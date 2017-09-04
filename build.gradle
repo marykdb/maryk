@@ -1,0 +1,40 @@
+buildscript {
+    ext.kotlin_version = '1.1.4-3'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+apply plugin: 'kotlin'
+
+allprojects {
+    group = "io.maryk"
+    version = "0.1"
+
+    repositories {
+        jcenter()
+    }
+}
+
+sourceSets {
+    jvm.kotlin.srcDir("src/jvm/kotlin")
+}
+
+dependencies {
+    jvmCompile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+
+    compile sourceSets.jvm.runtimeClasspath
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile "io.kotlintest:kotlintest:2.0.5"
+    testCompile "junit:junit:4.12"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}

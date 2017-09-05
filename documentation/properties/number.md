@@ -51,18 +51,18 @@ Int16 | Int32 | Int64 | Float32 | Float64**
 
 ## Data options
 - Index - Position in DataModel 
-- Indexable
-- Searchable
+- Indexed - Default false
+- Searchable - Default true
 
 **Example of a kotlin Number definition**
 ```kotlin
 NumberDefinition(
     name = "counter",
+    index = 0,
     type = UInt32,
     required = true,
     final = true,
     unique = true,
-    index = 0,
     minValue = 32,
     maxValue = 1000000,
     random = true,

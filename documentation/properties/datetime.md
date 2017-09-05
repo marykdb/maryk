@@ -1,0 +1,54 @@
+# DateTime
+A DateTime Property which can be used to represent the time in a date plus time.
+
+- Kotlin Definition : **DateTimeDefinition**
+- Maryk Yaml Definition: **DateTime** | **DateTime.Millis** 
+
+## Usage options
+- Value
+- Map Key
+- Map Value
+- List
+
+## Validation Options
+- Required
+- Final
+- Unique
+- Minimum value
+- Maximum value
+- fillWithNow - if true it will set the dateTime with the current UTC time
+
+## Data options
+- precision - The precision to which the time is stored and transported. 
+  SECONDS (default) or MILLIS. This value cannot be changed after storing first data.
+- Index - Position in DataModel 
+- Indexed - Default false
+- Searchable - Default true
+
+**Example of a kotlin String definition**
+```kotlin
+DateTimeDefinition(
+    name = "meetingDateTime",
+    index = 0,
+    required = true,
+    final = true,
+    unique = true,
+    minValue = DateTime(Date(2017, 12, 1),Time(8, 30)),
+    maxValue = DateTime(Date(2022, 12, 1),Time(18, 00)),
+    precision = TimePrecision.MILLIS,
+    fillWithNow = true
+)
+```
+
+## Byte representation
+It depends on the precision of the Time how it will be stored
+
+- SECONDS - 7 bit integer counting the seconds from midnight January 1st 1970
+- MILLIS - 9 bit integer with 7 bits counting the seconds from midnight January 1st 1970 
+and 2 bits for the added milliseconds 
+
+## String representation
+In unoptimized mode it will be represented by an iso8601 String
+
+In optimized mode it will use the integer counting either the seconds or milliseconds
+from midnight January 1st 1970.

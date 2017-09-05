@@ -12,6 +12,7 @@ import kotlin.test.assertTrue
 
 internal class TimeDefinitionTest {
     private val timesToTest = arrayOf(
+            Time(12, 3, 5, 50),
             Time.nowUTC(),
             Time.MAX_IN_SECONDS,
             Time.MAX_IN_MILLIS,

@@ -21,17 +21,17 @@ Basic String property to represent text.
 
 ## Data options
 - Index - Position in DataModel 
-- Indexable - if string value should be indexed
-- Searchable - if string value should be searchable with free text search
+- Indexed - Default false
+- Searchable - Default true
 
 **Example of a kotlin String definition**
 ```kotlin
 StringDefinition(
     name = "test",
+    index = 0,
     required = true,
     final = true,
     unique = true,
-    index = 0,
     minSize = 3,
     maxSize = 6,
     minValue = "aab",
@@ -43,5 +43,5 @@ StringDefinition(
 ## Byte representation
 UTF-8 byte conversion
 
-## JSON
+## String representation
 String

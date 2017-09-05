@@ -4,6 +4,7 @@ Maryk is a way of defining rich data structures which enable you to create
 data driven APIs for complex organizations. 
 
 **Advantages of structuring data models in Maryk**
+
 - Data models define validations so it is easy to validate data on all 
 platforms.
 - Data models provide an easy way to define a 

@@ -1,14 +1,15 @@
 # Enum
 Contains an enumaration value. Is limited to one of the values in an enum
 
-- Kotlin Definition : **EnumDefinition**
 - Maryk Yaml Definition: **Enum<Name>**
+- Kotlin Definition : **EnumDefinition**
+- Kotlin Value: **IndexedEnum**
 
 ## Usage options
 - Value
 - Map Key
 - Map Value
-- List
+- Inside List/Set
 
 ## Validation Options
 - Required
@@ -18,24 +19,24 @@ Contains an enumaration value. Is limited to one of the values in an enum
 - Maximum value
 
 ## Data options
-- Index - Position in DataModel 
-- Indexed - Default false
-- Searchable - Default true
+- index - Position in DataModel 
+- indexed - Default false
+- searchable - Default true
 
-**Example of a kotlin String definition**
+**Example of a kotlin Enum definition**
 ```kotlin
 enum class Role(override val index: Int): IndexedEnum<Option> {
     Admin(0), Moderator(1), User(2)
 }
 
-EnumDefinition<Role>(
+val def = EnumDefinition<Role>(
     name = "role",
     index = 0,
     required = true,
     final = true,
     unique = true,
     minValue = false,
-    maxValue = true,
+    maxValue = true
 )
 ```
 

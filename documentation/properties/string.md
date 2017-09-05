@@ -1,13 +1,14 @@
 # String
 Basic String property to represent text.
 
-- Kotlin Definition : **StringDefinition**
 - Maryk Yaml Definition: **String**
+- Kotlin Definition : **StringDefinition**
+- Kotlin Value : **String**
 
 ## Usage options
 - Value
 - Map Value
-- List
+- Inside List/Set
 
 ## Validation Options
 - Required
@@ -20,13 +21,13 @@ Basic String property to represent text.
 - Maximum value - The max value (Sort end value)
 
 ## Data options
-- Index - Position in DataModel 
-- Indexed - Default false
-- Searchable - Default true
+- index - Position in DataModel 
+- indexed - Default false
+- searchable - Default true
 
 **Example of a kotlin String definition**
 ```kotlin
-StringDefinition(
+val def = StringDefinition(
     name = "test",
     index = 0,
     required = true,
@@ -36,7 +37,7 @@ StringDefinition(
     maxSize = 6,
     minValue = "aab",
     maxValue = "ddda",
-    regEx = "^[abcd]{3,4}$",
+    regEx = "^[abcd]{3,4}$"
 )
 ```
 

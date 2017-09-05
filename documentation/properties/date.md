@@ -2,14 +2,16 @@
 A Date Property which can be used to represent the date in years, month and date. The 
 year is unsigned so it can contain negative dates
 
-- Kotlin Definition : **DateDefinition**
 - Maryk Yaml Definition: **Date**
+- Kotlin Definition : **DateDefinition**
+- Kotlin Value: **Date**
+
 
 ## Usage options
 - Value
 - Map Key
 - Map Value
-- List
+- Inside List/Set
 
 ## Validation Options
 - Required
@@ -20,13 +22,13 @@ year is unsigned so it can contain negative dates
 - fillWithNow - if true it will set the date with the current UTC date
 
 ## Data options
-- Index - Position in DataModel 
-- Indexed - Default false
-- Searchable - Default true
+- index - Position in DataModel 
+- indexed - Default false
+- searchable - Default true
 
-**Example of a kotlin String definition**
+**Example of a kotlin Date definition**
 ```kotlin
-DateDefinition(
+val def = DateDefinition(
     name = "dateOfBirth",
     index = 0,
     required = true,

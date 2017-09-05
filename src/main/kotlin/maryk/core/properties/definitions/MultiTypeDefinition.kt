@@ -17,7 +17,7 @@ class MultiTypeDefinition(
         required: Boolean = false,
         final: Boolean = false,
         val typeMap: Map<Int, AbstractSubDefinition<*>>
-) : AbstractSubDefinition<TypedValue<*>>(
+) : AbstractPropertyDefinition<TypedValue<*>>(
         name, index, indexed, searchable, required, final
 ) {
     @Throws(PropertyValidationException::class)

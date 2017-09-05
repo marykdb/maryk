@@ -1,14 +1,15 @@
 # Boolean
 Boolean true or false.
 
-- Kotlin Definition : **BooleanDefinition**
 - Maryk Yaml Definition: **Boolean**
+- Kotlin Definition : **BooleanDefinition**
+- Kotlin Value: **Boolean**
 
 ## Usage options
 - Value
 - Map Key
 - Map Value
-- List
+- Inside List/Set
 
 ## Validation Options
 - Required
@@ -18,20 +19,20 @@ Boolean true or false.
 - Maximum value
 
 ## Data options
-- Index - Position in DataModel 
-- Indexed - Default false
-- Searchable - Default true
+- index - Position in DataModel 
+- indexed - Default false
+- searchable - Default true
 
-**Example of a kotlin String definition**
+**Example of a kotlin Boolean definition**
 ```kotlin
-BooleanDefinition(
+val def = BooleanDefinition(
     name = "editable",
     index = 0,
     required = true,
     final = true,
     unique = true,
     minValue = false,
-    maxValue = true,
+    maxValue = true
 )
 ```
 

@@ -3,6 +3,8 @@ Used to store numbers in specific formats. Signed floats and signed and
 unsigned integers are available.
 
 - Kotlin Definition : **NumberDefinition**
+- Kotlin Value: **UInt8 | UInt16 | UInt32 | UInt64 | Byte | 
+                Short | Int | Long | Float | Double**
 - Maryk Yaml Definition: **UInt8 | UInt16 | UInt32 | UInt64 | Int8 | 
 Int16 | Int32 | Int64 | Float32 | Float64**
 
@@ -38,7 +40,7 @@ Int16 | Int32 | Int64 | Float32 | Float64**
 - Value
 - Map Key
 - Map Value
-- List
+- Inside List/Set
 
 ## Validation Options
 - Required
@@ -50,13 +52,14 @@ Int16 | Int32 | Int64 | Float32 | Float64**
 - Random value
 
 ## Data options
-- Index - Position in DataModel 
-- Indexed - Default false
-- Searchable - Default true
+- index - Position in DataModel 
+- indexed - Default false
+- searchable - Default true
+- type - type of number. See Types above.
 
 **Example of a kotlin Number definition**
 ```kotlin
-NumberDefinition(
+val def = NumberDefinition(
     name = "counter",
     index = 0,
     type = UInt32,
@@ -65,11 +68,11 @@ NumberDefinition(
     unique = true,
     minValue = 32,
     maxValue = 1000000,
-    random = true,
+    random = true
 )
 ```
 
-### Byte representation
+## Byte representation
 All numbers are encoded to a fixed length byte format fitting their type. 
 For example 4 bytes for Int32 and 1 for Int8. All numbers are encoded in
 an order fitting their natural order. For signed numbers this means that 

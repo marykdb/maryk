@@ -8,29 +8,29 @@ Int16 | Int32 | Int64 | Float32 | Float64**
 
 ## Types
 - **UInt8** - 8 bit unsigned Integer 
-  * Range: 0..255
+    * Range: 0..255
 - **UInt16** - 16 bit unsigned Integer 
-  * Range: 0..65536
+    * Range: 0..65536
 - **UInt32** - 32 bit unsigned Integer 
-  * Range: 0..4294967296
+    * Range: 0..4294967296
 - **UInt64** - 64 bit unsigned Integer 
-  * Range: 0..18446744073709551615
+    * Range: 0..18446744073709551615
   
   
 - **Int8** - 8 bit signed Integer 
-  * Range: -128..127
+    * Range: -128..127
 - **Int16** - 16 bit signed Integer 
-  * Range: -32768..32767
+    * Range: -32768..32767
 - **Int32** - 32 bit signed Integer 
-  * Range: -2147483648..2147483647
+    * Range: -2147483648..2147483647
 - **Int64** - 64 bit signed Integer 
-  * Range: -9223372036854775808..9223372036854775807
+    * Range: -9223372036854775808..9223372036854775807
   
   
 - **Float32** - 32 bit single precision signed floating point 
-  * Range: -Infinity..Infinity
+    * Range: -Infinity..Infinity
 - **Float64** - 64 bit double precision signed floating point 
-  * Range: -Infinity..Infinity
+    * Range: -Infinity..Infinity
 
 
 ## Usage options

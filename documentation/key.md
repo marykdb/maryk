@@ -1,3 +1,5 @@
+# Keys
+
 All DataObjects can only be stored below a key. The key is a unique index
 to an object and any object can be retrieved by the key. A key is always
 final and unique. If you store data inside an existing key it will
@@ -35,7 +37,7 @@ reference and you give a specific reference to the key, the data scan knows
 exactly where to start. 
 
 If you always request data with the newest on top it is wise to reverse the
-date of creation so new items always come back first. 
+date of creation so new items always come back first.
 
 ## Tips on designing a key
 - If data "belongs" to something or somebody, always start the key with

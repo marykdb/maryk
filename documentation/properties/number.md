@@ -7,6 +7,8 @@ unsigned integers are available.
 Int16 | Int32 | Int64 | Float32 | Float64**
 
 ## Types
+
+### Unsigned Integers
 - **UInt8** - 8 bit unsigned Integer 
     * Range: 0..255
 - **UInt16** - 16 bit unsigned Integer 
@@ -15,8 +17,8 @@ Int16 | Int32 | Int64 | Float32 | Float64**
     * Range: 0..4294967296
 - **UInt64** - 64 bit unsigned Integer 
     * Range: 0..18446744073709551615
-  
-  
+
+### Signed Integers
 - **Int8** - 8 bit signed Integer 
     * Range: -128..127
 - **Int16** - 16 bit signed Integer 
@@ -25,13 +27,12 @@ Int16 | Int32 | Int64 | Float32 | Float64**
     * Range: -2147483648..2147483647
 - **Int64** - 64 bit signed Integer 
     * Range: -9223372036854775808..9223372036854775807
-  
-  
+
+### Signed Floats
 - **Float32** - 32 bit single precision signed floating point 
     * Range: -Infinity..Infinity
 - **Float64** - 64 bit double precision signed floating point 
     * Range: -Infinity..Infinity
-
 
 ## Usage options
 - Value

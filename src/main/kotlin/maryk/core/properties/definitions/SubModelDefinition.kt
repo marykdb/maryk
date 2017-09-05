@@ -15,7 +15,7 @@ import maryk.core.properties.references.PropertyReference
 class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         name: String? = null,
         index: Short = -1,
-        indexed: Boolean = true,
+        indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,

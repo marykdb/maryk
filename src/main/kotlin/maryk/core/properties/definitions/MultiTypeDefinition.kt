@@ -12,7 +12,7 @@ import maryk.core.properties.types.TypedValue
 class MultiTypeDefinition(
         name: String? = null,
         index: Short = -1,
-        indexed: Boolean = true,
+        indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,

@@ -7,7 +7,7 @@ import maryk.core.properties.types.numeric.NumberDescriptor
 class NumberDefinition<T: Comparable<T>>(
         name: String? = null,
         index: Short = -1,
-        indexed: Boolean = true,
+        indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,

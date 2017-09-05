@@ -9,7 +9,7 @@ import maryk.core.properties.types.IndexedEnum
 class EnumDefinition<E: IndexedEnum<E>>(
         name: String? = null,
         index: Short = -1,
-        indexed: Boolean = true,
+        indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,

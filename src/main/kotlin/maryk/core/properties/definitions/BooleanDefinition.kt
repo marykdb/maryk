@@ -8,7 +8,7 @@ import maryk.core.properties.exceptions.ParseException
 class BooleanDefinition(
         name: String? = null,
         index: Short = -1,
-        indexed: Boolean = true,
+        indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,

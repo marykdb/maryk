@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.randomBytes
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 
@@ -9,7 +8,7 @@ import maryk.core.properties.types.Bytes
 class FixedBytesDefinition(
         name: String? = null,
         index: Short = -1,
-        indexed: Boolean = true,
+        indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,

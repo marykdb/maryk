@@ -173,4 +173,56 @@ data class PersonRoleInPeriod(
     }
 }
 ```
- 
+
+## Extending RootDataModels
+
+DataModels cannot be extended in an OOP sense. But they can have properties which
+can be of different types. This way it is possible to make a generic RootDataModel
+like a Timeline which can contain different flavors of DataModels below. 
+
+To accomplish this you create a MultiTypeDefinition mapping the different flavors 
+of DataModels. The property containing the value gets an extra type id. This type id
+can also be encoded into the key so data can be quickly queried on type. 
+
+**Example**
+
+```kotlin
+data class Post ...
+data class Event ...
+data class Advertisement ...
+
+data class TimelineItem(
+            val item: TypedValue,
+            val dateOfPosting: DateTime
+){
+    object Properties {
+        val dateOfPosting = DateTimeDefinition(
+            name = "dateOfPosting",
+            index = 0,
+            required = true,
+            final = true,
+            precision = TimePrecision.SECONDS
+        )
+        val item = MultiTypeDefinition(
+            name = "item",
+            index = 1,
+            required = true,
+            final = true,
+            typeMap = mapOf(
+                0 to SubModelDefinition(dataModel = Post),
+                1 to SubModelDefinition(dataModel = Event),
+                2 to SubModelDefinition(dataModel = Advertisement)
+            )
+        )
+    }
+    companion object: RootDataModel<TimelineItem>(
+        keyDefinitions = definitions(
+            Reversed(Properties.dateOfPosting),
+            TypeId(Properties.item)
+        ),
+        definitions = listOf(
+            Def(Properties.item, MarykObject::item)
+        )
+    )
+}
+```

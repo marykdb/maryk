@@ -23,16 +23,16 @@ This makes them usable as map keys and list/set items.
 - index - Position in DataModel 
 - indexed - Default false
 - searchable - Default true
-- dataModel - Refers to DataModel to be embedded
+- dataModel - Refers to DataModel to be used as value
 
-**Example of a kotlin SubModel definition**
+**Example of a kotlin ValueModel definition**
 ```kotlin
-val def = SubModelDefinition(
-    name = "address",
+val def = ValueModelDefinition(
+    name = "personRoleInPeriod",
     index = 0,
     required = true,
     final = true,
-    dataModel = Address
+    dataModel = PersonRoleInPeriod
 )
 ```
 

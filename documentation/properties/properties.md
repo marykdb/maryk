@@ -45,11 +45,13 @@ length or specific validations like a regex for a String property.
 
 Check the page for each type of property to see what is possible.
 
-Validation present on all properties:
+## Validation present on all properties:
+
 * Required - Property needs to be set.
 * Final - Property can never be changed.
 
-Validation present depending on the type:
+## Validation present depending on the type:
+
 * Unique - Another field with this value is not allowed to exist. Useful 
 for unique external IDs and email addresses.
 * Minimum value - Property cannot have a value less than this value

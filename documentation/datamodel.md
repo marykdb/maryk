@@ -125,7 +125,7 @@ properties:
     type: Date
   3 = endDate:
     type: Date
- ```
+```
  
 ```yaml
 // Role.enum.yml
@@ -172,8 +172,5 @@ data class PersonRoleInPeriod(
         )
     }
 }
-
-
- ```
- 
+```
  

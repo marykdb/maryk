@@ -7,14 +7,14 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 import org.junit.Test
 
-internal class ModelReferenceDefinitionTest {
-    private val modelRefToTest = arrayOf(
+internal class ReferenceDefinitionTest {
+    private val refToTest = arrayOf(
             Key<TestMarykObject>(ByteArray(9, { 0x00.toByte() })),
             Key<TestMarykObject>(ByteArray(9, { 0xFF.toByte() })),
             Key<TestMarykObject>(ByteArray(9, { if (it % 2 == 1) 0x88.toByte() else 0xFF.toByte() }))
     )
 
-    val def = ModelReferenceDefinition(
+    val def = ReferenceDefinition(
             name = "test",
             dataModel = TestMarykObject
     )
@@ -26,7 +26,7 @@ internal class ModelReferenceDefinitionTest {
 
     @Test
     fun convertToBytes() {
-        modelRefToTest.forEach {
+        refToTest.forEach {
             val b = def.convertToBytes(it)
             def.convertFromBytes(b, 0, b.size) shouldBe it
         }
@@ -35,7 +35,7 @@ internal class ModelReferenceDefinitionTest {
 
     @Test
     fun convertToPositionedBytes() {
-        modelRefToTest.forEach {
+        refToTest.forEach {
             val toBytes = ByteArray(22)
             val b = def.convertToBytes(it, toBytes, 10)
             def.convertFromBytes(b, 10, it.size) shouldBe it
@@ -44,7 +44,7 @@ internal class ModelReferenceDefinitionTest {
 
     @Test
     fun convertToString() {
-        modelRefToTest.forEach {
+        refToTest.forEach {
             val b = def.convertToString(it)
             def.convertFromString(b) shouldBe it
         }
@@ -52,7 +52,7 @@ internal class ModelReferenceDefinitionTest {
 
     @Test
     fun convertToOptimizedString() {
-        modelRefToTest.forEach {
+        refToTest.forEach {
             val b = def.convertToString(it, optimized = true)
             def.convertFromString(b, optimized = true) shouldBe it
         }

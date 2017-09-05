@@ -4,8 +4,8 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 
-/** Definition for a model reference */
-class ModelReferenceDefinition<DO: Any>(
+/** Definition for a reference to another DataObject*/
+class ReferenceDefinition<DO: Any>(
         name: String? = null,
         index: Short = -1,
         indexed: Boolean = false,

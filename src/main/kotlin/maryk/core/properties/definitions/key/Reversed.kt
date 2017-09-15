@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions.key
 
+import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.objects.DataModel
 import maryk.core.properties.definitions.IsFixedBytesEncodable
-import maryk.core.properties.types.MAX_BYTE
 import kotlin.experimental.xor
 
 class Reversed<T: Any>(
@@ -17,7 +17,7 @@ class Reversed<T: Any>(
         val newBytes = definition.convertToBytes(value, bytes, offset)
 
         (0 until byteSize).forEach {
-            newBytes[it + offset] = MAX_BYTE xor newBytes[it + offset]
+            newBytes[it + offset] = MAXBYTE xor newBytes[it + offset]
         }
         return newBytes
     }
@@ -26,7 +26,7 @@ class Reversed<T: Any>(
         val newBytes = bytes.copyOfRange(offset, offset + length)
 
         (0 until newBytes.size).forEach {
-            newBytes[it] = MAX_BYTE xor newBytes[it]
+            newBytes[it] = MAXBYTE xor newBytes[it]
         }
 
         return definition.convertFromBytes(newBytes, 0)

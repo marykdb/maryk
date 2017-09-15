@@ -3,6 +3,7 @@ package maryk.core.extensions.bytes
 import io.kotlintest.matchers.shouldBe
 import maryk.core.bytes.Base64
 import maryk.core.extensions.compare.compareTo
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 
 internal class ByteArrayKtTest {
@@ -31,6 +32,18 @@ internal class ByteArrayKtTest {
                     10,
                     it.size
             ).compareTo(it) shouldBe 0
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        bytesToTest.forEach {
+            bc.reserve(it.size)
+            it.writeBytes(bc::write)
+
+            initByteArray(bc::read, it.size).compareTo(it) shouldBe 0
+            bc.reset()
         }
     }
 }

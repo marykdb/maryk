@@ -1,5 +1,7 @@
 package maryk.core.extensions.bytes
 
+import io.kotlintest.matchers.shouldBe
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -35,6 +37,18 @@ internal class FloatKtTest {
                     it,
                     initFloat(it.toBytes(bytes, 10), 10)
             )
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        floatsToTest.forEach {
+            bc.reserve(4)
+            it.writeBytes(bc::write)
+
+            initFloat(bc::read) shouldBe it
+            bc.reset()
         }
     }
 }

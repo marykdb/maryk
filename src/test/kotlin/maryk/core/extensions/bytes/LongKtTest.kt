@@ -2,6 +2,7 @@ package maryk.core.extensions.bytes
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -22,6 +23,39 @@ internal class LongKtTest {
     fun testConversion() {
         longsToTest.forEach {
             initLong(it.toBytes()) shouldBe it
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        longsToTest.forEach {
+            bc.reserve(8)
+            it.writeBytes(bc::write, 8)
+
+            initLong(bc::read, 8) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testStreaming7Conversion() {
+        val bc = ByteCollector()
+        longArrayOf(
+                MIN_SEVEN_VALUE,
+                -999999999L,
+                -1L,
+                0L,
+                1L,
+                1504201744L,
+                999999999,
+                MAX_SEVEN_VALUE
+        ).forEach {
+            bc.reserve(7)
+            it.writeBytes(bc::write, 7)
+
+            initLong(bc::read, 7) shouldBe it
+            bc.reset()
         }
     }
 

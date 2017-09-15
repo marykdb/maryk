@@ -1,6 +1,8 @@
 package maryk.core.extensions.bytes
 
+import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -36,6 +38,37 @@ internal class IntKtTest {
                     it,
                     initInt(it.toBytes(bytes, 10), 10)
             )
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        intsToTest.forEach {
+            bc.reserve(4)
+            it.writeBytes(bc::write)
+
+            initInt(bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testStreaming3Conversion() {
+        val bc = ByteCollector()
+        intArrayOf(
+                -0x7FFFFF
+                -1,
+                0,
+                1,
+                2222,
+                0x7FFFFF
+        ).forEach {
+            bc.reserve(3)
+            it.writeBytes(bc::write, 3)
+
+            initInt(bc::read, 3) shouldBe it
+            bc.reset()
         }
     }
 

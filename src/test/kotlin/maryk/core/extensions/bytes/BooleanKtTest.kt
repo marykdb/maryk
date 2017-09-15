@@ -1,5 +1,7 @@
 package maryk.core.extensions.bytes
 
+import io.kotlintest.matchers.shouldBe
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -27,6 +29,18 @@ internal class BooleanKtTest {
                     it,
                     initBoolean(it.toBytes(bytes, 10), 10)
             )
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        booleansToTest.forEach {
+            bc.reserve(1)
+            it.writeBytes(bc::write)
+
+            initBoolean(bc::read) shouldBe it
+            bc.reset()
         }
     }
 }

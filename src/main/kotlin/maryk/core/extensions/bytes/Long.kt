@@ -7,7 +7,7 @@ import kotlin.experimental.xor
 const val MAX_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L-1
 const val MIN_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L*-1
 
-fun Long.toSevenBytes(bytes: ByteArray? = null, offset: Int = 0): ByteArray {
+internal fun Long.toSevenBytes(bytes: ByteArray? = null, offset: Int = 0): ByteArray {
     if (this !in MIN_SEVEN_VALUE..MAX_SEVEN_VALUE) {
         throw IllegalArgumentException("Number is outside the bounds for 7 byte array")
     }
@@ -25,7 +25,7 @@ fun Long.toSevenBytes(bytes: ByteArray? = null, offset: Int = 0): ByteArray {
     return b
 }
 
-fun initLongSeven(bytes: ByteArray, offset: Int = 0): Long {
+internal fun initLongSeven(bytes: ByteArray, offset: Int = 0): Long {
     var l: Long = 0
 
     (0..6).forEach { i ->
@@ -77,5 +77,44 @@ internal fun initLong(bytes: ByteArray, offset: Int = 0, length: Int = 8): Long 
         long = long xor (bytes[i + offset].toLong() and 0xFF)
     }
     if (length == 8){ long += Long.MIN_VALUE }
+    return long
+}
+
+/** Write the bytes of this Long to a writer
+ * @param writer to write this Long to
+ */
+fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
+    if (length !in 5..8) { throw IllegalArgumentException("Length should be within range of 5 to 8") }
+
+    (0 until length).forEach {
+        val b = (this shr (length-1-it) * 8 and 0xFF).toByte()
+        writer(
+                if(it == 0) b xor SIGNBYTE else b
+        )
+    }
+}
+
+/** Converts reader with bytes to Long
+ * @param reader to read bytes from
+ * @return Long represented by bytes
+ */
+internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
+    var long = 0L
+    val firstByte = reader()
+    // Skip bytes if below certain length
+    if (length < 8) {
+        val negative = firstByte and SIGNBYTE != SIGNBYTE
+        (0 until 8 - length).forEach {
+            if (negative) { // Set to max byte to have correct value if negative
+                long = long xor 0xFF
+            }
+            long = long shl 8
+        }
+    }
+    long = long xor ((firstByte xor SIGNBYTE).toLong() and 0xFF)
+    (1 until length).forEach {
+        long = long shl 8
+        long = long xor (reader().toLong() and 0xFF)
+    }
     return long
 }

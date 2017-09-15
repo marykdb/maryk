@@ -8,8 +8,6 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.properties.exceptions.ParseException
 
-internal const val MAX_BYTE = 0xff.toByte()
-
 open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
     val size = bytes.size
 

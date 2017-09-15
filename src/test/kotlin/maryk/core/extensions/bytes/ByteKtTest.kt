@@ -1,10 +1,13 @@
 package maryk.core.extensions.bytes
 
+import io.kotlintest.matchers.shouldBe
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
 
 internal class ByteKtTest {
     private val bytesToTest = byteArrayOf(
+            -1,
             22,
             -22,
             0,
@@ -30,6 +33,18 @@ internal class ByteKtTest {
                     it,
                     initByte(it.toBytes(bytes, 10), 10)
             )
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        bytesToTest.forEach {
+            bc.reserve(1)
+            it.writeBytes(bc::write)
+
+            initByte(bc::read) shouldBe it
+            bc.reset()
         }
     }
 }

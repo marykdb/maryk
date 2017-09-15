@@ -1,5 +1,6 @@
 package maryk.core.extensions.bytes
 
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -37,6 +38,18 @@ internal class DoubleKtTest {
                     it,
                     initDouble(it.toBytes(bytes, 10), 10)
             )
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        doublesToTest.forEach {
+            bc.reserve(8)
+            it.writeBytes(bc::write)
+
+            assertEquals(it, initDouble(bc::read))
+            bc.reset()
         }
     }
 }

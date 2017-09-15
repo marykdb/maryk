@@ -6,9 +6,9 @@ package maryk.core.extensions.bytes
  * @param offset to add value to
  * @return byte array
  */
-fun Boolean.toBytes(bytes: ByteArray? = null, offset: Int = 0): ByteArray {
+internal fun Boolean.toBytes(bytes: ByteArray? = null, offset: Int = 0): ByteArray {
     val b = bytes ?: ByteArray(1)
-    b[offset] = if (this) 1 else 0
+    b[offset] = if (this) ONEBYTE else ZEROBYTE
     return b
 }
 
@@ -18,6 +18,21 @@ fun Boolean.toBytes(bytes: ByteArray? = null, offset: Int = 0): ByteArray {
  * @param offset of byte to start
  * @return Boolean represented by bytes
  */
-fun initBoolean(bytes: ByteArray, offset: Int = 0): Boolean {
-    return bytes[offset] != 0.toByte()
+internal fun initBoolean(bytes: ByteArray, offset: Int = 0): Boolean {
+    return bytes[offset] != ZEROBYTE
 }
+
+/** Write the bytes of this Boolean to a writer
+ * @param writer to write this Boolean to
+ */
+internal fun Boolean.writeBytes(writer: (byte: Byte) -> Unit) {
+    writer(
+            if (this) ONEBYTE else ZEROBYTE
+    )
+}
+
+/** Converts reader with bytes to Boolean
+ * @param reader to read bytes from
+ * @return Boolean represented by bytes
+ */
+internal fun initBoolean(reader: () -> Byte) = reader() != ZEROBYTE

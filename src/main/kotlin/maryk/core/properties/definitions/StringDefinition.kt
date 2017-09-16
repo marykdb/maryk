@@ -34,21 +34,6 @@ class StringDefinition(
         }
     }
 
-    override fun convertToBytes(value: String, bytes: ByteArray?, offset: Int): ByteArray {
-        val stringAsBytes = value.toByteArray()
-        return when (bytes) {
-            null -> stringAsBytes
-            else -> {
-                stringAsBytes.forEachIndexed { i, byte ->
-                    bytes[i + offset] = byte
-                }
-                bytes
-            }
-        }
-    }
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = String(bytes, offset, length)
-
     override fun convertFromBytes(length: Int, reader:() -> Byte) = initString(length, reader)
 
     override fun convertToBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)

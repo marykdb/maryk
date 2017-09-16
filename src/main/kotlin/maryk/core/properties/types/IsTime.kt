@@ -23,20 +23,6 @@ abstract class IsTime<T>: IsTemporal<T>() {
     /**
      * Converts Value into bytes
      * @param precision: how precise to convertFromBytes the time
-     */
-    fun toBytes(precision: TimePrecision) = toBytes(precision, null, 0)
-
-    /**
-     * Converts Value into bytes
-     * @param precision: how precise to convertFromBytes the time
-     * @param bytes: byte array to write to. Default it is a new fitting byte array
-     * @param offset: starting position to write to. Default 0
-     */
-    abstract fun toBytes(precision: TimePrecision, bytes: ByteArray?, offset: Int): ByteArray
-
-    /**
-     * Converts Value into bytes
-     * @param precision: how precise to convertFromBytes the time
      * @param reserver to reserve right amount of bytes on
      * @param writer to write bytes to
      */
@@ -47,22 +33,8 @@ abstract class IsTimeObject<T>: IsTemporalObject<T>() {
     /** Get the size of the byte representation */
     abstract fun byteSize(precision: TimePrecision): Int
 
-    /**
-     * Create from byte array
-     * @param bytes  to convertFromBytes
-     * @param offset of byte to start
-     * @param length of bytes to convertFromBytes
-     * @return DateTime represented by bytes
+    /** Creates a Time object by reading a byte reader
+     * @param reader to read from
      */
-    fun ofBytes(bytes: ByteArray) = ofBytes(bytes, 0, bytes.size)
-
-    /**
-     * Create from byte array
-     * @param bytes  to convertFromBytes
-     * @param offset of byte to start
-     * @param length of bytes to convertFromBytes
-     * @return DateTime represented by bytes
-     */
-    abstract fun ofBytes(bytes: ByteArray, offset: Int, length: Int): T
     abstract fun fromByteReader(length: Int, reader: () -> Byte): T
 }

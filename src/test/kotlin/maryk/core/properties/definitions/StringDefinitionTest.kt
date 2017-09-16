@@ -47,29 +47,12 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convertToBytes() {
-        stringsToTest.forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
     fun convertStreamingBytes() {
         val byteCollector = ByteCollector()
         stringsToTest.forEach {
             def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
             def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
-        }
-    }
-
-    @Test
-    fun convertToBytesWithOffset() {
-        stringsToTest.forEach {
-            val bytes = ByteArray(33)
-            val b = def.convertToBytes(it, bytes, 10)
-            def.convertFromBytes(b, 10, it.toByteArray().size) shouldBe it
         }
     }
 

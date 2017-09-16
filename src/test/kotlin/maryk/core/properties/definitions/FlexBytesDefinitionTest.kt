@@ -37,29 +37,12 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun convertToBytes() {
-        flexBytesToTest.forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
     fun testStreamingConversion() {
         val byteCollector = ByteCollector()
         flexBytesToTest.forEach {
             def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
             def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
-        }
-    }
-
-    @Test
-    fun convertToPositionedBytes() {
-        flexBytesToTest.forEach {
-            val toBytes = ByteArray(22)
-            val b = def.convertToBytes(it, toBytes, 10)
-            def.convertFromBytes(b, 10, it.size) shouldBe it
         }
     }
 

@@ -15,27 +15,6 @@ internal class ByteArrayKtTest {
     )
 
     @Test
-    fun testConversion() {
-        bytesToTest.forEach {
-            initByteArray(
-                    it
-            ).compareTo(it) shouldBe 0
-        }
-    }
-
-    @Test
-    fun testOffsetConversion() {
-        bytesToTest.forEach {
-            val b = ByteArray(22)
-            initByteArray(
-                    it.toBytes(b, 10),
-                    10,
-                    it.size
-            ).compareTo(it) shouldBe 0
-        }
-    }
-
-    @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
         bytesToTest.forEach {

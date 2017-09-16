@@ -52,7 +52,6 @@ internal class TypeIdTest {
         val specificDef = keyDef as TypeId
         specificDef.multiTypeDefinition shouldBe MarykObject.Properties.multi
 
-        specificDef.convertFromBytes(key.bytes, 0) shouldBe 1
         specificDef.getValue(MarykObject, obj) shouldBe 1
 
         val bc = ByteCollector()

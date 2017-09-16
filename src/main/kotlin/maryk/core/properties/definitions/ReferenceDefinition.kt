@@ -27,14 +27,6 @@ class ReferenceDefinition<DO: Any>(
 
     override fun convertFromBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
 
-    override fun convertToBytes(value: Key<DO>, bytes: ByteArray?, offset: Int) = when(bytes) {
-        null -> value.bytes
-        else -> value.toBytes(bytes, offset)
-    }
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) =
-            dataModel.key.get(bytes.copyOfRange(offset, this.byteSize + offset))
-
     @Throws(ParseException::class)
     override fun convertFromString(string: String, optimized: Boolean) = try {
         dataModel.key.get(string)

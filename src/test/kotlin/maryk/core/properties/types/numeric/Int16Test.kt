@@ -1,7 +1,6 @@
 package maryk.core.properties.types.numeric
 
 import io.kotlintest.matchers.shouldBe
-import maryk.core.extensions.bytes.toBytes
 import maryk.core.properties.ByteCollector
 import org.junit.Test
 
@@ -20,23 +19,12 @@ internal class Int16Test {
     }
 
     @Test
-    fun test16StringConversion() {
+    fun testStringConversion() {
         Short.MIN_VALUE.toString() shouldBe "-32768"
         Short.MAX_VALUE.toString() shouldBe "32767"
 
         int16values.forEach {
             Int16.ofString(it.toString()) shouldBe it
-        }
-    }
-
-    @Test
-    fun testInt16BytesConversion() {
-        val bytes = ByteArray(33)
-
-        int16values.forEach {
-            Int16.ofBytes(it.toBytes()) shouldBe it
-            Int16.ofBytes(it.toBytes(bytes, 10), 10) shouldBe it
-            Int16.ofBytes(Int16.toBytes(it, bytes, 10), 10) shouldBe it
         }
     }
 

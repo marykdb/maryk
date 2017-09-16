@@ -27,14 +27,6 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convertToBytes() {
-        intArray.forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
     fun convertStreamingBytes() {
         val byteCollector = ByteCollector()
         intArray.forEach {

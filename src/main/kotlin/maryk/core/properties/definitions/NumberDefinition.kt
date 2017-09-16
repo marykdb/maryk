@@ -23,10 +23,6 @@ class NumberDefinition<T: Comparable<T>>(
 
     override fun createRandom() = type.createRandom()
 
-    override fun convertToBytes(value: T, bytes: ByteArray?, offset: Int) = type.toBytes(value,bytes?: ByteArray(byteSize), offset)
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = type.ofBytes(bytes, offset, length)
-
     override fun convertFromBytes(length: Int, reader:() -> Byte) = type.fromByteReader(length, reader)
 
     override fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = type.writeBytes(value, reserver, writer)

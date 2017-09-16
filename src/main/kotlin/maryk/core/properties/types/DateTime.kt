@@ -1,10 +1,7 @@
 package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initLong
-import maryk.core.extensions.bytes.initLongSeven
 import maryk.core.extensions.bytes.initShort
-import maryk.core.extensions.bytes.toBytes
-import maryk.core.extensions.bytes.toSevenBytes
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.time.Instant
@@ -39,18 +36,6 @@ data class DateTime(
     override fun toString(iso8601: Boolean) = when {
         iso8601 -> "${date.toString(iso8601 = true)}T${time.toString(iso8601 = true)}"
         else -> "${this.toEpochSecond()},${this.milli}"
-    }
-
-    override fun toBytes(precision: TimePrecision, bytes: ByteArray?, offset: Int) = when (precision) {
-        TimePrecision.MILLIS -> {
-            val b = bytes ?: ByteArray(9)
-            this.toEpochSecond().toSevenBytes(b, offset)
-            this.milli.toBytes(b, offset + 7)
-        }
-        TimePrecision.SECONDS -> this.toEpochSecond().toSevenBytes(
-                bytes ?: ByteArray(7),
-                offset
-        )
     }
 
     override fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
@@ -110,27 +95,6 @@ data class DateTime(
             TimePrecision.SECONDS -> 7
         }
 
-        /**
-         * Converts byte array to DateTime
-         * @param bytes  to convertFromBytes
-         * @param offset of byte to start
-         * @param length of bytes to convertFromBytes
-         * @return DateTime represented by bytes
-         */
-        override fun ofBytes(bytes: ByteArray, offset: Int, length: Int) = when (length) {
-            7 -> DateTime.ofEpochSecond(
-                    initLongSeven(bytes, offset)
-            )
-            9 -> DateTime.ofEpochSecond(
-                    initLongSeven(bytes, offset),
-                    initShort(bytes, offset + 7)
-            )
-            else -> throw IllegalArgumentException("Invalid length for bytes for DateTime conversion: " + length)
-        }
-
-        /** Creates a dateTime by reading a byte reader
-         * @param reader to read from
-         */
         override fun fromByteReader(length: Int, reader: () -> Byte) = when (length) {
             7 -> DateTime.ofEpochSecond(
                     initLong(reader, 7)

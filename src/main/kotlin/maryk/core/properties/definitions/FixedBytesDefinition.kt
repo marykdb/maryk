@@ -22,16 +22,6 @@ class FixedBytesDefinition(
 ), IsFixedBytesEncodable<Bytes> {
     override fun createRandom() = Bytes(randomBytes(this.byteSize))
 
-    override fun convertToBytes(value: Bytes, bytes: ByteArray?, offset: Int) = when(bytes) {
-        null -> value.bytes
-        else -> value.toBytes(bytes, offset)
-    }
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = when{
-        bytes.size != length && offset != 0 -> Bytes(bytes.copyOfRange(offset, offset + length))
-        else -> Bytes(bytes)
-    }
-
     override fun convertFromBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(byteSize, reader)
 
     override fun convertToBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)

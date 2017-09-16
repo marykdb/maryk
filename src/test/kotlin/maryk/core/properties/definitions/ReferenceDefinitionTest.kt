@@ -26,24 +26,6 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun convertToBytes() {
-        refToTest.forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-
-    @Test
-    fun convertToPositionedBytes() {
-        refToTest.forEach {
-            val toBytes = ByteArray(22)
-            val b = def.convertToBytes(it, toBytes, 10)
-            def.convertFromBytes(b, 10, it.size) shouldBe it
-        }
-    }
-
-    @Test
     fun convertToString() {
         refToTest.forEach {
             val b = def.convertToString(it)

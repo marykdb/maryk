@@ -29,14 +29,6 @@ internal class ValueModelDefinitionTest {
     )
 
     @Test
-    fun testConvertBytes() {
-        val bytes = value._bytes
-        val new = TestValueObject.createFromBytes(bytes, 0)
-
-        new shouldBe value
-    }
-
-    @Test
     fun testConvertStreamableBytes() {
         val bc = ByteCollector()
         def.convertToBytes(value, bc::reserve, bc::write)

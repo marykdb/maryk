@@ -26,23 +26,12 @@ internal class UInt32Test {
     }
 
     @Test
-    fun test32StringConversion() {
+    fun testStringConversion() {
         UInt32.MIN_VALUE.toString() shouldBe "0"
         UInt32.MAX_VALUE.toString() shouldBe "4294967295"
 
         uInt32values.forEach {
             UInt32.ofString(it.toString()) shouldBe it
-        }
-    }
-
-    @Test
-    fun testInt32BytesConversion() {
-        val bytes = ByteArray(33)
-
-        uInt32values.forEach {
-            UInt32.ofBytes(it.toBytes()) shouldBe it
-            UInt32.ofBytes(it.toBytes(bytes, 10), 10) shouldBe it
-            UInt32.ofBytes(UInt32.toBytes(it, bytes, 10), 10) shouldBe it
         }
     }
 

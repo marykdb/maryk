@@ -1,7 +1,6 @@
 package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initLong
-import maryk.core.extensions.bytes.toBytes
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.random
@@ -13,8 +12,12 @@ import maryk.core.properties.types.numeric.UnsignedNumberDescriptor
 /** Base class for 64 bit/8 byte unsigned integers */
 class UInt64 internal constructor(number: Long): UInt<Long>(number) {
     override fun compareTo(other: UInt<Long>) = number.compareTo(other.number)
-    override fun toString() = "0x${number.toBytes().toHex()}"
-    override fun toBytes(bytes: ByteArray?, offset: Int) = number.toBytes(bytes ?: ByteArray(size), offset)
+    override fun toString(): String {
+        val bytes = ByteArray(8)
+        var index = 0
+        number.writeBytes({ bytes[index++] = it })
+        return "0x${bytes.toHex()}"
+    }
     override fun writeBytes(writer: (Byte) -> Unit) = number.writeBytes(writer)
     companion object : UnsignedNumberDescriptor<UInt64>(
             size = 8,
@@ -23,12 +26,11 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
     ) {
         override fun fromByteReader(length: Int, reader: () -> Byte) = UInt64(initLong(reader))
         override fun writeBytes(value: UInt64, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
-        override fun toBytes(value: UInt64, bytes: ByteArray?, offset: Int) = value.toBytes(bytes, offset)
-        override fun ofBytes(bytes: ByteArray, offset: Int, length: Int) = UInt64(initLong(bytes, offset, length))
         override fun ofString(value: String): UInt64 {
-            if(value.startsWith("0x") && value.length < 4) { throw ParseException("Long should be represented by hex")
-            }
-            return UInt64(initLong(initByteArrayByHex(value.substring(2))))
+            if(value.startsWith("0x") && value.length < 4) { throw ParseException("Long should be represented by hex") }
+            val bytes = initByteArrayByHex(value.substring(2))
+            var index = 0
+            return UInt64(initLong({ bytes[index++] }))
         }
         override fun createRandom() = UInt64(Long.random())
     }

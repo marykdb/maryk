@@ -28,10 +28,6 @@ class DateDefinition(
 
     override fun convertToBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
-    override fun convertToBytes(value: Date, bytes: ByteArray?, offset: Int) = value.toBytes(bytes, offset)
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = Date.ofBytes(bytes, offset)
-
     @Throws(ParseException::class)
     override fun convertFromString(string: String, optimized: Boolean) = Date.parse(string, iso8601 = !optimized)
 }

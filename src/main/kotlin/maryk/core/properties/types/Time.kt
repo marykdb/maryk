@@ -1,7 +1,6 @@
 package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initInt
-import maryk.core.extensions.bytes.toBytes
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.zeroFill
 import maryk.core.properties.exceptions.ParseException
@@ -37,11 +36,6 @@ data class Time(
         total += second * MILLIS_PER_SECOND
         total += milli
         return total
-    }
-
-    override fun toBytes(precision: TimePrecision, bytes: ByteArray?, offset: Int) = when (precision) {
-        TimePrecision.MILLIS -> (this.secondsOfDay * 1000 + this.milli).toBytes(bytes ?: ByteArray(4), offset)
-        TimePrecision.SECONDS -> this.secondsOfDay.toBytes(bytes ?: ByteArray(3), offset, 3)
     }
 
     override fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
@@ -136,12 +130,6 @@ data class Time(
         override fun byteSize(precision: TimePrecision) = when (precision) {
             TimePrecision.MILLIS -> 4
             TimePrecision.SECONDS -> 3
-        }
-
-        override fun ofBytes(bytes: ByteArray, offset: Int, length: Int): Time = when (length) {
-            4 -> Time.ofMilliOfDay(initInt(bytes, offset))
-            3 -> Time.ofSecondOfDay(initInt(bytes, offset, length))
-            else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: " + bytes.size)
         }
 
         override fun fromByteReader(length: Int, reader: () -> Byte): Time = when (length) {

@@ -20,27 +20,6 @@ internal class FloatKtTest {
     )
 
     @Test
-    fun testConversion() {
-        floatsToTest.forEach {
-            assertEquals(
-                    it,
-                    initFloat(it.toBytes())
-            )
-        }
-    }
-
-    @Test
-    fun testOffsetConversion() {
-        floatsToTest.forEach {
-            val bytes = ByteArray(22)
-            assertEquals(
-                    it,
-                    initFloat(it.toBytes(bytes, 10), 10)
-            )
-        }
-    }
-
-    @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
         floatsToTest.forEach {

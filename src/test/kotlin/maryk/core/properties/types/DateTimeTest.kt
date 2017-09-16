@@ -59,54 +59,12 @@ internal class DateTimeTest {
     }
 
     @Test
-    fun testConversion() {
-        dateTimesWithSecondsToTest.forEach {
-            DateTime.ofBytes(
-                    it.toBytes(TimePrecision.SECONDS)
-            ) shouldBe it
-        }
-    }
-
-    @Test
-    fun testOffsetConversion() {
-        dateTimesWithSecondsToTest.forEach {
-            val bytes = ByteArray(22)
-            DateTime.ofBytes(
-                    it.toBytes(TimePrecision.SECONDS, bytes, 10),
-                    10,
-                    7
-            ) shouldBe it
-        }
-    }
-
-    @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
         dateTimesWithSecondsToTest.forEach {
             it.writeBytes(TimePrecision.SECONDS, bc::reserve, bc::write)
             DateTime.fromByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
-        }
-    }
-
-    @Test
-    fun testMillisConversion() {
-        dateTimesWithMillisToTest.forEach {
-            DateTime.ofBytes(
-                    it.toBytes(TimePrecision.MILLIS)
-            ) shouldBe it
-        }
-    }
-
-    @Test
-    fun testMillisOffsetConversion() {
-        dateTimesWithMillisToTest.forEach {
-            val bytes = ByteArray(22)
-            DateTime.ofBytes(
-                    it.toBytes(TimePrecision.MILLIS, bytes, 10),
-                    10,
-                    9
-            ) shouldBe it
         }
     }
 
@@ -122,13 +80,10 @@ internal class DateTimeTest {
 
     @Test
     fun testWrongByteSizeError() {
-        val bytes = ByteArray(22)
         shouldThrow<IllegalArgumentException> {
-            DateTime.ofBytes(
-                    bytes,
-                    10,
-                    22
-            )
+            DateTime.fromByteReader(22){
+                1
+            }
         }
     }
 

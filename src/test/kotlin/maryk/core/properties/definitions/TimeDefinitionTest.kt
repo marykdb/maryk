@@ -37,22 +37,6 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertToBytesMilli() {
-        arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
-            val b = defMilli.convertToBytes(it)
-            defMilli.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
-    fun convertToBytesSeconds() {
-        arrayOf(Time.MAX_IN_SECONDS, Time.MIN).forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
     fun convertStreamingBytesMillis() {
         val byteCollector = ByteCollector()
         arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {

@@ -28,23 +28,12 @@ internal class UInt64Test {
     }
 
     @Test
-    fun test64StringConversion() {
+    fun testStringConversion() {
         UInt64.MIN_VALUE.toString() shouldBe "0x0000000000000000"
         UInt64.MAX_VALUE.toString() shouldBe "0xffffffffffffffff"
 
         uInt64values.forEach {
             UInt64.ofString(it.toString()) shouldBe it
-        }
-    }
-
-    @Test
-    fun testInt64BytesConversion() {
-        val bytes = ByteArray(33)
-
-        uInt64values.forEach {
-            UInt64.ofBytes(it.toBytes()) shouldBe it
-            UInt64.ofBytes(it.toBytes(bytes, 10), 10) shouldBe it
-            UInt64.ofBytes(UInt64.toBytes(it, bytes, 10), 10) shouldBe it
         }
     }
 

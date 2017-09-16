@@ -21,27 +21,6 @@ internal class DoubleKtTest {
     )
 
     @Test
-    fun testConversion() {
-        doublesToTest.forEach {
-            assertEquals(
-                    it,
-                    initDouble(it.toBytes())
-            )
-        }
-    }
-
-    @Test
-    fun testOffsetConversion() {
-        doublesToTest.forEach {
-            val bytes = ByteArray(22)
-            assertEquals(
-                    it,
-                    initDouble(it.toBytes(bytes, 10), 10)
-            )
-        }
-    }
-
-    @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
         doublesToTest.forEach {

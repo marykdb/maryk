@@ -31,27 +31,6 @@ internal class BytesTest {
     }
 
     @Test
-    fun testConversion() {
-        bytesToTest.forEach {
-            Bytes(
-                it.bytes
-            ) shouldBe it
-        }
-    }
-
-    @Test
-    fun testOffsetConversion() {
-        bytesToTest.forEach {
-            val b = ByteArray(22)
-            Bytes.ofBytes(
-                    it.toBytes(b, 10),
-                    10,
-                    it.size
-            ) shouldBe it
-        }
-    }
-
-    @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
         bytesToTest.forEach {

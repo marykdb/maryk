@@ -12,14 +12,6 @@ internal class BooleanDefinitionTest {
     )
 
     @Test
-    fun convertToBytes() {
-        booleanArrayOf(true, false).forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
     fun convertStreamingBytes() {
         val byteCollector = ByteCollector()
         booleanArrayOf(true, false).forEach {

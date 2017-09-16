@@ -26,8 +26,6 @@ class DateTimeDefinition(
 
     override fun createNow() = DateTime.nowUTC()
 
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = DateTime.ofBytes(bytes, offset, length)
-
     override fun convertFromBytes(length: Int, reader:() -> Byte) = DateTime.fromByteReader(length, reader)
 
     @Throws(ParseException::class)

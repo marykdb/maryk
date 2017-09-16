@@ -19,11 +19,11 @@ internal class DateTimeDefinitionTest {
             DateTime.MIN
     )
 
-    val def = DateTimeDefinition(
+    private val def = DateTimeDefinition(
             name = "seconds"
     )
 
-    val defMilli = DateTimeDefinition(
+    private val defMilli = DateTimeDefinition(
             name = "milli",
             precision = TimePrecision.MILLIS
     )
@@ -52,22 +52,6 @@ internal class DateTimeDefinitionTest {
             def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
             def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
-        }
-    }
-
-    @Test
-    fun convertToBytesMilli() {
-        for(value in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
-            val b = defMilli.convertToBytes(value)
-            defMilli.convertFromBytes(b, 0, b.size) shouldBe value
-        }
-    }
-
-    @Test
-    fun convertToBytesSeconds() {
-        for(value in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
-            val b = def.convertToBytes(value)
-            def.convertFromBytes(b, 0, b.size) shouldBe value
         }
     }
 

@@ -17,28 +17,6 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         size
     }
 
-    /** Converts bytes to DataObject
-     * @param bytes  to convertFromBytes
-     * @param offset to start at
-     * @return converted DataObject
-     * @throws DefNotFoundException if definition needed for conversion is not found
-     */
-    @Throws(DefNotFoundException::class)
-    fun createFromBytes(bytes: ByteArray, offset: Int = 0): DO {
-        var byteOffset = offset
-        val values = mutableMapOf<Int, Any>()
-        this.definitions.forEach {
-            val def = it.propertyDefinition as IsFixedBytesEncodable<*>
-
-            values.put(
-                    key = def.index.toInt(),
-                    value = def.convertFromBytes(bytes, byteOffset, def.byteSize)
-            )
-            byteOffset += def.byteSize + 1
-        }
-        return this.construct(values)
-    }
-
     /** Converts bytes from reader to DataObject
      * @param reader  to read from
      * @return converted DataObject

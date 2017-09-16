@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.initLong
-import maryk.core.extensions.bytes.toBytes
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.generateUUID
 import maryk.core.objects.DataModel
@@ -12,19 +11,6 @@ object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>> {
     override val byteSize = 16
 
     override fun <T : Any> getValue(dataModel: DataModel<T>, dataObject: T) = generateUUID()
-
-    override fun convertToBytes(value: Pair<Long, Long>, bytes: ByteArray?, offset: Int): ByteArray {
-        val newBytes = bytes ?: ByteArray(byteSize)
-        value.first.toBytes(newBytes, offset)
-        value.second.toBytes(newBytes, offset + 8)
-        return newBytes
-    }
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int): Pair<Long, Long> {
-        val l1 = initLong(bytes, offset)
-        val l2 = initLong(bytes, offset + 8)
-        return Pair(l1, l2)
-    }
 
     override fun convertFromBytes(length: Int, reader: () -> Byte) = Pair(
         initLong(reader),

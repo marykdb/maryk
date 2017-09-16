@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.initShort
-import maryk.core.extensions.bytes.toBytes
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.DataModel
 import maryk.core.properties.definitions.IsFixedBytesEncodable
@@ -20,10 +19,6 @@ class TypeId(
         )?.invoke(dataObject) as TypedValue<*>
         return multiType.typeIndex
     }
-
-    override fun convertToBytes(value: Int, bytes: ByteArray?, offset: Int) = (value + Short.MIN_VALUE).toShort().toBytes(bytes, offset)
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = initShort(bytes, offset).toInt() - Short.MIN_VALUE
 
     override fun convertToBytes(value: Int, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(2)

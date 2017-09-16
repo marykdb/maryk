@@ -4,7 +4,6 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
 import org.junit.Test
-import kotlin.test.assertEquals
 
 internal class IntKtTest {
     private val intsToTest = intArrayOf(
@@ -18,28 +17,6 @@ internal class IntKtTest {
             923587636,
             Int.MAX_VALUE
     )
-
-    private val bytes = ByteArray(22)
-
-    @Test
-    fun testConversion() {
-        intsToTest.forEach {
-            assertEquals(
-                    it,
-                    initInt(it.toBytes())
-            )
-        }
-    }
-
-    @Test
-    fun testOffsetConversion() {
-        intsToTest.forEach {
-            assertEquals(
-                    it,
-                    initInt(it.toBytes(bytes, 10), 10)
-            )
-        }
-    }
 
     @Test
     fun testStreamingConversion() {
@@ -73,30 +50,9 @@ internal class IntKtTest {
     }
 
     @Test
-    fun test3Conversion() {
-        intArrayOf(
-                0,
-                2222,
-                256*256*256-1
-        ).forEach {
-            assertEquals(
-                    it,
-                    initInt(it.toBytes(bytes, 10, 3), 10, 3)
-            )
-        }
-    }
-
-    @Test
-    fun testOutOfRange3Conversion() {
-        intArrayOf(
-                Int.MAX_VALUE,
-                Int.MIN_VALUE,
-                256*256*256,
-                -1
-        ).forEach {
-            shouldThrow<IllegalArgumentException> {
-                initInt(it.toBytes(bytes, 10, 3), 10, 3)
-            }
+    fun testOutOfRangeConversion() {
+        shouldThrow<IllegalArgumentException> {
+            4.writeBytes({}, 5)
         }
     }
 }

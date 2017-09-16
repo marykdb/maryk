@@ -25,7 +25,7 @@ internal class UInt8Test {
     }
 
     @Test
-    fun test8StringConversion() {
+    fun testStringConversion() {
         UInt8.MIN_VALUE.toString() shouldBe "0"
         UInt8.MAX_VALUE.toString() shouldBe "255"
 
@@ -33,18 +33,6 @@ internal class UInt8Test {
             UInt8.ofString(it.toString()) shouldBe it
         }
     }
-
-    @Test
-    fun testInt8BytesConversion() {
-        val bytes = ByteArray(33)
-
-        uInt8values.forEach {
-            UInt8.ofBytes(it.toBytes()) shouldBe it
-            UInt8.ofBytes(it.toBytes(bytes, 10), 10) shouldBe it
-            UInt8.ofBytes(UInt8.toBytes(it, bytes, 10), 10) shouldBe it
-        }
-    }
-
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()

@@ -2,7 +2,6 @@ package maryk.core.properties.types
 
 import maryk.core.bytes.Base64
 import maryk.core.extensions.bytes.initByteArray
-import maryk.core.extensions.bytes.toBytes
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.compare.compareTo
 import maryk.core.extensions.initByteArrayByHex
@@ -28,8 +27,6 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
         else -> this.bytes contentEquals other.bytes
     }
 
-    fun toBytes(toBytes: ByteArray, offset: Int = 0) = this.bytes.toBytes(toBytes, offset)
-
     fun writeBytes(reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(bytes.size)
         bytes.writeBytes(writer)
@@ -48,10 +45,6 @@ abstract class BytesDescriptor<T>{
                 Base64.decode(base64)
         )
     } catch (e: Throwable) { throw ParseException(base64) }
-
-    fun ofBytes(byteArray: ByteArray, offset: Int, length: Int) = this.construct(
-        initByteArray(byteArray, offset, length)
-    )
 
     fun fromByteReader(length: Int, reader: () -> Byte): T = this.construct(
         initByteArray(length, reader)

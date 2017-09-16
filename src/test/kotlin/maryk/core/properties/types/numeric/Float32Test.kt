@@ -1,7 +1,6 @@
 package maryk.core.properties.types.numeric
 
 import io.kotlintest.matchers.shouldBe
-import maryk.core.extensions.bytes.toBytes
 import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -25,23 +24,12 @@ internal class Float32Test {
     }
 
     @Test
-    fun test64StringConversion() {
+    fun testStringConversion() {
         Float.MIN_VALUE.toString() shouldBe "1.4E-45"
         Float.MAX_VALUE.toString() shouldBe "3.4028235E38"
 
         float32values.forEach {
             assertEquals(it, Float32.ofString(it.toString()))
-        }
-    }
-
-    @Test
-    fun testFloat32BytesConversion() {
-        val bytes = ByteArray(33)
-
-        float32values.forEach {
-            assertEquals(it, Float32.ofBytes(it.toBytes()))
-            assertEquals(it, Float32.ofBytes(it.toBytes(bytes, 10), 10))
-            assertEquals(it, Float32.ofBytes(Float32.toBytes(it, bytes, 10), 10))
         }
     }
 

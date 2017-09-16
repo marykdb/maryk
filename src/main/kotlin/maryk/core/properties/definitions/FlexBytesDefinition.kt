@@ -22,16 +22,6 @@ class FlexBytesDefinition(
 ): AbstractSimpleDefinition<Bytes>(
     name, index, indexed, searchable, required, final, unique, minValue, maxValue
 ), HasSizeDefinition {
-    override fun convertToBytes(value: Bytes, bytes: ByteArray?, offset: Int) = when(bytes) {
-        null -> value.bytes
-        else -> value.toBytes(bytes, offset)
-    }
-
-    override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = when {
-        bytes.size != length && offset != 0 -> Bytes(bytes.copyOfRange(offset, offset + length))
-        else -> Bytes(bytes)
-    }
-
     override fun convertFromBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(length, reader)
 
     override fun convertToBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)

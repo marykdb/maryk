@@ -25,23 +25,12 @@ internal class UInt16Test {
     }
 
     @Test
-    fun test16StringConversion() {
+    fun testStringConversion() {
         UInt16.MIN_VALUE.toString() shouldBe "0"
         UInt16.MAX_VALUE.toString() shouldBe "65535"
 
         uInt16values.forEach {
             UInt16.ofString(it.toString()) shouldBe it
-        }
-    }
-
-    @Test
-    fun testInt16BytesConversion() {
-        val bytes = ByteArray(33)
-
-        uInt16values.forEach {
-            UInt16.ofBytes(it.toBytes()) shouldBe it
-            UInt16.ofBytes(it.toBytes(bytes, 10), 10) shouldBe it
-            UInt16.ofBytes(UInt16.toBytes(it, bytes, 10), 10) shouldBe it
         }
     }
 

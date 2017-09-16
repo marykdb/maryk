@@ -52,15 +52,13 @@ internal class ReversedTest {
 
         val key = MarykObject.key.getKey(obj)
 
-        key.toHex() shouldBe "fe017fffffa6540703"
-
         @Suppress("UNCHECKED_CAST")
         with(MarykObject.key.keyDefinitions[1] as Reversed<DateTime>){
-            this.convertFromBytes(key.bytes, 2) shouldBe dt
-
             val bc = ByteCollector()
             this.convertToBytes(dt, bc::reserve, bc::write)
             this.convertFromBytes(bc.size, bc::read) shouldBe dt
         }
+
+        key.toHex() shouldBe "fe017fffffa6540703"
     }
 }

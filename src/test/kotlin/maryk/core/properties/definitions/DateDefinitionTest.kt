@@ -25,23 +25,6 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun convertToBytes() {
-        datesToTest.forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
-    fun convertToOffsetBytes() {
-        datesToTest.forEach {
-            var b = ByteArray(20)
-            b = def.convertToBytes(it, b, 10)
-            def.convertFromBytes(b, 10, b.size) shouldBe it
-        }
-    }
-
-    @Test
     fun convertStreamingBytes() {
         val byteCollector = ByteCollector()
         datesToTest.forEach {

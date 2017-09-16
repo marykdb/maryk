@@ -19,29 +19,12 @@ internal class EnumDefinitionTest {
     )
 
     @Test
-    fun convertToBytes() {
-        enumsToTest.forEach {
-            val b = def.convertToBytes(it)
-            def.convertFromBytes(b, 0, b.size) shouldBe it
-        }
-    }
-
-    @Test
     fun convertStreamingBytes() {
         val byteCollector = ByteCollector()
         enumsToTest.forEach {
             def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
             def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
-        }
-    }
-
-    @Test
-    fun convertToOffsetBytes() {
-        enumsToTest.forEach {
-            var b = ByteArray(20)
-            b = def.convertToBytes(it, b, 10)
-            def.convertFromBytes(b, 10, b.size) shouldBe it
         }
     }
 

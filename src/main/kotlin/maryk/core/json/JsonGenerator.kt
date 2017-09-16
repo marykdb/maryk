@@ -13,6 +13,7 @@ private enum class JsonObjectType {
 /** A JSON generator for streaming JSON generation */
 class JsonGenerator(
         val optimized: Boolean = false,
+        val pretty: Boolean = false,
         val writer: (String) -> Unit
 ) {
     private var lastType: JsonType = JsonType.START
@@ -21,12 +22,18 @@ class JsonGenerator(
     fun writeStartObject() {
         typeStack.add(JsonObjectType.OBJECT)
         // Comma is for models embedded in MultiType values
-        if(lastType == JsonType.ARRAY_VALUE) writer(",")
+        if(lastType == JsonType.ARRAY_VALUE) {
+            writer(",")
+            if (pretty) { writer(" ") }
+        }
         write(JsonType.START_OBJ, "{", JsonType.START, JsonType.FIELD_NAME, JsonType.ARRAY_VALUE)
+
+        makePretty()
     }
 
     fun writeEndObject() {
         typeStack.removeAt(typeStack.lastIndex)
+        makePretty()
         write(JsonType.END_OBJ, "}", JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_OBJ, JsonType.END_ARRAY)
     }
 
@@ -42,8 +49,21 @@ class JsonGenerator(
 
     /** Writes the field name for an object */
     fun writeFieldName(name: String) {
-        if(lastType != JsonType.START_OBJ) writer(",")
+        if(lastType != JsonType.START_OBJ) {
+            writer(",")
+            makePretty()
+        }
         write(JsonType.FIELD_NAME, "\"$name\":", JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_ARRAY, JsonType.END_OBJ)
+        if (pretty) { writer(" ") }
+    }
+
+    private fun makePretty() {
+        if (pretty) {
+            writer("\n")
+            typeStack.forEach{
+                if(it == JsonObjectType.OBJECT) { writer("\t") }
+            }
+        }
     }
 
     /** Writes a string value including quotes */
@@ -51,9 +71,14 @@ class JsonGenerator(
 
     /** Writes a value excluding quotes */
     fun writeValue(value: String) = when(typeStack.last()) {
-        JsonObjectType.OBJECT -> write(JsonType.OBJ_VALUE, value, JsonType.FIELD_NAME)
+        JsonObjectType.OBJECT -> {
+            write(JsonType.OBJ_VALUE, value, JsonType.FIELD_NAME)
+        }
         JsonObjectType.ARRAY -> {
-            if(lastType != JsonType.START_ARRAY) writer(",")
+            if(lastType != JsonType.START_ARRAY) {
+                writer(",")
+                if (pretty) { writer(" ") }
+            }
             write(JsonType.ARRAY_VALUE, value, JsonType.START_ARRAY, JsonType.ARRAY_VALUE)
         }
     }

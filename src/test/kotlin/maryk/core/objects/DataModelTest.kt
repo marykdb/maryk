@@ -45,6 +45,33 @@ val textExtendedObject = TestMarykObject(
         multi = TypedValue(2, SubMarykObject("subInMulti!"))
 )
 
+val prettyJson = """{
+	"string": "hey",
+	"int": 4,
+	"uint": 32,
+	"double": "3.555",
+	"bool": true,
+	"dateTime": "2017-12-04T12:13",
+	"enum": "V0",
+	"list": [34, 2352, 3423, 766],
+	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+	"map": {
+		"12:55": "yes",
+		"10:03": "ahum"
+	},
+	"valueObject": {
+		"int": 43,
+		"dateTime": "2017-04-01T12:55",
+		"bool": true
+	},
+	"subModel": {
+		"value": "test"
+	},
+	"multi": [2, {
+		"value": "subInMulti!"
+	}]
+}"""
+
 internal class DataModelTest {
     @Test
     fun testIndexConstruction() {
@@ -127,5 +154,16 @@ internal class DataModelTest {
         TestMarykObject.toJson(generator, textExtendedObject)
 
         json shouldBe "{\"string\":\"hey\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"1512389580,0\",\"enum\":\"-32768\",\"list\":[34,2352,3423,766],\"set\":[\"17505\",\"16862\",\"4356\"],\"map\":{\"46500000\":\"yes\",\"36180000\":\"ahum\"},\"valueObject\":\"gAAAKwGAAABY36MkAQE\",\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
+    }
+
+    @Test
+    fun testPrettyJsonConversion() {
+        var json = ""
+        val generator = JsonGenerator(pretty = true) {
+            json += it
+        }
+        TestMarykObject.toJson(generator, textExtendedObject)
+
+        json shouldBe prettyJson
     }
 }

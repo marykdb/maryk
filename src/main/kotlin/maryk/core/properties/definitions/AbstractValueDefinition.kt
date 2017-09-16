@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.json.JsonGenerator
 
 /**
  * Abstract Property Definition to define properties.
@@ -40,4 +41,14 @@ abstract class AbstractValueDefinition<T: Any>(
      * @return value as String
      */
     open fun convertToString(value: T, optimized: Boolean = false) = value.toString()
+
+    /** Writes a value to Json
+     * @param value: value to write
+     * @param generator: to write json to
+     */
+    override fun writeJsonValue(generator: JsonGenerator, value: T) {
+        generator.writeString(
+                this.convertToString(value, optimized = generator.optimized)
+        )
+    }
 }

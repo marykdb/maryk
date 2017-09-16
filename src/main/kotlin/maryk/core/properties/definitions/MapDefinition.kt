@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.json.JsonGenerator
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -73,5 +74,16 @@ class MapDefinition<K: Any, V: Any>(
                 }
             }
         }
+    }
+
+    override fun writeJsonValue(generator: JsonGenerator, value: Map<K, V>) {
+        generator.writeStartObject()
+        value.forEach { k, v ->
+            generator.writeFieldName(
+                    keyDefinition.convertToString(k, generator.optimized)
+            )
+            valueDefinition.writeJsonValue(generator, v)
+        }
+        generator.writeEndObject()
     }
 }

@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.json.JsonGenerator
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 
@@ -31,4 +32,10 @@ interface IsPropertyDefinition<T: Any> {
      */
     @Throws(PropertyValidationException::class)
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+
+    /** Writes a value to Json
+     * @param generator: to write json to
+     * @param value: value to write
+     */
+    fun writeJsonValue(generator: JsonGenerator, value: T)
 }

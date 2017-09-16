@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.json.JsonGenerator
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -58,6 +59,17 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
                     parentRefFactory = { this.getRef(parentRefFactory) },
                     dataObject = newValue
             )
+        }
+    }
+
+    /** Writes a value to Json
+     * @param value: value to write
+     * @param generator: to write json to
+     */
+    override fun writeJsonValue(generator: JsonGenerator, value: DO) {
+        when(generator.optimized) {
+            true -> super.writeJsonValue(generator, value)
+            false -> dataModel.toJson(generator, value)
         }
     }
 }

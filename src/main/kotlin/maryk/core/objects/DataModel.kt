@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.json.JsonGenerator
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
@@ -59,5 +60,19 @@ abstract class DataModel<DO: Any>(val definitions: List<Def<*, DO>>) {
                 }
             }
         }
+    }
+
+    fun toJson(generator: JsonGenerator, obj: DO) {
+        generator.writeStartObject()
+        @Suppress("UNCHECKED_CAST")
+        for (def in definitions as List<Def<Any, DO>>) {
+            val name = def.propertyDefinition.name!!
+            val value = def.propertyGetter(obj) ?: break
+
+            generator.writeFieldName(name)
+
+            def.propertyDefinition.writeJsonValue(generator, value)
+        }
+        generator.writeEndObject()
     }
 }

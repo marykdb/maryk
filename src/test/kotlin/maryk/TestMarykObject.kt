@@ -2,9 +2,24 @@ package maryk
 import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
-import maryk.core.properties.definitions.*
+import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.DateDefinition
+import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.TimeDefinition
+import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.Time
+import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.Int32
 import maryk.core.properties.types.numeric.UInt32
@@ -22,8 +37,15 @@ data class TestMarykObject(
         val double: Double,
         val dateTime: DateTime,
         val bool: Boolean? = null,
-        val enum: Option = Option.V0
+        val enum: Option = Option.V0,
+        val list: List<Int>? = null,
+        val set: Set<Date>? = null,
+        val map: Map<Time, String>? = null,
+        val valueObject: TestValueObject? = null,
+        val subModel: SubMarykObject? = null,
+        val multi: TypedValue<*>? = null
 ) {
+    @Suppress("UNCHECKED_CAST")
     constructor(values: Map<Int, *>) : this(
             string = values[0] as String,
             int = values[1] as Int,
@@ -31,7 +53,13 @@ data class TestMarykObject(
             double = values[3] as Double,
             dateTime = values[4] as DateTime,
             bool = values[5] as Boolean?,
-            enum = values[6] as Option
+            enum = values[6] as Option,
+            list = values[7] as List<Int>?,
+            set = values[8] as Set<Date>?,
+            map = values[9] as Map<Time, String>?,
+            valueObject = values[10] as TestValueObject?,
+            subModel = values[11] as SubMarykObject?,
+            multi = values[12] as TypedValue<*>?
     )
 
     object Properties {
@@ -76,6 +104,46 @@ data class TestMarykObject(
                 required = true,
                 final = true
         )
+        val list = ListDefinition(
+                name = "list",
+                index = 7,
+                valueDefinition = NumberDefinition(
+                        required = true,
+                        type = Int32
+                )
+        )
+        val set = SetDefinition(
+                name = "set",
+                index = 8,
+                valueDefinition = DateDefinition(required = true)
+        )
+        val map = MapDefinition(
+                name = "map",
+                index = 9,
+                keyDefinition = TimeDefinition(required = true),
+                valueDefinition = StringDefinition(required = true)
+        )
+        val valueObject = ValueModelDefinition(
+                name = "valueObject",
+                index = 10,
+                dataModel = TestValueObject
+        )
+        val subModel = SubModelDefinition(
+                name = "subModel",
+                index = 11,
+                dataModel = SubMarykObject
+        )
+        val multi = MultiTypeDefinition(
+                name = "multi",
+                index = 12,
+                typeMap = mapOf(
+                        0 to StringDefinition(),
+                        1 to NumberDefinition(type = Int32),
+                        2 to SubModelDefinition(
+                                dataModel = SubMarykObject
+                        )
+                )
+        )
     }
 
     companion object: RootDataModel<TestMarykObject>(
@@ -91,7 +159,29 @@ data class TestMarykObject(
                     Def(Properties.double, TestMarykObject::double),
                     Def(Properties.bool, TestMarykObject::bool),
                     Def(Properties.dateTime, TestMarykObject::dateTime),
-                    Def(Properties.enum, TestMarykObject::enum)
+                    Def(Properties.enum, TestMarykObject::enum),
+                    Def(Properties.list, TestMarykObject::list),
+                    Def(Properties.set, TestMarykObject::set),
+                    Def(Properties.map, TestMarykObject::map),
+                    Def(Properties.valueObject, TestMarykObject::valueObject),
+                    Def(Properties.subModel, TestMarykObject::subModel),
+                    Def(Properties.multi, TestMarykObject::multi)
+            )
+    )
+}
+
+data class SubMarykObject(
+        val value: String
+){
+    object Properties {
+        val value = StringDefinition(
+                name = "value",
+                index = 0
+        )
+    }
+    companion object: RootDataModel<SubMarykObject>(
+            definitions = listOf(
+                    Def(Properties.value, SubMarykObject::value)
             )
     )
 }

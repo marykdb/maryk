@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.json.JsonGenerator
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -52,4 +53,12 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
 
     /** Validates the collection content */
     abstract internal fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?, newValue: C, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any)
+
+    override fun writeJsonValue(generator: JsonGenerator, value: C) {
+        generator.writeStartArray()
+        value.forEach {
+            valueDefinition.writeJsonValue(generator, it)
+        }
+        generator.writeEndArray()
+    }
 }

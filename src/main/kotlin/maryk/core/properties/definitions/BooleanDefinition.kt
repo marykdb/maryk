@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.json.JsonGenerator
 import maryk.core.properties.exceptions.ParseException
 
 /** Definition for Boolean properties */
@@ -30,5 +31,11 @@ class BooleanDefinition(
         "true" -> true
         "false" -> false
         else -> throw ParseException(string)
+    }
+
+    override fun writeJsonValue(generator: JsonGenerator, value: Boolean) {
+        generator.writeValue(
+                this.convertToString(value, optimized = generator.optimized)
+        )
     }
 }

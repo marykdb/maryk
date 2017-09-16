@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.json.JsonGenerator
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.TypedValue
@@ -35,5 +36,16 @@ class MultiTypeDefinition(
                 getRef(parentRefFactory)
             }
         }
+    }
+
+    override fun writeJsonValue(generator: JsonGenerator, value: TypedValue<Any>) {
+        generator.writeStartArray()
+        generator.writeValue(value.typeIndex.toString())
+        @Suppress("UNCHECKED_CAST")
+        val definition = this.typeMap[value.typeIndex] as AbstractSubDefinition<Any>?
+                ?: throw DefNotFoundException("No def found for index ${value.typeIndex} for $name")
+
+        definition.writeJsonValue(generator, value.value)
+        generator.writeEndArray()
     }
 }

@@ -57,15 +57,6 @@ class JsonGenerator(
         if (pretty) { writer(" ") }
     }
 
-    private fun makePretty() {
-        if (pretty) {
-            writer("\n")
-            typeStack.forEach{
-                if(it == JsonObjectType.OBJECT) { writer("\t") }
-            }
-        }
-    }
-
     /** Writes a string value including quotes */
     fun writeString(value: String) = writeValue("\"$value\"")
 
@@ -80,6 +71,15 @@ class JsonGenerator(
                 if (pretty) { writer(" ") }
             }
             write(JsonType.ARRAY_VALUE, value, JsonType.START_ARRAY, JsonType.ARRAY_VALUE)
+        }
+    }
+
+    private fun makePretty() {
+        if (pretty) {
+            writer("\n")
+            typeStack.forEach{
+                if(it == JsonObjectType.OBJECT) { writer("\t") }
+            }
         }
     }
 

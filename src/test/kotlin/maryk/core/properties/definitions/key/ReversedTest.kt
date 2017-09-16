@@ -60,7 +60,7 @@ internal class ReversedTest {
 
             val bc = ByteCollector()
             this.convertToBytes(dt, bc::reserve, bc::write)
-            this.convertFromBytes(bc.size, bc::read)
+            this.convertFromBytes(bc.size, bc::read) shouldBe dt
         }
     }
 }

@@ -131,7 +131,7 @@ data class DateTime(
         /** Creates a dateTime by reading a byte reader
          * @param reader to read from
          */
-        fun fromByteReader(length: Int, reader: () -> Byte) = when (length) {
+        override fun fromByteReader(length: Int, reader: () -> Byte) = when (length) {
             7 -> DateTime.ofEpochSecond(
                     initLong(reader, 7)
             )

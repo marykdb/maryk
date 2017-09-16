@@ -144,10 +144,7 @@ data class Time(
             else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: " + bytes.size)
         }
 
-        /** Creates a dateTime by reading a byte reader
-         * @param reader to read from
-         */
-        fun fromByteReader(length: Int, reader: () -> Byte): Time = when (length) {
+        override fun fromByteReader(length: Int, reader: () -> Byte): Time = when (length) {
             4 -> Time.ofMilliOfDay(initInt(reader))
             3 -> Time.ofSecondOfDay(initInt(reader, length))
             else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: $length")

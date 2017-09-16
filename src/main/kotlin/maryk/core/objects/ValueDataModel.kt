@@ -72,10 +72,12 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         this.definitions.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it.propertyDefinition as IsFixedBytesEncodable<in Any>
-            def.convertToBytes(inputs[index], bytes, offset = offset)
-            offset += def.byteSize + 1
-            if(offset <= bytes.size) {
-                bytes[offset - 1] = 1 // separator byte
+            def.convertToBytes(inputs[index], {}, {
+                bytes[offset++] = it
+            })
+
+            if(offset < bytes.size) {
+                bytes[offset++] = 1 // separator byte
             }
         }
 
@@ -90,6 +92,9 @@ abstract class ValueDataModel<DO: ValueDataObject>(
     @Throws(DefNotFoundException::class)
     fun createFromString(value: String): DO {
         val b = Base64.decode(value)
-        return this.createFromBytes(b, 0)
+        var index = 0
+        return this.createFromBytes({
+            b[index++]
+        })
     }
 }

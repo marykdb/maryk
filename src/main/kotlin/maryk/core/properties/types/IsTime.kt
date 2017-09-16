@@ -64,4 +64,5 @@ abstract class IsTimeObject<T>: IsTemporalObject<T>() {
      * @return DateTime represented by bytes
      */
     abstract fun ofBytes(bytes: ByteArray, offset: Int, length: Int): T
+    abstract fun fromByteReader(length: Int, reader: () -> Byte): T
 }

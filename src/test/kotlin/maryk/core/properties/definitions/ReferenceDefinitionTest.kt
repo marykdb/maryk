@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestMarykObject
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 import org.junit.Test
@@ -62,6 +63,16 @@ internal class ReferenceDefinitionTest {
     fun convertWrongString() {
         shouldThrow<ParseException> {
             def.convertFromString("wrong")
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val byteCollector = ByteCollector()
+        refToTest.forEach {
+            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
         }
     }
 }

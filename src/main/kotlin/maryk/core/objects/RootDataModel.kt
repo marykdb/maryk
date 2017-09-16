@@ -64,13 +64,13 @@ abstract class RootDataModel<DM: Any>(
                 val value = it.getValue(this@RootDataModel, dataObject)
 
                 @Suppress("UNCHECKED_CAST")
-                (it as IsFixedBytesEncodable<Any>).convertToBytes(value, bytes, index)
-                index += it.byteSize
+                (it as IsFixedBytesEncodable<Any>).convertToBytes(value, {}) {
+                    bytes[index++] = it
+                }
 
                 // Add separator
                 if (index < this.size) {
-                    bytes[index] = 1
-                    index++
+                    bytes[index++] = 1
                 }
             }
             return Key(bytes)

@@ -33,26 +33,14 @@ class Reversed<T: Any>(
     }
 
     override fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        val bytesToReverse = ByteArray(definition.byteSize)
-        var index = 0
-        definition.convertToBytes(value, reserver){
-            bytesToReverse[index++] = it
-        }
-
-        (bytesToReverse.lastIndex .. 0).forEach {
-            writer(bytesToReverse[it])
+        definition.convertToBytes(value, reserver) {
+            writer(MAXBYTE xor it)
         }
     }
 
     override fun convertFromBytes(length: Int, reader: () -> Byte): T {
-        val bytesToReverse = ByteArray(definition.byteSize)
-        var index = -1
-        (0 until byteSize).forEach {
-            bytesToReverse[++index] = reader()
+        return definition.convertFromBytes(byteSize) {
+            MAXBYTE xor reader()
         }
-
-        return definition.convertFromBytes(byteSize, {
-            bytesToReverse[index--]
-        })
     }
 }

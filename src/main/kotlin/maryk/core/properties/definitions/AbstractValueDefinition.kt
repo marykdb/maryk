@@ -22,7 +22,9 @@ abstract class AbstractValueDefinition<T: Any>(
      * @param length of bytes to read
      * @param reader to read bytes from
      * @return converted value
+     * @throws DefNotFoundException if definition is not found to translate bytes
      */
+    @Throws(DefNotFoundException::class)
     abstract fun convertFromBytes(length: Int, reader:() -> Byte): T
 
     /** Convert a value to bytes

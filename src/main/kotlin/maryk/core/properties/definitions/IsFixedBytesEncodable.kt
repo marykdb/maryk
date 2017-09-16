@@ -15,15 +15,17 @@ interface IsFixedBytesEncodable<T: Any> {
      * @param length of bytes to read
      * @param reader to read bytes from
      * @return converted value
+     * @throws DefNotFoundException if definition is not found to translate bytes
      */
-    abstract fun convertFromBytes(length: Int, reader:() -> Byte): T
+    @Throws(DefNotFoundException::class)
+    fun convertFromBytes(length: Int, reader:() -> Byte): T
 
     /** Convert a value to bytes
      * @param value to convert
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    abstract fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
 
     /** Convert value to bytes
      * @param value to convertFromBytes

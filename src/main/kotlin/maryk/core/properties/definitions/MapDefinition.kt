@@ -4,7 +4,11 @@ import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
-import maryk.core.properties.references.*
+import maryk.core.properties.references.CanHaveComplexChildReference
+import maryk.core.properties.references.CanHaveSimpleChildReference
+import maryk.core.properties.references.MapKeyReference
+import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.PropertyReference
 
 class MapDefinition<K: Any, V: Any>(
         name: String? = null,
@@ -21,8 +25,8 @@ class MapDefinition<K: Any, V: Any>(
         name, index, indexed, searchable, required, final
 ), HasSizeDefinition {
     init {
-        assert(keyDefinition.required, { "Definition for key should be required on list $name" })
-        assert(valueDefinition.required, { "Definition for value should be required on list $name" })
+        assert(keyDefinition.required, { "Definition for key should be required on map: $name" })
+        assert(valueDefinition.required, { "Definition for value should be required on map: $name" })
     }
 
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?): PropertyReference<Map<K, V>, AbstractPropertyDefinition<Map<K, V>>> =

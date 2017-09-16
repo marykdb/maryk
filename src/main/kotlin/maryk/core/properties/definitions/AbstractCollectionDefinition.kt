@@ -6,7 +6,7 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
 
-abstract class AbstractCollectionDefinition<T: Any, C: Any>(
+abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         name: String? = null,
         index: Short = -1,
         indexed: Boolean = true,
@@ -20,7 +20,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Any>(
         name, index, indexed, searchable, required, final
 ), HasSizeDefinition {
     init {
-        assert(valueDefinition.required, { "Definition should be required on collection «$name»" })
+        assert(valueDefinition.required, { "Definition should have required=true on collection «$name»" })
     }
 
     override fun validate(previousValue: C?, newValue: C?, parentRefFactory: () -> PropertyReference<*, *>?) {

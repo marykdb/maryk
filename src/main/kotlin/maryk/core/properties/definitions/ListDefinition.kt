@@ -13,18 +13,19 @@ class ListDefinition<T: Any>(
         minSize: Int? = null,
         maxSize: Int? = null,
         valueDefinition: AbstractValueDefinition<T>
-) : AbstractCollectionDefinition<T, Array<T>>(
+) : AbstractCollectionDefinition<T, List<T>>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
 ), HasSizeDefinition {
-    override fun getSize(newValue: Array<T>) = newValue.size
 
-    override fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?,  newValue: Array<T>, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any) {
+    override fun getSize(newValue: List<T>) = newValue.size
+
+    override fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?,  newValue: List<T>, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any) {
         newValue.forEachIndexed { index, item ->
             validator(item) {
                 @Suppress("UNCHECKED_CAST")
                 ListItemReference(
                         index,
-                        getRef(parentRefFactory) as PropertyReference<Array<T>, ListDefinition<T>>
+                        getRef(parentRefFactory) as PropertyReference<List<T>, ListDefinition<T>>
                 )
             }
         }

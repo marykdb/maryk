@@ -2,7 +2,11 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
-import maryk.core.properties.exceptions.*
+import maryk.core.properties.exceptions.PropertyInvalidValueException
+import maryk.core.properties.exceptions.PropertyRequiredException
+import maryk.core.properties.exceptions.PropertyTooLittleItemsException
+import maryk.core.properties.exceptions.PropertyTooMuchItemsException
+import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import org.junit.Test
 import kotlin.test.assertTrue
 
@@ -38,23 +42,23 @@ internal class ListDefinitionTest {
 
     @Test
     fun testValidateSize() {
-        def.validate(newValue = arrayOf("T", "T2"))
-        def.validate(newValue = arrayOf("T", "T2", "T3"))
-        def.validate(newValue = arrayOf("T", "T2", "T3", "T4"))
+        def.validate(newValue = listOf("T", "T2"))
+        def.validate(newValue = listOf("T", "T2", "T3"))
+        def.validate(newValue = listOf("T", "T2", "T3", "T4"))
 
         shouldThrow<PropertyTooLittleItemsException> {
-            def.validate(newValue = arrayOf("T"))
+            def.validate(newValue = listOf("T"))
         }
 
         shouldThrow<PropertyTooMuchItemsException> {
-            def.validate(newValue = arrayOf("T", "T2", "T3", "T4", "T5"))
+            def.validate(newValue = listOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
     fun testValidateContent() {
         val e = shouldThrow<PropertyValidationUmbrellaException> {
-            def.validate(newValue = arrayOf("T", "WRONG", "WRONG2"))
+            def.validate(newValue = listOf("T", "WRONG", "WRONG2"))
         }
         e.exceptions.size shouldBe 2
 

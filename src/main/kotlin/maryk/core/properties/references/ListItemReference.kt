@@ -12,7 +12,7 @@ import maryk.core.properties.definitions.ListDefinition
  */
 class ListItemReference<T: Any> (
         val index: Int,
-        parentReference: PropertyReference<Array<T>, ListDefinition<T>>
+        parentReference: PropertyReference<List<T>, ListDefinition<T>>
 ) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
 ), EmbeddedPropertyReference<T> {

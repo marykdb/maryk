@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
 import org.junit.Test
@@ -37,6 +38,16 @@ internal class DateDefinitionTest {
             var b = ByteArray(20)
             b = def.convertToBytes(it, b, 10)
             def.convertFromBytes(b, 10, b.size) shouldBe it
+        }
+    }
+
+    @Test
+    fun convertStreamingBytes() {
+        val byteCollector = ByteCollector()
+        datesToTest.forEach {
+            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
         }
     }
 

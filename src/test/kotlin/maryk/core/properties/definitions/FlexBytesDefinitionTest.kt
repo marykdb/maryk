@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.types.Bytes
@@ -43,6 +44,15 @@ internal class FlexBytesDefinitionTest {
         }
     }
 
+    @Test
+    fun testStreamingConversion() {
+        val byteCollector = ByteCollector()
+        flexBytesToTest.forEach {
+            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
 
     @Test
     fun convertToPositionedBytes() {

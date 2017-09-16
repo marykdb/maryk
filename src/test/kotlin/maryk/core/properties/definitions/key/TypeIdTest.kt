@@ -5,6 +5,7 @@ import maryk.core.extensions.toHex
 import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.AbstractSubDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -53,5 +54,9 @@ internal class TypeIdTest {
 
         specificDef.convertFromBytes(key.bytes, 0) shouldBe 1
         specificDef.getValue(MarykObject, obj) shouldBe 1
+
+        val bc = ByteCollector()
+        specificDef.convertToBytes(1, bc::reserve, bc::write)
+        specificDef.convertFromBytes(bc.size, bc::read) shouldBe 1
     }
 }

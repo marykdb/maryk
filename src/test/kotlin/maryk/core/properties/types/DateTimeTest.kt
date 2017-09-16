@@ -2,6 +2,7 @@ package maryk.core.properties.types
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 
 internal class DateTimeTest {
@@ -79,6 +80,16 @@ internal class DateTimeTest {
     }
 
     @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        dateTimesWithSecondsToTest.forEach {
+            it.writeBytes(TimePrecision.SECONDS, bc::reserve, bc::write)
+            DateTime.fromByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
     fun testMillisConversion() {
         dateTimesWithMillisToTest.forEach {
             DateTime.ofBytes(
@@ -96,6 +107,16 @@ internal class DateTimeTest {
                     10,
                     9
             ) shouldBe it
+        }
+    }
+
+    @Test
+    fun testStreamingMillisConversion() {
+        val bc = ByteCollector()
+        dateTimesWithMillisToTest.forEach {
+            it.writeBytes(TimePrecision.MILLIS, bc::reserve, bc::write)
+            DateTime.fromByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 

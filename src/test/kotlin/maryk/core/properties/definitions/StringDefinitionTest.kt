@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import org.junit.Test
@@ -54,6 +55,16 @@ internal class StringDefinitionTest {
     }
 
     @Test
+    fun convertStreamingBytes() {
+        val byteCollector = ByteCollector()
+        stringsToTest.forEach {
+            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
+
+    @Test
     fun convertToBytesWithOffset() {
         stringsToTest.forEach {
             val bytes = ByteArray(33)
@@ -70,3 +81,4 @@ internal class StringDefinitionTest {
         }
     }
 }
+

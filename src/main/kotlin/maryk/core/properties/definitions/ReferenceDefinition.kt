@@ -21,6 +21,12 @@ class ReferenceDefinition<DO: Any>(
 ), IsFixedBytesEncodable<Key<DO>> {
     override val byteSize = dataModel.key.size
 
+    override fun convertToBytes(value: Key<DO>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        value.writeBytes(reserver, writer)
+    }
+
+    override fun convertFromBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
+
     override fun convertToBytes(value: Key<DO>, bytes: ByteArray?, offset: Int) = when(bytes) {
         null -> value.bytes
         else -> value.toBytes(bytes, offset)

@@ -2,6 +2,7 @@ package maryk.core.properties.types.numeric
 
 import io.kotlintest.matchers.shouldBe
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 
 internal class Int64Test {
@@ -37,6 +38,16 @@ internal class Int64Test {
             Int64.ofBytes(it.toBytes()) shouldBe it
             Int64.ofBytes(it.toBytes(bytes, 10), 10) shouldBe it
             Int64.ofBytes(Int64.toBytes(it, bytes, 10), 10) shouldBe it
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        int64values.forEach {
+            Int64.writeBytes(it, bc::reserve, bc::write)
+            Int64.fromByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 }

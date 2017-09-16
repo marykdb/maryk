@@ -4,6 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.types.DateTime
@@ -53,6 +54,13 @@ internal class ReversedTest {
 
         key.toHex() shouldBe "fe017fffffa6540703"
 
-        MarykObject.key.keyDefinitions[1].convertFromBytes(key.bytes, 2) shouldBe dt
+        @Suppress("UNCHECKED_CAST")
+        with(MarykObject.key.keyDefinitions[1] as Reversed<DateTime>){
+            this.convertFromBytes(key.bytes, 2) shouldBe dt
+
+            val bc = ByteCollector()
+            this.convertToBytes(dt, bc::reserve, bc::write)
+            this.convertFromBytes(bc.size, bc::read)
+        }
     }
 }

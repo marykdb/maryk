@@ -2,6 +2,7 @@ package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.zeroFill
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.time.Instant
@@ -48,6 +49,11 @@ data class Date(
     }
 
     fun toBytes(bytes: ByteArray? = null, offset: Int = 0) = this.epochDay.toBytes(bytes ?: ByteArray(8), offset)
+
+    fun writeBytes(reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        reserver(8)
+        this.epochDay.writeBytes(writer)
+    }
 
     /**
      * Get value as ISO8601 string
@@ -121,6 +127,13 @@ data class Date(
          */
         fun ofBytes(bytes: ByteArray, offset: Int = 0) = Date.ofEpochDay(
             initLong(bytes, offset)
+        )
+
+        /** Creates a date by reading a byte reader
+         * @param reader to read from
+         */
+        fun fromByteReader(reader: () -> Byte) = Date.ofEpochDay(
+            initLong(reader)
         )
 
         override fun parse(value: String, iso8601: Boolean) = when {

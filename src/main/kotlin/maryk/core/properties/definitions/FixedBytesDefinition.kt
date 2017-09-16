@@ -32,6 +32,10 @@ class FixedBytesDefinition(
         else -> Bytes(bytes)
     }
 
+    override fun convertFromBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(byteSize, reader)
+
+    override fun convertToBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+
     @Throws(ParseException::class)
     override fun convertFromString(string: String, optimized: Boolean) = try {
         Bytes.ofBase64String(string)

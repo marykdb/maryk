@@ -2,6 +2,7 @@ package maryk.core.properties.types.numeric
 
 import io.kotlintest.matchers.shouldBe
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.properties.ByteCollector
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -41,6 +42,16 @@ internal class Float32Test {
             assertEquals(it, Float32.ofBytes(it.toBytes()))
             assertEquals(it, Float32.ofBytes(it.toBytes(bytes, 10), 10))
             assertEquals(it, Float32.ofBytes(Float32.toBytes(it, bytes, 10), 10))
+        }
+    }
+
+    @Test
+    fun testStreamingConversion() {
+        val bc = ByteCollector()
+        float32values.forEach {
+            Float32.writeBytes(it, bc::reserve, bc::write)
+            Float32.fromByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 }

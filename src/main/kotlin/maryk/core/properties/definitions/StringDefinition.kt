@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.bytes.initString
+import maryk.core.bytes.writeBytes
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -46,6 +48,10 @@ class StringDefinition(
     }
 
     override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = String(bytes, offset, length)
+
+    override fun convertFromBytes(length: Int, reader:() -> Byte) = initString(length, reader)
+
+    override fun convertToBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     override fun convertToString(value: String, optimized: Boolean) = value
 

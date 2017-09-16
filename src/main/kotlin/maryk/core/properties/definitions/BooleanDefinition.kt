@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.exceptions.ParseException
 
 /** Definition for Boolean properties */
@@ -21,6 +22,13 @@ class BooleanDefinition(
     override fun convertToBytes(value: Boolean, bytes: ByteArray?, offset: Int) = value.toBytes(bytes, offset)
 
     override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = initBoolean(bytes, offset)
+
+    override fun convertFromBytes(length: Int, reader:() -> Byte) = initBoolean(reader)
+
+    override fun convertToBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        reserver(1)
+        value.writeBytes(writer)
+    }
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String, optimized: Boolean) = when(string) {

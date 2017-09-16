@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.Option
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import org.junit.Test
 
@@ -22,6 +23,16 @@ internal class EnumDefinitionTest {
         enumsToTest.forEach {
             val b = def.convertToBytes(it)
             def.convertFromBytes(b, 0, b.size) shouldBe it
+        }
+    }
+
+    @Test
+    fun convertStreamingBytes() {
+        val byteCollector = ByteCollector()
+        enumsToTest.forEach {
+            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
         }
     }
 

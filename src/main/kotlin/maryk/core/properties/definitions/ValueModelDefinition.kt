@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -27,6 +28,13 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 ) : AbstractSimpleDefinition<DO>(
         name, index, indexed, searchable, required, final, unique, minValue, maxValue
 ) {
+    override fun convertToBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        reserver(value._bytes.size)
+        value._bytes.writeBytes(writer)
+    }
+
+    override fun convertFromBytes(length: Int, reader: () -> Byte) = this.dataModel.createFromBytes(reader)
+
     override fun convertToBytes(value: DO, bytes: ByteArray?, offset: Int) = when(bytes) {
         null -> value._bytes
         else -> value._bytes.toBytes(bytes, offset)

@@ -1,9 +1,11 @@
 package maryk.core.properties.types
 
+import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.initLongSeven
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.toBytes
 import maryk.core.extensions.bytes.toSevenBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.time.Instant
 
@@ -49,6 +51,20 @@ data class DateTime(
                 bytes ?: ByteArray(7),
                 offset
         )
+    }
+
+    override fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        when (precision) {
+            TimePrecision.MILLIS -> {
+                reserver(9)
+                this.toEpochSecond().writeBytes(writer, 7)
+                this.milli.writeBytes(writer)
+            }
+            TimePrecision.SECONDS -> {
+                reserver(7)
+                this.toEpochSecond().writeBytes(writer, 7)
+            }
+        }
     }
 
     /** Get the date time as the amount of milliseconds since 01-01-1970 */
@@ -108,6 +124,20 @@ data class DateTime(
             9 -> DateTime.ofEpochSecond(
                     initLongSeven(bytes, offset),
                     initShort(bytes, offset + 7)
+            )
+            else -> throw IllegalArgumentException("Invalid length for bytes for DateTime conversion: " + length)
+        }
+
+        /** Creates a dateTime by reading a byte reader
+         * @param reader to read from
+         */
+        fun fromByteReader(length: Int, reader: () -> Byte) = when (length) {
+            7 -> DateTime.ofEpochSecond(
+                    initLong(reader, 7)
+            )
+            9 -> DateTime.ofEpochSecond(
+                    initLong(reader, 7),
+                    initShort(reader)
             )
             else -> throw IllegalArgumentException("Invalid length for bytes for DateTime conversion: " + length)
         }

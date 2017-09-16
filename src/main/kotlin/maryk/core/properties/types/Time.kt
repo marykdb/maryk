@@ -2,6 +2,7 @@ package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.zeroFill
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.time.Instant
@@ -41,6 +42,19 @@ data class Time(
     override fun toBytes(precision: TimePrecision, bytes: ByteArray?, offset: Int) = when (precision) {
         TimePrecision.MILLIS -> (this.secondsOfDay * 1000 + this.milli).toBytes(bytes ?: ByteArray(4), offset)
         TimePrecision.SECONDS -> this.secondsOfDay.toBytes(bytes ?: ByteArray(3), offset, 3)
+    }
+
+    override fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        when (precision) {
+            TimePrecision.MILLIS -> {
+                reserver(4)
+                (this.secondsOfDay * 1000 + this.milli).writeBytes(writer)
+            }
+            TimePrecision.SECONDS -> {
+                reserver(3)
+                this.secondsOfDay.writeBytes(writer, 3)
+            }
+        }
     }
 
     override fun compareTo(other: Time): Int {
@@ -128,6 +142,15 @@ data class Time(
             4 -> Time.ofMilliOfDay(initInt(bytes, offset))
             3 -> Time.ofSecondOfDay(initInt(bytes, offset, length))
             else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: " + bytes.size)
+        }
+
+        /** Creates a dateTime by reading a byte reader
+         * @param reader to read from
+         */
+        fun fromByteReader(length: Int, reader: () -> Byte): Time = when (length) {
+            4 -> Time.ofMilliOfDay(initInt(reader))
+            3 -> Time.ofSecondOfDay(initInt(reader, length))
+            else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: $length")
         }
 
         @Throws(ParseException::class)

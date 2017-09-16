@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 import org.junit.Test
@@ -31,6 +32,15 @@ internal class FixedBytesDefinitionTest {
         }
     }
 
+    @Test
+    fun testStreamingConversion() {
+        val byteCollector = ByteCollector()
+        fixedBytesToTest.forEach {
+            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
 
     @Test
     fun convertToPositionedBytes() {

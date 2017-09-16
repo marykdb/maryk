@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.IndexedEnum
 
@@ -33,6 +34,14 @@ class EnumDefinition<E: IndexedEnum<E>>(
 
     override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) =
             valueByIndex[initShort(bytes, offset)] ?: throw ParseException("Enum index does not exist ${initShort(bytes, offset)}")
+
+    override fun convertFromBytes(length: Int, reader:() -> Byte) =
+            valueByIndex[initShort(reader)] ?: throw ParseException("Enum index does not exist ${initShort(reader)}")
+
+    override fun convertToBytes(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        reserver(2)
+        value.indexAsShort.writeBytes(writer)
+    }
 
     override fun convertToString(value: E, optimized: Boolean) = when {
         optimized -> value.indexAsShort.toString()

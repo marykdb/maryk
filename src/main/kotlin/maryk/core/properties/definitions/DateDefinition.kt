@@ -24,6 +24,10 @@ class DateDefinition(
 
     override fun createNow() = Date.nowUTC()
 
+    override fun convertFromBytes(length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
+
+    override fun convertToBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+
     override fun convertToBytes(value: Date, bytes: ByteArray?, offset: Int) = value.toBytes(bytes, offset)
 
     override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = Date.ofBytes(bytes, offset)

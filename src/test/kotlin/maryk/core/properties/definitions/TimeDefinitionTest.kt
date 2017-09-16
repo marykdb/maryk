@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
@@ -48,6 +49,26 @@ internal class TimeDefinitionTest {
         arrayOf(Time.MAX_IN_SECONDS, Time.MIN).forEach {
             val b = def.convertToBytes(it)
             def.convertFromBytes(b, 0, b.size) shouldBe it
+        }
+    }
+
+    @Test
+    fun convertStreamingBytesMillis() {
+        val byteCollector = ByteCollector()
+        arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
+            defMilli.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            defMilli.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
+
+    @Test
+    fun convertStreamingBytesSeconds() {
+        val byteCollector = ByteCollector()
+        arrayOf(Time.MAX_IN_SECONDS, Time.MIN).forEach {
+            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
         }
     }
 

@@ -33,6 +33,14 @@ abstract class IsTime<T>: IsTemporal<T>() {
      * @param offset: starting position to write to. Default 0
      */
     abstract fun toBytes(precision: TimePrecision, bytes: ByteArray?, offset: Int): ByteArray
+
+    /**
+     * Converts Value into bytes
+     * @param precision: how precise to convertFromBytes the time
+     * @param reserver to reserve right amount of bytes on
+     * @param writer to write bytes to
+     */
+    abstract fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
 }
 
 abstract class IsTimeObject<T>: IsTemporalObject<T>() {

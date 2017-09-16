@@ -28,6 +28,8 @@ class DateTimeDefinition(
 
     override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = DateTime.ofBytes(bytes, offset, length)
 
+    override fun convertFromBytes(length: Int, reader:() -> Byte) = DateTime.fromByteReader(length, reader)
+
     @Throws(ParseException::class)
     override fun convertFromString(string: String, optimized: Boolean) = DateTime.parse(string, iso8601 = !optimized)
 }

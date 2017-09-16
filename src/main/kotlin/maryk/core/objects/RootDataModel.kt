@@ -1,6 +1,7 @@
 package maryk.core.objects
 
 import maryk.core.bytes.Base64
+import maryk.core.extensions.bytes.initByteArray
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.key.Reversed
@@ -49,6 +50,11 @@ abstract class RootDataModel<DM: Any>(
 
         /** Get Key by base64 byte representation */
         fun get(base64: String): Key<DM> = this.get(Base64.decode(base64))
+
+        /** Get Key by byte reader */
+        fun get(reader: () -> Byte): Key<DM> = Key<DM>(
+                initByteArray(size, reader)
+        )
 
         /** Get Key based on DataObject */
         fun getKey(dataObject: DM): Key<DM> {

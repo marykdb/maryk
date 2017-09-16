@@ -11,6 +11,20 @@ interface IsFixedBytesEncodable<T: Any> {
     /** Index of property on model. -1 if not on property */
     val index: Short
 
+    /** Convert to value from a byte reader
+     * @param length of bytes to read
+     * @param reader to read bytes from
+     * @return converted value
+     */
+    abstract fun convertFromBytes(length: Int, reader:() -> Byte): T
+
+    /** Convert a value to bytes
+     * @param value to convert
+     * @param reserver to reserve amount of bytes to write on
+     * @param writer to write bytes to
+     */
+    abstract fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+
     /** Convert value to bytes
      * @param value to convertFromBytes
      * @param bytes: to write to

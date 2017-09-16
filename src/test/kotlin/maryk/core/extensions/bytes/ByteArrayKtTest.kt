@@ -42,7 +42,7 @@ internal class ByteArrayKtTest {
             bc.reserve(it.size)
             it.writeBytes(bc::write)
 
-            initByteArray(bc::read, it.size).compareTo(it) shouldBe 0
+            initByteArray(it.size, bc::read).compareTo(it) shouldBe 0
             bc.reset()
         }
     }

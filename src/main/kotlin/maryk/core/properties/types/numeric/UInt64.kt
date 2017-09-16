@@ -2,6 +2,7 @@ package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.random
 import maryk.core.extensions.toHex
@@ -14,11 +15,14 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
     override fun compareTo(other: UInt<Long>) = number.compareTo(other.number)
     override fun toString() = "0x${number.toBytes().toHex()}"
     override fun toBytes(bytes: ByteArray?, offset: Int) = number.toBytes(bytes ?: ByteArray(size), offset)
+    override fun writeBytes(writer: (Byte) -> Unit) = number.writeBytes(writer)
     companion object : UnsignedNumberDescriptor<UInt64>(
             size = 8,
             MIN_VALUE = UInt64(Long.MIN_VALUE),
             MAX_VALUE = UInt64(Long.MAX_VALUE)
     ) {
+        override fun fromByteReader(length: Int, reader: () -> Byte) = UInt64(initLong(reader))
+        override fun writeBytes(value: UInt64, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
         override fun toBytes(value: UInt64, bytes: ByteArray?, offset: Int) = value.toBytes(bytes, offset)
         override fun ofBytes(bytes: ByteArray, offset: Int, length: Int) = UInt64(initLong(bytes, offset, length))
         override fun ofString(value: String): UInt64 {

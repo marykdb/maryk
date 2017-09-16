@@ -25,6 +25,6 @@ internal fun ByteArray.writeBytes(writer: (byte: Byte) -> Unit) {
  * @param reader to read bytes from
  * @return ByteArray represented by bytes
  */
-internal fun initByteArray(reader: () -> Byte, length: Int) = ByteArray(length) {
+internal fun initByteArray(length: Int, reader: () -> Byte) = ByteArray(length) {
     reader()
 }

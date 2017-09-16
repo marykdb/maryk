@@ -3,6 +3,7 @@ package maryk.core.properties.types
 import maryk.core.bytes.Base64
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.toBytes
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.compare.compareTo
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
@@ -29,6 +30,11 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
 
     fun toBytes(toBytes: ByteArray, offset: Int = 0) = this.bytes.toBytes(toBytes, offset)
 
+    fun writeBytes(reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        reserver(bytes.size)
+        bytes.writeBytes(writer)
+    }
+
     fun toHex() = this.bytes.toHex()
 
     companion object: BytesDescriptor<Bytes>() {
@@ -45,6 +51,10 @@ abstract class BytesDescriptor<T>{
 
     fun ofBytes(byteArray: ByteArray, offset: Int, length: Int) = this.construct(
         initByteArray(byteArray, offset, length)
+    )
+
+    fun fromByteReader(length: Int, reader: () -> Byte): T = this.construct(
+        initByteArray(length, reader)
     )
 
     fun ofHex(hex: String) = this.construct(

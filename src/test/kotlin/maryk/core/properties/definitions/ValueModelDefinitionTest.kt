@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestValueObject
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.Date
@@ -31,6 +32,15 @@ internal class ValueModelDefinitionTest {
     fun testConvertBytes() {
         val bytes = value._bytes
         val new = TestValueObject.createFromBytes(bytes, 0)
+
+        new shouldBe value
+    }
+
+    @Test
+    fun testConvertStreamableBytes() {
+        val bc = ByteCollector()
+        def.convertToBytes(value, bc::reserve, bc::write)
+        val new = def.convertFromBytes(bc.size, bc::read)
 
         new shouldBe value
     }

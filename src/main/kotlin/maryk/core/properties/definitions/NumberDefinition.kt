@@ -27,6 +27,10 @@ class NumberDefinition<T: Comparable<T>>(
 
     override fun convertFromBytes(bytes: ByteArray, offset: Int, length: Int) = type.ofBytes(bytes, offset, length)
 
+    override fun convertFromBytes(length: Int, reader:() -> Byte) = type.fromByteReader(length, reader)
+
+    override fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = type.writeBytes(value, reserver, writer)
+
     @Throws(ParseException::class)
     override fun convertFromString(string: String, optimized: Boolean) = try {
         type.ofString(string)

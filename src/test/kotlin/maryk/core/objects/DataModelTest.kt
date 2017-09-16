@@ -14,7 +14,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
 import org.junit.Test
 
-val testObject = TestMarykObject(
+private val testObject = TestMarykObject(
         string = "haas",
         int = 4,
         uint = 53.toUInt32(),
@@ -23,7 +23,7 @@ val testObject = TestMarykObject(
         dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
 )
 
-val textExtendedObject = TestMarykObject(
+private val textExtendedObject = TestMarykObject(
         string = "hey",
         int = 4,
         double = 3.555,
@@ -45,7 +45,11 @@ val textExtendedObject = TestMarykObject(
         multi = TypedValue(2, SubMarykObject("subInMulti!"))
 )
 
-val prettyJson = """{
+private const val json = "{\"string\":\"hey\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"2017-12-04T12:13\",\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":43,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
+
+private const val optimizedJson = "{\"string\":\"hey\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"1512389580,0\",\"enum\":\"-32768\",\"list\":[34,2352,3423,766],\"set\":[\"17505\",\"16862\",\"4356\"],\"map\":{\"46500000\":\"yes\",\"36180000\":\"ahum\"},\"valueObject\":\"gAAAKwGAAABY36MkAQE\",\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
+
+private const val prettyJson = """{
 	"string": "hey",
 	"int": 4,
 	"uint": 32,
@@ -142,7 +146,7 @@ internal class DataModelTest {
         }
         TestMarykObject.toJson(generator, textExtendedObject)
 
-        json shouldBe "{\"string\":\"hey\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"2017-12-04T12:13\",\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":43,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
+        json shouldBe json
     }
 
     @Test
@@ -153,7 +157,7 @@ internal class DataModelTest {
         }
         TestMarykObject.toJson(generator, textExtendedObject)
 
-        json shouldBe "{\"string\":\"hey\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"1512389580,0\",\"enum\":\"-32768\",\"list\":[34,2352,3423,766],\"set\":[\"17505\",\"16862\",\"4356\"],\"map\":{\"46500000\":\"yes\",\"36180000\":\"ahum\"},\"valueObject\":\"gAAAKwGAAABY36MkAQE\",\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
+        json shouldBe optimizedJson
     }
 
     @Test

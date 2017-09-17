@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
+import maryk.core.json.JsonToken
+import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -85,5 +88,23 @@ class MapDefinition<K: Any, V: Any>(
             valueDefinition.writeJsonValue(generator, v)
         }
         generator.writeEndObject()
+    }
+
+    override fun parseFromJson(parser: JsonParser): Map<K, V> {
+        if (parser.currentToken !is JsonToken.START_OBJECT) {
+            throw ParseException("JSON value for $name should be an Object")
+        }
+        val map: MutableMap<K, V> = mutableMapOf()
+
+        while (parser.nextToken() !is JsonToken.END_OBJECT) {
+            val key = keyDefinition.convertFromString(parser.lastValue, optimized = parser.optimized)
+            parser.nextToken()
+
+            map.put(
+                    key,
+                    valueDefinition.parseFromJson(parser)
+            )
+        }
+        return map
     }
 }

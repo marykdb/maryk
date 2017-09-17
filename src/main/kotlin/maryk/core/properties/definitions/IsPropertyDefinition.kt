@@ -1,6 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
+import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 
@@ -38,4 +40,10 @@ interface IsPropertyDefinition<T: Any> {
      * @param value: value to write
      */
     fun writeJsonValue(generator: JsonGenerator, value: T)
+
+    /** Reads JSON and returns values
+     * @param parser: to parse JSON from
+     */
+    @Throws(ParseException::class)
+    fun parseFromJson(parser: JsonParser): T
 }

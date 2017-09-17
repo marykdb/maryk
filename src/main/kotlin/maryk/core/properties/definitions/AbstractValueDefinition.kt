@@ -2,6 +2,9 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
+import maryk.core.json.JsonToken
+import maryk.core.properties.exceptions.ParseException
 
 /**
  * Abstract Property Definition to define properties.
@@ -42,6 +45,16 @@ abstract class AbstractValueDefinition<T: Any>(
      */
     open fun convertToString(value: T, optimized: Boolean = false) = value.toString()
 
+    /**
+     * Get the value from a string
+     * @param string to convertFromBytes
+     * @param optimized true if conversion should be faster to process, false if it should be human readable
+     * @return the value
+     * @throws ParseException if conversion fails
+     */
+    @Throws(ParseException::class)
+    abstract fun convertFromString(string: String, optimized: Boolean = false): T
+
     /** Writes a value to Json
      * @param value: value to write
      * @param generator: to write json to
@@ -50,5 +63,13 @@ abstract class AbstractValueDefinition<T: Any>(
         generator.writeString(
                 this.convertToString(value, optimized = generator.optimized)
         )
+    }
+
+    @Throws(ParseException::class)
+    override fun parseFromJson(parser: JsonParser): T {
+        if (parser.currentToken !is JsonToken.OBJECT_VALUE && parser.currentToken !is JsonToken.ARRAY_VALUE) {
+            throw ParseException("JSON value for $name should be a simple value")
+        }
+        return this.convertFromString(parser.lastValue, optimized = parser.optimized)
     }
 }

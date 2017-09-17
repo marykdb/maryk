@@ -5,11 +5,6 @@ private enum class JsonType {
     START, START_OBJ, END_OBJ, FIELD_NAME, OBJ_VALUE, START_ARRAY, END_ARRAY, ARRAY_VALUE
 }
 
-/** Describes Json object types */
-private enum class JsonObjectType {
-    OBJECT, ARRAY
-}
-
 /** A JSON generator for streaming JSON generation */
 class JsonGenerator(
         val optimized: Boolean = false,

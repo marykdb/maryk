@@ -32,6 +32,7 @@ data class TestValueObject(
     }
 
     companion object: ValueDataModel<TestValueObject>(
+            constructor = { TestValueObject(it[0] as Int, it[1] as DateTime, it[2] as Boolean)},
             definitions = listOf(
                     Def(Properties.int, TestValueObject::int),
                     Def(Properties.dateTime, TestValueObject::dateTime),

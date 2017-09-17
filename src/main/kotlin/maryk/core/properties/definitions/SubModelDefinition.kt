@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
 import maryk.core.objects.DataModel
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -45,4 +46,6 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
     }
 
     override fun writeJsonValue(generator: JsonGenerator, value: DO) = dataModel.toJson(generator, value)
+
+    override fun parseFromJson(parser: JsonParser) = dataModel.fromJson(parser)
 }

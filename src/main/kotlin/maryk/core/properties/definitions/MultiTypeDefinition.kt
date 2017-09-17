@@ -2,6 +2,9 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
+import maryk.core.json.JsonToken
+import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.TypedValue
@@ -47,5 +50,27 @@ class MultiTypeDefinition(
 
         definition.writeJsonValue(generator, value.value)
         generator.writeEndArray()
+    }
+
+    override fun parseFromJson(parser: JsonParser): TypedValue<*> {
+        if(parser.nextToken() !is JsonToken.ARRAY_VALUE) {
+            throw ParseException("Expected an array value at start")
+        }
+
+        val index: Int
+        try {
+            index = parser.lastValue.toInt()
+        }catch (e: Throwable) {
+            throw ParseException("Invalid multitype index ${parser.lastValue} for $name")
+        }
+        parser.nextToken()
+
+        val definition: AbstractSubDefinition<*>? = typeMap[index]
+                ?: throw ParseException("Unknown multitype index ${parser.lastValue} for $name")
+
+        return TypedValue<Any>(
+                index,
+                definition!!.parseFromJson(parser)
+        )
     }
 }

@@ -1,6 +1,9 @@
 package maryk.core.objects
 
+import maryk.core.json.IllegalJsonOperation
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
+import maryk.core.json.JsonToken
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
@@ -13,7 +16,10 @@ class Def<T: Any, in DM: Any>(val propertyDefinition: IsPropertyDefinition<T>, v
  * A Data Model for converting and validating DataObjects
  * @param <DO> Type of DataObject which is modeled
  */
-abstract class DataModel<DO: Any>(val definitions: List<Def<*, DO>>) {
+abstract class DataModel<DO: Any>(
+        val construct: (Map<Int, *>) -> DO,
+        val definitions: List<Def<*, DO>>
+) {
     protected val indexToDefinition: Map<Short, Def<*, DO>>
     private val nameToDefinition: Map<String, Def<*, DO>>
 
@@ -30,16 +36,14 @@ abstract class DataModel<DO: Any>(val definitions: List<Def<*, DO>>) {
             nameToDefinition[def.name!!] = it
         }
     }
-    fun getDefinition(ofString: String) = nameToDefinition.get(ofString)?.propertyDefinition
+    fun getDefinition(ofString: String) = nameToDefinition[ofString]?.propertyDefinition
 
-    fun getDefinition(ofIndex: Short) = indexToDefinition.get(ofIndex)?.propertyDefinition
-    fun getPropertyGetter(ofString: String) = nameToDefinition.get(ofString)?.propertyGetter
+    fun getDefinition(ofIndex: Short) = indexToDefinition[ofIndex]?.propertyDefinition
+    fun getPropertyGetter(ofString: String) = nameToDefinition[ofString]?.propertyGetter
 
-    fun getPropertyGetter(ofIndex: Short) = indexToDefinition.get(ofIndex)?.propertyGetter
+    fun getPropertyGetter(ofIndex: Short) = indexToDefinition[ofIndex]?.propertyGetter
 
-    /**
-     * Validate a DataObject
-     *
+    /** Validate a DataObject
      * @param dataObject to validate
      * @param parentRef  parent reference to the model
      * @throws PropertyValidationUmbrellaException if input was invalid
@@ -62,6 +66,10 @@ abstract class DataModel<DO: Any>(val definitions: List<Def<*, DO>>) {
         }
     }
 
+    /** Convert an object to JSON
+     * @param generator to generate JSON with
+     * @param obj to convert to JSON
+     */
     fun toJson(generator: JsonGenerator, obj: DO) {
         generator.writeStartObject()
         @Suppress("UNCHECKED_CAST")
@@ -74,5 +82,41 @@ abstract class DataModel<DO: Any>(val definitions: List<Def<*, DO>>) {
             def.propertyDefinition.writeJsonValue(generator, value)
         }
         generator.writeEndObject()
+    }
+
+    /** Convert to a DataModel from JSON
+     * @param parser to parse JSON with
+     * @return DataObject represented by the JSON
+     */
+    fun fromJson(parser: JsonParser): DO {
+        if (parser.currentToken != JsonToken.START_OBJECT) {
+            throw IllegalJsonOperation("Expected object at start of json")
+        }
+
+        val valueMap: MutableMap<Int, Any> = mutableMapOf()
+        parser.nextToken()
+        walker@ do {
+            val token = parser.currentToken
+            when (token) {
+                JsonToken.FIELD_NAME -> {
+                    val definition = getDefinition(parser.lastValue)
+                    if (definition == null) {
+                        parser.ignoreUntilNextField()
+                        continue@walker
+                    } else {
+                        parser.nextToken()
+
+                        valueMap.put(
+                                definition.index.toInt(),
+                                definition.parseFromJson(parser)
+                        )
+                    }
+                }
+                else -> break@walker
+            }
+            parser.nextToken()
+        } while (token !is JsonToken.SUSPENDED && token !is JsonToken.END_JSON)
+
+        return construct(valueMap)
     }
 }

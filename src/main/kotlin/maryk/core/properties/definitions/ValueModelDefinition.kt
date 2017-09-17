@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -70,6 +71,14 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
         when(generator.optimized) {
             true -> super.writeJsonValue(generator, value)
             false -> dataModel.toJson(generator, value)
+        }
+    }
+
+    @Throws(ParseException::class)
+    override fun parseFromJson(parser: JsonParser): DO = when(parser.optimized) {
+        true -> super.parseFromJson(parser)
+        false -> {
+            dataModel.fromJson(parser)
         }
     }
 }

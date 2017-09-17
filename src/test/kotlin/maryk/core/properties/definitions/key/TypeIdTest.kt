@@ -28,6 +28,7 @@ internal class TypeIdTest {
             )
         }
         companion object: RootDataModel<MarykObject>(
+            constructor = { MarykObject(it[0] as TypedValue<*>) },
             keyDefinitions = definitions(
                     TypeId(Properties.multi)
             ),

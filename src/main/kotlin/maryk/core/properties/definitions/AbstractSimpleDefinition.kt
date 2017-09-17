@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
@@ -24,16 +23,6 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>>(
 ) : AbstractValueDefinition<T>(
         name, index, indexed, searchable, required, final
 ) {
-    /**
-     * Get the value from a string
-     * @param string to convertFromBytes
-     * @param optimized true if conversion should be faster to process, false if it should be human readable
-     * @return the value
-     * @throws ParseException if conversion fails
-     */
-    @Throws(ParseException::class)
-    abstract fun convertFromString(string: String, optimized: Boolean = false): T
-
     /**
      * Validate the contents of the native type
      * @param newValue to validate

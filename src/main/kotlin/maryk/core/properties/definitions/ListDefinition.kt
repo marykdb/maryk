@@ -16,8 +16,9 @@ class ListDefinition<T: Any>(
 ) : AbstractCollectionDefinition<T, List<T>>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
 ), HasSizeDefinition {
-
     override fun getSize(newValue: List<T>) = newValue.size
+
+    override fun newMutableCollection() = mutableListOf<T>()
 
     override fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?,  newValue: List<T>, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any) {
         newValue.forEachIndexed { index, item ->

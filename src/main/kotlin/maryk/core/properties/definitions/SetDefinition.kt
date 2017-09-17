@@ -18,6 +18,8 @@ class SetDefinition<T: Any>(
 ), HasSizeDefinition {
     override fun getSize(newValue: Set<T>) = newValue.size
 
+    override fun newMutableCollection() = mutableSetOf<T>()
+
     override fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?, newValue: Set<T>, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any) {
         newValue.forEach {
             validator(it) {

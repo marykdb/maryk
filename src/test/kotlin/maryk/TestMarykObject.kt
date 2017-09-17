@@ -45,23 +45,6 @@ data class TestMarykObject(
         val subModel: SubMarykObject? = null,
         val multi: TypedValue<*>? = null
 ) {
-    @Suppress("UNCHECKED_CAST")
-    constructor(values: Map<Int, *>) : this(
-            string = values[0] as String,
-            int = values[1] as Int,
-            uint = values[2] as UInt32,
-            double = values[3] as Double,
-            dateTime = values[4] as DateTime,
-            bool = values[5] as Boolean?,
-            enum = values[6] as Option,
-            list = values[7] as List<Int>?,
-            set = values[8] as Set<Date>?,
-            map = values[9] as Map<Time, String>?,
-            valueObject = values[10] as TestValueObject?,
-            subModel = values[11] as SubMarykObject?,
-            multi = values[12] as TypedValue<*>?
-    )
-
     object Properties {
         val string = StringDefinition(
                 name = "string",
@@ -147,6 +130,24 @@ data class TestMarykObject(
     }
 
     companion object: RootDataModel<TestMarykObject>(
+            constructor = {
+                @Suppress("UNCHECKED_CAST")
+                TestMarykObject(
+                        string = it[0] as String,
+                        int = it[1] as Int,
+                        uint = it[2] as UInt32,
+                        double = it[3] as Double,
+                        dateTime = it[4] as DateTime,
+                        bool = it[5] as Boolean?,
+                        enum = it[6] as Option,
+                        list = it[7] as List<Int>?,
+                        set = it[8] as Set<Date>?,
+                        map = it[9] as Map<Time, String>?,
+                        valueObject = it[10] as TestValueObject?,
+                        subModel = it[11] as SubMarykObject?,
+                        multi = it[12] as TypedValue<*>?
+                )
+            },
             keyDefinitions = definitions(
                     Properties.uint,
                     Properties.bool,
@@ -180,6 +181,7 @@ data class SubMarykObject(
         )
     }
     companion object: RootDataModel<SubMarykObject>(
+            constructor = { SubMarykObject(it[0] as String) },
             definitions = listOf(
                     Def(Properties.value, SubMarykObject::value)
             )

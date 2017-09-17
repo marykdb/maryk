@@ -18,7 +18,9 @@ internal class SubModelDefinitionTest {
                     regEx = "jur"
             )
         }
-        companion object: DataModel<MarykObject>(definitions = listOf(
+        companion object: DataModel<MarykObject>(
+                construct = { MarykObject(it[0] as String)},
+                definitions = listOf(
                 Def(Properties.string, MarykObject::string)
         ))
     }

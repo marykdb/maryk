@@ -6,8 +6,9 @@ import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.types.ValueDataObject
 
 abstract class ValueDataModel<DO: ValueDataObject>(
+        constructor: (Map<Int, *>) -> DO,
         definitions: List<Def<*, DO>>
-) : DataModel<DO>(definitions) {
+) : DataModel<DO>(constructor, definitions) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {

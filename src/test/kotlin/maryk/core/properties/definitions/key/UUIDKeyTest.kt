@@ -18,6 +18,7 @@ internal class UUIDKeyTest {
             )
         }
         companion object: RootDataModel<MarykObject>(
+            constructor = { MarykObject(it[0] as String) },
             definitions = listOf(
                     Def(Properties.value, MarykObject::value)
             )

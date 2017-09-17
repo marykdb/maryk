@@ -30,6 +30,7 @@ internal class ReversedTest {
             )
         }
         companion object: RootDataModel<MarykObject>(
+            constructor = { MarykObject(it[0] as Boolean, it[1] as DateTime) },
             keyDefinitions = definitions(
                     Reversed(Properties.boolean),
                     Reversed(Properties.dateTime)

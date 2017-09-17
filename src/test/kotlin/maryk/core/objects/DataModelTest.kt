@@ -6,6 +6,7 @@ import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonParser
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
@@ -79,7 +80,7 @@ private const val prettyJson = """{
 internal class DataModelTest {
     @Test
     fun testIndexConstruction() {
-        TestMarykObject(mapOf(
+        TestMarykObject.construct(mapOf(
                 0 to testObject.string,
                 1 to testObject.int,
                 2 to testObject.uint,
@@ -139,35 +140,37 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testJsonConversion() {
-        var json = ""
-        val generator = JsonGenerator {
-            json += it
-        }
-        TestMarykObject.toJson(generator, textExtendedObject)
+    fun testToJsonConversion() {
+        var output = ""
+        val writer = { string: String -> output += string }
 
-        json shouldBe json
+        mapOf(
+                json to JsonGenerator(writer = writer),
+                optimizedJson to JsonGenerator(optimized = true, writer = writer),
+                prettyJson to JsonGenerator(pretty = true, writer = writer)
+        ).forEach { result, generator ->
+            TestMarykObject.toJson(generator, textExtendedObject)
+
+            output shouldBe result
+            output = ""
+        }
     }
 
     @Test
-    fun testOptimizedJsonConversion() {
-        var json = ""
-        val generator = JsonGenerator(optimized = true) {
-            json += it
+    fun testFromJsonConversion() {
+        var input = ""
+        var index = 0
+        val reader = { input[index++] }
+
+        mapOf(
+                json to { JsonParser(reader = reader) },
+                optimizedJson to { JsonParser(optimized = true, reader = reader) },
+                prettyJson to { JsonParser(reader = reader) }
+        ).forEach { result, parser ->
+            input = result
+            index = 0
+            TestMarykObject.fromJson(parser()) shouldBe textExtendedObject
         }
-        TestMarykObject.toJson(generator, textExtendedObject)
-
-        json shouldBe optimizedJson
-    }
-
-    @Test
-    fun testPrettyJsonConversion() {
-        var json = ""
-        val generator = JsonGenerator(pretty = true) {
-            json += it
-        }
-        TestMarykObject.toJson(generator, textExtendedObject)
-
-        json shouldBe prettyJson
     }
 }
+

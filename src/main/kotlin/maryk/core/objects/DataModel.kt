@@ -89,6 +89,10 @@ abstract class DataModel<DO: Any>(
      * @return DataObject represented by the JSON
      */
     fun fromJson(parser: JsonParser): DO {
+        if (parser.currentToken == JsonToken.START_JSON){
+            parser.nextToken()
+        }
+
         if (parser.currentToken != JsonToken.START_OBJECT) {
             throw IllegalJsonOperation("Expected object at start of json")
         }
@@ -101,7 +105,7 @@ abstract class DataModel<DO: Any>(
                 JsonToken.FIELD_NAME -> {
                     val definition = getDefinition(parser.lastValue)
                     if (definition == null) {
-                        parser.ignoreUntilNextField()
+                        parser.skipUntilNextField()
                         continue@walker
                     } else {
                         parser.nextToken()
@@ -115,7 +119,7 @@ abstract class DataModel<DO: Any>(
                 else -> break@walker
             }
             parser.nextToken()
-        } while (token !is JsonToken.SUSPENDED && token !is JsonToken.END_JSON)
+        } while (token !is JsonToken.STOPPED)
 
         return construct(valueMap)
     }

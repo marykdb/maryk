@@ -11,13 +11,15 @@ sealed class JsonToken(val name: String) {
     object ARRAY_VALUE : JsonToken("ARRAY_VALUE")
     object ARRAY_SEPARATOR : JsonToken("ARRAY_SEPARATOR")
     object END_ARRAY: JsonToken("END_ARRAY")
-    object END_JSON: JsonToken("END_JSON")
-    class SUSPENDED(val lastToken: JsonToken): JsonToken("Stopped reader")
+    abstract class STOPPED(name: String): JsonToken(name)
+    object END_JSON: STOPPED("END_JSON")
+    class SUSPENDED(val lastToken: JsonToken): STOPPED("Stopped reader")
+    class JSON_EXCEPTION(val e: InvalidJsonContent) : STOPPED("JSON_EXCEPTION")
 }
 
 private val whiteSpaceChars = charArrayOf(' ', '\t', '\n', '\r')
 private val numberChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
-private val skipArray = arrayOf(JsonToken.OBJECT_SEPARATOR, JsonToken.ARRAY_SEPARATOR)
+private val skipArray = arrayOf(JsonToken.OBJECT_SEPARATOR, JsonToken.ARRAY_SEPARATOR, JsonToken.START_JSON)
 
 /** Parses JSON
  * @param optimized true to parse with CPU optimized format
@@ -25,26 +27,25 @@ private val skipArray = arrayOf(JsonToken.OBJECT_SEPARATOR, JsonToken.ARRAY_SEPA
  */
 class JsonParser(
         val optimized: Boolean = false,
-        val reader: () -> Char
+        private val reader: () -> Char
 ) {
     var currentToken: JsonToken = JsonToken.START_JSON
     var lastValue: String = ""
-    private var typeStack: MutableList<JsonObjectType> = mutableListOf()
-    private var lastChar: Char = readSkipWhitespace()
-
-    init {
-        nextToken()
-    }
+    private val typeStack: MutableList<JsonObjectType> = mutableListOf()
+    private var lastChar: Char = ' '
 
     /** Find the next token */
     fun nextToken(): JsonToken {
         lastValue = ""
         try {
             when (currentToken) {
-                JsonToken.START_JSON -> when(lastChar) {
-                    '{' -> startObject()
-                    '[' -> startArray()
-                    else -> throwJsonException()
+                JsonToken.START_JSON -> {
+                    lastChar = readSkipWhitespace()
+                    when(lastChar) {
+                        '{' -> startObject()
+                        '[' -> startArray()
+                        else -> throwJsonException()
+                    }
                 }
                 JsonToken.START_OBJECT -> {
                     typeStack.add(JsonObjectType.OBJECT)
@@ -84,15 +85,19 @@ class JsonParser(
                     readArray()
                 }
                 JsonToken.ARRAY_SEPARATOR -> {
-                    if (lastChar == ']') {
-                        endArray()
-                    } else {
-                        readValue(JsonToken.ARRAY_VALUE)
-                    }
+                    readValue(JsonToken.ARRAY_VALUE)
+                }
+                is JsonToken.SUSPENDED -> {
+                    currentToken = (currentToken as JsonToken.SUSPENDED).lastToken
+                    readSkipWhitespace()
+                    return nextToken()
                 }
             }
         } catch (e: ExceptionWhileReadingJson) {
             currentToken = JsonToken.SUSPENDED(currentToken)
+        } catch (e: InvalidJsonContent) {
+            currentToken = JsonToken.JSON_EXCEPTION(e)
+            throw e
         }
 
         if (currentToken in skipArray) {
@@ -103,7 +108,7 @@ class JsonParser(
     }
 
     /** Method that walks the JSON until a next value at same level is discovered */
-    fun ignoreUntilNextField() {
+    fun skipUntilNextField() {
         val currentDepth = typeStack.count()
         do {
             nextToken()
@@ -118,10 +123,14 @@ class JsonParser(
 
     private fun readSkipWhitespace(): Char {
         read()
+        skipWhiteSpace()
+        return lastChar
+    }
+
+    private fun skipWhiteSpace() {
         if (lastChar in whiteSpaceChars) {
             readSkipWhitespace() // continue reading
         }
-        return lastChar
     }
 
     private fun continueComplexRead() {
@@ -164,9 +173,13 @@ class JsonParser(
                 currentToken = currentValueToken
                 readStringValue()
             }
-            '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
+            '-' -> {
                 currentToken = currentValueToken
-                readNumber()
+                readNumber(true)
+            }
+            in numberChars -> {
+                currentToken = currentValueToken
+                readNumber(false)
             }
             'n' -> {
                 currentToken = currentValueToken
@@ -184,11 +197,46 @@ class JsonParser(
         }
     }
 
-    private fun readNumber() {
-        do {
+    private fun readNumber(startedWithMinus: Boolean) {
+        fun addAndAdvance() {
             lastValue += lastChar
             read()
+        }
+
+        // read number
+        do {
+            addAndAdvance()
         } while (lastChar in numberChars)
+
+        // Check if value starts with illegal 0
+        if (startedWithMinus && lastValue.length > 2 && lastValue[1] == '0') {
+            throwJsonException()
+        } else if (lastValue.length > 1 && lastValue[0] == '0') {
+            throwJsonException()
+        }
+
+        // read fraction
+        if(lastChar == '.') {
+            addAndAdvance()
+            if (lastChar !in numberChars) throwJsonException()
+            do {
+                addAndAdvance()
+            } while (lastChar in numberChars)
+        }
+
+        // read exponent
+        if(lastChar in arrayOf('e', 'E')) {
+            addAndAdvance()
+            if(lastChar in arrayOf('+', '-')) {
+                addAndAdvance()
+            }
+            if (lastChar !in numberChars) throwJsonException()
+            do {
+                addAndAdvance()
+            } while (lastChar in numberChars)
+        }
+
+        skipWhiteSpace()
     }
 
     private fun readFalse() {
@@ -236,7 +284,6 @@ class JsonParser(
     private fun readStringValue() {
         read()
         var skipChar = false
-        lastValue = ""
         while(lastChar != '"' || skipChar) {
             lastValue += lastChar
             skipChar = if (lastChar == '\\') !skipChar else false

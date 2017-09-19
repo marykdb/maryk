@@ -77,6 +77,35 @@ private const val prettyJson = """{
 	}]
 }"""
 
+// Test if unknown values will be skipped
+private const val prettyJsonWithSkip = """{
+	"string": "hey",
+	"int": 4,
+	"uint": 32,
+	"double": "3.555",
+	"bool": true,
+	"dateTime": "2017-12-04T12:13",
+	"enum": "V0",
+	"list": [34, 2352, 3423, 766],
+	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+	"map": {
+		"12:55": "yes",
+		"10:03": "ahum"
+	},
+    "skipUnknown": "should be skipped as possible future property",
+	"valueObject": {
+		"int": 43,
+		"dateTime": "2017-04-01T12:55",
+		"bool": true
+	},
+	"subModel": {
+		"value": "test"
+	},
+	"multi": [2, {
+		"value": "subInMulti!"
+	}]
+}"""
+
 internal class DataModelTest {
     @Test
     fun testIndexConstruction() {
@@ -165,7 +194,7 @@ internal class DataModelTest {
         mapOf(
                 json to { JsonParser(reader = reader) },
                 optimizedJson to { JsonParser(optimized = true, reader = reader) },
-                prettyJson to { JsonParser(reader = reader) }
+                prettyJsonWithSkip to { JsonParser(reader = reader) }
         ).forEach { result, parser ->
             input = result
             index = 0

@@ -9,7 +9,7 @@ private enum class JsonType {
 class JsonGenerator(
         val optimized: Boolean = false,
         val pretty: Boolean = false,
-        val writer: (String) -> Unit
+        private val writer: (String) -> Unit
 ) {
     private var lastType: JsonType = JsonType.START
     private var typeStack: MutableList<JsonObjectType> = mutableListOf()
@@ -27,6 +27,9 @@ class JsonGenerator(
     }
 
     fun writeEndObject() {
+        if(typeStack.isEmpty() || typeStack.last() != JsonObjectType.OBJECT) {
+            throw IllegalJsonOperation("Json: There is no object to close")
+        }
         typeStack.removeAt(typeStack.lastIndex)
         makePretty()
         write(JsonType.END_OBJ, "}", JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_OBJ, JsonType.END_ARRAY)
@@ -38,6 +41,9 @@ class JsonGenerator(
     }
 
     fun writeEndArray() {
+        if(typeStack.isEmpty() || typeStack.last() != JsonObjectType.ARRAY) {
+            throw IllegalJsonOperation("Json: There is no array to close")
+        }
         typeStack.removeAt(typeStack.lastIndex)
         write(JsonType.END_ARRAY, "]", JsonType.START_ARRAY, JsonType.ARRAY_VALUE, JsonType.END_ARRAY, JsonType.END_OBJ)
     }
@@ -56,17 +62,21 @@ class JsonGenerator(
     fun writeString(value: String) = writeValue("\"$value\"")
 
     /** Writes a value excluding quotes */
-    fun writeValue(value: String) = when(typeStack.last()) {
-        JsonObjectType.OBJECT -> {
-            write(JsonType.OBJ_VALUE, value, JsonType.FIELD_NAME)
-        }
-        JsonObjectType.ARRAY -> {
-            if(lastType != JsonType.START_ARRAY) {
-                writer(",")
-                if (pretty) { writer(" ") }
+    fun writeValue(value: String) = if (!typeStack.isEmpty()) {
+        when(typeStack.last()) {
+            JsonObjectType.OBJECT -> {
+                write(JsonType.OBJ_VALUE, value, JsonType.FIELD_NAME)
             }
-            write(JsonType.ARRAY_VALUE, value, JsonType.START_ARRAY, JsonType.ARRAY_VALUE)
+            JsonObjectType.ARRAY -> {
+                if(lastType != JsonType.START_ARRAY) {
+                    writer(",")
+                    if (pretty) { writer(" ") }
+                }
+                write(JsonType.ARRAY_VALUE, value, JsonType.START_ARRAY, JsonType.ARRAY_VALUE)
+            }
         }
+    } else {
+        throw IllegalJsonOperation("Cannot write a value outside array or object")
     }
 
     private fun makePretty() {

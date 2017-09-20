@@ -21,7 +21,7 @@ import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
-import maryk.core.properties.types.numeric.Int32
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 
 enum class Option(
@@ -54,7 +54,7 @@ data class TestMarykObject(
         )
         val int = NumberDefinition(
                 name = "int",
-                type = Int32,
+                type = SInt32,
                 index = 1,
                 maxValue = 6
         )
@@ -92,7 +92,7 @@ data class TestMarykObject(
                 index = 7,
                 valueDefinition = NumberDefinition(
                         required = true,
-                        type = Int32
+                        type = SInt32
                 )
         )
         val set = SetDefinition(
@@ -121,7 +121,7 @@ data class TestMarykObject(
                 index = 12,
                 typeMap = mapOf(
                         0 to StringDefinition(),
-                        1 to NumberDefinition(type = Int32),
+                        1 to NumberDefinition(type = SInt32),
                         2 to SubModelDefinition(
                                 dataModel = SubMarykObject
                         )

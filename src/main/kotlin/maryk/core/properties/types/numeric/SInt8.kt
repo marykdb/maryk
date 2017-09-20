@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.initByte
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.random
 
-object Int8 : NumberDescriptor<Byte>(
+object SInt8 : NumberDescriptor<Byte>(
         size = 1
 ) {
     override fun fromByteReader(length: Int, reader: () -> Byte): Byte = initByte(reader)

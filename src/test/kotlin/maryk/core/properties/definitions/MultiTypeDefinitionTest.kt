@@ -6,13 +6,13 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.Int32
+import maryk.core.properties.types.numeric.SInt32
 import org.junit.Test
 
 internal class MultiTypeDefinitionTest {
     val intDef = NumberDefinition<Int>(
             name = "int",
-            type = Int32,
+            type = SInt32,
             maxValue = 1000
     )
 

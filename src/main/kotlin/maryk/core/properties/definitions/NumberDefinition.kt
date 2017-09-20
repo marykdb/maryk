@@ -5,7 +5,7 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.UInt64
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
-import maryk.core.properties.types.numeric.Int64
+import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.NumberDescriptor
 
 /** Definition for Number properties */
@@ -38,7 +38,7 @@ class NumberDefinition<T: Comparable<T>>(
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
     override fun writeJsonValue(generator: JsonGenerator, value: T) = when {
-        type !in arrayOf(UInt64, Int64, Float64, Float32) -> {
+        type !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
             generator.writeValue(
                     this.convertToString(value)
             )

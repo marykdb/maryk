@@ -11,23 +11,23 @@ Int16 | Int32 | Int64 | Float32 | Float64**
 ## Types
 
 ### Unsigned Integers
-- **UInt8** - 8 bit unsigned Integer 
+- **UInt8** - 8 bit Unsigned Integer 
     * Range: 0..255
-- **UInt16** - 16 bit unsigned Integer 
+- **UInt16** - 16 bit Unsigned Integer 
     * Range: 0..65536
-- **UInt32** - 32 bit unsigned Integer 
+- **UInt32** - 32 bit Unsigned Integer 
     * Range: 0..4294967296
-- **UInt64** - 64 bit unsigned Integer 
+- **UInt64** - 64 bit Unsigned Integer 
     * Range: 0..18446744073709551615
 
 ### Signed Integers
-- **Int8** - 8 bit signed Integer 
+- **SInt8** - 8 bit Signed Integer 
     * Range: -128..127
-- **Int16** - 16 bit signed Integer 
+- **SInt16** - 16 bit Signed Integer 
     * Range: -32768..32767
-- **Int32** - 32 bit signed Integer 
+- **SInt32** - 32 bit signed Integer 
     * Range: -2147483648..2147483647
-- **Int64** - 64 bit signed Integer 
+- **SInt64** - 64 bit Signed Integer 
     * Range: -9223372036854775808..9223372036854775807
 
 ### Signed Floats
@@ -87,10 +87,10 @@ Examples:
 //UInt8:
 129 == 0b1000_0001
 
-//Int8:
+//SInt8:
 1 == 0b1000_0001
 
-//Int8:
+//SInt8:
 -127 == 0b0000_0001
 
 ``` 

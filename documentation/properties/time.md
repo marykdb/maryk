@@ -45,8 +45,8 @@ val def = TimeDefinition(
 ## Byte representation
 It depends on the precision of the Time how it will be stored
 
-- SECONDS - 3 bit integer counting the seconds from midnight (0:00am)
-- MILLIS - 4 bit integer counting the milliseconds from midnight (0:00am)
+- SECONDS - 3 byte integer counting the seconds from midnight (0:00am)
+- MILLIS - 4 byte integer counting the milliseconds from midnight (0:00am)
 
 ## String representation
 ISO8601 String: HH:MM:SS.SSS

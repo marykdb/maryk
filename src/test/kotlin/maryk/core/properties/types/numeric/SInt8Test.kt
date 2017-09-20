@@ -4,7 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import maryk.core.properties.ByteCollector
 import org.junit.Test
 
-internal class Int8Test {
+internal class SInt8Test {
     private val int8values = byteArrayOf(
             Byte.MIN_VALUE,
             -100,
@@ -16,7 +16,7 @@ internal class Int8Test {
 
     @Test
     fun testRandom() {
-        Int8.createRandom()
+        SInt8.createRandom()
     }
 
     @Test
@@ -25,7 +25,7 @@ internal class Int8Test {
         Byte.MAX_VALUE.toString() shouldBe "127"
 
         int8values.forEach {
-            Int8.ofString(it.toString()) shouldBe it
+            SInt8.ofString(it.toString()) shouldBe it
         }
     }
 
@@ -33,8 +33,8 @@ internal class Int8Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         int8values.forEach {
-            Int8.writeBytes(it, bc::reserve, bc::write)
-            Int8.fromByteReader(bc.size, bc::read) shouldBe it
+            SInt8.writeBytes(it, bc::reserve, bc::write)
+            SInt8.fromByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

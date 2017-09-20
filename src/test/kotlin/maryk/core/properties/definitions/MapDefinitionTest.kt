@@ -4,13 +4,13 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestMarykObject
 import maryk.core.properties.exceptions.*
-import maryk.core.properties.types.numeric.Int32
+import maryk.core.properties.types.numeric.SInt32
 import org.junit.Test
 import kotlin.test.assertTrue
 
 internal class MapDefinitionTest {
     val intDef = NumberDefinition(
-            type = Int32,
+            type = SInt32,
             required = true,
             maxValue = 1000
     )

@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.ValueDataObject
-import maryk.core.properties.types.numeric.Int32
+import maryk.core.properties.types.numeric.SInt32
 
 data class TestValueObject(
         val int: Int,
@@ -17,7 +17,7 @@ data class TestValueObject(
     object Properties {
         val int = NumberDefinition(
                 name = "int",
-                type = Int32,
+                type = SInt32,
                 index = 0,
                 maxValue = 6
         )

@@ -27,7 +27,7 @@ class BooleanDefinition(
     }
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String, optimized: Boolean) = when(string) {
+    override fun convertFromString(string: String) = when(string) {
         "true" -> true
         "false" -> false
         else -> throw ParseException(string)
@@ -35,7 +35,7 @@ class BooleanDefinition(
 
     override fun writeJsonValue(generator: JsonGenerator, value: Boolean) {
         generator.writeValue(
-                this.convertToString(value, optimized = generator.optimized)
+                this.convertToString(value)
         )
     }
 }

@@ -59,27 +59,14 @@ internal class TimeDefinitionTest {
     @Test
     fun convertString() {
         timesToTest.forEach {
-            val b = def.convertToString(it, false)
-            def.convertFromString(b, false) shouldBe it
+            val b = def.convertToString(it)
+            def.convertFromString(b) shouldBe it
         }
     }
-
-    @Test
-    fun convertOptimizedString() {
-        timesToTest.forEach {
-            val b = def.convertToString(it, true)
-            def.convertFromString(b, true) shouldBe it
-        }
-    }
-
     @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
-            def.convertFromString("wrong", false)
-        }
-
-        shouldThrow<ParseException> {
-            def.convertFromString("wrong", true)
+            def.convertFromString("wrong")
         }
     }
 }

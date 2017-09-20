@@ -22,9 +22,4 @@ abstract class AbstractMomentDefinition<T: IsTemporal<T>>(
 ) {
     /** @return a new value representing the current time */
     abstract fun createNow(): T
-
-    /** Convert the time value to a string
-     * @param optimized true for quick to parse solution, false for iso8601 string
-     */
-    override fun convertToString(value: T, optimized: Boolean) = value.toString(iso8601 = !optimized)
 }

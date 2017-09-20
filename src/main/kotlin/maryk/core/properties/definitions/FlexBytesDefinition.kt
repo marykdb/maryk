@@ -27,7 +27,7 @@ class FlexBytesDefinition(
     override fun convertToBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String, optimized: Boolean) = try {
+    override fun convertFromString(string: String) = try {
         Bytes.ofBase64String(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 

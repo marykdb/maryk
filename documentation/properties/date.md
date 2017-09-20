@@ -44,6 +44,4 @@ val def = DateDefinition(
 It will be represented by a 8 bit long counting the amount of days from January 1st 1970
 
 ## String representation
-In unoptimized mode it will be represented by an iso8601 String
-
-In optimized mode it will use the long with the days since January 1st 1970
+ISO8601 String: YYYY-MM-DD

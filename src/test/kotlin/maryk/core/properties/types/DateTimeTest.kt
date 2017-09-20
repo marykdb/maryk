@@ -92,18 +92,7 @@ internal class DateTimeTest {
     fun testStringConversion() {
         dateTimesWithMillisToTest.forEach {
             DateTime.parse(
-                    it.toString(true),
-                    iso8601 = true
-            ) shouldBe it
-        }
-    }
-
-    @Test
-    fun testStringOptimizedConversion() {
-        dateTimesWithMillisToTest.forEach {
-            DateTime.parse(
-                    it.toString(false),
-                    iso8601 = false
+                    it.toString()
             ) shouldBe it
         }
     }

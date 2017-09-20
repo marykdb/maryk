@@ -22,11 +22,9 @@ private val numberChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8
 private val skipArray = arrayOf(JsonToken.OBJECT_SEPARATOR, JsonToken.ARRAY_SEPARATOR, JsonToken.START_JSON)
 
 /** Parses JSON
- * @param optimized true to parse with CPU optimized format
  * @param reader to read json from
  */
 class JsonParser(
-        val optimized: Boolean = false,
         private val reader: () -> Char
 ) {
     var currentToken: JsonToken = JsonToken.START_JSON

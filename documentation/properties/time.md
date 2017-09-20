@@ -49,7 +49,4 @@ It depends on the precision of the Time how it will be stored
 - MILLIS - 4 bit integer counting the milliseconds from midnight (0:00am)
 
 ## String representation
-In unoptimized mode it will be represented by an iso8601 String
-
-In optimized mode it will use the integer counting either the seconds or milliseconds
-from midnight.
+ISO8601 String: HH:MM:SS.SSS

@@ -49,7 +49,4 @@ It depends on the precision of the Time how it will be stored
 and 2 bits for the added milliseconds 
 
 ## String representation
-In unoptimized mode it will be represented by an iso8601 String
-
-In optimized mode it will use the integer counting either the seconds or milliseconds
-from midnight January 1st 1970.
+ISO8601 String YYYY-MM-DDTHH:MM:SS.SSS

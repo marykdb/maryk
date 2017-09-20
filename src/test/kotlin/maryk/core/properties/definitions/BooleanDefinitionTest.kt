@@ -30,14 +30,6 @@ internal class BooleanDefinitionTest {
     }
 
     @Test
-    fun convertToOptimizedString() {
-        booleanArrayOf(true, false).forEach {
-            val b = def.convertToString(it, true)
-            def.convertFromString(b, true) shouldBe it
-        }
-    }
-
-    @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
             def.convertFromString("wrong")

@@ -44,5 +44,4 @@ val def = EnumDefinition<Role>(
 The enum short value as two bytes. They are encoded in an unsigned way.
 
 ## String representation
-In unoptimized mode it will use the name of the Enum. 
-In optimized mode the short value will be used.
+Name of the Enum. 

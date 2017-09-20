@@ -37,16 +37,8 @@ class EnumDefinition<E: IndexedEnum<E>>(
         value.indexAsShort.writeBytes(writer)
     }
 
-    override fun convertToString(value: E, optimized: Boolean) = when {
-        optimized -> value.indexAsShort.toString()
-        else -> value.name
-    }
+    override fun convertToString(value: E) = value.name
 
-    override fun convertFromString(string: String, optimized: Boolean) = when {
-        optimized -> {
-            val short = try { string.toShort() } catch (e: Throwable) { throw ParseException(string, e)}
-            valueByIndex[short] ?: throw ParseException(string)
-        }
-        else -> valueByString[string] ?: throw ParseException(string)
-    }
+    override fun convertFromString(string: String) =
+        valueByString[string] ?: throw ParseException(string)
 }

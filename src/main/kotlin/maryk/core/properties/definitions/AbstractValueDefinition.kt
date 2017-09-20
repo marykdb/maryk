@@ -40,20 +40,18 @@ abstract class AbstractValueDefinition<T: Any>(
 
     /** Convert value to String
      * @param value to convertFromBytes
-     * @param optimized true if conversion should be faster to process, false if it should be human readable
      * @return value as String
      */
-    open fun convertToString(value: T, optimized: Boolean = false) = value.toString()
+    open fun convertToString(value: T) = value.toString()
 
     /**
      * Get the value from a string
      * @param string to convertFromBytes
-     * @param optimized true if conversion should be faster to process, false if it should be human readable
      * @return the value
      * @throws ParseException if conversion fails
      */
     @Throws(ParseException::class)
-    abstract fun convertFromString(string: String, optimized: Boolean = false): T
+    abstract fun convertFromString(string: String): T
 
     /** Writes a value to Json
      * @param value: value to write
@@ -61,7 +59,7 @@ abstract class AbstractValueDefinition<T: Any>(
      */
     override fun writeJsonValue(generator: JsonGenerator, value: T) {
         generator.writeString(
-                this.convertToString(value, optimized = generator.optimized)
+                this.convertToString(value)
         )
     }
 
@@ -70,6 +68,6 @@ abstract class AbstractValueDefinition<T: Any>(
         if (parser.currentToken !is JsonToken.OBJECT_VALUE && parser.currentToken !is JsonToken.ARRAY_VALUE) {
             throw ParseException("JSON value for $name should be a simple value")
         }
-        return this.convertFromString(parser.lastValue, optimized = parser.optimized)
+        return this.convertFromString(parser.lastValue)
     }
 }

@@ -28,7 +28,7 @@ class ReferenceDefinition<DO: Any>(
     override fun convertFromBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String, optimized: Boolean) = try {
+    override fun convertFromString(string: String) = try {
         dataModel.key.get(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
 }

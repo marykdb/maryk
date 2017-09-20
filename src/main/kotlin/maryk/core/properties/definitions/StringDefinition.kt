@@ -38,9 +38,9 @@ class StringDefinition(
 
     override fun convertToBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
-    override fun convertToString(value: String, optimized: Boolean) = value
+    override fun convertToString(value: String) = value
 
-    override fun convertFromString(string: String, optimized: Boolean) = string
+    override fun convertFromString(string: String) = string
 
     @Throws(PropertyValidationException::class)
     override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> PropertyReference<*, *>?) {

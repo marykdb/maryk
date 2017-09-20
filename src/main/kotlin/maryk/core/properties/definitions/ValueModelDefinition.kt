@@ -36,10 +36,10 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     override fun convertFromBytes(length: Int, reader: () -> Byte) = this.dataModel.createFromBytes(reader)
 
-    override fun convertToString(value: DO, optimized: Boolean) = value.toBase64()
+    override fun convertToString(value: DO) = value.toBase64()
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String, optimized: Boolean) = try {
+    override fun convertFromString(string: String) = try {
         this.dataModel.createFromString(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
@@ -67,18 +67,8 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
      * @param value: value to write
      * @param generator: to write json to
      */
-    override fun writeJsonValue(generator: JsonGenerator, value: DO) {
-        when(generator.optimized) {
-            true -> super.writeJsonValue(generator, value)
-            false -> dataModel.toJson(generator, value)
-        }
-    }
+    override fun writeJsonValue(generator: JsonGenerator, value: DO) = dataModel.toJson(generator, value)
 
     @Throws(ParseException::class)
-    override fun parseFromJson(parser: JsonParser): DO = when(parser.optimized) {
-        true -> super.parseFromJson(parser)
-        false -> {
-            dataModel.fromJson(parser)
-        }
-    }
+    override fun parseFromJson(parser: JsonParser): DO = dataModel.fromJson(parser)
 }

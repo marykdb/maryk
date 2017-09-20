@@ -59,18 +59,7 @@ internal class TimeTest {
     fun testStringConversion() {
         timesWithMillisToTest.forEach {
             Time.parse(
-                    it.toString(true),
-                    iso8601 = true
-            ) shouldBe it
-        }
-    }
-
-    @Test
-    fun testOptimizedStringConversion() {
-        timesWithMillisToTest.forEach {
-            Time.parse(
-                    it.toString(iso8601 = false),
-                    iso8601 = false
+                    it.toString()
             ) shouldBe it
         }
     }

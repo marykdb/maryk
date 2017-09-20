@@ -32,15 +32,6 @@ internal class ReferenceDefinitionTest {
             def.convertFromString(b) shouldBe it
         }
     }
-
-    @Test
-    fun convertToOptimizedString() {
-        refToTest.forEach {
-            val b = def.convertToString(it, optimized = true)
-            def.convertFromString(b, optimized = true) shouldBe it
-        }
-    }
-
     @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {

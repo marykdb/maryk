@@ -33,14 +33,14 @@ class NumberDefinition<T: Comparable<T>>(
     override fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = type.writeBytes(value, reserver, writer)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String, optimized: Boolean) = try {
+    override fun convertFromString(string: String) = try {
         type.ofString(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
     override fun writeJsonValue(generator: JsonGenerator, value: T) = when {
         type !in arrayOf(UInt64, Int64, Float64, Float32) -> {
             generator.writeValue(
-                    this.convertToString(value, optimized = generator.optimized)
+                    this.convertToString(value)
             )
         }
         else -> super.writeJsonValue(generator, value)

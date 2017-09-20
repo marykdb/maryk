@@ -29,5 +29,5 @@ class DateDefinition(
     override fun convertToBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String, optimized: Boolean) = Date.parse(string, iso8601 = !optimized)
+    override fun convertFromString(string: String) = Date.parse(string)
 }

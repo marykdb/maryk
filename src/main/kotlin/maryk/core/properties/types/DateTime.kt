@@ -31,12 +31,7 @@ data class DateTime(
      * Get value as ISO8601 string
      * (Overwrites data class toString)
      */
-    override fun toString() = this.toString(true)
-
-    override fun toString(iso8601: Boolean) = when {
-        iso8601 -> "${date.toString(iso8601 = true)}T${time.toString(iso8601 = true)}"
-        else -> "${this.toEpochSecond()},${this.milli}"
-    }
+    override fun toString() = "${date}T$time"
 
     override fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         when (precision) {
@@ -106,23 +101,12 @@ data class DateTime(
             else -> throw IllegalArgumentException("Invalid length for bytes for DateTime conversion: " + length)
         }
 
-        override fun parse(value: String, iso8601: Boolean) = try {
-            when {
-                iso8601 -> {
-                    val (date, time) = value.split('T', limit = 2)
-                    DateTime(
-                            Date.parse(date, iso8601 = true),
-                            Time.parse(time)
-                    )
-                }
-                else -> {
-                    val i = value.indexOf(',')
-                    DateTime.ofEpochSecond(
-                            value.substring(0, i).toLong(),
-                            value.substring(i + 1).toShort()
-                    )
-                }
-            }
+        override fun parse(value: String) = try {
+            val (date, time) = value.split('T', limit = 2)
+            DateTime(
+                    Date.parse(date),
+                    Time.parse(time)
+            )
         } catch (e: Throwable) { throw ParseException(value, e) }
     }
 }

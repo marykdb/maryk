@@ -41,15 +41,6 @@ internal class FixedBytesDefinitionTest {
             def.convertFromString(b) shouldBe it
         }
     }
-
-    @Test
-    fun convertToOptimizedString() {
-        fixedBytesToTest.forEach {
-            val b = def.convertToString(it, optimized = true)
-            def.convertFromString(b, optimized = true) shouldBe it
-        }
-    }
-
     @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {

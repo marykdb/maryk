@@ -83,7 +83,7 @@ class MapDefinition<K: Any, V: Any>(
         generator.writeStartObject()
         value.forEach { k, v ->
             generator.writeFieldName(
-                    keyDefinition.convertToString(k, generator.optimized)
+                    keyDefinition.convertToString(k)
             )
             valueDefinition.writeJsonValue(generator, v)
         }
@@ -97,7 +97,7 @@ class MapDefinition<K: Any, V: Any>(
         val map: MutableMap<K, V> = mutableMapOf()
 
         while (parser.nextToken() !is JsonToken.END_OBJECT) {
-            val key = keyDefinition.convertFromString(parser.lastValue, optimized = parser.optimized)
+            val key = keyDefinition.convertFromString(parser.lastValue)
             parser.nextToken()
 
             map.put(

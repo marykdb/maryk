@@ -34,18 +34,7 @@ internal class DateTest {
     fun testStringConversion() {
         datesToTest.forEach {
             Date.parse(
-                    it.toString(true),
-                    iso8601 = true
-            ) shouldBe it
-        }
-    }
-
-    @Test
-    fun testStringOptimizedConversion() {
-        datesToTest.forEach {
-            Date.parse(
-                    it.toString(false),
-                    iso8601 = false
+                    it.toString()
             ) shouldBe it
         }
     }

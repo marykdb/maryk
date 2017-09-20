@@ -29,5 +29,5 @@ class TimeDefinition(
     override fun convertFromBytes(length: Int, reader:() -> Byte) = Time.fromByteReader(length, reader)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String, optimized: Boolean) = Time.parse(string, iso8601 = !optimized)
+    override fun convertFromString(string: String) = Time.parse(string)
 }

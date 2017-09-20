@@ -55,14 +55,6 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun convertToOptimizedString() {
-        flexBytesToTest.forEach {
-            val b = def.convertToString(it, optimized = true)
-            def.convertFromString(b, optimized = true) shouldBe it
-        }
-    }
-
-    @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
             def.convertFromString("wrong")

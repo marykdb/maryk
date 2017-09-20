@@ -30,7 +30,7 @@ data class Time(
     }
 
     /** Get the millis since midnight */
-    private val millisOfDay: Int get() {
+    val millisOfDay: Int get() {
         var total = hour * MILLIS_PER_HOUR
         total += minute * MILLIS_PER_MINUTE
         total += second * MILLIS_PER_SECOND
@@ -69,18 +69,13 @@ data class Time(
      * Get value as ISO8601 string
      * (Overwrites data class toString)
      */
-    override fun toString() = this.toString(true)
-
-    override fun toString(iso8601: Boolean) = when {
-        iso8601 -> {
-            val out = "${hour.zeroFill(2)}:${minute.zeroFill(2)}"
-            when {
-                milli > 0 -> out + ":${second.zeroFill(2)}.${milli.zeroFill(3)}"
-                second > 0 -> out + ":${second.zeroFill(2)}"
-                else -> out
-            }
+    override fun toString(): String {
+        val out = "${hour.zeroFill(2)}:${minute.zeroFill(2)}"
+        return when {
+            milli > 0 -> out + ":${second.zeroFill(2)}.${milli.zeroFill(3)}"
+            second > 0 -> out + ":${second.zeroFill(2)}"
+            else -> out
         }
-        else -> this.millisOfDay.toString()
     }
 
     companion object: IsTimeObject<Time>() {
@@ -139,27 +134,18 @@ data class Time(
         }
 
         @Throws(ParseException::class)
-        override fun parse(value: String, iso8601: Boolean) = when {
-            iso8601 -> {
-                val result = timeRegex.matchEntire(value)
-                        ?: throw ParseException("Invalid Time string: $value")
-                val ( hour, minute, _, second, _,  milli) = result.destructured
+        override fun parse(value: String): Time {
+            val result = timeRegex.matchEntire(value)
+                    ?: throw ParseException("Invalid Time string: $value")
+            val ( hour, minute, _, second, _,  milli) = result.destructured
 
-                when {
-                    milli.isNotBlank() -> {
-                        Time(hour.toByte(), minute.toByte(), second.toByte(), milli.substring(0, 3).toShort())
-                    }
-                    second.isNotBlank() -> Time(hour.toByte(), minute.toByte(), second.toByte())
-                    hour.isNotBlank() -> Time(hour.toByte(), minute.toByte())
-                    else -> throw ParseException("Invalid Time string: $value")
+            return when {
+                milli.isNotBlank() -> {
+                    Time(hour.toByte(), minute.toByte(), second.toByte(), milli.substring(0, 3).toShort())
                 }
-            }
-            else -> {
-                try {
-                    Time.ofMilliOfDay(value.toInt())
-                } catch (e: NumberFormatException) {
-                    throw ParseException("Invalid Time string: $value")
-                }
+                second.isNotBlank() -> Time(hour.toByte(), minute.toByte(), second.toByte())
+                hour.isNotBlank() -> Time(hour.toByte(), minute.toByte())
+                else -> throw ParseException("Invalid Time string: $value")
             }
         }
 

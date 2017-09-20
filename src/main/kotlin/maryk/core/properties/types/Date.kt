@@ -52,16 +52,10 @@ data class Date(
         this.epochDay.writeBytes(writer)
     }
 
-    /**
-     * Get value as ISO8601 string
+    /** Get value as ISO8601 string
      * (Overwrites data class toString)
      */
-    override fun toString() = this.toString(true)
-
-    override fun toString(iso8601: Boolean) = when {
-        iso8601 -> "$year-${month.zeroFill(2)}-${day.zeroFill(2)}"
-        else -> this.epochDay.toString()
-    }
+    override fun toString() = "$year-${month.zeroFill(2)}-${day.zeroFill(2)}"
 
     companion object: IsTemporalObject<Date>() {
         var MIN = Date(-999_999_999, 1, 1)
@@ -123,42 +117,37 @@ data class Date(
             initLong(reader)
         )
 
-        override fun parse(value: String, iso8601: Boolean) = when {
-            iso8601 -> {
-                val result = this.dateRegex.matchEntire(value) ?: throw ParseException(value)
+        override fun parse(value: String): Date {
+            val result = this.dateRegex.matchEntire(value) ?: throw ParseException(value)
 
-                val (year, month, day) = result.destructured
+            val (year, month, day) = result.destructured
 
-                val y = year.toInt()
-                val m = month.toByte()
-                val d = day.toByte()
+            val y = year.toInt()
+            val m = month.toByte()
+            val d = day.toByte()
 
-                when (m) {
-                    2.toByte() -> when {
-                        d in (1..28) -> {}
-                        d == 29.toByte() && isLeapYear(y) -> {}
-                        else -> throw ParseException(value)
-                    }
-                    in byteArrayOf(1, 3, 5, 7, 8, 10, 12) -> when (d) {
-                        in (1..31) -> {}
-                        else -> throw ParseException(value)
-                    }
-                    in byteArrayOf(4, 6, 9, 11) -> when(d) {
-                        in (1..30) -> {}
-                        else -> throw ParseException(value)
-                    }
+            when (m) {
+                2.toByte() -> when {
+                    d in (1..28) -> {}
+                    d == 29.toByte() && isLeapYear(y) -> {}
                     else -> throw ParseException(value)
                 }
-
-                Date(
-                    year = y,
-                    month = m,
-                    day = d
-                )
+                in byteArrayOf(1, 3, 5, 7, 8, 10, 12) -> when (d) {
+                    in (1..31) -> {}
+                    else -> throw ParseException(value)
+                }
+                in byteArrayOf(4, 6, 9, 11) -> when(d) {
+                    in (1..30) -> {}
+                    else -> throw ParseException(value)
+                }
+                else -> throw ParseException(value)
             }
-            else -> try{
-                Date.ofEpochDay(value.toLong())
-            } catch (e: Throwable) { throw ParseException(value, e) }
+
+            return Date(
+                year = y,
+                month = m,
+                day = d
+            )
         }
 
         /** Get the current date at UTC timezone */

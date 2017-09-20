@@ -45,14 +45,6 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convertToOptimizedString() {
-        intArray.forEach {
-            val b = def.convertToString(it, true)
-            def.convertFromString(b, true) shouldBe it
-        }
-    }
-
-    @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
             def.convertFromString("wrong")

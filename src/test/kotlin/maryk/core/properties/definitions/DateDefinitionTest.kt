@@ -37,27 +37,15 @@ internal class DateDefinitionTest {
     @Test
     fun convertString() {
         datesToTest.forEach {
-            val b = def.convertToString(it, optimized = false)
-            def.convertFromString(b, optimized = false) shouldBe it
-        }
-    }
-
-    @Test
-    fun convertOptimizedString() {
-        datesToTest.forEach {
-            val b = def.convertToString(it, optimized = true)
-            def.convertFromString(b, optimized = true) shouldBe it
+            val b = def.convertToString(it)
+            def.convertFromString(b) shouldBe it
         }
     }
 
     @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
-            def.convertFromString("wrong", optimized = false)
-        }
-
-        shouldThrow<ParseException> {
-            def.convertFromString("wrong", optimized = true)
+            def.convertFromString("wrong")
         }
     }
 }

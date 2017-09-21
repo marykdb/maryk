@@ -1,6 +1,8 @@
 package maryk.core.extensions
 
 import io.kotlintest.matchers.shouldBe
+import io.kotlintest.matchers.shouldThrow
+import maryk.core.properties.exceptions.ParseException
 import org.junit.Test
 
 internal class HexKtTest {
@@ -14,10 +16,18 @@ internal class HexKtTest {
     @Test
     fun testFromHexConversion(){
         bytes contentEquals initByteArrayByHex("00ff58") shouldBe true
+        bytes contentEquals initByteArrayByHex("00FF58") shouldBe true
     }
 
     @Test
     fun testHexConversionBothWays(){
         bytes contentEquals initByteArrayByHex(bytes.toHex()) shouldBe true
+    }
+
+    @Test
+    fun testFromInvalidHexConversion(){
+        shouldThrow<ParseException> {
+            bytes contentEquals initByteArrayByHex("wrongg")
+        }
     }
 }

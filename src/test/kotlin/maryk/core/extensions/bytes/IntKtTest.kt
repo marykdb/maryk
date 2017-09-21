@@ -4,6 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.exceptions.ParseException
 import org.junit.Test
 
 internal class IntKtTest {
@@ -106,5 +107,14 @@ internal class IntKtTest {
 
         bc.bytes!!.toHex() shouldBe hexValue
         bc.reset()
+    }
+
+    @Test
+    fun testWrongVarInt() {
+        val bytes = ByteArray(6, { -1 })
+        var index = 0
+        shouldThrow<ParseException> {
+            initIntByVar { bytes[index++] }
+        }
     }
 }

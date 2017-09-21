@@ -1,8 +1,10 @@
 package maryk.core.extensions.bytes
 
 import io.kotlintest.matchers.shouldBe
+import io.kotlintest.matchers.shouldThrow
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.exceptions.ParseException
 import org.junit.Test
 
 internal class ByteKtTest {
@@ -49,6 +51,9 @@ internal class ByteKtTest {
 
     @Test
     fun testStreamingVarIntZigZagConversion() {
+        fun testZigZagByteContent(bc: ByteCollector, it: Byte, hexValue: String)
+                = this.testByteContent(bc, it.encodeZigZag(), hexValue)
+
         val bc = ByteCollector()
 
         testZigZagByteContent(bc, 22, "2c")
@@ -60,10 +65,6 @@ internal class ByteKtTest {
         testZigZagByteContent(bc, Byte.MIN_VALUE, "ff01")
     }
 
-    private fun testZigZagByteContent(bc: ByteCollector, it: Byte, hexValue: String) {
-        return this.testByteContent(bc, it.encodeZigZag(), hexValue)
-    }
-
     private fun testByteContent(bc: ByteCollector, it: Byte, hexValue: String) {
         bc.reserve(it.computeVarByteSize())
         it.writeVarBytes(bc::write)
@@ -71,5 +72,14 @@ internal class ByteKtTest {
 
         bc.bytes!!.toHex() shouldBe hexValue
         bc.reset()
+    }
+
+    @Test
+    fun testWrongVarInt() {
+        val bytes = ByteArray(3, { -1 })
+        var index = 0
+        shouldThrow<ParseException> {
+            initByteByVar { bytes[index++] }
+        }
     }
 }

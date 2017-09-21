@@ -1,8 +1,10 @@
 package maryk.core.extensions.bytes
 
 import io.kotlintest.matchers.shouldBe
+import io.kotlintest.matchers.shouldThrow
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.exceptions.ParseException
 import org.junit.Test
 
 internal class ShortKtTest {
@@ -71,5 +73,14 @@ internal class ShortKtTest {
         bc.bytes!!.toHex() shouldBe hexValue
 
         bc.reset()
+    }
+
+    @Test
+    fun testWrongVarInt() {
+        val bytes = ByteArray(4, { -1 })
+        var index = 0
+        shouldThrow<ParseException> {
+            initShortByVar { bytes[index++] }
+        }
     }
 }

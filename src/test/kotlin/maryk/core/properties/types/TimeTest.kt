@@ -29,6 +29,13 @@ internal class TimeTest {
     }
 
     @Test
+    fun testMillisOfDay(){
+        Time(0, 0, 0, 0).millisOfDay shouldBe 0
+        Time(12, 3, 44, 345).millisOfDay shouldBe 43424345
+        Time(24, 59, 59, 999).millisOfDay shouldBe 89999999
+    }
+
+    @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
         timesWithSecondsToTest.forEach {

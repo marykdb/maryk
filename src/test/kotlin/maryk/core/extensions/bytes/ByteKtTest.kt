@@ -1,6 +1,7 @@
 package maryk.core.extensions.bytes
 
 import io.kotlintest.matchers.shouldBe
+import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import org.junit.Test
 

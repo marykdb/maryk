@@ -27,6 +27,14 @@ internal fun initShort(reader: () -> Byte): Short {
     return short.toShort()
 }
 
+/** Encodes the Short in zigzag pattern so negative values are
+ * able to encode much more efficiently into varInt
+ */
+internal fun Short.encodeZigZag() = this.toInt().encodeZigZag().toShort()
+
+/** Decodes the Short out of zigzag pattern so bytes have the normal native order again */
+internal fun Short.decodeZigZag() = (this.toInt() and 0xFFFF).decodeZigZag().toShort()
+
 /** Write the bytes of this Int as a variable int to a writer
  * @param writer to write this Int to
  */
@@ -64,9 +72,8 @@ internal fun initShortByVar(reader: () -> Byte): Short {
     throw ParseException("Malformed valInt")
 }
 
-/**Computes the byte size of the variable int
- */
-fun Short.computeVarByteSize(): Int {
+/** Computes the byte size of the variable int */
+internal fun Short.computeVarByteSize(): Int {
     val asInt = this.toInt()
     return when {
         asInt and (0xffff shl 7) == 0 -> 1

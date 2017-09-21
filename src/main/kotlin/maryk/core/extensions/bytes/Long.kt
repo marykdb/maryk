@@ -63,6 +63,14 @@ internal fun Long.writeVarBytes(writer: (byte: Byte) -> Unit) {
     }
 }
 
+/** Encodes the Long in zigzag pattern so negative values are
+ * able to encode much more efficiently into varInt
+ */
+internal fun Long.encodeZigZag() = this shl 1 xor (this shr 63)
+
+/** Decodes the Long out of zigzag pattern so bytes have the normal native order again */
+internal fun Long.decodeZigZag() = this ushr 1 xor -(this and 1)
+
 /** Converts reader with var bytes to Long
  * @param reader to read bytes from
  * @return Int represented by bytes
@@ -82,7 +90,7 @@ internal fun initLongByVar(reader: () -> Byte): Long {
 }
 
 /** Computes the byte size of the variable int */
-fun Long.computeVarByteSize(): Int = when {
+internal fun Long.computeVarByteSize(): Int = when {
     this and (Long.MAX_VALUE shl 7) == 0L -> 1
     this and (Long.MAX_VALUE shl 14) == 0L -> 2
     this and (Long.MAX_VALUE shl 21) == 0L -> 3

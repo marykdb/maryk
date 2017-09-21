@@ -43,6 +43,14 @@ internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
     return int
 }
 
+/** Encodes the Int in zigzag pattern so negative values are
+ * able to encode much more efficiently into varInt
+ */
+internal fun Int.encodeZigZag() = this shl 1 xor (this shr 31)
+
+/** Decodes the Int out of zigzag pattern so bytes have the normal native order again */
+internal fun Int.decodeZigZag() = this ushr 1 xor -(this and 1)
+
 /** Write the bytes of this Int as a variable int to a writer
  * @param writer to write this Int to
  */
@@ -79,7 +87,7 @@ internal fun initIntByVar(reader: () -> Byte): Int {
 
 /**Computes the byte size of the variable int
  */
-fun Int.computeVarByteSize(): Int = when {
+internal fun Int.computeVarByteSize(): Int = when {
     this and (Int.MAX_VALUE shl 7) == 0 -> 1
     this and (Int.MAX_VALUE shl 14) == 0 -> 2
     this and (Int.MAX_VALUE shl 21) == 0 -> 3

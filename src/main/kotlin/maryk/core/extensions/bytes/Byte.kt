@@ -25,6 +25,14 @@ internal fun Byte.writeBytes(writer: (byte: Byte) -> Unit) {
  */
 internal fun initByte(reader: () -> Byte) = reader() xor SIGNBYTE and MAXBYTE
 
+/** Encodes the Byte in zigzag pattern so negative values are
+ * able to encode much more efficiently into varInt
+ */
+internal fun Byte.encodeZigZag() = this.toInt().encodeZigZag().toByte()
+
+/** Decodes the Short out of zigzag pattern so bytes have the normal native order again */
+internal fun Byte.decodeZigZag() = (this.toInt() and 0xFF).decodeZigZag().toByte()
+
 /** Write the bytes of this Int as a variable int to a writer
  * @param writer to write this Int to
  */
@@ -55,9 +63,8 @@ internal fun initByteByVar(reader: () -> Byte): Byte {
     throw ParseException("Malformed valInt")
 }
 
-/** Computes the byte size of the variable int
- */
-fun Byte.computeVarByteSize(): Int {
+/** Computes the byte size of the variable int */
+internal fun Byte.computeVarByteSize(): Int {
     val asInt = this.toInt()
     return when {
         asInt and (0xff shl 7) == 0 -> 1

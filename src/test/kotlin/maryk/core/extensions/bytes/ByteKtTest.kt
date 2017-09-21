@@ -28,6 +28,13 @@ internal class ByteKtTest {
     }
 
     @Test
+    fun testZigZagAndBack() {
+        bytesToTest.forEach {
+            it.encodeZigZag().decodeZigZag() shouldBe it
+        }
+    }
+
+    @Test
     fun testStreamingVarIntConversion() {
         val bc = ByteCollector()
 
@@ -38,6 +45,23 @@ internal class ByteKtTest {
         testByteContent(bc, -1, "ff01")
         testByteContent(bc, Byte.MAX_VALUE, "7f")
         testByteContent(bc, Byte.MIN_VALUE, "8001")
+    }
+
+    @Test
+    fun testStreamingVarIntZigZagConversion() {
+        val bc = ByteCollector()
+
+        testZigZagByteContent(bc, 22, "2c")
+        testZigZagByteContent(bc, -22, "2b")
+        testZigZagByteContent(bc, 1, "02")
+        testZigZagByteContent(bc, 0, "00")
+        testZigZagByteContent(bc, -1, "01")
+        testZigZagByteContent(bc, Byte.MAX_VALUE, "fe01")
+        testZigZagByteContent(bc, Byte.MIN_VALUE, "ff01")
+    }
+
+    private fun testZigZagByteContent(bc: ByteCollector, it: Byte, hexValue: String) {
+        return this.testByteContent(bc, it.encodeZigZag(), hexValue)
     }
 
     private fun testByteContent(bc: ByteCollector, it: Byte, hexValue: String) {

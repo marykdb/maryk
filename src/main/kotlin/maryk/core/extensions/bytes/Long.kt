@@ -1,5 +1,6 @@
 package maryk.core.extensions.bytes
 
+import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 
@@ -43,4 +44,53 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
         long = long xor (reader().toLong() and 0xFF)
     }
     return long
+}
+
+
+/** Write the bytes of this Long as a variable int to a writer
+ * @param writer to write this Int to
+ */
+internal fun Long.writeVarBytes(writer: (byte: Byte) -> Unit) {
+    var value = this
+    while (true) {
+        if (value and 0x7F.inv() == 0L) {
+            writer(value.toByte())
+            return
+        } else {
+            writer((value and 0x7F or 0x80).toByte())
+            value = value ushr 7
+        }
+    }
+}
+
+/** Converts reader with var bytes to Long
+ * @param reader to read bytes from
+ * @return Int represented by bytes
+ */
+internal fun initLongByVar(reader: () -> Byte): Long {
+    var shift = 0
+    var result = 0L
+    while (shift < 64) {
+        val b = reader().toLong()
+        result = result or ((b and 0x7FL) shl shift)
+        if (b and 0x80L == 0L) {
+            return result
+        }
+        shift += 7
+    }
+    throw ParseException("Malformed varInt")
+}
+
+/** Computes the byte size of the variable int */
+fun Long.computeVarByteSize(): Int = when {
+    this and (Long.MAX_VALUE shl 7) == 0L -> 1
+    this and (Long.MAX_VALUE shl 14) == 0L -> 2
+    this and (Long.MAX_VALUE shl 21) == 0L -> 3
+    this and (Long.MAX_VALUE shl 28) == 0L -> 4
+    this and (Long.MAX_VALUE shl 35) == 0L -> 5
+    this and (Long.MAX_VALUE shl 42) == 0L -> 6
+    this and (Long.MAX_VALUE shl 49) == 0L -> 7
+    this and (Long.MAX_VALUE shl 56) == 0L -> 8
+    this and (Long.MAX_VALUE shl 63) == 0L -> 9
+    else -> 10
 }

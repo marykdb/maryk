@@ -25,4 +25,26 @@ internal class ByteKtTest {
             bc.reset()
         }
     }
+
+    @Test
+    fun testStreamingVarIntConversion() {
+        val bc = ByteCollector()
+
+        testByteContent(bc, 22, "16")
+        testByteContent(bc, -22, "ea01")
+        testByteContent(bc, 1, "01")
+        testByteContent(bc, 0, "00")
+        testByteContent(bc, -1, "ff01")
+        testByteContent(bc, Byte.MAX_VALUE, "7f")
+        testByteContent(bc, Byte.MIN_VALUE, "8001")
+    }
+
+    private fun testByteContent(bc: ByteCollector, it: Byte, hexValue: String) {
+        bc.reserve(it.computeVarByteSize())
+        it.writeVarBytes(bc::write)
+        initByteByVar(bc::read) shouldBe it
+
+        bc.bytes!!.toHex() shouldBe hexValue
+        bc.reset()
+    }
 }

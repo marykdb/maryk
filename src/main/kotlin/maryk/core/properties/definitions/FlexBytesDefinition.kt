@@ -22,9 +22,9 @@ class FlexBytesDefinition(
 ): AbstractSimpleDefinition<Bytes>(
     name, index, indexed, searchable, required, final, unique, minValue, maxValue
 ), HasSizeDefinition {
-    override fun convertFromBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(length, reader)
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(length, reader)
 
-    override fun convertToBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun convertToStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = try {

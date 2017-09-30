@@ -65,7 +65,7 @@ abstract class RootDataModel<DM: Any>(
                 val value = it.getValue(this@RootDataModel, dataObject)
 
                 @Suppress("UNCHECKED_CAST")
-                (it as IsFixedBytesEncodable<Any>).convertToBytes(value, {}) {
+                (it as IsFixedBytesEncodable<Any>).convertToStorageBytes(value, {}) {
                     bytes[index++] = it
                 }
 

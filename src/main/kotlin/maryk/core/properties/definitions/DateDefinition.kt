@@ -24,9 +24,9 @@ class DateDefinition(
 
     override fun createNow() = Date.nowUTC()
 
-    override fun convertFromBytes(length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
 
-    override fun convertToBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun convertToStorageBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = Date.parse(string)

@@ -29,24 +29,24 @@ abstract class AbstractValueDefinition<T: Any>(
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    abstract fun convertFromBytes(length: Int, reader:() -> Byte): T
+    abstract fun convertFromStorageBytes(length: Int, reader:() -> Byte): T
 
     /** Convert a value to bytes
      * @param value to convert
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    abstract fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    abstract fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
 
     /** Convert value to String
-     * @param value to convertFromBytes
+     * @param value to convert
      * @return value as String
      */
     open fun convertToString(value: T) = value.toString()
 
     /**
      * Get the value from a string
-     * @param string to convertFromBytes
+     * @param string to convert
      * @return the value
      * @throws ParseException if conversion fails
      */

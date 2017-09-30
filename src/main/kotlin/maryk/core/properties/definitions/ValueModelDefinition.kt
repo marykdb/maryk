@@ -29,12 +29,12 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 ) : AbstractSimpleDefinition<DO>(
         name, index, indexed, searchable, required, final, unique, minValue, maxValue
 ) {
-    override fun convertToBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun convertToStorageBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(value._bytes.size)
         value._bytes.writeBytes(writer)
     }
 
-    override fun convertFromBytes(length: Int, reader: () -> Byte) = this.dataModel.createFromBytes(reader)
+    override fun convertFromStorageBytes(length: Int, reader: () -> Byte) = this.dataModel.createFromBytes(reader)
 
     override fun convertToString(value: DO) = value.toBase64()
 

@@ -39,8 +39,8 @@ internal class DateTimeDefinitionTest {
     fun convertStreamingBytesMillis() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
-            defMilli.convertToBytes(it, byteCollector::reserve, byteCollector::write)
-            defMilli.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            defMilli.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            defMilli.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }
@@ -49,8 +49,8 @@ internal class DateTimeDefinitionTest {
     fun convertStreamingBytesSeconds() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
-            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }

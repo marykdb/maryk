@@ -20,10 +20,10 @@ class TypeId(
         return multiType.typeIndex
     }
 
-    override fun convertToBytes(value: Int, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun convertToStorageBytes(value: Int, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(2)
         (value + Short.MIN_VALUE).toShort().writeBytes(writer)
     }
 
-    override fun convertFromBytes(length: Int, reader: () -> Byte) = initShort(reader).toInt() - Short.MIN_VALUE
+    override fun convertFromStorageBytes(length: Int, reader: () -> Byte) = initShort(reader).toInt() - Short.MIN_VALUE
 }

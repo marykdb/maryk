@@ -32,7 +32,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
             val def = it.propertyDefinition as IsFixedBytesEncodable<*>
             values.put(
                     key = def.index.toInt(),
-                    value = def.convertFromBytes(def.byteSize, reader)
+                    value = def.convertFromStorageBytes(def.byteSize, reader)
             )
         }
         return this.construct(values)
@@ -51,7 +51,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         this.definitions.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it.propertyDefinition as IsFixedBytesEncodable<in Any>
-            def.convertToBytes(inputs[index], {}, {
+            def.convertToStorageBytes(inputs[index], {}, {
                 bytes[offset++] = it
             })
 
@@ -64,7 +64,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
     }
 
     /** Converts String to DataObject
-     * @param value to convertFromBytes
+     * @param value to convert
      * @return converted DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */

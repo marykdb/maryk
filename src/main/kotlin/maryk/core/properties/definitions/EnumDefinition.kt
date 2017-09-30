@@ -29,10 +29,10 @@ class EnumDefinition<E: IndexedEnum<E>>(
         values.associate { Pair(it.indexAsShort, it) }
     }
 
-    override fun convertFromBytes(length: Int, reader:() -> Byte) =
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) =
             valueByIndex[initShort(reader)] ?: throw ParseException("Enum index does not exist ${initShort(reader)}")
 
-    override fun convertToBytes(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun convertToStorageBytes(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(2)
         value.indexAsShort.writeBytes(writer)
     }

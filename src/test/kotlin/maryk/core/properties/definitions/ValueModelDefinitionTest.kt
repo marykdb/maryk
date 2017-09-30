@@ -31,8 +31,8 @@ internal class ValueModelDefinitionTest {
     @Test
     fun testConvertStreamableBytes() {
         val bc = ByteCollector()
-        def.convertToBytes(value, bc::reserve, bc::write)
-        val new = def.convertFromBytes(bc.size, bc::read)
+        def.convertToStorageBytes(value, bc::reserve, bc::write)
+        val new = def.convertFromStorageBytes(bc.size, bc::read)
 
         new shouldBe value
     }

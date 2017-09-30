@@ -19,9 +19,9 @@ class BooleanDefinition(
 ), IsFixedBytesEncodable<Boolean> {
     override val byteSize = 1
 
-    override fun convertFromBytes(length: Int, reader:() -> Byte) = initBoolean(reader)
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = initBoolean(reader)
 
-    override fun convertToBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun convertToStorageBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(1)
         value.writeBytes(writer)
     }

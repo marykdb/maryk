@@ -34,9 +34,9 @@ class StringDefinition(
         }
     }
 
-    override fun convertFromBytes(length: Int, reader:() -> Byte) = initString(length, reader)
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = initString(length, reader)
 
-    override fun convertToBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun convertToStorageBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     override fun convertToString(value: String) = value
 

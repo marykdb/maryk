@@ -26,7 +26,7 @@ class TimeDefinition(
 
     override fun createNow() = Time.nowUTC()
 
-    override fun convertFromBytes(length: Int, reader:() -> Byte) = Time.fromByteReader(length, reader)
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Time.fromByteReader(length, reader)
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = Time.parse(string)

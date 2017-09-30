@@ -40,8 +40,8 @@ internal class FlexBytesDefinitionTest {
     fun testStreamingConversion() {
         val byteCollector = ByteCollector()
         flexBytesToTest.forEach {
-            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }

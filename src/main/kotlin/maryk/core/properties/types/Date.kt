@@ -101,7 +101,7 @@ data class Date(
             yearEst += adjust  // reset any negative year
             val marchDoy0 = doyEst.toInt()
 
-            // convertFromBytes march-based values back to january-based
+            // convert march-based values back to january-based
             val marchMonth0 = (marchDoy0 * 5 + 2) / 153
             val month = (marchMonth0 + 2) % 12 + 1
             val dom = marchDoy0 - (marchMonth0 * 306 + 5) / 10 + 1

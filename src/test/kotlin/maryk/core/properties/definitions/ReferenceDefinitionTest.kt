@@ -43,8 +43,8 @@ internal class ReferenceDefinitionTest {
     fun testStreamingConversion() {
         val byteCollector = ByteCollector()
         refToTest.forEach {
-            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }

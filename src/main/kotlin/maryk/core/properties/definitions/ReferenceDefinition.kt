@@ -21,11 +21,11 @@ class ReferenceDefinition<DO: Any>(
 ), IsFixedBytesEncodable<Key<DO>> {
     override val byteSize = dataModel.key.size
 
-    override fun convertToBytes(value: Key<DO>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun convertToStorageBytes(value: Key<DO>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         value.writeBytes(reserver, writer)
     }
 
-    override fun convertFromBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
+    override fun convertFromStorageBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = try {

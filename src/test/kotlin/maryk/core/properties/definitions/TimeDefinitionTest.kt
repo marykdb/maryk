@@ -40,8 +40,8 @@ internal class TimeDefinitionTest {
     fun convertStreamingBytesMillis() {
         val byteCollector = ByteCollector()
         arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
-            defMilli.convertToBytes(it, byteCollector::reserve, byteCollector::write)
-            defMilli.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            defMilli.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            defMilli.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }
@@ -50,8 +50,8 @@ internal class TimeDefinitionTest {
     fun convertStreamingBytesSeconds() {
         val byteCollector = ByteCollector()
         arrayOf(Time.MAX_IN_SECONDS, Time.MIN).forEach {
-            def.convertToBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }

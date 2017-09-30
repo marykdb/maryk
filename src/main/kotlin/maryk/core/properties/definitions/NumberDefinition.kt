@@ -28,9 +28,9 @@ class NumberDefinition<T: Comparable<T>>(
 
     override fun createRandom() = type.createRandom()
 
-    override fun convertFromBytes(length: Int, reader:() -> Byte) = type.fromByteReader(length, reader)
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = type.fromByteReader(length, reader)
 
-    override fun convertToBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = type.writeBytes(value, reserver, writer)
+    override fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = type.writeBytes(value, reserver, writer)
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = try {

@@ -41,8 +41,8 @@ internal class UInt64Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         uInt64values.forEach {
-            UInt64.writeBytes(it, bc::reserve, bc::write)
-            UInt64.fromByteReader(bc.size, bc::read) shouldBe it
+            UInt64.writeStorageBytes(it, bc::reserve, bc::write)
+            UInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

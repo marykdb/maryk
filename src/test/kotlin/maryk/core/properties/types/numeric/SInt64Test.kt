@@ -33,8 +33,8 @@ internal class SInt64Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         int64values.forEach {
-            SInt64.writeBytes(it, bc::reserve, bc::write)
-            SInt64.fromByteReader(bc.size, bc::read) shouldBe it
+            SInt64.writeStorageBytes(it, bc::reserve, bc::write)
+            SInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

@@ -33,8 +33,8 @@ internal class SInt8Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         int8values.forEach {
-            SInt8.writeBytes(it, bc::reserve, bc::write)
-            SInt8.fromByteReader(bc.size, bc::read) shouldBe it
+            SInt8.writeStorageBytes(it, bc::reserve, bc::write)
+            SInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

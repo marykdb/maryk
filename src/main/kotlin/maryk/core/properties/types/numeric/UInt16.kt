@@ -8,14 +8,14 @@ import maryk.core.extensions.random
 class UInt16 internal constructor(number: Short): UInt<Short>(number) {
     override fun compareTo(other: UInt<Short>) = number.compareTo(other.number)
     override fun toString() = (number.toInt() - Short.MIN_VALUE).toString()
-    override fun writeBytes(writer: (Byte) -> Unit) = number.writeBytes(writer)
+    override fun writeStorageBytes(writer: (Byte) -> Unit) = number.writeBytes(writer)
     companion object : UnsignedNumberDescriptor<UInt16>(
             size = 2,
             MIN_VALUE = UInt16(Short.MIN_VALUE),
             MAX_VALUE = UInt16(Short.MAX_VALUE)
     ) {
-        override fun fromByteReader(length: Int, reader: () -> Byte) = UInt16(initShort(reader))
-        override fun writeBytes(value: UInt16, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
+        override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt16(initShort(reader))
+        override fun writeStorageBytes(value: UInt16, writer: (byte: Byte) -> Unit) = value.writeStorageBytes(writer)
         override fun ofString(value: String) = UInt16((value.toInt() + Short.MIN_VALUE).toShort())
         override fun createRandom() = UInt16(Short.random())
     }

@@ -39,8 +39,8 @@ internal class UInt32Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         uInt32values.forEach {
-            UInt32.writeBytes(it, bc::reserve, bc::write)
-            UInt32.fromByteReader(bc.size, bc::read) shouldBe it
+            UInt32.writeStorageBytes(it, bc::reserve, bc::write)
+            UInt32.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

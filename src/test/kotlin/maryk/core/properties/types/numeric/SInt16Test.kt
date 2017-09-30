@@ -32,8 +32,8 @@ internal class SInt16Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         int16values.forEach {
-            SInt16.writeBytes(it, bc::reserve, bc::write)
-            SInt16.fromByteReader(bc.size, bc::read) shouldBe it
+            SInt16.writeStorageBytes(it, bc::reserve, bc::write)
+            SInt16.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

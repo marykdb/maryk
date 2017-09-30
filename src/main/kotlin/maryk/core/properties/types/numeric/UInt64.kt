@@ -18,14 +18,14 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
         number.writeBytes({ bytes[index++] = it })
         return "0x${bytes.toHex()}"
     }
-    override fun writeBytes(writer: (Byte) -> Unit) = number.writeBytes(writer)
+    override fun writeStorageBytes(writer: (Byte) -> Unit) = number.writeBytes(writer)
     companion object : UnsignedNumberDescriptor<UInt64>(
             size = 8,
             MIN_VALUE = UInt64(Long.MIN_VALUE),
             MAX_VALUE = UInt64(Long.MAX_VALUE)
     ) {
-        override fun fromByteReader(length: Int, reader: () -> Byte) = UInt64(initLong(reader))
-        override fun writeBytes(value: UInt64, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
+        override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt64(initLong(reader))
+        override fun writeStorageBytes(value: UInt64, writer: (byte: Byte) -> Unit) = value.writeStorageBytes(writer)
         override fun ofString(value: String): UInt64 {
             if(value.startsWith("0x") && value.length < 4) { throw ParseException("Long should be represented by hex") }
             val bytes = initByteArrayByHex(value.substring(2))

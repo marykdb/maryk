@@ -37,8 +37,8 @@ internal class Float32Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         float32values.forEach {
-            Float32.writeBytes(it, bc::reserve, bc::write)
-            Float32.fromByteReader(bc.size, bc::read) shouldBe it
+            Float32.writeStorageBytes(it, bc::reserve, bc::write)
+            Float32.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

@@ -38,8 +38,8 @@ internal class UInt16Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         uInt16values.forEach {
-            UInt16.writeBytes(it, bc::reserve, bc::write)
-            UInt16.fromByteReader(bc.size, bc::read) shouldBe it
+            UInt16.writeStorageBytes(it, bc::reserve, bc::write)
+            UInt16.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

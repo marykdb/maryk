@@ -37,8 +37,8 @@ internal class UInt8Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         uInt8values.forEach {
-            UInt8.writeBytes(it, bc::reserve, bc::write)
-            UInt8.fromByteReader(bc.size, bc::read) shouldBe it
+            UInt8.writeStorageBytes(it, bc::reserve, bc::write)
+            UInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

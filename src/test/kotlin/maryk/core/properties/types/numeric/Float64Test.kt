@@ -37,8 +37,8 @@ internal class Float64Test {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         float64values.forEach {
-            Float64.writeBytes(it, bc::reserve, bc::write)
-            assertEquals(it, Float64.fromByteReader(bc.size, bc::read))
+            Float64.writeStorageBytes(it, bc::reserve, bc::write)
+            assertEquals(it, Float64.fromStorageByteReader(bc.size, bc::read))
             bc.reset()
         }
     }

@@ -66,6 +66,31 @@ abstract class DataModel<DO: Any>(
         }
     }
 
+    /** Validate a map of values
+     * @param map with values to validate
+     * @param parentRef  parent reference to the model
+     * @throws PropertyValidationUmbrellaException if input was invalid
+     */
+    @Throws(PropertyValidationUmbrellaException::class)
+    fun validate(map: Map<Int, Any>, parentRefFactory: () -> PropertyReference<*, *>? = { null }) {
+        createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
+            map.forEach { (key, value) ->
+                val definition = indexToDefinition[key.toShort()] ?: return@forEach
+
+                @Suppress("UNCHECKED_CAST")
+                val def: IsPropertyDefinition<Any> = definition.propertyDefinition as IsPropertyDefinition<Any>
+                try {
+                    def.validate(
+                            newValue = value,
+                            parentRefFactory = parentRefFactory
+                    )
+                } catch (e: PropertyValidationException) {
+                    addException(e)
+                }
+            }
+        }
+    }
+
     /** Convert an object to JSON
      * @param generator to generate JSON with
      * @param obj to convert to JSON
@@ -84,11 +109,28 @@ abstract class DataModel<DO: Any>(
         generator.writeEndObject()
     }
 
+    /** Convert a map with values to JSON
+     * @param generator to generate JSON with
+     * @param map with values to convert to JSON
+     */
+    fun toJson(generator: JsonGenerator, map: Map<Int, Any>) {
+        generator.writeStartObject()
+        for ((key, value) in map) {
+            @Suppress("UNCHECKED_CAST")
+            val def = indexToDefinition[key.toShort()] as Def<Any, DO>? ?: break
+            val name = def.propertyDefinition.name!!
+
+            generator.writeFieldName(name)
+            def.propertyDefinition.writeJsonValue(generator, value)
+        }
+        generator.writeEndObject()
+    }
+
     /** Convert to a DataModel from JSON
      * @param parser to parse JSON with
-     * @return DataObject represented by the JSON
+     * @return map with all the values
      */
-    fun fromJson(parser: JsonParser): DO {
+    fun fromJson(parser: JsonParser): Map<Int, Any> {
         if (parser.currentToken == JsonToken.START_JSON){
             parser.nextToken()
         }
@@ -121,6 +163,12 @@ abstract class DataModel<DO: Any>(
             parser.nextToken()
         } while (token !is JsonToken.STOPPED)
 
-        return construct(valueMap)
+        return valueMap
     }
+
+    /** Convert to a DataModel from JSON
+     * @param parser to parse JSON with
+     * @return DataObject represented by the JSON
+     */
+    fun fromJsonToObject(parser: JsonParser) = construct(this.fromJson(parser))
 }

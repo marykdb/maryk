@@ -70,5 +70,5 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
     override fun writeJsonValue(generator: JsonGenerator, value: DO) = dataModel.toJson(generator, value)
 
     @Throws(ParseException::class)
-    override fun parseFromJson(parser: JsonParser): DO = dataModel.fromJson(parser)
+    override fun parseFromJson(parser: JsonParser): DO = dataModel.fromJsonToObject(parser)
 }

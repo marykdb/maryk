@@ -47,5 +47,5 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
 
     override fun writeJsonValue(generator: JsonGenerator, value: DO) = dataModel.toJson(generator, value)
 
-    override fun parseFromJson(parser: JsonParser) = dataModel.fromJson(parser)
+    override fun parseFromJson(parser: JsonParser) = dataModel.fromJsonToObject(parser)
 }

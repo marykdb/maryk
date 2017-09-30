@@ -2,11 +2,14 @@ package maryk.core.objects
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.Option
 import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.core.json.JsonGenerator
 import maryk.core.json.JsonParser
+import maryk.core.properties.exceptions.PropertyInvalidValueException
+import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
@@ -24,8 +27,8 @@ private val testObject = TestMarykObject(
         dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
 )
 
-private val textExtendedObject = TestMarykObject(
-        string = "hey",
+private val testExtendedObject = TestMarykObject(
+        string = "hay",
         int = 4,
         double = 3.555,
         dateTime = DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
@@ -41,15 +44,37 @@ private val textExtendedObject = TestMarykObject(
                 Time(12,55) to "yes",
                 Time(10, 3) to "ahum"
         ),
-        valueObject = TestValueObject(43, DateTime(2017, 4, 1, 12, 55), true),
+        valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
         subModel = SubMarykObject("test"),
         multi = TypedValue(2, SubMarykObject("subInMulti!"))
 )
+private val testMap = sortedMapOf(
+        0 to "hay",
+        1 to 4,
+        2 to 32.toUInt32(),
+        3 to 3.555,
+        4 to DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
+        5 to true,
+        6 to Option.V0,
+        7 to listOf(34, 2352, 3423, 766),
+        8 to setOf(
+                Date(2017, 12, 5),
+                Date(2016, 3, 2),
+                Date(1981, 12, 5)
+        ),
+        9 to mapOf(
+                Time(12,55) to "yes",
+                Time(10, 3) to "ahum"
+        ),
+        10 to TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
+        11 to SubMarykObject("test"),
+        12 to TypedValue(2, SubMarykObject("subInMulti!"))
+)
 
-private const val json = "{\"string\":\"hey\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"2017-12-04T12:13\",\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":43,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
+private const val json = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"2017-12-04T12:13\",\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
 
 private const val prettyJson = """{
-	"string": "hey",
+	"string": "hay",
 	"int": 4,
 	"uint": 32,
 	"double": "3.555",
@@ -63,7 +88,7 @@ private const val prettyJson = """{
 		"10:03": "ahum"
 	},
 	"valueObject": {
-		"int": 43,
+		"int": 6,
 		"dateTime": "2017-04-01T12:55",
 		"bool": true
 	},
@@ -77,7 +102,7 @@ private const val prettyJson = """{
 
 // Test if unknown values will be skipped
 private const val prettyJsonWithSkip = """{
-	"string": "hey",
+	"string": "hay",
 	"int": 4,
 	"uint": 32,
 	"double": "3.555",
@@ -92,7 +117,7 @@ private const val prettyJsonWithSkip = """{
 	},
     "skipUnknown": "should be skipped as possible future property",
 	"valueObject": {
-		"int": 43,
+		"int": 6,
 		"dateTime": "2017-04-01T12:55",
 		"bool": true
 	},
@@ -119,8 +144,13 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testValidation() {
+    fun testValidationWithDataObject() {
         TestMarykObject.validate(testObject)
+    }
+
+    @Test
+    fun testValidationWithMap() {
+        TestMarykObject.validate(testMap)
     }
 
     @Test
@@ -128,6 +158,21 @@ internal class DataModelTest {
         shouldThrow<PropertyValidationUmbrellaException> {
             TestMarykObject.validate(testObject.copy(int = 9))
         }
+    }
+
+    @Test
+    fun testValidationWithMapFail() {
+        val e = shouldThrow<PropertyValidationUmbrellaException> {
+            TestMarykObject.validate(mapOf(
+                0 to "wrong",
+                1 to 999
+            ))
+        }
+
+        e.exceptions.size shouldBe 2
+
+        (e.exceptions[0] is PropertyInvalidValueException) shouldBe true
+        (e.exceptions[1] is PropertyOutOfRangeException) shouldBe true
     }
 
     @Test
@@ -175,7 +220,7 @@ internal class DataModelTest {
                 json to JsonGenerator(writer = writer),
                 prettyJson to JsonGenerator(pretty = true, writer = writer)
         ).forEach { result, generator ->
-            TestMarykObject.toJson(generator, textExtendedObject)
+            TestMarykObject.toJson(generator, testExtendedObject)
 
             output shouldBe result
             output = ""
@@ -183,18 +228,55 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testFromJsonConversion() {
+    fun testFromJsonToObjectConversion() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
+        val parser = { JsonParser(reader = reader) }
 
-        mapOf(
-                json to { JsonParser(reader = reader) },
-                prettyJsonWithSkip to { JsonParser(reader = reader) }
-        ).forEach { result, parser ->
-            input = result
+        listOf(
+                json,
+                prettyJsonWithSkip
+        ).forEach { jsonInput ->
+            input = jsonInput
             index = 0
-            TestMarykObject.fromJson(parser()) shouldBe textExtendedObject
+            TestMarykObject.fromJsonToObject(parser()) shouldBe testExtendedObject
+        }
+    }
+
+    @Test
+    fun testFromJsonToMapConversion() {
+        var input = ""
+        var index = 0
+        val reader = { input[index++] }
+        val parser = { JsonParser(reader = reader) }
+
+        listOf(
+                json,
+                prettyJsonWithSkip
+        ).forEach { jsonInput ->
+            input = jsonInput
+            index = 0
+            TestMarykObject.fromJson(parser()) shouldBe testMap
+        }
+    }
+
+    @Test
+    fun testMapToJsonAndBackConversion() {
+        var output = ""
+        val writer = { string: String -> output += string }
+
+        listOf(
+                JsonGenerator(writer = writer),
+                JsonGenerator(pretty = true, writer = writer)
+        ).forEach { generator ->
+            TestMarykObject.toJson(generator, testMap)
+
+            var index = 0
+            val parser = { JsonParser(reader = { output[index++] }) }
+            TestMarykObject.fromJson(parser()) shouldBe testMap
+
+            output = ""
         }
     }
 }

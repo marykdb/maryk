@@ -7,7 +7,7 @@ package maryk.core.properties.definitions
  */
 abstract class AbstractSubDefinition<T: Any>(
         name: String?,
-        index: Short,
+        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,

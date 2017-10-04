@@ -8,7 +8,7 @@ import maryk.core.properties.types.IsTemporal
  */
 abstract class AbstractMomentDefinition<T: IsTemporal<T>>(
         name: String?,
-        index: Short,
+        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,

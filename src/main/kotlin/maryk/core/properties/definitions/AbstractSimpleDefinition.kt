@@ -12,7 +12,7 @@ import maryk.core.properties.references.PropertyReference
  */
 abstract class AbstractSimpleDefinition<T: Comparable<T>>(
         name: String?,
-        index: Short,
+        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,

@@ -7,7 +7,7 @@ import maryk.core.properties.types.Key
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(
         name: String? = null,
-        index: Short = -1,
+        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,

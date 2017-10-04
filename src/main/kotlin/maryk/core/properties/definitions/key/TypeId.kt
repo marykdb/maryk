@@ -10,7 +10,7 @@ import maryk.core.properties.types.TypedValue
 class TypeId(
         val multiTypeDefinition: MultiTypeDefinition
 ) : IsFixedBytesEncodable<Int> {
-    override val index: Short = multiTypeDefinition.index
+    override val index: Int = multiTypeDefinition.index
     override val byteSize = 2
 
     override fun <T : Any> getValue(dataModel: DataModel<T>, dataObject: T): Int {

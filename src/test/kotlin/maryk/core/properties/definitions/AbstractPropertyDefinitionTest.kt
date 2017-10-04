@@ -15,7 +15,6 @@ internal class AbstractPropertyDefinitionTest {
         def.final shouldBe true
     }
 
-
     @Test
     fun testReference() {
         def.getRef().dataModel shouldBe null

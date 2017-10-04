@@ -9,7 +9,7 @@ import maryk.core.properties.types.TimePrecision
  */
 abstract class AbstractTimeDefinition<T : IsTime<T>>(
         name: String?,
-        index: Short,
+        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,

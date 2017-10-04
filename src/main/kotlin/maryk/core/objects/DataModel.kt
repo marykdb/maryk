@@ -20,7 +20,7 @@ abstract class DataModel<DO: Any>(
         val construct: (Map<Int, *>) -> DO,
         val definitions: List<Def<*, DO>>
 ) {
-    protected val indexToDefinition: Map<Short, Def<*, DO>>
+    protected val indexToDefinition: Map<Int, Def<*, DO>>
     private val nameToDefinition: Map<String, Def<*, DO>>
 
     init {
@@ -38,10 +38,10 @@ abstract class DataModel<DO: Any>(
     }
     fun getDefinition(ofString: String) = nameToDefinition[ofString]?.propertyDefinition
 
-    fun getDefinition(ofIndex: Short) = indexToDefinition[ofIndex]?.propertyDefinition
+    fun getDefinition(ofIndex: Int) = indexToDefinition[ofIndex]?.propertyDefinition
     fun getPropertyGetter(ofString: String) = nameToDefinition[ofString]?.propertyGetter
 
-    fun getPropertyGetter(ofIndex: Short) = indexToDefinition[ofIndex]?.propertyGetter
+    fun getPropertyGetter(ofIndex: Int) = indexToDefinition[ofIndex]?.propertyGetter
 
     /** Validate a DataObject
      * @param dataObject to validate
@@ -75,7 +75,7 @@ abstract class DataModel<DO: Any>(
     fun validate(map: Map<Int, Any>, parentRefFactory: () -> PropertyReference<*, *>? = { null }) {
         createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
             map.forEach { (key, value) ->
-                val definition = indexToDefinition[key.toShort()] ?: return@forEach
+                val definition = indexToDefinition[key] ?: return@forEach
 
                 @Suppress("UNCHECKED_CAST")
                 val def: IsPropertyDefinition<Any> = definition.propertyDefinition as IsPropertyDefinition<Any>
@@ -117,7 +117,7 @@ abstract class DataModel<DO: Any>(
         generator.writeStartObject()
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
-            val def = indexToDefinition[key.toShort()] as Def<Any, DO>? ?: break
+            val def = indexToDefinition[key] as Def<Any, DO>? ?: break
             val name = def.propertyDefinition.name!!
 
             generator.writeFieldName(name)

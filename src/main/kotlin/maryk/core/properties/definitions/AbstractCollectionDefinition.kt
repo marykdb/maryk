@@ -12,7 +12,7 @@ import maryk.core.properties.references.PropertyReference
 
 abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         name: String? = null,
-        index: Short = -1,
+        index: Int = -1,
         indexed: Boolean = true,
         searchable: Boolean = true,
         required: Boolean = false,

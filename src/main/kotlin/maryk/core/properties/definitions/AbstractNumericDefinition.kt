@@ -8,7 +8,7 @@ package maryk.core.properties.definitions
  */
 abstract class AbstractNumericDefinition<T: Comparable<T>>(
         name: String?,
-        index: Short,
+        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,

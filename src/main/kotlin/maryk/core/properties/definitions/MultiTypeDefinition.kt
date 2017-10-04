@@ -15,7 +15,7 @@ import maryk.core.properties.types.TypedValue
  */
 class MultiTypeDefinition(
         name: String? = null,
-        index: Short = -1,
+        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,

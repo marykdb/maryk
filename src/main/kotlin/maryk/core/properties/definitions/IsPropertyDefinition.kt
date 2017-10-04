@@ -15,7 +15,7 @@ interface IsPropertyDefinition<T: Any> {
     val name: String?
 
     /** The index position of this property definition */
-    val index: Short
+    val index: Int
 
     /**
      * Get a reference to this definition

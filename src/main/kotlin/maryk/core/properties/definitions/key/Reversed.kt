@@ -8,7 +8,7 @@ import kotlin.experimental.xor
 class Reversed<T: Any>(
         val definition: IsFixedBytesEncodable<T>
 ) : IsFixedBytesEncodable<T> {
-    override val index: Short = definition.index
+    override val index: Int = definition.index
 
     override val byteSize = definition.byteSize
     override fun <DO : Any> getValue(dataModel: DataModel<DO>, dataObject: DO) = definition.getValue(dataModel, dataObject)

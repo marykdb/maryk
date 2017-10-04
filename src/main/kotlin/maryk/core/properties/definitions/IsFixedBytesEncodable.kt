@@ -9,7 +9,7 @@ interface IsFixedBytesEncodable<T: Any> {
     val byteSize: Int
 
     /** Index of property on model. -1 if not on property */
-    val index: Short
+    val index: Int
 
     /** Convert to value from a byte reader
      * @param length of bytes to read

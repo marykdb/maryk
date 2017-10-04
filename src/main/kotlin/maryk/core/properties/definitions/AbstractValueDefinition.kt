@@ -14,7 +14,7 @@ import maryk.core.properties.exceptions.ParseException
  */
 abstract class AbstractValueDefinition<T: Any>(
         name: String?,
-        index: Short,
+        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,

@@ -8,7 +8,7 @@ import maryk.core.properties.types.Date
  */
 class DateDefinition(
         name: String? = null,
-        index: Short = -1,
+        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,

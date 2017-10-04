@@ -12,7 +12,7 @@ import maryk.core.properties.references.PropertyReference
  */
 class StringDefinition(
         name: String? = null,
-        index: Short = -1,
+        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,

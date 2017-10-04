@@ -16,7 +16,7 @@ import maryk.core.properties.references.PropertyReference
 
 class MapDefinition<K: Any, V: Any>(
         name: String? = null,
-        index: Short = -1,
+        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,

@@ -5,7 +5,7 @@ import maryk.core.properties.references.SetItemReference
 
 class SetDefinition<T: Any>(
         name: String? = null,
-        index: Short = -1,
+        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,

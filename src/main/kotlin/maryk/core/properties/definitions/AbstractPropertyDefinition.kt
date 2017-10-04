@@ -12,7 +12,7 @@ import maryk.core.properties.references.PropertyReference
  */
 abstract class AbstractPropertyDefinition<T: Any>  (
         override final val name: String?,
-        override final val index: Short,
+        override final val index: Int,
         val indexed: Boolean,
         val searchable: Boolean,
         val required: Boolean,

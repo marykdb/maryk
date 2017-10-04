@@ -2,13 +2,13 @@ package maryk.core.extensions.bytes
 
 import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
-import kotlin.experimental.or
 import kotlin.experimental.xor
 
-const val SIGNBYTE: Byte = 0x80.toByte()
-const val ZEROBYTE: Byte = 0.toByte()
-const val ONEBYTE: Byte = 1.toByte()
-const val MAXBYTE: Byte = 0xFF.toByte()
+const val SIGNBYTE: Byte = 0b1000_0000.toByte()
+const val ZEROBYTE: Byte = 0b0.toByte()
+const val ONEBYTE: Byte = 0b1.toByte()
+const val MAXBYTE: Byte = 0b1111_1111.toByte()
+const val SEVENBYTES: Byte = 0b0111_1111.toByte()
 
 /** Write the bytes of this Byte to a writer
  * @param writer to write this Byte to
@@ -38,7 +38,7 @@ internal fun Byte.decodeZigZag() = (this.toInt() and 0xFF).decodeZigZag().toByte
  */
 internal fun Byte.writeVarBytes(writer: (byte: Byte) -> Unit) {
     if (this < 0) {
-        writer(this and 0x7F or SIGNBYTE)
+        writer(this and SEVENBYTES xor SIGNBYTE)
         writer(1)
     } else {
         writer(this)

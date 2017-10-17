@@ -6,8 +6,11 @@ import maryk.Option
 import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.TestValueObject
+import maryk.core.extensions.initByteArrayByHex
+import maryk.core.extensions.toHex
 import maryk.core.json.JsonGenerator
 import maryk.core.json.JsonParser
+import maryk.core.properties.GrowableByteCollector
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
@@ -225,6 +228,48 @@ internal class DataModelTest {
             output shouldBe result
             output = ""
         }
+    }
+
+    @Test
+    fun testToProtoBufConversionWithMap() {
+        val byteCollector = GrowableByteCollector()
+
+        TestMarykObject.toProtoBuf(mapOf(
+                0 to "hay",
+                1 to 4,
+                2 to 32.toUInt32(),
+                3 to 3.555,
+                5 to true,
+                6 to Option.V2,
+                13 to SubMarykObject.key.get(byteArrayOf(1, 5))
+        ), byteCollector::reserve, byteCollector::write)
+
+        byteCollector.bytes.toHex() shouldBe "02036861790808102019400c70a3d70a3d72280130026a020105"
+    }
+
+    @Test
+    fun testFromProtoBufConversionWithMap() {
+        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d72280130026a020105")
+        var index = 0
+
+        val map = TestMarykObject.fromProtoBuf {
+            bytes[index++]
+        }
+
+        map.size shouldBe 6
+        map[0] shouldBe "hay"
+        map[1] shouldBe 4
+        map[2] shouldBe 32.toUInt32()
+        map[3] shouldBe 3.555
+        map[5] shouldBe true
+        map[6] shouldBe Option.V2
+    }
+
+    @Test
+    fun testToProtoBufConversion() {
+        val byteCollector = GrowableByteCollector()
+
+        TestMarykObject.toProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
     }
 
     @Test

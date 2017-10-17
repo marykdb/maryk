@@ -22,7 +22,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         val valueDefinition: AbstractValueDefinition<T>
 ) : AbstractPropertyDefinition<C>(
         name, index, indexed, searchable, required, final
-), HasSizeDefinition {
+), HasSizeDefinition, IsByteTransportableCollection<T> {
     init {
         assert(valueDefinition.required, { "Definition should have required=true on collection «$name»" })
     }
@@ -82,4 +82,13 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         @Suppress("UNCHECKED_CAST")
         return collection as C
     }
+
+    override fun writeTransportBytesWithKey(value: C, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        value.forEach { item ->
+            valueDefinition.writeTransportBytesWithKey(this.index, item, reserver, writer)
+        }
+    }
+
+    override fun readCollectionTransportBytes(length: Int, reader: () -> Byte)
+            = valueDefinition.readTransportBytes(length, reader)
 }

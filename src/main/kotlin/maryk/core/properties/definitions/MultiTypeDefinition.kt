@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonGenerator
 import maryk.core.json.JsonParser
 import maryk.core.json.JsonToken
@@ -8,6 +11,8 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 /**
  * Definition for objects with multiple types
@@ -65,12 +70,41 @@ class MultiTypeDefinition(
         }
         parser.nextToken()
 
-        val definition: AbstractSubDefinition<*>? = typeMap[index]
+        val definition: AbstractSubDefinition<*>? = this.typeMap[index]
                 ?: throw ParseException("Unknown multitype index ${parser.lastValue} for $name")
 
         return TypedValue<Any>(
                 index,
                 definition!!.parseFromJson(parser)
         )
+    }
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte): TypedValue<*> {
+        val typeIndex = initIntByVar(reader)
+        val def = this.typeMap[typeIndex] ?: throw ParseException("Unknown multitype index $typeIndex for $name")
+        return TypedValue(
+                typeIndex,
+                def.readTransportBytes(
+                        length - typeIndex.computeVarByteSize(),
+                        reader
+                )
+        )
+    }
+
+    override fun writeTransportBytesWithKey(value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, reserver, writer)
+        this.writeTransportBytes(value, { givenLength ->
+            val newLength = givenLength + value.typeIndex.computeVarByteSize()
+            reserver(newLength + newLength.computeVarByteSize())
+            newLength.writeVarBytes(writer)
+            value.typeIndex.writeVarBytes(writer)
+        }, writer)
+    }
+
+    override fun writeTransportBytes(value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any>
+
+        def.writeTransportBytes(value.value, reserver, writer)
     }
 }

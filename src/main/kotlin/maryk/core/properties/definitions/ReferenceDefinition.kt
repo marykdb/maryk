@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
+import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(
@@ -17,7 +18,7 @@ class ReferenceDefinition<DO: Any>(
         maxValue: Key<DO>? = null,
         val dataModel: RootDataModel<DO>
 ): AbstractSimpleDefinition<Key<DO>>(
-        name, index, indexed, searchable, required, final, unique, minValue, maxValue
+        name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), IsFixedBytesEncodable<Key<DO>> {
     override val byteSize = dataModel.key.size
 

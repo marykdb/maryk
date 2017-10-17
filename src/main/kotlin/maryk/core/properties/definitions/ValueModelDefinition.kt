@@ -9,6 +9,7 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.ValueDataObject
+import maryk.core.protobuf.WireType
 
 /** Definition for value model properties
  * @param dataModel definition of the DataObject
@@ -27,7 +28,7 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
         maxValue: DO? = null,
         val dataModel: D
 ) : AbstractSimpleDefinition<DO>(
-        name, index, indexed, searchable, required, final, unique, minValue, maxValue
+        name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ) {
     override fun convertToStorageBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(value._bytes.size)

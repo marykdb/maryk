@@ -1,8 +1,12 @@
 package maryk.core.properties.definitions
 
+import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.initLongByVar
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
+import maryk.core.protobuf.WireType
 
 /**
  * Definition for DateTime properties
@@ -20,13 +24,27 @@ class DateTimeDefinition(
         fillWithNow: Boolean = false,
         precision: TimePrecision = TimePrecision.SECONDS
 ) : AbstractTimeDefinition<DateTime>(
-        name, index, indexed, searchable, required, final, unique, minValue, maxValue, fillWithNow, precision
+        name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow, precision
 ), IsFixedBytesEncodable<DateTime> {
     override val byteSize = DateTime.byteSize(precision)
 
     override fun createNow() = DateTime.nowUTC()
 
     override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = DateTime.fromByteReader(length, reader)
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte) = when(this.precision) {
+        TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))
+        TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
+    }
+
+    override fun writeTransportBytes(value: DateTime, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        val epochUnit = when(this.precision) {
+            TimePrecision.SECONDS -> value.toEpochSecond()
+            TimePrecision.MILLIS -> value.toEpochMilli()
+        }
+        reserver(epochUnit.computeVarByteSize())
+        epochUnit.writeVarBytes(writer)
+    }
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = DateTime.parse(string)

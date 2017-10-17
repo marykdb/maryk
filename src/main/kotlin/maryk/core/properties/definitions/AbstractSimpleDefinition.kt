@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.WireType
 
 /**
  * Abstract Property Definition to define properties.
@@ -17,11 +18,12 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>>(
         searchable: Boolean,
         required: Boolean,
         final: Boolean,
+        wireType: WireType,
         val unique: Boolean,
         val minValue: T?,
         val maxValue: T?
 ) : AbstractValueDefinition<T>(
-        name, index, indexed, searchable, required, final
+        name, index, indexed, searchable, required, final, wireType
 ) {
     /**
      * Validate the contents of the native type

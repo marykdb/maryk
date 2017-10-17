@@ -1,7 +1,10 @@
 package maryk.core.properties.types.numeric
 
+import maryk.core.protobuf.WireType
+
 abstract class NumberDescriptor<T: Comparable<T>>(
-        val size: Int
+        val size: Int,
+        val wireType: WireType
 ) {
     abstract fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
     abstract fun fromStorageByteReader(length: Int, reader: () -> Byte): T
@@ -11,4 +14,6 @@ abstract class NumberDescriptor<T: Comparable<T>>(
         reserver(size)
         this.writeStorageBytes(value, writer)
     }
+    abstract fun readTransportBytes(reader: () -> Byte): T
+    abstract fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
 }

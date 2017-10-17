@@ -30,11 +30,21 @@ internal class SInt8Test {
     }
 
     @Test
-    fun testStreamingConversion() {
+    fun testStorageBytesConversion() {
         val bc = ByteCollector()
         int8values.forEach {
             SInt8.writeStorageBytes(it, bc::reserve, bc::write)
             SInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testTransportBytesConversion() {
+        val bc = ByteCollector()
+        int8values.forEach {
+            SInt8.writeTransportBytes(it, bc::reserve, bc::write)
+            SInt8.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }
     }

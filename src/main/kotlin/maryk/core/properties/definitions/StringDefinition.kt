@@ -6,6 +6,7 @@ import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.WireType
 
 /**
  * Definition for String properties
@@ -24,7 +25,7 @@ class StringDefinition(
         override val maxSize: Int? = null,
         val regEx: String? = null
 ) : AbstractSimpleDefinition<String>(
-        name, index, indexed, searchable, required, final, unique, minValue, maxValue
+        name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), HasSizeDefinition {
 
     private val _regEx by lazy {

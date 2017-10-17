@@ -5,6 +5,8 @@ import maryk.core.json.JsonGenerator
 import maryk.core.json.JsonParser
 import maryk.core.json.JsonToken
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 /**
  * Abstract Property Definition to define properties.
@@ -18,7 +20,8 @@ abstract class AbstractValueDefinition<T: Any>(
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,
-        final: Boolean
+        final: Boolean,
+        internal val wireType: WireType
 ) : AbstractSubDefinition<T>(
         name, index, indexed, searchable, required, final
 ) {
@@ -37,6 +40,23 @@ abstract class AbstractValueDefinition<T: Any>(
      * @param writer to write bytes to
      */
     abstract fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte) = convertFromStorageBytes(length, reader)
+
+    override fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        convertToStorageBytes(value, reserver, writer)
+    }
+
+    override fun writeTransportBytesWithKey(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+            = this.writeTransportBytesWithKey(this.index, value, reserver, writer)
+
+    fun writeTransportBytesWithKey(index: Int, value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(index, this.wireType, reserver, writer)
+        when(this.wireType) {
+            WireType.LENGTH_DELIMITED -> writeTransportBytesWithLength(value, reserver, writer)
+            else -> writeTransportBytes(value, reserver, writer)
+        }
+    }
 
     /** Convert value to String
      * @param value to convert

@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
@@ -18,6 +19,7 @@ import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -43,7 +45,8 @@ data class TestMarykObject(
         val map: Map<Time, String>? = null,
         val valueObject: TestValueObject? = null,
         val subModel: SubMarykObject? = null,
-        val multi: TypedValue<*>? = null
+        val multi: TypedValue<*>? = null,
+        val reference: Key<SubMarykObject>? = null
 ) {
     object Properties {
         val string = StringDefinition(
@@ -127,6 +130,11 @@ data class TestMarykObject(
                         )
                 )
         )
+        val reference = ReferenceDefinition(
+                name = "reference",
+                index = 13,
+                dataModel = SubMarykObject
+        )
     }
 
     companion object: RootDataModel<TestMarykObject>(
@@ -145,7 +153,8 @@ data class TestMarykObject(
                         map = it[9] as Map<Time, String>?,
                         valueObject = it[10] as TestValueObject?,
                         subModel = it[11] as SubMarykObject?,
-                        multi = it[12] as TypedValue<*>?
+                        multi = it[12] as TypedValue<*>?,
+                        reference = it[13] as Key<SubMarykObject>?
                 )
             },
             keyDefinitions = definitions(
@@ -166,7 +175,8 @@ data class TestMarykObject(
                     Def(Properties.map, TestMarykObject::map),
                     Def(Properties.valueObject, TestMarykObject::valueObject),
                     Def(Properties.subModel, TestMarykObject::subModel),
-                    Def(Properties.multi, TestMarykObject::multi)
+                    Def(Properties.multi, TestMarykObject::multi),
+                    Def(Properties.reference, TestMarykObject::reference)
             )
     )
 }

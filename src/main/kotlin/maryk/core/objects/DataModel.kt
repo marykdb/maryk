@@ -9,6 +9,7 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.ProtoBuf
 
 class Def<T: Any, in DM: Any>(val propertyDefinition: IsPropertyDefinition<T>, val propertyGetter: (DM) -> T?)
 
@@ -20,7 +21,7 @@ abstract class DataModel<DO: Any>(
         val construct: (Map<Int, *>) -> DO,
         val definitions: List<Def<*, DO>>
 ) {
-    protected val indexToDefinition: Map<Int, Def<*, DO>>
+    private val indexToDefinition: Map<Int, Def<*, DO>>
     private val nameToDefinition: Map<String, Def<*, DO>>
 
     init {
@@ -45,7 +46,7 @@ abstract class DataModel<DO: Any>(
 
     /** Validate a DataObject
      * @param dataObject to validate
-     * @param parentRef  parent reference to the model
+     * @param parentRefFactory parent reference factory to the model
      * @throws PropertyValidationUmbrellaException if input was invalid
      */
     @Throws(PropertyValidationUmbrellaException::class)
@@ -68,7 +69,7 @@ abstract class DataModel<DO: Any>(
 
     /** Validate a map of values
      * @param map with values to validate
-     * @param parentRef  parent reference to the model
+     * @param parentRefFactory parent reference factory to the model
      * @throws PropertyValidationUmbrellaException if input was invalid
      */
     @Throws(PropertyValidationUmbrellaException::class)
@@ -153,7 +154,7 @@ abstract class DataModel<DO: Any>(
                         parser.nextToken()
 
                         valueMap.put(
-                                definition.index.toInt(),
+                                definition.index,
                                 definition.parseFromJson(parser)
                         )
                     }
@@ -171,4 +172,59 @@ abstract class DataModel<DO: Any>(
      * @return DataObject represented by the JSON
      */
     fun fromJsonToObject(parser: JsonParser) = construct(this.fromJson(parser))
+
+    fun toProtoBuf(map: Map<Int, Any>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        for ((key, value) in map) {
+            @Suppress("UNCHECKED_CAST")
+            val def = indexToDefinition[key] as Def<Any, DO>? ?: break
+            def.propertyDefinition.writeTransportBytesWithKey(value, reserver, writer)
+        }
+    }
+
+    fun toProtoBuf(obj: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        for (def in definitions as List<Def<Any, DO>>) {
+            val value = def.propertyGetter(obj) ?: break
+            def.propertyDefinition.writeTransportBytesWithKey(value, reserver, writer)
+        }
+    }
+
+    /** Convert to a Map of values from ProtoBuf
+     * @param reader to read ProtoBuf bytes from
+     * @return DataObject represented by the ProtoBuf
+     */
+    fun fromProtoBuf(reader:() -> Byte): Map<Int, Any> {
+        val valueMap: MutableMap<Int, Any> = mutableMapOf()
+
+        var toContinue = true
+
+        while (toContinue) {
+            // TODO: Correct way to handle all conditions???
+            try {
+                val key = ProtoBuf.readKey(reader)
+                val definition = indexToDefinition[key.tag]
+
+                if (definition != null) {
+                    val value = definition.propertyDefinition.readTransportBytes(
+                            ProtoBuf.getLength(key.wireType, reader),
+                            reader
+                    )
+
+                    valueMap.put(key.tag, value)
+                } else {
+                    ProtoBuf.skipField(key.wireType, reader)
+                }
+            } catch (e: Throwable) {
+                toContinue = false
+            }
+        }
+
+        return valueMap
+    }
+
+    /** Convert to a DataModel from ProtoBuf
+     * @param reader to read ProtoBuf bytes from
+     * @return DataObject represented by the ProtoBuf
+     */
+    fun fromProtoBufToObject(reader:() -> Byte) = construct(this.fromProtoBuf(reader))
 }

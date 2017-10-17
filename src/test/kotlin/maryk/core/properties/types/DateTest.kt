@@ -15,8 +15,8 @@ internal class DateTest {
 
     @Test
     fun compare() {
-        Date.MIN.compareTo(Date.MAX) shouldBe -1999999998
-        Date.MAX.compareTo(Date.MIN) shouldBe 1999999998
+        Date.MIN.compareTo(Date.MAX) shouldBe -199999998
+        Date.MAX.compareTo(Date.MIN) shouldBe 199999998
         Date.nowUTC().compareTo(Date.nowUTC()) shouldBe 0
     }
 

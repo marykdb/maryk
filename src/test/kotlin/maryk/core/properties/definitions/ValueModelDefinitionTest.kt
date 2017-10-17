@@ -4,11 +4,14 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestValueObject
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.GrowableByteCollector
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 import org.junit.Test
 
 internal class ValueModelDefinitionTest {
@@ -29,12 +32,27 @@ internal class ValueModelDefinitionTest {
     )
 
     @Test
-    fun testConvertStreamableBytes() {
+    fun testConvertStorageBytes() {
         val bc = ByteCollector()
         def.convertToStorageBytes(value, bc::reserve, bc::write)
         val new = def.convertFromStorageBytes(bc.size, bc::read)
 
         new shouldBe value
+    }
+
+    @Test
+    fun testTransportConversion() {
+        val bc = GrowableByteCollector()
+        def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+
+        val key = ProtoBuf.readKey(bc::read)
+        key.wireType shouldBe WireType.LENGTH_DELIMITED
+        key.tag shouldBe -1
+
+        def.readTransportBytes(
+                ProtoBuf.getLength(key.wireType, bc::read),
+                bc::read
+        ) shouldBe value
     }
 
     @Test

@@ -3,5 +3,5 @@ package maryk.core.properties.types
 interface IndexedEnum<E>: Comparable<E>{
     val name: String
     val index: Int
-    val indexAsShort: Short get() = (this.index + Short.MIN_VALUE).toShort()
+    val indexAsShortToStore: Short get() = (this.index + Short.MIN_VALUE).toShort()
 }

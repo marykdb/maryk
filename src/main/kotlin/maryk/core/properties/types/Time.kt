@@ -22,7 +22,7 @@ data class Time(
 {
 
     /** Get the seconds since midnight */
-    val secondsOfDay: Int get() {
+    fun toSecondsOfDay(): Int {
         var total = hour * SECONDS_PER_HOUR
         total += minute * SECONDS_PER_MINUTE
         total += second
@@ -30,7 +30,7 @@ data class Time(
     }
 
     /** Get the millis since midnight */
-    val millisOfDay: Int get() {
+    fun toMillisOfDay(): Int {
         var total = hour * MILLIS_PER_HOUR
         total += minute * MILLIS_PER_MINUTE
         total += second * MILLIS_PER_SECOND
@@ -42,11 +42,11 @@ data class Time(
         when (precision) {
             TimePrecision.MILLIS -> {
                 reserver(4)
-                (this.secondsOfDay * 1000 + this.milli).writeBytes(writer)
+                (this.toSecondsOfDay() * 1000 + this.milli).writeBytes(writer)
             }
             TimePrecision.SECONDS -> {
                 reserver(3)
-                this.secondsOfDay.writeBytes(writer, 3)
+                this.toSecondsOfDay().writeBytes(writer, 3)
             }
         }
     }

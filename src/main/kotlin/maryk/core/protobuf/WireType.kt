@@ -2,7 +2,6 @@ package maryk.core.protobuf
 
 import maryk.core.properties.exceptions.ParseException
 
-
 enum class WireType(val type: Byte) {
     VAR_INT(0),
     BIT_64(1),

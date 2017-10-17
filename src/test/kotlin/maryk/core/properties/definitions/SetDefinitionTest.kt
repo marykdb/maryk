@@ -2,7 +2,15 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
-import maryk.core.properties.exceptions.*
+import maryk.core.extensions.toHex
+import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.exceptions.PropertyInvalidValueException
+import maryk.core.properties.exceptions.PropertyRequiredException
+import maryk.core.properties.exceptions.PropertyTooLittleItemsException
+import maryk.core.properties.exceptions.PropertyTooMuchItemsException
+import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 import org.junit.Test
 import kotlin.test.assertTrue
 
@@ -15,6 +23,7 @@ internal class SetDefinitionTest {
 
     val def = SetDefinition<String>(
             name = "stringSet",
+            index = 4,
             minSize = 2,
             maxSize = 4,
             required = true,
@@ -59,5 +68,33 @@ internal class SetDefinitionTest {
 
         assertTrue(e.exceptions[0] is PropertyInvalidValueException)
         assertTrue(e.exceptions[1] is PropertyInvalidValueException)
+    }
+
+    @Test
+    fun testTransportConversion() {
+        val bc = GrowableByteCollector()
+
+        val value = setOf("T", "T2", "T3", "T4")
+        val asHex = "220154220254322202543322025434"
+
+        def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+
+        bc.bytes.toHex() shouldBe asHex
+
+        fun readKey() {
+            val key = ProtoBuf.readKey(bc::read)
+            key.wireType shouldBe WireType.LENGTH_DELIMITED
+            key.tag shouldBe 4
+        }
+
+        fun readValue() = def.readCollectionTransportBytes(
+                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+                bc::read
+        )
+
+        value.forEach {
+            readKey()
+            readValue() shouldBe it
+        }
     }
 }

@@ -36,7 +36,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertStreamingBytesMillis() {
+    fun convertStorageBytesMillis() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             defMilli.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
@@ -46,11 +46,31 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertStreamingBytesSeconds() {
+    fun convertStorageBytesSeconds() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
             def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
+
+    @Test
+    fun convertTransportBytesMillis() {
+        val byteCollector = ByteCollector()
+        for(it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
+            defMilli.writeTransportBytes(it, byteCollector::reserve, byteCollector::write)
+            defMilli.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
+
+    @Test
+    fun convertTransportBytesSeconds() {
+        val byteCollector = ByteCollector()
+        for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
+            def.writeTransportBytes(it, byteCollector::reserve, byteCollector::write)
+            def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }

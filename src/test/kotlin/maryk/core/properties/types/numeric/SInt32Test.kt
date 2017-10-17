@@ -30,11 +30,21 @@ internal class SInt32Test {
     }
 
     @Test
-    fun testStreamingConversion() {
+    fun testStorageBytesConversion() {
         val bc = ByteCollector()
         int32values.forEach {
             SInt32.writeStorageBytes(it, bc::reserve, bc::write)
             SInt32.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testTransportBytesConversion() {
+        val bc = ByteCollector()
+        int32values.forEach {
+            SInt32.writeTransportBytes(it, bc::reserve, bc::write)
+            SInt32.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }
     }

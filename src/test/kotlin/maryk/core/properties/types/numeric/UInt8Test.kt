@@ -33,12 +33,23 @@ internal class UInt8Test {
             UInt8.ofString(it.toString()) shouldBe it
         }
     }
+
     @Test
-    fun testStreamingConversion() {
+    fun testStorageBytesConversion() {
         val bc = ByteCollector()
         uInt8values.forEach {
             UInt8.writeStorageBytes(it, bc::reserve, bc::write)
             UInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testTransportBytesConversion() {
+        val bc = ByteCollector()
+        uInt8values.forEach {
+            UInt8.writeTransportBytes(it, bc::reserve, bc::write)
+            UInt8.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }
     }

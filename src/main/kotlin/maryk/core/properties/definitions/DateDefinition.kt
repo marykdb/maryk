@@ -1,11 +1,13 @@
 package maryk.core.properties.definitions
 
+import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.initLongByVar
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
+import maryk.core.protobuf.WireType
 
-/**
- * Definition for Date properties
- */
+/** Definition for Date properties */
 class DateDefinition(
         name: String? = null,
         index: Int = -1,
@@ -18,7 +20,7 @@ class DateDefinition(
         maxValue: Date? = null,
         fillWithNow: Boolean = false
 ) : AbstractMomentDefinition<Date>(
-        name, index, indexed, searchable, required, final, unique, minValue, maxValue, fillWithNow
+        name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow
 ), IsFixedBytesEncodable<Date> {
     override val byteSize = 8
 
@@ -27,6 +29,14 @@ class DateDefinition(
     override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
 
     override fun convertToStorageBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte) = Date.ofEpochDay(initLongByVar(reader))
+
+    override fun writeTransportBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        val epochDay = value.epochDay
+        reserver(epochDay.computeVarByteSize())
+        epochDay.writeVarBytes(writer)
+    }
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = Date.parse(string)

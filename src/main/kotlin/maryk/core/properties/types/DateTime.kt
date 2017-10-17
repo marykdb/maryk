@@ -51,7 +51,7 @@ data class DateTime(
     fun toEpochMilli() = toEpochSecond() * MILLIS_PER_SECOND + time.milli
 
     /** Get the date time as the amount of seconds since 01-01-1970 */
-    fun toEpochSecond() = date.epochDay * SECONDS_PER_DAY + time.secondsOfDay
+    fun toEpochSecond() = date.epochDay * SECONDS_PER_DAY + time.toSecondsOfDay()
 
     companion object: IsTimeObject<DateTime>() {
         var MIN = DateTime(Date.MIN, Time.MIN)

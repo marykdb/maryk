@@ -12,13 +12,15 @@ import java.time.ZoneOffset
 import kotlin.test.assertTrue
 
 internal class TimeDefinitionTest {
-    private val timesToTest = arrayOf(
+    private val timesToTestMillis = arrayOf(
             Time(12, 3, 5, 50),
             Time.nowUTC(),
             Time.MAX_IN_SECONDS,
             Time.MAX_IN_MILLIS,
             Time.MIN
     )
+
+    private val timesToTestSeconds = arrayOf(Time.MAX_IN_SECONDS, Time.MIN, Time(13, 55, 44))
 
     val def = TimeDefinition(
             name = "seconds"
@@ -32,12 +34,12 @@ internal class TimeDefinitionTest {
     @Test
     fun createNow() {
         assertTrue {
-            LocalTime.now(ZoneOffset.UTC).toSecondOfDay() - def.createNow().secondsOfDay in 0..1
+            LocalTime.now(ZoneOffset.UTC).toSecondOfDay() - def.createNow().toSecondsOfDay() in 0..1
         }
     }
 
     @Test
-    fun convertStreamingBytesMillis() {
+    fun convertStorageBytesMillis() {
         val byteCollector = ByteCollector()
         arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
             defMilli.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
@@ -47,9 +49,9 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertStreamingBytesSeconds() {
+    fun convertStorageBytesSeconds() {
         val byteCollector = ByteCollector()
-        arrayOf(Time.MAX_IN_SECONDS, Time.MIN).forEach {
+        timesToTestSeconds.forEach {
             def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
             def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
@@ -57,8 +59,28 @@ internal class TimeDefinitionTest {
     }
 
     @Test
+    fun convertTransportBytesSeconds() {
+        val byteCollector = ByteCollector()
+        timesToTestSeconds.forEach {
+            def.writeTransportBytes(it, byteCollector::reserve, byteCollector::write)
+            def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
+
+    @Test
+    fun convertTransportBytesMillis() {
+        val byteCollector = ByteCollector()
+        timesToTestMillis.forEach {
+            defMilli.writeTransportBytes(it, byteCollector::reserve, byteCollector::write)
+            defMilli.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
+            byteCollector.reset()
+        }
+    }
+
+    @Test
     fun convertString() {
-        timesToTest.forEach {
+        timesToTestMillis.forEach {
             val b = def.convertToString(it)
             def.convertFromString(b) shouldBe it
         }

@@ -5,6 +5,8 @@ import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.Bytes
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
 class FlexBytesDefinition(
@@ -20,11 +22,16 @@ class FlexBytesDefinition(
         override val minSize: Int? = null,
         override val maxSize: Int? = null
 ): AbstractSimpleDefinition<Bytes>(
-    name, index, indexed, searchable, required, final, unique, minValue, maxValue
+    name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), HasSizeDefinition {
     override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(length, reader)
 
     override fun convertToStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+
+    override fun writeTransportBytesWithKey(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, reserver, writer)
+        writeTransportBytesWithLength(value, reserver, writer)
+    }
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = try {

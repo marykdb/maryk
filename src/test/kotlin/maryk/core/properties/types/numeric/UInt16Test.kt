@@ -35,11 +35,21 @@ internal class UInt16Test {
     }
 
     @Test
-    fun testStreamingConversion() {
+    fun testStorageBytesConversion() {
         val bc = ByteCollector()
         uInt16values.forEach {
             UInt16.writeStorageBytes(it, bc::reserve, bc::write)
             UInt16.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testTransportBytesConversion() {
+        val bc = ByteCollector()
+        uInt16values.forEach {
+            UInt16.writeTransportBytes(it, bc::reserve, bc::write)
+            UInt16.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }
     }

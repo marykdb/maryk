@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.JsonGenerator
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.protobuf.WireType
 
 /** Definition for Boolean properties */
 class BooleanDefinition(
@@ -15,7 +16,7 @@ class BooleanDefinition(
         final: Boolean = false,
         unique: Boolean = false
 ): AbstractSimpleDefinition<Boolean>(
-    name, index, indexed, searchable, required, final, unique, minValue = false, maxValue = true
+    name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue = false, maxValue = true
 ), IsFixedBytesEncodable<Boolean> {
     override val byteSize = 1
 
@@ -25,6 +26,9 @@ class BooleanDefinition(
         reserver(1)
         value.writeBytes(writer)
     }
+
+    override fun writeTransportBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+            = convertToStorageBytes(value, reserver, writer)
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = when(string) {

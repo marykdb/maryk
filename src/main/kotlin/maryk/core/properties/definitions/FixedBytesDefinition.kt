@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.randomBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
+import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
 class FixedBytesDefinition(
@@ -18,7 +19,7 @@ class FixedBytesDefinition(
         random: Boolean = false,
         override val byteSize: Int
 ): AbstractNumericDefinition<Bytes>(
-    name, index, indexed, searchable, required, final, unique, minValue, maxValue, random
+    name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue, random
 ), IsFixedBytesEncodable<Bytes> {
     override fun createRandom() = Bytes(randomBytes(this.byteSize))
 

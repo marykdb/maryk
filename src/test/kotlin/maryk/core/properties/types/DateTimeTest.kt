@@ -33,8 +33,8 @@ internal class DateTimeTest {
     
     @Test
     fun compare() {
-        DateTime.MIN.compareTo(DateTime.MAX_IN_SECONDS) shouldBe -1999999998
-        DateTime.MAX_IN_MILLIS.compareTo(DateTime.MIN) shouldBe 1999999998
+        DateTime.MIN.compareTo(DateTime.MAX_IN_SECONDS) shouldBe -199999998
+        DateTime.MAX_IN_MILLIS.compareTo(DateTime.MIN) shouldBe 199999998
         dateTime.compareTo(dateTime) shouldBe 0
     }
 

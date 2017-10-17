@@ -3,6 +3,7 @@ package maryk.core.protobuf
 import maryk.core.extensions.bytes.SEVENBYTES
 import maryk.core.extensions.bytes.SIGNBYTE
 import maryk.core.extensions.bytes.ZEROBYTE
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
@@ -54,6 +55,40 @@ object ProtoBuf {
             shift += 7
         }
         throw ParseException("Too big tag")
+    }
+
+    /** Skips a field by wire type
+     * @param wireType: of field to skip
+     * @param reader: to continue reading for
+     */
+    fun skipField(wireType: Any, reader: () -> Byte) {
+        when (wireType) {
+            WireType.VAR_INT -> {
+                var currentByte: Byte
+                do {
+                    currentByte = reader()
+                } while (currentByte and SIGNBYTE != ZEROBYTE)
+            }
+            WireType.BIT_64 -> (0 .. 8).forEach { reader() }
+            WireType.LENGTH_DELIMITED -> (0..initIntByVar(reader)).forEach { reader() }
+            WireType.START_GROUP -> TODO("not implemented")
+            WireType.END_GROUP -> return
+            WireType.BIT_32 -> (0 .. 4).forEach { reader() }
+        }
+    }
+
+    /** Get length of next value
+     * @param wireType: to use for length retrieval
+     * @param reader: to continue reading for
+     * @return size of bytes of next value. -1 for varInt or start/end group
+     */
+    fun getLength(wireType: WireType, reader: () -> Byte) = when(wireType) {
+        WireType.VAR_INT -> -1
+        WireType.BIT_64 -> 8
+        WireType.LENGTH_DELIMITED -> initIntByVar(reader)
+        WireType.START_GROUP -> -1
+        WireType.END_GROUP -> -1
+        WireType.BIT_32 -> 4
     }
 }
 

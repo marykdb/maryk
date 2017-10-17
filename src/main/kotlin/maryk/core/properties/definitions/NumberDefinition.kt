@@ -5,8 +5,8 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.UInt64
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
-import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.NumberDescriptor
+import maryk.core.properties.types.numeric.SInt64
 
 /** Definition for Number properties */
 class NumberDefinition<T: Comparable<T>>(
@@ -22,15 +22,23 @@ class NumberDefinition<T: Comparable<T>>(
         random: Boolean = false,
         val type: NumberDescriptor<T>
 ): AbstractNumericDefinition<T>(
-    name, index, indexed, searchable, required, final, unique, minValue, maxValue, random
+    name, index, indexed, searchable, required, final, type.wireType, unique, minValue, maxValue, random
 ), IsFixedBytesEncodable<T> {
     override val byteSize = type.size
 
     override fun createRandom() = type.createRandom()
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = type.fromStorageByteReader(length, reader)
+    override fun convertFromStorageBytes(length: Int, reader:() -> Byte)
+            = this.type.fromStorageByteReader(length, reader)
 
-    override fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = type.writeStorageBytes(value, reserver, writer)
+    override fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+            = this.type.writeStorageBytes(value, reserver, writer)
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte)
+            = this.type.readTransportBytes(reader)
+
+    override fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+            = this.type.writeTransportBytes(value, reserver, writer)
 
     @Throws(ParseException::class)
     override fun convertFromString(string: String) = try {

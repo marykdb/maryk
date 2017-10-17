@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.protobuf.WireType
+
 /**
  * Abstract Property Definition to define numeric properties.
  *
@@ -13,12 +15,13 @@ abstract class AbstractNumericDefinition<T: Comparable<T>>(
         searchable: Boolean,
         required: Boolean,
         final: Boolean,
+        wireType: WireType,
         unique: Boolean,
         minValue: T?,
         maxValue: T?,
         val random:Boolean
 ) : AbstractSimpleDefinition<T>(
-        name, index, indexed, searchable, required, final, unique, minValue, maxValue
+        name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue
 ) {
     /** @return random value */
     abstract fun createRandom(): T

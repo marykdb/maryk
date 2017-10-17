@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.DataModel
 import maryk.core.properties.exceptions.PropertyAlreadySetException
 import maryk.core.properties.exceptions.PropertyRequiredException
@@ -33,5 +35,29 @@ abstract class AbstractPropertyDefinition<T: Any>  (
         return dataModel.getPropertyGetter(
                 this.index
         )?.invoke(dataObject) as T
+    }
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte): T {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    /** Adds length to written bytes
+     * @param value to convert
+     * @param reserver to reserve amount of bytes to write on
+     * @param writer to write bytes to
+     */
+    protected fun writeTransportBytesWithLength(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        this.writeTransportBytes(value, {
+            reserver(it + it.computeVarByteSize())
+            it.writeVarBytes(writer)
+        }, writer)
+    }
+
+    override fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun writeTransportBytesWithKey(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

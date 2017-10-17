@@ -38,11 +38,21 @@ internal class UInt64Test {
     }
 
     @Test
-    fun testStreamingConversion() {
+    fun testStorageBytesConversion() {
         val bc = ByteCollector()
         uInt64values.forEach {
             UInt64.writeStorageBytes(it, bc::reserve, bc::write)
             UInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testTransportBytesConversion() {
+        val bc = ByteCollector()
+        uInt64values.forEach {
+            UInt64.writeTransportBytes(it, bc::reserve, bc::write)
+            UInt64.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }
     }

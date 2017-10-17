@@ -7,5 +7,4 @@ abstract class UInt<T: Number>(internal val number: T): Comparable<UInt<T>> {
         else -> number == other.number
     }
     override fun hashCode() = number.hashCode()
-    abstract fun writeStorageBytes(writer: (Byte) -> Unit)
 }

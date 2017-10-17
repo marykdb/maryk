@@ -34,11 +34,21 @@ internal class Float32Test {
     }
 
     @Test
-    fun testStreamingConversion() {
+    fun testStorageBytesConversion() {
         val bc = ByteCollector()
         float32values.forEach {
             Float32.writeStorageBytes(it, bc::reserve, bc::write)
             Float32.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testTransportBytesConversion() {
+        val bc = ByteCollector()
+        float32values.forEach {
+            Float32.writeTransportBytes(it, bc::reserve, bc::write)
+            Float32.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }
     }

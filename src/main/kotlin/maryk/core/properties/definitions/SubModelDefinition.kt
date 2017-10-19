@@ -7,6 +7,8 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.CanHaveSimpleChildReference
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 /**
  * Definition for submodel properties
@@ -31,7 +33,7 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
                 parentRefFactory()?.let {
                     it as CanHaveComplexChildReference<*, *>
                 },
-                dataModel = dataModel
+                dataModel = this.dataModel
             )
 
     @Throws(PropertyValidationException::class)
@@ -45,7 +47,15 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         }
     }
 
-    override fun writeJsonValue(generator: JsonGenerator, value: DO) = dataModel.toJson(generator, value)
+    override fun writeJsonValue(generator: JsonGenerator, value: DO) = this.dataModel.toJson(generator, value)
 
-    override fun parseFromJson(parser: JsonParser) = dataModel.fromJsonToObject(parser)
+    override fun parseFromJson(parser: JsonParser) = this.dataModel.fromJsonToObject(parser)
+
+    override fun writeTransportBytesWithKey(index: Int, value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(this.index, WireType.START_GROUP, reserver, writer)
+        this.dataModel.toProtoBuf(value, reserver, writer)
+        ProtoBuf.writeKey(this.index, WireType.END_GROUP, reserver, writer)
+    }
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte) = this.dataModel.fromProtoBufToObject(reader)
 }

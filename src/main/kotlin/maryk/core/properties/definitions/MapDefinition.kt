@@ -13,6 +13,8 @@ import maryk.core.properties.references.CanHaveSimpleChildReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 class MapDefinition<K: Any, V: Any>(
         name: String? = null,
@@ -106,5 +108,35 @@ class MapDefinition<K: Any, V: Any>(
             )
         }
         return map
+    }
+
+    override fun writeTransportBytesWithKey(value: Map<K, V>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        value.forEach { key, item ->
+            ProtoBuf.writeKey(this.index, WireType.START_GROUP, reserver, writer)
+            keyDefinition.writeTransportBytesWithKey(1, key, reserver, writer)
+            valueDefinition.writeTransportBytesWithKey(2, item, reserver, writer)
+            ProtoBuf.writeKey(this.index, WireType.END_GROUP, reserver, writer)
+        }
+    }
+
+    fun readMapTransportBytes(length: Int, reader: () -> Byte): Pair<K, V> {
+        val keyOfMapKey = ProtoBuf.readKey(reader)
+        val key = keyDefinition.readTransportBytes(
+                ProtoBuf.getLength(keyOfMapKey.wireType, reader),
+                reader
+        )
+
+        val keyOfMapValue = ProtoBuf.readKey(reader)
+        val value = valueDefinition.readTransportBytes(
+                ProtoBuf.getLength(keyOfMapValue.wireType, reader),
+                reader
+        )
+
+        val endKey = ProtoBuf.readKey(reader)
+        if (endKey.wireType != WireType.END_GROUP) {
+            throw ParseException("Invalid protobuf map construction")
+        }
+
+        return Pair(key, value)
     }
 }

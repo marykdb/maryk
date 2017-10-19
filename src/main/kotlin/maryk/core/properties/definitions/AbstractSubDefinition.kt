@@ -13,5 +13,9 @@ abstract class AbstractSubDefinition<T: Any>(
         required: Boolean,
         final: Boolean
 ) : AbstractPropertyDefinition<T>(
-        name, index, indexed, searchable, required, final
-)
+        name, index, indexed, searchable, required, final) {
+    override fun writeTransportBytesWithKey(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+            = this.writeTransportBytesWithKey(this.index, value, reserver, writer)
+
+    abstract fun writeTransportBytesWithKey(index: Int, value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+}

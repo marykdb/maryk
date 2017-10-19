@@ -71,9 +71,9 @@ internal class MultiTypeDefinitionTest {
             def.writeTransportBytesWithKey(it, bc::reserve, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 1
-            key.wireType shouldBe WireType.LENGTH_DELIMITED
+            key.wireType shouldBe WireType.START_GROUP
             def.readTransportBytes(
-                    ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+                    -1,
                     bc::read
             ) shouldBe it
             bc.reset()

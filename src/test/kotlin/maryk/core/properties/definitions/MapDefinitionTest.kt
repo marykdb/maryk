@@ -3,8 +3,16 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestMarykObject
-import maryk.core.properties.exceptions.*
+import maryk.core.extensions.toHex
+import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.exceptions.PropertyInvalidValueException
+import maryk.core.properties.exceptions.PropertyOutOfRangeException
+import maryk.core.properties.exceptions.PropertyTooLittleItemsException
+import maryk.core.properties.exceptions.PropertyTooMuchItemsException
+import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 import org.junit.Test
 import kotlin.test.assertTrue
 
@@ -28,6 +36,7 @@ internal class MapDefinitionTest {
 
     val def = MapDefinition(
             name = "intStringMap",
+            index = 4,
             minSize = 2,
             maxSize = 4,
             keyDefinition = intDef,
@@ -101,6 +110,42 @@ internal class MapDefinitionTest {
         with(e.exceptions[2]) {
             assertTrue(this is PropertyOutOfRangeException)
             this.reference!!.completeName shouldBe "intStringMap<3000>"
+        }
+    }
+
+
+    @Test
+    fun testTransportConversion() {
+        val bc = GrowableByteCollector()
+
+        val value = mapOf(
+                12 to "#twelve",
+                30 to "#thirty",
+                100 to "#hundred",
+                1000 to "#thousand"
+        )
+        val asHex = "2308181207237477656c76652423083c120723746869727479242308c80112082368756e64726564242308d00f12092374686f7573616e6424"
+
+        def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+
+        bc.bytes.toHex() shouldBe asHex
+
+        fun readKey() {
+            val key = ProtoBuf.readKey(bc::read)
+            key.wireType shouldBe WireType.START_GROUP
+            key.tag shouldBe 4
+        }
+
+        fun readValue() = def.readMapTransportBytes(
+                -1,
+                bc::read
+        )
+
+        value.forEach {
+            readKey()
+            val mapValue = readValue()
+            mapValue.first shouldBe it.key
+            mapValue.second shouldBe it.value
         }
     }
 }

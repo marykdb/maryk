@@ -10,6 +10,7 @@ import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 class Def<T: Any, in DM: Any>(val propertyDefinition: IsPropertyDefinition<T>, val propertyGetter: (DM) -> T?)
 
@@ -202,6 +203,11 @@ abstract class DataModel<DO: Any>(
             // TODO: Correct way to handle all conditions???
             try {
                 val key = ProtoBuf.readKey(reader)
+                if (key.wireType == WireType.END_GROUP) {
+                    toContinue = false
+                    break
+                }
+
                 val definition = indexToDefinition[key.tag]
 
                 if (definition != null) {

@@ -47,10 +47,7 @@ abstract class AbstractValueDefinition<T: Any>(
         convertToStorageBytes(value, reserver, writer)
     }
 
-    override fun writeTransportBytesWithKey(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
-            = this.writeTransportBytesWithKey(this.index, value, reserver, writer)
-
-    fun writeTransportBytesWithKey(index: Int, value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytesWithKey(index: Int, value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(index, this.wireType, reserver, writer)
         when(this.wireType) {
             WireType.LENGTH_DELIMITED -> writeTransportBytesWithLength(value, reserver, writer)

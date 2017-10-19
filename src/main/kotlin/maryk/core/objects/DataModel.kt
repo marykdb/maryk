@@ -4,7 +4,13 @@ import maryk.core.json.IllegalJsonOperation
 import maryk.core.json.JsonGenerator
 import maryk.core.json.JsonParser
 import maryk.core.json.JsonToken
+import maryk.core.properties.definitions.AbstractCollectionDefinition
+import maryk.core.properties.definitions.AbstractSubDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
@@ -204,21 +210,56 @@ abstract class DataModel<DO: Any>(
             try {
                 val key = ProtoBuf.readKey(reader)
                 if (key.wireType == WireType.END_GROUP) {
-                    toContinue = false
                     break
                 }
 
-                val definition = indexToDefinition[key.tag]
+                val propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
 
-                if (definition != null) {
-                    val value = definition.propertyDefinition.readTransportBytes(
-                            ProtoBuf.getLength(key.wireType, reader),
-                            reader
-                    )
-
-                    valueMap.put(key.tag, value)
-                } else {
+                if (propertyDefinition == null) {
                     ProtoBuf.skipField(key.wireType, reader)
+                } else {
+                    when (propertyDefinition) {
+                        is AbstractSubDefinition<*> -> valueMap.put(
+                                key.tag,
+                                propertyDefinition.readTransportBytes(
+                                        ProtoBuf.getLength(key.wireType, reader),
+                                        reader
+                                )
+                        )
+                        is AbstractCollectionDefinition<*, *> -> {
+                            val value = propertyDefinition.readCollectionTransportBytes(
+                                    ProtoBuf.getLength(key.wireType, reader),
+                                    reader
+                            )
+                            if (valueMap.contains(key.tag)) {
+                                @Suppress("UNCHECKED_CAST")
+                                val collection = valueMap[key.tag] as MutableCollection<Any>
+                                collection.add(value)
+                            } else {
+                                valueMap[key.tag] = when (propertyDefinition) {
+                                    is SetDefinition<*> -> mutableSetOf(value)
+                                    is ListDefinition<*> -> mutableListOf(value)
+                                    else -> {
+                                        throw ParseException("Unknown type of collection definition for ${propertyDefinition.name}")
+                                    }
+                                }
+                            }
+                        }
+                        is MapDefinition<*, *> -> {
+                            val value = propertyDefinition.readMapTransportBytes(
+                                    ProtoBuf.getLength(key.wireType, reader),
+                                    reader
+                            )
+                            if (valueMap.contains(key.tag)) {
+                                @Suppress("UNCHECKED_CAST")
+                                val map = valueMap[key.tag] as MutableMap<Any, Any>
+                                map.put(value.first, value.second)
+                            } else {
+                                valueMap[key.tag] = mutableMapOf(value)
+                            }
+                        }
+                        else -> throw ParseException("Unknown property type for ${propertyDefinition.name}")
+                    }
                 }
             } catch (e: Throwable) {
                 toContinue = false

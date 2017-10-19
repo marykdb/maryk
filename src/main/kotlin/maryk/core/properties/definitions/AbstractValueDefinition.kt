@@ -1,6 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonGenerator
 import maryk.core.json.JsonParser
 import maryk.core.json.JsonToken
@@ -43,7 +45,24 @@ abstract class AbstractValueDefinition<T: Any>(
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = convertFromStorageBytes(length, reader)
 
-    override fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    /** Adds length to written bytes
+     * @param value to convert
+     * @param reserver to reserve amount of bytes to write on
+     * @param writer to write bytes to
+     */
+    protected fun writeTransportBytesWithLength(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        this.writeTransportBytes(value, {
+            reserver(it + it.computeVarByteSize())
+            it.writeVarBytes(writer)
+        }, writer)
+    }
+
+    /** Convert a value to bytes for transportation
+     * @param value to convert
+     * @param reserver to reserve amount of bytes to write on
+     * @param writer to write bytes to
+     */
+    open fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         convertToStorageBytes(value, reserver, writer)
     }
 

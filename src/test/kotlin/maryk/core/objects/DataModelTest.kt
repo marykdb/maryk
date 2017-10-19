@@ -266,10 +266,12 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testToProtoBufConversion() {
+    fun testProtoBufConversion() {
         val byteCollector = GrowableByteCollector()
 
         TestMarykObject.toProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
+
+        TestMarykObject.fromProtoBufToObject(byteCollector::read) shouldBe testExtendedObject
     }
 
     @Test

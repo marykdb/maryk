@@ -25,7 +25,7 @@ class MultiTypeDefinition(
         required: Boolean = false,
         final: Boolean = false,
         val typeMap: Map<Int, AbstractSubDefinition<*>>
-) : AbstractPropertyDefinition<TypedValue<*>>(
+) : AbstractSubDefinition<TypedValue<*>>(
         name, index, indexed, searchable, required, final
 ) {
     @Throws(PropertyValidationException::class)
@@ -103,12 +103,12 @@ class MultiTypeDefinition(
         )
     }
 
-    override fun writeTransportBytesWithKey(value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytesWithKey(index: Int, value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(this.index, WireType.START_GROUP, reserver, writer)
         this.writeTransportBytes(value, reserver, writer)
     }
 
-    override fun writeTransportBytes(value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    fun writeTransportBytes(value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(1, WireType.VAR_INT, reserver, writer)
         value.typeIndex.writeVarBytes(writer)
 

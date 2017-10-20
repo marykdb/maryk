@@ -16,6 +16,7 @@ import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WireType
 
 class Def<T: Any, in DM: Any>(val propertyDefinition: IsPropertyDefinition<T>, val propertyGetter: (DM) -> T?)
@@ -197,76 +198,114 @@ abstract class DataModel<DO: Any>(
     }
 
     /** Convert to a Map of values from ProtoBuf
+     * @param length of bytes to read.
+     * @param reader to read ProtoBuf bytes from
+     * @return DataObject represented by the ProtoBuf
+     */
+    fun fromProtoBuf(length: Int, reader:() -> Byte): Map<Int, Any> {
+        val valueMap: MutableMap<Int, Any> = mutableMapOf()
+        var byteCounter = 1
+
+        val byteReader = {
+            byteCounter++
+            reader()
+        }
+
+        while (byteCounter < length) {
+            readProtoBufField(
+                    valueMap,
+                    ProtoBuf.readKey(byteReader),
+                    byteReader
+            )
+        }
+
+        return valueMap
+    }
+
+    /** Convert to a Map of values from ProtoBuf
+     * Expects an END_GROUP wire type to signal the end of the object
      * @param reader to read ProtoBuf bytes from
      * @return DataObject represented by the ProtoBuf
      */
     fun fromProtoBuf(reader:() -> Byte): Map<Int, Any> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
 
-        while (true) {
-            try {
-                val key = ProtoBuf.readKey(reader)
-                if (key.wireType == WireType.END_GROUP) {
-                    break
-                }
-
-                val propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
-
-                if (propertyDefinition == null) {
-                    ProtoBuf.skipField(key.wireType, reader)
-                } else {
-                    when (propertyDefinition) {
-                        is AbstractSubDefinition<*> -> valueMap.put(
-                                key.tag,
-                                propertyDefinition.readTransportBytes(
-                                        ProtoBuf.getLength(key.wireType, reader),
-                                        reader
-                                )
-                        )
-                        is AbstractCollectionDefinition<*, *> -> {
-                            val value = propertyDefinition.readCollectionTransportBytes(
-                                    ProtoBuf.getLength(key.wireType, reader),
-                                    reader
-                            )
-                            if (valueMap.contains(key.tag)) {
-                                @Suppress("UNCHECKED_CAST")
-                                val collection = valueMap[key.tag] as MutableCollection<Any>
-                                collection.add(value)
-                            } else {
-                                valueMap[key.tag] = when (propertyDefinition) {
-                                    is SetDefinition<*> -> mutableSetOf(value)
-                                    is ListDefinition<*> -> mutableListOf(value)
-                                    else -> {
-                                        throw ParseException("Unknown type of collection definition for ${propertyDefinition.name}")
-                                    }
-                                }
-                            }
-                        }
-                        is MapDefinition<*, *> -> {
-                            val value = propertyDefinition.readMapTransportBytes(
-                                    ProtoBuf.getLength(key.wireType, reader),
-                                    reader
-                            )
-                            if (valueMap.contains(key.tag)) {
-                                @Suppress("UNCHECKED_CAST")
-                                val map = valueMap[key.tag] as MutableMap<Any, Any>
-                                map.put(value.first, value.second)
-                            } else {
-                                valueMap[key.tag] = mutableMapOf(value)
-                            }
-                        }
-                        else -> throw ParseException("Unknown property type for ${propertyDefinition.name}")
-                    }
-                }
-            } catch (e: Throwable) {
+        while(true) {
+            val key = ProtoBuf.readKey(reader)
+            if (key.wireType == WireType.END_GROUP) {
                 break
             }
+
+            readProtoBufField(
+                    valueMap,
+                    key,
+                    reader
+            )
         }
 
         return valueMap
     }
 
+    private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte) {
+        val propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
+
+        if (propertyDefinition == null) {
+            ProtoBuf.skipField(key.wireType, byteReader)
+        } else {
+            when (propertyDefinition) {
+                is AbstractSubDefinition<*> -> valueMap.put(
+                        key.tag,
+                        propertyDefinition.readTransportBytes(
+                                ProtoBuf.getLength(key.wireType, byteReader),
+                                byteReader
+                        )
+                )
+                is AbstractCollectionDefinition<*, *> -> {
+                    val value = propertyDefinition.readCollectionTransportBytes(
+                            ProtoBuf.getLength(key.wireType, byteReader),
+                            byteReader
+                    )
+                    if (valueMap.contains(key.tag)) {
+                        @Suppress("UNCHECKED_CAST")
+                        val collection = valueMap[key.tag] as MutableCollection<Any>
+                        collection.add(value)
+                    } else {
+                        valueMap[key.tag] = when (propertyDefinition) {
+                            is SetDefinition<*> -> mutableSetOf(value)
+                            is ListDefinition<*> -> mutableListOf(value)
+                            else -> {
+                                throw ParseException("Unknown type of collection definition for ${propertyDefinition.name}")
+                            }
+                        }
+                    }
+                }
+                is MapDefinition<*, *> -> {
+                    val value = propertyDefinition.readMapTransportBytes(
+                            ProtoBuf.getLength(key.wireType, byteReader),
+                            byteReader
+                    )
+                    if (valueMap.contains(key.tag)) {
+                        @Suppress("UNCHECKED_CAST")
+                        val map = valueMap[key.tag] as MutableMap<Any, Any>
+                        map.put(value.first, value.second)
+                    } else {
+                        valueMap[key.tag] = mutableMapOf(value)
+                    }
+                }
+                else -> throw ParseException("Unknown property type for ${propertyDefinition.name}")
+            }
+        }
+    }
+
     /** Convert to a DataModel from ProtoBuf
+     * @param length of bytes which contains object
+     * @param reader to read ProtoBuf bytes from
+     * @return DataObject represented by the ProtoBuf
+     */
+    fun fromProtoBufToObject(length: Int, reader:() -> Byte) = construct(this.fromProtoBuf(length, reader))
+
+    /** Convert to a DataModel from ProtoBuf
+     * Expects a field with END_GROUP wire type to stop reading
      * @param reader to read ProtoBuf bytes from
      * @return DataObject represented by the ProtoBuf
      */

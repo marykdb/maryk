@@ -57,5 +57,10 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         ProtoBuf.writeKey(this.index, WireType.END_GROUP, reserver, writer)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte) = this.dataModel.fromProtoBufToObject(reader)
+    // With a length of -1 it should convert with GROUP based protobuf
+    override fun readTransportBytes(length: Int, reader: () -> Byte) = if(length == -1) {
+        this.dataModel.fromProtoBufToObject(reader)
+    } else {
+        this.dataModel.fromProtoBufToObject(length, reader)
+    }
 }

@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
 import maryk.core.objects.Def
@@ -71,6 +72,23 @@ internal class SubModelDefinitionTest {
         def.readTransportBytes(
                 ProtoBuf.getLength(WireType.START_GROUP, bc::read),
                 bc::read
+        ) shouldBe value
+    }
+
+    @Test
+    fun testTransportWithLengthConversion() {
+        val value = MarykObject()
+        val bytes = initByteArrayByHex("0a0502036a7572")
+        var index = 0
+        val reader = { bytes[index++] }
+
+        val key = ProtoBuf.readKey(reader)
+        key.wireType shouldBe WireType.LENGTH_DELIMITED
+        key.tag shouldBe 1
+
+        def.readTransportBytes(
+                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, reader),
+                reader
         ) shouldBe value
     }
 }

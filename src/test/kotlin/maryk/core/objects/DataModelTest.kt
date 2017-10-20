@@ -16,6 +16,7 @@ import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
@@ -249,20 +250,21 @@ internal class DataModelTest {
 
     @Test
     fun testFromProtoBufConversionWithMap() {
-        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d72280130026a020105")
+        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d72280130026a1001050105010501050105010501050105")
         var index = 0
 
-        val map = TestMarykObject.fromProtoBuf {
+        val map = TestMarykObject.fromProtoBuf(bytes.size) {
             bytes[index++]
         }
 
-        map.size shouldBe 6
+        map.size shouldBe 7
         map[0] shouldBe "hay"
         map[1] shouldBe 4
         map[2] shouldBe 32.toUInt32()
         map[3] shouldBe 3.555
         map[5] shouldBe true
         map[6] shouldBe Option.V2
+        (map[13] as Key<*>).bytes.toHex() shouldBe "01050105010501050105010501050105"
     }
 
     @Test
@@ -271,7 +273,16 @@ internal class DataModelTest {
 
         TestMarykObject.toProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
 
-        TestMarykObject.fromProtoBufToObject(byteCollector::read) shouldBe testExtendedObject
+        TestMarykObject.fromProtoBufToObject(byteCollector.size, byteCollector::read) shouldBe testExtendedObject
+    }
+
+    @Test
+    fun testProtoBufWithNoLengthConversion() {
+        val byteCollector = GrowableByteCollector()
+
+        TestMarykObject.toProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
+
+        TestMarykObject.fromProtoBufToObject(byteCollector.size, byteCollector::read) shouldBe testExtendedObject
     }
 
     @Test
@@ -279,7 +290,7 @@ internal class DataModelTest {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
-        val map = TestMarykObject.fromProtoBuf {
+        val map = TestMarykObject.fromProtoBuf(bytes.size) {
             bytes[index++]
         }
 

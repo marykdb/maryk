@@ -203,10 +203,7 @@ abstract class DataModel<DO: Any>(
     fun fromProtoBuf(reader:() -> Byte): Map<Int, Any> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
 
-        var toContinue = true
-
-        while (toContinue) {
-            // TODO: Correct way to handle all conditions???
+        while (true) {
             try {
                 val key = ProtoBuf.readKey(reader)
                 if (key.wireType == WireType.END_GROUP) {
@@ -262,7 +259,7 @@ abstract class DataModel<DO: Any>(
                     }
                 }
             } catch (e: Throwable) {
-                toContinue = false
+                break
             }
         }
 

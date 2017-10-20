@@ -69,11 +69,19 @@ object ProtoBuf {
                     currentByte = reader()
                 } while (currentByte and SIGNBYTE != ZEROBYTE)
             }
-            WireType.BIT_64 -> (0 .. 8).forEach { reader() }
-            WireType.LENGTH_DELIMITED -> (0..initIntByVar(reader)).forEach { reader() }
-            WireType.START_GROUP -> TODO("not implemented")
+            WireType.BIT_64 -> (0 until 8).forEach { reader() }
+            WireType.LENGTH_DELIMITED -> (0 until initIntByVar(reader)).forEach { reader() }
+            WireType.START_GROUP -> {
+                while (true) {
+                    val key = ProtoBuf.readKey(reader)
+                    if (key.wireType == WireType.END_GROUP) {
+                       break
+                    }
+                    skipField(key.wireType, reader)
+                }
+            }
             WireType.END_GROUP -> return
-            WireType.BIT_32 -> (0 .. 4).forEach { reader() }
+            WireType.BIT_32 -> (0 until 4).forEach { reader() }
         }
     }
 

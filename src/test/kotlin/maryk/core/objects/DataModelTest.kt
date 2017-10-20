@@ -275,6 +275,18 @@ internal class DataModelTest {
     }
 
     @Test
+    fun testSkipProtoBufConversion() {
+        val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
+        var index = 0
+
+        val map = TestMarykObject.fromProtoBuf {
+            bytes[index++]
+        }
+
+        map.size shouldBe 0
+    }
+
+    @Test
     fun testFromJsonToObjectConversion() {
         var input = ""
         var index = 0

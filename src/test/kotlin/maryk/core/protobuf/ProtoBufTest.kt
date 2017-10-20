@@ -1,9 +1,12 @@
 package maryk.core.protobuf
 
 import io.kotlintest.matchers.shouldBe
+import maryk.core.extensions.bytes.writeBytes
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.GrowableByteCollector
 import org.junit.Test
 
 class ProtoBufTest {
@@ -51,5 +54,47 @@ class ProtoBufTest {
         testValues.forEach {
             testParseKey(it)
         }
+    }
+
+    @Test
+    fun skipField() {
+        val bc = GrowableByteCollector()
+
+        ProtoBuf.writeKey(22, WireType.VAR_INT, bc::reserve, bc::write)
+        22.writeVarBytes(bc::write)
+
+        ProtoBuf.writeKey(44, WireType.BIT_64, bc::reserve, bc::write)
+        4444L.writeBytes(bc::write)
+
+        ProtoBuf.writeKey(55, WireType.LENGTH_DELIMITED, bc::reserve, bc::write)
+        22.writeVarBytes(bc::write)
+        (0 until 22).forEach { bc.write(-1) }
+
+        ProtoBuf.writeKey(66, WireType.START_GROUP, bc::reserve, bc::write)
+
+        ProtoBuf.writeKey(1, WireType.VAR_INT, bc::reserve, bc::write)
+        22.writeVarBytes(bc::write)
+
+        ProtoBuf.writeKey(2, WireType.LENGTH_DELIMITED, bc::reserve, bc::write)
+        5.writeVarBytes(bc::write)
+        (0 until 5).forEach { bc.write(-1) }
+
+        ProtoBuf.writeKey(66, WireType.END_GROUP, bc::reserve, bc::write)
+
+        ProtoBuf.writeKey(77, WireType.BIT_32, bc::reserve, bc::write)
+        333.writeBytes(bc::write)
+
+        fun testSkip(bc: GrowableByteCollector, wireType: WireType, readIndex: Int) {
+            ProtoBuf.readKey(bc::read).wireType shouldBe wireType
+            ProtoBuf.skipField(wireType, bc::read)
+
+            bc.readIndex shouldBe readIndex
+        }
+
+        testSkip(bc, WireType.VAR_INT, 3)
+        testSkip(bc, WireType.BIT_64, 13)
+        testSkip(bc, WireType.LENGTH_DELIMITED, 38)
+        testSkip(bc, WireType.START_GROUP, 51)
+        testSkip(bc, WireType.BIT_32, 57)
     }
 }

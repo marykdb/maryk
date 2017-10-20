@@ -4,7 +4,7 @@ package maryk.core.properties
 class GrowableByteCollector() {
     private var byteList = mutableListOf<Byte>()
     private var reserved: Int = 0
-    private var readIndex = 0
+    internal var readIndex = 0
 
     val bytes: ByteArray get() = byteList.toByteArray()
     val size: Int get() = this.reserved

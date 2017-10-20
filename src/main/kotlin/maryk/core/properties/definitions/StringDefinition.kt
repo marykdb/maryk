@@ -35,13 +35,13 @@ class StringDefinition(
         }
     }
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = initString(length, reader)
+    override fun readStorageBytes(length: Int, reader:() -> Byte) = initString(length, reader)
 
-    override fun convertToStorageBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun writeStorageBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
-    override fun convertToString(value: String) = value
+    override fun asString(value: String) = value
 
-    override fun convertFromString(string: String) = string
+    override fun fromString(string: String) = string
 
     @Throws(PropertyValidationException::class)
     override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> PropertyReference<*, *>?) {

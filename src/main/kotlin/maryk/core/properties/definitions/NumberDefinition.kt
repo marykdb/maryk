@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.UInt64
 import maryk.core.properties.types.numeric.Float32
@@ -28,10 +28,10 @@ class NumberDefinition<T: Comparable<T>>(
 
     override fun createRandom() = type.createRandom()
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte)
+    override fun readStorageBytes(length: Int, reader:() -> Byte)
             = this.type.fromStorageByteReader(length, reader)
 
-    override fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    override fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
             = this.type.writeStorageBytes(value, reserver, writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte)
@@ -41,16 +41,16 @@ class NumberDefinition<T: Comparable<T>>(
             = this.type.writeTransportBytes(value, reserver, writer)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String) = try {
+    override fun fromString(string: String) = try {
         type.ofString(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
-    override fun writeJsonValue(generator: JsonGenerator, value: T) = when {
+    override fun writeJsonValue(writer: JsonWriter, value: T) = when {
         type !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
-            generator.writeValue(
-                    this.convertToString(value)
+            writer.writeValue(
+                    this.asString(value)
             )
         }
-        else -> super.writeJsonValue(generator, value)
+        else -> super.writeJsonValue(writer, value)
     }
 }

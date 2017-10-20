@@ -4,7 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import org.junit.Test
 
-internal class JsonParserTest {
+internal class JsonReaderTest {
     @Test
     fun testJsonParserStructure() {
         val input = """{
@@ -23,7 +23,7 @@ internal class JsonParserTest {
         }"""
         var index = 0
 
-        val parser = JsonParser() { input[index++] }
+        val reader = JsonReader() { input[index++] }
         listOf<Pair<JsonToken, String>>(
                 JsonToken.START_OBJECT to "",
                 JsonToken.FIELD_NAME to "string",
@@ -62,13 +62,13 @@ internal class JsonParserTest {
                 JsonToken.END_ARRAY to "",
                 JsonToken.END_OBJECT to ""
         ). forEach { (token, value) ->
-            parser.nextToken()
+            reader.nextToken()
 
-            parser.currentToken shouldBe token
-            parser.lastValue shouldBe value
+            reader.currentToken shouldBe token
+            reader.lastValue shouldBe value
         }
 
-        parser.nextToken() shouldBe JsonToken.END_JSON
+        reader.nextToken() shouldBe JsonToken.END_JSON
     }
 
     @Test
@@ -85,29 +85,29 @@ internal class JsonParserTest {
         }"""
         var index = 0
 
-        val parser = JsonParser() { input[index++] }
-        (parser.nextToken() is JsonToken.START_OBJECT) shouldBe true
+        val reader = JsonReader() { input[index++] }
+        (reader.nextToken() is JsonToken.START_OBJECT) shouldBe true
 
-        (parser.nextToken() is JsonToken.FIELD_NAME) shouldBe true
-        parser.lastValue shouldBe "1"
-        parser.skipUntilNextField()
+        (reader.nextToken() is JsonToken.FIELD_NAME) shouldBe true
+        reader.lastValue shouldBe "1"
+        reader.skipUntilNextField()
 
-        (parser.currentToken is JsonToken.FIELD_NAME) shouldBe true
-        parser.lastValue shouldBe "2"
-        parser.skipUntilNextField()
+        (reader.currentToken is JsonToken.FIELD_NAME) shouldBe true
+        reader.lastValue shouldBe "2"
+        reader.skipUntilNextField()
 
-        (parser.currentToken is JsonToken.FIELD_NAME) shouldBe true
-        parser.lastValue shouldBe "3"
-        parser.skipUntilNextField()
+        (reader.currentToken is JsonToken.FIELD_NAME) shouldBe true
+        reader.lastValue shouldBe "3"
+        reader.skipUntilNextField()
 
-        (parser.currentToken is JsonToken.FIELD_NAME) shouldBe true
-        parser.lastValue shouldBe "4"
+        (reader.currentToken is JsonToken.FIELD_NAME) shouldBe true
+        reader.lastValue shouldBe "4"
 
-        (parser.nextToken() is JsonToken.OBJECT_VALUE) shouldBe true
-        parser.lastValue shouldBe "true"
+        (reader.nextToken() is JsonToken.OBJECT_VALUE) shouldBe true
+        reader.lastValue shouldBe "true"
 
-        (parser.nextToken() is JsonToken.END_OBJECT) shouldBe true
-        (parser.nextToken() is JsonToken.END_JSON) shouldBe true
+        (reader.nextToken() is JsonToken.END_OBJECT) shouldBe true
+        (reader.nextToken() is JsonToken.END_JSON) shouldBe true
     }
 
     @Test
@@ -125,7 +125,7 @@ internal class JsonParserTest {
         ]"""
         var index = 0
 
-        val parser = JsonParser() { input[index++] }
+        val reader = JsonReader() { input[index++] }
         listOf<Pair<JsonToken, String>>(
                 JsonToken.START_ARRAY to "",
                 JsonToken.ARRAY_VALUE to "4",
@@ -139,13 +139,13 @@ internal class JsonParserTest {
                 JsonToken.ARRAY_VALUE to "53.442e+234",
                 JsonToken.END_ARRAY to ""
         ). forEach { (token, value) ->
-            parser.nextToken()
+            reader.nextToken()
 
-            parser.currentToken shouldBe token
-            parser.lastValue shouldBe value
+            reader.currentToken shouldBe token
+            reader.lastValue shouldBe value
         }
 
-        parser.nextToken() shouldBe JsonToken.END_JSON
+        reader.nextToken() shouldBe JsonToken.END_JSON
     }
 
     @Test
@@ -153,11 +153,11 @@ internal class JsonParserTest {
         fun checkFaultyJSON(input: String) {
             var index = 0
 
-            val parser = JsonParser() { input[index++] }
+            val reader = JsonReader() { input[index++] }
             shouldThrow<InvalidJsonContent> {
                 do {
-                    parser.nextToken()
-                } while (parser.currentToken !is JsonToken.STOPPED)
+                    reader.nextToken()
+                } while (reader.currentToken !is JsonToken.STOPPED)
             }
         }
 
@@ -192,20 +192,20 @@ internal class JsonParserTest {
         var input = "[343,22452,true"
         var index = 0
 
-        val parser = JsonParser() {
+        val reader = JsonReader() {
             val b = input[index]
             index++
             b
         }
         do {
-            parser.nextToken()
-        } while (parser.currentToken !is JsonToken.STOPPED)
+            reader.nextToken()
+        } while (reader.currentToken !is JsonToken.STOPPED)
 
-        (parser.currentToken is JsonToken.SUSPENDED) shouldBe true
+        (reader.currentToken is JsonToken.SUSPENDED) shouldBe true
 
         input += "]"
 
-        parser.nextToken() shouldBe JsonToken.END_ARRAY
-        parser.nextToken() shouldBe JsonToken.END_JSON
+        reader.nextToken() shouldBe JsonToken.END_ARRAY
+        reader.nextToken() shouldBe JsonToken.END_JSON
     }
 }

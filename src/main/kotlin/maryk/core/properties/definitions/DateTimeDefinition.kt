@@ -30,7 +30,7 @@ class DateTimeDefinition(
 
     override fun createNow() = DateTime.nowUTC()
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = DateTime.fromByteReader(length, reader)
+    override fun readStorageBytes(length: Int, reader:() -> Byte) = DateTime.fromByteReader(length, reader)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = when(this.precision) {
         TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))
@@ -47,5 +47,5 @@ class DateTimeDefinition(
     }
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String) = DateTime.parse(string)
+    override fun fromString(string: String) = DateTime.parse(string)
 }

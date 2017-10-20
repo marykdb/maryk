@@ -8,8 +8,8 @@ import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonReader
+import maryk.core.json.JsonWriter
 import maryk.core.properties.GrowableByteCollector
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
@@ -221,10 +221,10 @@ internal class DataModelTest {
         val writer = { string: String -> output += string }
 
         mapOf(
-                json to JsonGenerator(writer = writer),
-                prettyJson to JsonGenerator(pretty = true, writer = writer)
+                json to JsonWriter(writer = writer),
+                prettyJson to JsonWriter(pretty = true, writer = writer)
         ).forEach { result, generator ->
-            TestMarykObject.toJson(generator, testExtendedObject)
+            TestMarykObject.writeJson(generator, testExtendedObject)
 
             output shouldBe result
             output = ""
@@ -235,7 +235,7 @@ internal class DataModelTest {
     fun testToProtoBufConversionWithMap() {
         val byteCollector = GrowableByteCollector()
 
-        TestMarykObject.toProtoBuf(mapOf(
+        TestMarykObject.writeProtoBuf(mapOf(
                 0 to "hay",
                 1 to 4,
                 2 to 32.toUInt32(),
@@ -253,7 +253,7 @@ internal class DataModelTest {
         val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d72280130026a1001050105010501050105010501050105")
         var index = 0
 
-        val map = TestMarykObject.fromProtoBuf(bytes.size) {
+        val map = TestMarykObject.readProtoBuf(bytes.size) {
             bytes[index++]
         }
 
@@ -271,18 +271,18 @@ internal class DataModelTest {
     fun testProtoBufConversion() {
         val byteCollector = GrowableByteCollector()
 
-        TestMarykObject.toProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
+        TestMarykObject.writeProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
 
-        TestMarykObject.fromProtoBufToObject(byteCollector.size, byteCollector::read) shouldBe testExtendedObject
+        TestMarykObject.readProtoBufToObject(byteCollector.size, byteCollector::read) shouldBe testExtendedObject
     }
 
     @Test
     fun testProtoBufWithNoLengthConversion() {
         val byteCollector = GrowableByteCollector()
 
-        TestMarykObject.toProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
+        TestMarykObject.writeProtoBuf(testExtendedObject, byteCollector::reserve, byteCollector::write)
 
-        TestMarykObject.fromProtoBufToObject(byteCollector.size, byteCollector::read) shouldBe testExtendedObject
+        TestMarykObject.readProtoBufToObject(byteCollector.size, byteCollector::read) shouldBe testExtendedObject
     }
 
     @Test
@@ -290,7 +290,7 @@ internal class DataModelTest {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
-        val map = TestMarykObject.fromProtoBuf(bytes.size) {
+        val map = TestMarykObject.readProtoBuf(bytes.size) {
             bytes[index++]
         }
 
@@ -302,7 +302,7 @@ internal class DataModelTest {
         var input = ""
         var index = 0
         val reader = { input[index++] }
-        val parser = { JsonParser(reader = reader) }
+        val jsonReader = { JsonReader(reader = reader) }
 
         listOf(
                 json,
@@ -310,7 +310,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.fromJsonToObject(parser()) shouldBe testExtendedObject
+            TestMarykObject.readJsonToObject(jsonReader()) shouldBe testExtendedObject
         }
     }
 
@@ -319,7 +319,7 @@ internal class DataModelTest {
         var input = ""
         var index = 0
         val reader = { input[index++] }
-        val parser = { JsonParser(reader = reader) }
+        val jsonReader = { JsonReader(reader = reader) }
 
         listOf(
                 json,
@@ -327,7 +327,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.fromJson(parser()) shouldBe testMap
+            TestMarykObject.readJson(jsonReader()) shouldBe testMap
         }
     }
 
@@ -337,14 +337,14 @@ internal class DataModelTest {
         val writer = { string: String -> output += string }
 
         listOf(
-                JsonGenerator(writer = writer),
-                JsonGenerator(pretty = true, writer = writer)
+                JsonWriter(writer = writer),
+                JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.toJson(generator, testMap)
+            TestMarykObject.writeJson(generator, testMap)
 
             var index = 0
-            val parser = { JsonParser(reader = { output[index++] }) }
-            TestMarykObject.fromJson(parser()) shouldBe testMap
+            val reader = { JsonReader(reader = { output[index++] }) }
+            TestMarykObject.readJson(reader()) shouldBe testMap
 
             output = ""
         }

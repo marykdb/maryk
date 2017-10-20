@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonReader
+import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
@@ -36,19 +36,19 @@ interface IsPropertyDefinition<T: Any> {
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> PropertyReference<*, *>? = { null })
 
     /** Writes a value to Json
-     * @param generator: to write json to
+     * @param writer: to write json to
      * @param value: value to write
      */
-    fun writeJsonValue(generator: JsonGenerator, value: T)
+    fun writeJsonValue(writer: JsonWriter, value: T)
 
     /** Reads JSON and returns values
-     * @param parser: to parse JSON from
+     * @param reader: to read JSON from
      */
     @Throws(ParseException::class)
-    fun parseFromJson(parser: JsonParser): T
+    fun readJson(reader: JsonReader): T
 
     /** Convert a value to bytes for transportation and adds the key with tag and wiretype
-     * @param value to convert
+     * @param value to write
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */

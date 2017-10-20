@@ -36,10 +36,10 @@ class EnumDefinition<E: IndexedEnum<E>>(
 
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) =
+    override fun readStorageBytes(length: Int, reader:() -> Byte) =
             getEnumByIndex(initShort(reader).toInt() - Short.MIN_VALUE)
 
-    override fun convertToStorageBytes(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeStorageBytes(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(2)
         value.indexAsShortToStore.writeBytes(writer)
     }
@@ -57,8 +57,8 @@ class EnumDefinition<E: IndexedEnum<E>>(
         value.index.writeVarBytes(writer)
     }
 
-    override fun convertToString(value: E) = value.name
+    override fun asString(value: E) = value.name
 
-    override fun convertFromString(string: String) =
+    override fun fromString(string: String) =
         valueByString[string] ?: throw ParseException(string)
 }

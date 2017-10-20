@@ -148,7 +148,7 @@ data class PersonRoleInPeriod(
         val role: Role,
         val startDate: Date,
         val endDate: Date
-) : ValueDataObject(createBytes(person, role, startDate, stopDate)) {
+) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
     object Properties {
         val person = ReferenceDefinition(name = "person", index = 0, dataModel = Person)
         val role = EnumProperty(name = "role", index = 1, values = Role.values())

@@ -25,17 +25,17 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytes() {
+    fun testStorageBytesConversion() {
         val byteCollector = GrowableByteCollector()
         datesToTest.forEach {
-            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }
 
     @Test
-    fun convertTransportBytes() {
+    fun testTransportBytesConversion() {
         val byteCollector = GrowableByteCollector()
         datesToTest.forEach {
             def.writeTransportBytes(it, byteCollector::reserve, byteCollector::write)
@@ -47,15 +47,15 @@ internal class DateDefinitionTest {
     @Test
     fun convertString() {
         datesToTest.forEach {
-            val b = def.convertToString(it)
-            def.convertFromString(b) shouldBe it
+            val b = def.asString(it)
+            def.fromString(b) shouldBe it
         }
     }
 
     @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
-            def.convertFromString("wrong")
+            def.fromString("wrong")
         }
     }
 }

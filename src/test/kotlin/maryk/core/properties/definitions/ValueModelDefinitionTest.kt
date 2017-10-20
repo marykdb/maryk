@@ -34,8 +34,8 @@ internal class ValueModelDefinitionTest {
     @Test
     fun testConvertStorageBytes() {
         val bc = ByteCollector()
-        def.convertToStorageBytes(value, bc::reserve, bc::write)
-        val new = def.convertFromStorageBytes(bc.size, bc::read)
+        def.writeStorageBytes(value, bc::reserve, bc::write)
+        val new = def.readStorageBytes(bc.size, bc::read)
 
         new shouldBe value
     }
@@ -57,8 +57,8 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun testConvertString() {
-        def.convertFromString(
-                def.convertToString(value)
+        def.fromString(
+                def.asString(value)
         ) shouldBe value
     }
 

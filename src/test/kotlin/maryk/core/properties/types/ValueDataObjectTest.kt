@@ -28,7 +28,7 @@ internal class ValueDataObjectTest {
     @Test
     fun testConvertBytes() {
         val bytes = value._bytes
-        val new = TestValueObject.createFromBytes(bytes.iterator()::nextByte)
+        val new = TestValueObject.readFromBytes(bytes.iterator()::nextByte)
 
         new.compareTo(value) shouldBe 0
     }
@@ -36,7 +36,7 @@ internal class ValueDataObjectTest {
     @Test
     fun testConvertString() {
         val string = value.toBase64()
-        val new = TestValueObject.createFromString(string)
+        val new = TestValueObject.fromString(string)
 
         new.compareTo(value) shouldBe 0
     }

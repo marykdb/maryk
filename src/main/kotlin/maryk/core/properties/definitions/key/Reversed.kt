@@ -13,14 +13,14 @@ class Reversed<T: Any>(
     override val byteSize = definition.byteSize
     override fun <DO : Any> getValue(dataModel: DataModel<DO>, dataObject: DO) = definition.getValue(dataModel, dataObject)
 
-    override fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        definition.convertToStorageBytes(value, reserver) {
+    override fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        definition.writeStorageBytes(value, reserver) {
             writer(MAXBYTE xor it)
         }
     }
 
-    override fun convertFromStorageBytes(length: Int, reader: () -> Byte): T {
-        return definition.convertFromStorageBytes(byteSize) {
+    override fun readStorageBytes(length: Int, reader: () -> Byte): T {
+        return definition.readStorageBytes(byteSize) {
             MAXBYTE xor reader()
         }
     }

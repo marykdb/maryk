@@ -31,8 +31,8 @@ internal class FixedBytesDefinitionTest {
     fun testStorageConversion() {
         val byteCollector = ByteCollector()
         fixedBytesToTest.forEach {
-            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }
@@ -56,14 +56,14 @@ internal class FixedBytesDefinitionTest {
     @Test
     fun convertToString() {
         fixedBytesToTest.forEach {
-            val b = def.convertToString(it)
-            def.convertFromString(b) shouldBe it
+            val b = def.asString(it)
+            def.fromString(b) shouldBe it
         }
     }
     @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
-            def.convertFromString("wrong")
+            def.fromString("wrong")
         }
     }
 }

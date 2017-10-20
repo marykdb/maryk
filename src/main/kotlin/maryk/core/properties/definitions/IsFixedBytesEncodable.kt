@@ -14,18 +14,18 @@ interface IsFixedBytesEncodable<T: Any> {
     /** Convert to value from a byte reader
      * @param length of bytes to read
      * @param reader to read bytes from
-     * @return converted value
+     * @return stored value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    fun convertFromStorageBytes(length: Int, reader:() -> Byte): T
+    fun readStorageBytes(length: Int, reader:() -> Byte): T
 
     /** Convert a value to bytes
      * @param value to convert
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
 
     /** Get the value to be used in a key
      * @param dataModel to use to fetch property if relevant

@@ -2,9 +2,7 @@ package maryk.core.bytes
 
 import java.util.Base64 as JvmBase64
 
-/**
- * Util to convert base 64
- */
+/** Util to convert base 64 */
 object Base64 {
     private val base64Decoder by lazy { JvmBase64.getUrlDecoder() }
     private val base64Encoder by lazy { JvmBase64.getUrlEncoder().withoutPadding() }

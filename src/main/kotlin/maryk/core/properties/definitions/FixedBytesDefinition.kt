@@ -23,12 +23,12 @@ class FixedBytesDefinition(
 ), IsFixedBytesEncodable<Bytes> {
     override fun createRandom() = Bytes(randomBytes(this.byteSize))
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(byteSize, reader)
+    override fun readStorageBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(byteSize, reader)
 
-    override fun convertToStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun writeStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String) = try {
+    override fun fromString(string: String) = try {
         Bytes.ofBase64String(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 }

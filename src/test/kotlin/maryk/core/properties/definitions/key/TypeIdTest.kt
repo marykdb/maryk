@@ -56,7 +56,7 @@ internal class TypeIdTest {
         specificDef.getValue(MarykObject, obj) shouldBe 1
 
         val bc = ByteCollector()
-        specificDef.convertToStorageBytes(1, bc::reserve, bc::write)
-        specificDef.convertFromStorageBytes(bc.size, bc::read) shouldBe 1
+        specificDef.writeStorageBytes(1, bc::reserve, bc::write)
+        specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1
     }
 }

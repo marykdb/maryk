@@ -39,8 +39,8 @@ internal class DateTimeDefinitionTest {
     fun convertStorageBytesMillis() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
-            defMilli.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            defMilli.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
+            defMilli.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            defMilli.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }
@@ -49,8 +49,8 @@ internal class DateTimeDefinitionTest {
     fun convertStorageBytesSeconds() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
-            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }
@@ -78,15 +78,15 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertString() {
         dateTimesToTest.forEach {
-            val b = def.convertToString(it)
-            def.convertFromString(b) shouldBe it
+            val b = def.asString(it)
+            def.fromString(b) shouldBe it
         }
     }
 
     @Test
     fun convertWrongString() {
         shouldThrow<ParseException> {
-            def.convertFromString("wrong")
+            def.fromString("wrong")
         }
     }
 }

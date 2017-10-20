@@ -24,5 +24,5 @@ abstract class AbstractTimeDefinition<T : IsTime<T>>(
 ) : AbstractMomentDefinition<T>(
         name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue, fillWithNow
 ) {
-    override fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, reserver, writer)
+    override fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, reserver, writer)
 }

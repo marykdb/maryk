@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonWriter
+import maryk.core.json.JsonReader
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -30,18 +30,18 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 ) : AbstractSimpleDefinition<DO>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ) {
-    override fun convertToStorageBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeStorageBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(value._bytes.size)
         value._bytes.writeBytes(writer)
     }
 
-    override fun convertFromStorageBytes(length: Int, reader: () -> Byte) = this.dataModel.createFromBytes(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = this.dataModel.readFromBytes(reader)
 
-    override fun convertToString(value: DO) = value.toBase64()
+    override fun asString(value: DO) = value.toBase64()
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String) = try {
-        this.dataModel.createFromString(string)
+    override fun fromString(string: String) = try {
+        this.dataModel.fromString(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
@@ -66,10 +66,10 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     /** Writes a value to Json
      * @param value: value to write
-     * @param generator: to write json to
+     * @param writer: to write json to
      */
-    override fun writeJsonValue(generator: JsonGenerator, value: DO) = dataModel.toJson(generator, value)
+    override fun writeJsonValue(writer: JsonWriter, value: DO) = dataModel.writeJson(writer, value)
 
     @Throws(ParseException::class)
-    override fun parseFromJson(parser: JsonParser): DO = dataModel.fromJsonToObject(parser)
+    override fun readJson(reader: JsonReader): DO = dataModel.readJsonToObject(reader)
 }

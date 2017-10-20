@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonReader
+import maryk.core.json.JsonWriter
 import maryk.core.objects.DataModel
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -47,20 +47,20 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         }
     }
 
-    override fun writeJsonValue(generator: JsonGenerator, value: DO) = this.dataModel.toJson(generator, value)
+    override fun writeJsonValue(writer: JsonWriter, value: DO) = this.dataModel.writeJson(writer, value)
 
-    override fun parseFromJson(parser: JsonParser) = this.dataModel.fromJsonToObject(parser)
+    override fun readJson(reader: JsonReader) = this.dataModel.readJsonToObject(reader)
 
     override fun writeTransportBytesWithKey(index: Int, value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(this.index, WireType.START_GROUP, reserver, writer)
-        this.dataModel.toProtoBuf(value, reserver, writer)
+        this.dataModel.writeProtoBuf(value, reserver, writer)
         ProtoBuf.writeKey(this.index, WireType.END_GROUP, reserver, writer)
     }
 
-    // With a length of -1 it should convert with GROUP based protobuf
+    // With a length of -1 it should read until key with wire type END_GROUP
     override fun readTransportBytes(length: Int, reader: () -> Byte) = if(length == -1) {
-        this.dataModel.fromProtoBufToObject(reader)
+        this.dataModel.readProtoBufToObject(reader)
     } else {
-        this.dataModel.fromProtoBufToObject(length, reader)
+        this.dataModel.readProtoBufToObject(length, reader)
     }
 }

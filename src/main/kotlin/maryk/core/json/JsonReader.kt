@@ -24,7 +24,7 @@ private val skipArray = arrayOf(JsonToken.OBJECT_SEPARATOR, JsonToken.ARRAY_SEPA
 /** Parses JSON
  * @param reader to read json from
  */
-class JsonParser(
+class JsonReader(
         private val reader: () -> Char
 ) {
     var currentToken: JsonToken = JsonToken.START_JSON

@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.json.JsonGenerator
+import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
 
@@ -20,26 +20,26 @@ class BooleanDefinition(
 ), IsFixedBytesEncodable<Boolean> {
     override val byteSize = 1
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = initBoolean(reader)
+    override fun readStorageBytes(length: Int, reader:() -> Byte) = initBoolean(reader)
 
-    override fun convertToStorageBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeStorageBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(1)
         value.writeBytes(writer)
     }
 
     override fun writeTransportBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
-            = convertToStorageBytes(value, reserver, writer)
+            = writeStorageBytes(value, reserver, writer)
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String) = when(string) {
+    override fun fromString(string: String) = when(string) {
         "true" -> true
         "false" -> false
         else -> throw ParseException(string)
     }
 
-    override fun writeJsonValue(generator: JsonGenerator, value: Boolean) {
-        generator.writeValue(
-                this.convertToString(value)
+    override fun writeJsonValue(writer: JsonWriter, value: Boolean) {
+        writer.writeValue(
+                this.asString(value)
         )
     }
 }

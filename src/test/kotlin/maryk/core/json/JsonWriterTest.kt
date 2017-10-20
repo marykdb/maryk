@@ -4,13 +4,13 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import org.junit.Test
 
-internal class JsonGeneratorTest {
+internal class JsonWriterTest {
     @Test
     fun testJsonGeneration() {
         var output = ""
         val writer = { string: String -> output += string }
 
-        val generator = JsonGenerator(writer = writer)
+        val generator = JsonWriter(writer = writer)
 
         generateJson(generator)
 
@@ -22,7 +22,7 @@ internal class JsonGeneratorTest {
         var output = ""
         val writer = { string: String -> output += string }
 
-        val generator = JsonGenerator(pretty = true, writer = writer)
+        val generator = JsonWriter(pretty = true, writer = writer)
 
         generateJson(generator)
 
@@ -36,7 +36,7 @@ internal class JsonGeneratorTest {
     fun testWrongJsonStartGeneration() {
         var output = ""
 
-        val generator = JsonGenerator {
+        val generator = JsonWriter {
             output += it
         }
 
@@ -69,7 +69,7 @@ internal class JsonGeneratorTest {
     @Test
     fun testWrongJsonArrayGeneration() {
         var output = ""
-        val generator = JsonGenerator {
+        val generator = JsonWriter {
             output += it
         }
 
@@ -90,7 +90,7 @@ internal class JsonGeneratorTest {
     @Test
     fun testWrongJsonObjectGeneration() {
         var output = ""
-        val generator = JsonGenerator {
+        val generator = JsonWriter {
             output += it
         }
 
@@ -115,7 +115,7 @@ internal class JsonGeneratorTest {
     @Test
     fun testWrongJsonObjectAfterFieldNameGeneration() {
         var output = ""
-        val generator = JsonGenerator {
+        val generator = JsonWriter {
             output += it
         }
 
@@ -138,18 +138,18 @@ internal class JsonGeneratorTest {
         }
     }
 
-    private fun generateJson(generator: JsonGenerator) {
-        generator.writeStartArray()
-        generator.writeValue("1")
-        generator.writeString("Test")
-        generator.writeValue("3.5")
-        generator.writeValue("true")
-        generator.writeStartObject()
-        generator.writeFieldName("test")
-        generator.writeValue("false")
-        generator.writeFieldName("test2")
-        generator.writeString("value")
-        generator.writeEndObject()
-        generator.writeEndArray()
+    private fun generateJson(writer: JsonWriter) {
+        writer.writeStartArray()
+        writer.writeValue("1")
+        writer.writeString("Test")
+        writer.writeValue("3.5")
+        writer.writeValue("true")
+        writer.writeStartObject()
+        writer.writeFieldName("test")
+        writer.writeValue("false")
+        writer.writeFieldName("test2")
+        writer.writeString("value")
+        writer.writeEndObject()
+        writer.writeEndArray()
     }
 }

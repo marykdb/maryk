@@ -3,9 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.computeVarByteSize
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
+import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -30,23 +30,23 @@ abstract class AbstractValueDefinition<T: Any>(
     /** Convert to value from a byte reader
      * @param length of bytes to read
      * @param reader to read bytes from
-     * @return converted value
+     * @return stored value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    abstract fun convertFromStorageBytes(length: Int, reader:() -> Byte): T
+    abstract fun readStorageBytes(length: Int, reader:() -> Byte): T
 
     /** Convert a value to bytes
      * @param value to convert
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    abstract fun convertToStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    abstract fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte) = convertFromStorageBytes(length, reader)
+    override fun readTransportBytes(length: Int, reader: () -> Byte) = readStorageBytes(length, reader)
 
     /** Adds length to written bytes
-     * @param value to convert
+     * @param value to write
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
@@ -58,12 +58,12 @@ abstract class AbstractValueDefinition<T: Any>(
     }
 
     /** Convert a value to bytes for transportation
-     * @param value to convert
+     * @param value to write
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
     open fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        convertToStorageBytes(value, reserver, writer)
+        writeStorageBytes(value, reserver, writer)
     }
 
     override fun writeTransportBytesWithKey(index: Int, value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
@@ -78,7 +78,7 @@ abstract class AbstractValueDefinition<T: Any>(
      * @param value to convert
      * @return value as String
      */
-    open fun convertToString(value: T) = value.toString()
+    open fun asString(value: T) = value.toString()
 
     /**
      * Get the value from a string
@@ -87,23 +87,23 @@ abstract class AbstractValueDefinition<T: Any>(
      * @throws ParseException if conversion fails
      */
     @Throws(ParseException::class)
-    abstract fun convertFromString(string: String): T
+    abstract fun fromString(string: String): T
 
     /** Writes a value to Json
      * @param value: value to write
-     * @param generator: to write json to
+     * @param writer: to write json to
      */
-    override fun writeJsonValue(generator: JsonGenerator, value: T) {
-        generator.writeString(
-                this.convertToString(value)
+    override fun writeJsonValue(writer: JsonWriter, value: T) {
+        writer.writeString(
+                this.asString(value)
         )
     }
 
     @Throws(ParseException::class)
-    override fun parseFromJson(parser: JsonParser): T {
-        if (parser.currentToken !is JsonToken.OBJECT_VALUE && parser.currentToken !is JsonToken.ARRAY_VALUE) {
+    override fun readJson(reader: JsonReader): T {
+        if (reader.currentToken !is JsonToken.OBJECT_VALUE && reader.currentToken !is JsonToken.ARRAY_VALUE) {
             throw ParseException("JSON value for $name should be a simple value")
         }
-        return this.convertFromString(parser.lastValue)
+        return this.fromString(reader.lastValue)
     }
 }

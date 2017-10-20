@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
+import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
@@ -81,30 +81,30 @@ class MapDefinition<K: Any, V: Any>(
         }
     }
 
-    override fun writeJsonValue(generator: JsonGenerator, value: Map<K, V>) {
-        generator.writeStartObject()
+    override fun writeJsonValue(writer: JsonWriter, value: Map<K, V>) {
+        writer.writeStartObject()
         value.forEach { k, v ->
-            generator.writeFieldName(
-                    keyDefinition.convertToString(k)
+            writer.writeFieldName(
+                    keyDefinition.asString(k)
             )
-            valueDefinition.writeJsonValue(generator, v)
+            valueDefinition.writeJsonValue(writer, v)
         }
-        generator.writeEndObject()
+        writer.writeEndObject()
     }
 
-    override fun parseFromJson(parser: JsonParser): Map<K, V> {
-        if (parser.currentToken !is JsonToken.START_OBJECT) {
+    override fun readJson(reader: JsonReader): Map<K, V> {
+        if (reader.currentToken !is JsonToken.START_OBJECT) {
             throw ParseException("JSON value for $name should be an Object")
         }
         val map: MutableMap<K, V> = mutableMapOf()
 
-        while (parser.nextToken() !is JsonToken.END_OBJECT) {
-            val key = keyDefinition.convertFromString(parser.lastValue)
-            parser.nextToken()
+        while (reader.nextToken() !is JsonToken.END_OBJECT) {
+            val key = keyDefinition.fromString(reader.lastValue)
+            reader.nextToken()
 
             map.put(
                     key,
-                    valueDefinition.parseFromJson(parser)
+                    valueDefinition.readJson(reader)
             )
         }
         return map

@@ -56,8 +56,8 @@ internal class ReversedTest {
         @Suppress("UNCHECKED_CAST")
         with(MarykObject.key.keyDefinitions[1] as Reversed<DateTime>){
             val bc = ByteCollector()
-            this.convertToStorageBytes(dt, bc::reserve, bc::write)
-            this.convertFromStorageBytes(bc.size, bc::read) shouldBe dt
+            this.writeStorageBytes(dt, bc::reserve, bc::write)
+            this.readStorageBytes(bc.size, bc::read) shouldBe dt
         }
 
         key.toHex() shouldBe "fe017fffffa6540703"

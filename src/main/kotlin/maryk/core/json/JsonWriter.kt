@@ -6,7 +6,7 @@ private enum class JsonType {
 }
 
 /** A JSON generator for streaming JSON generation */
-class JsonGenerator(
+class JsonWriter(
         val pretty: Boolean = false,
         private val writer: (String) -> Unit
 ) {

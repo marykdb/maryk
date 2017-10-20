@@ -3,9 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
+import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
@@ -45,36 +45,36 @@ class MultiTypeDefinition(
         }
     }
 
-    override fun writeJsonValue(generator: JsonGenerator, value: TypedValue<Any>) {
-        generator.writeStartArray()
-        generator.writeValue(value.typeIndex.toString())
+    override fun writeJsonValue(writer: JsonWriter, value: TypedValue<Any>) {
+        writer.writeStartArray()
+        writer.writeValue(value.typeIndex.toString())
         @Suppress("UNCHECKED_CAST")
         val definition = this.typeMap[value.typeIndex] as AbstractSubDefinition<Any>?
                 ?: throw DefNotFoundException("No def found for index ${value.typeIndex} for $name")
 
-        definition.writeJsonValue(generator, value.value)
-        generator.writeEndArray()
+        definition.writeJsonValue(writer, value.value)
+        writer.writeEndArray()
     }
 
-    override fun parseFromJson(parser: JsonParser): TypedValue<*> {
-        if(parser.nextToken() !is JsonToken.ARRAY_VALUE) {
+    override fun readJson(reader: JsonReader): TypedValue<*> {
+        if(reader.nextToken() !is JsonToken.ARRAY_VALUE) {
             throw ParseException("Expected an array value at start")
         }
 
         val index: Int
         try {
-            index = parser.lastValue.toInt()
+            index = reader.lastValue.toInt()
         }catch (e: Throwable) {
-            throw ParseException("Invalid multitype index ${parser.lastValue} for $name")
+            throw ParseException("Invalid multitype index ${reader.lastValue} for $name")
         }
-        parser.nextToken()
+        reader.nextToken()
 
         val definition: AbstractSubDefinition<*>? = this.typeMap[index]
-                ?: throw ParseException("Unknown multitype index ${parser.lastValue} for $name")
+                ?: throw ParseException("Unknown multitype index ${reader.lastValue} for $name")
 
         return TypedValue<Any>(
                 index,
-                definition!!.parseFromJson(parser)
+                definition!!.readJson(reader)
         )
     }
 

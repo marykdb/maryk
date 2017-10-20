@@ -13,7 +13,7 @@ data class TestValueObject(
         val int: Int,
         val dateTime: DateTime,
         val bool: Boolean
-) : ValueDataObject(createBytes(int, dateTime, bool)) {
+) : ValueDataObject(toBytes(int, dateTime, bool)) {
     object Properties {
         val int = NumberDefinition(
                 name = "int",

@@ -12,12 +12,12 @@ object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>> {
 
     override fun <T : Any> getValue(dataModel: DataModel<T>, dataObject: T) = generateUUID()
 
-    override fun convertFromStorageBytes(length: Int, reader: () -> Byte) = Pair(
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = Pair(
         initLong(reader),
         initLong(reader)
     )
 
-    override fun convertToStorageBytes(value: Pair<Long, Long>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeStorageBytes(value: Pair<Long, Long>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(byteSize)
         value.first.writeBytes(writer)
         value.second.writeBytes(writer)

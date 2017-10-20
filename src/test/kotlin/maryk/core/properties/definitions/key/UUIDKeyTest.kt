@@ -38,12 +38,12 @@ internal class UUIDKeyTest {
         val specificDef = keyDef as UUIDKey
 
         var index = 0
-        val uuid = specificDef.convertFromStorageBytes(key.size, {
+        val uuid = specificDef.readStorageBytes(key.size, {
             key.bytes[index++]
         })
 
         val bc = ByteCollector()
-        specificDef.convertToStorageBytes(uuid, bc::reserve, bc::write)
+        specificDef.writeStorageBytes(uuid, bc::reserve, bc::write)
 
         bc.bytes!! contentEquals key.bytes shouldBe true
     }

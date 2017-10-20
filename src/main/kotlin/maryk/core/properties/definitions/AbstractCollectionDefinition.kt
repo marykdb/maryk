@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.JsonGenerator
-import maryk.core.json.JsonParser
+import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
+import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
@@ -60,23 +60,23 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
     /** Creates a new mutable instance of the collection */
     abstract internal fun newMutableCollection(): MutableCollection<T>
 
-    override fun writeJsonValue(generator: JsonGenerator, value: C) {
-        generator.writeStartArray()
+    override fun writeJsonValue(writer: JsonWriter, value: C) {
+        writer.writeStartArray()
         value.forEach {
-            valueDefinition.writeJsonValue(generator, it)
+            valueDefinition.writeJsonValue(writer, it)
         }
-        generator.writeEndArray()
+        writer.writeEndArray()
     }
 
-    override fun parseFromJson(parser: JsonParser): C {
-        if (parser.currentToken !is JsonToken.START_ARRAY) {
+    override fun readJson(reader: JsonReader): C {
+        if (reader.currentToken !is JsonToken.START_ARRAY) {
             throw ParseException("JSON value for $name should be an Array")
         }
         val collection: MutableCollection<T> = newMutableCollection()
 
-        while (parser.nextToken() !is JsonToken.END_ARRAY) {
+        while (reader.nextToken() !is JsonToken.END_ARRAY) {
             collection.add(
-                    valueDefinition.parseFromJson(parser)
+                    valueDefinition.readJson(reader)
             )
         }
         @Suppress("UNCHECKED_CAST")

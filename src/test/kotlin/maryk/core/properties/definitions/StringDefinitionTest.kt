@@ -65,8 +65,8 @@ internal class StringDefinitionTest {
     fun convertStorageBytes() {
         val byteCollector = GrowableByteCollector()
         stringsToTest.forEach { (value, asHex) ->
-            def.convertToStorageBytes(value, byteCollector::reserve, byteCollector::write)
-            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe value
+            def.writeStorageBytes(value, byteCollector::reserve, byteCollector::write)
+            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe value
             byteCollector.bytes.toHex() shouldBe asHex
             byteCollector.reset()
         }
@@ -90,10 +90,10 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convertToString() {
+    fun convertString() {
         stringsToTest.keys.forEach {
-            val b = def.convertToString(it)
-            def.convertFromString(b) shouldBe it
+            val b = def.asString(it)
+            def.fromString(b) shouldBe it
         }
     }
 }

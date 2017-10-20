@@ -24,7 +24,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     @Throws(DefNotFoundException::class)
-    fun createFromBytes(reader: () -> Byte): DO {
+    fun readFromBytes(reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
         this.definitions.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
@@ -32,7 +32,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
             val def = it.propertyDefinition as IsFixedBytesEncodable<*>
             values.put(
                     key = def.index.toInt(),
-                    value = def.convertFromStorageBytes(def.byteSize, reader)
+                    value = def.readStorageBytes(def.byteSize, reader)
             )
         }
         return this.construct(values)
@@ -44,14 +44,14 @@ abstract class ValueDataModel<DO: ValueDataObject>(
     /** Creates bytes for given inputs
      * @param inputs to convert to values
      */
-    fun createBytes(vararg inputs: Any): ByteArray {
+    fun toBytes(vararg inputs: Any): ByteArray {
         val bytes =  ByteArray(this.byteSize)
         var offset = 0
 
         this.definitions.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it.propertyDefinition as IsFixedBytesEncodable<in Any>
-            def.convertToStorageBytes(inputs[index], {}, {
+            def.writeStorageBytes(inputs[index], {}, {
                 bytes[offset++] = it
             })
 
@@ -69,10 +69,10 @@ abstract class ValueDataModel<DO: ValueDataObject>(
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     @Throws(DefNotFoundException::class)
-    fun createFromString(value: String): DO {
+    fun fromString(value: String): DO {
         val b = Base64.decode(value)
         var index = 0
-        return this.createFromBytes({
+        return this.readFromBytes({
             b[index++]
         })
     }

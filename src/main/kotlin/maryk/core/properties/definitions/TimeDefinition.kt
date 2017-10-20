@@ -30,7 +30,7 @@ class TimeDefinition(
 
     override fun createNow() = Time.nowUTC()
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Time.fromByteReader(length, reader)
+    override fun readStorageBytes(length: Int, reader:() -> Byte) = Time.fromByteReader(length, reader)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = when(this.precision) {
         TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
@@ -47,5 +47,5 @@ class TimeDefinition(
     }
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String) = Time.parse(string)
+    override fun fromString(string: String) = Time.parse(string)
 }

@@ -22,7 +22,7 @@ internal const val MILLIS_PER_DAY = MILLIS_PER_HOUR * HOURS_PER_DAY
 abstract class IsTime<T>: IsTemporal<T>() {
     /**
      * Converts Value into bytes
-     * @param precision: how precise to convert the time
+     * @param precision: how precise to write the time
      * @param reserver to reserve right amount of bytes on
      * @param writer to write bytes to
      */

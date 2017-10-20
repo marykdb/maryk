@@ -16,11 +16,11 @@ internal class BooleanDefinitionTest {
     )
 
     @Test
-    fun convertStorageBytes() {
+    fun testStorageConversion() {
         val byteCollector = ByteCollector()
         booleanArrayOf(true, false).forEach {
-            def.convertToStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            def.convertFromStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
+            def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
+            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }
     }
@@ -42,17 +42,17 @@ internal class BooleanDefinitionTest {
     }
 
     @Test
-    fun convertToString() {
+    fun testStringConversion() {
         booleanArrayOf(true, false).forEach {
-            val b = def.convertToString(it)
-            def.convertFromString(b) shouldBe it
+            val b = def.asString(it)
+            def.fromString(b) shouldBe it
         }
     }
 
     @Test
-    fun convertWrongString() {
+    fun testWrongStringConversion() {
         shouldThrow<ParseException> {
-            def.convertFromString("wrong")
+            def.fromString("wrong")
         }
     }
 }

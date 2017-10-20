@@ -26,9 +26,9 @@ class DateDefinition(
 
     override fun createNow() = Date.nowUTC()
 
-    override fun convertFromStorageBytes(length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
+    override fun readStorageBytes(length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
 
-    override fun convertToStorageBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun writeStorageBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = Date.ofEpochDay(initLongByVar(reader))
 
@@ -39,5 +39,5 @@ class DateDefinition(
     }
 
     @Throws(ParseException::class)
-    override fun convertFromString(string: String) = Date.parse(string)
+    override fun fromString(string: String) = Date.parse(string)
 }

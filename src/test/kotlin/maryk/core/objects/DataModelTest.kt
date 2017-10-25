@@ -247,7 +247,7 @@ internal class DataModelTest {
         )
 
         byteCollector.reserve(
-            TestMarykObject.reserveProtoBufSize(map, byteCollector::addToCache)
+            TestMarykObject.calculateProtoBufSize(map, byteCollector::addToCache)
         )
 
         TestMarykObject.writeProtoBuf(map, byteCollector::nextSizeFromCache, byteCollector::write)
@@ -279,7 +279,7 @@ internal class DataModelTest {
         val byteCollector = ByteCollectorWithSizeCacher()
 
         byteCollector.reserve(
-                TestMarykObject.reserveProtoBufSize(testMap, byteCollector::addToCache)
+                TestMarykObject.calculateProtoBufSize(testMap, byteCollector::addToCache)
         )
 
         TestMarykObject.writeProtoBuf(testMap, byteCollector::nextSizeFromCache, byteCollector::write)
@@ -292,7 +292,7 @@ internal class DataModelTest {
         val byteCollector = ByteCollectorWithSizeCacher()
 
         byteCollector.reserve(
-                TestMarykObject.reserveProtoBufSize(testExtendedObject, byteCollector::addToCache)
+                TestMarykObject.calculateProtoBufSize(testExtendedObject, byteCollector::addToCache)
         )
 
         TestMarykObject.writeProtoBuf(testExtendedObject, byteCollector::nextSizeFromCache, byteCollector::write)

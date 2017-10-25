@@ -62,7 +62,7 @@ internal class SubModelDefinitionTest {
         val asHex = "2a0502036a7572"
 
         bc.reserve(
-                def.reserveTransportBytesWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
         )
         bc.bytes!!.size shouldBe 7
         def.writeTransportBytesWithKey(5, value, bc::nextSizeFromCache, bc::write)

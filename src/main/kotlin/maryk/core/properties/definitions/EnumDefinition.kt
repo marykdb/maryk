@@ -46,7 +46,7 @@ class EnumDefinition<E: IndexedEnum<E>>(
     override fun readTransportBytes(length: Int, reader: () -> Byte)
             = getEnumByIndex(initShortByVar(reader).toInt())
 
-    override fun reserveTransportBytes(value: E) = value.index.calculateVarByteSize()
+    override fun calculateTransportBytes(value: E) = value.index.calculateVarByteSize()
 
     override fun writeTransportBytes(value: E, writer: (byte: Byte) -> Unit)
             = value.index.writeVarBytes(writer)

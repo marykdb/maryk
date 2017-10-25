@@ -30,7 +30,7 @@ internal class BooleanDefinitionTest {
         val bc = ByteCollector()
         booleanArrayOf(true, false).forEach {
             bc.reserve(
-                def.reserveTransportBytesWithKey(it, { fail("Should not call") })
+                def.calculateTransportByteLengthWithKey(it, { fail("Should not call") })
             )
             def.writeTransportBytesWithKey(it, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)

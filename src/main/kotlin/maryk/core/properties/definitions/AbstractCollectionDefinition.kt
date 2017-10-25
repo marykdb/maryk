@@ -84,10 +84,10 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         return collection as C
     }
 
-    override fun reserveTransportBytesWithKey(value: C, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(value: C, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
         var totalByteSize = 0
         value.forEach { item ->
-            totalByteSize += valueDefinition.reserveTransportBytesWithKey(this.index, item, lengthCacher)
+            totalByteSize += valueDefinition.calculateTransportBytesWithKey(this.index, item, lengthCacher)
         }
         return totalByteSize
     }

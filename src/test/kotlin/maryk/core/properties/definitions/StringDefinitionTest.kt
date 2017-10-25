@@ -79,7 +79,7 @@ internal class StringDefinitionTest {
         val bc = ByteCollectorWithSizeCacher()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
-                    def.reserveTransportBytesWithKey(value, bc::addToCache)
+                    def.calculateTransportByteLengthWithKey(value, bc::addToCache)
             )
             bc.bytes!!.size shouldBe value.calculateUTF8ByteLength() + 2
             def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)

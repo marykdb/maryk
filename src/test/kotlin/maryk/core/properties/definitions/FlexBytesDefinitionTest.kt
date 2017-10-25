@@ -54,7 +54,7 @@ internal class FlexBytesDefinitionTest {
         val bc = ByteCollectorWithSizeCacher()
         flexBytesToTest.forEach { value ->
             bc.reserve(
-                def.reserveTransportBytesWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
             )
             def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
             val key = ProtoBuf.readKey(bc::read)

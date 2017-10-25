@@ -17,16 +17,16 @@ abstract class AbstractSubDefinition<T: Any>(
         final: Boolean
 ) : AbstractPropertyDefinition<T>(
         name, index, indexed, searchable, required, final) {
-    override fun reserveTransportBytesWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit)
-            = this.reserveTransportBytesWithKey(this.index, value, lengthCacher)
+    override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit)
+            = this.calculateTransportBytesWithKey(this.index, value, lengthCacher)
 
     /** Reserve bytes for a value for transportation
      * @param index to write this value for
      * @param value to write
-     * @param lengthCacheGetter to fetch next cached length
+     * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order
      * @return total byte size
      */
-    abstract fun reserveTransportBytesWithKey(index: Int, value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int
+    abstract fun calculateTransportBytesWithKey(index: Int, value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int
 
     override fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit)
             = this.writeTransportBytesWithKey(this.index, value, lengthCacheGetter, writer)

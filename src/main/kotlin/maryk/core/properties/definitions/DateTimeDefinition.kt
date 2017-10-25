@@ -37,7 +37,7 @@ class DateTimeDefinition(
         TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
     }
 
-    override fun reserveTransportBytes(value: DateTime) = when(this.precision) {
+    override fun calculateTransportBytes(value: DateTime) = when(this.precision) {
         TimePrecision.SECONDS -> value.toEpochSecond().calculateVarByteSize()
         TimePrecision.MILLIS -> value.toEpochMilli().calculateVarByteSize()
     }

@@ -48,16 +48,16 @@ interface IsPropertyDefinition<T: Any> {
     @Throws(ParseException::class)
     fun readJson(reader: JsonReader): T
 
-    /** Reserves the needed bytes to transport the value
+    /** Calculates the needed bytes to transport the value
      * @param value to get size of
-     * @param reserver to reserve byte size with
+     * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order
      * @return the total size
      */
-    fun reserveTransportBytesWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int
+    fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int
 
     /** Convert a value to bytes for transportation and adds the key with tag and wiretype
      * @param value to write
-     * @param reserver to reserve amount of bytes to write on
+     * @param lengthCacheGetter to get next cached length
      * @param writer to write bytes to
      */
     fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit)

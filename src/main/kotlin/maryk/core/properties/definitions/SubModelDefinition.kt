@@ -54,13 +54,13 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
 
     override fun readJson(reader: JsonReader) = this.dataModel.readJsonToObject(reader)
 
-    override fun reserveTransportBytesWithKey(index: Int, value: DO, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+    override fun calculateTransportBytesWithKey(index: Int, value: DO, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
         // Set up container to store byte size
         val container = ByteSizeContainer()
         lengthCacher(container)
 
         var totalByteSize = 0
-        totalByteSize += this.dataModel.reserveProtoBufSize(value, lengthCacher)
+        totalByteSize += this.dataModel.calculateProtoBufSize(value, lengthCacher)
         container.size = totalByteSize // first store byte size of object
 
         totalByteSize += ProtoBuf.reserveKey(index)

@@ -62,7 +62,7 @@ internal class TimeDefinitionTest {
     fun convertTransportBytesSeconds() {
         val byteCollector = ByteCollector()
         timesToTestSeconds.forEach {
-            byteCollector.reserve(def.reserveTransportBytes(it))
+            byteCollector.reserve(def.calculateTransportBytes(it))
             def.writeTransportBytes(it, byteCollector::write)
             def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
@@ -73,7 +73,7 @@ internal class TimeDefinitionTest {
     fun convertTransportBytesMillis() {
         val byteCollector = ByteCollector()
         timesToTestMillis.forEach {
-            byteCollector.reserve(defMilli.reserveTransportBytes(it))
+            byteCollector.reserve(defMilli.calculateTransportBytes(it))
             defMilli.writeTransportBytes(it, byteCollector::write)
             defMilli.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()

@@ -69,7 +69,7 @@ internal class MultiTypeDefinitionTest {
         val bc = ByteCollectorWithSizeCacher()
         multisToTest.forEach {
             bc.reserve(
-                def.reserveTransportBytesWithKey(it, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(it, bc::addToCache)
             )
             def.writeTransportBytesWithKey(6, it, bc::nextSizeFromCache, bc::write)
 

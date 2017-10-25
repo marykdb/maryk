@@ -100,7 +100,7 @@ class MultiTypeDefinition(
         )
     }
 
-    override fun reserveTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+    override fun calculateTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
         // Cache length for length delimiter
         val container = ByteSizeContainer()
         lengthCacher(container)
@@ -113,7 +113,7 @@ class MultiTypeDefinition(
         // value
         @Suppress("UNCHECKED_CAST")
         val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any>
-        totalByteSize += def.reserveTransportBytesWithKey(2, value.value, lengthCacher)
+        totalByteSize += def.calculateTransportBytesWithKey(2, value.value, lengthCacher)
 
         container.size = totalByteSize
 

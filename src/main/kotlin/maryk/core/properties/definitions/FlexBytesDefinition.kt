@@ -27,7 +27,7 @@ class FlexBytesDefinition(
 
     override fun writeStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
-    override fun reserveTransportBytes(value: Bytes) = value.size
+    override fun calculateTransportBytes(value: Bytes) = value.size
 
     @Throws(ParseException::class)
     override fun fromString(string: String) = try {

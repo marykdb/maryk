@@ -56,10 +56,10 @@ abstract class AbstractValueDefinition<T: Any>(
         this.writeTransportBytes(value, writer)
     }
 
-    override fun reserveTransportBytesWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit)
-            = this.reserveTransportBytesWithKey(this.index, value, lengthCacher)
+    override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit)
+            = this.calculateTransportBytesWithKey(this.index, value, lengthCacher)
 
-    override fun reserveTransportBytesWithKey(index: Int, value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
+    override fun calculateTransportBytesWithKey(index: Int, value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
         var totalByteSize = 0
         totalByteSize += ProtoBuf.reserveKey(index)
 
@@ -71,20 +71,20 @@ abstract class AbstractValueDefinition<T: Any>(
             lengthCacher(container)
 
             // calculate field length
-            this.reserveTransportBytes(value).let {
+            this.calculateTransportBytes(value).let {
                 container.size = it
                 totalByteSize += it
                 totalByteSize += it.calculateVarByteSize()
             }
         } else {
             // calculate field length
-            totalByteSize += this.reserveTransportBytes(value)
+            totalByteSize += this.calculateTransportBytes(value)
         }
 
         return totalByteSize
     }
 
-    abstract fun reserveTransportBytes(value: T): Int
+    abstract internal fun calculateTransportBytes(value: T): Int
 
     override fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(index, this.wireType, writer)

@@ -37,7 +37,7 @@ class NumberDefinition<T: Comparable<T>>(
     override fun readTransportBytes(length: Int, reader: () -> Byte)
             = this.type.readTransportBytes(reader)
 
-    override fun reserveTransportBytes(value: T) = this.type.calculateTransportByteSize(value)
+    override fun calculateTransportBytes(value: T) = this.type.calculateTransportByteSize(value)
 
     override fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
             = this.type.writeTransportBytes(value, writer)

@@ -179,32 +179,32 @@ abstract class DataModel<DO: Any>(
      */
     fun readJsonToObject(reader: JsonReader) = construct(this.readJson(reader))
 
-    /** Reserves the byte size for the DataObject contained in map
+    /** Calculates the byte size for the DataObject contained in map
      * @param map with values to reserve bytes for
-     * @param reserver to reserve bytes with
+     * @param lengthCacher to cache byte lengths
      * @return total bytesize of object
      */
-    fun reserveProtoBufSize(map: Map<Int, Any>, reserver: (size: ByteSizeContainer) -> Unit) : Int {
+    fun calculateProtoBufSize(map: Map<Int, Any>, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
         var totalByteSize = 0
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
             val def = indexToDefinition[key] as Def<Any, DO>? ?: break
-            totalByteSize += def.propertyDefinition.reserveTransportBytesWithKey(value, reserver)
+            totalByteSize += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
         }
         return totalByteSize
     }
 
-    /** Reserves the byte size for the DataObject
+    /** Calculates the byte size for the DataObject
      * @param obj to reserve bytes for
-     * @param reserver to reserve bytes with
+     * @param lengthCacher to cache byte lengths
      * @return total bytesize of object
      */
-    fun reserveProtoBufSize(obj: DO, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
+    fun calculateProtoBufSize(obj: DO, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
         var totalByteSize = 0
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO>>) {
             val value = def.propertyGetter(obj) ?: break
-            totalByteSize += def.propertyDefinition.reserveTransportBytesWithKey(value, lengthCacher)
+            totalByteSize += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
         }
         return totalByteSize
     }
@@ -280,8 +280,8 @@ abstract class DataModel<DO: Any>(
                     collection += value
                 }
                 is MapDefinition<*, *> -> {
+                    ProtoBuf.getLength(key.wireType, byteReader)
                     val value = propertyDefinition.readMapTransportBytes(
-                            ProtoBuf.getLength(key.wireType, byteReader),
                             byteReader
                     )
                     if (valueMap.contains(key.tag)) {

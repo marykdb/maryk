@@ -113,7 +113,7 @@ class MapDefinition<K: Any, V: Any>(
         return map
     }
 
-    override fun reserveTransportBytesWithKey(value: Map<K, V>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
         var totalByteSize = 0
         value.forEach { key, item ->
             totalByteSize += ProtoBuf.reserveKey(this.index)
@@ -123,8 +123,8 @@ class MapDefinition<K: Any, V: Any>(
             lengthCacher(container)
 
             var fieldLength = 0
-            fieldLength += keyDefinition.reserveTransportBytesWithKey(1, key, lengthCacher)
-            fieldLength += valueDefinition.reserveTransportBytesWithKey(2, item, lengthCacher)
+            fieldLength += keyDefinition.calculateTransportBytesWithKey(1, key, lengthCacher)
+            fieldLength += valueDefinition.calculateTransportBytesWithKey(2, item, lengthCacher)
             fieldLength += fieldLength.calculateVarByteSize() // Add field length for length delimiter
             container.size = fieldLength // set length for value
 
@@ -142,7 +142,7 @@ class MapDefinition<K: Any, V: Any>(
         }
     }
 
-    fun readMapTransportBytes(length: Int, reader: () -> Byte): Pair<K, V> {
+    fun readMapTransportBytes(reader: () -> Byte): Pair<K, V> {
         val keyOfMapKey = ProtoBuf.readKey(reader)
         val key = keyDefinition.readTransportBytes(
                 ProtoBuf.getLength(keyOfMapKey.wireType, reader),

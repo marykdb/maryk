@@ -37,7 +37,7 @@ class TimeDefinition(
         TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
     }
 
-    override fun reserveTransportBytes(value: Time) = when(this.precision) {
+    override fun calculateTransportBytes(value: Time) = when(this.precision) {
         TimePrecision.SECONDS -> value.toSecondsOfDay().calculateVarByteSize()
         TimePrecision.MILLIS -> value.toMillisOfDay().calculateVarByteSize()
     }

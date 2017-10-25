@@ -127,7 +127,7 @@ internal class MapDefinitionTest {
         val asHex = "220c08181207237477656c7665220c083c120723746869727479220e08c80112082368756e64726564220f08d00f12092374686f7573616e64"
 
         bc.reserve(
-                def.reserveTransportBytesWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
         )
         def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
 
@@ -139,10 +139,10 @@ internal class MapDefinitionTest {
             key.tag shouldBe 4
         }
 
-        fun readValue() = def.readMapTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read
-        )
+        fun readValue(): Pair<Int, String> {
+            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read)
+            return def.readMapTransportBytes(bc::read)
+        }
 
         value.forEach {
             readKey()

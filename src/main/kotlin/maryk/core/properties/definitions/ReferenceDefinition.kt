@@ -28,7 +28,7 @@ class ReferenceDefinition<DO: Any>(
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
 
-    override fun reserveTransportBytes(value: Key<DO>) = this.byteSize
+    override fun calculateTransportBytes(value: Key<DO>) = this.byteSize
 
     @Throws(ParseException::class)
     override fun fromString(string: String) = try {

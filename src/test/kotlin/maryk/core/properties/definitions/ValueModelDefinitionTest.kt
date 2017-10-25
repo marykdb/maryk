@@ -44,7 +44,7 @@ internal class ValueModelDefinitionTest {
     fun testTransportConversion() {
         val bc = ByteCollectorWithSizeCacher()
 
-        bc.reserve(def.reserveTransportBytesWithKey(value, bc::addToCache))
+        bc.reserve(def.calculateTransportByteLengthWithKey(value, bc::addToCache))
         def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
         bc.bytes!!.size shouldBe 20
 

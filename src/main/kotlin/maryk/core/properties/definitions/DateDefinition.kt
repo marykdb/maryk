@@ -32,7 +32,7 @@ class DateDefinition(
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = Date.ofEpochDay(initLongByVar(reader))
 
-    override fun reserveTransportBytes(value: Date) = value.epochDay.calculateVarByteSize()
+    override fun calculateTransportBytes(value: Date) = value.epochDay.calculateVarByteSize()
 
     override fun writeTransportBytes(value: Date, writer: (byte: Byte) -> Unit) {
         val epochDay = value.epochDay

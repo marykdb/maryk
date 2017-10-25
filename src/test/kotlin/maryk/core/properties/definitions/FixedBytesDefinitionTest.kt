@@ -41,7 +41,7 @@ internal class FixedBytesDefinitionTest {
     fun testTransportConversion() {
         val bc = ByteCollectorWithSizeCacher()
         fixedBytesToTest.forEach { value ->
-            bc.reserve(def.reserveTransportBytesWithKey(value, bc::addToCache))
+            bc.reserve(def.calculateTransportByteLengthWithKey(value, bc::addToCache))
             def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
 
             val key = ProtoBuf.readKey(bc::read)

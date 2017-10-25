@@ -78,7 +78,7 @@ internal class SetDefinitionTest {
         val asHex = "220154220254322202543322025434"
 
         bc.reserve(
-            def.reserveTransportBytesWithKey(value, bc::addToCache)
+            def.calculateTransportByteLengthWithKey(value, bc::addToCache)
         )
         def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
 

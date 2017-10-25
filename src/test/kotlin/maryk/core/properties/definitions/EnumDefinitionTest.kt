@@ -44,7 +44,7 @@ internal class EnumDefinitionTest {
 
         enumsToTest.zip(expected).forEach { (enum, expected) ->
             bc.reserve(
-                    def.reserveTransportBytesWithKey(enum, { fail("Should not call") })
+                    def.calculateTransportByteLengthWithKey(enum, { fail("Should not call") })
             )
             def.writeTransportBytesWithKey(enum, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)

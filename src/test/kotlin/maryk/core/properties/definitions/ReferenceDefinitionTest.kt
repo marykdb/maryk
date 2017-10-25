@@ -60,7 +60,7 @@ internal class ReferenceDefinitionTest {
         val bc = ByteCollectorWithSizeCacher()
         refToTest.forEach { value ->
             bc.reserve(
-                def.reserveTransportBytesWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
             )
             def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
             bc.bytes!!.size shouldBe 11

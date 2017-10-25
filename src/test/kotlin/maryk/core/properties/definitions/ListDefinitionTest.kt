@@ -85,7 +85,7 @@ internal class ListDefinitionTest {
         val asHex = "1a01541a0254321a0254331a025434"
 
         bc.reserve(
-                def.reserveTransportBytesWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
         )
         def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
 

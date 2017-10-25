@@ -48,7 +48,7 @@ internal class NumberDefinitionTest {
         val bc = ByteCollector()
         intArray.forEach { value ->
             bc.reserve(
-                def.reserveTransportBytesWithKey(value, { fail("Should not call") })
+                def.calculateTransportByteLengthWithKey(value, { fail("Should not call") })
             )
             def.writeTransportBytesWithKey(value, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)

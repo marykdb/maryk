@@ -264,20 +264,36 @@ abstract class DataModel<DO: Any>(
                                 byteReader
                         )
                 )
-                is IsByteTransportableCollection<*> -> {
-                    val value = propertyDefinition.readCollectionTransportBytes(
-                            ProtoBuf.getLength(key.wireType, byteReader),
-                            byteReader
-                    )
-                    @Suppress("UNCHECKED_CAST")
-                    val collection = when {
-                        valueMap.contains(key.tag) -> valueMap[key.tag]
-                        else -> propertyDefinition.newMutableCollection().let {
-                            valueMap[key.tag] = it
-                            it
+                is IsByteTransportableCollection<*, *> -> {
+                    when {
+                        propertyDefinition.isPacked(key.wireType) -> {
+                            @Suppress("UNCHECKED_CAST")
+                            val collection = propertyDefinition.readPackedCollectionTransportBytes(
+                                    ProtoBuf.getLength(key.wireType, byteReader),
+                                    byteReader
+                            ) as MutableCollection<Any>
+                            @Suppress("UNCHECKED_CAST")
+                            when {
+                                valueMap.contains(key.tag) -> (valueMap[key.tag] as MutableCollection<Any>).addAll(collection)
+                                else -> valueMap[key.tag] = collection
+                            }
                         }
-                    } as MutableCollection<Any>
-                    collection += value
+                        else -> {
+                            val value = propertyDefinition.readCollectionTransportBytes(
+                                    ProtoBuf.getLength(key.wireType, byteReader),
+                                    byteReader
+                            )
+                            @Suppress("UNCHECKED_CAST")
+                            val collection = when {
+                                valueMap.contains(key.tag) -> valueMap[key.tag]
+                                else -> propertyDefinition.newMutableCollection().let {
+                                    valueMap[key.tag] = it
+                                    it
+                                }
+                            } as MutableCollection<Any>
+                            collection += value
+                        }
+                    }
                 }
                 is MapDefinition<*, *> -> {
                     ProtoBuf.getLength(key.wireType, byteReader)

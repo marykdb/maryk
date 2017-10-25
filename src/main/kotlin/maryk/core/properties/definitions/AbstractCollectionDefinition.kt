@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
@@ -10,6 +12,8 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.protobuf.ByteLengthContainer
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         name: String? = null,
@@ -23,7 +27,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         val valueDefinition: AbstractValueDefinition<T>
 ) : AbstractPropertyDefinition<C>(
         name, index, indexed, searchable, required, final
-), HasSizeDefinition, IsByteTransportableCollection<T> {
+), HasSizeDefinition, IsByteTransportableCollection<T, C> {
     init {
         assert(valueDefinition.required, { "Definition should have required=true on collection «$name»" })
     }
@@ -86,18 +90,66 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
 
     override fun calculateTransportByteLengthWithKey(value: C, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         var totalByteSize = 0
-        value.forEach { item ->
-            totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(this.index, item, lengthCacher)
+        when(this.valueDefinition.wireType) {
+            WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
+                // Cache length for length delimiter
+                val container = ByteLengthContainer()
+                lengthCacher(container)
+
+                value.forEach { item ->
+                    totalByteSize += valueDefinition.calculateTransportByteLength(item)
+                }
+                container.length = totalByteSize
+
+                totalByteSize += ProtoBuf.calculateKeyLength(this.index)
+                totalByteSize += container.length.calculateVarByteLength()
+            }
+            else -> value.forEach { item ->
+                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(this.index, item, lengthCacher)
+            }
         }
+
         return totalByteSize
     }
 
     override fun writeTransportBytesWithKey(value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
-        value.forEach { item ->
-            valueDefinition.writeTransportBytesWithKey(this.index, item, lengthCacheGetter, writer)
+        when(this.valueDefinition.wireType) {
+            WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
+                ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, writer)
+                lengthCacheGetter().writeVarBytes(writer)
+                value.forEach { item ->
+                    valueDefinition.writeTransportBytes(item, writer)
+                }
+            }
+            else -> value.forEach { item ->
+                valueDefinition.writeTransportBytesWithKey(this.index, item, lengthCacheGetter, writer)
+            }
         }
+    }
+
+    override fun isPacked(encodedWireType: WireType) = when(this.valueDefinition.wireType) {
+        WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> encodedWireType == WireType.LENGTH_DELIMITED
+        else -> false
     }
 
     override fun readCollectionTransportBytes(length: Int, reader: () -> Byte)
             = valueDefinition.readTransportBytes(length, reader)
+
+    override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte): C {
+        var byteCounter = 0
+
+        val byteReader = {
+            byteCounter++
+            reader()
+        }
+
+        val collection = this.newMutableCollection()
+
+        while (byteCounter < length) {
+            collection += valueDefinition.readTransportBytes(length, byteReader)
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return collection as C
+    }
 }

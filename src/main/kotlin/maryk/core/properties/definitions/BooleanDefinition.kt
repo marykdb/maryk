@@ -27,7 +27,7 @@ class BooleanDefinition(
         value.writeBytes(writer)
     }
 
-    override fun calculateTransportBytes(value: Boolean) = this.byteSize
+    override fun calculateTransportByteLength(value: Boolean) = this.byteSize
 
     override fun writeTransportBytes(value: Boolean, writer: (byte: Byte) -> Unit)
             = writeStorageBytes(value, {}, writer)

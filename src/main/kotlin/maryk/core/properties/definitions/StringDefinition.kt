@@ -43,7 +43,7 @@ class StringDefinition(
         value.writeUTF8Bytes(writer)
     }
 
-    override fun calculateTransportBytes(value: String) = value.calculateUTF8ByteLength()
+    override fun calculateTransportByteLength(value: String) = value.calculateUTF8ByteLength()
 
     override fun writeTransportBytes(value: String, writer: (byte: Byte) -> Unit) = value.writeUTF8Bytes(writer)
 

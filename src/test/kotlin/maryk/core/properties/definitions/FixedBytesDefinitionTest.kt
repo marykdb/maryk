@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithSizeCacher
+import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.ProtoBuf
@@ -39,10 +39,10 @@ internal class FixedBytesDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithSizeCacher()
+        val bc = ByteCollectorWithLengthCacher()
         fixedBytesToTest.forEach { value ->
             bc.reserve(def.calculateTransportByteLengthWithKey(value, bc::addToCache))
-            def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
+            def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
 
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED

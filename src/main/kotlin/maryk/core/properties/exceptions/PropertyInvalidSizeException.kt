@@ -13,5 +13,5 @@ class PropertyInvalidSizeException(
 ) : PropertyValidationException(
         reference = ref,
         id = "INVALID_SIZE",
-        reason = "has incorrect length: «$value» with size limits [$min,$max]"
+        reason = "has incorrect size: «$value» with size limits [$min,$max]"
 )

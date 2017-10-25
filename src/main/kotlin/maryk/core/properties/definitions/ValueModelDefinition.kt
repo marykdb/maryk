@@ -39,7 +39,7 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = this.dataModel.readFromBytes(reader)
 
-    override fun calculateTransportBytes(value: DO) = this.dataModel.byteSize
+    override fun calculateTransportByteLength(value: DO) = this.dataModel.byteSize
 
     override fun asString(value: DO) = value.toBase64()
 

@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.calculateVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.exceptions.ParseException
@@ -37,9 +37,9 @@ class DateTimeDefinition(
         TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
     }
 
-    override fun calculateTransportBytes(value: DateTime) = when(this.precision) {
-        TimePrecision.SECONDS -> value.toEpochSecond().calculateVarByteSize()
-        TimePrecision.MILLIS -> value.toEpochMilli().calculateVarByteSize()
+    override fun calculateTransportByteLength(value: DateTime) = when(this.precision) {
+        TimePrecision.SECONDS -> value.toEpochSecond().calculateVarByteLength()
+        TimePrecision.MILLIS -> value.toEpochMilli().calculateVarByteLength()
     }
 
     override fun writeTransportBytes(value: DateTime, writer: (byte: Byte) -> Unit) {

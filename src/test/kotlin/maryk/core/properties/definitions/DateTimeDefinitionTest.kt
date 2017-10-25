@@ -59,7 +59,7 @@ internal class DateTimeDefinitionTest {
     fun convertTransportBytesMillis() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
-            byteCollector.reserve(defMilli.calculateTransportBytes(it))
+            byteCollector.reserve(defMilli.calculateTransportByteLength(it))
             defMilli.writeTransportBytes(it, byteCollector::write)
             defMilli.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
@@ -70,7 +70,7 @@ internal class DateTimeDefinitionTest {
     fun convertTransportBytesSeconds() {
         val byteCollector = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
-            byteCollector.reserve(def.calculateTransportBytes(it))
+            byteCollector.reserve(def.calculateTransportByteLength(it))
             def.writeTransportBytes(it, byteCollector::write)
             def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()

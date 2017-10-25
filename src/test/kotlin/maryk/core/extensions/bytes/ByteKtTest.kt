@@ -66,7 +66,7 @@ internal class ByteKtTest {
     }
 
     private fun testByteContent(bc: ByteCollector, it: Byte, hexValue: String) {
-        bc.reserve(it.calculateVarByteSize())
+        bc.reserve(it.calculateVarByteLength())
         it.writeVarBytes(bc::write)
         initByteByVar(bc::read) shouldBe it
 

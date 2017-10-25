@@ -39,7 +39,7 @@ internal class DateDefinitionTest {
         val byteCollector = ByteCollector()
         datesToTest.forEach {
             byteCollector.reserve(
-                def.calculateTransportBytes(it)
+                def.calculateTransportByteLength(it)
             )
             def.writeTransportBytes(it, byteCollector::write)
             def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it

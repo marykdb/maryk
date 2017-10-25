@@ -47,7 +47,7 @@ internal class Float64Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         float64values.forEach {
-            bc.reserve(Float64.calculateTransportByteSize(it))
+            bc.reserve(Float64.calculateTransportByteLength(it))
             Float64.writeTransportBytes(it, bc::write)
             val value = Float64.readTransportBytes(bc::read)
             assertEquals(value, it)

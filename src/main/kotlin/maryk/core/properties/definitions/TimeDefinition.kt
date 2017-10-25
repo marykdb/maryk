@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.calculateVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.exceptions.ParseException
@@ -37,9 +37,9 @@ class TimeDefinition(
         TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
     }
 
-    override fun calculateTransportBytes(value: Time) = when(this.precision) {
-        TimePrecision.SECONDS -> value.toSecondsOfDay().calculateVarByteSize()
-        TimePrecision.MILLIS -> value.toMillisOfDay().calculateVarByteSize()
+    override fun calculateTransportByteLength(value: Time) = when(this.precision) {
+        TimePrecision.SECONDS -> value.toSecondsOfDay().calculateVarByteLength()
+        TimePrecision.MILLIS -> value.toMillisOfDay().calculateVarByteLength()
     }
 
     override fun writeTransportBytes(value: Time, writer: (byte: Byte) -> Unit) {

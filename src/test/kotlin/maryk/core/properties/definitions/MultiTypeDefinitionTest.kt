@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.ByteCollectorWithSizeCacher
+import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.types.TypedValue
@@ -66,12 +66,12 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithSizeCacher()
+        val bc = ByteCollectorWithLengthCacher()
         multisToTest.forEach {
             bc.reserve(
                 def.calculateTransportByteLengthWithKey(it, bc::addToCache)
             )
-            def.writeTransportBytesWithKey(6, it, bc::nextSizeFromCache, bc::write)
+            def.writeTransportBytesWithKey(6, it, bc::nextLengthFromCache, bc::write)
 
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 6

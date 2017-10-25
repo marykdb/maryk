@@ -6,7 +6,7 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
 import maryk.core.objects.Def
-import maryk.core.properties.ByteCollectorWithSizeCacher
+import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -56,7 +56,7 @@ internal class SubModelDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithSizeCacher()
+        val bc = ByteCollectorWithLengthCacher()
 
         val value = MarykObject()
         val asHex = "2a0502036a7572"
@@ -65,7 +65,7 @@ internal class SubModelDefinitionTest {
                 def.calculateTransportByteLengthWithKey(value, bc::addToCache)
         )
         bc.bytes!!.size shouldBe 7
-        def.writeTransportBytesWithKey(5, value, bc::nextSizeFromCache, bc::write)
+        def.writeTransportBytesWithKey(5, value, bc::nextLengthFromCache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 

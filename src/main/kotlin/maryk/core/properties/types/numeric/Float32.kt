@@ -12,7 +12,7 @@ object Float32 : NumberDescriptor<Float>(
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Float = initFloat(reader)
     override fun writeStorageBytes(value: Float, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initFloat(reader)
-    override fun calculateTransportByteSize(value: Float) = size
+    override fun calculateTransportByteLength(value: Float) = size
     override fun writeTransportBytes(value: Float, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun ofString(value: String) = value.toFloat()
     override fun createRandom() = Float.random()

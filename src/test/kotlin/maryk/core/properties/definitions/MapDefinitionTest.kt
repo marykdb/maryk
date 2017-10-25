@@ -4,7 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestMarykObject
 import maryk.core.extensions.toHex
-import maryk.core.properties.ByteCollectorWithSizeCacher
+import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
@@ -116,7 +116,7 @@ internal class MapDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithSizeCacher()
+        val bc = ByteCollectorWithLengthCacher()
 
         val value = mapOf(
                 12 to "#twelve",
@@ -129,7 +129,7 @@ internal class MapDefinitionTest {
         bc.reserve(
                 def.calculateTransportByteLengthWithKey(value, bc::addToCache)
         )
-        def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
+        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 

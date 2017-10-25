@@ -30,7 +30,7 @@ abstract class IsTime<T>: IsTemporal<T>() {
 }
 
 abstract class IsTimeObject<T>: IsTemporalObject<T>() {
-    /** Get the size of the byte representation */
+    /** Get the length of the byte representation */
     abstract fun byteSize(precision: TimePrecision): Int
 
     /** Creates a Time object by reading a byte reader

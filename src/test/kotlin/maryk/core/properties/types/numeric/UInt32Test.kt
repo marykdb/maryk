@@ -49,7 +49,7 @@ internal class UInt32Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         uInt32values.forEach {
-            bc.reserve(UInt32.calculateTransportByteSize(it))
+            bc.reserve(UInt32.calculateTransportByteLength(it))
             UInt32.writeTransportBytes(it, bc::write)
             UInt32.readTransportBytes(bc::read) shouldBe it
             bc.reset()

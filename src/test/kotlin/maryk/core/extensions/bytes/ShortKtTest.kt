@@ -66,7 +66,7 @@ internal class ShortKtTest {
     }
 
     private fun testByteContent(bc: ByteCollector, it: Short, hexValue: String) {
-        bc.reserve(it.calculateVarByteSize())
+        bc.reserve(it.calculateVarByteLength())
         it.writeVarBytes(bc::write)
         initShortByVar(bc::read) shouldBe it
 

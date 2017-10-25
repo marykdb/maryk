@@ -6,7 +6,7 @@ import maryk.TestMarykObject
 import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.extensions.bytes.ZEROBYTE
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithSizeCacher
+import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.ProtoBuf
@@ -57,12 +57,12 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithSizeCacher()
+        val bc = ByteCollectorWithLengthCacher()
         refToTest.forEach { value ->
             bc.reserve(
                 def.calculateTransportByteLengthWithKey(value, bc::addToCache)
             )
-            def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
+            def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
             bc.bytes!!.size shouldBe 11
 
             val key = ProtoBuf.readKey(bc::read)

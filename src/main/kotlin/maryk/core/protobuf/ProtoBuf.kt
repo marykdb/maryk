@@ -87,7 +87,7 @@ object ProtoBuf {
     /** Get length of next value
      * @param wireType: to use for length retrieval
      * @param reader: to continue reading for
-     * @return size of bytes of next value. -1 for varInt or start/end group
+     * @return length of bytes of next value. -1 for varInt or start/end group
      */
     fun getLength(wireType: WireType, reader: () -> Byte) = when(wireType) {
         WireType.VAR_INT -> -1
@@ -104,7 +104,7 @@ object ProtoBuf {
 }
 
 
-/** Calculates the byte size of the variable int */
+/** Calculates the byte length of the variable int */
 private fun Int.calculateTagByteSize(): Int = when {
     this and (Int.MAX_VALUE shl 4) == 0 -> 1
     this and (Int.MAX_VALUE shl 11) == 0 -> 2

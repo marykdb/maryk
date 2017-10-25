@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.calculateVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
@@ -15,7 +15,7 @@ import maryk.core.properties.references.CanHaveSimpleChildReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.PropertyReference
-import maryk.core.protobuf.ByteSizeContainer
+import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -113,24 +113,24 @@ class MapDefinition<K: Any, V: Any>(
         return map
     }
 
-    override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
-        var totalByteSize = 0
+    override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+        var totalByteLength = 0
         value.forEach { key, item ->
-            totalByteSize += ProtoBuf.reserveKey(this.index)
+            totalByteLength += ProtoBuf.reserveKey(this.index)
 
             // Cache length for length delimiter
-            val container = ByteSizeContainer()
+            val container = ByteLengthContainer()
             lengthCacher(container)
 
             var fieldLength = 0
-            fieldLength += keyDefinition.calculateTransportBytesWithKey(1, key, lengthCacher)
-            fieldLength += valueDefinition.calculateTransportBytesWithKey(2, item, lengthCacher)
-            fieldLength += fieldLength.calculateVarByteSize() // Add field length for length delimiter
-            container.size = fieldLength // set length for value
+            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, lengthCacher)
+            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, lengthCacher)
+            fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
+            container.length = fieldLength // set length for value
 
-            totalByteSize += fieldLength
+            totalByteLength += fieldLength
         }
-        return totalByteSize
+        return totalByteLength
     }
 
     override fun writeTransportBytesWithKey(value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {

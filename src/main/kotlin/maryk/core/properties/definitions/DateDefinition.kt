@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.calculateVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.exceptions.ParseException
@@ -32,7 +32,7 @@ class DateDefinition(
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = Date.ofEpochDay(initLongByVar(reader))
 
-    override fun calculateTransportBytes(value: Date) = value.epochDay.calculateVarByteSize()
+    override fun calculateTransportByteLength(value: Date) = value.epochDay.calculateVarByteLength()
 
     override fun writeTransportBytes(value: Date, writer: (byte: Byte) -> Unit) {
         val epochDay = value.epochDay

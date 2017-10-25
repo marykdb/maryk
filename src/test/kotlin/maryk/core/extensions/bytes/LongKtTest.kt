@@ -102,7 +102,7 @@ internal class LongKtTest {
     }
 
     private fun testByteContent(bc: ByteCollector, it: Long, hexValue: String) {
-        bc.reserve(it.calculateVarByteSize())
+        bc.reserve(it.calculateVarByteLength())
         it.writeVarBytes(bc::write)
 
         initLongByVar(bc::read) shouldBe it

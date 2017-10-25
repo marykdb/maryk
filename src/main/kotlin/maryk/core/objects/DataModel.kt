@@ -13,7 +13,7 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
-import maryk.core.protobuf.ByteSizeContainer
+import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 
@@ -179,34 +179,34 @@ abstract class DataModel<DO: Any>(
      */
     fun readJsonToObject(reader: JsonReader) = construct(this.readJson(reader))
 
-    /** Calculates the byte size for the DataObject contained in map
+    /** Calculates the byte length for the DataObject contained in map
      * @param map with values to reserve bytes for
      * @param lengthCacher to cache byte lengths
      * @return total bytesize of object
      */
-    fun calculateProtoBufSize(map: Map<Int, Any>, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
-        var totalByteSize = 0
+    fun calculateProtoBufLength(map: Map<Int, Any>, lengthCacher: (length: ByteLengthContainer) -> Unit) : Int {
+        var totalByteLength = 0
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
             val def = indexToDefinition[key] as Def<Any, DO>? ?: break
-            totalByteSize += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
+            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
         }
-        return totalByteSize
+        return totalByteLength
     }
 
-    /** Calculates the byte size for the DataObject
+    /** Calculates the byte length for the DataObject
      * @param obj to reserve bytes for
      * @param lengthCacher to cache byte lengths
      * @return total bytesize of object
      */
-    fun calculateProtoBufSize(obj: DO, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
-        var totalByteSize = 0
+    fun calculateProtoBufLength(obj: DO, lengthCacher: (length: ByteLengthContainer) -> Unit) : Int {
+        var totalByteLength = 0
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO>>) {
             val value = def.propertyGetter(obj) ?: break
-            totalByteSize += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
+            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
         }
-        return totalByteSize
+        return totalByteLength
     }
 
     fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {

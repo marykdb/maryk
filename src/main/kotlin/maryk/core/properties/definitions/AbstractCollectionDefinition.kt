@@ -9,7 +9,7 @@ import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
-import maryk.core.protobuf.ByteSizeContainer
+import maryk.core.protobuf.ByteLengthContainer
 
 abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         name: String? = null,
@@ -84,10 +84,10 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         return collection as C
     }
 
-    override fun calculateTransportByteLengthWithKey(value: C, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(value: C, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         var totalByteSize = 0
         value.forEach { item ->
-            totalByteSize += valueDefinition.calculateTransportBytesWithKey(this.index, item, lengthCacher)
+            totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(this.index, item, lengthCacher)
         }
         return totalByteSize
     }

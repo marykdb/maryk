@@ -43,7 +43,7 @@ internal class SInt8Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         int8values.forEach {
-            bc.reserve(SInt8.calculateTransportByteSize(it))
+            bc.reserve(SInt8.calculateTransportByteLength(it))
             SInt8.writeTransportBytes(it, bc::write)
             SInt8.readTransportBytes(bc::read) shouldBe it
             bc.reset()

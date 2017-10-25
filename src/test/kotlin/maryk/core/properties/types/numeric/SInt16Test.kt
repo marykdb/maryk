@@ -42,7 +42,7 @@ internal class SInt16Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         int16values.forEach {
-            bc.reserve(SInt16.calculateTransportByteSize(it))
+            bc.reserve(SInt16.calculateTransportByteLength(it))
             SInt16.writeTransportBytes(it, bc::write)
             SInt16.readTransportBytes(bc::read) shouldBe it
             bc.reset()

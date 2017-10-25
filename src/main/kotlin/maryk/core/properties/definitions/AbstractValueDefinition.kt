@@ -1,13 +1,13 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.calculateVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.protobuf.ByteSizeContainer
+import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -56,35 +56,35 @@ abstract class AbstractValueDefinition<T: Any>(
         this.writeTransportBytes(value, writer)
     }
 
-    override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit)
-            = this.calculateTransportBytesWithKey(this.index, value, lengthCacher)
+    override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit)
+            = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher)
 
-    override fun calculateTransportBytesWithKey(index: Int, value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
-        var totalByteSize = 0
-        totalByteSize += ProtoBuf.reserveKey(index)
+    override fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit) : Int {
+        var totalByteLength = 0
+        totalByteLength += ProtoBuf.reserveKey(index)
 
         if (this.wireType == WireType.LENGTH_DELIMITED) {
-            // Take care size container is first cached before value is calculated
-            // Otherwise byte sizes contained by value could be cached before
+            // Take care length container is first cached before value is calculated
+            // Otherwise byte lengths contained by value could be cached before
             // This way order is maintained
-            val container = ByteSizeContainer()
+            val container = ByteLengthContainer()
             lengthCacher(container)
 
             // calculate field length
-            this.calculateTransportBytes(value).let {
-                container.size = it
-                totalByteSize += it
-                totalByteSize += it.calculateVarByteSize()
+            this.calculateTransportByteLength(value).let {
+                container.length = it
+                totalByteLength += it
+                totalByteLength += it.calculateVarByteLength()
             }
         } else {
             // calculate field length
-            totalByteSize += this.calculateTransportBytes(value)
+            totalByteLength += this.calculateTransportByteLength(value)
         }
 
-        return totalByteSize
+        return totalByteLength
     }
 
-    abstract internal fun calculateTransportBytes(value: T): Int
+    abstract internal fun calculateTransportByteLength(value: T): Int
 
     override fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(index, this.wireType, writer)

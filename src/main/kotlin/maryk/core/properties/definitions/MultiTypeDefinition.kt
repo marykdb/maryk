@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.calculateVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
@@ -11,7 +11,7 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.protobuf.ByteSizeContainer
+import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -100,26 +100,26 @@ class MultiTypeDefinition(
         )
     }
 
-    override fun calculateTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: TypedValue<*>, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         // Cache length for length delimiter
-        val container = ByteSizeContainer()
+        val container = ByteLengthContainer()
         lengthCacher(container)
 
-        var totalByteSize = 0
+        var totalByteLength = 0
         // Type index
-        totalByteSize += ProtoBuf.reserveKey(1)
-        totalByteSize += value.typeIndex.calculateVarByteSize()
+        totalByteLength += ProtoBuf.reserveKey(1)
+        totalByteLength += value.typeIndex.calculateVarByteLength()
 
         // value
         @Suppress("UNCHECKED_CAST")
         val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any>
-        totalByteSize += def.calculateTransportBytesWithKey(2, value.value, lengthCacher)
+        totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, lengthCacher)
 
-        container.size = totalByteSize
+        container.length = totalByteLength
 
-        totalByteSize += ProtoBuf.reserveKey(this.index) // Add key length for field
-        totalByteSize += container.size.calculateVarByteSize() // Add field length for length delimiter
-        return totalByteSize
+        totalByteLength += ProtoBuf.reserveKey(this.index) // Add key length for field
+        totalByteLength += container.length.calculateVarByteLength() // Add field length for length delimiter
+        return totalByteLength
     }
 
     override fun writeTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {

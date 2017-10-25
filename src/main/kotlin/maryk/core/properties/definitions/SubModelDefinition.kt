@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.calculateVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
@@ -9,7 +9,7 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.CanHaveSimpleChildReference
 import maryk.core.properties.references.PropertyReference
-import maryk.core.protobuf.ByteSizeContainer
+import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -54,18 +54,18 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
 
     override fun readJson(reader: JsonReader) = this.dataModel.readJsonToObject(reader)
 
-    override fun calculateTransportBytesWithKey(index: Int, value: DO, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
-        // Set up container to store byte size
-        val container = ByteSizeContainer()
+    override fun calculateTransportByteLengthWithKey(index: Int, value: DO, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+        // Set up container to store byte length
+        val container = ByteLengthContainer()
         lengthCacher(container)
 
-        var totalByteSize = 0
-        totalByteSize += this.dataModel.calculateProtoBufSize(value, lengthCacher)
-        container.size = totalByteSize // first store byte size of object
+        var totalByteLength = 0
+        totalByteLength += this.dataModel.calculateProtoBufLength(value, lengthCacher)
+        container.length = totalByteLength // first store byte length of object
 
-        totalByteSize += ProtoBuf.reserveKey(index)
-        totalByteSize += container.size.calculateVarByteSize()
-        return totalByteSize
+        totalByteLength += ProtoBuf.reserveKey(index)
+        totalByteLength += container.length.calculateVarByteLength()
+        return totalByteLength
     }
 
     override fun writeTransportBytesWithKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {

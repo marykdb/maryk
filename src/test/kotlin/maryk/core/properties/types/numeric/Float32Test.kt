@@ -47,7 +47,7 @@ internal class Float32Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         float32values.forEach {
-            bc.reserve(Float32.calculateTransportByteSize(it))
+            bc.reserve(Float32.calculateTransportByteLength(it))
             Float32.writeTransportBytes(it, bc::write)
             Float32.readTransportBytes(bc::read) shouldBe it
             bc.reset()

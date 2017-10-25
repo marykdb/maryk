@@ -4,7 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestValueObject
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithSizeCacher
+import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.Date
@@ -42,10 +42,10 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithSizeCacher()
+        val bc = ByteCollectorWithLengthCacher()
 
         bc.reserve(def.calculateTransportByteLengthWithKey(value, bc::addToCache))
-        def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
+        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
         bc.bytes!!.size shouldBe 20
 
         val key = ProtoBuf.readKey(bc::read)

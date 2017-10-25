@@ -43,7 +43,7 @@ internal class SInt64Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         int64values.forEach {
-            bc.reserve(SInt64.calculateTransportByteSize(it))
+            bc.reserve(SInt64.calculateTransportByteLength(it))
             SInt64.writeTransportBytes(it, bc::write)
             SInt64.readTransportBytes(bc::read) shouldBe it
             bc.reset()

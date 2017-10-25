@@ -89,8 +89,8 @@ internal fun initLongByVar(reader: () -> Byte): Long {
     throw ParseException("Malformed varInt")
 }
 
-/** Calculates the byte size of the variable int */
-internal fun Long.calculateVarByteSize(): Int = when {
+/** Calculates the byte length of the variable int */
+internal fun Long.calculateVarByteLength(): Int = when {
     this and (Long.MAX_VALUE shl 7) == 0L -> 1
     this and (Long.MAX_VALUE shl 14) == 0L -> 2
     this and (Long.MAX_VALUE shl 21) == 0L -> 3

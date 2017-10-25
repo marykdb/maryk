@@ -14,7 +14,7 @@ abstract class NumberDescriptor<T: Comparable<T>>(
         reserver(size)
         this.writeStorageBytes(value, writer)
     }
-    abstract fun calculateTransportByteSize(value: T): Int
+    abstract fun calculateTransportByteLength(value: T): Int
     abstract fun readTransportBytes(reader: () -> Byte): T
     abstract fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
 }

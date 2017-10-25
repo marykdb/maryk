@@ -27,7 +27,7 @@ class FixedBytesDefinition(
 
     override fun writeStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
-    override fun calculateTransportBytes(value: Bytes) = this.byteSize
+    override fun calculateTransportByteLength(value: Bytes) = this.byteSize
 
     @Throws(ParseException::class)
     override fun fromString(string: String) = try {

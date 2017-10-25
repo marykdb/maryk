@@ -1,6 +1,6 @@
 package maryk.core.properties.types.numeric
 
-import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteSize
 import maryk.core.extensions.bytes.initByte
 import maryk.core.extensions.bytes.initByteByVar
 import maryk.core.extensions.bytes.writeBytes
@@ -19,7 +19,7 @@ class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte): UInt8 = UInt8(initByte(reader))
         override fun writeStorageBytes(value: UInt8, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)
         override fun readTransportBytes(reader: () -> Byte) = UInt8((initByteByVar(reader) + Byte.MIN_VALUE).toByte())
-        override fun calculateTransportByteSize(value: UInt8) = (value.number - Byte.MIN_VALUE).computeVarByteSize()
+        override fun calculateTransportByteSize(value: UInt8) = (value.number - Byte.MIN_VALUE).calculateVarByteSize()
         override fun writeTransportBytes(value: UInt8, writer: (byte: Byte) -> Unit) {
             val number = value.number.toLong() - Byte.MIN_VALUE
             number.writeVarBytes(writer)

@@ -63,8 +63,8 @@ internal fun initByteByVar(reader: () -> Byte): Byte {
     throw ParseException("Malformed valInt")
 }
 
-/** Computes the byte size of the variable int */
-internal fun Byte.computeVarByteSize(): Int {
+/** Calculates the byte size of the variable int */
+internal fun Byte.calculateVarByteSize(): Int {
     val asInt = this.toInt()
     return when {
         asInt and (0xff shl 7) == 0 -> 1

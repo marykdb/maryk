@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
@@ -64,7 +64,7 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         container.size = totalByteSize // first store byte size of object
 
         totalByteSize += ProtoBuf.reserveKey(index)
-        totalByteSize += container.size.computeVarByteSize()
+        totalByteSize += container.size.calculateVarByteSize()
         return totalByteSize
     }
 

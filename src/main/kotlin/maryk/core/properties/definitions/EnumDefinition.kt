@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteSize
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
@@ -46,7 +46,7 @@ class EnumDefinition<E: IndexedEnum<E>>(
     override fun readTransportBytes(length: Int, reader: () -> Byte)
             = getEnumByIndex(initShortByVar(reader).toInt())
 
-    override fun reserveTransportBytes(value: E) = value.index.computeVarByteSize()
+    override fun reserveTransportBytes(value: E) = value.index.calculateVarByteSize()
 
     override fun writeTransportBytes(value: E, writer: (byte: Byte) -> Unit)
             = value.index.writeVarBytes(writer)

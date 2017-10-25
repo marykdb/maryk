@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
@@ -125,7 +125,7 @@ class MapDefinition<K: Any, V: Any>(
             var fieldLength = 0
             fieldLength += keyDefinition.reserveTransportBytesWithKey(1, key, lengthCacher)
             fieldLength += valueDefinition.reserveTransportBytesWithKey(2, item, lengthCacher)
-            fieldLength += fieldLength.computeVarByteSize() // Add field length for length delimiter
+            fieldLength += fieldLength.calculateVarByteSize() // Add field length for length delimiter
             container.size = fieldLength // set length for value
 
             totalByteSize += fieldLength

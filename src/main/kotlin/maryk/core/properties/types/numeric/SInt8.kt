@@ -1,6 +1,6 @@
 package maryk.core.properties.types.numeric
 
-import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteSize
 import maryk.core.extensions.bytes.decodeZigZag
 import maryk.core.extensions.bytes.encodeZigZag
 import maryk.core.extensions.bytes.initByte
@@ -17,7 +17,7 @@ object SInt8 : NumberDescriptor<Byte>(
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Byte = initByte(reader)
     override fun writeStorageBytes(value: Byte, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initByteByVar(reader).decodeZigZag()
-    override fun calculateTransportByteSize(value: Byte) = value.encodeZigZag().computeVarByteSize()
+    override fun calculateTransportByteSize(value: Byte) = value.encodeZigZag().calculateVarByteSize()
     override fun writeTransportBytes(value: Byte, writer: (byte: Byte) -> Unit) {
         val zigZaggedValue = value.encodeZigZag()
         zigZaggedValue.writeVarBytes(writer)

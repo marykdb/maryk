@@ -72,8 +72,8 @@ internal fun initShortByVar(reader: () -> Byte): Short {
     throw ParseException("Malformed valInt")
 }
 
-/** Computes the byte size of the variable int */
-internal fun Short.computeVarByteSize(): Int {
+/** Calculates the byte size of the variable int */
+internal fun Short.calculateVarByteSize(): Int {
     val asInt = this.toInt()
     return when {
         asInt and (0xffff shl 7) == 0 -> 1

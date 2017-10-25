@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteSize
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
@@ -108,7 +108,7 @@ class MultiTypeDefinition(
         var totalByteSize = 0
         // Type index
         totalByteSize += ProtoBuf.reserveKey(1)
-        totalByteSize += value.typeIndex.computeVarByteSize()
+        totalByteSize += value.typeIndex.calculateVarByteSize()
 
         // value
         @Suppress("UNCHECKED_CAST")
@@ -118,7 +118,7 @@ class MultiTypeDefinition(
         container.size = totalByteSize
 
         totalByteSize += ProtoBuf.reserveKey(this.index) // Add key length for field
-        totalByteSize += container.size.computeVarByteSize() // Add field length for length delimiter
+        totalByteSize += container.size.calculateVarByteSize() // Add field length for length delimiter
         return totalByteSize
     }
 

@@ -85,9 +85,8 @@ internal fun initIntByVar(reader: () -> Byte): Int {
     throw ParseException("Malformed valInt")
 }
 
-/**Computes the byte size of the variable int
- */
-internal fun Int.computeVarByteSize(): Int = when {
+/** Calculates the byte size of the variable int */
+internal fun Int.calculateVarByteSize(): Int = when {
     this and (Int.MAX_VALUE shl 7) == 0 -> 1
     this and (Int.MAX_VALUE shl 14) == 0 -> 2
     this and (Int.MAX_VALUE shl 21) == 0 -> 3

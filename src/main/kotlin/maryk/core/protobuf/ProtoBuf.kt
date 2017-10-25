@@ -11,7 +11,7 @@ import kotlin.experimental.xor
 object ProtoBuf {
     /** Write the key for protobuf field */
     fun writeKey(tag: Int, wireType: WireType, writer: (byte: Byte) -> Unit) {
-        val byteSize = tag.computeTagByteSize()
+        val byteSize = tag.calculateTagByteSize()
 
         // Write Tag + Wiretype + potential sign byte (STTT TWWW)
         writer(
@@ -99,13 +99,13 @@ object ProtoBuf {
     }
 
     fun reserveKey(tag: Int): Int {
-        return tag.computeTagByteSize()
+        return tag.calculateTagByteSize()
     }
 }
 
 
-/**Computes the byte size of the variable int */
-private fun Int.computeTagByteSize(): Int = when {
+/** Calculates the byte size of the variable int */
+private fun Int.calculateTagByteSize(): Int = when {
     this and (Int.MAX_VALUE shl 4) == 0 -> 1
     this and (Int.MAX_VALUE shl 11) == 0 -> 2
     this and (Int.MAX_VALUE shl 18) == 0 -> 3

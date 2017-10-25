@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.calculateVarByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
@@ -74,7 +74,7 @@ abstract class AbstractValueDefinition<T: Any>(
             this.reserveTransportBytes(value).let {
                 container.size = it
                 totalByteSize += it
-                totalByteSize += it.computeVarByteSize()
+                totalByteSize += it.calculateVarByteSize()
             }
         } else {
             // calculate field length

@@ -58,7 +58,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
     abstract internal fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?, newValue: C, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any)
 
     /** Creates a new mutable instance of the collection */
-    abstract internal fun newMutableCollection(): MutableCollection<T>
+    abstract override fun newMutableCollection(): MutableCollection<T>
 
     override fun writeJsonValue(writer: JsonWriter, value: C) {
         writer.writeStartArray()

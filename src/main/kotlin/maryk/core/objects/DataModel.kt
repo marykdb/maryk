@@ -266,7 +266,10 @@ abstract class DataModel<DO: Any>(
                     @Suppress("UNCHECKED_CAST")
                     val collection = when {
                         valueMap.contains(key.tag) -> valueMap[key.tag]
-                        else -> propertyDefinition.newMutableCollection()
+                        else -> propertyDefinition.newMutableCollection().let {
+                            valueMap[key.tag] = it
+                            it
+                        }
                     } as MutableCollection<Any>
                     collection += value
                 }

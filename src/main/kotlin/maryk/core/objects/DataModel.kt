@@ -4,12 +4,10 @@ import maryk.core.json.IllegalJsonOperation
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
-import maryk.core.properties.definitions.AbstractCollectionDefinition
 import maryk.core.properties.definitions.AbstractSubDefinition
+import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
@@ -260,24 +258,17 @@ abstract class DataModel<DO: Any>(
                                 byteReader
                         )
                 )
-                is AbstractCollectionDefinition<*, *> -> {
+                is IsByteTransportableCollection<*> -> {
                     val value = propertyDefinition.readCollectionTransportBytes(
                             ProtoBuf.getLength(key.wireType, byteReader),
                             byteReader
                     )
-                    if (valueMap.contains(key.tag)) {
-                        @Suppress("UNCHECKED_CAST")
-                        val collection = valueMap[key.tag] as MutableCollection<Any>
-                        collection.add(value)
-                    } else {
-                        valueMap[key.tag] = when (propertyDefinition) {
-                            is SetDefinition<*> -> mutableSetOf(value)
-                            is ListDefinition<*> -> mutableListOf(value)
-                            else -> {
-                                throw ParseException("Unknown type of collection definition for ${propertyDefinition.name}")
-                            }
-                        }
-                    }
+                    @Suppress("UNCHECKED_CAST")
+                    val collection = when {
+                        valueMap.contains(key.tag) -> valueMap[key.tag]
+                        else -> propertyDefinition.newMutableCollection()
+                    } as MutableCollection<Any>
+                    collection += value
                 }
                 is MapDefinition<*, *> -> {
                     val value = propertyDefinition.readMapTransportBytes(

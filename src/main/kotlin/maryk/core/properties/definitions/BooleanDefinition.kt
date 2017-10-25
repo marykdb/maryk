@@ -22,15 +22,14 @@ class BooleanDefinition(
 
     override fun readStorageBytes(length: Int, reader:() -> Byte) = initBoolean(reader)
 
-    override fun writeStorageBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(1)
-        value.writeBytes(writer)
-    }
+    override fun calculateStorageByteLength(value: Boolean) = this.byteSize
+
+    override fun writeStorageBytes(value: Boolean, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     override fun calculateTransportByteLength(value: Boolean) = this.byteSize
 
     override fun writeTransportBytes(value: Boolean, writer: (byte: Byte) -> Unit)
-            = writeStorageBytes(value, {}, writer)
+            = writeStorageBytes(value, writer)
 
     @Throws(ParseException::class)
     override fun fromString(string: String) = when(string) {

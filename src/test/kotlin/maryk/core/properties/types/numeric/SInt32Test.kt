@@ -33,7 +33,8 @@ internal class SInt32Test {
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
         int32values.forEach {
-            SInt32.writeStorageBytes(it, bc::reserve, bc::write)
+            bc.reserve(SInt32.size)
+            SInt32.writeStorageBytes(it, bc::write)
             SInt32.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }

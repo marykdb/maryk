@@ -25,7 +25,9 @@ class FlexBytesDefinition(
 ), HasSizeDefinition {
     override fun readStorageBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(length, reader)
 
-    override fun writeStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun calculateStorageByteLength(value: Bytes) = value.size
+
+    override fun writeStorageBytes(value: Bytes, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     override fun calculateTransportByteLength(value: Bytes) = value.size
 

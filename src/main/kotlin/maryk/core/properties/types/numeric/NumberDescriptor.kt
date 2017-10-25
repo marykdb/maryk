@@ -10,10 +10,6 @@ abstract class NumberDescriptor<T: Comparable<T>>(
     abstract fun fromStorageByteReader(length: Int, reader: () -> Byte): T
     abstract fun ofString(value: String): T
     abstract fun createRandom(): T
-    fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(size)
-        this.writeStorageBytes(value, writer)
-    }
     abstract fun calculateTransportByteLength(value: T): Int
     abstract fun readTransportBytes(reader: () -> Byte): T
     abstract fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)

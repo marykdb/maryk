@@ -33,7 +33,8 @@ internal class SInt64Test {
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
         int64values.forEach {
-            SInt64.writeStorageBytes(it, bc::reserve, bc::write)
+            bc.reserve(SInt64.size)
+            SInt64.writeStorageBytes(it, bc::write)
             SInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }

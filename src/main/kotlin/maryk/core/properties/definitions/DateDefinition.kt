@@ -28,7 +28,9 @@ class DateDefinition(
 
     override fun readStorageBytes(length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
 
-    override fun writeStorageBytes(value: Date, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun calculateStorageByteLength(value: Date) = this.byteSize
+
+    override fun writeStorageBytes(value: Date, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = Date.ofEpochDay(initLongByVar(reader))
 

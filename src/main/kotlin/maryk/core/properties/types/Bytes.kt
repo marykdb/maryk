@@ -27,10 +27,7 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
         else -> this.bytes contentEquals other.bytes
     }
 
-    fun writeBytes(reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(bytes.size)
-        bytes.writeBytes(writer)
-    }
+    fun writeBytes(writer: (byte: Byte) -> Unit) = bytes.writeBytes(writer)
 
     fun toHex() = this.bytes.toHex()
 

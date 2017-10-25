@@ -62,7 +62,8 @@ internal class DateTimeTest {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         dateTimesWithSecondsToTest.forEach {
-            it.writeBytes(TimePrecision.SECONDS, bc::reserve, bc::write)
+            bc.reserve(7)
+            it.writeBytes(TimePrecision.SECONDS, bc::write)
             DateTime.fromByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
@@ -72,7 +73,8 @@ internal class DateTimeTest {
     fun testStreamingMillisConversion() {
         val bc = ByteCollector()
         dateTimesWithMillisToTest.forEach {
-            it.writeBytes(TimePrecision.MILLIS, bc::reserve, bc::write)
+            bc.reserve(9)
+            it.writeBytes(TimePrecision.MILLIS, bc::write)
             DateTime.fromByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }

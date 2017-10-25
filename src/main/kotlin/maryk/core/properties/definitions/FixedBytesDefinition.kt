@@ -25,7 +25,9 @@ class FixedBytesDefinition(
 
     override fun readStorageBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(byteSize, reader)
 
-    override fun writeStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun calculateStorageByteLength(value: Bytes) = this.byteSize
+
+    override fun writeStorageBytes(value: Bytes, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
     override fun calculateTransportByteLength(value: Bytes) = this.byteSize
 

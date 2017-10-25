@@ -180,7 +180,7 @@ abstract class DataModel<DO: Any>(
     fun readJsonToObject(reader: JsonReader) = construct(this.readJson(reader))
 
     /** Calculates the byte length for the DataObject contained in map
-     * @param map with values to reserve bytes for
+     * @param map with values to calculate byte length for
      * @param lengthCacher to cache byte lengths
      * @return total bytesize of object
      */
@@ -195,7 +195,7 @@ abstract class DataModel<DO: Any>(
     }
 
     /** Calculates the byte length for the DataObject
-     * @param obj to reserve bytes for
+     * @param obj to calculate byte length for
      * @param lengthCacher to cache byte lengths
      * @return total bytesize of object
      */

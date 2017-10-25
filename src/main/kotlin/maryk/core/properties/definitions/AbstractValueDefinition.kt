@@ -37,12 +37,16 @@ abstract class AbstractValueDefinition<T: Any>(
     @Throws(DefNotFoundException::class)
     abstract fun readStorageBytes(length: Int, reader:() -> Byte): T
 
+    /** Calculate byte length of a value
+     * @param value to calculate length of
+     */
+    abstract fun calculateStorageByteLength(value: T): Int
+
     /** Convert a value to bytes
      * @param value to convert
-     * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    abstract fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    abstract fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte) = readStorageBytes(length, reader)
 
@@ -61,7 +65,7 @@ abstract class AbstractValueDefinition<T: Any>(
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit) : Int {
         var totalByteLength = 0
-        totalByteLength += ProtoBuf.reserveKey(index)
+        totalByteLength += ProtoBuf.calculateKeyLength(index)
 
         if (this.wireType == WireType.LENGTH_DELIMITED) {
             // Take care length container is first cached before value is calculated
@@ -99,7 +103,7 @@ abstract class AbstractValueDefinition<T: Any>(
      * @param writer to write bytes to
      */
     open fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit) {
-        writeStorageBytes(value, {}, writer)
+        writeStorageBytes(value, writer)
     }
 
     /** Convert value to String

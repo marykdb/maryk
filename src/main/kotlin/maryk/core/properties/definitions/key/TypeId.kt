@@ -20,8 +20,7 @@ class TypeId(
         return multiType.typeIndex
     }
 
-    override fun writeStorageBytes(value: Int, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(2)
+    override fun writeStorageBytes(value: Int, writer: (byte: Byte) -> Unit) {
         (value + Short.MIN_VALUE).toShort().writeBytes(writer)
     }
 

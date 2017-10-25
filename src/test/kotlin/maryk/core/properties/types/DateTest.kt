@@ -24,7 +24,8 @@ internal class DateTest {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         datesToTest.forEach {
-            it.writeBytes(bc::reserve, bc::write)
+            bc.reserve(8)
+            it.writeBytes(bc::write)
             Date.fromByteReader(bc::read) shouldBe it
             bc.reset()
         }

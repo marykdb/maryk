@@ -63,7 +63,7 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         totalByteLength += this.dataModel.calculateProtoBufLength(value, lengthCacher)
         container.length = totalByteLength // first store byte length of object
 
-        totalByteLength += ProtoBuf.reserveKey(index)
+        totalByteLength += ProtoBuf.calculateKeyLength(index)
         totalByteLength += container.length.calculateVarByteLength()
         return totalByteLength
     }

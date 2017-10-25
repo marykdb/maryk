@@ -26,24 +26,27 @@ internal class DateDefinitionTest {
 
     @Test
     fun testStorageBytesConversion() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         datesToTest.forEach {
-            def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
-            byteCollector.reset()
+            bc.reserve(
+                    def.calculateStorageByteLength(it)
+            )
+            def.writeStorageBytes(it, bc::write)
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 
     @Test
     fun testTransportBytesConversion() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         datesToTest.forEach {
-            byteCollector.reserve(
+            bc.reserve(
                 def.calculateTransportByteLength(it)
             )
-            def.writeTransportBytes(it, byteCollector::write)
-            def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
-            byteCollector.reset()
+            def.writeTransportBytes(it, bc::write)
+            def.readTransportBytes(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 

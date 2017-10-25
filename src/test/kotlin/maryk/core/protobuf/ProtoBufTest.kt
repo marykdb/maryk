@@ -28,7 +28,7 @@ class ProtoBufTest {
     @Test
     fun writeKey() {
         fun testGenerateKey(bc: ByteCollector, value: PBKey) {
-            bc.reserve(ProtoBuf.reserveKey(value.tag))
+            bc.reserve(ProtoBuf.calculateKeyLength(value.tag))
             ProtoBuf.writeKey(value.tag, value.wireType, bc::write)
             bc.bytes!!.toHex() shouldBe value.hexBytes
             bc.reset()

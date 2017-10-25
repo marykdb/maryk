@@ -29,17 +29,18 @@ class EnumDefinition<E: IndexedEnum<E>>(
     private val valueByString: Map<String, E> by lazy {
         values.associate { Pair(it.name, it) }
     }
+
     private val valueByIndex: Map<Int, E> by lazy {
         values.associate { Pair(it.index, it) }
     }
-
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader:() -> Byte) =
             getEnumByIndex(initShort(reader).toInt() - Short.MIN_VALUE)
 
-    override fun writeStorageBytes(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(2)
+    override fun calculateStorageByteLength(value: E) = this.byteSize
+
+    override fun writeStorageBytes(value: E, writer: (byte: Byte) -> Unit) {
         value.indexAsShortToStore.writeBytes(writer)
     }
 

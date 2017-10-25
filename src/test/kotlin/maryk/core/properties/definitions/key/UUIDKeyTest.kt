@@ -43,7 +43,8 @@ internal class UUIDKeyTest {
         })
 
         val bc = ByteCollector()
-        specificDef.writeStorageBytes(uuid, bc::reserve, bc::write)
+        bc.reserve(16)
+        specificDef.writeStorageBytes(uuid, bc::write)
 
         bc.bytes!! contentEquals key.bytes shouldBe true
     }

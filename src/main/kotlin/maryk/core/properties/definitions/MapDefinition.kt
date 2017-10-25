@@ -116,7 +116,7 @@ class MapDefinition<K: Any, V: Any>(
     override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         var totalByteLength = 0
         value.forEach { key, item ->
-            totalByteLength += ProtoBuf.reserveKey(this.index)
+            totalByteLength += ProtoBuf.calculateKeyLength(this.index)
 
             // Cache length for length delimiter
             val container = ByteLengthContainer()

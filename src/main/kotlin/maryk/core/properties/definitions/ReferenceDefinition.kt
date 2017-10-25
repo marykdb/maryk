@@ -22,9 +22,9 @@ class ReferenceDefinition<DO: Any>(
 ), IsFixedBytesEncodable<Key<DO>> {
     override val byteSize = dataModel.key.size
 
-    override fun writeStorageBytes(value: Key<DO>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        value.writeBytes(reserver, writer)
-    }
+    override fun calculateStorageByteLength(value: Key<DO>) = this.byteSize
+
+    override fun writeStorageBytes(value: Key<DO>, writer: (byte: Byte) -> Unit)  = value.writeBytes(writer)
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
 

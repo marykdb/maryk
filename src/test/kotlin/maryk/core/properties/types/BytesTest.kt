@@ -34,7 +34,8 @@ internal class BytesTest {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         bytesToTest.forEach {
-            it.writeBytes(bc::reserve, bc::write)
+            bc.reserve(it.size)
+            it.writeBytes(bc::write)
             Bytes.fromByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }

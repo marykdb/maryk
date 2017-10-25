@@ -20,12 +20,14 @@ interface IsFixedBytesEncodable<T: Any> {
     @Throws(DefNotFoundException::class)
     fun readStorageBytes(length: Int, reader:() -> Byte): T
 
+    /** Calculates the byte size of the storage bytes */
+    fun calculateStorageByteLength(value: Boolean) = byteSize
+
     /** Convert a value to bytes
      * @param value to convert
-     * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     /** Get the value to be used in a key
      * @param dataModel to use to fetch property if relevant

@@ -20,7 +20,7 @@ abstract class AbstractSubDefinition<T: Any>(
     override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit)
             = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher)
 
-    /** Reserve bytes for a value for transportation
+    /** Calculates byte length of a value for transportation
      * @param index to write this value for
      * @param value to write
      * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order

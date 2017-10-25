@@ -23,6 +23,8 @@ abstract class AbstractTimeDefinition<T : IsTime<T>>(
         val precision: TimePrecision
 ) : AbstractMomentDefinition<T>(
         name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue, fillWithNow
-) {
-    override fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, reserver, writer)
+), IsFixedBytesEncodable<T> {
+    override fun calculateStorageByteLength(value: T) = this.byteSize
+
+    override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 }

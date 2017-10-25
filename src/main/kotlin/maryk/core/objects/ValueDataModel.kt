@@ -51,9 +51,9 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         this.definitions.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it.propertyDefinition as IsFixedBytesEncodable<in Any>
-            def.writeStorageBytes(inputs[index], {}, {
+            def.writeStorageBytes(inputs[index]) {
                 bytes[offset++] = it
-            })
+            }
 
             if(offset < bytes.size) {
                 bytes[offset++] = 1 // separator byte

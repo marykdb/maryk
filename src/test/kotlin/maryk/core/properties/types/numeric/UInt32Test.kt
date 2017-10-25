@@ -39,7 +39,8 @@ internal class UInt32Test {
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
         uInt32values.forEach {
-            UInt32.writeStorageBytes(it, bc::reserve, bc::write)
+            bc.reserve(UInt32.size)
+            UInt32.writeStorageBytes(it, bc::write)
             UInt32.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }

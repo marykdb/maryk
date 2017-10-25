@@ -32,10 +32,9 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 ), IsFixedBytesEncodable<DO> {
     override val byteSize = dataModel.byteSize
 
-    override fun writeStorageBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(value._bytes.size)
-        value._bytes.writeBytes(writer)
-    }
+    override fun calculateStorageByteLength(value: DO) = this.byteSize
+
+    override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) = value._bytes.writeBytes(writer)
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = this.dataModel.readFromBytes(reader)
 

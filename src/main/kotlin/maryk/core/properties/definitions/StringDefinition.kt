@@ -9,9 +9,7 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.protobuf.WireType
 
-/**
- * Definition for String properties
- */
+/** Definition for String properties */
 class StringDefinition(
         name: String? = null,
         index: Int = -1,
@@ -28,7 +26,6 @@ class StringDefinition(
 ) : AbstractSimpleDefinition<String>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), HasSizeDefinition {
-
     private val _regEx by lazy {
         when {
             this.regEx != null -> Regex(this.regEx)
@@ -38,14 +35,11 @@ class StringDefinition(
 
     override fun readStorageBytes(length: Int, reader:() -> Byte) = initString(length, reader)
 
-    override fun writeStorageBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(value.calculateUTF8ByteLength())
-        value.writeUTF8Bytes(writer)
-    }
+    override fun calculateStorageByteLength(value: String) = value.calculateUTF8ByteLength()
+
+    override fun writeStorageBytes(value: String, writer: (byte: Byte) -> Unit) = value.writeUTF8Bytes(writer)
 
     override fun calculateTransportByteLength(value: String) = value.calculateUTF8ByteLength()
-
-    override fun writeTransportBytes(value: String, writer: (byte: Byte) -> Unit) = value.writeUTF8Bytes(writer)
 
     override fun asString(value: String) = value
 

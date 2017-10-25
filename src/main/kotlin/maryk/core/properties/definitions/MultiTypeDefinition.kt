@@ -107,7 +107,7 @@ class MultiTypeDefinition(
 
         var totalByteLength = 0
         // Type index
-        totalByteLength += ProtoBuf.reserveKey(1)
+        totalByteLength += ProtoBuf.calculateKeyLength(1)
         totalByteLength += value.typeIndex.calculateVarByteLength()
 
         // value
@@ -117,7 +117,7 @@ class MultiTypeDefinition(
 
         container.length = totalByteLength
 
-        totalByteLength += ProtoBuf.reserveKey(this.index) // Add key length for field
+        totalByteLength += ProtoBuf.calculateKeyLength(this.index) // Add key length for field
         totalByteLength += container.length.calculateVarByteLength() // Add field length for length delimiter
         return totalByteLength
     }

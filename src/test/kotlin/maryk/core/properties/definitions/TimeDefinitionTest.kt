@@ -40,43 +40,49 @@ internal class TimeDefinitionTest {
 
     @Test
     fun convertStorageBytesMillis() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
-            defMilli.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            defMilli.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
-            byteCollector.reset()
+            bc.reserve(
+                    defMilli.calculateStorageByteLength(it)
+            )
+            defMilli.writeStorageBytes(it, bc::write)
+            defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 
     @Test
     fun convertStorageBytesSeconds() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         timesToTestSeconds.forEach {
-            def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
-            byteCollector.reset()
+            bc.reserve(
+                    def.calculateStorageByteLength(it)
+            )
+            def.writeStorageBytes(it, bc::write)
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 
     @Test
     fun convertTransportBytesSeconds() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         timesToTestSeconds.forEach {
-            byteCollector.reserve(def.calculateTransportByteLength(it))
-            def.writeTransportBytes(it, byteCollector::write)
-            def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
-            byteCollector.reset()
+            bc.reserve(def.calculateTransportByteLength(it))
+            def.writeTransportBytes(it, bc::write)
+            def.readTransportBytes(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 
     @Test
     fun convertTransportBytesMillis() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         timesToTestMillis.forEach {
-            byteCollector.reserve(defMilli.calculateTransportByteLength(it))
-            defMilli.writeTransportBytes(it, byteCollector::write)
-            defMilli.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
-            byteCollector.reset()
+            bc.reserve(defMilli.calculateTransportByteLength(it))
+            defMilli.writeTransportBytes(it, bc::write)
+            defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 

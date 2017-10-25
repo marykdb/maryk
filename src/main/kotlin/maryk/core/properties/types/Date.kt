@@ -47,8 +47,7 @@ data class Date(
         return cmp
     }
 
-    fun writeBytes(reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(8)
+    fun writeBytes(writer: (byte: Byte) -> Unit) {
         this.epochDay.writeBytes(writer)
     }
 

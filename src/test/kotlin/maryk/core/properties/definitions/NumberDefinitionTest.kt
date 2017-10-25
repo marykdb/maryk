@@ -35,11 +35,14 @@ internal class NumberDefinitionTest {
 
     @Test
     fun convertStorageBytes() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         intArray.forEach {
-            def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
-            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
-            byteCollector.reset()
+            bc.reserve(
+                    def.calculateStorageByteLength(it)
+            )
+            def.writeStorageBytes(it, bc::write)
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            bc.reset()
         }
     }
 

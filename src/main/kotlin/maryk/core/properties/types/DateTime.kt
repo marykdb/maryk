@@ -33,15 +33,13 @@ data class DateTime(
      */
     override fun toString() = "${date}T$time"
 
-    override fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {
         when (precision) {
             TimePrecision.MILLIS -> {
-                reserver(9)
                 this.toEpochSecond().writeBytes(writer, 7)
                 this.milli.writeBytes(writer)
             }
             TimePrecision.SECONDS -> {
-                reserver(7)
                 this.toEpochSecond().writeBytes(writer, 7)
             }
         }

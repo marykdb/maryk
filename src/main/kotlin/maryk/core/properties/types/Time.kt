@@ -38,16 +38,10 @@ data class Time(
         return total
     }
 
-    override fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {
         when (precision) {
-            TimePrecision.MILLIS -> {
-                reserver(4)
-                (this.toSecondsOfDay() * 1000 + this.milli).writeBytes(writer)
-            }
-            TimePrecision.SECONDS -> {
-                reserver(3)
-                this.toSecondsOfDay().writeBytes(writer, 3)
-            }
+            TimePrecision.MILLIS -> (this.toSecondsOfDay() * 1000 + this.milli).writeBytes(writer)
+            TimePrecision.SECONDS -> this.toSecondsOfDay().writeBytes(writer, 3)
         }
     }
 

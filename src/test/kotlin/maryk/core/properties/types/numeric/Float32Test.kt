@@ -37,7 +37,8 @@ internal class Float32Test {
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
         float32values.forEach {
-            Float32.writeStorageBytes(it, bc::reserve, bc::write)
+            bc.reserve(Float32.size)
+            Float32.writeStorageBytes(it, bc::write)
             Float32.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }

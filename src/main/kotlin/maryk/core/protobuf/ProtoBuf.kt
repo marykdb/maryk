@@ -98,7 +98,11 @@ object ProtoBuf {
         WireType.BIT_32 -> 4
     }
 
-    fun reserveKey(tag: Int): Int {
+    /** Calculate the length of the key
+     * @tag to calculate length of
+     * @return calculated key length
+     */
+    fun calculateKeyLength(tag: Int): Int {
         return tag.calculateTagByteSize()
     }
 }

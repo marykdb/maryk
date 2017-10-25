@@ -23,10 +23,9 @@ abstract class IsTime<T>: IsTemporal<T>() {
     /**
      * Converts Value into bytes
      * @param precision: how precise to write the time
-     * @param reserver to reserve right amount of bytes on
      * @param writer to write bytes to
      */
-    abstract fun writeBytes(precision: TimePrecision, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    abstract fun writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit)
 }
 
 abstract class IsTimeObject<T>: IsTemporalObject<T>() {

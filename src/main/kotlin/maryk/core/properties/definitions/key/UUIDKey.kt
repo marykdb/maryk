@@ -17,8 +17,7 @@ object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>> {
         initLong(reader)
     )
 
-    override fun writeStorageBytes(value: Pair<Long, Long>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(byteSize)
+    override fun writeStorageBytes(value: Pair<Long, Long>, writer: (byte: Byte) -> Unit) {
         value.first.writeBytes(writer)
         value.second.writeBytes(writer)
     }

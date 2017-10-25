@@ -41,7 +41,8 @@ internal class UInt64Test {
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
         uInt64values.forEach {
-            UInt64.writeStorageBytes(it, bc::reserve, bc::write)
+            bc.reserve(UInt64.size)
+            UInt64.writeStorageBytes(it, bc::write)
             UInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }

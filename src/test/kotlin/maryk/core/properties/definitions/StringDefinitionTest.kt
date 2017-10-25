@@ -65,12 +65,15 @@ internal class StringDefinitionTest {
 
     @Test
     fun convertStorageBytes() {
-        val byteCollector = ByteCollector()
+        val bc = ByteCollector()
         stringsToTest.forEach { (value, asHex) ->
-            def.writeStorageBytes(value, byteCollector::reserve, byteCollector::write)
-            def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe value
-            byteCollector.bytes!!.toHex() shouldBe asHex
-            byteCollector.reset()
+            bc.reserve(
+                    def.calculateStorageByteLength(value)
+            )
+            def.writeStorageBytes(value, bc::write)
+            def.readStorageBytes(bc.size, bc::read) shouldBe value
+            bc.bytes!!.toHex() shouldBe asHex
+            bc.reset()
         }
     }
 

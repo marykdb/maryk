@@ -233,7 +233,7 @@ internal class DataModelTest {
 
     @Test
     fun testToProtoBufConversionWithMap() {
-        val byteCollector = ByteCollectorWithLengthCacher()
+        val bc = ByteCollectorWithLengthCacher()
 
         val map = mapOf(
                 0 to "hay",
@@ -246,13 +246,13 @@ internal class DataModelTest {
                 13 to SubMarykObject.key.get(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5))
         )
 
-        byteCollector.reserve(
-            TestMarykObject.calculateProtoBufLength(map, byteCollector::addToCache)
+        bc.reserve(
+            TestMarykObject.calculateProtoBufLength(map, bc::addToCache)
         )
 
-        TestMarykObject.writeProtoBuf(map, byteCollector::nextLengthFromCache, byteCollector::write)
+        TestMarykObject.writeProtoBuf(map, bc::nextLengthFromCache, bc::write)
 
-        byteCollector.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a1001050105010501050105010501050105"
+        bc.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a1001050105010501050105010501050105"
     }
 
     @Test
@@ -276,28 +276,28 @@ internal class DataModelTest {
 
     @Test
     fun testProtoBufConversionWithMap() {
-        val byteCollector = ByteCollectorWithLengthCacher()
+        val bc = ByteCollectorWithLengthCacher()
 
-        byteCollector.reserve(
-                TestMarykObject.calculateProtoBufLength(testMap, byteCollector::addToCache)
+        bc.reserve(
+                TestMarykObject.calculateProtoBufLength(testMap, bc::addToCache)
         )
 
-        TestMarykObject.writeProtoBuf(testMap, byteCollector::nextLengthFromCache, byteCollector::write)
+        TestMarykObject.writeProtoBuf(testMap, bc::nextLengthFromCache, bc::write)
 
-        TestMarykObject.readProtoBuf(byteCollector.size, byteCollector::read) shouldBe testMap
+        TestMarykObject.readProtoBuf(bc.size, bc::read) shouldBe testMap
     }
 
     @Test
     fun testProtoBufConversion() {
-        val byteCollector = ByteCollectorWithLengthCacher()
+        val bc = ByteCollectorWithLengthCacher()
 
-        byteCollector.reserve(
-                TestMarykObject.calculateProtoBufLength(testExtendedObject, byteCollector::addToCache)
+        bc.reserve(
+                TestMarykObject.calculateProtoBufLength(testExtendedObject, bc::addToCache)
         )
 
-        TestMarykObject.writeProtoBuf(testExtendedObject, byteCollector::nextLengthFromCache, byteCollector::write)
+        TestMarykObject.writeProtoBuf(testExtendedObject, bc::nextLengthFromCache, bc::write)
 
-        TestMarykObject.readProtoBufToObject(byteCollector.size, byteCollector::read) shouldBe testExtendedObject
+        TestMarykObject.readProtoBufToObject(bc.size, bc::read) shouldBe testExtendedObject
     }
 
     @Test

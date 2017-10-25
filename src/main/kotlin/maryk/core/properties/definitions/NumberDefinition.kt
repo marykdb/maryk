@@ -31,8 +31,10 @@ class NumberDefinition<T: Comparable<T>>(
     override fun readStorageBytes(length: Int, reader:() -> Byte)
             = this.type.fromStorageByteReader(length, reader)
 
-    override fun writeStorageBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
-            = this.type.writeStorageBytes(value, reserver, writer)
+    override fun calculateStorageByteLength(value: T) = type.size
+
+    override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
+            = this.type.writeStorageBytes(value, writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte)
             = this.type.readTransportBytes(reader)

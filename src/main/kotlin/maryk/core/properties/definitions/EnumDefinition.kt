@@ -7,7 +7,6 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.IndexedEnum
-import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
 /** Definition for Enum properties */
@@ -44,18 +43,13 @@ class EnumDefinition<E: IndexedEnum<E>>(
         value.indexAsShortToStore.writeBytes(writer)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte) =
-            getEnumByIndex(initShortByVar(reader).toInt())
+    override fun readTransportBytes(length: Int, reader: () -> Byte)
+            = getEnumByIndex(initShortByVar(reader).toInt())
 
-    override fun writeTransportBytesWithKey(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        ProtoBuf.writeKey(this.index, WireType.VAR_INT, reserver, writer)
-        this.writeTransportBytes(value, reserver, writer)
-    }
+    override fun reserveTransportBytes(value: E) = value.index.computeVarByteSize()
 
-    override fun writeTransportBytes(value: E, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        reserver(value.index.computeVarByteSize())
-        value.index.writeVarBytes(writer)
-    }
+    override fun writeTransportBytes(value: E, writer: (byte: Byte) -> Unit)
+            = value.index.writeVarBytes(writer)
 
     override fun asString(value: E) = value.name
 

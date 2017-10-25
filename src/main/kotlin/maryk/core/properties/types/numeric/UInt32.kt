@@ -19,9 +19,9 @@ class UInt32 internal constructor(number: Int): UInt<Int>(number) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt32(initInt(reader))
         override fun writeStorageBytes(value: UInt32, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)
         override fun readTransportBytes(reader: () -> Byte) = UInt32(initIntByVar(reader) + Int.MIN_VALUE)
-        override fun writeTransportBytes(value: UInt32, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        override fun calculateTransportByteSize(value: UInt32) = (value.number - Int.MIN_VALUE).computeVarByteSize()
+        override fun writeTransportBytes(value: UInt32, writer: (byte: Byte) -> Unit) {
             val number = value.number.toLong() - Int.MIN_VALUE
-            reserver(number.computeVarByteSize())
             number.writeVarBytes(writer)
         }
         override fun ofString(value: String) = UInt32((value.toLong() + Int.MIN_VALUE).toInt())

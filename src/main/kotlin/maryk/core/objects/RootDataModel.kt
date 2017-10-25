@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
+import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 
 fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
@@ -47,7 +48,12 @@ abstract class RootDataModel<DM: Any>(
         }
 
         /** Get Key by byte array */
-        fun get(bytes: ByteArray) = Key<DM>(bytes)
+        fun get(bytes: ByteArray): Key<DM> {
+            if (bytes.size != this.size) {
+               throw ParseException("Invalid byte length for key")
+            }
+            return Key<DM>(bytes)
+        }
 
         /** Get Key by base64 byte representation */
         fun get(base64: String): Key<DM> = this.get(Base64.decode(base64))

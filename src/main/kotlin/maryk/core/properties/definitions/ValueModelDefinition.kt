@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.json.JsonWriter
 import maryk.core.json.JsonReader
+import maryk.core.json.JsonWriter
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -29,13 +29,17 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
         val dataModel: D
 ) : AbstractSimpleDefinition<DO>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-) {
+), IsFixedBytesEncodable<DO> {
+    override val byteSize = dataModel.byteSize
+
     override fun writeStorageBytes(value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
         reserver(value._bytes.size)
         value._bytes.writeBytes(writer)
     }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = this.dataModel.readFromBytes(reader)
+
+    override fun reserveTransportBytes(value: DO) = this.dataModel.byteSize
 
     override fun asString(value: DO) = value.toBase64()
 

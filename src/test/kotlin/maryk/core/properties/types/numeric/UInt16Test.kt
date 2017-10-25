@@ -48,7 +48,8 @@ internal class UInt16Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         uInt16values.forEach {
-            UInt16.writeTransportBytes(it, bc::reserve, bc::write)
+            bc.reserve(UInt16.calculateTransportByteSize(it))
+            UInt16.writeTransportBytes(it, bc::write)
             UInt16.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }

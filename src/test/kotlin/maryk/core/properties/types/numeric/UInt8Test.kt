@@ -48,7 +48,8 @@ internal class UInt8Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         uInt8values.forEach {
-            UInt8.writeTransportBytes(it, bc::reserve, bc::write)
+            bc.reserve(UInt8.calculateTransportByteSize(it))
+            UInt8.writeTransportBytes(it, bc::write)
             UInt8.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }

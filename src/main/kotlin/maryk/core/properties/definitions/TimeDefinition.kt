@@ -37,12 +37,16 @@ class TimeDefinition(
         TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
     }
 
-    override fun writeTransportBytes(value: Time, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun reserveTransportBytes(value: Time) = when(this.precision) {
+        TimePrecision.SECONDS -> value.toSecondsOfDay().computeVarByteSize()
+        TimePrecision.MILLIS -> value.toMillisOfDay().computeVarByteSize()
+    }
+
+    override fun writeTransportBytes(value: Time, writer: (byte: Byte) -> Unit) {
         val toEncode = when(this.precision) {
             TimePrecision.SECONDS -> value.toSecondsOfDay()
             TimePrecision.MILLIS -> value.toMillisOfDay()
         }
-        reserver(toEncode.computeVarByteSize())
         toEncode.writeVarBytes(writer)
     }
 

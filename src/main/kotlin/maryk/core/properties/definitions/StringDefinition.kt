@@ -1,7 +1,8 @@
 package maryk.core.properties.definitions
 
+import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.bytes.initString
-import maryk.core.bytes.writeBytes
+import maryk.core.bytes.writeUTF8Bytes
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -37,7 +38,14 @@ class StringDefinition(
 
     override fun readStorageBytes(length: Int, reader:() -> Byte) = initString(length, reader)
 
-    override fun writeStorageBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
+    override fun writeStorageBytes(value: String, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        reserver(value.calculateUTF8ByteLength())
+        value.writeUTF8Bytes(writer)
+    }
+
+    override fun reserveTransportBytes(value: String) = value.calculateUTF8ByteLength()
+
+    override fun writeTransportBytes(value: String, writer: (byte: Byte) -> Unit) = value.writeUTF8Bytes(writer)
 
     override fun asString(value: String) = value
 

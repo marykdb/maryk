@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
+import io.kotlintest.matchers.fail
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.GrowableByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
@@ -45,9 +45,12 @@ internal class NumberDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollector()
         intArray.forEach { value ->
-            def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+            bc.reserve(
+                def.reserveTransportBytesWithKey(value, { fail("Should not call") })
+            )
+            def.writeTransportBytesWithKey(value, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.VAR_INT
             key.tag shouldBe -1

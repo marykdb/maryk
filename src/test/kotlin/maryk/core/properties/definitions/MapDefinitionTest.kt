@@ -4,7 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.TestMarykObject
 import maryk.core.extensions.toHex
-import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.ByteCollectorWithSizeCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
@@ -116,7 +116,7 @@ internal class MapDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollectorWithSizeCacher()
 
         val value = mapOf(
                 12 to "#twelve",
@@ -124,20 +124,23 @@ internal class MapDefinitionTest {
                 100 to "#hundred",
                 1000 to "#thousand"
         )
-        val asHex = "2308181207237477656c76652423083c120723746869727479242308c80112082368756e64726564242308d00f12092374686f7573616e6424"
+        val asHex = "220c08181207237477656c7665220c083c120723746869727479220e08c80112082368756e64726564220f08d00f12092374686f7573616e64"
 
-        def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+        bc.reserve(
+                def.reserveTransportBytesWithKey(value, bc::addToCache)
+        )
+        def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
 
-        bc.bytes.toHex() shouldBe asHex
+        bc.bytes!!.toHex() shouldBe asHex
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.START_GROUP
+            key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe 4
         }
 
         fun readValue() = def.readMapTransportBytes(
-                -1,
+                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         )
 

@@ -7,6 +7,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.protobuf.ByteSizeContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -47,31 +48,58 @@ abstract class AbstractValueDefinition<T: Any>(
 
     /** Adds length to written bytes
      * @param value to write
-     * @param reserver to reserve amount of bytes to write on
+     * @param lengthCacheGetter to fetch cached length
      * @param writer to write bytes to
      */
-    protected fun writeTransportBytesWithLength(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        this.writeTransportBytes(value, {
-            reserver(it + it.computeVarByteSize())
-            it.writeVarBytes(writer)
-        }, writer)
+    protected fun writeTransportBytesWithLength(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        lengthCacheGetter().writeVarBytes(writer)
+        this.writeTransportBytes(value, writer)
+    }
+
+    override fun reserveTransportBytesWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit)
+            = this.reserveTransportBytesWithKey(this.index, value, lengthCacher)
+
+    override fun reserveTransportBytesWithKey(index: Int, value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
+        var totalByteSize = 0
+        totalByteSize += ProtoBuf.reserveKey(index)
+
+        if (this.wireType == WireType.LENGTH_DELIMITED) {
+            // Take care size container is first cached before value is calculated
+            // Otherwise byte sizes contained by value could be cached before
+            // This way order is maintained
+            val container = ByteSizeContainer()
+            lengthCacher(container)
+
+            // calculate field length
+            this.reserveTransportBytes(value).let {
+                container.size = it
+                totalByteSize += it
+                totalByteSize += it.computeVarByteSize()
+            }
+        } else {
+            // calculate field length
+            totalByteSize += this.reserveTransportBytes(value)
+        }
+
+        return totalByteSize
+    }
+
+    abstract fun reserveTransportBytes(value: T): Int
+
+    override fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(index, this.wireType, writer)
+        when(this.wireType) {
+            WireType.LENGTH_DELIMITED -> writeTransportBytesWithLength(value, lengthCacheGetter, writer)
+            else -> writeTransportBytes(value, writer)
+        }
     }
 
     /** Convert a value to bytes for transportation
      * @param value to write
-     * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    open fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        writeStorageBytes(value, reserver, writer)
-    }
-
-    override fun writeTransportBytesWithKey(index: Int, value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        ProtoBuf.writeKey(index, this.wireType, reserver, writer)
-        when(this.wireType) {
-            WireType.LENGTH_DELIMITED -> writeTransportBytesWithLength(value, reserver, writer)
-            else -> writeTransportBytes(value, reserver, writer)
-        }
+    open fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit) {
+        writeStorageBytes(value, {}, writer)
     }
 
     /** Convert value to String

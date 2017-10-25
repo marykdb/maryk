@@ -27,8 +27,10 @@ class BooleanDefinition(
         value.writeBytes(writer)
     }
 
-    override fun writeTransportBytes(value: Boolean, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
-            = writeStorageBytes(value, reserver, writer)
+    override fun reserveTransportBytes(value: Boolean) = this.byteSize
+
+    override fun writeTransportBytes(value: Boolean, writer: (byte: Byte) -> Unit)
+            = writeStorageBytes(value, {}, writer)
 
     @Throws(ParseException::class)
     override fun fromString(string: String) = when(string) {

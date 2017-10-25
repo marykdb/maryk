@@ -51,7 +51,8 @@ internal class UInt64Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         uInt64values.forEach {
-            UInt64.writeTransportBytes(it, bc::reserve, bc::write)
+            bc.reserve(UInt64.calculateTransportByteSize(it))
+            UInt64.writeTransportBytes(it, bc::write)
             UInt64.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }

@@ -6,34 +6,31 @@ fun initString(length: Int, reader: () -> Byte) = String(
     }
 )
 
-fun String.writeBytes(reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-    reserver(calculateUTF8Length(this))
-    toUTF8Bytes(this, writer)
-}
+fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
 
-/** Calculates the length of a String in UTF8 in an optimized way
+/** Calculates the length of a String in UTF8 bytes in an optimized way
  * @param string to calculate length of
  * @throws IllegalArgumentException when string contains invalid UTF-16: unpaired surrogates
  */
-private fun calculateUTF8Length(string: String): Int {
-    val utf16Length = string.length
+fun String.calculateUTF8ByteLength(): Int {
+    val utf16Length = this.length
     var utf8Length = utf16Length
     var i = 0
 
     // Count ASCII chars.
-    while (i < utf16Length && string[i].toInt() < 0x80) {
+    while (i < utf16Length && this[i].toInt() < 0x80) {
         i++
     }
 
     // Count other chars
     while (i < utf16Length) {
-        val c = string[i]
+        val c = this[i]
         if (c.toInt() < 0x800) {
             // Count any chars anything below 0x800.
             utf8Length += (0x7f - c.toInt()) ushr 31
         } else {
             // Count remaining chars
-            utf8Length += calculateGenericUTF8Length(string, i)
+            utf8Length += calculateGenericUTF8Length(this, i)
             break
         }
         i++
@@ -82,11 +79,11 @@ private fun calculateGenericUTF8Length(string: String, startPosition: Int): Int 
  * @param writer to write bytes with
  * @throws IllegalArgumentException when string contains invalid UTF-16 unpaired surrogates
  */
-private fun toUTF8Bytes(string: String, writer: (byte: Byte) -> Unit) {
-    val utf16Length = string.length
+private fun String.toUTF8Bytes(writer: (byte: Byte) -> Unit) {
+    val utf16Length = this.length
     var i = 0
     while (i < utf16Length) {
-        val char = string[i]
+        val char = this[i]
         val charInt = char.toInt()
         when {
             charInt < 0x80 -> // ASCII
@@ -102,8 +99,8 @@ private fun toUTF8Bytes(string: String, writer: (byte: Byte) -> Unit) {
                 writer((0x80 or (0x3F and charInt)).toByte())
             }
             else -> {
-                val low = string[++i]
-                if (i == string.length || !Character.isSurrogatePair(char, low)) {
+                val low = this[++i]
+                if (i == this.length || !Character.isSurrogatePair(char, low)) {
                     throw IllegalArgumentException("Unpaired surrogate at index: ${i - 1}")
                 }
                 val codePoint = Character.toCodePoint(char, low)

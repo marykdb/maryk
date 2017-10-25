@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
@@ -13,6 +15,7 @@ import maryk.core.properties.references.CanHaveSimpleChildReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.ByteSizeContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -110,12 +113,32 @@ class MapDefinition<K: Any, V: Any>(
         return map
     }
 
-    override fun writeTransportBytesWithKey(value: Map<K, V>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun reserveTransportBytesWithKey(value: Map<K, V>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+        var totalByteSize = 0
         value.forEach { key, item ->
-            ProtoBuf.writeKey(this.index, WireType.START_GROUP, reserver, writer)
-            keyDefinition.writeTransportBytesWithKey(1, key, reserver, writer)
-            valueDefinition.writeTransportBytesWithKey(2, item, reserver, writer)
-            ProtoBuf.writeKey(this.index, WireType.END_GROUP, reserver, writer)
+            totalByteSize += ProtoBuf.reserveKey(this.index)
+
+            // Cache length for length delimiter
+            val container = ByteSizeContainer()
+            lengthCacher(container)
+
+            var fieldLength = 0
+            fieldLength += keyDefinition.reserveTransportBytesWithKey(1, key, lengthCacher)
+            fieldLength += valueDefinition.reserveTransportBytesWithKey(2, item, lengthCacher)
+            fieldLength += fieldLength.computeVarByteSize() // Add field length for length delimiter
+            container.size = fieldLength // set length for value
+
+            totalByteSize += fieldLength
+        }
+        return totalByteSize
+    }
+
+    override fun writeTransportBytesWithKey(value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        value.forEach { key, item ->
+            ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, writer)
+            lengthCacheGetter().writeVarBytes(writer)
+            keyDefinition.writeTransportBytesWithKey(1, key, lengthCacheGetter, writer)
+            valueDefinition.writeTransportBytesWithKey(2, item, lengthCacheGetter, writer)
         }
     }
 
@@ -131,11 +154,6 @@ class MapDefinition<K: Any, V: Any>(
                 ProtoBuf.getLength(keyOfMapValue.wireType, reader),
                 reader
         )
-
-        val endKey = ProtoBuf.readKey(reader)
-        if (endKey.wireType != WireType.END_GROUP) {
-            throw ParseException("Invalid protobuf map construction")
-        }
 
         return Pair(key, value)
     }

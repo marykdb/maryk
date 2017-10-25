@@ -19,9 +19,9 @@ class UInt16 internal constructor(number: Short): UInt<Short>(number) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt16(initShort(reader))
         override fun writeStorageBytes(value: UInt16, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)
         override fun readTransportBytes(reader: () -> Byte) = UInt16((initShortByVar(reader) + Short.MIN_VALUE).toShort())
-        override fun writeTransportBytes(value: UInt16, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+        override fun calculateTransportByteSize(value: UInt16) = (value.number - Short.MIN_VALUE).computeVarByteSize()
+        override fun writeTransportBytes(value: UInt16, writer: (byte: Byte) -> Unit) {
             val number = value.number.toInt() - Short.MIN_VALUE
-            reserver(number.computeVarByteSize())
             number.writeVarBytes(writer)
         }
         override fun ofString(value: String) = UInt16((value.toInt() + Short.MIN_VALUE).toShort())

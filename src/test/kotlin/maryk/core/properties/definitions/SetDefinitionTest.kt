@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.extensions.toHex
-import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.ByteCollectorWithSizeCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyRequiredException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
@@ -72,14 +72,17 @@ internal class SetDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollectorWithSizeCacher()
 
         val value = setOf("T", "T2", "T3", "T4")
         val asHex = "220154220254322202543322025434"
 
-        def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+        bc.reserve(
+            def.reserveTransportBytesWithKey(value, bc::addToCache)
+        )
+        def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
 
-        bc.bytes.toHex() shouldBe asHex
+        bc.bytes!!.toHex() shouldBe asHex
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)

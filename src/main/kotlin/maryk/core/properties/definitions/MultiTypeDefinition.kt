@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.extensions.bytes.computeVarByteSize
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
@@ -10,6 +11,7 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.protobuf.ByteSizeContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -92,29 +94,46 @@ class MultiTypeDefinition(
                 reader
         )
 
-        val endKey = ProtoBuf.readKey(reader)
-        if (endKey.wireType != WireType.END_GROUP) {
-            throw ParseException("Invalid protobuf multiType construction")
-        }
-
         return TypedValue(
                 typeIndex,
                 value
         )
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        ProtoBuf.writeKey(this.index, WireType.START_GROUP, reserver, writer)
-        this.writeTransportBytes(value, reserver, writer)
+    override fun reserveTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+        // Cache length for length delimiter
+        val container = ByteSizeContainer()
+        lengthCacher(container)
+
+        var totalByteSize = 0
+        // Type index
+        totalByteSize += ProtoBuf.reserveKey(1)
+        totalByteSize += value.typeIndex.computeVarByteSize()
+
+        // value
+        @Suppress("UNCHECKED_CAST")
+        val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any>
+        totalByteSize += def.reserveTransportBytesWithKey(2, value.value, lengthCacher)
+
+        container.size = totalByteSize
+
+        totalByteSize += ProtoBuf.reserveKey(this.index) // Add key length for field
+        totalByteSize += container.size.computeVarByteSize() // Add field length for length delimiter
+        return totalByteSize
     }
 
-    fun writeTransportBytes(value: TypedValue<*>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        ProtoBuf.writeKey(1, WireType.VAR_INT, reserver, writer)
+    override fun writeTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
+        lengthCacheGetter().writeVarBytes(writer)
+        this.writeTransportBytes(value, lengthCacheGetter, writer)
+    }
+
+    fun writeTransportBytes(value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
         value.typeIndex.writeVarBytes(writer)
 
         @Suppress("UNCHECKED_CAST")
         val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any>
-        def.writeTransportBytesWithKey(2, value.value, reserver, writer)
-        ProtoBuf.writeKey(this.index, WireType.END_GROUP, reserver, writer)
+        def.writeTransportBytesWithKey(2, value.value, lengthCacheGetter, writer)
     }
 }

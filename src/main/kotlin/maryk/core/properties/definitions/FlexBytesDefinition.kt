@@ -5,7 +5,6 @@ import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.Bytes
-import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
@@ -28,10 +27,7 @@ class FlexBytesDefinition(
 
     override fun writeStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
-    override fun writeTransportBytesWithKey(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, reserver, writer)
-        writeTransportBytesWithLength(value, reserver, writer)
-    }
+    override fun reserveTransportBytes(value: Bytes) = value.size
 
     @Throws(ParseException::class)
     override fun fromString(string: String) = try {

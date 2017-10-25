@@ -2,8 +2,10 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.extensions.toHex
-import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.ByteCollector
+import maryk.core.properties.ByteCollectorWithSizeCacher
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.protobuf.ProtoBuf
@@ -63,20 +65,24 @@ internal class StringDefinitionTest {
 
     @Test
     fun convertStorageBytes() {
-        val byteCollector = GrowableByteCollector()
+        val byteCollector = ByteCollector()
         stringsToTest.forEach { (value, asHex) ->
             def.writeStorageBytes(value, byteCollector::reserve, byteCollector::write)
             def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe value
-            byteCollector.bytes.toHex() shouldBe asHex
+            byteCollector.bytes!!.toHex() shouldBe asHex
             byteCollector.reset()
         }
     }
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollectorWithSizeCacher()
         stringsToTest.forEach { (value, asHex) ->
-            def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+            bc.reserve(
+                    def.reserveTransportBytesWithKey(value, bc::addToCache)
+            )
+            bc.bytes!!.size shouldBe value.calculateUTF8ByteLength() + 2
+            def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe 14
@@ -84,7 +90,7 @@ internal class StringDefinitionTest {
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
             ) shouldBe value
-            bc.bytes.toHex().endsWith(asHex) shouldBe true
+            bc.bytes!!.toHex().endsWith(asHex) shouldBe true
             bc.reset()
         }
     }

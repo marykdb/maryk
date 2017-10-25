@@ -17,9 +17,9 @@ object SInt32 : NumberDescriptor<Int>(
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Int = initInt(reader)
     override fun writeStorageBytes(value: Int, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initIntByVar(reader).decodeZigZag()
-    override fun writeTransportBytes(value: Int, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun calculateTransportByteSize(value: Int) = value.encodeZigZag().computeVarByteSize()
+    override fun writeTransportBytes(value: Int, writer: (byte: Byte) -> Unit) {
         val zigZaggedValue = value.encodeZigZag()
-        reserver(zigZaggedValue.computeVarByteSize())
         zigZaggedValue.writeVarBytes(writer)
     }
     override fun ofString(value: String) = value.toInt()

@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions
 
+import io.kotlintest.matchers.fail
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.Option
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.GrowableByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -35,7 +35,7 @@ internal class EnumDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollector()
 
         val expected = arrayOf(
                 "7000",
@@ -43,12 +43,15 @@ internal class EnumDefinitionTest {
         )
 
         enumsToTest.zip(expected).forEach { (enum, expected) ->
-            def.writeTransportBytesWithKey(enum, bc::reserve, bc::write)
+            bc.reserve(
+                    def.reserveTransportBytesWithKey(enum, { fail("Should not call") })
+            )
+            def.writeTransportBytesWithKey(enum, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 14
             key.wireType shouldBe WireType.VAR_INT
 
-            bc.bytes.toHex() shouldBe expected
+            bc.bytes!!.toHex() shouldBe expected
 
             def.readTransportBytes(
                     ProtoBuf.getLength(WireType.VAR_INT, bc::read),

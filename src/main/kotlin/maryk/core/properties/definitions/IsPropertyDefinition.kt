@@ -5,6 +5,7 @@ import maryk.core.json.JsonWriter
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.ByteSizeContainer
 
 /**
  * Interface to define this is a property definition
@@ -47,10 +48,17 @@ interface IsPropertyDefinition<T: Any> {
     @Throws(ParseException::class)
     fun readJson(reader: JsonReader): T
 
+    /** Reserves the needed bytes to transport the value
+     * @param value to get size of
+     * @param reserver to reserve byte size with
+     * @return the total size
+     */
+    fun reserveTransportBytesWithKey(value: T, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int
+
     /** Convert a value to bytes for transportation and adds the key with tag and wiretype
      * @param value to write
      * @param reserver to reserve amount of bytes to write on
      * @param writer to write bytes to
      */
-    fun writeTransportBytesWithKey(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
+    fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit)
 }

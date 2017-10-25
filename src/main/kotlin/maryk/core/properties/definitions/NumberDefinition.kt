@@ -37,8 +37,10 @@ class NumberDefinition<T: Comparable<T>>(
     override fun readTransportBytes(length: Int, reader: () -> Byte)
             = this.type.readTransportBytes(reader)
 
-    override fun writeTransportBytes(value: T, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit)
-            = this.type.writeTransportBytes(value, reserver, writer)
+    override fun reserveTransportBytes(value: T) = this.type.calculateTransportByteSize(value)
+
+    override fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
+            = this.type.writeTransportBytes(value, writer)
 
     @Throws(ParseException::class)
     override fun fromString(string: String) = try {

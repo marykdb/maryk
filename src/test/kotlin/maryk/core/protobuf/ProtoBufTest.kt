@@ -6,7 +6,6 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.GrowableByteCollector
 import org.junit.Test
 
 class ProtoBufTest {
@@ -29,7 +28,8 @@ class ProtoBufTest {
     @Test
     fun writeKey() {
         fun testGenerateKey(bc: ByteCollector, value: PBKey) {
-            ProtoBuf.writeKey(value.tag, value.wireType, bc::reserve, bc::write)
+            bc.reserve(ProtoBuf.reserveKey(value.tag))
+            ProtoBuf.writeKey(value.tag, value.wireType, bc::write)
             bc.bytes!!.toHex() shouldBe value.hexBytes
             bc.reset()
         }
@@ -58,33 +58,35 @@ class ProtoBufTest {
 
     @Test
     fun skipField() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollector()
 
-        ProtoBuf.writeKey(22, WireType.VAR_INT, bc::reserve, bc::write)
+        bc.reserve(57)
+
+        ProtoBuf.writeKey(22, WireType.VAR_INT, bc::write)
         22.writeVarBytes(bc::write)
 
-        ProtoBuf.writeKey(44, WireType.BIT_64, bc::reserve, bc::write)
+        ProtoBuf.writeKey(44, WireType.BIT_64, bc::write)
         4444L.writeBytes(bc::write)
 
-        ProtoBuf.writeKey(55, WireType.LENGTH_DELIMITED, bc::reserve, bc::write)
+        ProtoBuf.writeKey(55, WireType.LENGTH_DELIMITED, bc::write)
         22.writeVarBytes(bc::write)
         (0 until 22).forEach { bc.write(-1) }
 
-        ProtoBuf.writeKey(66, WireType.START_GROUP, bc::reserve, bc::write)
+        ProtoBuf.writeKey(66, WireType.START_GROUP, bc::write)
 
-        ProtoBuf.writeKey(1, WireType.VAR_INT, bc::reserve, bc::write)
+        ProtoBuf.writeKey(1, WireType.VAR_INT, bc::write)
         22.writeVarBytes(bc::write)
 
-        ProtoBuf.writeKey(2, WireType.LENGTH_DELIMITED, bc::reserve, bc::write)
+        ProtoBuf.writeKey(2, WireType.LENGTH_DELIMITED, bc::write)
         5.writeVarBytes(bc::write)
         (0 until 5).forEach { bc.write(-1) }
 
-        ProtoBuf.writeKey(66, WireType.END_GROUP, bc::reserve, bc::write)
+        ProtoBuf.writeKey(66, WireType.END_GROUP, bc::write)
 
-        ProtoBuf.writeKey(77, WireType.BIT_32, bc::reserve, bc::write)
+        ProtoBuf.writeKey(77, WireType.BIT_32, bc::write)
         333.writeBytes(bc::write)
 
-        fun testSkip(bc: GrowableByteCollector, wireType: WireType, readIndex: Int) {
+        fun testSkip(bc: ByteCollector, wireType: WireType, readIndex: Int) {
             ProtoBuf.readKey(bc::read).wireType shouldBe wireType
             ProtoBuf.skipField(wireType, bc::read)
 

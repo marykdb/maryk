@@ -27,6 +27,8 @@ class FixedBytesDefinition(
 
     override fun writeStorageBytes(value: Bytes, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) = value.writeBytes(reserver, writer)
 
+    override fun reserveTransportBytes(value: Bytes) = this.byteSize
+
     @Throws(ParseException::class)
     override fun fromString(string: String) = try {
         Bytes.ofBase64String(string)

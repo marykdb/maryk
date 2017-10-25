@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
-import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
 import org.junit.Test
@@ -26,7 +26,7 @@ internal class DateDefinitionTest {
 
     @Test
     fun testStorageBytesConversion() {
-        val byteCollector = GrowableByteCollector()
+        val byteCollector = ByteCollector()
         datesToTest.forEach {
             def.writeStorageBytes(it, byteCollector::reserve, byteCollector::write)
             def.readStorageBytes(byteCollector.size, byteCollector::read) shouldBe it
@@ -36,9 +36,12 @@ internal class DateDefinitionTest {
 
     @Test
     fun testTransportBytesConversion() {
-        val byteCollector = GrowableByteCollector()
+        val byteCollector = ByteCollector()
         datesToTest.forEach {
-            def.writeTransportBytes(it, byteCollector::reserve, byteCollector::write)
+            byteCollector.reserve(
+                def.reserveTransportBytes(it)
+            )
+            def.writeTransportBytes(it, byteCollector::write)
             def.readTransportBytes(byteCollector.size, byteCollector::read) shouldBe it
             byteCollector.reset()
         }

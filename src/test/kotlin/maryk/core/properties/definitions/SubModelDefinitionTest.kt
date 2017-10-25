@@ -6,7 +6,7 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
 import maryk.core.objects.Def
-import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.ByteCollectorWithSizeCacher
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -56,21 +56,25 @@ internal class SubModelDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollectorWithSizeCacher()
 
         val value = MarykObject()
-        val asHex = "0b02036a75720c"
+        val asHex = "2a0502036a7572"
 
-        def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+        bc.reserve(
+                def.reserveTransportBytesWithKey(value, bc::addToCache)
+        )
+        bc.bytes!!.size shouldBe 7
+        def.writeTransportBytesWithKey(5, value, bc::nextSizeFromCache, bc::write)
 
-        bc.bytes.toHex() shouldBe asHex
+        bc.bytes!!.toHex() shouldBe asHex
 
         val key = ProtoBuf.readKey(bc::read)
-        key.wireType shouldBe WireType.START_GROUP
-        key.tag shouldBe 1
+        key.wireType shouldBe WireType.LENGTH_DELIMITED
+        key.tag shouldBe 5
 
         def.readTransportBytes(
-                ProtoBuf.getLength(WireType.START_GROUP, bc::read),
+                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         ) shouldBe value
     }

@@ -37,12 +37,16 @@ class DateTimeDefinition(
         TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
     }
 
-    override fun writeTransportBytes(value: DateTime, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun reserveTransportBytes(value: DateTime) = when(this.precision) {
+        TimePrecision.SECONDS -> value.toEpochSecond().computeVarByteSize()
+        TimePrecision.MILLIS -> value.toEpochMilli().computeVarByteSize()
+    }
+
+    override fun writeTransportBytes(value: DateTime, writer: (byte: Byte) -> Unit) {
         val epochUnit = when(this.precision) {
             TimePrecision.SECONDS -> value.toEpochSecond()
             TimePrecision.MILLIS -> value.toEpochMilli()
         }
-        reserver(epochUnit.computeVarByteSize())
         epochUnit.writeVarBytes(writer)
     }
 

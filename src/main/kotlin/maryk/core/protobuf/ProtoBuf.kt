@@ -10,9 +10,8 @@ import kotlin.experimental.xor
 
 object ProtoBuf {
     /** Write the key for protobuf field */
-    fun writeKey(tag: Int, wireType: WireType, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    fun writeKey(tag: Int, wireType: WireType, writer: (byte: Byte) -> Unit) {
         val byteSize = tag.computeTagByteSize()
-        reserver(byteSize)
 
         // Write Tag + Wiretype + potential sign byte (STTT TWWW)
         writer(
@@ -97,6 +96,10 @@ object ProtoBuf {
         WireType.START_GROUP -> -1
         WireType.END_GROUP -> -1
         WireType.BIT_32 -> 4
+    }
+
+    fun reserveKey(tag: Int): Int {
+        return tag.computeTagByteSize()
     }
 }
 

@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
+import io.kotlintest.matchers.fail
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.GrowableByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -27,9 +27,12 @@ internal class BooleanDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollector()
         booleanArrayOf(true, false).forEach {
-            def.writeTransportBytesWithKey(it, bc::reserve, bc::write)
+            bc.reserve(
+                def.reserveTransportBytesWithKey(it, { fail("Should not call") })
+            )
+            def.writeTransportBytesWithKey(it, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 222
             key.wireType shouldBe WireType.VAR_INT

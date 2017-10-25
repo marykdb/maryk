@@ -43,7 +43,8 @@ internal class SInt32Test {
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
         int32values.forEach {
-            SInt32.writeTransportBytes(it, bc::reserve, bc::write)
+            bc.reserve(SInt32.calculateTransportByteSize(it))
+            SInt32.writeTransportBytes(it, bc::write)
             SInt32.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }

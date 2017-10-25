@@ -13,9 +13,9 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.ByteSizeContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
-import maryk.core.protobuf.WireType
 
 class Def<T: Any, in DM: Any>(val propertyDefinition: IsPropertyDefinition<T>, val propertyGetter: (DM) -> T?)
 
@@ -179,19 +179,49 @@ abstract class DataModel<DO: Any>(
      */
     fun readJsonToObject(reader: JsonReader) = construct(this.readJson(reader))
 
-    fun writeProtoBuf(map: Map<Int, Any>, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    /** Reserves the byte size for the DataObject contained in map
+     * @param map with values to reserve bytes for
+     * @param reserver to reserve bytes with
+     * @return total bytesize of object
+     */
+    fun reserveProtoBufSize(map: Map<Int, Any>, reserver: (size: ByteSizeContainer) -> Unit) : Int {
+        var totalByteSize = 0
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
             val def = indexToDefinition[key] as Def<Any, DO>? ?: break
-            def.propertyDefinition.writeTransportBytesWithKey(value, reserver, writer)
+            totalByteSize += def.propertyDefinition.reserveTransportBytesWithKey(value, reserver)
         }
+        return totalByteSize
     }
 
-    fun writeProtoBuf(obj: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    /** Reserves the byte size for the DataObject
+     * @param obj to reserve bytes for
+     * @param reserver to reserve bytes with
+     * @return total bytesize of object
+     */
+    fun reserveProtoBufSize(obj: DO, lengthCacher: (size: ByteSizeContainer) -> Unit) : Int {
+        var totalByteSize = 0
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO>>) {
             val value = def.propertyGetter(obj) ?: break
-            def.propertyDefinition.writeTransportBytesWithKey(value, reserver, writer)
+            totalByteSize += def.propertyDefinition.reserveTransportBytesWithKey(value, lengthCacher)
+        }
+        return totalByteSize
+    }
+
+    fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        for ((key, value) in map) {
+            @Suppress("UNCHECKED_CAST")
+            val def = indexToDefinition[key] as Def<Any, DO>? ?: break
+            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer)
+        }
+    }
+
+    fun writeProtoBuf(obj: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        for (def in definitions as List<Def<Any, DO>>) {
+            val value = def.propertyGetter(obj) ?: break
+            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer)
         }
     }
 
@@ -214,30 +244,6 @@ abstract class DataModel<DO: Any>(
                     valueMap,
                     ProtoBuf.readKey(byteReader),
                     byteReader
-            )
-        }
-
-        return valueMap
-    }
-
-    /** Convert to a Map of values from ProtoBuf
-     * Expects an END_GROUP wire type to signal the end of the object
-     * @param reader to read ProtoBuf bytes from
-     * @return DataObject represented by the ProtoBuf
-     */
-    fun readProtoBuf(reader:() -> Byte): Map<Int, Any> {
-        val valueMap: MutableMap<Int, Any> = mutableMapOf()
-
-        while(true) {
-            val key = ProtoBuf.readKey(reader)
-            if (key.wireType == WireType.END_GROUP) {
-                break
-            }
-
-            readProtoBufField(
-                    valueMap,
-                    key,
-                    reader
             )
         }
 
@@ -297,11 +303,4 @@ abstract class DataModel<DO: Any>(
      * @return DataObject represented by the ProtoBuf
      */
     fun readProtoBufToObject(length: Int, reader:() -> Byte) = construct(this.readProtoBuf(length, reader))
-
-    /** Convert to a DataModel from ProtoBuf
-     * Expects a field with END_GROUP wire type to stop reading
-     * @param reader to read ProtoBuf bytes from
-     * @return DataObject represented by the ProtoBuf
-     */
-    fun readProtoBufToObject(reader:() -> Byte) = construct(this.readProtoBuf(reader))
 }

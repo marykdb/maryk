@@ -17,9 +17,9 @@ object SInt64 : NumberDescriptor<Long>(
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Long = initLong(reader)
     override fun writeStorageBytes(value: Long, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initLongByVar(reader).decodeZigZag()
-    override fun writeTransportBytes(value: Long, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
+    override fun calculateTransportByteSize(value: Long) = value.encodeZigZag().computeVarByteSize()
+    override fun writeTransportBytes(value: Long, writer: (byte: Byte) -> Unit) {
         val zigZaggedValue = value.encodeZigZag()
-        reserver(zigZaggedValue.computeVarByteSize())
         zigZaggedValue.writeVarBytes(writer)
     }
     override fun ofString(value: String) = value.toLong()

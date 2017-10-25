@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.extensions.bytes.computeVarByteSize
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.DataModel
@@ -7,6 +9,7 @@ import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.CanHaveSimpleChildReference
 import maryk.core.properties.references.PropertyReference
+import maryk.core.protobuf.ByteSizeContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
@@ -51,16 +54,25 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
 
     override fun readJson(reader: JsonReader) = this.dataModel.readJsonToObject(reader)
 
-    override fun writeTransportBytesWithKey(index: Int, value: DO, reserver: (size: Int) -> Unit, writer: (byte: Byte) -> Unit) {
-        ProtoBuf.writeKey(this.index, WireType.START_GROUP, reserver, writer)
-        this.dataModel.writeProtoBuf(value, reserver, writer)
-        ProtoBuf.writeKey(this.index, WireType.END_GROUP, reserver, writer)
+    override fun reserveTransportBytesWithKey(index: Int, value: DO, lengthCacher: (size: ByteSizeContainer) -> Unit): Int {
+        // Set up container to store byte size
+        val container = ByteSizeContainer()
+        lengthCacher(container)
+
+        var totalByteSize = 0
+        totalByteSize += this.dataModel.reserveProtoBufSize(value, lengthCacher)
+        container.size = totalByteSize // first store byte size of object
+
+        totalByteSize += ProtoBuf.reserveKey(index)
+        totalByteSize += container.size.computeVarByteSize()
+        return totalByteSize
     }
 
-    // With a length of -1 it should read until key with wire type END_GROUP
-    override fun readTransportBytes(length: Int, reader: () -> Byte) = if(length == -1) {
-        this.dataModel.readProtoBufToObject(reader)
-    } else {
-        this.dataModel.readProtoBufToObject(length, reader)
+    override fun writeTransportBytesWithKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
+        lengthCacheGetter().writeVarBytes(writer)
+        this.dataModel.writeProtoBuf(value, lengthCacheGetter, writer)
     }
+
+    override fun readTransportBytes(length: Int, reader: () -> Byte) = this.dataModel.readProtoBufToObject(length, reader)
 }

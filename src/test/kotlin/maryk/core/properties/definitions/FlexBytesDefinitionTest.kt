@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.GrowableByteCollector
+import maryk.core.properties.ByteCollectorWithSizeCacher
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.types.Bytes
@@ -51,9 +51,12 @@ internal class FlexBytesDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = GrowableByteCollector()
+        val bc = ByteCollectorWithSizeCacher()
         flexBytesToTest.forEach { value ->
-            def.writeTransportBytesWithKey(value, bc::reserve, bc::write)
+            bc.reserve(
+                def.reserveTransportBytesWithKey(value, bc::addToCache)
+            )
+            def.writeTransportBytesWithKey(value, bc::nextSizeFromCache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe -1

@@ -102,6 +102,6 @@ The numbers are differently encoded depending on their type.
  number.
  - **SInt8** **SInt16** **SInt32** **SInt64** Encoded as VarInt zigzaging
  between positive and negative numbers. This means 0 as 0, -1 as 1, 1 as 2,
- -2 as three etc. This way small positive and negative numbers take less space
- - **Float32** Encoded as BIT_32
- - **Float64** Encoded as BIT_64
+ -2 as 3 etc. This way small positive and negative numbers take less space
+ - **Float32** Encoded as 64-bit
+ - **Float64** Encoded as 32-bit

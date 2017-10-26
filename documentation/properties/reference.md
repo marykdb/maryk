@@ -37,7 +37,7 @@ val def = ReferenceDefinition(
 ```
 
 ## Storage/Transport Byte representation
-The key of the referenced DataObject as bytes. With transport the LENGTH_DELIMITED
+The key of the referenced DataObject as bytes. With transport the Length Delimited
 wiretype is used
 
 ## String representation

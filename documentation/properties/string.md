@@ -41,8 +41,8 @@ val def = StringDefinition(
 )
 ```
 
-## Byte representation
-UTF-8 byte conversion
+## Storage/Transport Byte representation
+UTF-8 byte conversion. With transport the LENGTH_DELIMITED wiretype is used
 
 ## String representation
 String

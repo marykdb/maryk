@@ -72,7 +72,7 @@ val def = NumberDefinition(
 )
 ```
 
-## Byte representation
+## Storage Byte representation
 All numbers are encoded to a fixed length byte format fitting their type. 
 For example 4 bytes for Int32 and 1 for Int8. All numbers are encoded in
 an order fitting their natural order. For signed numbers this means that 
@@ -94,3 +94,14 @@ Examples:
 -127 == 0b0000_0001
 
 ``` 
+
+## Transport Byte representation
+The numbers are differently encoded depending on their type.
+
+ - **UInt8** **UInt16** **UInt32** **UInt64** Encoded as VarInt as unsigned
+ number.
+ - **SInt8** **SInt16** **SInt32** **SInt64** Encoded as VarInt zigzaging
+ between positive and negative numbers. This means 0 as 0, -1 as 1, 1 as 2,
+ -2 as three etc. This way small positive and negative numbers take less space
+ - **Float32** Encoded as BIT_32
+ - **Float64** Encoded as BIT_64

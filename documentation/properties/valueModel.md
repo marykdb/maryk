@@ -36,7 +36,9 @@ val def = ValueModelDefinition(
 )
 ```
 
-## Byte representation
+## Storage/Transport Byte representation
 Each property of the value model is stored in its representative byte format. All 
 values are combined into one array separated by a separator byte (0b0001) in the
 order of how the properties are defined.
+
+With transport the field is encoded as length delimited wire type preceded by length of bytes

@@ -36,7 +36,7 @@ val def = BooleanDefinition(
 )
 ```
 
-## Byte representation
+## Storage and Transport Byte representation
 0b0000 for false 0b0001 for true
 
 ## String representation

@@ -53,9 +53,14 @@ val def = MultiTypeDefinition(
 )
 ```
 
-## Byte representation
+## Storage Byte representation
 Depends on the specific implementation. The type id is stored as UInt16 and the value in its
 native form.
+
+## Transport Byte representation
+The multitype is encoded as an embedded object within a length delimited tag/value. It then 
+contains 2 tag/value pairs with the first one with tag=1 being the type index encoded in VarInt and 
+secondly a tag=2 with the value itself. 
 
 ## String representation
 TypeID as a UInt16 encoded to string.

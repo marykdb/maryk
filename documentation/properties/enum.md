@@ -40,8 +40,11 @@ val def = EnumDefinition<Role>(
 )
 ```
 
-## Byte representation
-The enum short value as two bytes. They are encoded in an unsigned way.
+## Storage Byte representation
+The enum index value as two bytes. It is encoded as unsigned short.
+
+## Transport Byte representation
+The enum index value as a VarInt.
 
 ## String representation
 Name of the Enum. 

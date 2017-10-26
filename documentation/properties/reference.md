@@ -36,8 +36,9 @@ val def = ReferenceDefinition(
 )
 ```
 
-## Byte representation
-The key of the referenced DataObject as bytes.
+## Storage/Transport Byte representation
+The key of the referenced DataObject as bytes. With transport the LENGTH_DELIMITED
+wiretype is used
 
 ## String representation
 Key as base64 value

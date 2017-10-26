@@ -30,3 +30,7 @@ val def = SubModelDefinition(
     dataModel = Address
 )
 ```
+
+## Transport Byte representation
+All fields of a DataObject are wrapped in a tag/value pair with LENGTH_DELIMITED
+wiretype and the value starts with the length of the total bytes of the DataObject

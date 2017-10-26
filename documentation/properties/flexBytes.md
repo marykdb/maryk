@@ -32,8 +32,9 @@ val def = FlexBytesDefinition(
 )
 ```
 
-## Byte representation
-The byte array of the property
+## Storage/Transport Byte representation
+The byte array of the property.
+In transport bytes it is encoded as Length Delimited.
 
 ## String representation
 Base 64 representation of the bytes

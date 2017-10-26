@@ -41,12 +41,18 @@ val def = DateTimeDefinition(
 )
 ```
 
-## Byte representation
+## Storage Byte representation
 It depends on the precision of the Time how it will be stored
 
 - SECONDS - 7 byte integer counting the seconds from midnight January 1st 1970
 - MILLIS - 9 byte integer with 7 bits counting the seconds from midnight January 1st 1970 
-and 2 bits for the added milliseconds 
+and 2 bits for the added milliseconds
+
+## Transport Byte representation
+The bytes are transported in a different way depending on the precision of time.
+
+- SECONDS - VarInt integer counting the seconds from midnight January 1st 1970
+- MILLIS - VarInt integer counting the milliseconds from midnight January 1st 1970 
 
 ## String representation
 ISO8601 String YYYY-MM-DDTHH:MM:SS.SSS

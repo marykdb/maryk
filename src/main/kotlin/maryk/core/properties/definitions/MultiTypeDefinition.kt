@@ -74,10 +74,11 @@ class MultiTypeDefinition(
         val definition: AbstractSubDefinition<*>? = this.typeMap[index]
                 ?: throw ParseException("Unknown multitype index ${reader.lastValue} for $name")
 
-        return TypedValue<Any>(
-                index,
-                definition!!.readJson(reader)
-        )
+        val value = definition!!.readJson(reader)
+
+        reader.nextToken() // skip end object
+
+        return TypedValue<Any>(index, value)
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte): TypedValue<*> {

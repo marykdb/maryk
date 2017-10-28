@@ -31,6 +31,12 @@ internal class BytesTest {
     }
 
     @Test
+    fun testGet() {
+        bytesToTest[0][0] shouldBe (-1).toByte()
+        bytesToTest[1][3] shouldBe 0.toByte()
+    }
+
+    @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
         bytesToTest.forEach {

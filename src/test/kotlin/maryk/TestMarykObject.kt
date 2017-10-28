@@ -46,7 +46,8 @@ data class TestMarykObject(
         val valueObject: TestValueObject? = null,
         val subModel: SubMarykObject? = null,
         val multi: TypedValue<*>? = null,
-        val reference: Key<SubMarykObject>? = null
+        val reference: Key<SubMarykObject>? = null,
+        val listOfString: List<String>? = null
 ) {
     object Properties {
         val string = StringDefinition(
@@ -135,6 +136,11 @@ data class TestMarykObject(
                 index = 13,
                 dataModel = SubMarykObject
         )
+        val listOfString = ListDefinition<String>(
+                name = "listOfString",
+                index = 14,
+                valueDefinition = StringDefinition(required = true)
+        )
     }
 
     companion object: RootDataModel<TestMarykObject>(
@@ -154,7 +160,8 @@ data class TestMarykObject(
                         valueObject = it[10] as TestValueObject?,
                         subModel = it[11] as SubMarykObject?,
                         multi = it[12] as TypedValue<*>?,
-                        reference = it[13] as Key<SubMarykObject>?
+                        reference = it[13] as Key<SubMarykObject>?,
+                        listOfString = it[14] as List<String>?
                 )
             },
             keyDefinitions = definitions(
@@ -176,7 +183,8 @@ data class TestMarykObject(
                     Def(Properties.valueObject, TestMarykObject::valueObject),
                     Def(Properties.subModel, TestMarykObject::subModel),
                     Def(Properties.multi, TestMarykObject::multi),
-                    Def(Properties.reference, TestMarykObject::reference)
+                    Def(Properties.reference, TestMarykObject::reference),
+                    Def(Properties.listOfString, TestMarykObject::listOfString)
             )
     )
 }

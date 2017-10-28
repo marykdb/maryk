@@ -39,6 +39,12 @@ internal class DateTimeTest {
     }
 
     @Test
+    fun testGet() {
+        this.dateTime.date shouldBe Date(2017, 8, 16)
+        this.dateTime.time shouldBe Time(11, 28, 22, 2344)
+    }
+
+    @Test
     fun epochSecondConversion() {
         dateTimesWithSecondsToTest.forEach {
             DateTime.ofEpochSecond(
@@ -88,7 +94,6 @@ internal class DateTimeTest {
             }
         }
     }
-
 
     @Test
     fun testStringConversion() {

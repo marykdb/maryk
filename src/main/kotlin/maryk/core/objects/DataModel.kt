@@ -107,7 +107,7 @@ abstract class DataModel<DO: Any>(
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO>>) {
             val name = def.propertyDefinition.name!!
-            val value = def.propertyGetter(obj) ?: break
+            val value = def.propertyGetter(obj) ?: continue
 
             writer.writeFieldName(name)
 
@@ -124,7 +124,7 @@ abstract class DataModel<DO: Any>(
         writer.writeStartObject()
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
-            val def = indexToDefinition[key] as Def<Any, DO>? ?: break
+            val def = indexToDefinition[key] as Def<Any, DO>? ?: continue
             val name = def.propertyDefinition.name!!
 
             writer.writeFieldName(name)
@@ -188,7 +188,7 @@ abstract class DataModel<DO: Any>(
         var totalByteLength = 0
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
-            val def = indexToDefinition[key] as Def<Any, DO>? ?: break
+            val def = indexToDefinition[key] as Def<Any, DO>? ?: continue
             totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
         }
         return totalByteLength
@@ -203,7 +203,7 @@ abstract class DataModel<DO: Any>(
         var totalByteLength = 0
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO>>) {
-            val value = def.propertyGetter(obj) ?: break
+            val value = def.propertyGetter(obj) ?: continue
             totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
         }
         return totalByteLength
@@ -212,7 +212,7 @@ abstract class DataModel<DO: Any>(
     fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
-            val def = indexToDefinition[key] as Def<Any, DO>? ?: break
+            val def = indexToDefinition[key] as Def<Any, DO>? ?: continue
             def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer)
         }
     }
@@ -220,7 +220,7 @@ abstract class DataModel<DO: Any>(
     fun writeProtoBuf(obj: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO>>) {
-            val value = def.propertyGetter(obj) ?: break
+            val value = def.propertyGetter(obj) ?: continue
             def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer)
         }
     }

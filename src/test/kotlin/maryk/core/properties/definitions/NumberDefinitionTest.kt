@@ -5,6 +5,7 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
@@ -21,6 +22,17 @@ internal class NumberDefinitionTest {
             UInt32.MIN_VALUE,
             UInt32.MAX_VALUE,
             32373957.toUInt32()
+    )
+
+    private val defFloat32 = NumberDefinition(
+            name = "test",
+            type = Float32
+    )
+
+    private val floatArray = arrayOf(
+            Float.MIN_VALUE,
+            Float.MAX_VALUE,
+            323.73957F
     )
 
     @Test
@@ -58,6 +70,25 @@ internal class NumberDefinitionTest {
             key.wireType shouldBe WireType.VAR_INT
             key.tag shouldBe -1
             def.readTransportBytes(
+                    ProtoBuf.getLength(key.wireType, bc::read),
+                    bc::read
+            ) shouldBe value
+            bc.reset()
+        }
+    }
+
+    @Test
+    fun testFloatTransportConversion() {
+        val bc = ByteCollector()
+        floatArray.forEach { value ->
+            bc.reserve(
+                    defFloat32.calculateTransportByteLengthWithKey(value, { fail("Should not call") })
+            )
+            defFloat32.writeTransportBytesWithKey(value, { fail("Should not call") }, bc::write)
+            val key = ProtoBuf.readKey(bc::read)
+            key.wireType shouldBe WireType.BIT_32
+            key.tag shouldBe -1
+            defFloat32.readTransportBytes(
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
             ) shouldBe value

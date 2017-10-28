@@ -1,10 +1,6 @@
 package maryk.core.exceptions
 
-/** Thrown when definition is not found */
-class DefNotFoundException : Throwable {
-    /** @param e cause for this exception */
-    constructor(e: Throwable) : super(e) {}
-
-    /** @param message to be set for exception explaining cause */
-    constructor(message: String) : super(message) {}
-}
+/** Thrown when definition is not found
+ * @param message to be set for exception explaining cause
+ */
+class DefNotFoundException(message: String) : Throwable(message)

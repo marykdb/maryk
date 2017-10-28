@@ -50,7 +50,8 @@ private val testExtendedObject = TestMarykObject(
         ),
         valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
         subModel = SubMarykObject("test"),
-        multi = TypedValue(2, SubMarykObject("subInMulti!"))
+        multi = TypedValue(2, SubMarykObject("subInMulti!")),
+        listOfString = listOf("test1", "another test", "🤗")
 )
 private val testMap = sortedMapOf(
         0 to "hay",
@@ -72,10 +73,11 @@ private val testMap = sortedMapOf(
         ),
         10 to TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
         11 to SubMarykObject("test"),
-        12 to TypedValue(2, SubMarykObject("subInMulti!"))
+        12 to TypedValue(2, SubMarykObject("subInMulti!")),
+        14 to listOf("test1", "another test", "🤗")
 )
 
-private const val json = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"2017-12-04T12:13\",\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}]}"
+private const val json = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"bool\":true,\"dateTime\":\"2017-12-04T12:13\",\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
 private const val prettyJson = """{
 	"string": "hay",
@@ -101,7 +103,8 @@ private const val prettyJson = """{
 	},
 	"multi": [2, {
 		"value": "subInMulti!"
-	}]
+	}],
+	"listOfString": ["test1", "another test", "🤗"]
 }"""
 
 // Test if unknown values will be skipped
@@ -130,7 +133,8 @@ private const val prettyJsonWithSkip = """{
 	},
 	"multi": [2, {
 		"value": "subInMulti!"
-	}]
+	}],
+	"listOfString": ["test1", "another test", "🤗"]
 }"""
 
 internal class DataModelTest {
@@ -216,7 +220,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testToJsonConversion() {
+    fun testWriteJsonConversion() {
         var output = ""
         val writer = { string: String -> output += string }
 
@@ -232,7 +236,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testToProtoBufConversionWithMap() {
+    fun testWriteProtoBufConversionWithMap() {
         val bc = ByteCollectorWithLengthCacher()
 
         val map = mapOf(

@@ -18,5 +18,5 @@ This list is expanded as more functionality is ported and lands
 
 See the documentation for more details
 
-- [DataModels](documentation/dataModel.md)
+- [DataModels](documentation/datamodel.md)
 - [Properties](documentation/properties/properties.md)

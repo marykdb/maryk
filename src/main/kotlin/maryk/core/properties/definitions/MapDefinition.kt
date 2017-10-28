@@ -142,6 +142,10 @@ class MapDefinition<K: Any, V: Any>(
         }
     }
 
+    /** Read the transport bytes as a map
+     * @param reader to read bytes with for map
+     * @return Pair of key value
+     */
     fun readMapTransportBytes(reader: () -> Byte): Pair<K, V> {
         val keyOfMapKey = ProtoBuf.readKey(reader)
         val key = keyDefinition.readTransportBytes(

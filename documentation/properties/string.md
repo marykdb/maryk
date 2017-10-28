@@ -42,7 +42,7 @@ val def = StringDefinition(
 ```
 
 ## Storage/Transport Byte representation
-UTF-8 byte conversion. With transport the LENGTH_DELIMITED wiretype is used
+Strings are stored as UTF-8 encoded bytes. With transport the LENGTH_DELIMITED wiretype is used
 
 ## String representation
 String

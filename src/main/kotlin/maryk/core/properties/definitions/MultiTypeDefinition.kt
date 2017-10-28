@@ -129,6 +129,12 @@ class MultiTypeDefinition(
         this.writeTransportBytes(value, lengthCacheGetter, writer)
     }
 
+    /** Write transport bytes for MultiType
+     * Will be an object with a type index on key=1 and the value on key=2
+     * @param value to write
+     * @param lengthCacheGetter to fetch cached length of value if needed
+     * @param writer to write the bytes with
+     */
     fun writeTransportBytes(value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
         value.typeIndex.writeVarBytes(writer)

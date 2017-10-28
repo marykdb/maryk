@@ -43,12 +43,26 @@ abstract class DataModel<DO: Any>(
             nameToDefinition[def.name!!] = it
         }
     }
-    fun getDefinition(ofString: String) = nameToDefinition[ofString]?.propertyDefinition
 
-    fun getDefinition(ofIndex: Int) = indexToDefinition[ofIndex]?.propertyDefinition
-    fun getPropertyGetter(ofString: String) = nameToDefinition[ofString]?.propertyGetter
+    /** Get the definition with a property name
+     * @param name to get property of
+     */
+    fun getDefinition(name: String) = nameToDefinition[name]?.propertyDefinition
 
-    fun getPropertyGetter(ofIndex: Int) = indexToDefinition[ofIndex]?.propertyGetter
+    /** Get the definition with a property index
+     * @param index to get property of
+     */
+    fun getDefinition(index: Int) = indexToDefinition[index]?.propertyDefinition
+
+    /** Get a method to retrieve property from DataObject by name
+     * @param name of value to retrieve
+     */
+    fun getPropertyGetter(name: String) = nameToDefinition[name]?.propertyGetter
+
+    /** Get a method to retrieve property from DataObject by index
+     * @param index of value to retrieve
+     */
+    fun getPropertyGetter(index: Int) = indexToDefinition[index]?.propertyGetter
 
     /** Validate a DataObject
      * @param dataObject to validate
@@ -209,6 +223,11 @@ abstract class DataModel<DO: Any>(
         return totalByteLength
     }
 
+    /** Write a protobuf from a map with values
+     * @param map to write
+     * @param lengthCacheGetter to get next length
+     * @param writer to write bytes with
+     */
     fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
@@ -217,6 +236,11 @@ abstract class DataModel<DO: Any>(
         }
     }
 
+    /** Write a protobuf from a DataObject
+     * @param map to write
+     * @param lengthCacheGetter to get next length
+     * @param writer to write bytes with
+     */
     fun writeProtoBuf(obj: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO>>) {
@@ -250,6 +274,11 @@ abstract class DataModel<DO: Any>(
         return valueMap
     }
 
+    /** Read a single field
+     * @param valueMap to write the read values to
+     * @param key to read for
+     * @param byteReader to read bytes for values from
+     */
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte) {
         val propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
 

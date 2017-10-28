@@ -1,6 +1,6 @@
 # What is a DataModel?
 DataModels describe the structure of the data. They contain 
-[PropertyDefinitions](properties/properties.md) whichdescribe what type of data the 
+[Property definitions](properties/properties.md) which describe what type of data the 
 property contains, how it is validated and other properties that are relevant to the 
 storage. DataObjects are created from DataModels which can also validate or serialize
 them.  

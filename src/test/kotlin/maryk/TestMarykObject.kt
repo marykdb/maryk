@@ -136,7 +136,7 @@ data class TestMarykObject(
                 index = 13,
                 dataModel = SubMarykObject
         )
-        val listOfString = ListDefinition<String>(
+        val listOfString = ListDefinition(
                 name = "listOfString",
                 index = 14,
                 valueDefinition = StringDefinition(required = true)
@@ -144,7 +144,8 @@ data class TestMarykObject(
     }
 
     companion object: RootDataModel<TestMarykObject>(
-            constructor = {
+            name = "TestMarykObject",
+            construct = {
                 @Suppress("UNCHECKED_CAST")
                 TestMarykObject(
                         string = it[0] as String,
@@ -199,8 +200,8 @@ data class SubMarykObject(
         )
     }
     companion object: RootDataModel<SubMarykObject>(
-            constructor = { SubMarykObject(it[0] as String) },
-            definitions = listOf(
+            name = "TestMarykObject",
+            construct = { SubMarykObject(it[0] as String) }, definitions = listOf(
                     Def(Properties.value, SubMarykObject::value)
             )
     )

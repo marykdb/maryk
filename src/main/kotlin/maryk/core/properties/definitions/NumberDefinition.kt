@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.json.JsonWriter
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.UInt64
 import maryk.core.properties.types.numeric.Float32
@@ -28,7 +29,7 @@ class NumberDefinition<T: Comparable<T>>(
 
     override fun createRandom() = type.createRandom()
 
-    override fun readStorageBytes(length: Int, reader:() -> Byte)
+    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte)
             = this.type.fromStorageByteReader(length, reader)
 
     override fun calculateStorageByteLength(value: T) = type.size
@@ -36,7 +37,7 @@ class NumberDefinition<T: Comparable<T>>(
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
             = this.type.writeStorageBytes(value, writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte)
+    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte)
             = this.type.readTransportBytes(reader)
 
     override fun calculateTransportByteLength(value: T) = this.type.calculateTransportByteLength(value)
@@ -45,7 +46,7 @@ class NumberDefinition<T: Comparable<T>>(
             = this.type.writeTransportBytes(value, writer)
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = try {
+    override fun fromString(string: String, context: IsPropertyContext?) = try {
         type.ofString(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 

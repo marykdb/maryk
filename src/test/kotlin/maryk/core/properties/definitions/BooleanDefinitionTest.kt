@@ -23,7 +23,7 @@ internal class BooleanDefinitionTest {
                 def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -40,6 +40,7 @@ internal class BooleanDefinitionTest {
             key.tag shouldBe 222
             key.wireType shouldBe WireType.VAR_INT
             def.readTransportBytes(
+                    null,
                     ProtoBuf.getLength(WireType.VAR_INT, bc::read),
                     bc::read
             ) shouldBe it
@@ -58,7 +59,7 @@ internal class BooleanDefinitionTest {
     @Test
     fun testWrongStringConversion() {
         shouldThrow<ParseException> {
-            def.fromString("wrong")
+            def.fromString("wrong", null)
         }
     }
 }

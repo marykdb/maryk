@@ -26,7 +26,7 @@ internal class TimeDefinitionTest {
             name = "seconds"
     )
 
-    val defMilli = TimeDefinition(
+    private val defMilli = TimeDefinition(
             name = "milli",
             precision = TimePrecision.MILLIS
     )
@@ -46,7 +46,7 @@ internal class TimeDefinitionTest {
                     defMilli.calculateStorageByteLength(it)
             )
             defMilli.writeStorageBytes(it, bc::write)
-            defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
+            defMilli.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -59,7 +59,7 @@ internal class TimeDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -70,7 +70,7 @@ internal class TimeDefinitionTest {
         timesToTestSeconds.forEach {
             bc.reserve(def.calculateTransportByteLength(it))
             def.writeTransportBytes(it, bc::write)
-            def.readTransportBytes(bc.size, bc::read) shouldBe it
+            def.readTransportBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -81,7 +81,7 @@ internal class TimeDefinitionTest {
         timesToTestMillis.forEach {
             bc.reserve(defMilli.calculateTransportByteLength(it))
             defMilli.writeTransportBytes(it, bc::write)
-            defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
+            defMilli.readTransportBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

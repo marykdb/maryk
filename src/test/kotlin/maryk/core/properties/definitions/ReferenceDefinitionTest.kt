@@ -14,10 +14,10 @@ import maryk.core.protobuf.WireType
 import org.junit.Test
 
 internal class ReferenceDefinitionTest {
-    private val refToTest = arrayOf(
-            Key<TestMarykObject>(ByteArray(9, { ZEROBYTE })),
-            Key<TestMarykObject>(ByteArray(9, { MAXBYTE })),
-            Key<TestMarykObject>(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAXBYTE }))
+    private val refToTest = arrayOf<Key<TestMarykObject>>(
+            Key(ByteArray(9, { ZEROBYTE })),
+            Key(ByteArray(9, { MAXBYTE })),
+            Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAXBYTE }))
     )
 
     val def = ReferenceDefinition(
@@ -53,7 +53,7 @@ internal class ReferenceDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -72,6 +72,7 @@ internal class ReferenceDefinitionTest {
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe 8
             def.readTransportBytes(
+                    null,
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
             ) shouldBe value

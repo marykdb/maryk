@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WireType
 
 /**
@@ -20,7 +21,7 @@ abstract class AbstractNumericDefinition<T: Comparable<T>>(
         minValue: T?,
         maxValue: T?,
         val random:Boolean
-) : AbstractSimpleDefinition<T>(
+) : AbstractSimpleDefinition<T, IsPropertyContext>(
         name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue
 ) {
     /** @return random value */

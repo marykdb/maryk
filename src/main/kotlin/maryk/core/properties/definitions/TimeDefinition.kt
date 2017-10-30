@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
@@ -30,9 +31,10 @@ class TimeDefinition(
 
     override fun createNow() = Time.nowUTC()
 
-    override fun readStorageBytes(length: Int, reader:() -> Byte) = Time.fromByteReader(length, reader)
+    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte)
+            = Time.fromByteReader(length, reader)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte) = when(this.precision) {
+    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte) = when(this.precision) {
         TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
         TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
     }
@@ -51,5 +53,5 @@ class TimeDefinition(
     }
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = Time.parse(string)
+    override fun fromString(string: String, context: IsPropertyContext?) = Time.parse(string)
 }

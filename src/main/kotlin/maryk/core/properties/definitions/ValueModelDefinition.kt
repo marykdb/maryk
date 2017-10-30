@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.ValueDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -27,7 +28,7 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
         minValue: DO? = null,
         maxValue: DO? = null,
         val dataModel: D
-) : AbstractSimpleDefinition<DO>(
+) : AbstractSimpleDefinition<DO, IsPropertyContext>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), IsFixedBytesEncodable<DO> {
     override val byteSize = dataModel.byteSize
@@ -36,19 +37,20 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) = value._bytes.writeBytes(writer)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = this.dataModel.readFromBytes(reader)
+    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte)
+            = this.dataModel.readFromBytes(context, reader)
 
     override fun calculateTransportByteLength(value: DO) = this.dataModel.byteSize
 
     override fun asString(value: DO) = value.toBase64()
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = try {
-        this.dataModel.fromString(string)
+    override fun fromString(string: String, context: IsPropertyContext?) = try {
+        this.dataModel.fromString(string, context)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
-            CanHaveComplexChildReference<DO, ValueModelDefinition<DO, D>>(
+            CanHaveComplexChildReference(
                     this,
                     parentRefFactory()?.let {
                         it as CanHaveComplexChildReference<*, *>
@@ -74,5 +76,5 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
     override fun writeJsonValue(writer: JsonWriter, value: DO) = dataModel.writeJson(writer, value)
 
     @Throws(ParseException::class)
-    override fun readJson(reader: JsonReader): DO = dataModel.readJsonToObject(reader)
+    override fun readJson(context: IsPropertyContext?, reader: JsonReader): DO = dataModel.readJsonToObject(reader, context)
 }

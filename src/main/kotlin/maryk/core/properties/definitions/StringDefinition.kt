@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.bytes.initString
 import maryk.core.bytes.writeUTF8Bytes
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -23,7 +24,7 @@ class StringDefinition(
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
         val regEx: String? = null
-) : AbstractSimpleDefinition<String>(
+) : AbstractSimpleDefinition<String, IsPropertyContext>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), HasSizeDefinition {
     private val _regEx by lazy {
@@ -33,7 +34,7 @@ class StringDefinition(
         }
     }
 
-    override fun readStorageBytes(length: Int, reader:() -> Byte) = initString(length, reader)
+    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) = initString(length, reader)
 
     override fun calculateStorageByteLength(value: String) = value.calculateUTF8ByteLength()
 
@@ -43,7 +44,7 @@ class StringDefinition(
 
     override fun asString(value: String) = value
 
-    override fun fromString(string: String) = string
+    override fun fromString(string: String, context: IsPropertyContext?) = string
 
     @Throws(PropertyValidationException::class)
     override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> PropertyReference<*, *>?) {

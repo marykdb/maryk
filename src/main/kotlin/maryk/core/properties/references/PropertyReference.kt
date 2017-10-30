@@ -1,6 +1,6 @@
 package maryk.core.properties.references
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 
 /**
@@ -12,7 +12,7 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
         val propertyDefinition: D,
         val parentReference: PropertyReference<*, *>?,
         val indexable: Boolean = true,
-        val dataModel: DataModel<*>? = parentReference?.parentDataModel
+        val dataModel: IsDataModel<*>? = parentReference?.parentDataModel
 ) {
     open val name = propertyDefinition.name
 
@@ -26,7 +26,7 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
     } ?: name
 
     /** the parent DataObject definition */
-    open val parentDataModel: DataModel<*>? by lazy { this.parentReference?.parentDataModel }
+    open val parentDataModel: IsDataModel<*>? by lazy { this.parentReference?.parentDataModel }
 
     override fun equals(other: Any?) = when {
         this === other -> true

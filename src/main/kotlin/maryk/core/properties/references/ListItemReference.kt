@@ -12,8 +12,8 @@ import maryk.core.properties.definitions.ListDefinition
  */
 class ListItemReference<T: Any> (
         val index: Int,
-        parentReference: PropertyReference<List<T>, ListDefinition<T>>
-) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T>>(
+        parentReference: PropertyReference<List<T>, ListDefinition<T, *>>
+) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T, *>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
 ), EmbeddedPropertyReference<T> {
     override val name = parentReference.name

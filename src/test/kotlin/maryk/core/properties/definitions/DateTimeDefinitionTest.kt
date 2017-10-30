@@ -43,7 +43,7 @@ internal class DateTimeDefinitionTest {
                     defMilli.calculateStorageByteLength(it)
             )
             defMilli.writeStorageBytes(it, bc::write)
-            defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
+            defMilli.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -56,7 +56,7 @@ internal class DateTimeDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -67,7 +67,7 @@ internal class DateTimeDefinitionTest {
         for(it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(defMilli.calculateTransportByteLength(it))
             defMilli.writeTransportBytes(it, bc::write)
-            defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
+            defMilli.readTransportBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -78,7 +78,7 @@ internal class DateTimeDefinitionTest {
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(def.calculateTransportByteLength(it))
             def.writeTransportBytes(it, bc::write)
-            def.readTransportBytes(bc.size, bc::read) shouldBe it
+            def.readTransportBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

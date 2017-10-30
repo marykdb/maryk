@@ -2,6 +2,7 @@ package maryk.core.objects
 
 import maryk.core.bytes.Base64
 import maryk.core.extensions.bytes.initByteArray
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.key.Reversed
@@ -15,10 +16,11 @@ fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
  * If no key is defined the datamodel will get a UUID
  */
 abstract class RootDataModel<DM: Any>(
-        constructor: (Map<Int, *>) -> DM,
+        val name: String?,
+        construct: (Map<Int, *>) -> DM,
         keyDefinitions: Array<IsFixedBytesEncodable<out Any>> = arrayOf(UUIDKey),
-        definitions: List<Def<*, DM>>
-) : DataModel<DM>(constructor, definitions){
+        definitions: List<Def<*, DM, IsPropertyContext>>
+) : DataModel<DM, IsPropertyContext>(construct, definitions){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */

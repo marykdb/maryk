@@ -71,7 +71,7 @@ internal class StringDefinitionTest {
                     def.calculateStorageByteLength(value)
             )
             def.writeStorageBytes(value, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe value
+            def.readStorageBytes(null, bc.size, bc::read) shouldBe value
             bc.bytes!!.toHex() shouldBe asHex
             bc.reset()
         }
@@ -90,6 +90,7 @@ internal class StringDefinitionTest {
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe 14
             def.readTransportBytes(
+                    null,
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
             ) shouldBe value

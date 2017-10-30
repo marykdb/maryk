@@ -31,7 +31,7 @@ internal class EnumDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -57,6 +57,7 @@ internal class EnumDefinitionTest {
             bc.bytes!!.toHex() shouldBe expected
 
             def.readTransportBytes(
+                    null,
                     ProtoBuf.getLength(WireType.VAR_INT, bc::read),
                     bc::read
             ) shouldBe enum

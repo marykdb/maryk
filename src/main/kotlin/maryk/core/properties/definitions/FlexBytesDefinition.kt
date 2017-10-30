@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -20,10 +21,10 @@ class FlexBytesDefinition(
         maxValue: Bytes? = null,
         override val minSize: Int? = null,
         override val maxSize: Int? = null
-): AbstractSimpleDefinition<Bytes>(
+): AbstractSimpleDefinition<Bytes, IsPropertyContext>(
     name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), HasSizeDefinition {
-    override fun readStorageBytes(length: Int, reader:() -> Byte) = Bytes.fromByteReader(length, reader)
+    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) = Bytes.fromByteReader(length, reader)
 
     override fun calculateStorageByteLength(value: Bytes) = value.size
 
@@ -32,7 +33,7 @@ class FlexBytesDefinition(
     override fun calculateTransportByteLength(value: Bytes) = value.size
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = try {
+    override fun fromString(string: String, context: IsPropertyContext?) = try {
         Bytes.ofBase64String(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 

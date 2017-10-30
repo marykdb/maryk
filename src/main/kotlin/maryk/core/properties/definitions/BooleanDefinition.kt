@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.JsonWriter
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
 
@@ -15,12 +16,12 @@ class BooleanDefinition(
         required: Boolean = false,
         final: Boolean = false,
         unique: Boolean = false
-): AbstractSimpleDefinition<Boolean>(
+): AbstractSimpleDefinition<Boolean, IsPropertyContext>(
     name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue = false, maxValue = true
 ), IsFixedBytesEncodable<Boolean> {
     override val byteSize = 1
 
-    override fun readStorageBytes(length: Int, reader:() -> Byte) = initBoolean(reader)
+    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) = initBoolean(reader)
 
     override fun calculateStorageByteLength(value: Boolean) = this.byteSize
 
@@ -32,7 +33,7 @@ class BooleanDefinition(
             = writeStorageBytes(value, writer)
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = when(string) {
+    override fun fromString(string: String, context: IsPropertyContext?) = when(string) {
         "true" -> true
         "false" -> false
         else -> throw ParseException(string)

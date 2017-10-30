@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.DataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.CanHaveSimpleChildReference
@@ -19,7 +20,7 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
+class SubModelDefinition<DO : Any, out D : DataModel<DO, IsPropertyContext>>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = false,
@@ -27,11 +28,11 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         required: Boolean = false,
         final: Boolean = false,
         val dataModel: D
-) : AbstractSubDefinition<DO>(
+) : AbstractSubDefinition<DO, IsPropertyContext>(
         name, index, indexed, searchable, required, final
 ) {
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
-            CanHaveSimpleChildReference<DO, SubModelDefinition<DO, D>>(
+            CanHaveSimpleChildReference(
                 this,
                 parentRefFactory()?.let {
                     it as CanHaveComplexChildReference<*, *>
@@ -52,7 +53,7 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
 
     override fun writeJsonValue(writer: JsonWriter, value: DO) = this.dataModel.writeJson(writer, value)
 
-    override fun readJson(reader: JsonReader) = this.dataModel.readJsonToObject(reader)
+    override fun readJson(context: IsPropertyContext?, reader: JsonReader) = this.dataModel.readJsonToObject(reader, context)
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: DO, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         // Set up container to store byte length
@@ -74,5 +75,6 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO>>(
         this.dataModel.writeProtoBuf(value, lengthCacheGetter, writer)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte) = this.dataModel.readProtoBufToObject(length, reader)
+    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte)
+            = this.dataModel.readProtoBufToObject(context, length, reader)
 }

@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
@@ -19,7 +20,7 @@ import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
-class MapDefinition<K: Any, V: Any>(
+class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = false,
@@ -28,11 +29,11 @@ class MapDefinition<K: Any, V: Any>(
         final: Boolean = false,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
-        val keyDefinition: AbstractValueDefinition<K>,
-        val valueDefinition: AbstractSubDefinition<V>
+        val keyDefinition: AbstractValueDefinition<K, CX>,
+        val valueDefinition: AbstractSubDefinition<V, CX>
 ) : AbstractPropertyDefinition<Map<K, V>>(
         name, index, indexed, searchable, required, final
-), HasSizeDefinition {
+), HasSizeDefinition, IsSerializablePropertyDefinition<Map<K, V>, CX> {
     init {
         assert(keyDefinition.required, { "Definition for key should be required on map: $name" })
         assert(valueDefinition.required, { "Definition for value should be required on map: $name" })
@@ -67,14 +68,14 @@ class MapDefinition<K: Any, V: Any>(
                 newValue.forEach { key, value ->
                     try {
                         this.keyDefinition.validate(null, key) {
-                            MapKeyReference(key, this.getRef(parentRefFactory) as PropertyReference<Map<K, V>, MapDefinition<K, V>>)
+                            MapKeyReference(key, this.getRef(parentRefFactory) as PropertyReference<Map<K, V>, MapDefinition<K, V, CX>>)
                         }
                     } catch (e: PropertyValidationException) {
                         addException(e)
                     }
                     try {
                         this.valueDefinition.validate(null, value) {
-                            MapValueReference(key, this.getRef(parentRefFactory) as PropertyReference<Map<K, V>, MapDefinition<K, V>>)
+                            MapValueReference(key, this.getRef(parentRefFactory) as PropertyReference<Map<K, V>, MapDefinition<K, V, CX>>)
                         }
                     } catch (e: PropertyValidationException) {
                         addException(e)
@@ -95,19 +96,19 @@ class MapDefinition<K: Any, V: Any>(
         writer.writeEndObject()
     }
 
-    override fun readJson(reader: JsonReader): Map<K, V> {
+    override fun readJson(context: CX?, reader: JsonReader): Map<K, V> {
         if (reader.currentToken !is JsonToken.START_OBJECT) {
             throw ParseException("JSON value for $name should be an Object")
         }
         val map: MutableMap<K, V> = mutableMapOf()
 
         while (reader.nextToken() !is JsonToken.END_OBJECT) {
-            val key = keyDefinition.fromString(reader.lastValue)
+            val key = keyDefinition.fromString(reader.lastValue, context)
             reader.nextToken()
 
             map.put(
                     key,
-                    valueDefinition.readJson(reader)
+                    valueDefinition.readJson(context, reader)
             )
         }
         return map
@@ -143,18 +144,21 @@ class MapDefinition<K: Any, V: Any>(
     }
 
     /** Read the transport bytes as a map
+     * @param context for contextual parameters in reading dynamic properties
      * @param reader to read bytes with for map
      * @return Pair of key value
      */
-    fun readMapTransportBytes(reader: () -> Byte): Pair<K, V> {
+    fun readMapTransportBytes(context: CX?, reader: () -> Byte): Pair<K, V> {
         val keyOfMapKey = ProtoBuf.readKey(reader)
         val key = keyDefinition.readTransportBytes(
+                context,
                 ProtoBuf.getLength(keyOfMapKey.wireType, reader),
                 reader
         )
 
         val keyOfMapValue = ProtoBuf.readKey(reader)
         val value = valueDefinition.readTransportBytes(
+                context,
                 ProtoBuf.getLength(keyOfMapValue.wireType, reader),
                 reader
         )

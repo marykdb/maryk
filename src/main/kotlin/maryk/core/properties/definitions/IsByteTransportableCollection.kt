@@ -1,23 +1,24 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WireType
 
 /** Interface with methods to read collection items from byte stream
  * @param <T> Type of collection item which is transported
  * @param <T> Collection containing type T
  */
-interface IsByteTransportableCollection<T: Any, out C: Collection<T>> {
+interface IsByteTransportableCollection<T: Any, out C: Collection<T>, in CX: IsPropertyContext> {
     /** Reads the transport bytes of a collection
      * @param length to read
      * @param reader to read with
      */
-    fun readCollectionTransportBytes(length: Int, reader: () -> Byte): T
+    fun readCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte): T
 
     /** Reads the packed transport bytes of a collection
      * @param length to read
      * @param reader to read with
      */
-    fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte): C
+    fun readPackedCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte): C
 
     /** Creates a new mutable collection of type T */
     fun newMutableCollection(): MutableCollection<T>

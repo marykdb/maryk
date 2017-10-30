@@ -1,6 +1,6 @@
 package maryk.core.properties.references
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 
 /**
@@ -12,5 +12,5 @@ open class CanHaveSimpleChildReference<T: Any, out D : IsPropertyDefinition<T>>(
         definition: D,
         parentReference: PropertyReference<*, *>? = null,
         indexable: Boolean = true,
-        dataModel: DataModel<*>? = parentReference?.parentDataModel
+        dataModel: IsDataModel<*>? = parentReference?.parentDataModel
 ) : PropertyReference<T, D>(definition, parentReference, indexable, dataModel)

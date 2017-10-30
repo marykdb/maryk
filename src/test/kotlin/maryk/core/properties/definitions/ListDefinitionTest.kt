@@ -20,12 +20,12 @@ import org.junit.Test
 import kotlin.test.assertTrue
 
 internal class ListDefinitionTest {
-    val subDef = StringDefinition(
+    private val subDef = StringDefinition(
             required = true,
             regEx = "T.*"
     )
 
-    val def = ListDefinition<String>(
+    private val def = ListDefinition(
             index = 3,
             name = "stringList",
             minSize = 2,
@@ -34,26 +34,26 @@ internal class ListDefinitionTest {
             valueDefinition = subDef
     )
 
-    val def2 = ListDefinition<String>(
+    private val def2 = ListDefinition(
             name = "stringList2",
             minSize = 2,
             maxSize = 4,
             valueDefinition = subDef
     )
 
-    val defVarInt = ListDefinition(
+    private val defVarInt = ListDefinition(
             name = "varIntList",
             index = 5,
             valueDefinition = NumberDefinition(type = UInt32, required = true)
     )
 
-    val def64Int = ListDefinition(
+    private val def64Int = ListDefinition(
             name = "64IntList",
             index = 6,
             valueDefinition = NumberDefinition(type = Float64, required = true)
     )
 
-    val def32Int = ListDefinition(
+    private val def32Int = ListDefinition(
             name = "32IntList",
             index = 7,
             valueDefinition = NumberDefinition(type = Float32, required = true)
@@ -121,6 +121,7 @@ internal class ListDefinitionTest {
         }
 
         fun readValue() = def.readCollectionTransportBytes(
+                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         )
@@ -170,7 +171,7 @@ internal class ListDefinitionTest {
         this.testPackedTransportConversion(def64Int, value, asHex, 6)
     }
 
-    private fun <T: Any> testPackedTransportConversion(def: ListDefinition<T>, list: List<T>, hex: String, index: Int) {
+    private fun <T: Any> testPackedTransportConversion(def: ListDefinition<T, *>, list: List<T>, hex: String, index: Int) {
         val bc = ByteCollectorWithLengthCacher()
 
         bc.reserve(
@@ -186,6 +187,7 @@ internal class ListDefinitionTest {
 
 
         val readList = def.readPackedCollectionTransportBytes(
+                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         )

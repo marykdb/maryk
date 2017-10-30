@@ -7,6 +7,7 @@ import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
 import maryk.core.objects.Def
 import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -23,7 +24,7 @@ internal class SubModelDefinitionTest {
                     regEx = "jur"
             )
         }
-        companion object: DataModel<MarykObject>(
+        companion object: DataModel<MarykObject, IsPropertyContext>(
                 construct = { MarykObject(it[0] as String)},
                 definitions = listOf(
                 Def(Properties.string, MarykObject::string)
@@ -74,6 +75,7 @@ internal class SubModelDefinitionTest {
         key.tag shouldBe 5
 
         def.readTransportBytes(
+                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         ) shouldBe value
@@ -91,6 +93,7 @@ internal class SubModelDefinitionTest {
         key.tag shouldBe 1
 
         def.readTransportBytes(
+                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, reader),
                 reader
         ) shouldBe value

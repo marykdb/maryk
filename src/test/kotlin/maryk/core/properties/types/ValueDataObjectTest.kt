@@ -28,7 +28,7 @@ internal class ValueDataObjectTest {
     @Test
     fun testConvertBytes() {
         val bytes = value._bytes
-        val new = TestValueObject.readFromBytes(bytes.iterator()::nextByte)
+        val new = TestValueObject.readFromBytes(null, bytes.iterator()::nextByte)
 
         new.compareTo(value) shouldBe 0
     }

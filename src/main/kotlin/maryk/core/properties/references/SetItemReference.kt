@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.SetDefinition
  */
 class SetItemReference<T: Any>(
         val value: T,
-        parentReference: PropertyReference<Set<T>, SetDefinition<T>>
+        parentReference: PropertyReference<Set<T>, SetDefinition<T, *>>
 ) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
 ), EmbeddedPropertyReference<T> {

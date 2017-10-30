@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.MapDefinition
  */
 class MapKeyReference<K: Any, V: Any>(
         val key: K,
-        parentReference: PropertyReference<Map<K,V>, MapDefinition<K, V>>
+        parentReference: PropertyReference<Map<K,V>, MapDefinition<K, V, *>>
 ) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>>(
         parentReference.propertyDefinition.keyDefinition, parentReference
 ), EmbeddedPropertyReference<K> {

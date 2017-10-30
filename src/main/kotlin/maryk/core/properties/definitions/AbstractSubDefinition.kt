@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.ByteLengthContainer
 
 /**
@@ -8,7 +9,7 @@ import maryk.core.protobuf.ByteLengthContainer
  * This is used for simple single value properties and not for lists and maps.
  * @param <T> Type of objects contained
  */
-abstract class AbstractSubDefinition<T: Any>(
+abstract class AbstractSubDefinition<T: Any, in CX: IsPropertyContext>(
         name: String?,
         index: Int,
         indexed: Boolean,
@@ -16,7 +17,8 @@ abstract class AbstractSubDefinition<T: Any>(
         required: Boolean,
         final: Boolean
 ) : AbstractPropertyDefinition<T>(
-        name, index, indexed, searchable, required, final) {
+        name, index, indexed, searchable, required, final
+), IsSerializablePropertyDefinition<T, CX> {
     override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit)
             = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher)
 
@@ -40,11 +42,12 @@ abstract class AbstractSubDefinition<T: Any>(
     abstract fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit)
 
     /** Convert to value from a byte reader
+     * @param context for contextual parameters for dynamic properties
      * @param length of bytes to read
      * @param reader to read bytes from
      * @return transported value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    abstract fun readTransportBytes(length: Int, reader:() -> Byte): T
+    abstract fun readTransportBytes(context: CX?, length: Int, reader:() -> Byte): T
 }

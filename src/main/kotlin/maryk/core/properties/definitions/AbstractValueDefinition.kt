@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -17,7 +18,7 @@ import maryk.core.protobuf.WireType
  * This is used for simple single value properties and not for lists and maps.
  * @param <T> Type of objects contained in property
  */
-abstract class AbstractValueDefinition<T: Any>(
+abstract class AbstractValueDefinition<T: Any, CX: IsPropertyContext>(
         name: String?,
         index: Int,
         indexed: Boolean,
@@ -25,17 +26,18 @@ abstract class AbstractValueDefinition<T: Any>(
         required: Boolean,
         final: Boolean,
         internal val wireType: WireType
-) : AbstractSubDefinition<T>(
+) : AbstractSubDefinition<T, CX>(
         name, index, indexed, searchable, required, final
 ) {
     /** Convert to value from a byte reader
+     * @param context for contextual parameters
      * @param length of bytes to read
      * @param reader to read bytes from
      * @return stored value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    abstract fun readStorageBytes(length: Int, reader:() -> Byte): T
+    abstract fun readStorageBytes(context: CX?, length: Int, reader:() -> Byte): T
 
     /** Calculate byte length of a value
      * @param value to calculate length of
@@ -48,7 +50,7 @@ abstract class AbstractValueDefinition<T: Any>(
      */
     abstract fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte) = readStorageBytes(length, reader)
+    override fun readTransportBytes(context: CX?, length: Int, reader: () -> Byte) = readStorageBytes(context, length, reader)
 
     /** Adds length to written bytes
      * @param value to write
@@ -114,12 +116,13 @@ abstract class AbstractValueDefinition<T: Any>(
 
     /**
      * Get the value from a string
+     * @param context with possible context values for Dynamic Json readers
      * @param string to convert
      * @return the value
      * @throws ParseException if conversion fails
      */
     @Throws(ParseException::class)
-    abstract fun fromString(string: String): T
+    abstract internal fun fromString(string: String, context: CX? = null): T
 
     /** Writes a value to Json
      * @param value: value to write
@@ -132,10 +135,10 @@ abstract class AbstractValueDefinition<T: Any>(
     }
 
     @Throws(ParseException::class)
-    override fun readJson(reader: JsonReader): T {
+    override fun readJson(context: CX?, reader: JsonReader): T {
         if (reader.currentToken !is JsonToken.OBJECT_VALUE && reader.currentToken !is JsonToken.ARRAY_VALUE) {
             throw ParseException("JSON value for $name should be a simple value")
         }
-        return this.fromString(reader.lastValue)
+        return this.fromString(reader.lastValue, context)
     }
 }

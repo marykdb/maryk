@@ -2,13 +2,14 @@ package maryk.core.objects
 
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.types.ValueDataObject
 
 abstract class ValueDataModel<DO: ValueDataObject>(
         constructor: (Map<Int, *>) -> DO,
-        definitions: List<Def<*, DO>>
-) : DataModel<DO>(constructor, definitions) {
+        definitions: List<Def<*, DO, IsPropertyContext>>
+) : DataModel<DO, IsPropertyContext>(constructor, definitions) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {
@@ -18,21 +19,22 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         size
     }
 
-    /** Converts bytes from reader to DataObject
+    /** Read bytes from reader to DataObject
+     * @param context for contextual parameters in reading dynamic properties
      * @param reader  to read from
      * @return converted DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     @Throws(DefNotFoundException::class)
-    fun readFromBytes(reader: () -> Byte): DO {
+    fun readFromBytes(context: IsPropertyContext?, reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
         this.definitions.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
 
             val def = it.propertyDefinition as IsFixedBytesEncodable<*>
             values.put(
-                    key = def.index.toInt(),
-                    value = def.readStorageBytes(def.byteSize, reader)
+                    key = def.index,
+                    value = def.readStorageBytes(context, def.byteSize, reader)
             )
         }
         return this.construct(values)
@@ -64,15 +66,16 @@ abstract class ValueDataModel<DO: ValueDataObject>(
     }
 
     /** Converts String to DataObject
+     * @param context for contextual parameters in dynamic properties
      * @param value to convert
      * @return converted DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     @Throws(DefNotFoundException::class)
-    fun fromString(value: String): DO {
+    fun fromString(value: String, context: IsPropertyContext? = null): DO {
         val b = Base64.decode(value)
         var index = 0
-        return this.readFromBytes({
+        return this.readFromBytes(context, {
             b[index++]
         })
     }

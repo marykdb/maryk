@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.PropertyReference
@@ -11,7 +12,7 @@ import maryk.core.protobuf.WireType
  * This is used for simple single value properties and not for lists and maps.
  * @param <T> Type of objects contained in property
  */
-abstract class AbstractSimpleDefinition<T: Comparable<T>>(
+abstract class AbstractSimpleDefinition<T: Comparable<T>, CX: IsPropertyContext>(
         name: String?,
         index: Int,
         indexed: Boolean,
@@ -22,7 +23,7 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>>(
         val unique: Boolean,
         val minValue: T?,
         val maxValue: T?
-) : AbstractValueDefinition<T>(
+) : AbstractValueDefinition<T, CX>(
         name, index, indexed, searchable, required, final, wireType
 ) {
     /**

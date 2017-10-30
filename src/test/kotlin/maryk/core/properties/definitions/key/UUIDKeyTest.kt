@@ -18,10 +18,10 @@ internal class UUIDKeyTest {
             )
         }
         companion object: RootDataModel<MarykObject>(
-            constructor = { MarykObject(it[0] as String) },
-            definitions = listOf(
-                    Def(Properties.value, MarykObject::value)
-            )
+                name = "MarykObject",
+                construct = { MarykObject(it[0] as String) }, definitions = listOf(
+                        Def(Properties.value, MarykObject::value)
+                )
         )
     }
 
@@ -38,7 +38,7 @@ internal class UUIDKeyTest {
         val specificDef = keyDef as UUIDKey
 
         var index = 0
-        val uuid = specificDef.readStorageBytes(key.size, {
+        val uuid = specificDef.readStorageBytes(null, key.size, {
             key.bytes[index++]
         })
 

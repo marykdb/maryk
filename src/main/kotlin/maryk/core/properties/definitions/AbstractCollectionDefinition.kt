@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
@@ -15,7 +16,7 @@ import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
-abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
+abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsPropertyContext>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = true,
@@ -24,10 +25,10 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         final: Boolean = false,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
-        val valueDefinition: AbstractValueDefinition<T>
+        val valueDefinition: AbstractValueDefinition<T, CX>
 ) : AbstractPropertyDefinition<C>(
         name, index, indexed, searchable, required, final
-), HasSizeDefinition, IsByteTransportableCollection<T, C> {
+), HasSizeDefinition, IsByteTransportableCollection<T, C, CX>, IsSerializablePropertyDefinition<C, CX> {
     init {
         assert(valueDefinition.required, { "Definition should have required=true on collection «$name»" })
     }
@@ -73,7 +74,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         writer.writeEndArray()
     }
 
-    override fun readJson(reader: JsonReader): C {
+    override fun readJson(context: CX?, reader: JsonReader): C {
         if (reader.currentToken !is JsonToken.START_ARRAY) {
             throw ParseException("JSON value for $name should be an Array")
         }
@@ -81,7 +82,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
 
         while (reader.nextToken() !is JsonToken.END_ARRAY) {
             collection.add(
-                    valueDefinition.readJson(reader)
+                    valueDefinition.readJson(context, reader)
             )
         }
         @Suppress("UNCHECKED_CAST")
@@ -132,10 +133,10 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         else -> false
     }
 
-    override fun readCollectionTransportBytes(length: Int, reader: () -> Byte)
-            = valueDefinition.readTransportBytes(length, reader)
+    override fun readCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte)
+            = valueDefinition.readTransportBytes(context, length, reader)
 
-    override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte): C {
+    override fun readPackedCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte): C {
         var byteCounter = 0
 
         val byteReader = {
@@ -146,7 +147,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>>(
         val collection = this.newMutableCollection()
 
         while (byteCounter < length) {
-            collection += valueDefinition.readTransportBytes(length, byteReader)
+            collection += valueDefinition.readTransportBytes(context, length, byteReader)
         }
 
         @Suppress("UNCHECKED_CAST")

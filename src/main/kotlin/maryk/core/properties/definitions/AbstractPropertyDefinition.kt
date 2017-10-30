@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.IsDataModel
 import maryk.core.properties.exceptions.PropertyAlreadySetException
 import maryk.core.properties.exceptions.PropertyRequiredException
 import maryk.core.properties.exceptions.PropertyValidationException
@@ -28,7 +28,7 @@ abstract class AbstractPropertyDefinition<T: Any>  (
         else -> {}
     }
 
-    fun <DM : Any> getValue(dataModel: DataModel<DM>, dataObject: DM): T {
+    fun <DM : Any> getValue(dataModel: IsDataModel<DM>, dataObject: DM): T {
         @Suppress("UNCHECKED_CAST")
         return dataModel.getPropertyGetter(
                 this.index

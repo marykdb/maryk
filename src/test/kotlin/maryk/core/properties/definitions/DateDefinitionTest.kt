@@ -32,7 +32,7 @@ internal class DateDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(bc.size, bc::read) shouldBe it
+            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -45,7 +45,7 @@ internal class DateDefinitionTest {
                 def.calculateTransportByteLength(it)
             )
             def.writeTransportBytes(it, bc::write)
-            def.readTransportBytes(bc.size, bc::read) shouldBe it
+            def.readTransportBytes(null, bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

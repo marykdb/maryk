@@ -1,9 +1,10 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.SetItemReference
 
-class SetDefinition<T: Any>(
+class SetDefinition<T: Any, CX: IsPropertyContext>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = false,
@@ -12,8 +13,8 @@ class SetDefinition<T: Any>(
         final: Boolean = false,
         minSize: Int? = null,
         maxSize: Int? = null,
-        valueDefinition: AbstractValueDefinition<T>
-) : AbstractCollectionDefinition<T, Set<T>>(
+        valueDefinition: AbstractValueDefinition<T, CX>
+) : AbstractCollectionDefinition<T, Set<T>, CX>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
 ), HasSizeDefinition {
     override fun getSize(newValue: Set<T>) = newValue.size
@@ -26,7 +27,7 @@ class SetDefinition<T: Any>(
                 @Suppress("UNCHECKED_CAST")
                 SetItemReference(
                         it,
-                        getRef(parentRefFactory) as PropertyReference<Set<T>, SetDefinition<T>>
+                        getRef(parentRefFactory) as PropertyReference<Set<T>, SetDefinition<T, CX>>
                 )
             }
         }

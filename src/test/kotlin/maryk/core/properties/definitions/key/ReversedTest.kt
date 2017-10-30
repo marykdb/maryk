@@ -30,15 +30,15 @@ internal class ReversedTest {
             )
         }
         companion object: RootDataModel<MarykObject>(
-            constructor = { MarykObject(it[0] as Boolean, it[1] as DateTime) },
-            keyDefinitions = definitions(
-                    Reversed(Properties.boolean),
-                    Reversed(Properties.dateTime)
-            ),
-            definitions = listOf(
-                    Def(Properties.boolean, MarykObject::boolean),
-                    Def(Properties.dateTime, MarykObject::dateTime)
-            )
+                name = "MarykObject",
+                construct = { MarykObject(it[0] as Boolean, it[1] as DateTime) },
+                keyDefinitions = definitions(
+                        Reversed(Properties.boolean),
+                        Reversed(Properties.dateTime)
+                ), definitions = listOf(
+                        Def(Properties.boolean, MarykObject::boolean),
+                        Def(Properties.dateTime, MarykObject::dateTime)
+                )
         )
     }
 
@@ -58,7 +58,7 @@ internal class ReversedTest {
             val bc = ByteCollector()
             bc.reserve(8)
             this.writeStorageBytes(dt, bc::write)
-            this.readStorageBytes(bc.size, bc::read) shouldBe dt
+            this.readStorageBytes(null, bc.size, bc::read) shouldBe dt
         }
 
         key.toHex() shouldBe "fe017fffffa6540703"

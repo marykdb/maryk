@@ -15,13 +15,13 @@ import org.junit.Test
 import kotlin.test.assertTrue
 
 internal class SetDefinitionTest {
-    val subDef = StringDefinition(
+    private val subDef = StringDefinition(
             name = "string",
             regEx = "T.*",
             required = true
     )
 
-    val def = SetDefinition<String>(
+    private val def = SetDefinition(
             name = "stringSet",
             index = 4,
             minSize = 2,
@@ -30,7 +30,7 @@ internal class SetDefinitionTest {
             valueDefinition = subDef
     )
 
-    val def2 = SetDefinition<String>(
+    private val def2 = SetDefinition(
             name = "stringSet",
             valueDefinition = subDef
     )
@@ -91,6 +91,7 @@ internal class SetDefinitionTest {
         }
 
         fun readValue() = def.readCollectionTransportBytes(
+                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         )

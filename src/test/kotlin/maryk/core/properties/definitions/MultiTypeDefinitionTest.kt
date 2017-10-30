@@ -77,6 +77,7 @@ internal class MultiTypeDefinitionTest {
             key.tag shouldBe 6
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             def.readTransportBytes(
+                    null,
                     ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                     bc::read
             ) shouldBe it

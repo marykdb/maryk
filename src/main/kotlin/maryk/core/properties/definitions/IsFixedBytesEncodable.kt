@@ -1,7 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.DataModel
+import maryk.core.objects.IsDataModel
+import maryk.core.properties.IsPropertyContext
 
 /** Interface to define something can be en/decoded to fixed byte array */
 interface IsFixedBytesEncodable<T: Any> {
@@ -12,13 +13,14 @@ interface IsFixedBytesEncodable<T: Any> {
     val index: Int
 
     /** Convert to value from a byte reader
+     * @param context for contextual parameters in dynamic properties
      * @param length of bytes to read
      * @param reader to read bytes from
      * @return stored value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    fun readStorageBytes(length: Int, reader:() -> Byte): T
+    fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte): T
 
     /** Calculates the byte size of the storage bytes */
     fun calculateStorageByteLength(value: Boolean) = byteSize
@@ -33,5 +35,5 @@ interface IsFixedBytesEncodable<T: Any> {
      * @param dataModel to use to fetch property if relevant
      * @param dataObject to get property from
      */
-    fun <DO: Any> getValue(dataModel: DataModel<DO>, dataObject: DO): T
+    fun <DO: Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO): T
 }

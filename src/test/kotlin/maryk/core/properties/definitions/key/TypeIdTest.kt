@@ -6,6 +6,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractSubDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -21,20 +22,20 @@ internal class TypeIdTest {
             val multi = MultiTypeDefinition(
                     name = "multi",
                     index = 0,
-                    typeMap = mapOf<Int, AbstractSubDefinition<*>>(
+                    typeMap = mapOf<Int, AbstractSubDefinition<*, IsPropertyContext>>(
                             0 to StringDefinition(),
                             1 to BooleanDefinition()
                     )
             )
         }
         companion object: RootDataModel<MarykObject>(
-            constructor = { MarykObject(it[0] as TypedValue<*>) },
-            keyDefinitions = definitions(
-                    TypeId(Properties.multi)
-            ),
-            definitions = listOf(
-                Def(Properties.multi, MarykObject::multi)
-            )
+                name = "MarykObject",
+                construct = { MarykObject(it[0] as TypedValue<*>) },
+                keyDefinitions = definitions(
+                        TypeId(Properties.multi)
+                ), definitions = listOf(
+                    Def(Properties.multi, MarykObject::multi)
+                )
         )
     }
 
@@ -58,6 +59,6 @@ internal class TypeIdTest {
         val bc = ByteCollector()
         bc.reserve(2)
         specificDef.writeStorageBytes(1, bc::write)
-        specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1
+        specificDef.readStorageBytes(null, bc.size, bc::read) shouldBe 1
     }
 }

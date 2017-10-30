@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.IsTemporal
 import maryk.core.protobuf.WireType
 
@@ -19,7 +20,7 @@ abstract class AbstractMomentDefinition<T: IsTemporal<T>>(
         minValue: T?,
         maxValue: T?,
         val fillWithNow: Boolean
-) : AbstractSimpleDefinition<T>(
+) : AbstractSimpleDefinition<T, IsPropertyContext>(
         name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue
 ) {
     /** @return a new value representing the current time */

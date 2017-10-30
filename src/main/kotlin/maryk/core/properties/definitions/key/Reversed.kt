@@ -1,7 +1,8 @@
 package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.MAXBYTE
-import maryk.core.objects.DataModel
+import maryk.core.objects.IsDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import kotlin.experimental.xor
 
@@ -11,7 +12,7 @@ class Reversed<T: Any>(
     override val index: Int = definition.index
 
     override val byteSize = definition.byteSize
-    override fun <DO : Any> getValue(dataModel: DataModel<DO>, dataObject: DO) = definition.getValue(dataModel, dataObject)
+    override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO) = definition.getValue(dataModel, dataObject)
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
         definition.writeStorageBytes(value) {
@@ -19,8 +20,8 @@ class Reversed<T: Any>(
         }
     }
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte): T {
-        return definition.readStorageBytes(byteSize) {
+    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte): T {
+        return definition.readStorageBytes(context, byteSize) {
             MAXBYTE xor reader()
         }
     }

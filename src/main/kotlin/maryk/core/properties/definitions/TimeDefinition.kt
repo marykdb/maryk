@@ -31,10 +31,10 @@ class TimeDefinition(
 
     override fun createNow() = Time.nowUTC()
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte)
+    override fun readStorageBytes(length: Int, reader: () -> Byte)
             = Time.fromByteReader(length, reader)
 
-    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte) = when(this.precision) {
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = when(this.precision) {
         TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
         TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
     }
@@ -44,7 +44,7 @@ class TimeDefinition(
         TimePrecision.MILLIS -> value.toMillisOfDay().calculateVarByteLength()
     }
 
-    override fun writeTransportBytes(value: Time, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytes(value: Time, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         val toEncode = when(this.precision) {
             TimePrecision.SECONDS -> value.toSecondsOfDay()
             TimePrecision.MILLIS -> value.toMillisOfDay()
@@ -53,5 +53,5 @@ class TimeDefinition(
     }
 
     @Throws(ParseException::class)
-    override fun fromString(string: String, context: IsPropertyContext?) = Time.parse(string)
+    override fun fromString(string: String) = Time.parse(string)
 }

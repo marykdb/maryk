@@ -37,16 +37,16 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) = value._bytes.writeBytes(writer)
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte)
-            = this.dataModel.readFromBytes(context, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte)
+            = this.dataModel.readFromBytes(reader)
 
     override fun calculateTransportByteLength(value: DO) = this.dataModel.byteSize
 
     override fun asString(value: DO) = value.toBase64()
 
     @Throws(ParseException::class)
-    override fun fromString(string: String, context: IsPropertyContext?) = try {
-        this.dataModel.fromString(string, context)
+    override fun fromString(string: String) = try {
+        this.dataModel.fromString(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
@@ -73,8 +73,8 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
      * @param value: value to write
      * @param writer: to write json to
      */
-    override fun writeJsonValue(writer: JsonWriter, value: DO) = dataModel.writeJson(writer, value)
+    override fun writeJsonValue(value: DO, writer: JsonWriter, context: IsPropertyContext?) = dataModel.writeJson(value, writer, context)
 
     @Throws(ParseException::class)
-    override fun readJson(context: IsPropertyContext?, reader: JsonReader): DO = dataModel.readJsonToObject(reader, context)
+    override fun readJson(reader: JsonReader, context: IsPropertyContext?): DO = dataModel.readJsonToObject(reader, context)
 }

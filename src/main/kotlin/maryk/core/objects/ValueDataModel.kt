@@ -6,10 +6,15 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.types.ValueDataObject
 
+/** DataModel for objects that can be encoded in fixed length width
+ * @param construct: Constructs object out of a map with values keyed on index.
+ * @param definitions: All definitions for properties contained in this model
+ * @param DO: Type of DataObject contained
+ */
 abstract class ValueDataModel<DO: ValueDataObject>(
-        constructor: (Map<Int, *>) -> DO,
+        construct: (Map<Int, *>) -> DO,
         definitions: List<Def<*, DO, IsPropertyContext>>
-) : DataModel<DO, IsPropertyContext>(constructor, definitions) {
+) : DataModel<DO, IsPropertyContext>(construct, definitions) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {
@@ -20,13 +25,12 @@ abstract class ValueDataModel<DO: ValueDataObject>(
     }
 
     /** Read bytes from reader to DataObject
-     * @param context for contextual parameters in reading dynamic properties
      * @param reader  to read from
      * @return converted DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     @Throws(DefNotFoundException::class)
-    fun readFromBytes(context: IsPropertyContext?, reader: () -> Byte): DO {
+    fun readFromBytes(reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
         this.definitions.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
@@ -34,7 +38,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
             val def = it.propertyDefinition as IsFixedBytesEncodable<*>
             values.put(
                     key = def.index,
-                    value = def.readStorageBytes(context, def.byteSize, reader)
+                    value = def.readStorageBytes(def.byteSize, reader)
             )
         }
         return this.construct(values)
@@ -53,9 +57,9 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         this.definitions.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it.propertyDefinition as IsFixedBytesEncodable<in Any>
-            def.writeStorageBytes(inputs[index]) {
+            def.writeStorageBytes(inputs[index], {
                 bytes[offset++] = it
-            }
+            })
 
             if(offset < bytes.size) {
                 bytes[offset++] = 1 // separator byte
@@ -66,16 +70,15 @@ abstract class ValueDataModel<DO: ValueDataObject>(
     }
 
     /** Converts String to DataObject
-     * @param context for contextual parameters in dynamic properties
      * @param value to convert
      * @return converted DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     @Throws(DefNotFoundException::class)
-    fun fromString(value: String, context: IsPropertyContext? = null): DO {
+    fun fromString(value: String): DO {
         val b = Base64.decode(value)
         var index = 0
-        return this.readFromBytes(context, {
+        return this.readFromBytes({
             b[index++]
         })
     }

@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
+import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition for Date properties */
@@ -27,21 +28,21 @@ class DateDefinition(
 
     override fun createNow() = Date.nowUTC()
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) = Date.fromByteReader(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = Date.fromByteReader(reader)
 
     override fun calculateStorageByteLength(value: Date) = this.byteSize
 
     override fun writeStorageBytes(value: Date, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
-    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte) = Date.ofEpochDay(initLongByVar(reader))
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = Date.ofEpochDay(initLongByVar(reader))
 
     override fun calculateTransportByteLength(value: Date) = value.epochDay.calculateVarByteLength()
 
-    override fun writeTransportBytes(value: Date, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytes(value: Date, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         val epochDay = value.epochDay
         epochDay.writeVarBytes(writer)
     }
 
     @Throws(ParseException::class)
-    override fun fromString(string: String, context: IsPropertyContext?) = Date.parse(string)
+    override fun fromString(string: String) = Date.parse(string)
 }

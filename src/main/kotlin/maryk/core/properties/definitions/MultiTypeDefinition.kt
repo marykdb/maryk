@@ -48,18 +48,18 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         }
     }
 
-    override fun writeJsonValue(writer: JsonWriter, value: TypedValue<Any>) {
+    override fun writeJsonValue(value: TypedValue<*>, writer: JsonWriter, context: CX?) {
         writer.writeStartArray()
         writer.writeValue(value.typeIndex.toString())
         @Suppress("UNCHECKED_CAST")
         val definition = this.typeMap[value.typeIndex] as AbstractSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("No def found for index ${value.typeIndex} for $name")
 
-        definition.writeJsonValue(writer, value.value)
+        definition.writeJsonValue(value.value, writer, context)
         writer.writeEndArray()
     }
 
-    override fun readJson(context: CX?, reader: JsonReader): TypedValue<*> {
+    override fun readJson(reader: JsonReader, context: CX?): TypedValue<*> {
         if(reader.nextToken() !is JsonToken.ARRAY_VALUE) {
             throw ParseException("Expected an array value at start")
         }
@@ -75,14 +75,14 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         val definition: AbstractSubDefinition<*, CX>? = this.typeMap[index]
                 ?: throw ParseException("Unknown multitype index ${reader.lastValue} for $name")
 
-        val value = definition!!.readJson(context, reader)
+        val value = definition!!.readJson(reader, context)
 
         reader.nextToken() // skip end object
 
         return TypedValue(index, value)
     }
 
-    override fun readTransportBytes(context: CX?, length: Int, reader: () -> Byte): TypedValue<*> {
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): TypedValue<*> {
         // First the type value
         ProtoBuf.readKey(reader)
         val typeIndex = initIntByVar(reader)
@@ -92,9 +92,9 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         val def = this.typeMap[typeIndex] ?: throw ParseException("Unknown multitype index $typeIndex for $name")
 
         val value = def.readTransportBytes(
-                context,
                 ProtoBuf.getLength(key.wireType, reader),
-                reader
+                reader,
+                context
         )
 
         return TypedValue(
@@ -103,7 +103,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         )
     }
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: TypedValue<*>, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: TypedValue<*>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         // Cache length for length delimiter
         val container = ByteLengthContainer()
         lengthCacher(container)
@@ -116,7 +116,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         // value
         @Suppress("UNCHECKED_CAST")
         val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any, CX>
-        totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, lengthCacher)
+        totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, lengthCacher, context)
 
         container.length = totalByteLength
 
@@ -125,10 +125,10 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
         lengthCacheGetter().writeVarBytes(writer)
-        this.writeTransportBytes(value, lengthCacheGetter, writer)
+        this.writeTransportBytes(context, value, lengthCacheGetter, writer)
     }
 
     /** Write transport bytes for MultiType
@@ -137,12 +137,12 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
      * @param lengthCacheGetter to fetch cached length of value if needed
      * @param writer to write the bytes with
      */
-    fun writeTransportBytes(value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    fun writeTransportBytes(context: CX?, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
         value.typeIndex.writeVarBytes(writer)
 
         @Suppress("UNCHECKED_CAST")
         val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any, CX>
-        def.writeTransportBytesWithKey(2, value.value, lengthCacheGetter, writer)
+        def.writeTransportBytesWithKey(2, value.value, lengthCacheGetter, writer, context)
     }
 }

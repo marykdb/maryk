@@ -21,7 +21,7 @@ class BooleanDefinition(
 ), IsFixedBytesEncodable<Boolean> {
     override val byteSize = 1
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) = initBoolean(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = initBoolean(reader)
 
     override fun calculateStorageByteLength(value: Boolean) = this.byteSize
 
@@ -29,17 +29,14 @@ class BooleanDefinition(
 
     override fun calculateTransportByteLength(value: Boolean) = this.byteSize
 
-    override fun writeTransportBytes(value: Boolean, writer: (byte: Byte) -> Unit)
-            = writeStorageBytes(value, writer)
-
     @Throws(ParseException::class)
-    override fun fromString(string: String, context: IsPropertyContext?) = when(string) {
+    override fun fromString(string: String) = when(string) {
         "true" -> true
         "false" -> false
         else -> throw ParseException(string)
     }
 
-    override fun writeJsonValue(writer: JsonWriter, value: Boolean) {
+    override fun writeJsonValue(value: Boolean, writer: JsonWriter, context: IsPropertyContext?) {
         writer.writeValue(
                 this.asString(value)
         )

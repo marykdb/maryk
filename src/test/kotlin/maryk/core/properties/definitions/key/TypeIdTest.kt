@@ -59,6 +59,6 @@ internal class TypeIdTest {
         val bc = ByteCollector()
         bc.reserve(2)
         specificDef.writeStorageBytes(1, bc::write)
-        specificDef.readStorageBytes(null, bc.size, bc::read) shouldBe 1
+        specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1
     }
 }

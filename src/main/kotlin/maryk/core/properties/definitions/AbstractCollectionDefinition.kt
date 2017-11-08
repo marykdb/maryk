@@ -66,15 +66,15 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
     /** Creates a new mutable instance of the collection */
     abstract override fun newMutableCollection(): MutableCollection<T>
 
-    override fun writeJsonValue(writer: JsonWriter, value: C) {
+    override fun writeJsonValue(value: C, writer: JsonWriter, context: CX?) {
         writer.writeStartArray()
         value.forEach {
-            valueDefinition.writeJsonValue(writer, it)
+            valueDefinition.writeJsonValue(it, writer, context)
         }
         writer.writeEndArray()
     }
 
-    override fun readJson(context: CX?, reader: JsonReader): C {
+    override fun readJson(reader: JsonReader, context: CX?): C {
         if (reader.currentToken !is JsonToken.START_ARRAY) {
             throw ParseException("JSON value for $name should be an Array")
         }
@@ -82,14 +82,14 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
 
         while (reader.nextToken() !is JsonToken.END_ARRAY) {
             collection.add(
-                    valueDefinition.readJson(context, reader)
+                    valueDefinition.readJson(reader, context)
             )
         }
         @Suppress("UNCHECKED_CAST")
         return collection as C
     }
 
-    override fun calculateTransportByteLengthWithKey(value: C, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(value: C, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         var totalByteSize = 0
         when(this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
@@ -98,7 +98,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
                 lengthCacher(container)
 
                 value.forEach { item ->
-                    totalByteSize += valueDefinition.calculateTransportByteLength(item)
+                    totalByteSize += valueDefinition.calculateTransportByteLength(item, lengthCacher, context)
                 }
                 container.length = totalByteSize
 
@@ -106,24 +106,24 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
                 totalByteSize += container.length.calculateVarByteLength()
             }
             else -> value.forEach { item ->
-                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(this.index, item, lengthCacher)
+                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(this.index, item, lengthCacher, context)
             }
         }
 
         return totalByteSize
     }
 
-    override fun writeTransportBytesWithKey(value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytesWithKey(value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         when(this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
                 ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, writer)
                 lengthCacheGetter().writeVarBytes(writer)
                 value.forEach { item ->
-                    valueDefinition.writeTransportBytes(item, writer)
+                    valueDefinition.writeTransportBytes(item, lengthCacheGetter, writer, context)
                 }
             }
             else -> value.forEach { item ->
-                valueDefinition.writeTransportBytesWithKey(this.index, item, lengthCacheGetter, writer)
+                valueDefinition.writeTransportBytesWithKey(this.index, item, lengthCacheGetter, writer, context)
             }
         }
     }
@@ -134,7 +134,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
     }
 
     override fun readCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte)
-            = valueDefinition.readTransportBytes(context, length, reader)
+            = valueDefinition.readTransportBytes(length, reader, context)
 
     override fun readPackedCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte): C {
         var byteCounter = 0
@@ -147,7 +147,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
         val collection = this.newMutableCollection()
 
         while (byteCounter < length) {
-            collection += valueDefinition.readTransportBytes(context, length, byteReader)
+            collection += valueDefinition.readTransportBytes(length, byteReader, context)
         }
 
         @Suppress("UNCHECKED_CAST")

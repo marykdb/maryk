@@ -34,7 +34,7 @@ class StringDefinition(
         }
     }
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) = initString(length, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = initString(length, reader)
 
     override fun calculateStorageByteLength(value: String) = value.calculateUTF8ByteLength()
 
@@ -44,7 +44,7 @@ class StringDefinition(
 
     override fun asString(value: String) = value
 
-    override fun fromString(string: String, context: IsPropertyContext?) = string
+    override fun fromString(string: String) = string
 
     @Throws(PropertyValidationException::class)
     override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> PropertyReference<*, *>?) {

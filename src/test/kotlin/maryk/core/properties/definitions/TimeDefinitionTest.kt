@@ -10,6 +10,7 @@ import org.junit.Test
 import java.time.LocalTime
 import java.time.ZoneOffset
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(
@@ -46,7 +47,7 @@ internal class TimeDefinitionTest {
                     defMilli.calculateStorageByteLength(it)
             )
             defMilli.writeStorageBytes(it, bc::write)
-            defMilli.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -59,7 +60,7 @@ internal class TimeDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -68,9 +69,9 @@ internal class TimeDefinitionTest {
     fun convertTransportBytesSeconds() {
         val bc = ByteCollector()
         timesToTestSeconds.forEach {
-            bc.reserve(def.calculateTransportByteLength(it))
-            def.writeTransportBytes(it, bc::write)
-            def.readTransportBytes(null, bc.size, bc::read) shouldBe it
+            bc.reserve(def.calculateTransportByteLength(it, { fail("Should not call") }))
+            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -79,9 +80,9 @@ internal class TimeDefinitionTest {
     fun convertTransportBytesMillis() {
         val bc = ByteCollector()
         timesToTestMillis.forEach {
-            bc.reserve(defMilli.calculateTransportByteLength(it))
-            defMilli.writeTransportBytes(it, bc::write)
-            defMilli.readTransportBytes(null, bc.size, bc::read) shouldBe it
+            bc.reserve(defMilli.calculateTransportByteLength(it, { fail("Should not call") }))
+            defMilli.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

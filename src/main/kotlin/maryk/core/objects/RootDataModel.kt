@@ -14,9 +14,15 @@ fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
 
 /** DataModel which is on root level so it can be stored and thus can have a key
  * If no key is defined the datamodel will get a UUID
+ *
+ * @param name: Name of the datamodel. Used also to resolve DataModels
+ * @param construct: Constructs object out of a map with values keyed on index.
+ * @param keyDefinitions: Ordered array with all key part definitions
+ * @param definitions: All definitions for properties contained in this model
+ * @param DM: Type of DataModel contained
  */
 abstract class RootDataModel<DM: Any>(
-        val name: String?,
+        val name: String,
         construct: (Map<Int, *>) -> DM,
         keyDefinitions: Array<IsFixedBytesEncodable<out Any>> = arrayOf(UUIDKey),
         definitions: List<Def<*, DM, IsPropertyContext>>
@@ -73,9 +79,9 @@ abstract class RootDataModel<DM: Any>(
                 val value = it.getValue(this@RootDataModel, dataObject)
 
                 @Suppress("UNCHECKED_CAST")
-                (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
+                (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value, {
                     bytes[index++] = it
-                }
+                })
 
                 // Add separator
                 if (index < this.size) {

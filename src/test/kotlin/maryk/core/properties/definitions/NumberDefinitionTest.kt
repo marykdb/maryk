@@ -53,7 +53,7 @@ internal class NumberDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -70,7 +70,6 @@ internal class NumberDefinitionTest {
             key.wireType shouldBe WireType.VAR_INT
             key.tag shouldBe -1
             def.readTransportBytes(
-                    null,
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
             ) shouldBe value
@@ -90,7 +89,6 @@ internal class NumberDefinitionTest {
             key.wireType shouldBe WireType.BIT_32
             key.tag shouldBe -1
             defFloat32.readTransportBytes(
-                    null,
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
             ) shouldBe value

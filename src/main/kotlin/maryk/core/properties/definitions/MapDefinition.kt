@@ -29,7 +29,7 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         final: Boolean = false,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
-        val keyDefinition: AbstractValueDefinition<K, CX>,
+        val keyDefinition: AbstractSimpleValueDefinition<K, CX>,
         val valueDefinition: AbstractSubDefinition<V, CX>
 ) : AbstractPropertyDefinition<Map<K, V>>(
         name, index, indexed, searchable, required, final
@@ -85,36 +85,36 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         }
     }
 
-    override fun writeJsonValue(writer: JsonWriter, value: Map<K, V>) {
+    override fun writeJsonValue(value: Map<K, V>, writer: JsonWriter, context: CX?) {
         writer.writeStartObject()
         value.forEach { k, v ->
             writer.writeFieldName(
                     keyDefinition.asString(k)
             )
-            valueDefinition.writeJsonValue(writer, v)
+            valueDefinition.writeJsonValue(v, writer, context)
         }
         writer.writeEndObject()
     }
 
-    override fun readJson(context: CX?, reader: JsonReader): Map<K, V> {
+    override fun readJson(reader: JsonReader, context: CX?): Map<K, V> {
         if (reader.currentToken !is JsonToken.START_OBJECT) {
             throw ParseException("JSON value for $name should be an Object")
         }
         val map: MutableMap<K, V> = mutableMapOf()
 
         while (reader.nextToken() !is JsonToken.END_OBJECT) {
-            val key = keyDefinition.fromString(reader.lastValue, context)
+            val key = keyDefinition.fromString(reader.lastValue)
             reader.nextToken()
 
             map.put(
                     key,
-                    valueDefinition.readJson(context, reader)
+                    valueDefinition.readJson(reader, context)
             )
         }
         return map
     }
 
-    override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         var totalByteLength = 0
         value.forEach { key, item ->
             totalByteLength += ProtoBuf.calculateKeyLength(this.index)
@@ -124,8 +124,8 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             lengthCacher(container)
 
             var fieldLength = 0
-            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, lengthCacher)
-            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, lengthCacher)
+            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, lengthCacher, context)
+            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, lengthCacher, context)
             fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
             container.length = fieldLength // set length for value
 
@@ -134,33 +134,33 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytesWithKey(value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         value.forEach { key, item ->
             ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, writer)
             lengthCacheGetter().writeVarBytes(writer)
-            keyDefinition.writeTransportBytesWithKey(1, key, lengthCacheGetter, writer)
-            valueDefinition.writeTransportBytesWithKey(2, item, lengthCacheGetter, writer)
+            keyDefinition.writeTransportBytesWithKey(1, key, lengthCacheGetter, writer, context)
+            valueDefinition.writeTransportBytesWithKey(2, item, lengthCacheGetter, writer, context)
         }
     }
 
     /** Read the transport bytes as a map
-     * @param context for contextual parameters in reading dynamic properties
      * @param reader to read bytes with for map
+     * @param context for contextual parameters in reading dynamic properties
      * @return Pair of key value
      */
-    fun readMapTransportBytes(context: CX?, reader: () -> Byte): Pair<K, V> {
+    fun readMapTransportBytes(reader: () -> Byte, context: CX? = null): Pair<K, V> {
         val keyOfMapKey = ProtoBuf.readKey(reader)
         val key = keyDefinition.readTransportBytes(
-                context,
                 ProtoBuf.getLength(keyOfMapKey.wireType, reader),
-                reader
+                reader,
+                context
         )
 
         val keyOfMapValue = ProtoBuf.readKey(reader)
         val value = valueDefinition.readTransportBytes(
-                context,
                 ProtoBuf.getLength(keyOfMapValue.wireType, reader),
-                reader
+                reader,
+                context
         )
 
         return Pair(key, value)

@@ -13,7 +13,7 @@ class SetDefinition<T: Any, CX: IsPropertyContext>(
         final: Boolean = false,
         minSize: Int? = null,
         maxSize: Int? = null,
-        valueDefinition: AbstractValueDefinition<T, CX>
+        valueDefinition: AbstractSimpleValueDefinition<T, CX>
 ) : AbstractCollectionDefinition<T, Set<T>, CX>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
 ), HasSizeDefinition {

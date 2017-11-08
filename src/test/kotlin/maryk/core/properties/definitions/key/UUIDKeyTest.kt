@@ -38,7 +38,7 @@ internal class UUIDKeyTest {
         val specificDef = keyDef as UUIDKey
 
         var index = 0
-        val uuid = specificDef.readStorageBytes(null, key.size, {
+        val uuid = specificDef.readStorageBytes(key.size, {
             key.bytes[index++]
         })
 

@@ -24,6 +24,11 @@ class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: 
 /**
  * A Data Model for converting and validating DataObjects
  * @param <DO> Type of DataObject which is modeled
+ *
+ * @param construct: Constructs object out of a map with values keyed on index.
+ * @param definitions: All definitions for properties contained in this model
+ * @param DM: Type of DataModel contained
+ * @param CX: Type of context object
  */
 open class DataModel<DO: Any, in CX: IsPropertyContext>(
         val construct: (Map<Int, *>) -> DO,
@@ -93,8 +98,9 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     /** Convert an object to JSON
      * @param writer to write JSON with
      * @param obj to write to JSON
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeJson(writer: JsonWriter, obj: DO) {
+    fun writeJson(obj: DO, writer: JsonWriter, context: CX? = null) {
         writer.writeStartObject()
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO, CX>>) {
@@ -103,7 +109,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
 
             writer.writeFieldName(name)
 
-            def.propertyDefinition.writeJsonValue(writer, value)
+            def.propertyDefinition.writeJsonValue(value, writer, context)
         }
         writer.writeEndObject()
     }
@@ -111,8 +117,9 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     /** Convert a map with values to JSON
      * @param writer to generate JSON with
      * @param map with values to write to JSON
+     * @param context (optional)  with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeJson(writer: JsonWriter, map: Map<Int, Any>) {
+    fun writeJson(map: Map<Int, Any>, writer: JsonWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
@@ -120,14 +127,14 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
             val name = def.propertyDefinition.name!!
 
             writer.writeFieldName(name)
-            def.propertyDefinition.writeJsonValue(writer, value)
+            def.propertyDefinition.writeJsonValue(value, writer, context)
         }
         writer.writeEndObject()
     }
 
     /** Convert to a DataModel from JSON
      * @param reader to read JSON with
-     * @param context with context parameters for conversion (for dynamically dependent properties)
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      * @return map with all the values
      */
     fun readJson(reader: JsonReader, context: CX? = null): Map<Int, Any> {
@@ -154,7 +161,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
 
                         valueMap.put(
                                 definition.index,
-                                definition.readJson(context, reader)
+                                definition.readJson(reader, context)
                         )
                     }
                 }
@@ -168,7 +175,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
 
     /** Convert to a DataModel from JSON
      * @param reader to read JSON with
-     * @param context with context parameters for conversion (for dynamically dependent properties)
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      * @return DataObject represented by the JSON
      */
     fun readJsonToObject(reader: JsonReader, context: CX? = null) = construct(this.readJson(reader, context))
@@ -176,14 +183,15 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     /** Calculates the byte length for the DataObject contained in map
      * @param map with values to calculate byte length for
      * @param lengthCacher to cache byte lengths
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      * @return total bytesize of object
      */
-    fun calculateProtoBufLength(map: Map<Int, Any>, lengthCacher: (length: ByteLengthContainer) -> Unit) : Int {
+    fun calculateProtoBufLength(map: Map<Int, Any>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null) : Int {
         var totalByteLength = 0
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
             val def = indexToDefinition[key] as Def<Any, DO, CX>? ?: continue
-            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
+            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher, context)
         }
         return totalByteLength
     }
@@ -191,14 +199,15 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     /** Calculates the byte length for the DataObject
      * @param obj to calculate byte length for
      * @param lengthCacher to cache byte lengths
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      * @return total bytesize of object
      */
-    fun calculateProtoBufLength(obj: DO, lengthCacher: (length: ByteLengthContainer) -> Unit) : Int {
+    fun calculateProtoBufLength(obj: DO, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null) : Int {
         var totalByteLength = 0
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO, CX>>) {
             val value = def.propertyGetter(obj) ?: continue
-            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher)
+            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher, context)
         }
         return totalByteLength
     }
@@ -207,12 +216,13 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
      * @param map to write
      * @param lengthCacheGetter to get next length
      * @param writer to write bytes with
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
             @Suppress("UNCHECKED_CAST")
             val def = indexToDefinition[key] as Def<Any, DO, CX>? ?: continue
-            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer)
+            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer, context)
         }
     }
 
@@ -220,29 +230,23 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
      * @param obj DataObject to write
      * @param lengthCacheGetter to get next length
      * @param writer to write bytes with
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeProtoBuf(obj: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    fun writeProtoBuf(obj: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null) {
         @Suppress("UNCHECKED_CAST")
         for (def in definitions as List<Def<Any, DO, CX>>) {
             val value = def.propertyGetter(obj) ?: continue
-            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer)
+            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer, context)
         }
     }
 
     /** Convert to a Map of values from ProtoBuf
      * @param length of bytes to read.
      * @param reader to read ProtoBuf bytes from
-     * @return DataObject represented by the ProtoBuf
-     */
-    fun readProtoBuf(length: Int, reader:() -> Byte) = this.readProtoBuf(null, length, reader)
-
-    /** Convert to a Map of values from ProtoBuf
      * @param context for contextual parameters in dynamic properties
-     * @param length of bytes to read.
-     * @param reader to read ProtoBuf bytes from
      * @return DataObject represented by the ProtoBuf
      */
-    fun readProtoBuf(context: CX?, length: Int, reader:() -> Byte): Map<Int, Any> {
+    fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
         var byteCounter = 1
 
@@ -253,10 +257,10 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
 
         while (byteCounter < length) {
             readProtoBufField(
-                    context,
                     valueMap,
                     ProtoBuf.readKey(byteReader),
-                    byteReader
+                    byteReader,
+                    context
             )
         }
 
@@ -264,27 +268,21 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     }
 
     /** Convert to a DataModel from ProtoBuf
-     * @param length of bytes which contains object
-     * @param reader to read ProtoBuf bytes from
-     * @return DataObject represented by the ProtoBuf
-     */
-    fun readProtoBufToObject(length: Int, reader:() -> Byte) = construct(this.readProtoBuf(null, length, reader))
-
-    /** Convert to a DataModel from ProtoBuf
      * @param context for contextual parameters in dynamic properties
      * @param length of bytes which contains object
      * @param reader to read ProtoBuf bytes from
+     * @param context with context parameters for conversion (for dynamically dependent properties)
      * @return DataObject represented by the ProtoBuf
      */
-    fun readProtoBufToObject(context: CX?, length: Int, reader:() -> Byte) = construct(this.readProtoBuf(context, length, reader))
+    fun readProtoBufToObject(length: Int, reader: () -> Byte, context: CX? = null) = construct(this.readProtoBuf(length, reader, context))
 
     /** Read a single field
-     * @param context for reading parameters
      * @param valueMap to write the read values to
      * @param key to read for
      * @param byteReader to read bytes for values from
+     * @param context with context parameters for conversion (for dynamically dependent properties)
      */
-    private fun readProtoBufField(context: CX?, valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte) {
+    private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
         val propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
 
         if (propertyDefinition == null) {
@@ -294,9 +292,9 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                 is AbstractSubDefinition<*, CX> -> valueMap.put(
                         key.tag,
                         propertyDefinition.readTransportBytes(
-                                context,
                                 ProtoBuf.getLength(key.wireType, byteReader),
-                                byteReader
+                                byteReader,
+                                context
                         )
                 )
                 is AbstractCollectionDefinition<*, *, CX> -> {
@@ -335,8 +333,8 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                 is MapDefinition<*, *, CX> -> {
                     ProtoBuf.getLength(key.wireType, byteReader)
                     val value = propertyDefinition.readMapTransportBytes(
-                            context,
-                            byteReader
+                            byteReader,
+                            context
                     )
                     if (valueMap.contains(key.tag)) {
                         @Suppress("UNCHECKED_CAST")

@@ -23,7 +23,7 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>, CX: IsPropertyContext>
         val unique: Boolean,
         val minValue: T?,
         val maxValue: T?
-) : AbstractValueDefinition<T, CX>(
+) : AbstractSimpleValueDefinition<T, CX>(
         name, index, indexed, searchable, required, final, wireType
 ) {
     /**

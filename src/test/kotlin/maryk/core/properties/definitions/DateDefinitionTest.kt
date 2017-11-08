@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import io.kotlintest.matchers.fail
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
@@ -32,7 +33,7 @@ internal class DateDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -42,10 +43,10 @@ internal class DateDefinitionTest {
         val bc = ByteCollector()
         datesToTest.forEach {
             bc.reserve(
-                def.calculateTransportByteLength(it)
+                def.calculateTransportByteLength(it, { fail("Should not call") })
             )
-            def.writeTransportBytes(it, bc::write)
-            def.readTransportBytes(null, bc.size, bc::read) shouldBe it
+            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

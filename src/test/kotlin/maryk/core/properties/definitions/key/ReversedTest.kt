@@ -58,7 +58,7 @@ internal class ReversedTest {
             val bc = ByteCollector()
             bc.reserve(8)
             this.writeStorageBytes(dt, bc::write)
-            this.readStorageBytes(null, bc.size, bc::read) shouldBe dt
+            this.readStorageBytes(bc.size, bc::read) shouldBe dt
         }
 
         key.toHex() shouldBe "fe017fffffa6540703"

@@ -23,7 +23,7 @@ internal class BooleanDefinitionTest {
                 def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -33,16 +33,16 @@ internal class BooleanDefinitionTest {
         val bc = ByteCollector()
         booleanArrayOf(true, false).forEach {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(it, { fail("Should not call") })
+                def.calculateTransportByteLengthWithKey(it, { fail("Should not call") }, null)
             )
-            def.writeTransportBytesWithKey(it, { fail("Should not call") }, bc::write)
+            def.writeTransportBytesWithKey(it, { fail("Should not call") }, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 222
             key.wireType shouldBe WireType.VAR_INT
             def.readTransportBytes(
-                    null,
                     ProtoBuf.getLength(WireType.VAR_INT, bc::read),
-                    bc::read
+                    bc::read,
+                    null
             ) shouldBe it
             bc.reset()
         }
@@ -59,7 +59,7 @@ internal class BooleanDefinitionTest {
     @Test
     fun testWrongStringConversion() {
         shouldThrow<ParseException> {
-            def.fromString("wrong", null)
+            def.fromString("wrong")
         }
     }
 }

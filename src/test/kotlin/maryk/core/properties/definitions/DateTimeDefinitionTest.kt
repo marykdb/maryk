@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import io.kotlintest.matchers.fail
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
@@ -43,7 +44,7 @@ internal class DateTimeDefinitionTest {
                     defMilli.calculateStorageByteLength(it)
             )
             defMilli.writeStorageBytes(it, bc::write)
-            defMilli.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -56,7 +57,7 @@ internal class DateTimeDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -65,9 +66,9 @@ internal class DateTimeDefinitionTest {
     fun convertTransportBytesMillis() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
-            bc.reserve(defMilli.calculateTransportByteLength(it))
-            defMilli.writeTransportBytes(it, bc::write)
-            defMilli.readTransportBytes(null, bc.size, bc::read) shouldBe it
+            bc.reserve(defMilli.calculateTransportByteLength(it, { fail("Should not call") }))
+            defMilli.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -76,9 +77,9 @@ internal class DateTimeDefinitionTest {
     fun convertTransportBytesSeconds() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
-            bc.reserve(def.calculateTransportByteLength(it))
-            def.writeTransportBytes(it, bc::write)
-            def.readTransportBytes(null, bc.size, bc::read) shouldBe it
+            bc.reserve(def.calculateTransportByteLength(it, { fail("Should not call") }))
+            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }

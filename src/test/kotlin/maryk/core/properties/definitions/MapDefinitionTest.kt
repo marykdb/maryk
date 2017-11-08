@@ -141,7 +141,7 @@ internal class MapDefinitionTest {
 
         fun readValue(): Pair<Int, String> {
             ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read)
-            return def.readMapTransportBytes(null, bc::read)
+            return def.readMapTransportBytes(bc::read)
         }
 
         value.forEach {

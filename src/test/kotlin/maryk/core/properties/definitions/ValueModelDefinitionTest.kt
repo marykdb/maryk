@@ -38,7 +38,7 @@ internal class ValueModelDefinitionTest {
                 def.calculateStorageByteLength(value)
         )
         def.writeStorageBytes(value, bc::write)
-        val new = def.readStorageBytes(null, bc.size, bc::read)
+        val new = def.readStorageBytes(bc.size, bc::read)
 
         new shouldBe value
     }
@@ -56,7 +56,6 @@ internal class ValueModelDefinitionTest {
         key.tag shouldBe -1
 
         def.readTransportBytes(
-                null,
                 ProtoBuf.getLength(key.wireType, bc::read),
                 bc::read
         ) shouldBe value

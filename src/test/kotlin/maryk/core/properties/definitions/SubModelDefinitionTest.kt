@@ -75,7 +75,6 @@ internal class SubModelDefinitionTest {
         key.tag shouldBe 5
 
         def.readTransportBytes(
-                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         ) shouldBe value
@@ -93,7 +92,6 @@ internal class SubModelDefinitionTest {
         key.tag shouldBe 1
 
         def.readTransportBytes(
-                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, reader),
                 reader
         ) shouldBe value

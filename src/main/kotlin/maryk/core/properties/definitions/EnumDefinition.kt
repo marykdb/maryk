@@ -36,7 +36,7 @@ class EnumDefinition<E: IndexedEnum<E>>(
     }
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) =
+    override fun readStorageBytes(length: Int, reader: () -> Byte) =
             getEnumByIndex(initShort(reader).toInt() - Short.MIN_VALUE)
 
     override fun calculateStorageByteLength(value: E) = this.byteSize
@@ -45,16 +45,16 @@ class EnumDefinition<E: IndexedEnum<E>>(
         value.indexAsShortToStore.writeBytes(writer)
     }
 
-    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte)
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?)
             = getEnumByIndex(initShortByVar(reader).toInt())
 
     override fun calculateTransportByteLength(value: E) = value.index.calculateVarByteLength()
 
-    override fun writeTransportBytes(value: E, writer: (byte: Byte) -> Unit)
+    override fun writeTransportBytes(value: E, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?)
             = value.index.writeVarBytes(writer)
 
     override fun asString(value: E) = value.name
 
-    override fun fromString(string: String, context: IsPropertyContext?) =
+    override fun fromString(string: String) =
         valueByString[string] ?: throw ParseException(string)
 }

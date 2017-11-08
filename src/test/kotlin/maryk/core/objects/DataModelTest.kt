@@ -228,7 +228,7 @@ internal class DataModelTest {
                 json to JsonWriter(writer = writer),
                 prettyJson to JsonWriter(pretty = true, writer = writer)
         ).forEach { result, generator ->
-            TestMarykObject.writeJson(generator, testExtendedObject)
+            TestMarykObject.writeJson(testExtendedObject, generator)
 
             output shouldBe result
             output = ""
@@ -264,9 +264,9 @@ internal class DataModelTest {
         val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d72280130026a1001050105010501050105010501050105")
         var index = 0
 
-        val map = TestMarykObject.readProtoBuf(bytes.size) {
+        val map = TestMarykObject.readProtoBuf(bytes.size, {
             bytes[index++]
-        }
+        })
 
         map.size shouldBe 7
         map[0] shouldBe "hay"
@@ -309,9 +309,9 @@ internal class DataModelTest {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
-        val map = TestMarykObject.readProtoBuf(bytes.size) {
+        val map = TestMarykObject.readProtoBuf(bytes.size, {
             bytes[index++]
-        }
+        })
 
         map.size shouldBe 0
     }
@@ -329,7 +329,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJsonToObject(jsonReader()) shouldBe testExtendedObject
+            TestMarykObject.readJsonToObject(reader = jsonReader()) shouldBe testExtendedObject
         }
     }
 
@@ -346,7 +346,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJson(jsonReader()) shouldBe testMap
+            TestMarykObject.readJson(reader = jsonReader()) shouldBe testMap
         }
     }
 
@@ -359,11 +359,11 @@ internal class DataModelTest {
                 JsonWriter(writer = writer),
                 JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.writeJson(generator, testMap)
+            TestMarykObject.writeJson(testMap, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykObject.readJson(reader()) shouldBe testMap
+            TestMarykObject.readJson(reader = reader()) shouldBe testMap
 
             output = ""
         }

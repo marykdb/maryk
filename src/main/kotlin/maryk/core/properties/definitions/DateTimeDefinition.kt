@@ -31,9 +31,9 @@ class DateTimeDefinition(
 
     override fun createNow() = DateTime.nowUTC()
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte) = DateTime.fromByteReader(length, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = DateTime.fromByteReader(length, reader)
 
-    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte) = when(this.precision) {
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = when(this.precision) {
         TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))
         TimePrecision.MILLIS -> DateTime.ofEpochMilli(initLongByVar(reader))
     }
@@ -43,7 +43,7 @@ class DateTimeDefinition(
         TimePrecision.MILLIS -> value.toEpochMilli().calculateVarByteLength()
     }
 
-    override fun writeTransportBytes(value: DateTime, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytes(value: DateTime, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         val epochUnit = when(this.precision) {
             TimePrecision.SECONDS -> value.toEpochSecond()
             TimePrecision.MILLIS -> value.toEpochMilli()
@@ -52,5 +52,5 @@ class DateTimeDefinition(
     }
 
     @Throws(ParseException::class)
-    override fun fromString(string: String, context: IsPropertyContext?) = DateTime.parse(string)
+    override fun fromString(string: String) = DateTime.parse(string)
 }

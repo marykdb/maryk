@@ -35,7 +35,7 @@ internal class FixedBytesDefinitionTest {
                     def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
-            def.readStorageBytes(null, bc.size, bc::read) shouldBe it
+            def.readStorageBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -51,7 +51,6 @@ internal class FixedBytesDefinitionTest {
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe -1
             def.readTransportBytes(
-                    null,
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
             ) shouldBe value

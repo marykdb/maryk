@@ -51,17 +51,17 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, IsPropertyContext>>(
         }
     }
 
-    override fun writeJsonValue(writer: JsonWriter, value: DO) = this.dataModel.writeJson(writer, value)
+    override fun writeJsonValue(value: DO, writer: JsonWriter, context: IsPropertyContext?) = this.dataModel.writeJson(value, writer, context)
 
-    override fun readJson(context: IsPropertyContext?, reader: JsonReader) = this.dataModel.readJsonToObject(reader, context)
+    override fun readJson(reader: JsonReader, context: IsPropertyContext?) = this.dataModel.readJsonToObject(reader, context)
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: DO, lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: DO, lengthCacher: (length: ByteLengthContainer) -> Unit, context: IsPropertyContext?): Int {
         // Set up container to store byte length
         val container = ByteLengthContainer()
         lengthCacher(container)
 
         var totalByteLength = 0
-        totalByteLength += this.dataModel.calculateProtoBufLength(value, lengthCacher)
+        totalByteLength += this.dataModel.calculateProtoBufLength(value, lengthCacher, context)
         container.length = totalByteLength // first store byte length of object
 
         totalByteLength += ProtoBuf.calculateKeyLength(index)
@@ -69,12 +69,12 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, IsPropertyContext>>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytesWithKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
         lengthCacheGetter().writeVarBytes(writer)
-        this.dataModel.writeProtoBuf(value, lengthCacheGetter, writer)
+        this.dataModel.writeProtoBuf(value, lengthCacheGetter, writer, context)
     }
 
-    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte)
-            = this.dataModel.readProtoBufToObject(context, length, reader)
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?)
+            = this.dataModel.readProtoBufToObject(length, reader, context)
 }

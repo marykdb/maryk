@@ -19,35 +19,37 @@ abstract class AbstractSubDefinition<T: Any, in CX: IsPropertyContext>(
 ) : AbstractPropertyDefinition<T>(
         name, index, indexed, searchable, required, final
 ), IsSerializablePropertyDefinition<T, CX> {
-    override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit)
-            = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher)
+    override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
+            = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher, context)
 
     /** Calculates byte length of a value for transportation
      * @param index to write this value for
      * @param value to write
      * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order
+     * @param context with context parameters for conversion (for dynamically dependent properties)
      * @return total byte length
      */
-    abstract fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit) : Int
+    abstract fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?) : Int
 
-    override fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit)
-            = this.writeTransportBytesWithKey(this.index, value, lengthCacheGetter, writer)
+    override fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
+            = this.writeTransportBytesWithKey(this.index, value, lengthCacheGetter, writer, context)
 
     /** Convert a value to bytes for transportation and adds the key with tag and wiretype
      * @param index to write this value for
      * @param value to write
      * @param lengthCacheGetter to fetch next cached length
      * @param writer to write bytes to
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
-    abstract fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit)
+    abstract fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
 
     /** Convert to value from a byte reader
-     * @param context for contextual parameters for dynamic properties
      * @param length of bytes to read
      * @param reader to read bytes from
+     * @param context with context parameters for conversion (for dynamically dependent properties)
      * @return transported value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    abstract fun readTransportBytes(context: CX?, length: Int, reader:() -> Byte): T
+    abstract fun readTransportBytes(length: Int, reader: () -> Byte, context: CX? = null): T
 }

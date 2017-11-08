@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.key
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.IsDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.types.TypedValue
@@ -25,5 +24,6 @@ class TypeId(
         (value + Short.MIN_VALUE).toShort().writeBytes(writer)
     }
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte) = initShort(reader).toInt() - Short.MIN_VALUE
+    override fun readStorageBytes(length: Int, reader: () -> Byte)
+            = initShort(reader).toInt() - Short.MIN_VALUE
 }

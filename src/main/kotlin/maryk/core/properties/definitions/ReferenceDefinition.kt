@@ -27,12 +27,12 @@ class ReferenceDefinition<DO: Any>(
 
     override fun writeStorageBytes(value: Key<DO>, writer: (byte: Byte) -> Unit)  = value.writeBytes(writer)
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte) = dataModel.key.get(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
 
     override fun calculateTransportByteLength(value: Key<DO>) = this.byteSize
 
     @Throws(ParseException::class)
-    override fun fromString(string: String, context: IsPropertyContext?) = try {
+    override fun fromString(string: String) = try {
         dataModel.key.get(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
 }

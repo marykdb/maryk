@@ -29,7 +29,7 @@ class NumberDefinition<T: Comparable<T>>(
 
     override fun createRandom() = type.createRandom()
 
-    override fun readStorageBytes(context: IsPropertyContext?, length: Int, reader:() -> Byte)
+    override fun readStorageBytes(length: Int, reader: () -> Byte)
             = this.type.fromStorageByteReader(length, reader)
 
     override fun calculateStorageByteLength(value: T) = type.size
@@ -37,25 +37,25 @@ class NumberDefinition<T: Comparable<T>>(
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
             = this.type.writeStorageBytes(value, writer)
 
-    override fun readTransportBytes(context: IsPropertyContext?, length: Int, reader: () -> Byte)
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?)
             = this.type.readTransportBytes(reader)
 
     override fun calculateTransportByteLength(value: T) = this.type.calculateTransportByteLength(value)
 
-    override fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
+    override fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?)
             = this.type.writeTransportBytes(value, writer)
 
     @Throws(ParseException::class)
-    override fun fromString(string: String, context: IsPropertyContext?) = try {
+    override fun fromString(string: String) = try {
         type.ofString(string)
     } catch (e: NumberFormatException) { throw ParseException(string, e) }
 
-    override fun writeJsonValue(writer: JsonWriter, value: T) = when {
+    override fun writeJsonValue(value: T, writer: JsonWriter, context: IsPropertyContext?) = when {
         type !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
             writer.writeValue(
                     this.asString(value)
             )
         }
-        else -> super.writeJsonValue(writer, value)
+        else -> super.writeJsonValue(value, writer, context)
     }
 }

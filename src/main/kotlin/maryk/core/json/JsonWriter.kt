@@ -14,13 +14,16 @@ class JsonWriter(
     private var typeStack: MutableList<JsonObjectType> = mutableListOf()
 
     fun writeStartObject() {
-        typeStack.add(JsonObjectType.OBJECT)
         // Comma is for models embedded in MultiType values
-        if(lastType == JsonType.ARRAY_VALUE) {
+        if(lastType != JsonType.START_ARRAY
+                && !typeStack.isEmpty()
+                && typeStack.last() == JsonObjectType.ARRAY
+        ) {
             writer(",")
             if (pretty) { writer(" ") }
         }
-        write(JsonType.START_OBJ, "{", JsonType.START, JsonType.FIELD_NAME, JsonType.ARRAY_VALUE)
+        typeStack.add(JsonObjectType.OBJECT)
+        write(JsonType.START_OBJ, "{", JsonType.START, JsonType.FIELD_NAME, JsonType.ARRAY_VALUE, JsonType.START_ARRAY, JsonType.END_OBJ)
 
         makePretty()
     }

@@ -50,12 +50,6 @@ internal class MapDefinitionTest {
     )
 
     @Test
-    fun testReference() {
-        def.getRef().dataModel shouldBe null
-        defSubModel.getRef().dataModel shouldBe TestMarykObject
-    }
-
-    @Test
     fun testValidateSize() {
         def.validate(newValue = mapOf(
                 12 to "#twelve",

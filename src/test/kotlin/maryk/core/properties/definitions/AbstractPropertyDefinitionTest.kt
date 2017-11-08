@@ -16,11 +16,6 @@ internal class AbstractPropertyDefinitionTest {
     }
 
     @Test
-    fun testReference() {
-        def.getRef().dataModel shouldBe null
-    }
-
-    @Test
     fun validateFinal() {
         def.validate(newValue = "test")
 

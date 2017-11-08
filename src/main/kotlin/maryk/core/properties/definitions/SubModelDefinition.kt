@@ -36,8 +36,7 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, CX: IsPropertyCont
                 this,
                 parentRefFactory()?.let {
                     it as CanHaveComplexChildReference<*, *>
-                },
-                dataModel = this.dataModel
+                }
             )
 
     @Throws(PropertyValidationException::class)

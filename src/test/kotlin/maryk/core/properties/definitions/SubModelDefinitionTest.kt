@@ -43,11 +43,6 @@ internal class SubModelDefinitionTest {
     }
 
     @Test
-    fun testReference() {
-        def.getRef().dataModel shouldBe MarykObject
-    }
-
-    @Test
     fun validate() {
         def.validate(newValue = MarykObject())
         shouldThrow<PropertyValidationUmbrellaException> {

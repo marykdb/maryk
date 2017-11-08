@@ -54,8 +54,7 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
                     this,
                     parentRefFactory()?.let {
                         it as CanHaveComplexChildReference<*, *>
-                    },
-                    dataModel = dataModel
+                    }
             )
 
     @Throws(PropertyValidationException::class)

@@ -45,8 +45,7 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     this,
                     parentRefFactory()?.let {
                         it as CanHaveComplexChildReference<*, *>
-                    },
-                    dataModel = valueDefinition.dataModel
+                    }
             )
             else -> { super.getRef(parentRefFactory)}
         }

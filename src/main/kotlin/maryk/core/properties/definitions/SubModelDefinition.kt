@@ -20,15 +20,15 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-class SubModelDefinition<DO : Any, out D : DataModel<DO, IsPropertyContext>>(
         name: String? = null,
+class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, CX: IsPropertyContext>(
         index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,
         val dataModel: D
-) : AbstractSubDefinition<DO, IsPropertyContext>(
+) : AbstractSubDefinition<DO, CX>(
         name, index, indexed, searchable, required, final
 ) {
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
@@ -51,11 +51,11 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, IsPropertyContext>>(
         }
     }
 
-    override fun writeJsonValue(value: DO, writer: JsonWriter, context: IsPropertyContext?) = this.dataModel.writeJson(value, writer, context)
+    override fun writeJsonValue(value: DO, writer: JsonWriter, context: CX?) = this.dataModel.writeJson(value, writer, context)
 
-    override fun readJson(reader: JsonReader, context: IsPropertyContext?) = this.dataModel.readJsonToObject(reader, context)
+    override fun readJson(reader: JsonReader, context: CX?) = this.dataModel.readJsonToObject(reader, context)
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: DO, lengthCacher: (length: ByteLengthContainer) -> Unit, context: IsPropertyContext?): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: DO, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         // Set up container to store byte length
         val container = ByteLengthContainer()
         lengthCacher(container)
@@ -69,12 +69,12 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, IsPropertyContext>>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
+    override fun writeTransportBytesWithKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
         lengthCacheGetter().writeVarBytes(writer)
         this.dataModel.writeProtoBuf(value, lengthCacheGetter, writer, context)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?)
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)
             = this.dataModel.readProtoBufToObject(length, reader, context)
 }

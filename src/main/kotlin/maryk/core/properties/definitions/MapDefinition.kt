@@ -41,7 +41,7 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?): PropertyReference<Map<K, V>, AbstractPropertyDefinition<Map<K, V>>> =
         when (valueDefinition) {
-            is SubModelDefinition<*, *> -> CanHaveSimpleChildReference(
+            is SubModelDefinition<*, *, *> -> CanHaveSimpleChildReference(
                     this,
                     parentRefFactory()?.let {
                         it as CanHaveComplexChildReference<*, *>

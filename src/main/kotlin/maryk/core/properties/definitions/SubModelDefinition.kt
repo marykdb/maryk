@@ -20,8 +20,8 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-        name: String? = null,
 class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, CX: IsPropertyContext>(
+        name: String? = null,
         index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,

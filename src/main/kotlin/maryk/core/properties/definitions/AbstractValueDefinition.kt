@@ -74,4 +74,8 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      * @param context with possible context values for Dynamic writers
      */
     abstract fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
+
+    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
+
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<*>? = null
 }

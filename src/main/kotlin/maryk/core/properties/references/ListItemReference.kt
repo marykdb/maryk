@@ -16,5 +16,5 @@ class ListItemReference<T: Any> (
 ), EmbeddedPropertyReference<T> {
     override val name = parentReference.name
 
-    override val completeName: String get() = "${this.parentReference!!.completeName}[$index]"
+    override val completeName: String get() = "${this.parentReference!!.completeName}.#$index"
 }

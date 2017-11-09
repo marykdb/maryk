@@ -1,13 +1,17 @@
 package maryk.core.objects
 
 import maryk.core.bytes.Base64
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.Key
 
 fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
@@ -60,7 +64,7 @@ abstract class RootDataModel<DM: Any>(
             if (bytes.size != this.size) {
                throw ParseException("Invalid byte length for key")
             }
-            return Key<DM>(bytes)
+            return Key(bytes)
         }
 
         /** Get Key by base64 byte representation */
@@ -90,5 +94,52 @@ abstract class RootDataModel<DM: Any>(
             }
             return Key(bytes)
         }
+    }
+
+    /** Get PropertyReference by name
+     * @param referenceName to parse for a property reference
+     */
+    fun getPropertyReferenceByName(referenceName: String): PropertyReference<*, IsPropertyDefinition<*>> {
+        val names = referenceName.split(".")
+
+        var propertyReference: PropertyReference<*, *>? = null
+        for (name in names) {
+            val def = if (propertyReference == null) {
+                getDefinition(name)
+            } else {
+                propertyReference.propertyDefinition.getEmbeddedByName(name)
+            } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist on ${this.name}")
+
+            propertyReference = def.getRef({ propertyReference })
+        }
+
+        return propertyReference!!
+    }
+
+    /** Get PropertyReference by bytes
+     * @param length of bytes to read
+     * @param reader to read for a property reference
+     */
+    fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): PropertyReference<*, IsPropertyDefinition<*>> {
+        var readLength = 0
+
+        val lengthReader = {
+            readLength++
+            reader()
+        }
+
+        var propertyReference: PropertyReference<*, *>? = null
+        while (readLength < length) {
+            val index = initIntByVar(lengthReader)
+            val def = if (propertyReference == null) {
+                getDefinition(index)
+            } else {
+                propertyReference.propertyDefinition.getEmbeddedByIndex(index)
+            } ?: throw DefNotFoundException("Property reference index «$index» does not exist on ${this.name}")
+
+            propertyReference = def.getRef({ propertyReference })
+        }
+
+        return propertyReference!!
     }
 }

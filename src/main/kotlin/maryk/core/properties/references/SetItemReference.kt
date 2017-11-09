@@ -16,5 +16,5 @@ class SetItemReference<T: Any>(
 ), EmbeddedPropertyReference<T> {
     override val name: String? get() = parentReference?.name
 
-    override val completeName: String get() = "${this.parentReference!!.completeName}[${value}]"
+    override val completeName: String get() = "${this.parentReference!!.completeName}.#${value}"
 }

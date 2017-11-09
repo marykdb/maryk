@@ -33,6 +33,10 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
         assert(valueDefinition.required, { "Definition should have required=true on collection «$name»" })
     }
 
+    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
+
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
+
     override fun validate(previousValue: C?, newValue: C?, parentRefFactory: () -> PropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 

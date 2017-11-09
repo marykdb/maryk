@@ -93,20 +93,19 @@ internal class MapDefinitionTest {
 
         with(e.exceptions[0]) {
             assertTrue(this is PropertyInvalidValueException)
-            this.reference!!.completeName shouldBe "intStringMap[30]"
+            this.reference!!.completeName shouldBe "intStringMap.#30"
         }
 
         with(e.exceptions[1]) {
             assertTrue(this is PropertyOutOfRangeException)
-            this.reference!!.completeName shouldBe "intStringMap<1001>"
+            this.reference!!.completeName shouldBe "intStringMap.$1001"
         }
 
         with(e.exceptions[2]) {
             assertTrue(this is PropertyOutOfRangeException)
-            this.reference!!.completeName shouldBe "intStringMap<3000>"
+            this.reference!!.completeName shouldBe "intStringMap.$3000"
         }
     }
-
 
     @Test
     fun testTransportConversion() {

@@ -50,6 +50,10 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             else -> { super.getRef(parentRefFactory)}
         }
 
+    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
+
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
+
     override fun validate(previousValue: Map<K,V>?, newValue: Map<K,V>?, parentRefFactory: () -> PropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 

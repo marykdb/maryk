@@ -17,5 +17,5 @@ class MapKeyReference<K: Any, V: Any>(
 ), EmbeddedPropertyReference<K> {
     override val name = parentReference.name
 
-    override val completeName get() = "${this.parentReference!!.completeName}<$key>"
+    override val completeName get() = "${this.parentReference!!.completeName}.$$key"
 }

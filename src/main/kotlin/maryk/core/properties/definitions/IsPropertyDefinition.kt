@@ -31,4 +31,14 @@ interface IsPropertyDefinition<T: Any> {
      */
     @Throws(PropertyValidationException::class)
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+
+    /** To get embedded properties by name
+     * @param name to fetch property of
+     */
+    fun getEmbeddedByName(name: String): IsPropertyDefinition<out Any>?
+
+    /** To get embedded properties by index
+     * @param index to fetch property of
+     */
+    fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>?
 }

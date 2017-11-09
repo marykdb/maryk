@@ -39,6 +39,10 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, CX: IsPropertyCont
                 }
             )
 
+    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = dataModel.getDefinition(name)
+
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = dataModel.getDefinition(index)
+
     @Throws(PropertyValidationException::class)
     override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> PropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)

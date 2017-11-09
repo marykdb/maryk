@@ -48,6 +48,10 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         }
     }
 
+    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
+
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
+
     override fun writeJsonValue(value: TypedValue<*>, writer: JsonWriter, context: CX?) {
         writer.writeStartArray()
         writer.writeValue(value.typeIndex.toString())

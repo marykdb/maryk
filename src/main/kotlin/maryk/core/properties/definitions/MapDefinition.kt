@@ -39,7 +39,7 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         assert(valueDefinition.required, { "Definition for value should be required on map: $name" })
     }
 
-    override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?): PropertyReference<Map<K, V>, AbstractPropertyDefinition<Map<K, V>>> =
+    override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?): PropertyReference<Map<K, V>, MapDefinition<K, V, CX>> =
         when (valueDefinition) {
             is SubModelDefinition<*, *, *> -> CanHaveSimpleChildReference(
                     this,
@@ -47,8 +47,24 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                         it as CanHaveComplexChildReference<*, *>
                     }
             )
-            else -> { super.getRef(parentRefFactory)}
+            else -> {
+                PropertyReference(this, parentRefFactory())
+            }
         }
+
+    /** Get a reference to a specific map key
+     * @param key to get reference for
+     * @param parentRefFactory (optional) factory to create parent ref
+     */
+    fun getKeyRef(key: K, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+            = MapKeyReference(key, this.getRef(parentRefFactory))
+
+    /** Get a reference to a specific map value by key
+     * @param key to get reference to value for
+     * @param parentRefFactory (optional) factory to create parent ref
+     */
+    fun getValueRef(key: K, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+            = MapValueReference(key, this.getRef(parentRefFactory))
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
 
@@ -67,19 +83,14 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             }
 
             createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
-                @Suppress("UNCHECKED_CAST")
                 newValue.forEach { key, value ->
                     try {
-                        this.keyDefinition.validate(null, key) {
-                            MapKeyReference(key, this.getRef(parentRefFactory) as PropertyReference<Map<K, V>, MapDefinition<K, V, CX>>)
-                        }
+                        this.keyDefinition.validate(null, key) { this.getKeyRef(key, parentRefFactory) }
                     } catch (e: PropertyValidationException) {
                         addException(e)
                     }
                     try {
-                        this.valueDefinition.validate(null, value) {
-                            MapValueReference(key, this.getRef(parentRefFactory) as PropertyReference<Map<K, V>, MapDefinition<K, V, CX>>)
-                        }
+                        this.valueDefinition.validate(null, value) { this.getValueRef(key, parentRefFactory) }
                     } catch (e: PropertyValidationException) {
                         addException(e)
                     }

@@ -21,14 +21,20 @@ class SetDefinition<T: Any, CX: IsPropertyContext>(
 
     override fun newMutableCollection() = mutableSetOf<T>()
 
+    override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
+            PropertyReference(this, parentRefFactory())
+
+    /** Get a reference to a specific set item
+     * @param key to get reference for
+     * @param parentRefFactory (optional) factory to create parent ref
+     */
+    fun getItemRef(value: T, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+            = SetItemReference(value, this.getRef(parentRefFactory))
+
     override fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?, newValue: Set<T>, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any) {
         newValue.forEach {
             validator(it) {
-                @Suppress("UNCHECKED_CAST")
-                SetItemReference(
-                        it,
-                        getRef(parentRefFactory) as PropertyReference<Set<T>, SetDefinition<T, CX>>
-                )
+                this.getItemRef(it, parentRefFactory)
             }
         }
     }

@@ -8,8 +8,8 @@ import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.CanHaveSimpleChildReference
 import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.SubModelPropertyRef
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -20,7 +20,7 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, CX: IsPropertyContext>(
+class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = false,
@@ -32,7 +32,7 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, CX: IsPropertyCont
         name, index, indexed, searchable, required, final
 ) {
     override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
-            CanHaveSimpleChildReference(
+            SubModelPropertyRef(
                 this,
                 parentRefFactory()?.let {
                     it as CanHaveComplexChildReference<*, *>

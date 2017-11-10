@@ -21,15 +21,19 @@ class ListDefinition<T: Any, CX: IsPropertyContext>(
 
     override fun newMutableCollection() = mutableListOf<T>()
 
+    override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
+            PropertyReference(this, parentRefFactory())
+
+    /** Get a reference to a specific list item by index
+     * @param item to get list item reference for
+     * @param parentRefFactory (optional) factory to create parent ref
+     */
+    fun getItemRef(index: Int, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+            = ListItemReference(index, this.getRef(parentRefFactory))
+
     override fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?,  newValue: List<T>, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any) {
         newValue.forEachIndexed { index, item ->
-            validator(item) {
-                @Suppress("UNCHECKED_CAST")
-                ListItemReference(
-                        index,
-                        getRef(parentRefFactory) as PropertyReference<List<T>, ListDefinition<T, CX>>
-                )
-            }
+            validator(item) { this.getItemRef(index, parentRefFactory) }
         }
     }
 }

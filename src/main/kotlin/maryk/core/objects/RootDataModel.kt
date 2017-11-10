@@ -131,13 +131,12 @@ abstract class RootDataModel<DM: Any>(
         var propertyReference: PropertyReference<*, *>? = null
         while (readLength < length) {
             val index = initIntByVar(lengthReader)
-            val def = if (propertyReference == null) {
-                getDefinition(index)
-            } else {
-                propertyReference.propertyDefinition.getEmbeddedByIndex(index)
-            } ?: throw DefNotFoundException("Property reference index «$index» does not exist on ${this.name}")
 
-            propertyReference = def.getRef({ propertyReference })
+            propertyReference = if (propertyReference == null) {
+                getDefinition(index)?.getRef({ propertyReference })
+            } else {
+                propertyReference.getEmbeddedRefByIndex(index, { propertyReference })
+            } ?: throw DefNotFoundException("Property reference index «$index» does not exist on ${this.name}")
         }
 
         return propertyReference!!

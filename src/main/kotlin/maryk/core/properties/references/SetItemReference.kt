@@ -17,4 +17,8 @@ class SetItemReference<T: Any>(
     override val name: String? get() = parentReference?.name
 
     override val completeName: String get() = "${this.parentReference!!.completeName}.#${value}"
+
+    override fun calculateTransportByteLength() = 0
+
+    override fun writeTransportBytes(writer: (byte: Byte) -> Unit) = writer(0)
 }

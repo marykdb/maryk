@@ -48,7 +48,7 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
      * For cascading use
      * @return size of this reference part
      */
-    open protected fun calculateTransportByteLength(): Int {
+    open internal fun calculateTransportByteLength(): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength() ?: 0
         return this.propertyDefinition.index.calculateVarByteLength() + parentLength
     }
@@ -60,4 +60,11 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
         this.parentReference?.writeTransportBytes(writer)
         this.propertyDefinition.index.writeVarBytes(writer)
     }
+
+    /** Get an embedded ref by index
+     * @param index to get reference for
+     * @param parentRefFactory to create parent reference for reference with
+     */
+    open fun getEmbeddedRefByIndex(index: Int, parentRefFactory: () -> PropertyReference<*, *>?): PropertyReference<out Any, IsPropertyDefinition<out Any>>?
+            = null
 }

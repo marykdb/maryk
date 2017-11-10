@@ -18,4 +18,8 @@ class MapKeyReference<K: Any, V: Any>(
     override val name = parentReference.name
 
     override val completeName get() = "${this.parentReference!!.completeName}.$$key"
+
+    override fun calculateTransportByteLength() = 2
+
+    override fun writeTransportBytes(writer: (byte: Byte) -> Unit) = writer(2)
 }

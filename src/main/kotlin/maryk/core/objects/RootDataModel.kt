@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 
@@ -130,11 +131,13 @@ abstract class RootDataModel<DM: Any>(
 
         var propertyReference: IsPropertyReference<*, *>? = null
         while (readLength < length) {
-            propertyReference = if (propertyReference == null) {
-                val index = initIntByVar(lengthReader)
-                getDefinition(index)?.getRef({ propertyReference })
-            } else {
-                propertyReference.getEmbeddedRefByIndex(lengthReader)
+            propertyReference = when (propertyReference) {
+                null -> {
+                    val index = initIntByVar(lengthReader)
+                    getDefinition(index)?.getRef({ propertyReference })
+                }
+                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader)
+                else -> throw DefNotFoundException("More property references found on property ${this.name} that cannot have any ")
             } ?: throw DefNotFoundException("Property reference does not exist on ${this.name}")
         }
 

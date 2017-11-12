@@ -16,7 +16,7 @@ class MapKeyReference<K: Any, V: Any>(
         parentReference: MapReference<K, V>
 ) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V>>(
         parentReference.propertyDefinition.keyDefinition, parentReference
-), EmbeddedPropertyReference<K> {
+) {
     override val name = parentReference.name
 
     override val completeName get() = "${this.parentReference!!.completeName}.$$key"

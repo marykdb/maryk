@@ -16,7 +16,7 @@ class MapValueReference<K: Any, V: Any>(
         parentReference: MapReference<K, V>
 ) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
-), EmbeddedPropertyReference<V> {
+) {
 
     override val name = parentReference.name
 

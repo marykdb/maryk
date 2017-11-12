@@ -15,7 +15,7 @@ class SetItemReference<T: Any>(
         parentReference: SetReference<T>
 ) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
-), EmbeddedPropertyReference<T> {
+) {
     override val name: String? get() = this.parentReference?.name
 
     override val completeName: String get() = "${this.parentReference!!.completeName}.#$value"

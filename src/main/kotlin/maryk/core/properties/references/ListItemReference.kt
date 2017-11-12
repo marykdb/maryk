@@ -17,7 +17,7 @@ class ListItemReference<T: Any> (
         parentReference: ListReference<T>
 ) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T, *>, ListReference<T>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
-), EmbeddedPropertyReference<T> {
+) {
     override val name = parentReference.name
 
     override val completeName: String get() = "${this.parentReference!!.completeName}.#$index"

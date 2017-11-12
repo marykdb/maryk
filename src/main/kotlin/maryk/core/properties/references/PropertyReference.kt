@@ -61,7 +61,4 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>, out P: IsP
         this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)
     }
-
-    override fun getEmbeddedRefByIndex(reader: () -> Byte): IsPropertyReference<out Any, IsPropertyDefinition<out Any>>?
-            = null
 }

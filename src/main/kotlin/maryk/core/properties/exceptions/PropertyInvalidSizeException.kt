@@ -1,12 +1,12 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Exception for properties which got a wrong new size.
  */
 class PropertyInvalidSizeException(
-        ref: PropertyReference<*, *>,
+        ref: IsPropertyReference<*, *>,
         value: String,
         min: Int?,
         max: Int?

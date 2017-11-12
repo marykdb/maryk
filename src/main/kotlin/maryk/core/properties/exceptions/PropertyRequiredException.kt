@@ -1,13 +1,13 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Exception if a required property was not set or is being unset.
  * @param ref to the required property
  */
 class PropertyRequiredException(
-        ref: PropertyReference<*,*>
+        ref: IsPropertyReference<*, *>
 ) : PropertyValidationException(
         reference = ref,
         id = "REQUIRED",

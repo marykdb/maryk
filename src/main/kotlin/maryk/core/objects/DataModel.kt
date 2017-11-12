@@ -14,7 +14,7 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
@@ -27,7 +27,7 @@ class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: 
  *
  * @param construct: Constructs object out of a map with values keyed on index.
  * @param definitions: All definitions for properties contained in this model
- * @param DM: Type of DataModel contained
+ * @param DO: Type of DataModel contained
  * @param CX: Type of context object
  */
 open class DataModel<DO: Any, in CX: IsPropertyContext>(
@@ -58,7 +58,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     override fun getPropertyGetter(index: Int) = indexToDefinition[index]?.propertyGetter
 
     @Throws(PropertyValidationUmbrellaException::class)
-    override fun validate(dataObject: DO, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(dataObject: DO, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
             definitions.forEach {
                 @Suppress("UNCHECKED_CAST")
@@ -76,7 +76,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     }
 
     @Throws(PropertyValidationUmbrellaException::class)
-    override fun validate(map: Map<Int, Any>, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(map: Map<Int, Any>, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
             map.forEach { (key, value) ->
                 val definition = indexToDefinition[key] ?: return@forEach

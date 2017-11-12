@@ -2,7 +2,7 @@ package maryk.core.objects
 
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 interface IsDataModel<in DO: Any> {
     /** Get the definition with a property name
@@ -31,7 +31,7 @@ interface IsDataModel<in DO: Any> {
      * @throws PropertyValidationUmbrellaException if input was invalid
      */
     @Throws(PropertyValidationUmbrellaException::class)
-    fun validate(dataObject: DO, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+    fun validate(dataObject: DO, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 
     /** Validate a map of values
      * @param map with values to validate
@@ -39,5 +39,5 @@ interface IsDataModel<in DO: Any> {
      * @throws PropertyValidationUmbrellaException if input was invalid
      */
     @Throws(PropertyValidationUmbrellaException::class)
-    fun validate(map: Map<Int, Any>, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+    fun validate(map: Map<Int, Any>, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 }

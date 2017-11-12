@@ -4,6 +4,7 @@ import maryk.core.objects.IsDataModel
 import maryk.core.properties.exceptions.PropertyAlreadySetException
 import maryk.core.properties.exceptions.PropertyRequiredException
 import maryk.core.properties.exceptions.PropertyValidationException
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.PropertyReference
 
 /**
@@ -18,11 +19,11 @@ abstract class AbstractPropertyDefinition<T: Any>  (
         val required: Boolean,
         val final: Boolean
 ) : IsPropertyDefinition<T> {
-    override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
+    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             PropertyReference(this, parentRefFactory())
 
     @Throws(PropertyValidationException::class)
-    override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> PropertyReference<*, *>?) = when {
+    override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) = when {
         this.final && previousValue != null -> throw PropertyAlreadySetException(this.getRef(parentRefFactory))
         this.required && newValue == null -> throw PropertyRequiredException(this.getRef(parentRefFactory))
         else -> {}

@@ -49,7 +49,7 @@ internal class PropertyReferenceTest {
         bc.reserve(
             this.subRef.calculateTransportByteLength(bc::addToCache)
         )
-        this.subRef.writeTransportBytes(bc::write)
+        this.subRef.writeTransportBytes(bc::nextLengthFromCache, bc::write)
 
         assertEquals("0201", bc.bytes!!.toHex())
     }

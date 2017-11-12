@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.exceptions.PropertyValidationException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Interface to define this is a property definition
@@ -19,8 +19,7 @@ interface IsPropertyDefinition<T: Any> {
      * @param parentReference reference to parent property if present
      * @return Complete property reference
      */
-    fun getRef(parentRefFactory: () -> PropertyReference<*, *>? = { null }):
-            PropertyReference<T, IsPropertyDefinition<T>>
+    fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>? = { null }): IsPropertyReference<T, IsPropertyDefinition<T>>
 
     /**
      * Validates the values on propertyDefinition
@@ -30,7 +29,7 @@ interface IsPropertyDefinition<T: Any> {
      * @throws PropertyValidationException when property is invalid
      */
     @Throws(PropertyValidationException::class)
-    fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+    fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 
     /** To get embedded properties by name
      * @param name to fetch property of

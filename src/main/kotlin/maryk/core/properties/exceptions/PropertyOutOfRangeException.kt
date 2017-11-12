@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Exception for when a value was out of range.
@@ -14,7 +14,7 @@ import maryk.core.properties.references.PropertyReference
  * @param max   maximum of range
  */
 class PropertyOutOfRangeException(
-        ref: PropertyReference<*, *>,
+        ref: IsPropertyReference<*, *>,
         value: Any,
         min: Any?,
         max: Any?

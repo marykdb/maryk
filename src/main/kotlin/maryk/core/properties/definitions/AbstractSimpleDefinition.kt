@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.exceptions.PropertyValidationException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 
 /**
@@ -32,7 +32,7 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>, CX: IsPropertyContext>
      * @throws PropertyValidationException thrown if property is invalid
      */
     @Throws(PropertyValidationException::class)
-    override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         when {
             newValue != null -> {

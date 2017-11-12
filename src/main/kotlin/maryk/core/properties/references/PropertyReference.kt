@@ -10,14 +10,15 @@ import maryk.core.protobuf.ByteLengthContainer
  * @param <T> Type of reference
  * @param <D> Definition of property
  */
-open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
-        val propertyDefinition: D,
-        val parentReference: PropertyReference<*, *>?
-) {
-    open val name = propertyDefinition.name
+open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>, out P: IsPropertyReference<*, *>> (
+        override final val propertyDefinition: D,
+        val parentReference: P?
+): IsPropertyReference<T, D> {
+
+    open val name = this.propertyDefinition.name
 
     /** The name of property which is referenced */
-    open val completeName: String? get() = this.parentReference?.let {
+    override val completeName: String? get() = this.parentReference?.let {
         if(name != null) {
             "${it.completeName}.$name"
         } else {
@@ -27,7 +28,7 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
 
     override fun equals(other: Any?) = when {
         this === other -> true
-        other == null || other !is PropertyReference<*, *> -> false
+        other == null || other !is IsPropertyReference<*, *> -> false
         else -> other.completeName!!.contentEquals(this.completeName!!)
     }
 
@@ -36,11 +37,11 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
     /** Calculate the transport length of encoding this reference
      * @param lengthCacher to cache length with
      */
-    fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+    override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         val container = ByteLengthContainer()
         lengthCacher(container)
 
-        container.length = this.calculateTransportByteLength()
+        container.length = this.calculateSubTransportByteLength(lengthCacher)
         return container.length
     }
 
@@ -48,23 +49,19 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>> (
      * For cascading use
      * @return size of this reference part
      */
-    open internal fun calculateTransportByteLength(): Int {
-        val parentLength = this.parentReference?.calculateTransportByteLength() ?: 0
+    override fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+        val parentLength = this.parentReference?.calculateSubTransportByteLength(lengthCacher) ?: 0
         return this.propertyDefinition.index.calculateVarByteLength() + parentLength
     }
 
     /** Write transport bytes of property reference
      * @param writer: To write bytes to
      */
-    open fun writeTransportBytes(writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeTransportBytes(writer)
+    override fun writeTransportBytes(lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)
     }
 
-    /** Get an embedded ref by index
-     * @param index to get reference for
-     * @param parentRefFactory to create parent reference for reference with
-     */
-    open fun getEmbeddedRefByIndex(index: Int, parentRefFactory: () -> PropertyReference<*, *>?): PropertyReference<out Any, IsPropertyDefinition<out Any>>?
+    override fun getEmbeddedRefByIndex(reader: () -> Byte): IsPropertyReference<out Any, IsPropertyDefinition<out Any>>?
             = null
 }

@@ -7,7 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyValidationException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 
 /** Definition for String properties */
@@ -47,7 +47,7 @@ class StringDefinition(
     override fun fromString(string: String) = string
 
     @Throws(PropertyValidationException::class)
-    override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 
         when {

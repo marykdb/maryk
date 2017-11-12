@@ -1,12 +1,12 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Validation Exception for properties
  */
 abstract class PropertyValidationException (
-        val reference: PropertyReference<*,*>? = null,
+        val reference: IsPropertyReference<*, *>? = null,
         val id: String,
         newMessage: String
 ) : Throwable(
@@ -14,7 +14,7 @@ abstract class PropertyValidationException (
 ) {
     constructor(
             reason: String?,
-            reference: PropertyReference<*,*>?,
+            reference: IsPropertyReference<*,*>?,
             id: String
     ) : this(
             reference = reference,

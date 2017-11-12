@@ -1,12 +1,12 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Exception for when properties are set with invalid input.
  */
 class PropertyInvalidValueException(
-        ref: PropertyReference<*, *>,
+        ref: IsPropertyReference<*, *>,
         value: String
 ) : PropertyValidationException(
         reference = ref,

@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /** Exception for when a map or collection property has too much items
  *
@@ -9,7 +9,7 @@ import maryk.core.properties.references.PropertyReference
  * @param maxSize  maximum of size
  */
 class PropertyTooMuchItemsException(
-        ref: PropertyReference<*, *>,
+        ref: IsPropertyReference<*, *>,
         size: Int,
         maxSize: Int
 ) : PropertyValidationException(

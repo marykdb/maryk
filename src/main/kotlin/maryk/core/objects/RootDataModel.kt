@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 
 fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
@@ -99,10 +99,10 @@ abstract class RootDataModel<DM: Any>(
     /** Get PropertyReference by name
      * @param referenceName to parse for a property reference
      */
-    fun getPropertyReferenceByName(referenceName: String): PropertyReference<*, IsPropertyDefinition<*>> {
+    fun getPropertyReferenceByName(referenceName: String): IsPropertyReference<*, IsPropertyDefinition<*>> {
         val names = referenceName.split(".")
 
-        var propertyReference: PropertyReference<*, *>? = null
+        var propertyReference: IsPropertyReference<*, *>? = null
         for (name in names) {
             val def = if (propertyReference == null) {
                 getDefinition(name)
@@ -120,7 +120,7 @@ abstract class RootDataModel<DM: Any>(
      * @param length of bytes to read
      * @param reader to read for a property reference
      */
-    fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): PropertyReference<*, IsPropertyDefinition<*>> {
+    fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>> {
         var readLength = 0
 
         val lengthReader = {
@@ -128,15 +128,14 @@ abstract class RootDataModel<DM: Any>(
             reader()
         }
 
-        var propertyReference: PropertyReference<*, *>? = null
+        var propertyReference: IsPropertyReference<*, *>? = null
         while (readLength < length) {
-            val index = initIntByVar(lengthReader)
-
             propertyReference = if (propertyReference == null) {
+                val index = initIntByVar(lengthReader)
                 getDefinition(index)?.getRef({ propertyReference })
             } else {
-                propertyReference.getEmbeddedRefByIndex(index, { propertyReference })
-            } ?: throw DefNotFoundException("Property reference index «$index» does not exist on ${this.name}")
+                propertyReference.getEmbeddedRefByIndex(lengthReader)
+            } ?: throw DefNotFoundException("Property reference does not exist on ${this.name}")
         }
 
         return propertyReference!!

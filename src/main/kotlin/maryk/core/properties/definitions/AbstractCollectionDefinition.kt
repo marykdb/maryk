@@ -11,12 +11,12 @@ import maryk.core.properties.exceptions.PropertyTooLittleItemsException
 import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
-abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsPropertyContext>(
+abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = true,
@@ -37,7 +37,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
 
-    override fun validate(previousValue: C?, newValue: C?, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(previousValue: C?, newValue: C?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 
         if (newValue != null) {
@@ -65,7 +65,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, CX: IsProp
     abstract fun getSize(newValue: C): Int
 
     /** Validates the collection content */
-    abstract internal fun validateCollectionForExceptions(parentRefFactory: () -> PropertyReference<*, *>?, newValue: C, validator: (item: T, parentRefFactory: () -> PropertyReference<*, *>?) -> Any)
+    abstract internal fun validateCollectionForExceptions(parentRefFactory: () -> IsPropertyReference<*, *>?, newValue: C, validator: (item: T, parentRefFactory: () -> IsPropertyReference<*, *>?) -> Any)
 
     /** Creates a new mutable instance of the collection */
     abstract override fun newMutableCollection(): MutableCollection<T>

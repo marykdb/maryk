@@ -12,10 +12,10 @@ import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.CanHaveSimpleChildReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
+import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
-import maryk.core.properties.references.PropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -39,38 +39,28 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         assert(valueDefinition.required, { "Definition for value should be required on map: $name" })
     }
 
-    override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?): PropertyReference<Map<K, V>, MapDefinition<K, V, CX>> =
-        when (valueDefinition) {
-            is SubModelDefinition<*, *, *> -> CanHaveSimpleChildReference(
-                    this,
-                    parentRefFactory()?.let {
-                        it as CanHaveComplexChildReference<*, *>
-                    }
-            )
-            else -> {
-                PropertyReference(this, parentRefFactory())
-            }
-        }
+    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?): MapReference<K, V> =
+            MapReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific map key
      * @param key to get reference for
      * @param parentRefFactory (optional) factory to create parent ref
      */
-    fun getKeyRef(key: K, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+    fun getKeyRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
             = MapKeyReference(key, this.getRef(parentRefFactory))
 
     /** Get a reference to a specific map value by key
      * @param key to get reference to value for
      * @param parentRefFactory (optional) factory to create parent ref
      */
-    fun getValueRef(key: K, parentRefFactory: () -> PropertyReference<*, *>? = { null })
+    fun getValueRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
             = MapValueReference(key, this.getRef(parentRefFactory))
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
 
-    override fun validate(previousValue: Map<K,V>?, newValue: Map<K,V>?, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(previousValue: Map<K,V>?, newValue: Map<K,V>?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 
         if (newValue != null) {

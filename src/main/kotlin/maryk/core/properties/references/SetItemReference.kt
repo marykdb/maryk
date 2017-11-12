@@ -1,7 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.SetDefinition
+import maryk.core.protobuf.ByteLengthContainer
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType
 
 /** Reference to a Set Item by value
  * @param value           index of property reference
@@ -10,15 +12,23 @@ import maryk.core.properties.definitions.SetDefinition
  */
 class SetItemReference<T: Any>(
         val value: T,
-        parentReference: PropertyReference<Set<T>, SetDefinition<T, *>>
-) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>>(
+        parentReference: SetReference<T>
+) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
 ), EmbeddedPropertyReference<T> {
-    override val name: String? get() = parentReference?.name
+    override val name: String? get() = this.parentReference?.name
 
-    override val completeName: String get() = "${this.parentReference!!.completeName}.#${value}"
+    override val completeName: String get() = "${this.parentReference!!.completeName}.#$value"
 
-    override fun calculateTransportByteLength() = 0
+    override fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+        val parentLength = this.parentReference!!.calculateSubTransportByteLength(lengthCacher)
+        val valueLength = this.parentReference.propertyDefinition.valueDefinition.calculateTransportByteLength(value, lengthCacher)
+        return parentLength + 1 + valueLength
+    }
 
-    override fun writeTransportBytes(writer: (byte: Byte) -> Unit) = writer(0)
+    override fun writeTransportBytes(lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
+        ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
+        this.parentReference!!.propertyDefinition.valueDefinition.writeTransportBytes(value, lengthCacheGetter, writer)
+    }
 }

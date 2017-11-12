@@ -8,7 +8,7 @@ import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SubModelPropertyRef
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -31,11 +31,11 @@ class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>
 ) : AbstractSubDefinition<DO, CX>(
         name, index, indexed, searchable, required, final
 ) {
-    override fun getRef(parentRefFactory: () -> PropertyReference<*, *>?) =
+    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             SubModelPropertyRef(
                 this,
                 parentRefFactory()?.let {
-                    it as CanHaveComplexChildReference<*, *>
+                    it as CanHaveComplexChildReference<*, *, *>
                 }
             )
 
@@ -44,7 +44,7 @@ class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = dataModel.getDefinition(index)
 
     @Throws(PropertyValidationException::class)
-    override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         if (newValue != null) {
             this.dataModel.validate(

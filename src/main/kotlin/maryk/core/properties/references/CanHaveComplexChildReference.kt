@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
  * @param <T> Type contained within Property
  * @param <D> Type of property definition
  */
-open class CanHaveComplexChildReference<T: Any, out D : IsPropertyDefinition<T>>(
+open class CanHaveComplexChildReference<T: Any, out D : IsPropertyDefinition<T>, P: IsPropertyReference<*, *>>(
         definition: D,
-        parentReference: PropertyReference<*, *>? = null
-) : CanHaveSimpleChildReference<T, D>(definition, parentReference)
+        parentReference: P? = null
+) : CanHaveSimpleChildReference<T, D, P>(definition, parentReference)

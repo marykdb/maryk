@@ -48,7 +48,7 @@ internal class RootDataModelTest {
             bc.reserve(
                     it.calculateTransportByteLength(bc::addToCache)
             )
-            it.writeTransportBytes(bc::write)
+            it.writeTransportBytes(bc::nextLengthFromCache, bc::write)
 
             assertEquals(it, TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read))
 

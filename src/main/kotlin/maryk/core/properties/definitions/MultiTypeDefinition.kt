@@ -10,7 +10,7 @@ import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -32,7 +32,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         name, index, indexed, searchable, required, final
 ) {
     @Throws(PropertyValidationException::class)
-    override fun validate(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, parentRefFactory: () -> PropertyReference<*, *>?) {
+    override fun validate(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         if (newValue != null) {
             @Suppress("UNCHECKED_CAST")

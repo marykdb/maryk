@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.IsPropertyReference
 
 /** Exception for when a map or collection property has too little amount of items
  *
@@ -9,7 +9,7 @@ import maryk.core.properties.references.PropertyReference
  * @param minSize   minimum of range
  */
 class PropertyTooLittleItemsException(
-        ref: PropertyReference<*, *>,
+        ref: IsPropertyReference<*, *>,
         size: Int,
         minSize: Int
 ) : PropertyValidationException(

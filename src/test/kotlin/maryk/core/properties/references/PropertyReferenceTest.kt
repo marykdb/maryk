@@ -5,10 +5,10 @@ import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
-import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.Test
 
 internal class PropertyReferenceTest {
     private val modelDefinition = SubModelDefinition(

@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
-import org.junit.Test
+import kotlin.test.Test
 
 class ProtoBufTest {
     private class PBKey(val tag: Int, val wireType: WireType, val hexBytes: String)

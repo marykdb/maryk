@@ -12,7 +12,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
-import org.junit.Test
+import kotlin.test.Test
 
 internal class TypeIdTest {
     private data class MarykObject(

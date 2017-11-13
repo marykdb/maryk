@@ -11,8 +11,8 @@ import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
 import kotlin.test.assertTrue
+import kotlin.test.Test
 
 internal class SetDefinitionTest {
     private val subDef = StringDefinition(

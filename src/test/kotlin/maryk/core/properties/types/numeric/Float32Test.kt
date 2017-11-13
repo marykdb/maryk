@@ -1,9 +1,9 @@
 package maryk.core.properties.types.numeric
 
 import io.kotlintest.matchers.shouldBe
-import maryk.core.properties.ByteCollector
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
+import maryk.core.properties.ByteCollector
 
 internal class Float32Test {
 

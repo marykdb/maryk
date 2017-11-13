@@ -10,7 +10,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
+import kotlin.test.Test
 
 internal class NumberDefinitionTest {
     private val def = NumberDefinition(

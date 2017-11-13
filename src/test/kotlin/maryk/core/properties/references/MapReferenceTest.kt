@@ -3,8 +3,8 @@ package maryk.core.properties.references
 import maryk.TestMarykObject
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.types.Time
-import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.Test
 
 class MapReferenceTest {
     val mapReference = TestMarykObject.Properties.map.getRef()

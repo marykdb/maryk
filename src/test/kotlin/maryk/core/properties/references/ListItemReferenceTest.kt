@@ -2,8 +2,8 @@ package maryk.core.properties.references
 
 import maryk.TestMarykObject
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.Test
 
 class ListItemReferenceTest {
     val reference = TestMarykObject.Properties.listOfString.getItemRef(5)

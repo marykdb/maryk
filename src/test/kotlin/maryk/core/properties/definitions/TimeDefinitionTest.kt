@@ -6,7 +6,7 @@ import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
-import org.junit.Test
+import kotlin.test.Test
 import java.time.LocalTime
 import java.time.ZoneOffset
 import kotlin.test.assertTrue

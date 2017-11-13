@@ -3,8 +3,8 @@ package maryk.core.properties.references
 import maryk.TestMarykObject
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.types.Date
-import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.Test
 
 class SetItemReferenceTest {
     val reference = TestMarykObject.Properties.set.getItemRef(Date(2001, 4, 2))

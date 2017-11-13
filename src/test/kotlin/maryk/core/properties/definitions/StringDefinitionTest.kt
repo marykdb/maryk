@@ -10,7 +10,7 @@ import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
+import kotlin.test.Test
 
 internal class StringDefinitionTest {
 

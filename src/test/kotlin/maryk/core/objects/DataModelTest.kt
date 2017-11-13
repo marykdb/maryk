@@ -2,6 +2,7 @@ package maryk.core.objects
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import kotlin.test.Test
 import maryk.Option
 import maryk.SubMarykObject
 import maryk.TestMarykObject
@@ -20,7 +21,6 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
-import org.junit.Test
 
 private val testObject = TestMarykObject(
         string = "haas",

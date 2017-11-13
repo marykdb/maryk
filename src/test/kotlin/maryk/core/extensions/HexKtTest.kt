@@ -3,7 +3,7 @@ package maryk.core.extensions
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.exceptions.ParseException
-import org.junit.Test
+import kotlin.test.Test
 
 internal class HexKtTest {
     private val bytes = byteArrayOf( 0, -1, 88)

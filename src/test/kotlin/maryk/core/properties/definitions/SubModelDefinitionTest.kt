@@ -11,7 +11,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
+import kotlin.test.Test
 
 internal class SubModelDefinitionTest {
     private data class MarykObject(

@@ -13,8 +13,8 @@ import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
 import kotlin.test.assertTrue
+import kotlin.test.Test
 
 internal class MapDefinitionTest {
     val intDef = NumberDefinition(

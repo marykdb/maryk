@@ -2,7 +2,7 @@ package maryk.core.properties.types.numeric
 
 import io.kotlintest.matchers.shouldBe
 import maryk.core.properties.ByteCollector
-import org.junit.Test
+import kotlin.test.Test
 
 internal class UInt8Test {
     private val uInt8values = arrayOf(UInt8.MIN_VALUE, UInt8.MAX_VALUE, 89.toUInt8(), 127.toByte().toUInt8())

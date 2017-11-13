@@ -4,7 +4,7 @@ import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
-import org.junit.Test
+import kotlin.test.Test
 
 internal class TimeTest {
     fun cleanToSeconds(time: Time) = Time(time.hour, time.minute, time.second)

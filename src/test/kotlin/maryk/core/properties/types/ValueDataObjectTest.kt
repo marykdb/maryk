@@ -2,7 +2,7 @@ package maryk.core.properties.types
 
 import io.kotlintest.matchers.shouldBe
 import maryk.TestValueObject
-import org.junit.Test
+import kotlin.test.Test
 
 internal class ValueDataObjectTest {
     private val value = TestValueObject(

@@ -10,7 +10,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
+import kotlin.test.Test
 
 internal class MultiTypeDefinitionTest {
     val intDef = NumberDefinition<Int>(

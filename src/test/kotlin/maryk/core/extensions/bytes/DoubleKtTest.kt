@@ -1,8 +1,8 @@
 package maryk.core.extensions.bytes
 
 import maryk.core.properties.ByteCollector
-import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.Test
 
 internal class DoubleKtTest {
     private val doublesToTest = doubleArrayOf(

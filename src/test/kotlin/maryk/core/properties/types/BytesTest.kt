@@ -2,9 +2,9 @@ package maryk.core.properties.types
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import kotlin.test.Test
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
-import org.junit.Test
 
 internal class BytesTest {
     private val bytesToTest = arrayOf(

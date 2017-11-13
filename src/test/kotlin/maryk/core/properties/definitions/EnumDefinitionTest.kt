@@ -3,13 +3,13 @@ package maryk.core.properties.definitions
 import io.kotlintest.matchers.fail
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
+import kotlin.test.Test
 import maryk.Option
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
 
 internal class EnumDefinitionTest {
     private val enumsToTest = arrayOf(

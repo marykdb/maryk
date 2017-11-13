@@ -5,7 +5,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.StringDefinition
-import org.junit.Test
+import kotlin.test.Test
 
 internal class UUIDKeyTest {
     private data class MarykObject(

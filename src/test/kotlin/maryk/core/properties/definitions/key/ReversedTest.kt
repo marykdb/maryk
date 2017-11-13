@@ -8,7 +8,7 @@ import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.types.DateTime
-import org.junit.Test
+import kotlin.test.Test
 
 internal class ReversedTest {
     private data class MarykObject(

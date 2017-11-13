@@ -8,8 +8,8 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.numeric.toUInt32
-import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.Test
 
 internal class RootDataModelTest {
     @Test

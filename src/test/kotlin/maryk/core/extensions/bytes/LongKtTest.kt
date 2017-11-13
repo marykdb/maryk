@@ -5,7 +5,7 @@ import io.kotlintest.matchers.shouldThrow
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
-import org.junit.Test
+import kotlin.test.Test
 
 internal class LongKtTest {
     private val longsToTest = longArrayOf(

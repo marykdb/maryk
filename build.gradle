@@ -24,6 +24,8 @@ allprojects {
     }
 }
 
+compileKotlin.kotlinOptions.allWarningsAsErrors = true
+
 sourceSets {
     jvm.kotlin.srcDir("src/jvm/kotlin")
 }
@@ -34,10 +36,9 @@ dependencies {
     compile sourceSets.jvm.runtimeClasspath
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     testCompile "io.kotlintest:kotlintest:2.0.7"
-    testCompile "junit:junit:4.12"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

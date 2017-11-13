@@ -12,7 +12,7 @@ import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
+import kotlin.test.Test
 
 internal class ValueModelDefinitionTest {
     val def = ValueModelDefinition(

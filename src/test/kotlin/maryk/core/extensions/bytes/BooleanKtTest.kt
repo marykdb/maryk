@@ -1,8 +1,8 @@
 package maryk.core.extensions.bytes
 
 import io.kotlintest.matchers.shouldBe
+import kotlin.test.Test
 import maryk.core.properties.ByteCollector
-import org.junit.Test
 
 internal class BooleanKtTest {
     private val booleansToTest = booleanArrayOf(

@@ -11,7 +11,7 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import org.junit.Test
+import kotlin.test.Test
 
 internal class ReferenceDefinitionTest {
     private val refToTest = arrayOf<Key<TestMarykObject>>(

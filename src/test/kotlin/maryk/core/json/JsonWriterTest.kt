@@ -2,7 +2,7 @@ package maryk.core.json
 
 import io.kotlintest.matchers.shouldBe
 import io.kotlintest.matchers.shouldThrow
-import org.junit.Test
+import kotlin.test.Test
 
 internal class JsonWriterTest {
     @Test

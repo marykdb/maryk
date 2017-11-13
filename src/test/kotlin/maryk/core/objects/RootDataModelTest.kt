@@ -6,6 +6,7 @@ import maryk.TestMarykObject
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.DateTime
+import maryk.core.properties.types.Time
 import maryk.core.properties.types.numeric.toUInt32
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -33,6 +34,7 @@ internal class RootDataModelTest {
 
     private val subModelRef = SubMarykObject.Properties.value.getRef { TestMarykObject.Properties.subModel.getRef() }
     private val mapRef = TestMarykObject.Properties.map.getRef()
+    private val mapKeyRef = TestMarykObject.Properties.map.getKeyRef(Time(12, 33, 44))
 
     @Test
     fun testPropertyReferenceByName() {
@@ -44,7 +46,7 @@ internal class RootDataModelTest {
     fun testPropertyReferenceByWriter() {
         val bc = ByteCollectorWithLengthCacher()
 
-        arrayOf(subModelRef, mapRef).forEach {
+        arrayOf(subModelRef, mapRef, mapKeyRef).forEach {
             bc.reserve(
                     it.calculateTransportByteLength(bc::addToCache)
             )

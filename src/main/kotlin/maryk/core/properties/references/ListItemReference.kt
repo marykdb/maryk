@@ -20,7 +20,7 @@ class ListItemReference<T: Any> (
 ) {
     override val name = parentReference.name
 
-    override val completeName: String get() = "${this.parentReference!!.completeName}.#$index"
+    override val completeName: String get() = "${this.parentReference!!.completeName}.@$index"
 
     override fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         val parentLength = parentReference?.calculateSubTransportByteLength(lengthCacher) ?: 0

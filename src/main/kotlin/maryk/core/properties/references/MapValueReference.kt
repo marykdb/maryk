@@ -20,7 +20,7 @@ class MapValueReference<K: Any, V: Any>(
 
     override val name = parentReference.name
 
-    override val completeName get() = "${this.parentReference!!.completeName}.#$key"
+    override val completeName get() = "${this.parentReference!!.completeName}.@$key"
 
     override fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         val parentLength = this.parentReference!!.calculateSubTransportByteLength(lengthCacher)

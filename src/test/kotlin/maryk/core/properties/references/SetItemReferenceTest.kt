@@ -21,4 +21,12 @@ class SetItemReferenceTest {
         val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
         assertEquals(this.reference, converted)
     }
+
+    @Test
+    fun testStringConversion() {
+        assertEquals("set.$2001-04-02", this.reference.completeName)
+
+        val converted = TestMarykObject.getPropertyReferenceByName(this.reference.completeName)
+        assertEquals(this.reference, converted)
+    }
 }

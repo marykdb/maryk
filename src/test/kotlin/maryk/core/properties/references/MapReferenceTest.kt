@@ -25,4 +25,16 @@ class MapReferenceTest {
             bc.reset()
         }
     }
+
+    @Test
+    fun testStringConversion() {
+        assertEquals("map", mapReference.completeName)
+        assertEquals("map.\$12:00:01", keyReference.completeName)
+        assertEquals("map.@15:22:55", valReference.completeName)
+
+        arrayOf(mapReference, keyReference, valReference).forEach {
+            val converted = TestMarykObject.getPropertyReferenceByName(it.completeName!!)
+            assertEquals(it, converted)
+        }
+    }
 }

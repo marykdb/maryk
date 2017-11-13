@@ -92,11 +92,11 @@ internal class ListDefinitionTest {
 
         with(e.exceptions[0]) {
             assertTrue(this is PropertyInvalidValueException)
-            this.reference!!.completeName shouldBe "stringList.#1"
+            this.reference!!.completeName shouldBe "stringList.@1"
         }
         with(e.exceptions[1]) {
             assertTrue(this is PropertyInvalidValueException)
-            this.reference!!.completeName shouldBe "stringList.#2"
+            this.reference!!.completeName shouldBe "stringList.@2"
         }
     }
 

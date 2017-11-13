@@ -17,6 +17,22 @@ open class MapReference<K: Any, V: Any> (
         propertyDefinition,
         parentReference
 ), HasEmbeddedPropertyReference<Map<K, V>> {
+    override fun getEmbedded(name: String): IsPropertyReference<*, *>  = when(name[0]) {
+        '@' -> MapValueReference<K, V>(
+                propertyDefinition.keyDefinition.fromString(
+                        name.substring(1)
+                ),
+                this
+        )
+        '$' -> MapKeyReference<K, V>(
+                propertyDefinition.keyDefinition.fromString(
+                        name.substring(1)
+                ),
+                this
+        )
+        else -> throw ParseException("Unknown List type $name[0]")
+    }
+
     override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>> {
         val protoKey = ProtoBuf.readKey(reader)
         return when(protoKey.tag) {

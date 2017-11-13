@@ -11,6 +11,9 @@ class SubModelPropertyRef<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext
 ): CanHaveSimpleChildReference<DO, SubModelDefinition<DO, D, CX>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
+    override fun getEmbedded(name: String)
+            = this.propertyDefinition.dataModel.getDefinition(name)!!.getRef({ this })
+
     override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
         val index = initIntByVar(reader)
         return this.propertyDefinition.dataModel.getDefinition(index)!!.getRef({ this })

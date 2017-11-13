@@ -16,7 +16,7 @@ class ListDefinition<T: Any, in CX: IsPropertyContext>(
         minSize: Int? = null,
         maxSize: Int? = null,
         valueDefinition: AbstractValueDefinition<T, CX>
-) : AbstractCollectionDefinition<T, List<T>, CX>(
+) : AbstractCollectionDefinition<T, List<T>, CX, AbstractValueDefinition<T, CX>>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
 ), HasSizeDefinition {
     override fun getSize(newValue: List<T>) = newValue.size

@@ -20,4 +20,12 @@ class ListItemReferenceTest {
         val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
         assertEquals(this.reference, converted)
     }
+
+    @Test
+    fun testStringConversion() {
+        assertEquals("listOfString.@5", this.reference.completeName)
+
+        val converted = TestMarykObject.getPropertyReferenceByName(this.reference.completeName)
+        assertEquals(this.reference, converted)
+    }
 }

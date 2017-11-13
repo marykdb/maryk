@@ -93,7 +93,7 @@ internal class MapDefinitionTest {
 
         with(e.exceptions[0]) {
             assertTrue(this is PropertyInvalidValueException)
-            this.reference!!.completeName shouldBe "intStringMap.#30"
+            this.reference!!.completeName shouldBe "intStringMap.@30"
         }
 
         with(e.exceptions[1]) {

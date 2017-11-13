@@ -105,13 +105,11 @@ abstract class RootDataModel<DM: Any>(
 
         var propertyReference: IsPropertyReference<*, *>? = null
         for (name in names) {
-            val def = if (propertyReference == null) {
-                getDefinition(name)
-            } else {
-                propertyReference.propertyDefinition.getEmbeddedByName(name)
+            propertyReference = when (propertyReference) {
+                null -> getDefinition(name)?.getRef({ propertyReference })
+                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
+                else -> throw DefNotFoundException("More property references found on property ${this.name} that cannot have any ")
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist on ${this.name}")
-
-            propertyReference = def.getRef({ propertyReference })
         }
 
         return propertyReference!!

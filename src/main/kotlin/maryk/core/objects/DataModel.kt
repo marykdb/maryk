@@ -297,7 +297,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                                 context
                         )
                 )
-                is AbstractCollectionDefinition<*, *, CX> -> {
+                is AbstractCollectionDefinition<*, *, CX, *> -> {
                     when {
                         propertyDefinition.isPacked(key.wireType) -> {
                             @Suppress("UNCHECKED_CAST")

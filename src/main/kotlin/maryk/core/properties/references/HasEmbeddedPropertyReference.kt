@@ -4,8 +4,13 @@ package maryk.core.properties.references
  * @param <T> Type of property contained
  */
 interface HasEmbeddedPropertyReference<T> {
-    /** Get an embedded ref by index
+    /** Get an embedded ref by reader
      * @param reader to read sub bytes with
      */
     fun getEmbeddedRef(reader: () -> Byte) : IsPropertyReference<*, *>
+
+    /** Get an embedded ref by name
+     * @param name to get reference for
+     */
+    fun getEmbedded(name: String): IsPropertyReference<*, *>
 }

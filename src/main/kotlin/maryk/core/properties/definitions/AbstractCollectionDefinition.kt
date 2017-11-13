@@ -16,7 +16,11 @@ import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
-abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext>(
+abstract class AbstractCollectionDefinition<
+        T: Any, C: Collection<T>,
+        in CX: IsPropertyContext,
+        out ST: AbstractValueDefinition<T, CX>
+>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = true,
@@ -25,7 +29,7 @@ abstract class AbstractCollectionDefinition<T: Any, C: Collection<T>, in CX: IsP
         final: Boolean = false,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
-        val valueDefinition: AbstractValueDefinition<T, CX>
+        val valueDefinition: ST
 ) : AbstractPropertyDefinition<C>(
         name, index, indexed, searchable, required, final
 ), HasSizeDefinition, IsByteTransportableCollection<T, C, CX>, IsSerializablePropertyDefinition<C, CX> {

@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
-import io.kotlintest.matchers.shouldBe
-import kotlin.test.Test
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
+import kotlin.test.Test
 
 internal class AbstractSimpleDefinitionTest {
     val test: String = "test"

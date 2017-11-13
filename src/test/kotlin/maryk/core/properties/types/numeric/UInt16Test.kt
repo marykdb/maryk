@@ -1,7 +1,7 @@
 package maryk.core.properties.types.numeric
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.properties.ByteCollector
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UInt16Test {

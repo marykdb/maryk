@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.properties.exceptions.PropertyAlreadySetException
 import maryk.core.properties.exceptions.PropertyRequiredException
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 

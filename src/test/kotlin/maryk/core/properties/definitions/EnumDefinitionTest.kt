@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions
 
-import io.kotlintest.matchers.shouldBe
 import maryk.Option
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 import kotlin.test.fail

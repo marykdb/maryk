@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.key
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.extensions.toHex
 import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
@@ -12,6 +11,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class TypeIdTest {

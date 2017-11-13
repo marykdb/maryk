@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import java.time.LocalDateTime
 import java.time.ZoneOffset

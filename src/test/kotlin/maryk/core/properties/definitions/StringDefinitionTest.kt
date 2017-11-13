@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
@@ -9,6 +8,7 @@ import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 

@@ -1,10 +1,10 @@
 package maryk.core.properties.types
 
-import io.kotlintest.matchers.shouldBe
-import kotlin.test.Test
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
+import kotlin.test.Test
 
 internal class DateTest {
     private val datesToTest = arrayOf(

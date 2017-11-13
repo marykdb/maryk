@@ -1,7 +1,7 @@
 package maryk.core.properties.types
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.properties.ByteCollector
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 

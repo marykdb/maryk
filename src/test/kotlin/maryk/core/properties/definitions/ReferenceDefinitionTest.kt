@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import io.kotlintest.matchers.shouldBe
 import maryk.TestMarykObject
 import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.extensions.bytes.ZEROBYTE
@@ -10,6 +9,7 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 

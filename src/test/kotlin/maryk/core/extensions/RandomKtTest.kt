@@ -1,6 +1,6 @@
 package maryk.core.extensions
 
-import io.kotlintest.matchers.shouldBe
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class RandomKtTest {

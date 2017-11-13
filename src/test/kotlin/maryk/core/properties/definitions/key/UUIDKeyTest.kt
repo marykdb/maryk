@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions.key
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.StringDefinition
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UUIDKeyTest {

@@ -1,11 +1,11 @@
 package maryk.core.protobuf
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ProtoBufTest {

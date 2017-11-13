@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
@@ -10,9 +9,10 @@ import maryk.core.properties.exceptions.PropertyTooMuchItemsException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
-import kotlin.test.assertTrue
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 internal class SetDefinitionTest {
     private val subDef = StringDefinition(

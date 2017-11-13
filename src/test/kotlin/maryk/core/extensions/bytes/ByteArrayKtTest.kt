@@ -1,10 +1,10 @@
 package maryk.core.extensions.bytes
 
-import io.kotlintest.matchers.shouldBe
-import kotlin.test.Test
 import maryk.core.bytes.Base64
 import maryk.core.extensions.compare.compareTo
 import maryk.core.properties.ByteCollector
+import maryk.test.shouldBe
+import kotlin.test.Test
 
 internal class ByteArrayKtTest {
     private val bytesToTest = arrayOf(

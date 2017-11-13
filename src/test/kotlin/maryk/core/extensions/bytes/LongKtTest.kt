@@ -1,9 +1,9 @@
 package maryk.core.extensions.bytes
 
-import io.kotlintest.matchers.shouldBe
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
+import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 

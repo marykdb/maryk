@@ -90,6 +90,9 @@ class JsonReader(
                     readSkipWhitespace()
                     return nextToken()
                 }
+                is JsonToken.STOPPED -> {
+                    return currentToken
+                }
             }
         } catch (e: ExceptionWhileReadingJson) {
             currentToken = JsonToken.SUSPENDED(currentToken)

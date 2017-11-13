@@ -1,12 +1,10 @@
 package maryk.core.extensions.bytes
 
-import maryk.core.extensions.rawbytes.toRawLongBits
-
 /** Write the bytes of this Double to a writer
  * @param writer to write this Double to
  */
 internal fun Double.writeBytes(writer: (byte: Byte) -> Unit) {
-    var l = this.toRawLongBits()
+    var l = this.toRawBits()
     l = (l xor ((l shr 64 - 1) or Long.MIN_VALUE)) + 1
     return l.writeBytes(writer)
 }
@@ -18,5 +16,5 @@ internal fun Double.writeBytes(writer: (byte: Byte) -> Unit) {
 internal fun initDouble(reader: () -> Byte): Double {
     var l = initLong(reader) - 1
     l = l xor (l.inv() shr 64 - 1 or java.lang.Long.MIN_VALUE)
-    return maryk.core.extensions.rawbytes.initDouble(l)
+    return Double.fromBits(l)
 }

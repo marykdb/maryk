@@ -1,12 +1,10 @@
 package maryk.core.extensions.bytes
 
-import maryk.core.extensions.rawbytes.toRawIntBits
-
 /** Write the bytes of this Double to a writer
  * @param writer to write this Double to
  */
 internal fun Float.writeBytes(writer: (byte: Byte) -> Unit) {
-    var f = this.toRawIntBits()
+    var f = this.toRawBits()
     f = (f xor (f shr 32 - 1 or Integer.MIN_VALUE)) + 1
     return f.writeBytes(writer)
 }
@@ -18,5 +16,5 @@ internal fun Float.writeBytes(writer: (byte: Byte) -> Unit) {
 internal fun initFloat(reader: () -> Byte): Float {
     var f = initInt(reader) - 1
     f = f xor (f.inv() shr 32 - 1 or Integer.MIN_VALUE)
-    return maryk.core.extensions.rawbytes.initFloat(f)
+    return Float.fromBits(f)
 }

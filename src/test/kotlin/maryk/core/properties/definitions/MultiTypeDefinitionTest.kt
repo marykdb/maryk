@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
@@ -10,6 +9,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class MultiTypeDefinitionTest {

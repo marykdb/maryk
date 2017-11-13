@@ -1,8 +1,8 @@
 package maryk.core.extensions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.exceptions.ParseException
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class HexKtTest {

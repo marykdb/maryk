@@ -1,16 +1,16 @@
 package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
-import kotlin.test.Test
+import maryk.test.shouldThrow
 import java.time.LocalTime
 import java.time.ZoneOffset
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlin.test.Test
 
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(

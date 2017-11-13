@@ -1,7 +1,7 @@
 package maryk.core.protobuf
 
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.exceptions.ParseException
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class WireTypeTest {

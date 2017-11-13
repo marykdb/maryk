@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
@@ -11,6 +10,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class SubModelDefinitionTest {

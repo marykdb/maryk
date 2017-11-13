@@ -1,11 +1,11 @@
 package maryk.core.extensions.bytes
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
 import kotlin.test.Test
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
+import maryk.test.shouldThrow
 
 internal class ByteKtTest {
     private val bytesToTest = byteArrayOf(

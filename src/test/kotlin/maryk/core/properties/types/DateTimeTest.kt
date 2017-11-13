@@ -1,9 +1,9 @@
 package maryk.core.properties.types
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
-import kotlin.test.Test
 import maryk.core.properties.ByteCollector
+import maryk.test.shouldThrow
+import kotlin.test.Test
 
 internal class DateTimeTest {
     private fun cleanToSeconds(it: DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.day))

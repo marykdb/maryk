@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
@@ -10,6 +9,7 @@ import maryk.core.properties.exceptions.PropertyInvalidSizeException
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class StringDefinitionTest {

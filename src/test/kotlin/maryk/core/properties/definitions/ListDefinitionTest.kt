@@ -1,8 +1,6 @@
 package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldEqual
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
@@ -16,8 +14,9 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import kotlin.test.assertTrue
+import maryk.test.shouldThrow
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 internal class ListDefinitionTest {
     private val subDef = StringDefinition(
@@ -192,6 +191,6 @@ internal class ListDefinitionTest {
                 bc::read
         )
 
-        readList shouldEqual list
+        readList shouldBe list
     }
 }

@@ -1,14 +1,14 @@
 package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
-import kotlin.test.Test
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.test.shouldThrow
+import kotlin.test.Test
 
 internal class FixedBytesDefinitionTest {
     private val fixedBytesToTest = arrayOf(

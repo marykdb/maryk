@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
-import kotlin.test.Test
 import maryk.core.properties.exceptions.PropertyAlreadySetException
 import maryk.core.properties.exceptions.PropertyRequiredException
+import maryk.test.shouldThrow
+import kotlin.test.Test
 
 internal class AbstractPropertyDefinitionTest {
     val def = StringDefinition(name = "test", required = true, final = true)

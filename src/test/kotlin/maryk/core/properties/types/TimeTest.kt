@@ -1,9 +1,9 @@
 package maryk.core.properties.types
 
 import io.kotlintest.matchers.shouldBe
-import io.kotlintest.matchers.shouldThrow
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class TimeTest {

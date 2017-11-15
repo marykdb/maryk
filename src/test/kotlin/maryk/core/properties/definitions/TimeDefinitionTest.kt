@@ -4,10 +4,9 @@ import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
+import maryk.core.time.Instant
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
-import java.time.LocalTime
-import java.time.ZoneOffset
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -34,8 +33,11 @@ internal class TimeDefinitionTest {
 
     @Test
     fun createNow() {
-        assertTrue {
-            LocalTime.now(ZoneOffset.UTC).toSecondOfDay() - def.createNow().toSecondsOfDay() in 0..1
+        val expected = Instant.getCurrentEpochTimeInMillis()% (24 * 60 * 60 * 1000) / 1000
+        val now = def.createNow().toSecondsOfDay()
+
+        assertTrue("$now is diverging too much from $expected time") {
+            expected - now in -1..1
         }
     }
 

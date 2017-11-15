@@ -15,6 +15,6 @@ internal fun Double.writeBytes(writer: (byte: Byte) -> Unit) {
  */
 internal fun initDouble(reader: () -> Byte): Double {
     var l = initLong(reader) - 1
-    l = l xor (l.inv() shr 64 - 1 or java.lang.Long.MIN_VALUE)
+    l = l xor (l.inv() shr 64 - 1 or Long.MIN_VALUE)
     return Double.fromBits(l)
 }

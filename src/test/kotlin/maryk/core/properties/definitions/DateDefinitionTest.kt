@@ -3,9 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
+import maryk.core.time.Instant
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
-import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.fail
 
@@ -22,7 +22,8 @@ internal class DateDefinitionTest {
 
     @Test
     fun createNow() {
-        def.createNow().epochDay shouldBe LocalDate.now().toEpochDay()
+        val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
+        def.createNow().epochDay shouldBe currentEpochDay
     }
 
     @Test

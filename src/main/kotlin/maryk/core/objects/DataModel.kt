@@ -321,9 +321,8 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                             @Suppress("UNCHECKED_CAST")
                             val collection = when {
                                 valueMap.contains(key.tag) -> valueMap[key.tag]
-                                else -> propertyDefinition.newMutableCollection().let {
+                                else -> propertyDefinition.newMutableCollection().also {
                                     valueMap[key.tag] = it
-                                    it
                                 }
                             } as MutableCollection<Any>
                             collection += value

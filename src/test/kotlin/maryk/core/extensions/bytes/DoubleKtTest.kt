@@ -1,7 +1,7 @@
 package maryk.core.extensions.bytes
 
 import maryk.core.properties.ByteCollector
-import kotlin.test.assertEquals
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class DoubleKtTest {
@@ -27,7 +27,7 @@ internal class DoubleKtTest {
             bc.reserve(8)
             it.writeBytes(bc::write)
 
-            assertEquals(it, initDouble(bc::read))
+            initDouble(bc::read) shouldBe it
             bc.reset()
         }
     }

@@ -3,7 +3,7 @@ package maryk.core.properties.references
 import maryk.TestMarykObject
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.types.Date
-import kotlin.test.assertEquals
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class SetItemReferenceTest {
@@ -19,14 +19,14 @@ class SetItemReferenceTest {
         this.reference.writeTransportBytes(bc::nextLengthFromCache, bc::write)
 
         val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
-        assertEquals(this.reference, converted)
+        converted shouldBe this.reference
     }
 
     @Test
     fun testStringConversion() {
-        assertEquals("set.$2001-04-02", this.reference.completeName)
+        this.reference.completeName shouldBe "set.$2001-04-02"
 
         val converted = TestMarykObject.getPropertyReferenceByName(this.reference.completeName)
-        assertEquals(this.reference, converted)
+        converted shouldBe this.reference
     }
 }

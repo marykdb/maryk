@@ -3,7 +3,6 @@ package maryk.core.properties.types.numeric
 import maryk.core.properties.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 internal class Float32Test {
 
@@ -29,7 +28,7 @@ internal class Float32Test {
         Float.MAX_VALUE.toString() shouldBe "3.4028235E38"
 
         float32values.forEach {
-            assertEquals(it, Float32.ofString(it.toString()))
+            Float32.ofString(it.toString()) shouldBe it
         }
     }
 

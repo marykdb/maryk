@@ -3,7 +3,7 @@ package maryk.core.properties.references
 import maryk.TestMarykObject
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.types.Time
-import kotlin.test.assertEquals
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class MapReferenceTest {
@@ -21,20 +21,20 @@ class MapReferenceTest {
             it.writeTransportBytes(bc::nextLengthFromCache, bc::write)
 
             val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
-            assertEquals(it, converted)
+            converted shouldBe it
             bc.reset()
         }
     }
 
     @Test
     fun testStringConversion() {
-        assertEquals("map", mapReference.completeName)
-        assertEquals("map.\$12:00:01", keyReference.completeName)
-        assertEquals("map.@15:22:55", valReference.completeName)
+        mapReference.completeName shouldBe "map"
+        keyReference.completeName shouldBe "map.\$12:00:01"
+        valReference.completeName shouldBe "map.@15:22:55"
 
         arrayOf(mapReference, keyReference, valReference).forEach {
             val converted = TestMarykObject.getPropertyReferenceByName(it.completeName!!)
-            assertEquals(it, converted)
+            converted shouldBe it
         }
     }
 }

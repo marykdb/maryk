@@ -32,7 +32,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun createNow() {
         assertTrue {
-            LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli() - def.createNow().toEpochMilli() in -20..20
+            LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli() - def.createNow().toEpochMilli() in -100..100
         }
     }
 

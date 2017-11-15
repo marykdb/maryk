@@ -3,7 +3,6 @@ package maryk.core.properties.types.numeric
 import maryk.core.properties.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 internal class Float64Test {
 
@@ -29,7 +28,7 @@ internal class Float64Test {
         Double.MAX_VALUE.toString() shouldBe "1.7976931348623157E308"
 
         float64values.forEach {
-            assertEquals(it,  Float64.ofString(it.toString()))
+            Float64.ofString(it.toString()) shouldBe  it
         }
     }
 
@@ -39,7 +38,7 @@ internal class Float64Test {
         float64values.forEach {
             bc.reserve(Float64.size)
             Float64.writeStorageBytes(it, bc::write)
-            assertEquals(it, Float64.fromStorageByteReader(bc.size, bc::read))
+            Float64.fromStorageByteReader(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
@@ -51,7 +50,7 @@ internal class Float64Test {
             bc.reserve(Float64.calculateTransportByteLength(it))
             Float64.writeTransportBytes(it, bc::write)
             val value = Float64.readTransportBytes(bc::read)
-            assertEquals(value, it)
+            value shouldBe it
             bc.reset()
         }
     }

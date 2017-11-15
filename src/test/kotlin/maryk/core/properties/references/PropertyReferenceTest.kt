@@ -5,9 +5,8 @@ import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import maryk.test.shouldBe
+import maryk.test.shouldNotBe
 import kotlin.test.Test
 
 internal class PropertyReferenceTest {
@@ -27,19 +26,19 @@ internal class PropertyReferenceTest {
 
     @Test
     fun getCompleteName() {
-        assertEquals("test", this.ref.completeName)
-        assertEquals("subModel.test", this.subRef.completeName)
+        this.ref.completeName shouldBe "test"
+        this.subRef.completeName shouldBe "subModel.test"
     }
 
     @Test
     fun testHashCode() {
-        assertEquals(3556498, this.ref.hashCode())
+        this.ref.hashCode() shouldBe 3556498
     }
 
     @Test
     fun testCompareTo() {
-        assertTrue { this.ref == definition.getRef() }
-        assertFalse { this.ref == modelDefinition.getRef() }
+        this.ref shouldBe  definition.getRef()
+        this.ref shouldNotBe modelDefinition.getRef()
     }
 
     @Test
@@ -51,6 +50,6 @@ internal class PropertyReferenceTest {
         )
         this.subRef.writeTransportBytes(bc::nextLengthFromCache, bc::write)
 
-        assertEquals("0201", bc.bytes!!.toHex())
+        bc.bytes!!.toHex() shouldBe "0201"
     }
 }

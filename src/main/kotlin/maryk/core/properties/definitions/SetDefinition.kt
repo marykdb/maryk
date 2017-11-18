@@ -15,8 +15,8 @@ class SetDefinition<T: Any, in CX: IsPropertyContext>(
         final: Boolean = false,
         minSize: Int? = null,
         maxSize: Int? = null,
-        valueDefinition: AbstractSimpleValueDefinition<T, CX>
-) : AbstractCollectionDefinition<T, Set<T>, CX, AbstractSimpleValueDefinition<T, CX>>(
+        valueDefinition: AbstractValueDefinition<T, CX>
+) : AbstractCollectionDefinition<T, Set<T>, CX, AbstractValueDefinition<T, CX>>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
 ), HasSizeDefinition {
     override fun getSize(newValue: Set<T>) = newValue.size

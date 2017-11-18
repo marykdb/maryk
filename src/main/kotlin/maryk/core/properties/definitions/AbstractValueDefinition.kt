@@ -3,6 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.exceptions.ParseException
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.PropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -24,6 +27,9 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
 ) : AbstractSubDefinition<T, CX>(
         name, index, indexed, searchable, required, final
 ) {
+    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?)
+            = PropertyReference(this, parentRefFactory())
+
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?) : Int {
         var totalByteLength = 0
         totalByteLength += ProtoBuf.calculateKeyLength(index)
@@ -78,4 +84,20 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
     override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<*>? = null
+
+    /** Get the value from a string
+     * @param string to convert
+     * @return the value
+     * @param context with possible context values for Dynamic writers
+     * @throws ParseException if conversion fails
+     */
+    @Throws(ParseException::class)
+    abstract fun fromString(string: String, context: CX? = null): T
+
+    /** Convert value to String
+     * @param value to convert
+     * @param context with possible context values for Dynamic writers
+     * @return value as String
+     */
+    open fun asString(value: T, context: CX? = null) = value.toString()
 }

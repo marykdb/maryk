@@ -68,6 +68,8 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
      */
     open fun asString(value: T) = value.toString()
 
+    override fun asString(value: T, context: CX?) = this.asString(value)
+
     /**
      * Get the value from a string
      * @param string to convert
@@ -76,6 +78,8 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
      */
     @Throws(ParseException::class)
     abstract internal fun fromString(string: String): T
+
+    override final fun fromString(string: String, context: CX?) = this.fromString(string)
 
     override fun writeJsonValue(value: T, writer: JsonWriter, context: CX?) {
         writer.writeString(
@@ -88,6 +92,6 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
         if (reader.currentToken !is JsonToken.OBJECT_VALUE && reader.currentToken !is JsonToken.ARRAY_VALUE) {
             throw ParseException("JSON value for $name should be a simple value")
         }
-        return this.fromString(reader.lastValue)
+        return this.fromString(reader.lastValue, context)
     }
 }

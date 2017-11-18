@@ -20,8 +20,8 @@ class SetItemReference<T: Any>(
 
     override val completeName: String get() = "${this.parentReference!!.completeName}.$$value"
 
-    override fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val parentLength = this.parentReference!!.calculateSubTransportByteLength(lengthCacher)
+    override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+        val parentLength = this.parentReference!!.calculateTransportByteLength(lengthCacher)
         val valueLength = this.parentReference.propertyDefinition.valueDefinition.calculateTransportByteLength(value, lengthCacher)
         return parentLength + 1 + valueLength
     }

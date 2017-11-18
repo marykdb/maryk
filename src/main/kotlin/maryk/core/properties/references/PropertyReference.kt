@@ -38,19 +38,7 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>, out P: IsP
      * @param lengthCacher to cache length with
      */
     override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val container = ByteLengthContainer()
-        lengthCacher(container)
-
-        container.length = this.calculateSubTransportByteLength(lengthCacher)
-        return container.length
-    }
-
-    /** Calculate the transport length of encoding this reference
-     * For cascading use
-     * @return size of this reference part
-     */
-    override fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val parentLength = this.parentReference?.calculateSubTransportByteLength(lengthCacher) ?: 0
+        val parentLength = this.parentReference?.calculateTransportByteLength(lengthCacher) ?: 0
         return this.propertyDefinition.index.calculateVarByteLength() + parentLength
     }
 

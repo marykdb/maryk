@@ -19,8 +19,8 @@ abstract class AbstractPropertyDefinition<T: Any>  (
         val required: Boolean,
         val final: Boolean
 ) : IsPropertyDefinition<T> {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
-            PropertyReference(this, parentRefFactory())
+    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?)
+            = PropertyReference(this, parentRefFactory())
 
     @Throws(PropertyValidationException::class)
     override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) = when {

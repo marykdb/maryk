@@ -14,15 +14,9 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>> {
 
     /** Calculate the transport length of encoding this reference
      * @param lengthCacher to cache length with
-     */
-    fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int
-
-    /** Calculate the transport length of encoding this reference
-     * For cascading use
-     * @param lengthCacher to cache length with
      * @return size of this reference part
      */
-    fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int
+    fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int
 
     /** Write transport bytes of property reference
      * @param lengthCacheGetter to get next cached length

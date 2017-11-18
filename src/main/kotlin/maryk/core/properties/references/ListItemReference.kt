@@ -22,8 +22,8 @@ class ListItemReference<T: Any> (
 
     override val completeName: String get() = "${this.parentReference!!.completeName}.@$index"
 
-    override fun calculateSubTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val parentLength = parentReference?.calculateSubTransportByteLength(lengthCacher) ?: 0
+    override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
+        val parentLength = parentReference?.calculateTransportByteLength(lengthCacher) ?: 0
         return parentLength + 1 + index.calculateVarByteLength()
     }
 

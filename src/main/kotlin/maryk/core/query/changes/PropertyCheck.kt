@@ -18,6 +18,8 @@ data class PropertyCheck<T: Any>(
         override val reference: IsPropertyReference<T, IsPropertyDefinition<T>>,
         override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
+    override val changeType = ChangeType.PROP_CHECK
+
     companion object: QueryDataModel<PropertyCheck<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")

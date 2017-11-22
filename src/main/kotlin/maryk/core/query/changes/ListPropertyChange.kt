@@ -31,6 +31,8 @@ data class ListPropertyChange<T: Any>(
         val deleteAtIndex: List<Int>? = null,
         override val valueToCompare: List<T>? = null
 ) : IsPropertyOperation<List<T>> {
+    override val changeType = ChangeType.LIST_CHANGE
+
     object Properties {
         @Suppress("UNCHECKED_CAST")
         private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->

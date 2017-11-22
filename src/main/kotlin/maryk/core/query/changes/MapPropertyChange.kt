@@ -27,6 +27,8 @@ data class MapPropertyChange<K: Any, V: Any>(
         val keysToDelete: Set<K>? = null,
         override val valueToCompare: Map<K, V>? = null
 ) : IsPropertyOperation<Map<K, V>> {
+    override val changeType = ChangeType.MAP_CHANGE
+
     object Properties {
         @Suppress("UNCHECKED_CAST")
         private val keyDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->

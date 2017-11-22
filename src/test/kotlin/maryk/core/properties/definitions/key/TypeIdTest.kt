@@ -22,10 +22,10 @@ internal class TypeIdTest {
             val multi = MultiTypeDefinition(
                     name = "multi",
                     index = 0,
-                    typeMap = mapOf<Int, AbstractSubDefinition<*, IsPropertyContext>>(
+                    getDefinition = mapOf<Int, AbstractSubDefinition<*, IsPropertyContext>>(
                             0 to StringDefinition(),
                             1 to BooleanDefinition()
-                    )
+                    )::get
             )
         }
         companion object: RootDataModel<MarykObject>(

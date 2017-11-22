@@ -123,13 +123,13 @@ data class TestMarykObject(
         val multi = MultiTypeDefinition(
                 name = "multi",
                 index = 12,
-                typeMap = mapOf(
+                getDefinition = mapOf(
                         0 to StringDefinition(),
                         1 to NumberDefinition(type = SInt32),
                         2 to SubModelDefinition(
                                 dataModel = SubMarykObject
                         )
-                )
+                )::get
         )
         val reference = ReferenceDefinition(
                 name = "reference",

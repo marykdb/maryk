@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
-import maryk.core.query.DataObjectChange
+import maryk.core.query.changes.DataObjectChange
 
 /** A Request to change DataObjects for specific DataModel
  * @param dataModel Root model of data to change objects in

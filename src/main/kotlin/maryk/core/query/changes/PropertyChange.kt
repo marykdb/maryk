@@ -15,11 +15,13 @@ import maryk.core.query.DataModelPropertyContext
  * Operation will only complete if they both are equal
  * @param T: type of value to be operated on
  */
-data class PropertyValueChange<T: Any>(
+data class PropertyChange<T: Any>(
         override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
         val newValue: T,
         override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
+    override val changeType = ChangeType.PROP_CHANGE
+
     object Properties {
         val newValue = ContextualValueDefinition(
                 name = "newValue",
@@ -30,19 +32,19 @@ data class PropertyValueChange<T: Any>(
         )
     }
 
-    companion object: QueryDataModel<PropertyValueChange<*>>(
+    companion object: QueryDataModel<PropertyChange<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                PropertyValueChange(
+                PropertyChange(
                     reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
                     valueToCompare = it[1],
                     newValue = it[2] as Any
                 )
             },
             definitions = listOf(
-                    Def(IsPropertyOperation.Properties.reference, PropertyValueChange<*>::reference),
-                    Def(IsPropertyOperation.Properties.valueToCompare, PropertyValueChange<*>::valueToCompare),
-                    Def(Properties.newValue, PropertyValueChange<*>::newValue)
+                    Def(IsPropertyOperation.Properties.reference, PropertyChange<*>::reference),
+                    Def(IsPropertyOperation.Properties.valueToCompare, PropertyChange<*>::valueToCompare),
+                    Def(Properties.newValue, PropertyChange<*>::newValue)
             )
     )
 }

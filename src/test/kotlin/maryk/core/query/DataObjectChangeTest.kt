@@ -4,10 +4,10 @@ import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.toUInt64
+import maryk.core.query.changes.DataObjectChange
+import maryk.core.query.changes.PropertyChange
 import maryk.core.query.changes.PropertyDelete
-import maryk.core.query.changes.PropertyValueChange
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -16,8 +16,8 @@ class DataObjectChangeTest {
 
     private val dataObjectChange = DataObjectChange(
             key1,
-            TypedValue(0, PropertyValueChange(SubMarykObject.Properties.value.getRef(), "new")),
-            TypedValue(1, PropertyDelete(SubMarykObject.Properties.value.getRef())),
+            PropertyChange(SubMarykObject.Properties.value.getRef(), "new"),
+            PropertyDelete(SubMarykObject.Properties.value.getRef()),
             lastVersion = 12345L.toUInt64()
     )
 

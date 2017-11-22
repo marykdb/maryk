@@ -10,6 +10,8 @@ import maryk.core.properties.definitions.BooleanDefinition
 data class ObjectSoftDeleteChange(
         val isDeleted: Boolean
 ) : IsChange {
+    override val changeType = ChangeType.OBJECT_DELETE
+
     object Properties {
         val isDeleted = BooleanDefinition(
                 name = "isDeleted",

@@ -17,6 +17,8 @@ data class PropertyDelete<T: Any>(
         override val reference: IsPropertyReference<T, IsPropertyDefinition<T>>,
         override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
+    override val changeType = ChangeType.PROP_DELETE
+
     companion object: QueryDataModel<PropertyDelete<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")

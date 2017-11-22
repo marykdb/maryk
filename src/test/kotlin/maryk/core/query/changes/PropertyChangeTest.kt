@@ -8,8 +8,8 @@ import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class PropertyValueChangeTest {
-    private val valueChange = PropertyValueChange(
+class PropertyChangeTest {
+    private val valueChange = PropertyChange(
             reference = SubMarykObject.Properties.value.getRef(),
             newValue = "test",
             valueToCompare = "old"
@@ -31,11 +31,11 @@ class PropertyValueChangeTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.valueChange, PropertyValueChange, this.context)
+        checkProtoBufConversion(this.valueChange, PropertyChange, this.context)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.valueChange, PropertyValueChange, this.context)
+        checkJsonConversion(this.valueChange, PropertyChange, this.context)
     }
 }

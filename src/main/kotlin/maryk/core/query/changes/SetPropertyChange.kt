@@ -27,6 +27,8 @@ data class SetPropertyChange<T: Any>(
         val deleteValues: Set<T>? = null,
         override val valueToCompare: Set<T>? = null
 ) : IsPropertyOperation<Set<T>> {
+    override val changeType = ChangeType.SET_CHANGE
+
     object Properties {
         @Suppress("UNCHECKED_CAST")
         private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->

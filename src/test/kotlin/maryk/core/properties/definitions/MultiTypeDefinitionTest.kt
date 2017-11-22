@@ -26,10 +26,11 @@ internal class MultiTypeDefinitionTest {
     val def = MultiTypeDefinition(
             name = "multitype",
             index = 1,
-            typeMap = mapOf(
-                    0 to stringDef,
-                    1 to intDef
-            )
+            getDefinition = { when(it) {
+                    0 -> stringDef
+                    1 -> intDef
+                    else -> null
+            }}
     )
 
     val multisToTest = arrayOf(
@@ -39,8 +40,8 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun testGet() {
-        def.typeMap[0] shouldBe stringDef
-        def.typeMap[1] shouldBe intDef
+        def.getDefinition(0) shouldBe stringDef
+        def.getDefinition(1) shouldBe intDef
     }
 
     @Test

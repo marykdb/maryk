@@ -18,7 +18,7 @@ import maryk.core.protobuf.WireType
 
 /**
  * Definition for objects with multiple types
- * @param typeMap definition of all sub types
+ * @param getDefinition method to get definition
  */
 class MultiTypeDefinition<in CX: IsPropertyContext>(
         name: String? = null,
@@ -27,7 +27,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,
-        val typeMap: Map<Int, AbstractSubDefinition<*, CX>>
+        val getDefinition: (Int) -> AbstractSubDefinition<*, CX>?
 ) : AbstractValueDefinition<TypedValue<*>, CX>(
         name, index, indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
 ) {
@@ -49,7 +49,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         super.validate(previousValue, newValue, parentRefFactory)
         if (newValue != null) {
             @Suppress("UNCHECKED_CAST")
-            val definition = this.typeMap[newValue.typeIndex] as AbstractSubDefinition<Any, CX>?
+            val definition = this.getDefinition(newValue.typeIndex) as AbstractSubDefinition<Any, CX>?
                     ?: throw DefNotFoundException("No def found for index ${newValue.typeIndex} for ${this.getRef(parentRefFactory).completeName}")
 
             definition.validate(
@@ -69,7 +69,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         writer.writeStartArray()
         writer.writeValue(value.typeIndex.toString())
         @Suppress("UNCHECKED_CAST")
-        val definition = this.typeMap[value.typeIndex] as AbstractSubDefinition<Any, CX>?
+        val definition = this.getDefinition(value.typeIndex) as AbstractSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("No def found for index ${value.typeIndex} for $name")
 
         definition.writeJsonValue(value.value, writer, context)
@@ -89,7 +89,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         }
         reader.nextToken()
 
-        val definition: AbstractSubDefinition<*, CX>? = this.typeMap[index]
+        val definition: AbstractSubDefinition<*, CX>? = this.getDefinition(index)
                 ?: throw ParseException("Unknown multitype index ${reader.lastValue} for $name")
 
         val value = definition!!.readJson(reader, context)
@@ -106,7 +106,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
 
         // Second the data itself
         val key = ProtoBuf.readKey(reader)
-        val def = this.typeMap[typeIndex] ?: throw ParseException("Unknown multitype index $typeIndex for $name")
+        val def = this.getDefinition(typeIndex) ?: throw ParseException("Unknown multitype index $typeIndex for $name")
 
         val value = def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, reader),
@@ -128,7 +128,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
 
         // value
         @Suppress("UNCHECKED_CAST")
-        val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any, CX>
+        val def = this.getDefinition(value.typeIndex)!! as AbstractSubDefinition<Any, CX>
         totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, lengthCacher, context)
 
         return totalByteLength
@@ -139,7 +139,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         value.typeIndex.writeVarBytes(writer)
 
         @Suppress("UNCHECKED_CAST")
-        val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any, CX>
+        val def = this.getDefinition(value.typeIndex)!! as AbstractSubDefinition<Any, CX>
         def.writeTransportBytesWithIndexKey(2, value.value, lengthCacheGetter, writer, context)
     }
 }

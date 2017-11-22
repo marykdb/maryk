@@ -15,6 +15,8 @@ data class LessThan<T: Any>(
         override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
         override val value: T
 ) : IsPropertyComparison<T> {
+    override val filterType = FilterType.LESS_THAN
+
     companion object: QueryDataModel<LessThan<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")

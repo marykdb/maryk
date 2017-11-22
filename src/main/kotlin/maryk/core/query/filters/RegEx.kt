@@ -15,6 +15,8 @@ data class RegEx(
         override val reference: IsPropertyReference<String, AbstractValueDefinition<String, IsPropertyContext>>,
         val regEx: String
 ) : IsPropertyCheck<String> {
+    override val filterType = FilterType.REGEX
+
     object Properties {
         val regEx = StringDefinition(
                 name = "regEx",

@@ -13,6 +13,8 @@ import maryk.core.properties.references.IsPropertyReference
 data class Exists<T: Any>(
         override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>
 ) : IsPropertyCheck<T> {
+    override val filterType = FilterType.EXISTS
+
     companion object: QueryDataModel<Exists<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")

@@ -17,6 +17,8 @@ data class ValueIn<T: Any>(
         override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
         val values: Set<T>
 ) : IsPropertyCheck<T> {
+    override val filterType = FilterType.VALUE_IN
+
     object Properties {
         val values = SetDefinition(
                 name = "values",

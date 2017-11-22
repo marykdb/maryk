@@ -1,9 +1,36 @@
 package maryk.core.query.filters
 
+import maryk.core.objects.Def
+import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.types.TypedValue
+
 /** Reverses the boolean check for given filter
  * @param filter to check against
- * @param T: type of value to be operated on
  */
-data class Not<T: Any>(
+data class Not(
         val filter: IsFilter
-) : IsFilter
+) : IsFilter {
+    override val filterType = FilterType.NOT
+
+    object Properties {
+        val filter = MultiTypeDefinition(
+                name = "filter",
+                index = 0,
+                required = true,
+                getDefinition = { mapOfFilterDefinitions[it] }
+        )
+    }
+
+    companion object: QueryDataModel<Not>(
+            construct = {
+                @Suppress("UNCHECKED_CAST")
+                Not(
+                        filter = (it[0] as TypedValue<IsFilter>).value
+                )
+            },
+            definitions = listOf(
+                    Def(Properties.filter, { not: Not -> TypedValue(not.filter.filterType.index, not.filter)})
+            )
+    )
+}

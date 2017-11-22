@@ -15,6 +15,8 @@ data class Prefix(
         override val reference: IsPropertyReference<String, AbstractValueDefinition<String, IsPropertyContext>>,
         val prefix: String
 ) : IsPropertyCheck<String> {
+    override val filterType = FilterType.PREFIX
+
     object Properties {
         val prefix = StringDefinition(
                 name = "prefix",

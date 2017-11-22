@@ -24,6 +24,7 @@ data class Range<T: Any>(
         val inclusiveFrom: Boolean = true,
         val inclusiveTo: Boolean = true
 ) : IsPropertyCheck<T> {
+    override val filterType = FilterType.RANGE
 
     object Properties {
         val from = ContextualValueDefinition(

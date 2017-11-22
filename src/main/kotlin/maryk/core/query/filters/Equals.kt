@@ -15,6 +15,8 @@ data class Equals<T: Any>(
         override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
         override val value: T
 ) : IsPropertyComparison<T> {
+    override val filterType = FilterType.EQUALS
+
     companion object: QueryDataModel<Equals<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")

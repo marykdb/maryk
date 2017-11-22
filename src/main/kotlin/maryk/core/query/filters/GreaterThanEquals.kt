@@ -15,6 +15,8 @@ data class GreaterThanEquals<T: Any>(
         override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
         override val value: T
 ) : IsPropertyComparison<T> {
+    override val filterType = FilterType.GREATER_THAN_EQUALS
+
     companion object: QueryDataModel<GreaterThanEquals<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")

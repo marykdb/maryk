@@ -28,9 +28,22 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         required: Boolean = false,
         final: Boolean = false,
         val typeMap: Map<Int, AbstractSubDefinition<*, CX>>
-) : AbstractSubDefinition<TypedValue<*>, CX>(
-        name, index, indexed, searchable, required, final
+) : AbstractValueDefinition<TypedValue<*>, CX>(
+        name, index, indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
 ) {
+    override fun asString(value: TypedValue<*>, context: CX?): String {
+        var string = ""
+        this.writeJsonValue(value, maryk.core.json.JsonWriter {
+            string += it
+        }, context)
+        return string
+    }
+
+    override fun fromString(string: String, context: CX?): TypedValue<*> {
+        val stringIterator = string.iterator()
+        return this.readJson(JsonReader { stringIterator.nextChar() }, context)
+    }
+
     @Throws(PropertyValidationException::class)
     override fun validate(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
@@ -107,11 +120,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         )
     }
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: TypedValue<*>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
-        // Cache length for length delimiter
-        val container = ByteLengthContainer()
-        lengthCacher(container)
-
+    override fun calculateTransportByteLength(value: TypedValue<*>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         var totalByteLength = 0
         // Type index
         totalByteLength += ProtoBuf.calculateKeyLength(1)
@@ -122,26 +131,10 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any, CX>
         totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, lengthCacher, context)
 
-        container.length = totalByteLength
-
-        totalByteLength += ProtoBuf.calculateKeyLength(this.index) // Add key length for field
-        totalByteLength += container.length.calculateVarByteLength() // Add field length for length delimiter
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithIndexKey(index: Int, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
-        ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
-        lengthCacheGetter().writeVarBytes(writer)
-        this.writeTransportBytes(context, value, lengthCacheGetter, writer)
-    }
-
-    /** Write transport bytes for MultiType
-     * Will be an object with a type index on key=1 and the value on key=2
-     * @param value to write
-     * @param lengthCacheGetter to fetch cached length of value if needed
-     * @param writer to write the bytes with
-     */
-    fun writeTransportBytes(context: CX?, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
+    override fun writeTransportBytes(value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
         value.typeIndex.writeVarBytes(writer)
 

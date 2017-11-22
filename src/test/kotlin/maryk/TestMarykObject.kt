@@ -25,7 +25,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.query.properties.DataModelPropertyContext
 
 enum class Option(
         override val index: Int
@@ -201,7 +200,7 @@ data class SubMarykObject(
         )
     }
     companion object: RootDataModel<SubMarykObject>(
-            name = "TestMarykObject",
+            name = "SubMarykObject",
             construct = { SubMarykObject(it[0] as String) }, definitions = listOf(
                     Def(Properties.value, SubMarykObject::value)
             )

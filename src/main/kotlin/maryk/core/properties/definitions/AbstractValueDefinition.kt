@@ -66,7 +66,7 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      */
     abstract fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null): Int
 
-    override fun writeTransportBytesWithIndexKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override final fun writeTransportBytesWithIndexKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, this.wireType, writer)
         if (this.wireType == WireType.LENGTH_DELIMITED) {
             lengthCacheGetter().writeVarBytes(writer)

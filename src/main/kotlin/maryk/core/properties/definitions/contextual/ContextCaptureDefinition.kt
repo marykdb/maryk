@@ -31,7 +31,7 @@ class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
             = this.definition.calculateTransportByteLength(value, lengthCacher, context)
 
     override fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
-            = this.definition.writeTransportBytes(value, lengthCacheGetter, writer, context)
+            = this.definition.writeTransportBytes(value.also { capturer(context, it) }, lengthCacheGetter, writer, context)
 
     override fun writeJsonValue(value: T, writer: JsonWriter, context: CX?)
             = this.definition.writeJsonValue(value.also {capturer(context, it)}, writer, context)

@@ -1,6 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.exceptions.ParseException
@@ -10,10 +11,10 @@ import maryk.core.properties.exceptions.ParseException
  * @param <T> Type of reference
  * @param <D> Definition of property
  */
-open class ListReference<T: Any> (
-        propertyDefinition: ListDefinition<T, *>,
+open class ListReference<T: Any, in CX: IsPropertyContext> (
+        propertyDefinition: ListDefinition<T, CX>,
         parentReference: CanHaveComplexChildReference<*, *, *>?
-) : PropertyReference<List<T>, ListDefinition<T, *>, CanHaveComplexChildReference<*, *, *>>(
+) : PropertyReference<List<T>, ListDefinition<T, CX>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition,
         parentReference
 ), HasEmbeddedPropertyReference<T> {

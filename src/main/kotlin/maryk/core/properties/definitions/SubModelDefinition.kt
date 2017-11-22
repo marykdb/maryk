@@ -72,7 +72,7 @@ class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithIndexKey(index: Int, value: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
         lengthCacheGetter().writeVarBytes(writer)
         this.dataModel.writeProtoBuf(value, lengthCacheGetter, writer, context)

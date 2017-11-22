@@ -45,7 +45,7 @@ abstract class AbstractCollectionDefinition<
         super.validate(previousValue, newValue, parentRefFactory)
 
         if (newValue != null) {
-            val size = getSize(newValue)
+            val size = newValue.size
             if (isSizeToSmall(size)) {
                 throw PropertyTooLittleItemsException(this.getRef(parentRefFactory), size, this.minSize!!)
             }
@@ -65,14 +65,11 @@ abstract class AbstractCollectionDefinition<
         }
     }
 
-    /** Get the size of the collection object */
-    abstract fun getSize(newValue: C): Int
-
     /** Validates the collection content */
     abstract internal fun validateCollectionForExceptions(parentRefFactory: () -> IsPropertyReference<*, *>?, newValue: C, validator: (item: T, parentRefFactory: () -> IsPropertyReference<*, *>?) -> Any)
 
     /** Creates a new mutable instance of the collection */
-    abstract override fun newMutableCollection(): MutableCollection<T>
+    abstract override fun newMutableCollection(context: CX?): MutableCollection<T>
 
     override fun writeJsonValue(value: C, writer: JsonWriter, context: CX?) {
         writer.writeStartArray()
@@ -86,7 +83,7 @@ abstract class AbstractCollectionDefinition<
         if (reader.currentToken !is JsonToken.START_ARRAY) {
             throw ParseException("JSON value for $name should be an Array")
         }
-        val collection: MutableCollection<T> = newMutableCollection()
+        val collection: MutableCollection<T> = newMutableCollection(context)
 
         while (reader.nextToken() !is JsonToken.END_ARRAY) {
             collection.add(
@@ -121,22 +118,22 @@ abstract class AbstractCollectionDefinition<
         return totalByteSize
     }
 
-    override fun writeTransportBytesWithKey(value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithIndexKey(index: Int, value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         when(this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
-                ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, writer)
+                ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
                 lengthCacheGetter().writeVarBytes(writer)
                 value.forEach { item ->
                     valueDefinition.writeTransportBytes(item, lengthCacheGetter, writer, context)
                 }
             }
             else -> value.forEach { item ->
-                valueDefinition.writeTransportBytesWithKey(this.index, item, lengthCacheGetter, writer, context)
+                valueDefinition.writeTransportBytesWithIndexKey(index, item, lengthCacheGetter, writer, context)
             }
         }
     }
 
-    override fun isPacked(encodedWireType: WireType) = when(this.valueDefinition.wireType) {
+    override fun isPacked(context: CX?, encodedWireType: WireType) = when(this.valueDefinition.wireType) {
         WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> encodedWireType == WireType.LENGTH_DELIMITED
         else -> false
     }
@@ -152,7 +149,7 @@ abstract class AbstractCollectionDefinition<
             reader()
         }
 
-        val collection = this.newMutableCollection()
+        val collection = this.newMutableCollection(context)
 
         while (byteCounter < length) {
             collection += valueDefinition.readTransportBytes(length, byteReader, context)

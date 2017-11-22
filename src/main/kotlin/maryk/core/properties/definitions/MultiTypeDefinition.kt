@@ -129,7 +129,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithIndexKey(index: Int, value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
         lengthCacheGetter().writeVarBytes(writer)
         this.writeTransportBytes(context, value, lengthCacheGetter, writer)
@@ -147,6 +147,6 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
 
         @Suppress("UNCHECKED_CAST")
         val def = this.typeMap[value.typeIndex]!! as AbstractSubDefinition<Any, CX>
-        def.writeTransportBytesWithKey(2, value.value, lengthCacheGetter, writer, context)
+        def.writeTransportBytesWithIndexKey(2, value.value, lengthCacheGetter, writer, context)
     }
 }

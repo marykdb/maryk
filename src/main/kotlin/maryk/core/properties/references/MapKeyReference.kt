@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -11,10 +12,10 @@ import maryk.core.protobuf.WireType
  * @param <K> key
  * @param <V> value
  */
-class MapKeyReference<K: Any, V: Any>(
+class MapKeyReference<K: Any, V: Any, in CX: IsPropertyContext>(
         val key: K,
-        parentReference: MapReference<K, V>
-) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V>>(
+        parentReference: MapReference<K, V, CX>
+) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V, CX>>(
         parentReference.propertyDefinition.keyDefinition, parentReference
 ) {
     override val name = parentReference.name

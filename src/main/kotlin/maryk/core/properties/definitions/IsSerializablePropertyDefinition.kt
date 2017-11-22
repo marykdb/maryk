@@ -40,5 +40,16 @@ interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : I
      * @param writer to write bytes to
      * @param context with possible context values for Dynamic property writers
      */
-    fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
+    fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null) {
+        this.writeTransportBytesWithIndexKey(this.index, value, lengthCacheGetter, writer, context)
+    }
+
+    /** Convert a value to bytes for transportation and adds the key with tag and wiretype
+     * @param index to write this value for
+     * @param value to write
+     * @param lengthCacheGetter to fetch next cached length
+     * @param writer to write bytes to
+     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
+     */
+    fun writeTransportBytesWithIndexKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
 }

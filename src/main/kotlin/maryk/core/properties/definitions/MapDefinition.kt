@@ -20,7 +20,7 @@ import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
-class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
+class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = false,
@@ -33,13 +33,13 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         val valueDefinition: AbstractSubDefinition<V, CX>
 ) : AbstractPropertyDefinition<Map<K, V>>(
         name, index, indexed, searchable, required, final
-), HasSizeDefinition, IsSerializablePropertyDefinition<Map<K, V>, CX> {
+), HasSizeDefinition, IsByteTransportableMap<K, V, CX> {
     init {
         assert(keyDefinition.required, { "Definition for key should be required on map: $name" })
         assert(valueDefinition.required, { "Definition for value should be required on map: $name" })
     }
 
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?): MapReference<K, V> =
+    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?): MapReference<K, V, CX> =
             MapReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific map key
@@ -138,12 +138,12 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithIndexKey(index: Int, value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         value.forEach { key, item ->
-            ProtoBuf.writeKey(this.index, WireType.LENGTH_DELIMITED, writer)
+            ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
             lengthCacheGetter().writeVarBytes(writer)
-            keyDefinition.writeTransportBytesWithKey(1, key, lengthCacheGetter, writer, context)
-            valueDefinition.writeTransportBytesWithKey(2, item, lengthCacheGetter, writer, context)
+            keyDefinition.writeTransportBytesWithIndexKey(1, key, lengthCacheGetter, writer, context)
+            valueDefinition.writeTransportBytesWithIndexKey(2, item, lengthCacheGetter, writer, context)
         }
     }
 
@@ -152,7 +152,7 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
      * @param context for contextual parameters in reading dynamic properties
      * @return Pair of key value
      */
-    fun readMapTransportBytes(reader: () -> Byte, context: CX? = null): Pair<K, V> {
+    override fun readMapTransportBytes(reader: () -> Byte, context: CX?): Pair<K, V> {
         val keyOfMapKey = ProtoBuf.readKey(reader)
         val key = keyDefinition.readTransportBytes(
                 ProtoBuf.getLength(keyOfMapKey.wireType, reader),

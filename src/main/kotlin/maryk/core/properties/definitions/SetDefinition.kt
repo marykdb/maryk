@@ -19,9 +19,7 @@ class SetDefinition<T: Any, in CX: IsPropertyContext>(
 ) : AbstractCollectionDefinition<T, Set<T>, CX, AbstractValueDefinition<T, CX>>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
 ), HasSizeDefinition {
-    override fun getSize(newValue: Set<T>) = newValue.size
-
-    override fun newMutableCollection() = mutableSetOf<T>()
+    override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
 
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             SetReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)

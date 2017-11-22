@@ -71,7 +71,7 @@ internal class MultiTypeDefinitionTest {
             bc.reserve(
                 def.calculateTransportByteLengthWithKey(it, bc::addToCache)
             )
-            def.writeTransportBytesWithKey(6, it, bc::nextLengthFromCache, bc::write)
+            def.writeTransportBytesWithIndexKey(6, it, bc::nextLengthFromCache, bc::write, null)
 
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 6

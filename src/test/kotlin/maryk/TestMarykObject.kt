@@ -25,6 +25,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.query.properties.DataModelPropertyContext
 
 enum class Option(
         override val index: Int

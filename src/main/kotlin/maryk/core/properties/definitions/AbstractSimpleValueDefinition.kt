@@ -83,7 +83,7 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
 
     override fun writeJsonValue(value: T, writer: JsonWriter, context: CX?) {
         writer.writeString(
-                this.asString(value)
+                this.asString(value, context)
         )
     }
 

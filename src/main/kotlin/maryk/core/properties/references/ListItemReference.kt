@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -12,10 +13,10 @@ import maryk.core.protobuf.WireType
  * @param parentReference reference to parent
  * @param <T> value type
  */
-class ListItemReference<T: Any> (
+class ListItemReference<T: Any, in CX: IsPropertyContext> (
         val index: Int,
-        parentReference: ListReference<T>
-) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T, *>, ListReference<T>>(
+        parentReference: ListReference<T, CX>
+) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T, CX>, ListReference<T, CX>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
 ) {
     override val name = parentReference.name

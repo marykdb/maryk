@@ -18,7 +18,7 @@ abstract class AbstractSubDefinition<T: Any, in CX: IsPropertyContext>(
         final: Boolean
 ) : AbstractPropertyDefinition<T>(
         name, index, indexed, searchable, required, final
-), IsSerializablePropertyDefinition<T, CX> {
+), IsSerializablePropertyDefinition<T, CX>, IsByteTransportableValue<T, CX> {
     override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
             = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher, context)
 
@@ -32,16 +32,7 @@ abstract class AbstractSubDefinition<T: Any, in CX: IsPropertyContext>(
     abstract fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?) : Int
 
     override fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
-            = this.writeTransportBytesWithKey(this.index, value, lengthCacheGetter, writer, context)
-
-    /** Convert a value to bytes for transportation and adds the key with tag and wiretype
-     * @param index to write this value for
-     * @param value to write
-     * @param lengthCacheGetter to fetch next cached length
-     * @param writer to write bytes to
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
-     */
-    abstract fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
+            = this.writeTransportBytesWithIndexKey(this.index, value, lengthCacheGetter, writer, context)
 
     /** Convert to value from a byte reader
      * @param length of bytes to read
@@ -51,5 +42,5 @@ abstract class AbstractSubDefinition<T: Any, in CX: IsPropertyContext>(
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     @Throws(DefNotFoundException::class)
-    abstract fun readTransportBytes(length: Int, reader: () -> Byte, context: CX? = null): T
+    abstract override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): T
 }

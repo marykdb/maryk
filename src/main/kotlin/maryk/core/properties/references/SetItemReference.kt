@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -10,10 +11,10 @@ import maryk.core.protobuf.WireType
  * @param parentReference reference to parent
  * @param <V> value type
  */
-class SetItemReference<T: Any>(
+class SetItemReference<T: Any, in CX: IsPropertyContext>(
         val value: T,
-        parentReference: SetReference<T>
-) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T>>(
+        parentReference: SetReference<T, CX>
+) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>>(
         parentReference.propertyDefinition.valueDefinition, parentReference
 ) {
     override val name: String? get() = this.parentReference?.name

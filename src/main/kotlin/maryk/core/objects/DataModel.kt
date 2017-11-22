@@ -5,11 +5,11 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractCollectionDefinition
-import maryk.core.properties.definitions.AbstractSubDefinition
+import maryk.core.properties.definitions.IsByteTransportableCollection
+import maryk.core.properties.definitions.IsByteTransportableMap
+import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.PropertyValidationException
 import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
@@ -285,11 +285,12 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
         val propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
 
+        // CANNOT READ LIST VALUE
         if (propertyDefinition == null) {
             ProtoBuf.skipField(key.wireType, byteReader)
         } else {
             when (propertyDefinition) {
-                is AbstractSubDefinition<*, CX> -> valueMap.put(
+                is IsByteTransportableValue<*, CX> -> valueMap.put(
                         key.tag,
                         propertyDefinition.readTransportBytes(
                                 ProtoBuf.getLength(key.wireType, byteReader),
@@ -297,9 +298,9 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                                 context
                         )
                 )
-                is AbstractCollectionDefinition<*, *, CX, *> -> {
+                is IsByteTransportableCollection<*, *, CX> -> {
                     when {
-                        propertyDefinition.isPacked(key.wireType) -> {
+                        propertyDefinition.isPacked(context, key.wireType) -> {
                             @Suppress("UNCHECKED_CAST")
                             val collection = propertyDefinition.readPackedCollectionTransportBytes(
                                     context,
@@ -321,7 +322,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                             @Suppress("UNCHECKED_CAST")
                             val collection = when {
                                 valueMap.contains(key.tag) -> valueMap[key.tag]
-                                else -> propertyDefinition.newMutableCollection().also {
+                                else -> propertyDefinition.newMutableCollection(context).also {
                                     valueMap[key.tag] = it
                                 }
                             } as MutableCollection<Any>
@@ -329,7 +330,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                         }
                     }
                 }
-                is MapDefinition<*, *, CX> -> {
+                is IsByteTransportableMap<*, *, CX> -> {
                     ProtoBuf.getLength(key.wireType, byteReader)
                     val value = propertyDefinition.readMapTransportBytes(
                             byteReader,

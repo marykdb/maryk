@@ -61,7 +61,7 @@ internal class SubModelDefinitionTest {
                 def.calculateTransportByteLengthWithKey(value, bc::addToCache)
         )
         bc.bytes!!.size shouldBe 7
-        def.writeTransportBytesWithKey(5, value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithIndexKey(5, value, bc::nextLengthFromCache, bc::write, null)
 
         bc.bytes!!.toHex() shouldBe asHex
 

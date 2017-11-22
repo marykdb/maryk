@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.exceptions.ParseException
@@ -10,21 +11,21 @@ import maryk.core.protobuf.ProtoBuf
  * @param <T> Type of reference
  * @param <D> Definition of property
  */
-open class MapReference<K: Any, V: Any> (
-        propertyDefinition: MapDefinition<K, V, *>,
+open class MapReference<K: Any, V: Any, in CX: IsPropertyContext> (
+        propertyDefinition: MapDefinition<K, V, CX>,
         parentReference: CanHaveComplexChildReference<*, *, *>?
-) : PropertyReference<Map<K, V>, MapDefinition<K, V, *>, CanHaveComplexChildReference<*, *, *>>(
+) : PropertyReference<Map<K, V>, MapDefinition<K, V, CX>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition,
         parentReference
 ), HasEmbeddedPropertyReference<Map<K, V>> {
     override fun getEmbedded(name: String): IsPropertyReference<*, *>  = when(name[0]) {
-        '@' -> MapValueReference<K, V>(
+        '@' -> MapValueReference(
                 propertyDefinition.keyDefinition.fromString(
                         name.substring(1)
                 ),
                 this
         )
-        '$' -> MapKeyReference<K, V>(
+        '$' -> MapKeyReference(
                 propertyDefinition.keyDefinition.fromString(
                         name.substring(1)
                 ),

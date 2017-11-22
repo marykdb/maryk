@@ -11,8 +11,13 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
 import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.ListPropertyChange
+import maryk.core.query.changes.MapPropertyChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.changes.PropertyCheck
 import maryk.core.query.changes.PropertyDelete
 import maryk.core.query.changes.PropertyValueChange
+import maryk.core.query.changes.SetPropertyChange
 
 /** Contains changes for a specific DataObject by key
  * @param key of DataObject to change
@@ -41,8 +46,29 @@ class DataObjectChange<out DO: Any>(
                                 ),
                                 1 to SubModelDefinition(
                                         required = true,
+                                        dataModel = PropertyCheck
+                                ),
+                                2 to SubModelDefinition(
+                                        required = true,
                                         dataModel = PropertyDelete
+                                ),
+                                3 to SubModelDefinition(
+                                        required = true,
+                                        dataModel = ObjectSoftDeleteChange
+                                ),
+                                4 to SubModelDefinition(
+                                        required = true,
+                                        dataModel = ListPropertyChange
+                                ),
+                                5 to SubModelDefinition(
+                                        required = true,
+                                        dataModel = SetPropertyChange
+                                ),
+                                6 to SubModelDefinition(
+                                        required = true,
+                                        dataModel = MapPropertyChange
                                 )
+
                         )
                 )
         )

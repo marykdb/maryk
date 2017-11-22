@@ -13,14 +13,14 @@ interface IsByteTransportableCollection<T: Any, C: Collection<T>, in CX: IsPrope
      * @param length to read
      * @param reader to read with
      */
-    fun readCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte): T
+    fun readCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX? = null): T
 
     /** Reads the packed transport bytes of a collection
      * @param context with possible context values for Dynamic property writers
      * @param length to read
      * @param reader to read with
      */
-    fun readPackedCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte): C
+    fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX? = null): C
 
     /** Creates a new mutable collection of type T
      * @param context with possible context values for Dynamic property writers

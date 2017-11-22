@@ -120,9 +120,9 @@ internal class ListDefinitionTest {
         }
 
         fun readValue() = def.readCollectionTransportBytes(
-                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read
+                bc::read,
+                null
         )
 
         value.forEach {
@@ -186,9 +186,9 @@ internal class ListDefinitionTest {
 
 
         val readList = def.readPackedCollectionTransportBytes(
-                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read
+                bc::read,
+                null
         )
 
         readList shouldBe list

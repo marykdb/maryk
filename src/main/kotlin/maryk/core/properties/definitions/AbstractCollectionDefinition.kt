@@ -138,10 +138,10 @@ abstract class AbstractCollectionDefinition<
         else -> false
     }
 
-    override fun readCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte)
+    override fun readCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?)
             = valueDefinition.readTransportBytes(length, reader, context)
 
-    override fun readPackedCollectionTransportBytes(context: CX?, length: Int, reader: () -> Byte): C {
+    override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?): C {
         var byteCounter = 0
 
         val byteReader = {

@@ -91,9 +91,9 @@ internal class SetDefinitionTest {
         }
 
         fun readValue() = def.readCollectionTransportBytes(
-                null,
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read
+                bc::read,
+                null
         )
 
         value.forEach {

@@ -16,14 +16,14 @@ interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : I
      * @param writer to write json to
      * @param value value to write
      */
-    fun writeJsonValue(value: T, writer: JsonWriter, context: CX?)
+    fun writeJsonValue(value: T, writer: JsonWriter, context: CX? = null)
 
     /** Reads JSON and returns values
      * @param context with possible context values for Dynamic Json readers
      * @param reader to read JSON from
      */
     @Throws(ParseException::class)
-    fun readJson(reader: JsonReader, context: CX?): T
+    fun readJson(reader: JsonReader, context: CX? = null): T
 
 
     /** Calculates the needed bytes to transport the value

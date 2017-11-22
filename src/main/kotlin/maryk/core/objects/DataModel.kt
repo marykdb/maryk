@@ -303,9 +303,9 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                         propertyDefinition.isPacked(context, key.wireType) -> {
                             @Suppress("UNCHECKED_CAST")
                             val collection = propertyDefinition.readPackedCollectionTransportBytes(
-                                    context,
                                     ProtoBuf.getLength(key.wireType, byteReader),
-                                    byteReader
+                                    byteReader,
+                                    context
                             ) as MutableCollection<Any>
                             @Suppress("UNCHECKED_CAST")
                             when {
@@ -315,9 +315,9 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                         }
                         else -> {
                             val value = propertyDefinition.readCollectionTransportBytes(
-                                    context,
                                     ProtoBuf.getLength(key.wireType, byteReader),
-                                    byteReader
+                                    byteReader,
+                                    context
                             )
                             @Suppress("UNCHECKED_CAST")
                             val collection = when {

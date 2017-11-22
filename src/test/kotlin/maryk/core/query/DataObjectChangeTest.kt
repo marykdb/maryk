@@ -6,9 +6,8 @@ import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.toUInt64
-import maryk.core.query.properties.DataModelPropertyContext
-import maryk.core.query.properties.changes.PropertyDelete
-import maryk.core.query.properties.changes.PropertyValueChange
+import maryk.core.query.changes.PropertyDelete
+import maryk.core.query.changes.PropertyValueChange
 import maryk.test.shouldBe
 import kotlin.test.Test
 

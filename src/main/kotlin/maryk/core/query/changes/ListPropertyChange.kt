@@ -1,4 +1,4 @@
-package maryk.core.query.properties.changes
+package maryk.core.query.changes
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
@@ -11,7 +11,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 
 /** Changes for a list property
  * @param reference to property affected by the change
@@ -70,14 +70,14 @@ data class ListPropertyChange<T: Any>(
     companion object: QueryDataModel<ListPropertyChange<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                ListPropertyChange(
-                        reference = it[0] as ListReference<Any, IsPropertyContext>,
-                        valueToCompare = it[1] as List<Any>?,
-                        addValuesToEnd = it[2] as List<Any>?,
-                        addValuesAtIndex = it[3] as Map<Int, Any>?,
-                        deleteValues = it[4] as List<Any>?,
-                        deleteAtIndex = it[5] as List<Int>?
-                )
+                (ListPropertyChange(
+                reference = it[0] as ListReference<Any, IsPropertyContext>,
+                valueToCompare = it[1] as List<Any>?,
+                addValuesToEnd = it[2] as List<Any>?,
+                addValuesAtIndex = it[3] as Map<Int, Any>?,
+                deleteValues = it[4] as List<Any>?,
+                deleteAtIndex = it[5] as List<Int>?
+        ))
             },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, ListPropertyChange<*>::reference),

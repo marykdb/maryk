@@ -4,7 +4,7 @@ import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.query.DataObjectChange
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 

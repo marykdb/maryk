@@ -6,14 +6,13 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
-import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
-import maryk.core.query.properties.DataModelPropertyContext
-import maryk.core.query.properties.changes.IsChange
-import maryk.core.query.properties.changes.PropertyDelete
-import maryk.core.query.properties.changes.PropertyValueChange
+import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.PropertyDelete
+import maryk.core.query.changes.PropertyValueChange
 
 /** Contains changes for a specific DataObject by key
  * @param key of DataObject to change

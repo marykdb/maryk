@@ -8,7 +8,7 @@ import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 

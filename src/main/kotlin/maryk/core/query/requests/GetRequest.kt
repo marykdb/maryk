@@ -8,7 +8,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.UInt64
 import maryk.core.query.Order
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 
 /** A Request to get DataObjects by key for specific DataModel
  * @param dataModel Root model of data to retrieve objects from

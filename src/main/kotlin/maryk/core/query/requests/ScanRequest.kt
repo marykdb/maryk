@@ -10,7 +10,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 
 /** A Request to scan DataObjects by key for specific DataModel
  * @param dataModel Root model of data to retrieve objects from

@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 
 /** A Request for Data Objects
  * @param dataModel Root model of data to do operations on

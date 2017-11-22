@@ -5,7 +5,6 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
-import maryk.core.query.properties.DataModelPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 
 /** Direction Enumeration */

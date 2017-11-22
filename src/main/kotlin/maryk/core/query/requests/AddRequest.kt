@@ -5,7 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 
 /** A Request to add DataObjects for specific DataModel
  * @param dataModel Root model of data to add objects to

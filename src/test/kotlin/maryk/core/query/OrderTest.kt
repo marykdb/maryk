@@ -4,7 +4,6 @@ import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
-import maryk.core.query.properties.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -17,7 +16,7 @@ class OrderTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(
-            SubMarykObject.name to SubMarykObject
+                    SubMarykObject.name to SubMarykObject
             ),
             dataModel = SubMarykObject as RootDataModel<Any>
     )

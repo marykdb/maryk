@@ -11,7 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Time
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 

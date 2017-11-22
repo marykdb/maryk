@@ -1,4 +1,4 @@
-package maryk.core.query.properties.changes
+package maryk.core.query.changes
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 
 /** An operation on a property

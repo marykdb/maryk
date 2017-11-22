@@ -1,4 +1,4 @@
-package maryk.core.query.properties.changes
+package maryk.core.query.changes
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
@@ -20,9 +20,9 @@ data class ObjectSoftDeleteChange(
     companion object: QueryDataModel<ObjectSoftDeleteChange>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                ObjectSoftDeleteChange(
-                        isDeleted = it[0] as Boolean
-                )
+                (ObjectSoftDeleteChange(
+                isDeleted = it[0] as Boolean
+        ))
             },
             definitions = listOf(
                     Def(Properties.isDeleted, ObjectSoftDeleteChange::isDeleted)

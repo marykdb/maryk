@@ -1,4 +1,4 @@
-package maryk.core.query.properties.changes
+package maryk.core.query.changes
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
@@ -20,10 +20,10 @@ data class PropertyDelete<T: Any>(
     companion object: QueryDataModel<PropertyDelete<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                PropertyDelete(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        valueToCompare = it[1]
-                )
+                (PropertyDelete(
+                reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                valueToCompare = it[1]
+        ))
             },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, PropertyDelete<*>::reference),

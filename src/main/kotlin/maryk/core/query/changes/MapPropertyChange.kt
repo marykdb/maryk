@@ -1,4 +1,4 @@
-package maryk.core.query.properties.changes
+package maryk.core.query.changes
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
@@ -10,7 +10,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 
 /** Changes for a map property
  * @param reference to property affected by the change
@@ -58,12 +58,12 @@ data class MapPropertyChange<K: Any, V: Any>(
     companion object: QueryDataModel<MapPropertyChange<*, *>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                MapPropertyChange(
-                        reference = it[0] as IsPropertyReference<Map<Any, Any>, MapDefinition<Any, Any, *>>,
-                        valueToCompare = it[1] as Map<Any, Any>?,
-                        valuesToAdd = it[2] as Map<Any, Any>?,
-                        keysToDelete = it[3] as Set<Any>?
-                )
+                (MapPropertyChange(
+                reference = it[0] as IsPropertyReference<Map<Any, Any>, MapDefinition<Any, Any, *>>,
+                valueToCompare = it[1] as Map<Any, Any>?,
+                valuesToAdd = it[2] as Map<Any, Any>?,
+                keysToDelete = it[3] as Set<Any>?
+        ))
             },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, MapPropertyChange<*, *>::reference),

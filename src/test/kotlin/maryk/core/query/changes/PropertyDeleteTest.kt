@@ -1,14 +1,14 @@
-package maryk.core.query.properties.changes
+package maryk.core.query.changes
 
 import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
-class PropertyCheckTest {
-    private val valueCheck = PropertyCheck(
+class PropertyDeleteTest {
+    private val propertyDelete = PropertyDelete(
             reference = SubMarykObject.Properties.value.getRef(),
             valueToCompare = "test"
     )
@@ -23,11 +23,11 @@ class PropertyCheckTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.valueCheck, PropertyCheck, this.context)
+        checkProtoBufConversion(this.propertyDelete, PropertyDelete, this.context)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.valueCheck, PropertyCheck, this.context)
+        checkJsonConversion(this.propertyDelete, PropertyDelete, this.context)
     }
 }

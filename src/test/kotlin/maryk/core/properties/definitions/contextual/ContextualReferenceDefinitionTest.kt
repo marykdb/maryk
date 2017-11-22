@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.ZEROBYTE
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.types.Key
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 

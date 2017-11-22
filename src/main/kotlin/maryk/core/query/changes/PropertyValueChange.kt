@@ -1,4 +1,4 @@
-package maryk.core.query.properties.changes
+package maryk.core.query.changes
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
@@ -6,7 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.query.properties.DataModelPropertyContext
+import maryk.core.query.DataModelPropertyContext
 
 /** Value change for a property
  * @param reference to property affected by the change
@@ -33,11 +33,11 @@ data class PropertyValueChange<T: Any>(
     companion object: QueryDataModel<PropertyValueChange<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                PropertyValueChange(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        valueToCompare = it[1],
-                        newValue = it[2] as Any
-                )
+                (PropertyValueChange(
+                reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                valueToCompare = it[1],
+                newValue = it[2] as Any
+        ))
             },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, PropertyValueChange<*>::reference),

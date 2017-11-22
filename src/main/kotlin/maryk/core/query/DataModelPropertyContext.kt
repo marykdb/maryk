@@ -1,4 +1,4 @@
-package maryk.core.query.properties
+package maryk.core.query
 
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext

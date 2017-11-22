@@ -64,11 +64,7 @@ class DataObjectChange<out DO: Any>(
             },
             definitions = listOf(
                     Def(Properties.key, DataObjectChange<*>::key),
-                    Def(Properties.changes, {
-                        val iterator = it.changes.iterator()
-                        List(it.changes.size, { iterator })
-                        it.changes.toList()
-                    }),
+                    Def(Properties.changes, { it.changes.toList() }),
                     Def(Properties.lastVersion, DataObjectChange<*>::lastVersion)
             )
     )

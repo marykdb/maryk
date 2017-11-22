@@ -21,10 +21,10 @@ data class PropertyCheck<T: Any>(
     companion object: QueryDataModel<PropertyCheck<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                (PropertyCheck(
-                reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                valueToCompare = it[1]
-        ))
+                PropertyCheck(
+                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                        valueToCompare = it[1]
+                )
             },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, PropertyCheck<*>::reference),

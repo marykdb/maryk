@@ -6,10 +6,10 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
-import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.MapReference
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapReference
 import maryk.core.query.DataModelPropertyContext
 
 /** Changes for a map property
@@ -58,12 +58,12 @@ data class MapPropertyChange<K: Any, V: Any>(
     companion object: QueryDataModel<MapPropertyChange<*, *>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                (MapPropertyChange(
-                reference = it[0] as IsPropertyReference<Map<Any, Any>, MapDefinition<Any, Any, *>>,
-                valueToCompare = it[1] as Map<Any, Any>?,
-                valuesToAdd = it[2] as Map<Any, Any>?,
-                keysToDelete = it[3] as Set<Any>?
-        ))
+                MapPropertyChange(
+                        reference = it[0] as IsPropertyReference<Map<Any, Any>, MapDefinition<Any, Any, *>>,
+                        valueToCompare = it[1] as Map<Any, Any>?,
+                        valuesToAdd = it[2] as Map<Any, Any>?,
+                        keysToDelete = it[3] as Set<Any>?
+                )
             },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, MapPropertyChange<*, *>::reference),

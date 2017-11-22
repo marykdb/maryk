@@ -7,10 +7,10 @@ import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.SetDefinition
-import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.SetReference
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SetReference
 import maryk.core.query.DataModelPropertyContext
 
 /** Changes for a set property
@@ -55,12 +55,12 @@ data class SetPropertyChange<T: Any>(
     companion object: QueryDataModel<SetPropertyChange<*>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                (SetPropertyChange(
-                reference = it[0] as IsPropertyReference<Set<Any>, AbstractValueDefinition<Set<Any>, IsPropertyContext>>,
-                valueToCompare = it[1] as Set<Any>?,
-                addValues = it[2] as Set<Any>?,
-                deleteValues = it[3] as Set<Any>?
-        ))
+                SetPropertyChange(
+                        reference = it[0] as IsPropertyReference<Set<Any>, AbstractValueDefinition<Set<Any>, IsPropertyContext>>,
+                        valueToCompare = it[1] as Set<Any>?,
+                        addValues = it[2] as Set<Any>?,
+                        deleteValues = it[3] as Set<Any>?
+                )
             },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, SetPropertyChange<*>::reference),

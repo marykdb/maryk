@@ -20,9 +20,9 @@ data class ObjectSoftDeleteChange(
     companion object: QueryDataModel<ObjectSoftDeleteChange>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
-                (ObjectSoftDeleteChange(
-                isDeleted = it[0] as Boolean
-        ))
+                ObjectSoftDeleteChange(
+                        isDeleted = it[0] as Boolean
+                )
             },
             definitions = listOf(
                     Def(Properties.isDeleted, ObjectSoftDeleteChange::isDeleted)

@@ -1,13 +1,12 @@
 package maryk.core.properties.definitions
 
+import maryk.checkProtoBufConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
-import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -67,20 +66,6 @@ internal class MultiTypeDefinitionTest {
     @Test
     fun testTransportConversion() {
         val bc = ByteCollectorWithLengthCacher()
-        multisToTest.forEach {
-            bc.reserve(
-                def.calculateTransportByteLengthWithKey(it, bc::addToCache)
-            )
-            def.writeTransportBytesWithIndexKey(6, it, bc::nextLengthFromCache, bc::write, null)
-
-            val key = ProtoBuf.readKey(bc::read)
-            key.tag shouldBe 6
-            key.wireType shouldBe WireType.LENGTH_DELIMITED
-            def.readTransportBytes(
-                    ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                    bc::read
-            ) shouldBe it
-            bc.reset()
-        }
+        multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 }

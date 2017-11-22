@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.TestValueObject
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyOutOfRangeException
@@ -8,8 +9,6 @@ import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
-import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -47,18 +46,7 @@ internal class ValueModelDefinitionTest {
     fun testTransportConversion() {
         val bc = ByteCollectorWithLengthCacher()
 
-        bc.reserve(def.calculateTransportByteLengthWithKey(value, bc::addToCache))
-        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
-        bc.bytes!!.size shouldBe 20
-
-        val key = ProtoBuf.readKey(bc::read)
-        key.wireType shouldBe WireType.LENGTH_DELIMITED
-        key.tag shouldBe -1
-
-        def.readTransportBytes(
-                ProtoBuf.getLength(key.wireType, bc::read),
-                bc::read
-        ) shouldBe value
+        checkProtoBufConversion(bc, value, this.def)
     }
 
     @Test

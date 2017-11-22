@@ -1,6 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.toHex
+import maryk.core.json.JsonReader
+import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.PropertyInvalidValueException
 import maryk.core.properties.exceptions.PropertyRequiredException
@@ -100,5 +102,22 @@ internal class SetDefinitionTest {
             readKey()
             readValue() shouldBe it
         }
+    }
+
+    @Test
+    fun testJsonConversion() {
+        val value = setOf("T", "T2", "T3", "T4")
+
+        var totalString = ""
+        def.writeJsonValue(value, JsonWriter { totalString += it })
+
+        totalString shouldBe "[\"T\",\"T2\",\"T3\",\"T4\"]"
+
+        val iterator = totalString.iterator()
+        val reader = JsonReader { iterator.nextChar() }
+        reader.nextToken()
+        val converted = def.readJson(reader)
+
+        converted shouldBe value
     }
 }

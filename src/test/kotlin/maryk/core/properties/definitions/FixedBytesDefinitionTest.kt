@@ -1,11 +1,10 @@
 package maryk.core.properties.definitions
 
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
-import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -43,19 +42,7 @@ internal class FixedBytesDefinitionTest {
     @Test
     fun testTransportConversion() {
         val bc = ByteCollectorWithLengthCacher()
-        fixedBytesToTest.forEach { value ->
-            bc.reserve(def.calculateTransportByteLengthWithKey(value, bc::addToCache))
-            def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
-
-            val key = ProtoBuf.readKey(bc::read)
-            key.wireType shouldBe WireType.LENGTH_DELIMITED
-            key.tag shouldBe -1
-            def.readTransportBytes(
-                    ProtoBuf.getLength(key.wireType, bc::read),
-                    bc::read
-            ) shouldBe value
-            bc.reset()
-        }
+        fixedBytesToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test

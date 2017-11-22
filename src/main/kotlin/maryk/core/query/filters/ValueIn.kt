@@ -1,0 +1,46 @@
+package maryk.core.query.filters
+
+import maryk.core.objects.Def
+import maryk.core.objects.QueryDataModel
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DataModelPropertyContext
+
+/** Checks if reference exists in Value set
+ * @param reference to property to compare against
+ * @param T: type of value to be operated on
+ */
+data class ValueIn<T: Any>(
+        override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
+        val values: Set<T>
+) : IsPropertyCheck<T> {
+    object Properties {
+        val values = SetDefinition(
+                name = "values",
+                index = 1,
+                valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
+                        contextualResolver = {
+                            @Suppress("UNCHECKED_CAST")
+                            it!!.reference!!.propertyDefinition
+                        }
+                )
+        )
+    }
+
+    companion object: QueryDataModel<ValueIn<*>>(
+            construct = {
+                @Suppress("UNCHECKED_CAST")
+                ValueIn(
+                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                        values = it[1] as Set<Any>
+                )
+            },
+            definitions = listOf(
+                    Def(IsPropertyCheck.Properties.reference, ValueIn<*>::reference),
+                    Def(Properties.values, ValueIn<*>::values)
+            )
+    )
+}

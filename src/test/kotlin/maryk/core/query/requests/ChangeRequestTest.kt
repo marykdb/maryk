@@ -3,8 +3,8 @@ package maryk.core.query.requests
 import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.query.changes.DataObjectChange
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.changes.DataObjectChange
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -38,7 +38,7 @@ class ChangeRequestTest {
         checkJsonConversion(this.changeRequest, ChangeRequest, this.context, ::compareRequest)
     }
 
-    private fun compareRequest(converted: ChangeRequest<*, *>) {
-        converted.dataModel shouldBe this.changeRequest.dataModel
+    private fun compareRequest(converted: ChangeRequest<*, *>, original: ChangeRequest<*, *>) {
+        converted.dataModel shouldBe original.dataModel
     }
 }

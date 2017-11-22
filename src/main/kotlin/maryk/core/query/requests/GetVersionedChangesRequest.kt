@@ -5,10 +5,12 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
+import maryk.core.query.filters.IsFilter
 
 /** A Request to get DataObject versioned changes by key for specific DataModel
  * @param dataModel Root model of data to retrieve objects from
@@ -19,7 +21,7 @@ import maryk.core.query.Order
 class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
         dataModel: DM,
         vararg keys: Key<DO>,
-        filter: Any? = null,
+        filter: IsFilter? = null,
         order: Order? = null,
         toVersion: UInt64? = null,
         fromVersion: UInt64,
@@ -48,6 +50,8 @@ class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                 GetVersionedChangesRequest(
                         dataModel = it[0] as RootDataModel<Any>,
                         keys = *(it[1] as List<Key<Any>>).toTypedArray(),
+                        filter = (it[2] as TypedValue<IsFilter>?)?.value,
+                        order = it[3] as Order?,
                         toVersion = it[4] as UInt64?,
                         filterSoftDeleted = it[5] as Boolean,
                         fromVersion = it[6] as UInt64,
@@ -60,6 +64,10 @@ class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                         @Suppress("UNCHECKED_CAST")
                         it.keys.toList() as List<Key<Any>>
                     }),
+                    Def(AbstractFetchRequest.Properties.filter)  {
+                        it.filter?.let { TypedValue(it.filterType.index, it) }
+                    },
+                    Def(AbstractFetchRequest.Properties.order, GetVersionedChangesRequest<*, *>::order),
                     Def(AbstractFetchRequest.Properties.toVersion, GetVersionedChangesRequest<*, *>::toVersion),
                     Def(AbstractFetchRequest.Properties.filterSoftDeleted, GetVersionedChangesRequest<*, *>::filterSoftDeleted),
                     Def(GetChangesRequest.Properties.fromVersion, GetVersionedChangesRequest<*, *>::fromVersion),

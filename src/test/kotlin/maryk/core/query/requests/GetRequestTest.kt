@@ -5,6 +5,8 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.types.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.Order
+import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -15,7 +17,15 @@ class GetRequestTest {
     private val getRequest = GetRequest(
             SubMarykObject,
             key1,
+            key2
+    )
+
+    private val getMaxRequest = GetRequest(
+            SubMarykObject,
+            key1,
             key2,
+            filter = Exists(SubMarykObject.Properties.value.getRef()),
+            order = Order(SubMarykObject.Properties.value.getRef()),
             toVersion = 333L.toUInt64(),
             filterSoftDeleted = true
     )
@@ -27,17 +37,21 @@ class GetRequestTest {
     @Test
     fun testProtoBufConversion() {
         checkProtoBufConversion(this.getRequest, GetRequest, this.context, ::compareRequest)
+        checkProtoBufConversion(this.getMaxRequest, GetRequest, this.context, ::compareRequest)
     }
 
     @Test
     fun testJsonConversion() {
         checkJsonConversion(this.getRequest, GetRequest, this.context, ::compareRequest)
+        checkJsonConversion(this.getMaxRequest, GetRequest, this.context, ::compareRequest)
     }
 
-    private fun compareRequest(converted: GetRequest<*, *>) {
-        converted.keys.contentDeepEquals(this.getRequest.keys) shouldBe true
-        converted.dataModel shouldBe this.getRequest.dataModel
-        converted.filterSoftDeleted shouldBe this.getRequest.filterSoftDeleted
-        converted.toVersion shouldBe this.getRequest.toVersion
+    private fun compareRequest(converted: GetRequest<*, *>, original: GetRequest<*, *>) {
+        converted.keys.contentDeepEquals(original.keys) shouldBe true
+        converted.dataModel shouldBe original.dataModel
+        converted.filter shouldBe original.filter
+        converted.order shouldBe original.order
+        converted.filterSoftDeleted shouldBe original.filterSoftDeleted
+        converted.toVersion shouldBe original.toVersion
     }
 }

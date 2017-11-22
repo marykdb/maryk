@@ -20,9 +20,9 @@ abstract class AbstractModelRequest<DO: Any, out DM: RootDataModel<DO>>(
                             context!!.dataModels[name]!!
                         }
                 ), { context, value ->
-            @Suppress("UNCHECKED_CAST")
-            context!!.dataModel = value as RootDataModel<Any>
-        }
+                    @Suppress("UNCHECKED_CAST")
+                    context!!.dataModel = value as RootDataModel<Any>
+                }
         )
     }
 }

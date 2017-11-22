@@ -26,17 +26,16 @@ class AddRequestTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.addRequest, AddRequest, this.context) {
-            it.objectsToAdd.contentDeepEquals(this.addRequest.objectsToAdd) shouldBe true
-            it.dataModel shouldBe this.addRequest.dataModel
-        }
+        checkProtoBufConversion(this.addRequest, AddRequest, this.context, ::compareRequest)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.addRequest, AddRequest, this.context) {
-            it.objectsToAdd.contentDeepEquals(this.addRequest.objectsToAdd) shouldBe true
-            it.dataModel shouldBe this.addRequest.dataModel
-        }
+        checkJsonConversion(this.addRequest, AddRequest, this.context, ::compareRequest)
+    }
+
+    private fun compareRequest(converted: AddRequest<*, *>, original: AddRequest<*, *>) {
+        converted.objectsToAdd.contentDeepEquals(original.objectsToAdd) shouldBe true
+        converted.dataModel shouldBe original.dataModel
     }
 }

@@ -2,10 +2,13 @@ package maryk.core.query.requests
 
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.types.UInt64
 import maryk.core.query.Order
+import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.mapOfFilterDefinitions
 
 /** Defines a fetch.
  * @param dataModel Root model of data to do operations on
@@ -15,12 +18,18 @@ import maryk.core.query.Order
  */
 abstract class AbstractFetchRequest<DO: Any, out DM: RootDataModel<DO>>(
         dataModel: DM,
-        val filter: Any?,
+        val filter: IsFilter?,
         val order: Order?,
         val toVersion: UInt64?,
         val filterSoftDeleted: Boolean = true
 ) : AbstractModelRequest<DO, DM>(dataModel) {
     object Properties {
+        val filter = MultiTypeDefinition(
+                name = "filter",
+                index = 2,
+                required = true,
+                getDefinition = { mapOfFilterDefinitions[it] }
+        )
         val order = SubModelDefinition(
                 name = "order",
                 index = 3,

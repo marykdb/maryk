@@ -11,7 +11,7 @@ fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
         value: T,
         dataModel: DataModel<T, CX>,
         context: CX,
-        checker: (T) -> Unit = { it shouldBe value }
+        checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     val bc = ByteCollectorWithLengthCacher()
     val byteLength = dataModel.calculateProtoBufLength(value, bc::addToCache, context)
@@ -20,14 +20,14 @@ fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
 
     val converted = dataModel.readProtoBufToObject(byteLength, bc::read, context)
 
-    checker(converted)
+    checker(converted, value)
 }
 
 fun <T: Any, CX: IsPropertyContext> checkJsonConversion(
         value: T,
         dataModel: DataModel<T, CX>,
         context: CX,
-        checker: (T) -> Unit = { it shouldBe value }
+        checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     var output = ""
 
@@ -41,5 +41,5 @@ fun <T: Any, CX: IsPropertyContext> checkJsonConversion(
     val reader = JsonReader { chars.nextChar() }
     val converted = dataModel.readJsonToObject(reader, context)
 
-    checker(converted)
+    checker(converted, value)
 }

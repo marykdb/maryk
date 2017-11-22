@@ -37,8 +37,8 @@ class OrderTest {
         checkJsonConversion(this.order, Order, this.context, ::compareRequest)
     }
 
-    private fun compareRequest(converted: Order) {
-        converted.propertyReference shouldBe this.order.propertyReference
-        converted.direction shouldBe this.order.direction
+    private fun compareRequest(converted: Order, original: Order) {
+        converted.propertyReference shouldBe original.propertyReference
+        converted.direction shouldBe original.direction
     }
 }

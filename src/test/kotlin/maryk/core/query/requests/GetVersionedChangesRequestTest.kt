@@ -6,6 +6,8 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.Order
+import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -17,8 +19,19 @@ class GetVersionedChangesRequestTest {
             SubMarykObject,
             key1,
             key2,
+            fromVersion = 1234L.toUInt64()
+    )
+
+    private val getVersionedChangesMaxRequest = GetVersionedChangesRequest(
+            SubMarykObject,
+            key1,
+            key2,
+            filter = Exists(SubMarykObject.Properties.value.getRef()),
+            order = Order(SubMarykObject.Properties.value.getRef()),
             fromVersion = 1234L.toUInt64(),
-            maxVersions = 5.toUInt32()
+            toVersion = 12345L.toUInt64(),
+            maxVersions = 5.toUInt32(),
+            filterSoftDeleted = true
     )
 
     private val context = DataModelPropertyContext(mapOf(
@@ -28,19 +41,23 @@ class GetVersionedChangesRequestTest {
     @Test
     fun testProtoBufConversion() {
         checkProtoBufConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
+        checkProtoBufConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
     }
 
     @Test
     fun testJsonConversion() {
         checkJsonConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
+        checkJsonConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
     }
 
-    private fun compareRequest(converted: GetVersionedChangesRequest<*, *>) {
-        converted.keys.contentDeepEquals(this.getVersionedChangesRequest.keys) shouldBe true
-        converted.dataModel shouldBe this.getVersionedChangesRequest.dataModel
-        converted.filterSoftDeleted shouldBe this.getVersionedChangesRequest.filterSoftDeleted
-        converted.toVersion shouldBe this.getVersionedChangesRequest.toVersion
-        converted.fromVersion shouldBe this.getVersionedChangesRequest.fromVersion
-        converted.maxVersions shouldBe this.getVersionedChangesRequest.maxVersions
+    private fun compareRequest(converted: GetVersionedChangesRequest<*, *>, original: GetVersionedChangesRequest<*, *>) {
+        converted.keys.contentDeepEquals(original.keys) shouldBe true
+        converted.dataModel shouldBe original.dataModel
+        converted.filter shouldBe original.filter
+        converted.order shouldBe original.order
+        converted.filterSoftDeleted shouldBe original.filterSoftDeleted
+        converted.toVersion shouldBe original.toVersion
+        converted.fromVersion shouldBe original.fromVersion
+        converted.maxVersions shouldBe original.maxVersions
     }
 }

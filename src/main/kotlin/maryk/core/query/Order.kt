@@ -3,9 +3,9 @@ package maryk.core.query
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 
 /** Direction Enumeration */
 enum class Direction(override val index: Int) : IndexedEnum<Direction> {
@@ -16,9 +16,9 @@ enum class Direction(override val index: Int) : IndexedEnum<Direction> {
  * @param propertyReference to property to order on
  * @param direction of ordering
  */
-class Order(
+data class Order(
         val propertyReference: IsPropertyReference<*, *>,
-        val direction: Direction
+        val direction: Direction = Direction.ASC
 ) {
     object Properties {
         val propertyReference = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(

@@ -5,10 +5,12 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
+import maryk.core.query.filters.IsFilter
 
 /** A Request to scan DataObjects by key for specific DataModel
  * @param dataModel Root model of data to retrieve objects from
@@ -20,7 +22,7 @@ import maryk.core.query.Order
 class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
         dataModel: DM,
         startKey: Key<DO>,
-        filter: Any? = null,
+        filter: IsFilter? = null,
         order: Order? = null,
         limit: UInt32 = 100.toUInt32(),
         fromVersion: UInt64,
@@ -42,6 +44,8 @@ class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                 ScanVersionedChangesRequest(
                         dataModel = it[0] as RootDataModel<Any>,
                         startKey = it[1] as Key<Any>,
+                        filter = (it[2] as TypedValue<IsFilter>?)?.value,
+                        order = it[3] as Order?,
                         toVersion = it[4] as UInt64?,
                         filterSoftDeleted = it[5] as Boolean,
                         limit = it[6] as UInt32,
@@ -52,6 +56,10 @@ class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
             definitions = listOf(
                     Def(AbstractModelRequest.Properties.dataModel, ScanVersionedChangesRequest<*, *>::dataModel),
                     Def(ScanRequest.Properties.startKey, ScanVersionedChangesRequest<*, *>::startKey),
+                    Def(AbstractFetchRequest.Properties.filter)  {
+                        it.filter?.let { TypedValue(it.filterType.index, it) }
+                    },
+                    Def(AbstractFetchRequest.Properties.order, ScanVersionedChangesRequest<*, *>::order),
                     Def(AbstractFetchRequest.Properties.toVersion, ScanVersionedChangesRequest<*, *>::toVersion),
                     Def(AbstractFetchRequest.Properties.filterSoftDeleted, ScanVersionedChangesRequest<*, *>::filterSoftDeleted),
                     Def(ScanRequest.Properties.limit, ScanVersionedChangesRequest<*, *>::limit),

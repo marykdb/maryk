@@ -32,9 +32,9 @@ class DeleteRequestTest {
         checkJsonConversion(this.deleteRequest, DeleteRequest, this.context, ::compareRequest)
     }
 
-    private fun compareRequest(converted: DeleteRequest<*, *>) {
-        converted.objectsToDelete.contentDeepEquals(this.deleteRequest.objectsToDelete) shouldBe true
-        converted.dataModel shouldBe this.deleteRequest.dataModel
-        converted.hardDelete shouldBe this.deleteRequest.hardDelete
+    private fun compareRequest(converted: DeleteRequest<*, *>, original: DeleteRequest<*, *>) {
+        converted.objectsToDelete.contentDeepEquals(original.objectsToDelete) shouldBe true
+        converted.dataModel shouldBe original.dataModel
+        converted.hardDelete shouldBe original.hardDelete
     }
 }

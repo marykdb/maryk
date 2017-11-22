@@ -54,9 +54,9 @@ class DataObjectChangeTest {
         checkJsonConversion(this.dataObjectChange, DataObjectChange, this.context, ::compareRequest)
     }
 
-    private fun compareRequest(converted: DataObjectChange<*>) {
-        converted.key shouldBe this.dataObjectChange.key
-        converted.changes.contentDeepEquals(this.dataObjectChange.changes) shouldBe true
-        converted.lastVersion shouldBe this.dataObjectChange.lastVersion
+    private fun compareRequest(converted: DataObjectChange<*>, original: DataObjectChange<*>) {
+        converted.key shouldBe original.key
+        converted.changes.contentDeepEquals(original.changes) shouldBe true
+        converted.lastVersion shouldBe original.lastVersion
     }
 }

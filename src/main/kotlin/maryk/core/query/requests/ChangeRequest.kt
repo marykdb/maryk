@@ -3,25 +3,43 @@ package maryk.core.query.requests
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.query.changes.DataObjectChange
 
 /** A Request to change DataObjects for specific DataModel
  * @param dataModel Root model of data to change objects in
  * @param objectChanges Array of object changes
  */
-class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        vararg val objectChanges: DataObjectChange<DO>
-) : AbstractModelRequest<DO, DM>(dataModel) {
+data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
+        override val dataModel: DM,
+        val objectChanges: List<DataObjectChange<DO>>
+) : IsObjectRequest<DO, DM> {
+    constructor(dataModel: DM, vararg objectChange: DataObjectChange<DO>) : this(dataModel, objectChange.toList())
+
+    object Properties {
+        val objectChanges = ListDefinition(
+                name = "objectChanges",
+                index = 1,
+                required = true,
+                valueDefinition = SubModelDefinition(
+                        required = true,
+                        dataModel = DataObjectChange
+                )
+        )
+    }
+
     companion object: QueryDataModel<ChangeRequest<*, *>>(
             construct = {
                 @Suppress("UNCHECKED_CAST")
                 ChangeRequest(
-                        dataModel = it[0] as RootDataModel<Any>
+                        dataModel = it[0] as RootDataModel<Any>,
+                        objectChanges = it[1] as List<DataObjectChange<Any>>
                 )
             },
             definitions = listOf(
-                    Def(AbstractModelRequest.Properties.dataModel, ChangeRequest<*, *>::dataModel)
+                    Def(IsObjectRequest.Properties.dataModel, ChangeRequest<*, *>::dataModel),
+                    Def(Properties.objectChanges, ChangeRequest<*, *>::objectChanges)
             )
     )
 }

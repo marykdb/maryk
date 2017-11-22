@@ -11,10 +11,12 @@ import maryk.core.query.DataModelPropertyContext
  * @param dataModel Root model of data to add objects to
  * @param objectsToAdd Array of objects to add
  */
-class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        vararg val objectsToAdd: DO
-) : AbstractModelRequest<DO, DM>(dataModel) {
+data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
+        override val dataModel: DM,
+        val objectsToAdd: List<DO>
+) : IsObjectRequest<DO, DM> {
+    constructor(dataModel: DM, vararg objectToAdd: DO) : this(dataModel, objectToAdd.toList())
+
     object Properties {
         val objectsToAdd = ListDefinition(
                 name = "objectsToAdd",
@@ -31,11 +33,11 @@ class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
                 @Suppress("UNCHECKED_CAST")
                 AddRequest(
                         dataModel = it[0] as RootDataModel<Any>,
-                        objectsToAdd = *(it[1] as List<Any>).toTypedArray()
+                        objectsToAdd = it[1] as List<Any>
                 )
             },
             definitions = listOf(
-                    Def(AbstractModelRequest.Properties.dataModel, AddRequest<*, *>::dataModel),
+                    Def(IsObjectRequest.Properties.dataModel, AddRequest<*, *>::dataModel),
                     Def(Properties.objectsToAdd, {
                         it.objectsToAdd.toList()
                     })

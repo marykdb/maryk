@@ -14,11 +14,17 @@ import maryk.core.query.DataModelPropertyContext
 /** Contains changes for a specific DataObject by key
  * @param key of DataObject to change
  */
-class DataObjectChange<out DO: Any>(
+data class DataObjectChange<out DO: Any>(
         val key: Key<out DO>,
-        vararg val changes: IsChange,
+        val changes: List<IsChange>,
         val lastVersion: UInt64? = null
 ) {
+    constructor(
+            key: Key<out DO>,
+            vararg change: IsChange,
+            lastVersion: UInt64? = null
+    ) : this(key, change.toList(), lastVersion)
+
     object Properties {
         val key = ContextualReferenceDefinition<DataModelPropertyContext>(
                 name = "key",
@@ -46,7 +52,7 @@ class DataObjectChange<out DO: Any>(
                 @Suppress("UNCHECKED_CAST")
                 DataObjectChange(
                         key = it[0] as Key<Any>,
-                        changes = *(it[1] as List<TypedValue<IsChange>>).map { it.value }.toTypedArray(),
+                        changes = (it[1] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList(),
                         lastVersion = it[2] as UInt64?
                 )
             },

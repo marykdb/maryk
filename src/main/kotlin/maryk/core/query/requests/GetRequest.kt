@@ -19,14 +19,23 @@ import maryk.core.query.filters.IsFilter
  * @param toVersion until which version to retrieve data. (exclusive)
  * @param keys Array of keys to retrieve object of
  */
-open class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        vararg val keys: Key<DO>,
-        filter: IsFilter? = null,
-        order: Order? = null,
-        toVersion: UInt64? = null,
-        filterSoftDeleted: Boolean = true
-) : AbstractFetchRequest<DO, DM>(dataModel, filter, order, toVersion, filterSoftDeleted)  {
+data class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
+        override val dataModel: DM,
+        override val keys: List<Key<DO>>,
+        override val filter: IsFilter? = null,
+        override val order: Order? = null,
+        override val toVersion: UInt64? = null,
+        override val filterSoftDeleted: Boolean = true
+) : IsGetRequest<DO, DM> {
+    constructor(
+            dataModel: DM,
+            vararg key: Key<DO>,
+            filter: IsFilter? = null,
+            order: Order? = null,
+            toVersion: UInt64? = null,
+            filterSoftDeleted: Boolean = true
+    ) : this(dataModel, key.toList(), filter, order, toVersion, filterSoftDeleted)
+
     object Properties {
         val keys = ListDefinition(
                 name = "keys",
@@ -43,7 +52,7 @@ open class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
                 @Suppress("UNCHECKED_CAST")
                 GetRequest(
                         dataModel = it[0] as RootDataModel<Any>,
-                        keys = *(it[1] as List<Key<Any>>).toTypedArray(),
+                        keys = it[1] as List<Key<Any>>,
                         filter = (it[2] as TypedValue<IsFilter>?)?.value,
                         order = it[3] as Order?,
                         toVersion = it[4] as UInt64?,
@@ -51,17 +60,14 @@ open class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
                 )
             },
             definitions = listOf(
-                    Def(AbstractModelRequest.Properties.dataModel, GetRequest<*, *>::dataModel),
-                    Def(Properties.keys, {
-                        @Suppress("UNCHECKED_CAST")
-                        it.keys.toList() as List<Key<Any>>
-                    }),
-                    Def(AbstractFetchRequest.Properties.filter)  {
+                    Def(IsObjectRequest.Properties.dataModel, GetRequest<*, *>::dataModel),
+                    Def(Properties.keys, GetRequest<*, *>::keys),
+                    Def(IsFetchRequest.Properties.filter)  {
                         it.filter?.let { TypedValue(it.filterType.index, it) }
                     },
-                    Def(AbstractFetchRequest.Properties.order, GetRequest<*, *>::order),
-                    Def(AbstractFetchRequest.Properties.toVersion, GetRequest<*, *>::toVersion),
-                    Def(AbstractFetchRequest.Properties.filterSoftDeleted, GetRequest<*, *>::filterSoftDeleted)
+                    Def(IsFetchRequest.Properties.order, GetRequest<*, *>::order),
+                    Def(IsFetchRequest.Properties.toVersion, GetRequest<*, *>::toVersion),
+                    Def(IsFetchRequest.Properties.filterSoftDeleted, GetRequest<*, *>::filterSoftDeleted)
             )
     )
 }

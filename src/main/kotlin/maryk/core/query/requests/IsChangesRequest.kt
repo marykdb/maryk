@@ -1,0 +1,9 @@
+package maryk.core.query.requests
+
+import maryk.core.objects.RootDataModel
+import maryk.core.properties.types.UInt64
+
+/** Request for all changes from a version and later */
+interface IsChangesRequest<DO: Any, out DM: RootDataModel<DO>> : IsFetchRequest<DO, DM> {
+    val fromVersion: UInt64
+}

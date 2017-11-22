@@ -16,13 +16,12 @@ import maryk.core.query.filters.mapOfFilterDefinitions
  * @param order to use for ordering the found data
  * @param toVersion until which version to retrieve data. (exclusive)
  */
-abstract class AbstractFetchRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        val filter: IsFilter?,
-        val order: Order?,
-        val toVersion: UInt64?,
-        val filterSoftDeleted: Boolean = true
-) : AbstractModelRequest<DO, DM>(dataModel) {
+interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO>> : IsObjectRequest<DO, DM> {
+    val filter: IsFilter?
+    val order: Order?
+    val toVersion: UInt64?
+    val filterSoftDeleted: Boolean
+
     object Properties {
         val filter = MultiTypeDefinition(
                 name = "filter",

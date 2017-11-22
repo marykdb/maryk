@@ -30,15 +30,11 @@ class ChangeRequestTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.changeRequest, ChangeRequest, this.context, ::compareRequest)
+        checkProtoBufConversion(this.changeRequest, ChangeRequest, this.context)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.changeRequest, ChangeRequest, this.context, ::compareRequest)
-    }
-
-    private fun compareRequest(converted: ChangeRequest<*, *>, original: ChangeRequest<*, *>) {
-        converted.dataModel shouldBe original.dataModel
+        checkJsonConversion(this.changeRequest, ChangeRequest, this.context)
     }
 }

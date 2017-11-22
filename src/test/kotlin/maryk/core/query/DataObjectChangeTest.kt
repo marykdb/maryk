@@ -14,7 +14,6 @@ import maryk.core.query.changes.PropertyChange
 import maryk.core.query.changes.PropertyCheck
 import maryk.core.query.changes.PropertyDelete
 import maryk.core.query.changes.SetPropertyChange
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DataObjectChangeTest {
@@ -46,17 +45,11 @@ class DataObjectChangeTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, this.context, ::compareRequest)
+        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, this.context)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.dataObjectChange, DataObjectChange, this.context, ::compareRequest)
-    }
-
-    private fun compareRequest(converted: DataObjectChange<*>, original: DataObjectChange<*>) {
-        converted.key shouldBe original.key
-        converted.changes.contentDeepEquals(original.changes) shouldBe true
-        converted.lastVersion shouldBe original.lastVersion
+        checkJsonConversion(this.dataObjectChange, DataObjectChange, this.context)
     }
 }

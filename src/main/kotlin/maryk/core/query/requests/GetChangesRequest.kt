@@ -15,22 +15,25 @@ import maryk.core.query.filters.IsFilter
  * @param keys Array of keys to retrieve object of
  * @param fromVersion the version to start getting objects of (Inclusive)
  */
-open class GetChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        vararg keys: Key<DO>,
-        filter: IsFilter? = null,
-        order: Order? = null,
-        val fromVersion: UInt64,
-        toVersion: UInt64? = null,
-        filterSoftDeleted: Boolean = true
-) : GetRequest<DO, DM>(
-        dataModel,
-        *keys,
-        filter = filter,
-        order = order,
-        toVersion = toVersion,
-        filterSoftDeleted = filterSoftDeleted
-) {
+data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
+        override val dataModel: DM,
+        override val keys: List<Key<DO>>,
+        override val filter: IsFilter? = null,
+        override val order: Order? = null,
+        override val fromVersion: UInt64,
+        override val toVersion: UInt64? = null,
+        override val filterSoftDeleted: Boolean = true
+) : IsGetRequest<DO, DM>, IsChangesRequest<DO, DM> {
+    constructor(
+            dataModel: DM,
+            vararg key: Key<DO>,
+            filter: IsFilter? = null,
+            order: Order? = null,
+            fromVersion: UInt64,
+            toVersion: UInt64? = null,
+            filterSoftDeleted: Boolean = true
+    ) : this(dataModel, key.toList(), filter, order, fromVersion, toVersion, filterSoftDeleted)
+
     object Properties {
         val fromVersion = NumberDefinition(
                 name = "fromVersion",
@@ -44,7 +47,7 @@ open class GetChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                 @Suppress("UNCHECKED_CAST")
                 GetChangesRequest(
                         dataModel = it[0] as RootDataModel<Any>,
-                        keys = *(it[1] as List<Key<Any>>).toTypedArray(),
+                        keys = it[1] as List<Key<Any>>,
                         filter = (it[2] as TypedValue<IsFilter>?)?.value,
                         order = it[3] as Order?,
                         toVersion = it[4] as UInt64?,
@@ -53,17 +56,14 @@ open class GetChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                 )
             },
             definitions = listOf(
-                    Def(AbstractModelRequest.Properties.dataModel, GetChangesRequest<*, *>::dataModel),
-                    Def(GetRequest.Properties.keys, {
-                        @Suppress("UNCHECKED_CAST")
-                        it.keys.toList() as List<Key<Any>>
-                    }),
-                    Def(AbstractFetchRequest.Properties.filter)  {
+                    Def(IsObjectRequest.Properties.dataModel, GetChangesRequest<*, *>::dataModel),
+                    Def(GetRequest.Properties.keys, GetChangesRequest<*, *>::keys),
+                    Def(IsFetchRequest.Properties.filter)  {
                         it.filter?.let { TypedValue(it.filterType.index, it) }
                     },
-                    Def(AbstractFetchRequest.Properties.order, GetChangesRequest<*, *>::order),
-                    Def(AbstractFetchRequest.Properties.toVersion, GetChangesRequest<*, *>::toVersion),
-                    Def(AbstractFetchRequest.Properties.filterSoftDeleted, GetChangesRequest<*, *>::filterSoftDeleted),
+                    Def(IsFetchRequest.Properties.order, GetChangesRequest<*, *>::order),
+                    Def(IsFetchRequest.Properties.toVersion, GetChangesRequest<*, *>::toVersion),
+                    Def(IsFetchRequest.Properties.filterSoftDeleted, GetChangesRequest<*, *>::filterSoftDeleted),
                     Def(GetChangesRequest.Properties.fromVersion, GetChangesRequest<*, *>::fromVersion)
             )
     )

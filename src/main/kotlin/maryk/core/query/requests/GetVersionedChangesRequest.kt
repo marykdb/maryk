@@ -18,24 +18,27 @@ import maryk.core.query.filters.IsFilter
  * @param fromVersion the version to start getting objects of (Inclusive)
  * @param maxVersions Max amount of versions to fetch (Default=1000)
  */
-class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        vararg keys: Key<DO>,
-        filter: IsFilter? = null,
-        order: Order? = null,
-        toVersion: UInt64? = null,
-        fromVersion: UInt64,
-        val maxVersions: UInt32 = 100.toUInt32(),
-        filterSoftDeleted: Boolean = true
-) : GetChangesRequest<DO, DM>(
-        dataModel,
-        *keys,
-        filter = filter,
-        order = order,
-        toVersion = toVersion,
-        filterSoftDeleted = filterSoftDeleted,
-        fromVersion = fromVersion
-) {
+data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
+        override val dataModel: DM,
+        override val keys: List<Key<DO>>,
+        override val filter: IsFilter? = null,
+        override val order: Order? = null,
+        override val toVersion: UInt64? = null,
+        override val fromVersion: UInt64,
+        override val maxVersions: UInt32 = 100.toUInt32(),
+        override val filterSoftDeleted: Boolean = true
+) : IsGetRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
+    constructor(
+            dataModel: DM,
+            vararg key: Key<DO>,
+            filter: IsFilter? = null,
+            order: Order? = null,
+            toVersion: UInt64? = null,
+            fromVersion: UInt64,
+            maxVersions: UInt32 = 100.toUInt32(),
+            filterSoftDeleted: Boolean = true
+    ) : this(dataModel, key.toList(), filter, order, toVersion, fromVersion, maxVersions, filterSoftDeleted)
+
     object Properties {
         val maxVersions = NumberDefinition(
                 name = "maxVersions",
@@ -49,7 +52,7 @@ class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                 @Suppress("UNCHECKED_CAST")
                 GetVersionedChangesRequest(
                         dataModel = it[0] as RootDataModel<Any>,
-                        keys = *(it[1] as List<Key<Any>>).toTypedArray(),
+                        keys = it[1] as List<Key<Any>>,
                         filter = (it[2] as TypedValue<IsFilter>?)?.value,
                         order = it[3] as Order?,
                         toVersion = it[4] as UInt64?,
@@ -59,17 +62,14 @@ class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                 )
             },
             definitions = listOf(
-                    Def(AbstractModelRequest.Properties.dataModel, GetVersionedChangesRequest<*, *>::dataModel),
-                    Def(GetRequest.Properties.keys, {
-                        @Suppress("UNCHECKED_CAST")
-                        it.keys.toList() as List<Key<Any>>
-                    }),
-                    Def(AbstractFetchRequest.Properties.filter)  {
+                    Def(IsObjectRequest.Properties.dataModel, GetVersionedChangesRequest<*, *>::dataModel),
+                    Def(GetRequest.Properties.keys, GetVersionedChangesRequest<*, *>::keys),
+                    Def(IsFetchRequest.Properties.filter)  {
                         it.filter?.let { TypedValue(it.filterType.index, it) }
                     },
-                    Def(AbstractFetchRequest.Properties.order, GetVersionedChangesRequest<*, *>::order),
-                    Def(AbstractFetchRequest.Properties.toVersion, GetVersionedChangesRequest<*, *>::toVersion),
-                    Def(AbstractFetchRequest.Properties.filterSoftDeleted, GetVersionedChangesRequest<*, *>::filterSoftDeleted),
+                    Def(IsFetchRequest.Properties.order, GetVersionedChangesRequest<*, *>::order),
+                    Def(IsFetchRequest.Properties.toVersion, GetVersionedChangesRequest<*, *>::toVersion),
+                    Def(IsFetchRequest.Properties.filterSoftDeleted, GetVersionedChangesRequest<*, *>::filterSoftDeleted),
                     Def(GetChangesRequest.Properties.fromVersion, GetVersionedChangesRequest<*, *>::fromVersion),
                     Def(GetVersionedChangesRequest.Properties.maxVersions, GetVersionedChangesRequest<*, *>::maxVersions)
             )

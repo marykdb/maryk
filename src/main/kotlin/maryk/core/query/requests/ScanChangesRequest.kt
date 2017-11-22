@@ -18,16 +18,16 @@ import maryk.core.query.filters.IsFilter
  * @param limit amount of items to fetch
  * @param fromVersion the version to start getting objects of (Inclusive)
  */
-open class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        startKey: Key<DO>,
-        filter: IsFilter? = null,
-        order: Order? = null,
-        limit: UInt32 = 100.toUInt32(),
-        val fromVersion: UInt64,
-        toVersion: UInt64? = null,
-        filterSoftDeleted: Boolean = true
-) : ScanRequest<DO, DM>(dataModel, startKey, filter, order, limit, toVersion, filterSoftDeleted) {
+data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
+        override val dataModel: DM,
+        override val startKey: Key<DO>,
+        override val filter: IsFilter? = null,
+        override val order: Order? = null,
+        override val limit: UInt32 = 100.toUInt32(),
+        override val fromVersion: UInt64,
+        override val toVersion: UInt64? = null,
+        override val filterSoftDeleted: Boolean = true
+) : IsScanRequest<DO, DM>, IsChangesRequest<DO, DM> {
     object Properties {
         val fromVersion = NumberDefinition(
                 name = "fromVersion",
@@ -51,14 +51,14 @@ open class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                 )
             },
             definitions = listOf(
-                    Def(AbstractModelRequest.Properties.dataModel, ScanChangesRequest<*, *>::dataModel),
+                    Def(IsObjectRequest.Properties.dataModel, ScanChangesRequest<*, *>::dataModel),
                     Def(ScanRequest.Properties.startKey, ScanChangesRequest<*, *>::startKey),
-                    Def(AbstractFetchRequest.Properties.filter) {
+                    Def(IsFetchRequest.Properties.filter) {
                         it.filter?.let { TypedValue(it.filterType.index, it) }
                     },
-                    Def(AbstractFetchRequest.Properties.order, ScanChangesRequest<*, *>::order),
-                    Def(AbstractFetchRequest.Properties.toVersion, ScanChangesRequest<*, *>::toVersion),
-                    Def(AbstractFetchRequest.Properties.filterSoftDeleted, ScanChangesRequest<*, *>::filterSoftDeleted),
+                    Def(IsFetchRequest.Properties.order, ScanChangesRequest<*, *>::order),
+                    Def(IsFetchRequest.Properties.toVersion, ScanChangesRequest<*, *>::toVersion),
+                    Def(IsFetchRequest.Properties.filterSoftDeleted, ScanChangesRequest<*, *>::filterSoftDeleted),
                     Def(ScanRequest.Properties.limit, ScanChangesRequest<*, *>::limit),
                     Def(ScanChangesRequest.Properties.fromVersion, ScanChangesRequest<*, *>::fromVersion)
             )

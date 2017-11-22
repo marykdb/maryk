@@ -4,7 +4,6 @@ import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.query.DataModelPropertyContext
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DeleteRequestTest {
@@ -24,17 +23,11 @@ class DeleteRequestTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.deleteRequest, DeleteRequest, this.context, ::compareRequest)
+        checkProtoBufConversion(this.deleteRequest, DeleteRequest, this.context)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.deleteRequest, DeleteRequest, this.context, ::compareRequest)
-    }
-
-    private fun compareRequest(converted: DeleteRequest<*, *>, original: DeleteRequest<*, *>) {
-        converted.objectsToDelete.contentDeepEquals(original.objectsToDelete) shouldBe true
-        converted.dataModel shouldBe original.dataModel
-        converted.hardDelete shouldBe original.hardDelete
+        checkJsonConversion(this.deleteRequest, DeleteRequest, this.context)
     }
 }

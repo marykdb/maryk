@@ -7,7 +7,6 @@ import maryk.core.properties.types.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.Order
 import maryk.core.query.filters.Exists
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class GetRequestTest {
@@ -36,22 +35,13 @@ class GetRequestTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.getRequest, GetRequest, this.context, ::compareRequest)
-        checkProtoBufConversion(this.getMaxRequest, GetRequest, this.context, ::compareRequest)
+        checkProtoBufConversion(this.getRequest, GetRequest, this.context)
+        checkProtoBufConversion(this.getMaxRequest, GetRequest, this.context)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.getRequest, GetRequest, this.context, ::compareRequest)
-        checkJsonConversion(this.getMaxRequest, GetRequest, this.context, ::compareRequest)
-    }
-
-    private fun compareRequest(converted: GetRequest<*, *>, original: GetRequest<*, *>) {
-        converted.keys.contentDeepEquals(original.keys) shouldBe true
-        converted.dataModel shouldBe original.dataModel
-        converted.filter shouldBe original.filter
-        converted.order shouldBe original.order
-        converted.filterSoftDeleted shouldBe original.filterSoftDeleted
-        converted.toVersion shouldBe original.toVersion
+        checkJsonConversion(this.getRequest, GetRequest, this.context)
+        checkJsonConversion(this.getMaxRequest, GetRequest, this.context)
     }
 }

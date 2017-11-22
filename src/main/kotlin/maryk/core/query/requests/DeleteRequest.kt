@@ -5,8 +5,8 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.types.Key
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
+import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
 
 /** A Request to delete DataObjects for specific DataModel
@@ -15,11 +15,15 @@ import maryk.core.query.DataModelPropertyContext
  * @param hardDelete false means data will still exist but be not requestable
  * and true will mean the data will be totally deleted
  */
-class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
-        dataModel: DM,
-        vararg val objectsToDelete: Key<DO>,
+data class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
+        override val dataModel: DM,
+        val objectsToDelete: List<Key<DO>>,
         val hardDelete: Boolean = false
-) : AbstractModelRequest<DO, DM>(dataModel) {
+) : IsObjectRequest<DO, DM> {
+    constructor(
+            dataModel: DM, vararg objectToDelete: Key<DO>, hardDelete: Boolean
+    ) : this(dataModel, objectToDelete.toList(), hardDelete)
+
     object Properties {
         val objectsToDelete = ListDefinition(
                 name = "objectsToDelete",
@@ -40,16 +44,13 @@ class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
                 @Suppress("UNCHECKED_CAST")
                 DeleteRequest(
                         dataModel = it[0] as RootDataModel<Any>,
-                        objectsToDelete = *(it[1] as List<Key<Any>>).toTypedArray(),
+                        objectsToDelete = it[1] as List<Key<Any>>,
                         hardDelete = it[2] as Boolean
                 )
             },
             definitions = listOf(
-                    Def(AbstractModelRequest.Properties.dataModel, DeleteRequest<*, *>::dataModel),
-                    Def(Properties.objectsToDelete, {
-                        @Suppress("UNCHECKED_CAST")
-                        it.objectsToDelete.toList() as List<Key<Any>>
-                    }),
+                    Def(IsObjectRequest.Properties.dataModel, DeleteRequest<*, *>::dataModel),
+                    Def(Properties.objectsToDelete, DeleteRequest<*, *>::objectsToDelete),
                     Def(Properties.hardDelete, DeleteRequest<*,*>::hardDelete)
             )
     )

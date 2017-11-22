@@ -8,7 +8,6 @@ import maryk.core.properties.types.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.Order
 import maryk.core.query.filters.Exists
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class GetVersionedChangesRequestTest {
@@ -40,24 +39,13 @@ class GetVersionedChangesRequestTest {
 
     @Test
     fun testProtoBufConversion() {
-        checkProtoBufConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
-        checkProtoBufConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
+        checkProtoBufConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
+        checkProtoBufConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
     }
 
     @Test
     fun testJsonConversion() {
-        checkJsonConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
-        checkJsonConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context, ::compareRequest)
-    }
-
-    private fun compareRequest(converted: GetVersionedChangesRequest<*, *>, original: GetVersionedChangesRequest<*, *>) {
-        converted.keys.contentDeepEquals(original.keys) shouldBe true
-        converted.dataModel shouldBe original.dataModel
-        converted.filter shouldBe original.filter
-        converted.order shouldBe original.order
-        converted.filterSoftDeleted shouldBe original.filterSoftDeleted
-        converted.toVersion shouldBe original.toVersion
-        converted.fromVersion shouldBe original.fromVersion
-        converted.maxVersions shouldBe original.maxVersions
+        checkJsonConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
+        checkJsonConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
     }
 }

@@ -13,14 +13,16 @@ import maryk.core.query.DataModelPropertyContext
 
 /** Contains changes for a specific DataObject by key
  * @param key of DataObject to change
+ * @param changes for DataObject
+ * @param lastVersion of data which is contained
  */
 data class DataObjectChange<out DO: Any>(
-        val key: Key<out DO>,
+        val key: Key<DO>,
         val changes: List<IsChange>,
         val lastVersion: UInt64? = null
 ) {
     constructor(
-            key: Key<out DO>,
+            key: Key<DO>,
             vararg change: IsChange,
             lastVersion: UInt64? = null
     ) : this(key, change.toList(), lastVersion)

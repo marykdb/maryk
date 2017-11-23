@@ -4,7 +4,6 @@ import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.query.DataModelPropertyContext
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class AddRequestTest {
@@ -13,12 +12,6 @@ class AddRequestTest {
             SubMarykObject(value = "haha1"),
             SubMarykObject(value = "haha2")
     )
-
-    @Test
-    fun testAddObject() {
-        this.addRequest.dataModel shouldBe SubMarykObject
-        this.addRequest.objectsToAdd.size shouldBe 2
-    }
 
     private val context = DataModelPropertyContext(mapOf(
             SubMarykObject.name to SubMarykObject

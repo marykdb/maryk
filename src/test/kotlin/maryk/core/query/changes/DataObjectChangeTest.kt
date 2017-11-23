@@ -1,4 +1,4 @@
-package maryk.core.query
+package maryk.core.query.changes
 
 import maryk.SubMarykObject
 import maryk.TestMarykObject
@@ -6,14 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.types.toUInt64
-import maryk.core.query.changes.DataObjectChange
-import maryk.core.query.changes.ListPropertyChange
-import maryk.core.query.changes.MapPropertyChange
-import maryk.core.query.changes.ObjectSoftDeleteChange
-import maryk.core.query.changes.PropertyChange
-import maryk.core.query.changes.PropertyCheck
-import maryk.core.query.changes.PropertyDelete
-import maryk.core.query.changes.SetPropertyChange
+import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class DataObjectChangeTest {

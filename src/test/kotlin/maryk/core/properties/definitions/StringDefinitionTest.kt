@@ -4,8 +4,8 @@ import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.PropertyInvalidSizeException
-import maryk.core.properties.exceptions.PropertyInvalidValueException
+import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
@@ -45,10 +45,10 @@ internal class StringDefinitionTest {
         def.validate(newValue = "abc")
         def.validate(newValue = "abcdef")
 
-        shouldThrow<PropertyInvalidSizeException> {
+        shouldThrow<InvalidSizeException> {
             def.validate(newValue = "ab")
         }
-        shouldThrow<PropertyInvalidSizeException> {
+        shouldThrow<InvalidSizeException> {
             def.validate(newValue = "abcdefg")
         }
     }
@@ -58,7 +58,7 @@ internal class StringDefinitionTest {
         // Should succeed
         defRegEx.validate(newValue = "abc")
 
-        shouldThrow<PropertyInvalidValueException> {
+        shouldThrow<InvalidValueException> {
             defRegEx.validate(newValue = "efgh")
         }
     }

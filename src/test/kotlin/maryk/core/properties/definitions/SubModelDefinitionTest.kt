@@ -6,7 +6,7 @@ import maryk.core.objects.DataModel
 import maryk.core.objects.Def
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
@@ -45,7 +45,7 @@ internal class SubModelDefinitionTest {
     @Test
     fun validate() {
         def.validate(newValue = MarykObject())
-        shouldThrow<PropertyValidationUmbrellaException> {
+        shouldThrow<ValidationUmbrellaException> {
             def.validate(newValue = MarykObject("wrong"))
         }
     }

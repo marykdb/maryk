@@ -26,6 +26,8 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>, out P: IsP
         }
     } ?: name
 
+    override fun toString() = this.completeName ?: "null"
+
     override fun equals(other: Any?) = when {
         this === other -> true
         other == null || other !is IsPropertyReference<*, *> -> false

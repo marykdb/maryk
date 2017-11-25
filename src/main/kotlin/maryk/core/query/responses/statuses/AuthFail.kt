@@ -8,6 +8,7 @@ class AuthFail<DO: Any> : IsAddResponseStatus<DO>, IsChangeResponseStatus<DO>, I
 
     override fun equals(other: Any?) = other is AuthFail<*>
     override fun hashCode() = 0
+    override fun toString() = "AuthFail"
 
     companion object: QueryDataModel<AuthFail<*>>(
             construct = { AuthFail<Any>() },

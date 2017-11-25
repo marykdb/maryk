@@ -11,9 +11,9 @@ import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.exceptions.PropertyValidationException
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
-import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -57,9 +57,9 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     override fun getPropertyGetter(name: String) = nameToDefinition[name]?.propertyGetter
     override fun getPropertyGetter(index: Int) = indexToDefinition[index]?.propertyGetter
 
-    @Throws(PropertyValidationUmbrellaException::class)
+    @Throws(ValidationUmbrellaException::class)
     override fun validate(dataObject: DO, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
+        createValidationUmbrellaException(parentRefFactory) { addException ->
             definitions.forEach {
                 @Suppress("UNCHECKED_CAST")
                 val def: IsPropertyDefinition<Any> = it.propertyDefinition as IsPropertyDefinition<Any>
@@ -68,16 +68,16 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                             newValue = it.propertyGetter(dataObject),
                             parentRefFactory = parentRefFactory
                     )
-                } catch (e: PropertyValidationException) {
+                } catch (e: ValidationException) {
                     addException(e)
                 }
             }
         }
     }
 
-    @Throws(PropertyValidationUmbrellaException::class)
+    @Throws(ValidationUmbrellaException::class)
     override fun validate(map: Map<Int, Any>, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
+        createValidationUmbrellaException(parentRefFactory) { addException ->
             map.forEach { (key, value) ->
                 val definition = indexToDefinition[key] ?: return@forEach
 
@@ -88,7 +88,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
                             newValue = value,
                             parentRefFactory = parentRefFactory
                     )
-                } catch (e: PropertyValidationException) {
+                } catch (e: ValidationException) {
                     addException(e)
                 }
             }

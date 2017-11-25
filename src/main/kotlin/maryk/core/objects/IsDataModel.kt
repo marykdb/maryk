@@ -1,7 +1,7 @@
 package maryk.core.objects
 
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
 interface IsDataModel<in DO: Any> {
@@ -28,16 +28,16 @@ interface IsDataModel<in DO: Any> {
     /** Validate a DataObject
      * @param dataObject to validate
      * @param parentRefFactory parent reference factory to the model
-     * @throws PropertyValidationUmbrellaException if input was invalid
+     * @throws ValidationUmbrellaException if input was invalid
      */
-    @Throws(PropertyValidationUmbrellaException::class)
+    @Throws(ValidationUmbrellaException::class)
     fun validate(dataObject: DO, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 
     /** Validate a map of values
      * @param map with values to validate
      * @param parentRefFactory parent reference factory to the model
-     * @throws PropertyValidationUmbrellaException if input was invalid
+     * @throws ValidationUmbrellaException if input was invalid
      */
-    @Throws(PropertyValidationUmbrellaException::class)
+    @Throws(ValidationUmbrellaException::class)
     fun validate(map: Map<Int, Any>, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 }

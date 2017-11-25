@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.checkProtoBufConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.PropertyInvalidValueException
-import maryk.core.properties.exceptions.PropertyOutOfRangeException
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.test.shouldBe
@@ -49,10 +49,10 @@ internal class MultiTypeDefinitionTest {
         def.validate(newValue = TypedValue(0, "#test"))
         def.validate(newValue = TypedValue(1, 400))
 
-        shouldThrow<PropertyOutOfRangeException> {
+        shouldThrow<OutOfRangeException> {
             def.validate(newValue = TypedValue(1, 3000))
         }
-        shouldThrow<PropertyInvalidValueException> {
+        shouldThrow<InvalidValueException> {
             def.validate(newValue = TypedValue(0, "WRONG"))
         }
     }

@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.PropertyOutOfRangeException
-import maryk.core.properties.exceptions.PropertyValidationException
+import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 
@@ -29,21 +29,21 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>, CX: IsPropertyContext>
     /**
      * Validate the contents of the native type
      * @param newValue to validate
-     * @throws PropertyValidationException thrown if property is invalid
+     * @throws ValidationException thrown if property is invalid
      */
-    @Throws(PropertyValidationException::class)
+    @Throws(ValidationException::class)
     override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         when {
             newValue != null -> {
                 when {
                     this.minValue != null && newValue.compareTo(this.minValue) < 0
-                            -> throw PropertyOutOfRangeException(
-                                this.getRef(parentRefFactory), newValue, this.minValue, this.maxValue
+                            -> throw OutOfRangeException(
+                                this.getRef(parentRefFactory), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
                             )
                     this.maxValue != null && newValue.compareTo(this.maxValue) > 0
-                            -> throw PropertyOutOfRangeException(
-                                this.getRef(parentRefFactory), newValue, this.minValue, this.maxValue
+                            -> throw OutOfRangeException(
+                                this.getRef(parentRefFactory), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
                             )
                 }
             }

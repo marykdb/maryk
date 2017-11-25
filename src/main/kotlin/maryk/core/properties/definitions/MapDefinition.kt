@@ -7,10 +7,10 @@ import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.exceptions.PropertyTooLittleItemsException
-import maryk.core.properties.exceptions.PropertyTooMuchItemsException
-import maryk.core.properties.exceptions.PropertyValidationException
-import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
@@ -66,22 +66,22 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         if (newValue != null) {
             val mapSize = newValue.size
             if (isSizeToSmall(mapSize)) {
-                throw PropertyTooLittleItemsException(this.getRef(parentRefFactory), mapSize, this.minSize!!)
+                throw TooLittleItemsException(this.getRef(parentRefFactory), mapSize, this.minSize!!)
             }
             if (isSizeToBig(mapSize)) {
-                throw PropertyTooMuchItemsException(this.getRef(parentRefFactory), mapSize, this.maxSize!!)
+                throw TooMuchItemsException(this.getRef(parentRefFactory), mapSize, this.maxSize!!)
             }
 
-            createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
+            createValidationUmbrellaException(parentRefFactory) { addException ->
                 newValue.forEach { key, value ->
                     try {
                         this.keyDefinition.validate(null, key) { this.getKeyRef(key, parentRefFactory) }
-                    } catch (e: PropertyValidationException) {
+                    } catch (e: ValidationException) {
                         addException(e)
                     }
                     try {
                         this.valueDefinition.validate(null, value) { this.getValueRef(key, parentRefFactory) }
-                    } catch (e: PropertyValidationException) {
+                    } catch (e: ValidationException) {
                         addException(e)
                     }
                 }

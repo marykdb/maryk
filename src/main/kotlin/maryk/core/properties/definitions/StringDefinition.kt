@@ -4,9 +4,9 @@ import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.bytes.initString
 import maryk.core.bytes.writeUTF8Bytes
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.PropertyInvalidSizeException
-import maryk.core.properties.exceptions.PropertyInvalidValueException
-import maryk.core.properties.exceptions.PropertyValidationException
+import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 
@@ -46,7 +46,7 @@ class StringDefinition(
 
     override fun fromString(string: String) = string
 
-    @Throws(PropertyValidationException::class)
+    @Throws(ValidationException::class)
     override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 
@@ -54,11 +54,11 @@ class StringDefinition(
             newValue != null -> {
                 when {
                     isSizeToSmall(newValue.length) || isSizeToBig(newValue.length)
-                    -> throw PropertyInvalidSizeException(
+                    -> throw InvalidSizeException(
                             this.getRef(parentRefFactory), newValue, this.minSize, this.maxSize
                     )
                     this._regEx != null && !(this._regEx!! matches newValue)
-                    -> throw PropertyInvalidValueException(
+                    -> throw InvalidValueException(
                             this.getRef(parentRefFactory), newValue
                     )
                 }

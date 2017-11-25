@@ -3,6 +3,8 @@ package maryk.core.query.responses
 import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.responses.statuses.AuthFail
@@ -10,6 +12,7 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.RequestFail
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
+import maryk.core.query.responses.statuses.ValidationFail
 import kotlin.test.Test
 
 class ChangeResponseTest {
@@ -22,6 +25,9 @@ class ChangeResponseTest {
             listOf(
                     Success(32352L.toUInt64()),
                     DoesNotExist(key),
+                    ValidationFail(ValidationUmbrellaException(null, listOf(
+                            InvalidValueException(SubMarykObject.Properties.value.getRef(), "wrong")
+                    ))),
                     RequestFail("Request was wrong"),
                     AuthFail(),
                     ServerFail("Something went wrong")

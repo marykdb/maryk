@@ -14,9 +14,10 @@ import maryk.core.protobuf.WireType
 class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
         name: String,
         index: Int = -1,
+        required: Boolean = true,
         val contextualResolver: (context: CX?) -> RootDataModel<Any>
 ): AbstractValueDefinition<IsPropertyReference<*, IsPropertyDefinition<*>>, CX>(
-        name, index, false, true, true, false, WireType.LENGTH_DELIMITED
+        name, index, false, true, required, false, WireType.LENGTH_DELIMITED
 ) {
     override fun asString(value: IsPropertyReference<*, IsPropertyDefinition<*>>, context: CX?)
             = value.completeName!!

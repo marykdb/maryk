@@ -4,11 +4,11 @@ import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.PropertyInvalidValueException
-import maryk.core.properties.exceptions.PropertyRequiredException
-import maryk.core.properties.exceptions.PropertyTooLittleItemsException
-import maryk.core.properties.exceptions.PropertyTooMuchItemsException
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.RequiredException
+import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.UInt32
@@ -18,7 +18,6 @@ import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
-import kotlin.test.assertTrue
 
 internal class ListDefinitionTest {
     private val subDef = StringDefinition(
@@ -64,7 +63,7 @@ internal class ListDefinitionTest {
     fun testValidateRequired() {
         def2.validate(newValue = null)
 
-        shouldThrow<PropertyRequiredException> {
+        shouldThrow<RequiredException> {
             def.validate(newValue = null)
         }
     }
@@ -75,29 +74,27 @@ internal class ListDefinitionTest {
         def.validate(newValue = listOf("T", "T2", "T3"))
         def.validate(newValue = listOf("T", "T2", "T3", "T4"))
 
-        shouldThrow<PropertyTooLittleItemsException> {
+        shouldThrow<TooLittleItemsException> {
             def.validate(newValue = listOf("T"))
         }
 
-        shouldThrow<PropertyTooMuchItemsException> {
+        shouldThrow<TooMuchItemsException> {
             def.validate(newValue = listOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
     fun testValidateContent() {
-        val e = shouldThrow<PropertyValidationUmbrellaException> {
+        val e = shouldThrow<ValidationUmbrellaException> {
             def.validate(newValue = listOf("T", "WRONG", "WRONG2"))
         }
         e.exceptions.size shouldBe 2
 
-        with(e.exceptions[0]) {
-            assertTrue(this is PropertyInvalidValueException)
-            this.reference!!.completeName shouldBe "stringList.@1"
+        with(e.exceptions[0] as InvalidValueException) {
+            this.reference.completeName shouldBe "stringList.@1"
         }
-        with(e.exceptions[1]) {
-            assertTrue(this is PropertyInvalidValueException)
-            this.reference!!.completeName shouldBe "stringList.@2"
+        with(e.exceptions[1] as InvalidValueException) {
+            this.reference.completeName shouldBe "stringList.@2"
         }
     }
 

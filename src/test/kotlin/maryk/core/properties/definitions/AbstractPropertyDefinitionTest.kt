@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.exceptions.PropertyAlreadySetException
-import maryk.core.properties.exceptions.PropertyRequiredException
+import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.exceptions.RequiredException
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -19,7 +19,7 @@ internal class AbstractPropertyDefinitionTest {
     fun validateFinal() {
         def.validate(newValue = "test")
 
-        shouldThrow<PropertyAlreadySetException> {
+        shouldThrow<AlreadySetException> {
             def.validate(
                     previousValue = "old",
                     newValue = "new"
@@ -31,7 +31,7 @@ internal class AbstractPropertyDefinitionTest {
     fun validateRequired() {
         def.validate(newValue = "test")
 
-        shouldThrow<PropertyRequiredException> {
+        shouldThrow<RequiredException> {
             def.validate(newValue = null)
         }
     }

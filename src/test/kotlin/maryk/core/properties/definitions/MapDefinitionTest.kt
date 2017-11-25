@@ -5,18 +5,17 @@ import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.PropertyInvalidValueException
-import maryk.core.properties.exceptions.PropertyOutOfRangeException
-import maryk.core.properties.exceptions.PropertyTooLittleItemsException
-import maryk.core.properties.exceptions.PropertyTooMuchItemsException
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
-import kotlin.test.assertTrue
 
 internal class MapDefinitionTest {
     private val intDef = NumberDefinition(
@@ -65,13 +64,13 @@ internal class MapDefinitionTest {
                 1000 to "#thousand"
         ))
 
-        shouldThrow<PropertyTooLittleItemsException> {
+        shouldThrow<TooLittleItemsException> {
             def.validate(newValue = mapOf(
                     1 to "#one"
             ))
         }
 
-        shouldThrow<PropertyTooMuchItemsException> {
+        shouldThrow<TooMuchItemsException> {
             def.validate(newValue = mapOf(
                     12 to "#twelve",
                     30 to "#thirty",
@@ -84,7 +83,7 @@ internal class MapDefinitionTest {
 
     @Test
     fun testValidateContent() {
-        val e = shouldThrow<PropertyValidationUmbrellaException> {
+        val e = shouldThrow<ValidationUmbrellaException> {
             def.validate(newValue = mapOf(
                     12 to "#twelve",
                     30 to "WRONG",
@@ -94,19 +93,16 @@ internal class MapDefinitionTest {
         }
         e.exceptions.size shouldBe 3
 
-        with(e.exceptions[0]) {
-            assertTrue(this is PropertyInvalidValueException)
-            this.reference!!.completeName shouldBe "intStringMap.@30"
+        with(e.exceptions[0] as InvalidValueException) {
+            this.reference.completeName shouldBe "intStringMap.@30"
         }
 
-        with(e.exceptions[1]) {
-            assertTrue(this is PropertyOutOfRangeException)
-            this.reference!!.completeName shouldBe "intStringMap.$1001"
+        with(e.exceptions[1] as OutOfRangeException) {
+            this.reference.completeName shouldBe "intStringMap.$1001"
         }
 
-        with(e.exceptions[2]) {
-            assertTrue(this is PropertyOutOfRangeException)
-            this.reference!!.completeName shouldBe "intStringMap.$3000"
+        with(e.exceptions[2] as OutOfRangeException) {
+            this.reference.completeName shouldBe "intStringMap.$3000"
         }
     }
 

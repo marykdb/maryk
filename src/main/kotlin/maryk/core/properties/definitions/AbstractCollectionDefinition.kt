@@ -7,10 +7,10 @@ import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.exceptions.PropertyTooLittleItemsException
-import maryk.core.properties.exceptions.PropertyTooMuchItemsException
-import maryk.core.properties.exceptions.PropertyValidationException
-import maryk.core.properties.exceptions.createPropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -47,17 +47,17 @@ abstract class AbstractCollectionDefinition<
         if (newValue != null) {
             val size = newValue.size
             if (isSizeToSmall(size)) {
-                throw PropertyTooLittleItemsException(this.getRef(parentRefFactory), size, this.minSize!!)
+                throw TooLittleItemsException(this.getRef(parentRefFactory), size, this.minSize!!)
             }
             if (isSizeToBig(size)) {
-                throw PropertyTooMuchItemsException(this.getRef(parentRefFactory), size, this.maxSize!!)
+                throw TooMuchItemsException(this.getRef(parentRefFactory), size, this.maxSize!!)
             }
 
-            createPropertyValidationUmbrellaException(parentRefFactory) { addException ->
+            createValidationUmbrellaException(parentRefFactory) { addException ->
                 validateCollectionForExceptions(parentRefFactory, newValue) { item, refFactory ->
                     try {
                         this.valueDefinition.validate(null, item, refFactory)
-                    } catch (e: PropertyValidationException) {
+                    } catch (e: ValidationException) {
                         addException(e)
                     }
                 }

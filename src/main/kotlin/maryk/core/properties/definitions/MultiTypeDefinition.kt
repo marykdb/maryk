@@ -9,7 +9,7 @@ import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.exceptions.PropertyValidationException
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ByteLengthContainer
@@ -44,7 +44,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    @Throws(PropertyValidationException::class)
+    @Throws(ValidationException::class)
     override fun validate(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         if (newValue != null) {

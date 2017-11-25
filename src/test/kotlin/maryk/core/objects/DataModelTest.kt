@@ -9,9 +9,9 @@ import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.PropertyInvalidValueException
-import maryk.core.properties.exceptions.PropertyOutOfRangeException
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Key
@@ -163,14 +163,14 @@ internal class DataModelTest {
 
     @Test
     fun testValidationFail() {
-        shouldThrow<PropertyValidationUmbrellaException> {
+        shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(testObject.copy(int = 9))
         }
     }
 
     @Test
     fun testValidationWithMapFail() {
-        val e = shouldThrow<PropertyValidationUmbrellaException> {
+        val e = shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(mapOf(
                 0 to "wrong",
                 1 to 999
@@ -179,8 +179,8 @@ internal class DataModelTest {
 
         e.exceptions.size shouldBe 2
 
-        (e.exceptions[0] is PropertyInvalidValueException) shouldBe true
-        (e.exceptions[1] is PropertyOutOfRangeException) shouldBe true
+        (e.exceptions[0] is InvalidValueException) shouldBe true
+        (e.exceptions[1] is OutOfRangeException) shouldBe true
     }
 
     @Test

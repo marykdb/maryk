@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.exceptions.PropertyOutOfRangeException
+import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -25,11 +25,11 @@ internal class AbstractSimpleDefinitionTest {
     @Test
     fun validateValueSize() {
         def.validate(newValue = "ccc")
-        shouldThrow<PropertyOutOfRangeException> {
+        shouldThrow<OutOfRangeException> {
             def.validate(newValue = "b")
         }
 
-        shouldThrow<PropertyOutOfRangeException> {
+        shouldThrow<OutOfRangeException> {
             def.validate(newValue = "z")
         }
     }

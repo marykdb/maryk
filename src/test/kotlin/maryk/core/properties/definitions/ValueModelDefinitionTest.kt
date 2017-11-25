@@ -4,8 +4,8 @@ import maryk.TestValueObject
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.PropertyOutOfRangeException
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
@@ -63,7 +63,7 @@ internal class ValueModelDefinitionTest {
                 dateTime = DateTime.nowUTC(),
                 bool = true
         ))
-        val e = shouldThrow<PropertyValidationUmbrellaException> {
+        val e = shouldThrow<ValidationUmbrellaException> {
             def.validate(newValue = TestValueObject(
                     int = 1000,
                     dateTime = DateTime.nowUTC(),
@@ -73,9 +73,8 @@ internal class ValueModelDefinitionTest {
 
         e.exceptions.size shouldBe 1
 
-        with (e.exceptions[0]) {
-            this is PropertyOutOfRangeException
-            this.reference!!.completeName shouldBe "test.int"
+        with (e.exceptions[0] as OutOfRangeException) {
+            this.reference.completeName shouldBe "test.int"
         }
     }
 }

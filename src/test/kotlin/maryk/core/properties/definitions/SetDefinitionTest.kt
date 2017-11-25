@@ -4,11 +4,11 @@ import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.PropertyInvalidValueException
-import maryk.core.properties.exceptions.PropertyRequiredException
-import maryk.core.properties.exceptions.PropertyTooLittleItemsException
-import maryk.core.properties.exceptions.PropertyTooMuchItemsException
-import maryk.core.properties.exceptions.PropertyValidationUmbrellaException
+import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.RequiredException
+import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
@@ -41,7 +41,7 @@ internal class SetDefinitionTest {
     fun testValidateRequired() {
         def2.validate(newValue = null)
 
-        shouldThrow<PropertyRequiredException> {
+        shouldThrow<RequiredException> {
             def.validate(newValue = null)
         }
     }
@@ -52,24 +52,24 @@ internal class SetDefinitionTest {
         def.validate(newValue = setOf("T", "T2", "T3"))
         def.validate(newValue = setOf("T", "T2", "T3", "T4"))
 
-        shouldThrow<PropertyTooLittleItemsException> {
+        shouldThrow<TooLittleItemsException> {
             def.validate(newValue = setOf("T"))
         }
 
-        shouldThrow<PropertyTooMuchItemsException> {
+        shouldThrow<TooMuchItemsException> {
             def.validate(newValue = setOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
     fun testValidateContent() {
-        val e = shouldThrow<PropertyValidationUmbrellaException> {
+        val e = shouldThrow<ValidationUmbrellaException> {
             def.validate(newValue = setOf("T", "WRONG", "WRONG2"))
         }
         e.exceptions.size shouldBe 2
 
-        assertTrue(e.exceptions[0] is PropertyInvalidValueException)
-        assertTrue(e.exceptions[1] is PropertyInvalidValueException)
+        assertTrue(e.exceptions[0] is InvalidValueException)
+        assertTrue(e.exceptions[1] is InvalidValueException)
     }
 
     @Test

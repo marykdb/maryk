@@ -4,7 +4,7 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.exceptions.PropertyInvalidSizeException
+import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.types.Bytes
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -30,10 +30,10 @@ internal class FlexBytesDefinitionTest {
         def.validate(newValue = Bytes(ByteArray(5, { 0x00.toByte() } )))
         def.validate(newValue = Bytes(ByteArray(10, { 0x00.toByte() } )))
 
-        shouldThrow<PropertyInvalidSizeException> {
+        shouldThrow<InvalidSizeException> {
             def.validate(newValue = Bytes(ByteArray(1, { 0x00.toByte() } )))
         }
-        shouldThrow<PropertyInvalidSizeException> {
+        shouldThrow<InvalidSizeException> {
             def.validate(newValue = Bytes(ByteArray(20, { 0x00.toByte() } )))
         }
     }

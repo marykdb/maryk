@@ -4,7 +4,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.PropertyValidationException
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SubModelPropertyRef
@@ -53,7 +53,7 @@ class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = dataModel.getDefinition(index)
 
-    @Throws(PropertyValidationException::class)
+    @Throws(ValidationException::class)
     override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         if (newValue != null) {

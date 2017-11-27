@@ -32,7 +32,5 @@ class FixedBytesDefinition(
     override fun calculateTransportByteLength(value: Bytes) = this.byteSize
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = try {
-        Bytes.ofBase64String(string)
-    } catch (e: NumberFormatException) { throw ParseException(string, e) }
+    override fun fromString(string: String) = Bytes.ofBase64String(string)
 }

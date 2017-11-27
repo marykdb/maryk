@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.random
+import maryk.core.properties.exceptions.ParseException
 
 /** Base class for 16 bit/2 byte unsigned integers */
 class UInt16 internal constructor(number: Short): UInt<Short>(number) {
@@ -31,8 +32,8 @@ class UInt16 internal constructor(number: Short): UInt<Short>(number) {
 
 fun Short.toUInt16() = if (this > 0) {
     UInt16((this + Short.MIN_VALUE).toShort())
-} else { throw NumberFormatException("Negative Short not allowed $this") }
+} else { throw ParseException("Negative Short not allowed $this") }
 
 fun Int.toUInt16() = if (this > 0) {
     UInt16((this + Short.MIN_VALUE).toShort())
-} else { throw NumberFormatException("Negative Int not allowed $this") }
+} else { throw ParseException("Negative Int not allowed $this") }

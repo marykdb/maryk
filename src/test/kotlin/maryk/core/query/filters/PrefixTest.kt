@@ -5,7 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.query.DataModelPropertyContext
-import org.junit.Test
+import kotlin.test.Test
 
 class PrefixTest {
     private val prefix = Prefix(

@@ -33,9 +33,7 @@ class FlexBytesDefinition(
     override fun calculateTransportByteLength(value: Bytes) = value.size
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = try {
-        Bytes.ofBase64String(string)
-    } catch (e: NumberFormatException) { throw ParseException(string, e) }
+    override fun fromString(string: String) = Bytes.ofBase64String(string)
 
     @Throws(ValidationException::class)
     override fun validate(previousValue: Bytes?, newValue: Bytes?, parentRefFactory: () -> IsPropertyReference<*, *>?) {

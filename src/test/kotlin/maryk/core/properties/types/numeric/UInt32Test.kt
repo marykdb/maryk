@@ -15,7 +15,7 @@ internal class UInt32Test {
 
     @Test
     fun testHashCode() {
-        UInt32.MAX_VALUE.hashCode() shouldBe Integer.MAX_VALUE.hashCode()
+        UInt32.MAX_VALUE.hashCode() shouldBe Int.MAX_VALUE.hashCode()
     }
 
     @Test

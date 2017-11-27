@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.time.Instant
+import kotlin.math.floor
 
 /** Date and Time object. */
 data class DateTime(
@@ -63,8 +64,8 @@ data class DateTime(
 
         /** Create a DateTime by the amount of milliseconds sinds 01-01-1970 */
         fun ofEpochMilli(epochInMillis: Long): DateTime {
-            val epochDay = Math.floorDiv(epochInMillis, MILLIS_PER_DAY.toLong())
-            val millisOfDay = Math.floorMod(epochInMillis, MILLIS_PER_DAY.toLong()).toInt()
+            val epochDay = floor((epochInMillis / MILLIS_PER_DAY).toDouble()).toLong()
+            val millisOfDay = floor((epochInMillis % MILLIS_PER_DAY).toDouble()).toInt()
             return DateTime(
                     Date.ofEpochDay(epochDay),
                     Time.ofMilliOfDay(millisOfDay)
@@ -73,8 +74,8 @@ data class DateTime(
 
         /** Create a DateTime by the amount of seconds sinds 01-01-1970 */
         fun ofEpochSecond(epochInSeconds: Long, milli: Short = 0): DateTime {
-            val epochDay = Math.floorDiv(epochInSeconds, SECONDS_PER_DAY.toLong())
-            val secondOfDay = Math.floorMod(epochInSeconds, SECONDS_PER_DAY.toLong()).toInt()
+            val epochDay = floor(epochInSeconds.toDouble() / SECONDS_PER_DAY).toLong()
+            val secondOfDay = floor(epochInSeconds.toDouble() % SECONDS_PER_DAY).toInt()
             return DateTime(
                     Date.ofEpochDay(epochDay),
                     Time.ofMilliOfDay(

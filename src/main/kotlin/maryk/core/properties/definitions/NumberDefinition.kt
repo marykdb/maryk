@@ -48,7 +48,7 @@ class NumberDefinition<T: Comparable<T>>(
     @Throws(ParseException::class)
     override fun fromString(string: String) = try {
         type.ofString(string)
-    } catch (e: NumberFormatException) { throw ParseException(string, e) }
+    } catch (e: Throwable) { throw ParseException(string, e) }
 
     override fun writeJsonValue(value: T, writer: JsonWriter, context: IsPropertyContext?) = when {
         type !in arrayOf(UInt64, SInt64, Float64, Float32) -> {

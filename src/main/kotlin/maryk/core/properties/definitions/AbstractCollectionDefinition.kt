@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.assert
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader

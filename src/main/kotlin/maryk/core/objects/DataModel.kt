@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.assert
 import maryk.core.json.IllegalJsonOperation
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken

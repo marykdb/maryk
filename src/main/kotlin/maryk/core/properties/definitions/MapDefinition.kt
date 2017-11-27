@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.assert
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
@@ -73,7 +74,7 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
             }
 
             createValidationUmbrellaException(parentRefFactory) { addException ->
-                newValue.forEach { key, value ->
+                newValue.forEach { (key, value) ->
                     try {
                         this.keyDefinition.validate(null, key) { this.getKeyRef(key, parentRefFactory) }
                     } catch (e: ValidationException) {
@@ -91,7 +92,7 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
 
     override fun writeJsonValue(value: Map<K, V>, writer: JsonWriter, context: CX?) {
         writer.writeStartObject()
-        value.forEach { k, v ->
+        value.forEach { (k, v) ->
             writer.writeFieldName(
                     keyDefinition.asString(k)
             )
@@ -120,7 +121,7 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
 
     override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         var totalByteLength = 0
-        value.forEach { key, item ->
+        value.forEach { (key, item) ->
             totalByteLength += ProtoBuf.calculateKeyLength(this.index)
 
             // Cache length for length delimiter
@@ -139,7 +140,7 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
     }
 
     override fun writeTransportBytesWithIndexKey(index: Int, value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
-        value.forEach { key, item ->
+        value.forEach { (key, item) ->
             ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
             lengthCacheGetter().writeVarBytes(writer)
             keyDefinition.writeTransportBytesWithIndexKey(1, key, lengthCacheGetter, writer, context)

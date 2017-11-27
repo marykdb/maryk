@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.random
+import maryk.core.properties.exceptions.ParseException
 
 /** Base class for 32 bit/4 byte unsigned integers */
 class UInt32 internal constructor(number: Int): UInt<Int>(number) {
@@ -31,8 +32,8 @@ class UInt32 internal constructor(number: Int): UInt<Int>(number) {
 
 fun Int.toUInt32() = if (this > 0) {
     UInt32(this + Int.MIN_VALUE)
-} else { throw NumberFormatException("Negative Int not allowed $this") }
+} else { throw ParseException("Negative Int not allowed $this") }
 
 fun Long.toUInt32() = if (this > 0) {
     UInt32((this + Int.MIN_VALUE).toInt())
-} else { throw NumberFormatException("Negative Long not allowed $this") }
+} else { throw ParseException("Negative Long not allowed $this") }

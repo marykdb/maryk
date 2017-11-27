@@ -31,7 +31,7 @@ open class PropertyReference<T: Any, out D : IsPropertyDefinition<T>, out P: IsP
     override fun equals(other: Any?) = when {
         this === other -> true
         other == null || other !is IsPropertyReference<*, *> -> false
-        else -> other.completeName!!.contentEquals(this.completeName!!)
+        else -> other.completeName!! == this.completeName!!
     }
 
     override fun hashCode() = this.completeName?.hashCode() ?: 0

@@ -46,4 +46,4 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
 
 fun Long.toUInt64() = if (this >= 0) {
     UInt64(this + Long.MIN_VALUE)
-} else { throw NumberFormatException("Negative Long not allowed $this") }
+} else { throw ParseException("Negative Long not allowed $this") }

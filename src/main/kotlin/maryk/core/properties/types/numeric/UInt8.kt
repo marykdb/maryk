@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.initByteByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.random
+import maryk.core.properties.exceptions.ParseException
 
 /** Base class for 8 bit/1 byte unsigned integers */
 class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
@@ -31,8 +32,8 @@ class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
 
 fun Byte.toUInt8() = if (this > 0) {
     UInt8((this + Byte.MIN_VALUE).toByte())
-} else { throw NumberFormatException("Negative Byte not allowed $this") }
+} else { throw ParseException("Negative Byte not allowed $this") }
 
 fun Int.toUInt8() = if (this > 0) {
     UInt8((this + Byte.MIN_VALUE).toByte())
-} else { throw NumberFormatException("Negative Int not allowed $this") }
+} else { throw ParseException("Negative Int not allowed $this") }

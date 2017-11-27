@@ -45,9 +45,7 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
     override fun asString(value: DO) = value.toBase64()
 
     @Throws(ParseException::class)
-    override fun fromString(string: String) = try {
-        this.dataModel.fromString(string)
-    } catch (e: NumberFormatException) { throw ParseException(string, e) }
+    override fun fromString(string: String) = this.dataModel.fromString(string)
 
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             CanHaveComplexChildReference(

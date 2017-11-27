@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.assert
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray

@@ -13,7 +13,7 @@ fun ByteArray.toHex(): String {
         ch[it] = HEX_CHARS[d shr 4 and 0x0F]
         ch[it + 1] = HEX_CHARS[d and 0x0F]
     }
-    return String(ch)
+    return ch.joinToString("")
 }
 
 fun initByteArrayByHex(hex: String) : ByteArray {

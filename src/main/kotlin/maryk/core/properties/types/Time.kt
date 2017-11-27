@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.zeroFill
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.time.Instant
+import kotlin.math.floor
 
 enum class TimePrecision {
     SECONDS, MILLIS
@@ -145,7 +146,7 @@ data class Time(
 
         override fun nowUTC(): Time {
             val nowInMillis = Instant.getCurrentEpochTimeInMillis()
-            val millisOfDay = Math.floorMod(nowInMillis, MILLIS_PER_DAY.toLong()).toInt()
+            val millisOfDay = floor(nowInMillis.toDouble() % MILLIS_PER_DAY).toInt()
             return ofMilliOfDay(millisOfDay)
         }
     }

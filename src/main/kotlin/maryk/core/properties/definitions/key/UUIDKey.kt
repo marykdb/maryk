@@ -2,9 +2,9 @@ package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.generateUUID
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.types.generateUUID
 
 object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>> {
     override val index: Int = -1

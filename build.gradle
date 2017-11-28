@@ -7,35 +7,20 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
-apply plugin: 'kotlin'
+apply plugin: 'kotlin-platform-common'
 
 allprojects {
     group = "io.maryk"
     version = "0.1"
-
-    repositories {
-        jcenter()
-    }
 }
 
-compileKotlin.kotlinOptions.allWarningsAsErrors = true
-
-sourceSets {
-    jvm.kotlin.srcDir("src/jvm/kotlin")
+repositories {
+    jcenter()
 }
 
 dependencies {
-    jvmCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
 
-    compile sourceSets.jvm.runtimeClasspath
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
-    testCompile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-}
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+    testCompile "org.jetbrains.kotlin:kotlin-test-annotations-common:$kotlin_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test-common:$kotlin_version"
 }

@@ -1,18 +1,18 @@
 package maryk.core.bytes;
 
-fun initString(length: Int, reader: () -> Byte) = String(
+actual fun initString(length: Int, reader: () -> Byte) = String(
     ByteArray(length) {
         reader()
     }
 )
 
-fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
+actual fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
 
 /** Calculates the length of a String in UTF8 bytes in an optimized way
  * @param string to calculate length of
  * @throws IllegalArgumentException when string contains invalid UTF-16: unpaired surrogates
  */
-fun String.calculateUTF8ByteLength(): Int {
+actual fun String.calculateUTF8ByteLength(): Int {
     val utf16Length = this.length
     var utf8Length = utf16Length
     var i = 0

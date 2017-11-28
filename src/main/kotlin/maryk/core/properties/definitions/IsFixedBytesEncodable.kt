@@ -17,7 +17,6 @@ interface IsFixedBytesEncodable<T: Any> {
      * @return stored value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
-    @Throws(DefNotFoundException::class)
     fun readStorageBytes(length: Int, reader: () -> Byte): T
 
     /** Calculates the byte size of the storage bytes */

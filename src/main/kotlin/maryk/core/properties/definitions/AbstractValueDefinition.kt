@@ -91,7 +91,6 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      * @param context with possible context values for Dynamic writers
      * @throws ParseException if conversion fails
      */
-    @Throws(ParseException::class)
     abstract fun fromString(string: String, context: CX? = null): T
 
     /** Convert value to String

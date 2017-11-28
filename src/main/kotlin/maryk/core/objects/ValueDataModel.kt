@@ -29,7 +29,6 @@ abstract class ValueDataModel<DO: ValueDataObject>(
      * @return converted DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
-    @Throws(DefNotFoundException::class)
     fun readFromBytes(reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
         this.definitions.forEachIndexed { index, it ->
@@ -74,7 +73,6 @@ abstract class ValueDataModel<DO: ValueDataObject>(
      * @return converted DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
-    @Throws(DefNotFoundException::class)
     fun fromString(value: String): DO {
         val b = Base64.decode(value)
         var index = 0

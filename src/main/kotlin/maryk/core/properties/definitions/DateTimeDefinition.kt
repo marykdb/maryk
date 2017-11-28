@@ -4,7 +4,6 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.WireType
@@ -51,6 +50,5 @@ class DateTimeDefinition(
         epochUnit.writeVarBytes(writer)
     }
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = DateTime.parse(string)
 }

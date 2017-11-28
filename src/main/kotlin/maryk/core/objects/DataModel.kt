@@ -13,7 +13,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.ValidationException
-import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
@@ -58,7 +57,6 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
     override fun getPropertyGetter(name: String) = nameToDefinition[name]?.propertyGetter
     override fun getPropertyGetter(index: Int) = indexToDefinition[index]?.propertyGetter
 
-    @Throws(ValidationUmbrellaException::class)
     override fun validate(dataObject: DO, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         createValidationUmbrellaException(parentRefFactory) { addException ->
             definitions.forEach {
@@ -76,7 +74,6 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
         }
     }
 
-    @Throws(ValidationUmbrellaException::class)
     override fun validate(map: Map<Int, Any>, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         createValidationUmbrellaException(parentRefFactory) { addException ->
             map.forEach { (key, value) ->

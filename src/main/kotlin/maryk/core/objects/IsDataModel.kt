@@ -30,7 +30,6 @@ interface IsDataModel<in DO: Any> {
      * @param parentRefFactory parent reference factory to the model
      * @throws ValidationUmbrellaException if input was invalid
      */
-    @Throws(ValidationUmbrellaException::class)
     fun validate(dataObject: DO, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 
     /** Validate a map of values
@@ -38,6 +37,5 @@ interface IsDataModel<in DO: Any> {
      * @param parentRefFactory parent reference factory to the model
      * @throws ValidationUmbrellaException if input was invalid
      */
-    @Throws(ValidationUmbrellaException::class)
     fun validate(map: Map<Int, Any>, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 }

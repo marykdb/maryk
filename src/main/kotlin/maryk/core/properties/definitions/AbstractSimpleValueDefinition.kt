@@ -33,7 +33,6 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
      * @return stored value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
-    @Throws(DefNotFoundException::class)
     abstract fun readStorageBytes(length: Int, reader: () -> Byte): T
 
     /** Calculate byte length of a value
@@ -74,9 +73,8 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
      * Get the value from a string
      * @param string to convert
      * @return the value
-     * @throws ParseException if conversion fails
+     * @throws ParseException when encountering unparsable content
      */
-    @Throws(ParseException::class)
     abstract internal fun fromString(string: String): T
 
     override final fun fromString(string: String, context: CX?) = this.fromString(string)
@@ -87,7 +85,6 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
         )
     }
 
-    @Throws(ParseException::class)
     override fun readJson(reader: JsonReader, context: CX?): T {
         if (reader.currentToken !is JsonToken.OBJECT_VALUE && reader.currentToken !is JsonToken.ARRAY_VALUE) {
             throw ParseException("JSON value for $name should be a simple value")

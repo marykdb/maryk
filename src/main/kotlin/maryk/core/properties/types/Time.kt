@@ -128,7 +128,6 @@ data class Time(
             else -> throw IllegalArgumentException("Invalid length for bytes for Time conversion: $length")
         }
 
-        @Throws(ParseException::class)
         override fun parse(value: String): Time {
             val result = timeRegex.matchEntire(value)
                     ?: throw ParseException("Invalid Time string: $value")

@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.randomBytes
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
 
@@ -31,6 +30,5 @@ class FixedBytesDefinition(
 
     override fun calculateTransportByteLength(value: Bytes) = this.byteSize
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 }

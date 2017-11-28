@@ -5,8 +5,6 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
@@ -44,7 +42,6 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     override fun asString(value: DO) = value.toBase64()
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = this.dataModel.fromString(string)
 
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
@@ -59,7 +56,6 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = dataModel.getDefinition(index)
 
-    @Throws(ValidationException::class)
     override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         if (newValue != null) {
@@ -76,6 +72,5 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
      */
     override fun writeJsonValue(value: DO, writer: JsonWriter, context: IsPropertyContext?) = dataModel.writeJson(value, writer, context)
 
-    @Throws(ParseException::class)
     override fun readJson(reader: JsonReader, context: IsPropertyContext?): DO = dataModel.readJsonToObject(reader, context)
 }

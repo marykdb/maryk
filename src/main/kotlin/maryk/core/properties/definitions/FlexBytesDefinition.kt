@@ -1,9 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.InvalidSizeException
-import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
@@ -32,10 +30,8 @@ class FlexBytesDefinition(
 
     override fun calculateTransportByteLength(value: Bytes) = value.size
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 
-    @Throws(ValidationException::class)
     override fun validate(previousValue: Bytes?, newValue: Bytes?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 

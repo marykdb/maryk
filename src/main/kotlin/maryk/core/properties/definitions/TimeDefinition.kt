@@ -4,7 +4,6 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.WireType
@@ -52,6 +51,5 @@ class TimeDefinition(
         toEncode.writeVarBytes(writer)
     }
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = Time.parse(string)
 }

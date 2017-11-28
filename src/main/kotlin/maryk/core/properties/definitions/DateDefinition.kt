@@ -4,9 +4,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition for Date properties */
@@ -43,6 +41,5 @@ class DateDefinition(
         epochDay.writeVarBytes(writer)
     }
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = Date.parse(string)
 }

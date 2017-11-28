@@ -26,9 +26,8 @@ interface IsPropertyDefinition<T: Any> {
      * @param parentRefFactory     for creating property reference to parent
      * @param previousValue previous value for validation
      * @param newValue      new value for validation
-     * @throws ValidationException when property is invalid
+     * @throws ValidationException when encountering invalid new value
      */
-    @Throws(ValidationException::class)
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
 
     /** To get embedded properties by name

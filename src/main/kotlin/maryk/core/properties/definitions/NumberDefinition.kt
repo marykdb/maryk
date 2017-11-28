@@ -45,7 +45,6 @@ class NumberDefinition<T: Comparable<T>>(
     override fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?)
             = this.type.writeTransportBytes(value, writer)
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = try {
         type.ofString(string)
     } catch (e: Throwable) { throw ParseException(string, e) }

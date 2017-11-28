@@ -41,6 +41,5 @@ abstract class AbstractSubDefinition<T: Any, in CX: IsPropertyContext>(
      * @return transported value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
-    @Throws(DefNotFoundException::class)
     abstract override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): T
 }

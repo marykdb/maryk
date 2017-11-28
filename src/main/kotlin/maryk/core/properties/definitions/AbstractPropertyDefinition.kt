@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.RequiredException
-import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.PropertyReference
 
@@ -22,7 +21,6 @@ abstract class AbstractPropertyDefinition<T: Any>  (
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?)
             = PropertyReference(this, parentRefFactory())
 
-    @Throws(ValidationException::class)
     override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) = when {
         this.final && previousValue != null -> throw AlreadySetException(this.getRef(parentRefFactory))
         this.required && newValue == null -> throw RequiredException(this.getRef(parentRefFactory))

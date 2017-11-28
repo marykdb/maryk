@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ByteLengthContainer
 
 /**
@@ -21,8 +20,8 @@ interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : I
     /** Reads JSON and returns values
      * @param context with possible context values for Dynamic Json readers
      * @param reader to read JSON from
+     * @throws ParseException when encountering unparsable content
      */
-    @Throws(ParseException::class)
     fun readJson(reader: JsonReader, context: CX? = null): T
 
 

@@ -29,7 +29,6 @@ class BooleanDefinition(
 
     override fun calculateTransportByteLength(value: Boolean) = this.byteSize
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = when(string) {
         "true" -> true
         "false" -> false

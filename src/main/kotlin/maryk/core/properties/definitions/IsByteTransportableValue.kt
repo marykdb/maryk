@@ -15,6 +15,5 @@ interface IsByteTransportableValue<T: Any, in CX: IsPropertyContext> : IsSeriali
      * @return transported value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
-    @Throws(DefNotFoundException::class)
     fun readTransportBytes(length: Int, reader: () -> Byte, context: CX? = null): T
 }

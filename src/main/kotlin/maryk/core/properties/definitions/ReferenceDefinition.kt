@@ -31,7 +31,6 @@ class ReferenceDefinition<DO: Any>(
 
     override fun calculateTransportByteLength(value: Key<DO>) = this.byteSize
 
-    @Throws(ParseException::class)
     override fun fromString(string: String) = try {
         dataModel.key.get(string)
     } catch (e: Throwable) { throw ParseException(string, e) }

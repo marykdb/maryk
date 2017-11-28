@@ -31,7 +31,6 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>, CX: IsPropertyContext>
      * @param newValue to validate
      * @throws ValidationException thrown if property is invalid
      */
-    @Throws(ValidationException::class)
     override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
         when {

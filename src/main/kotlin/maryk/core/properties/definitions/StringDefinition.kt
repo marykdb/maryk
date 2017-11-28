@@ -6,7 +6,6 @@ import maryk.core.bytes.writeUTF8Bytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
-import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 
@@ -46,7 +45,6 @@ class StringDefinition(
 
     override fun fromString(string: String) = string
 
-    @Throws(ValidationException::class)
     override fun validate(previousValue: String?, newValue: String?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
         super.validate(previousValue, newValue, parentRefFactory)
 

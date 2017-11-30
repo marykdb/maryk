@@ -7,14 +7,12 @@ import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.types.ValueDataObject
 
 /** DataModel for objects that can be encoded in fixed length width
- * @param construct: Constructs object out of a map with values keyed on index.
  * @param definitions: All definitions for properties contained in this model
  * @param DO: Type of DataObject contained
  */
 abstract class ValueDataModel<DO: ValueDataObject>(
-        construct: (Map<Int, *>) -> DO,
         definitions: List<Def<*, DO, IsPropertyContext>>
-) : DataModel<DO, IsPropertyContext>(construct, definitions) {
+) : DataModel<DO, IsPropertyContext>(definitions) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {
@@ -40,11 +38,8 @@ abstract class ValueDataModel<DO: ValueDataObject>(
                     value = def.readStorageBytes(def.byteSize, reader)
             )
         }
-        return this.construct(values)
+        return this(values)
     }
-
-    /** Constructs a new value with a map */
-    abstract fun construct(values: Map<Int, Any>): DO
 
     /** Creates bytes for given inputs
      * @param inputs to convert to values

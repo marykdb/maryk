@@ -25,13 +25,11 @@ class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: 
  * A Data Model for converting and validating DataObjects
  * @param <DO> Type of DataObject which is modeled
  *
- * @param construct: Constructs object out of a map with values keyed on index.
  * @param definitions: All definitions for properties contained in this model
  * @param DO: Type of DataModel contained
  * @param CX: Type of context object
  */
-open class DataModel<DO: Any, in CX: IsPropertyContext>(
-        val construct: (Map<Int, *>) -> DO,
+abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
         val definitions: List<Def<*, DO, CX>>
 ) : IsDataModel<DO> {
     private val indexToDefinition: Map<Int, Def<*, DO, CX>>
@@ -50,6 +48,12 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
             nameToDefinition[def.name!!] = it
         }
     }
+
+    /** Creates a Data Object by map
+     * @param map with index mapped to value
+     * @return newly created Data Object from map
+     */
+    abstract operator fun invoke(map: Map<Int, *>): DO
 
     override fun getDefinition(name: String) = nameToDefinition[name]?.propertyDefinition
     override fun getDefinition(index: Int) = indexToDefinition[index]?.propertyDefinition
@@ -176,7 +180,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      * @return DataObject represented by the JSON
      */
-    fun readJsonToObject(reader: JsonReader, context: CX? = null) = construct(this.readJson(reader, context))
+    fun readJsonToObject(reader: JsonReader, context: CX? = null) = this(this.readJson(reader, context))
 
     /** Calculates the byte length for the DataObject contained in map
      * @param map with values to calculate byte length for
@@ -272,7 +276,7 @@ open class DataModel<DO: Any, in CX: IsPropertyContext>(
      * @param context with context parameters for conversion (for dynamically dependent properties)
      * @return DataObject represented by the ProtoBuf
      */
-    fun readProtoBufToObject(length: Int, reader: () -> Byte, context: CX? = null) = construct(this.readProtoBuf(length, reader, context))
+    fun readProtoBufToObject(length: Int, reader: () -> Byte, context: CX? = null) = this(this.readProtoBuf(length, reader, context))
 
     /** Read a single field
      * @param valueMap to write the read values to

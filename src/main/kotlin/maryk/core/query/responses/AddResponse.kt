@@ -20,16 +20,15 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO>> constructor(
     }
 
     companion object: QueryDataModel<AddResponse<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                AddResponse(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        statuses = (it[1] as List<TypedValue<IsAddResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, AddResponse<*, *>::dataModel),
                     Def(Properties.statuses, { it.statuses.map { TypedValue(it.statusType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = AddResponse(
+                dataModel = map[0] as RootDataModel<Any>,
+                statuses = (map[1] as List<TypedValue<IsAddResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+        )
+    }
 }

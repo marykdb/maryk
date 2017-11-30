@@ -14,17 +14,16 @@ data class Success<DO: Any>(
     override val statusType = StatusType.SUCCESS
 
     companion object: QueryDataModel<Success<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Success<Any>(
-                        version = it[0] as UInt64
-                )
-            },
             definitions = listOf(
                     Def(
                             NumberDefinition("version", 0, type = UInt64),
                             Success<*>::version
                     )
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Success<Any>(
+                version = map[0] as UInt64
+        )
+    }
 }

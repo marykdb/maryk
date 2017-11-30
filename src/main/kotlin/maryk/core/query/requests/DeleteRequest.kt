@@ -40,18 +40,17 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<DeleteRequest<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                DeleteRequest(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        objectsToDelete = it[1] as List<Key<Any>>,
-                        hardDelete = it[2] as Boolean
-                )
-            },
             definitions = listOf(
                     Def(IsObjectRequest.Properties.dataModel, DeleteRequest<*, *>::dataModel),
                     Def(Properties.objectsToDelete, DeleteRequest<*, *>::objectsToDelete),
                     Def(Properties.hardDelete, DeleteRequest<*,*>::hardDelete)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = DeleteRequest(
+                dataModel = map[0] as RootDataModel<Any>,
+                objectsToDelete = map[1] as List<Key<Any>>,
+                hardDelete = map[2] as Boolean
+        )
+    }
 }

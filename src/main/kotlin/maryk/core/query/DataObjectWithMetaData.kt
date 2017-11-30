@@ -47,16 +47,6 @@ data class DataObjectWithMetaData<out DO: Any>(
     }
 
     companion object: QueryDataModel<DataObjectWithMetaData<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                DataObjectWithMetaData(
-                        key = it[0] as Key<Any>,
-                        dataObject = it[1] as Any,
-                        firstVersion = it[2] as UInt64,
-                        lastVersion = it[3] as UInt64,
-                        isDeleted = it[4] as Boolean
-                )
-            },
             definitions = listOf(
                     Def(Properties.key, DataObjectWithMetaData<*>::key),
                     Def(Properties.dataObject, DataObjectWithMetaData<*>::dataObject),
@@ -64,5 +54,14 @@ data class DataObjectWithMetaData<out DO: Any>(
                     Def(Properties.lastVersion, DataObjectWithMetaData<*>::lastVersion),
                     Def(Properties.isDeleted, DataObjectWithMetaData<*>::isDeleted)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = DataObjectWithMetaData(
+                key = map[0] as Key<Any>,
+                dataObject = map[1] as Any,
+                firstVersion = map[2] as UInt64,
+                lastVersion = map[3] as UInt64,
+                isDeleted = map[4] as Boolean
+        )
+    }
 }

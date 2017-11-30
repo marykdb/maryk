@@ -20,16 +20,15 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<DeleteResponse<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                DeleteResponse(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        statuses = (it[1] as List<TypedValue<IsDeleteResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, DeleteResponse<*, *>::dataModel),
                     Def(Properties.statuses, { it.statuses.map { TypedValue(it.statusType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = DeleteResponse(
+                dataModel = map[0] as RootDataModel<Any>,
+                statuses = (map[1] as List<TypedValue<IsDeleteResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+        )
+    }
 }

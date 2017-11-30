@@ -10,14 +10,12 @@ data class DoesNotExist<DO: Any>(
     override val statusType = StatusType.DOES_NOT_EXIST
 
     companion object: QueryDataModel<DoesNotExist<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                DoesNotExist(
-                        key = it[0] as Key<Any>
-                )
-            },
             definitions = listOf(
                     Def(keyDefinition, DoesNotExist<*>::key)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = DoesNotExist(
+                key = map[0] as Key<Any>
+        )
+    }
 }

@@ -29,14 +29,13 @@ data class And(
     }
 
     companion object: QueryDataModel<And>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                And(
-                        filters = (it[0] as List<TypedValue<IsFilter>>).map { it.value }
-                )
-            },
             definitions = listOf(
                     Def(Properties.filters, { it.filters.map { TypedValue(it.filterType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = And(
+                filters = (map[0] as List<TypedValue<IsFilter>>).map { it.value }
+        )
+    }
 }

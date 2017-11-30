@@ -18,16 +18,15 @@ data class LessThanEquals<T: Any>(
     override val filterType = FilterType.LESS_THAN_EQUALS
 
     companion object: QueryDataModel<LessThanEquals<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                LessThanEquals(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        value = it[1] as Any
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, LessThanEquals<*>::reference),
                     Def(IsPropertyComparison.Properties.value, LessThanEquals<*>::value)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = LessThanEquals(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                value = map[1] as Any
+        )
+    }
 }

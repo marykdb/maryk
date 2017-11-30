@@ -30,16 +30,15 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<ChangeRequest<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ChangeRequest(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        objectChanges = it[1] as List<DataObjectChange<Any>>
-                )
-            },
             definitions = listOf(
                     Def(IsObjectRequest.Properties.dataModel, ChangeRequest<*, *>::dataModel),
                     Def(Properties.objectChanges, ChangeRequest<*, *>::objectChanges)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ChangeRequest(
+                dataModel = map[0] as RootDataModel<Any>,
+                objectChanges = map[1] as List<DataObjectChange<Any>>
+        )
+    }
 }

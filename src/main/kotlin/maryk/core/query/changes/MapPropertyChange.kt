@@ -58,20 +58,19 @@ data class MapPropertyChange<K: Any, V: Any>(
     }
 
     companion object: QueryDataModel<MapPropertyChange<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                MapPropertyChange(
-                        reference = it[0] as IsPropertyReference<Map<Any, Any>, MapDefinition<Any, Any, *>>,
-                        valueToCompare = it[1] as Map<Any, Any>?,
-                        valuesToAdd = it[2] as Map<Any, Any>?,
-                        keysToDelete = it[3] as Set<Any>?
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, MapPropertyChange<*, *>::reference),
                     Def(Properties.valueToCompare, MapPropertyChange<*, *>::valueToCompare),
                     Def(Properties.valuesToAdd, MapPropertyChange<*, *>::valuesToAdd),
                     Def(Properties.keysToDelete, MapPropertyChange<*, *>::keysToDelete)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = MapPropertyChange(
+                reference = map[0] as IsPropertyReference<Map<Any, Any>, MapDefinition<Any, Any, *>>,
+                valueToCompare = map[1] as Map<Any, Any>?,
+                valuesToAdd = map[2] as Map<Any, Any>?,
+                keysToDelete = map[3] as Set<Any>?
+        )
+    }
 }

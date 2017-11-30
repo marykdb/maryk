@@ -55,20 +55,19 @@ data class SetPropertyChange<T: Any>(
     }
 
     companion object: QueryDataModel<SetPropertyChange<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                SetPropertyChange(
-                        reference = it[0] as IsPropertyReference<Set<Any>, AbstractValueDefinition<Set<Any>, IsPropertyContext>>,
-                        valueToCompare = it[1] as Set<Any>?,
-                        addValues = it[2] as Set<Any>?,
-                        deleteValues = it[3] as Set<Any>?
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, SetPropertyChange<*>::reference),
                     Def(Properties.valueToCompare, SetPropertyChange<*>::valueToCompare),
                     Def(Properties.addValues, SetPropertyChange<*>::addValues),
                     Def(Properties.deleteValues, SetPropertyChange<*>::deleteValues)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = SetPropertyChange(
+                reference = map[0] as IsPropertyReference<Set<Any>, AbstractValueDefinition<Set<Any>, IsPropertyContext>>,
+                valueToCompare = map[1] as Set<Any>?,
+                addValues = map[2] as Set<Any>?,
+                deleteValues = map[3] as Set<Any>?
+        )
+    }
 }

@@ -29,14 +29,13 @@ data class Or(
     }
 
     companion object: QueryDataModel<Or>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Or(
-                        filters = (it[0] as List<TypedValue<IsFilter>>).map { it.value }
-                )
-            },
             definitions = listOf(
                     Def(Properties.filters, { it.filters.map { TypedValue(it.filterType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Or(
+                filters = (map[0] as List<TypedValue<IsFilter>>).map { it.value }
+        )
+    }
 }

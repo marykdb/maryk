@@ -30,13 +30,17 @@ internal class TypeIdTest {
         }
         companion object: RootDataModel<MarykObject>(
                 name = "MarykObject",
-                construct = { MarykObject(it[0] as TypedValue<*>) },
                 keyDefinitions = definitions(
                         TypeId(Properties.multi)
-                ), definitions = listOf(
+                ),
+                definitions = listOf(
                     Def(Properties.multi, MarykObject::multi)
                 )
-        )
+        ) {
+            override fun invoke(map: Map<Int, *>) = MarykObject(
+                    map[0] as TypedValue<*>
+            )
+        }
     }
 
     @Test

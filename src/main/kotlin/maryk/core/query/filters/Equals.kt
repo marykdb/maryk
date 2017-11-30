@@ -18,16 +18,15 @@ data class Equals<T: Any>(
     override val filterType = FilterType.EQUALS
 
     companion object: QueryDataModel<Equals<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Equals(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        value = it[1] as Any
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, Equals<*>::reference),
                     Def(IsPropertyComparison.Properties.value, Equals<*>::value)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Equals(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                value = map[1] as Any
+        )
+    }
 }

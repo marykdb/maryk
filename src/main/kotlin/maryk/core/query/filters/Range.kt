@@ -54,16 +54,6 @@ data class Range<T: Any>(
     }
 
     companion object: QueryDataModel<Range<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Range(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        from = it[1] as Any,
-                        to = it[2] as Any,
-                        inclusiveFrom = it[3] as Boolean,
-                        inclusiveTo = it[4] as Boolean
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, Range<*>::reference),
                     Def(Properties.from, Range<*>::from),
@@ -71,5 +61,14 @@ data class Range<T: Any>(
                     Def(Properties.inclusiveStart, Range<*>::inclusiveFrom),
                     Def(Properties.inclusiveEnd, Range<*>::inclusiveTo)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Range(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                from = map[1] as Any,
+                to = map[2] as Any,
+                inclusiveFrom = map[3] as Boolean,
+                inclusiveTo = map[4] as Boolean
+        )
+    }
 }

@@ -20,16 +20,15 @@ data class ChangeResponse<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<ChangeResponse<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ChangeResponse(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        statuses = (it[1] as List<TypedValue<IsChangeResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, ChangeResponse<*, *>::dataModel),
                     Def(Properties.statuses, { it.statuses.map { TypedValue(it.statusType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ChangeResponse(
+                dataModel = map[0] as RootDataModel<Any>,
+                statuses = (map[1] as List<TypedValue<IsChangeResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+        )
+    }
 }

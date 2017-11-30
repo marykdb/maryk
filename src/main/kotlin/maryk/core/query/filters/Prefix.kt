@@ -26,16 +26,15 @@ data class Prefix(
     }
 
     companion object: QueryDataModel<Prefix>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Prefix(
-                        reference = it[0] as IsPropertyReference<String, StringDefinition>,
-                        prefix = it[1] as String
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, Prefix::reference),
                     Def(Properties.prefix, Prefix::prefix)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Prefix(
+                reference = map[0] as IsPropertyReference<String, StringDefinition>,
+                prefix = map[1] as String
+        )
+    }
 }

@@ -47,18 +47,17 @@ data class ValidationUmbrellaException(
     }
 
     companion object: QueryDataModel<ValidationUmbrellaException>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ValidationUmbrellaException(
-                        reference = it[0] as IsPropertyReference<*, *>?,
-                        exceptions = (it[1] as List<TypedValue<ValidationException>>?)?.map { it.value } ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(Properties.reference, ValidationUmbrellaException::reference),
                     Def(Properties.exceptions, { it.exceptions.map { TypedValue(it.validationExceptionType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
+                reference = map[0] as IsPropertyReference<*, *>?,
+                exceptions = (map[1] as List<TypedValue<ValidationException>>?)?.map { it.value } ?: emptyList()
+        )
+    }
 }
 
 private fun createReason(reference: IsPropertyReference<*, *>?, exceptions: List<ValidationException>): String {

@@ -39,20 +39,6 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<ScanVersionedChangesRequest<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ScanVersionedChangesRequest(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        startKey = it[1] as Key<Any>,
-                        filter = (it[2] as TypedValue<IsFilter>?)?.value,
-                        order = it[3] as Order?,
-                        toVersion = it[4] as UInt64?,
-                        filterSoftDeleted = it[5] as Boolean,
-                        limit = it[6] as UInt32,
-                        fromVersion = it[7] as UInt64,
-                        maxVersions = it[8] as UInt32
-                )
-            },
             definitions = listOf(
                     Def(IsObjectRequest.Properties.dataModel, ScanVersionedChangesRequest<*, *>::dataModel),
                     Def(ScanRequest.Properties.startKey, ScanVersionedChangesRequest<*, *>::startKey),
@@ -66,5 +52,18 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(ScanChangesRequest.Properties.fromVersion, ScanVersionedChangesRequest<*, *>::fromVersion),
                     Def(Properties.maxVersions, ScanVersionedChangesRequest<*, *>::maxVersions)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ScanVersionedChangesRequest(
+                dataModel = map[0] as RootDataModel<Any>,
+                startKey = map[1] as Key<Any>,
+                filter = (map[2] as TypedValue<IsFilter>?)?.value,
+                order = map[3] as Order?,
+                toVersion = map[4] as UInt64?,
+                filterSoftDeleted = map[5] as Boolean,
+                limit = map[6] as UInt32,
+                fromVersion = map[7] as UInt64,
+                maxVersions = map[8] as UInt32
+        )
+    }
 }

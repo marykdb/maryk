@@ -34,16 +34,15 @@ data class VersionedChanges(
     }
 
     companion object: QueryDataModel<VersionedChanges>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                VersionedChanges(
-                        version = it[0] as UInt64,
-                        changes = (it[1] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(Properties.version, VersionedChanges::version),
                     Def(Properties.changes, { it.changes.map { TypedValue(it.changeType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = VersionedChanges(
+                version = map[0] as UInt64,
+                changes = (map[1] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList()
+        )
+    }
 }

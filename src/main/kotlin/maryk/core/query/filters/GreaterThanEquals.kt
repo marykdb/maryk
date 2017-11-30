@@ -18,16 +18,15 @@ data class GreaterThanEquals<T: Any>(
     override val filterType = FilterType.GREATER_THAN_EQUALS
 
     companion object: QueryDataModel<GreaterThanEquals<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                GreaterThanEquals(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        value = it[1] as Any
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, GreaterThanEquals<*>::reference),
                     Def(IsPropertyComparison.Properties.value, GreaterThanEquals<*>::value)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = GreaterThanEquals(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                value = map[1] as Any
+        )
+    }
 }

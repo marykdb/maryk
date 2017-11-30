@@ -13,14 +13,12 @@ data class AlreadyExists<DO: Any>(
     override val statusType = StatusType.ALREADY_EXISTS
 
     companion object: QueryDataModel<AlreadyExists<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                AlreadyExists(
-                        key = it[0] as Key<Any>
-                )
-            },
             definitions = listOf(
                     Def(keyDefinition, AlreadyExists<*>::key)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = AlreadyExists(
+                key = map[0] as Key<Any>
+        )
+    }
 }

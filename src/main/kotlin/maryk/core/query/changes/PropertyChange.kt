@@ -33,18 +33,17 @@ data class PropertyChange<T: Any>(
     }
 
     companion object: QueryDataModel<PropertyChange<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                PropertyChange(
-                    reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                    valueToCompare = it[1],
-                    newValue = it[2] as Any
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, PropertyChange<*>::reference),
                     Def(IsPropertyOperation.Properties.valueToCompare, PropertyChange<*>::valueToCompare),
                     Def(Properties.newValue, PropertyChange<*>::newValue)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = PropertyChange(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                valueToCompare = map[1],
+                newValue = map[2] as Any
+        )
+    }
 }

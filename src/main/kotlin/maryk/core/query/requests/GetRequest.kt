@@ -48,17 +48,6 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<GetRequest<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                GetRequest(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        keys = it[1] as List<Key<Any>>,
-                        filter = (it[2] as TypedValue<IsFilter>?)?.value,
-                        order = it[3] as Order?,
-                        toVersion = it[4] as UInt64?,
-                        filterSoftDeleted = it[5] as Boolean
-                )
-            },
             definitions = listOf(
                     Def(IsObjectRequest.Properties.dataModel, GetRequest<*, *>::dataModel),
                     Def(Properties.keys, GetRequest<*, *>::keys),
@@ -69,5 +58,15 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(IsFetchRequest.Properties.toVersion, GetRequest<*, *>::toVersion),
                     Def(IsFetchRequest.Properties.filterSoftDeleted, GetRequest<*, *>::filterSoftDeleted)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = GetRequest(
+                dataModel = map[0] as RootDataModel<Any>,
+                keys = map[1] as List<Key<Any>>,
+                filter = (map[2] as TypedValue<IsFilter>?)?.value,
+                order = map[3] as Order?,
+                toVersion = map[4] as UInt64?,
+                filterSoftDeleted = map[5] as Boolean
+        )
+    }
 }

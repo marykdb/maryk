@@ -22,17 +22,15 @@ fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
  * If no key is defined the datamodel will get a UUID
  *
  * @param name: Name of the datamodel. Used also to resolve DataModels
- * @param construct: Constructs object out of a map with values keyed on index.
  * @param keyDefinitions: Ordered array with all key part definitions
  * @param definitions: All definitions for properties contained in this model
  * @param DM: Type of DataModel contained
  */
 abstract class RootDataModel<DM: Any>(
         val name: String,
-        construct: (Map<Int, *>) -> DM,
         keyDefinitions: Array<IsFixedBytesEncodable<out Any>> = arrayOf(UUIDKey),
         definitions: List<Def<*, DM, IsPropertyContext>>
-) : DataModel<DM, IsPropertyContext>(construct, definitions){
+) : DataModel<DM, IsPropertyContext>(definitions){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */

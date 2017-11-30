@@ -28,17 +28,16 @@ data class TooLittleItemsException(
     }
 
     companion object: QueryDataModel<TooLittleItemsException>(
-            construct = {
-                TooLittleItemsException(
-                        reference = it[0] as IsPropertyReference<*, *>,
-                        size = it[1] as Int,
-                        minSize = it[2] as Int
-                )
-            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, TooLittleItemsException::reference),
                     Def(Properties.size, TooLittleItemsException::size),
                     Def(Properties.minSize, TooLittleItemsException::minSize)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = TooLittleItemsException(
+                reference = map[0] as IsPropertyReference<*, *>,
+                size = map[1] as Int,
+                minSize = map[2] as Int
+        )
+    }
 }

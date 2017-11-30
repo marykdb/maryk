@@ -42,13 +42,13 @@ node {
     download = true
 }
 
-task installJest(type: NpmTask) {
-    args = ['install', 'jest']
+task installMocha(type: NpmTask) {
+    args = ['install', 'mocha']
 }
 
-task runJest(type: NodeTask, dependsOn: [compileTestKotlin2Js, populateNodeModules, installJest]) {
-    script = file('node_modules/.bin/jest')
+task runMocha(type: NodeTask, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
+    script = file('node_modules/.bin/mocha')
     args = [compileTestKotlin2Js.outputFile]
 }
 
-test.dependsOn runJest
+test.dependsOn runMocha

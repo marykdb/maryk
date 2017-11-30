@@ -32,17 +32,16 @@ data class TestValueObject(
     }
 
     companion object: ValueDataModel<TestValueObject>(
-            construct = { TestValueObject(it[0] as Int, it[1] as DateTime, it[2] as Boolean)},
             definitions = listOf(
                     Def(Properties.int, TestValueObject::int),
                     Def(Properties.dateTime, TestValueObject::dateTime),
                     Def(Properties.bool, TestValueObject::bool)
             )
     ) {
-        override fun construct(values: Map<Int, Any>) = TestValueObject(
-            int = values[0] as Int,
-            dateTime = values[1] as DateTime,
-            bool = values[2] as Boolean
+        override fun invoke(map: Map<Int, *>) = TestValueObject(
+                int = map[0] as Int,
+                dateTime = map[1] as DateTime,
+                bool = map[2] as Boolean
         )
     }
 }

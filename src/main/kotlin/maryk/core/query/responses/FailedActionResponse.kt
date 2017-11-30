@@ -39,16 +39,14 @@ data class FailedActionResponse(
     }
 
     companion object: QueryDataModel<FailedActionResponse>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                FailedActionResponse(
-                        message = it[0] as String,
-                        failType = it[1] as FailType
-                )
-            },
             definitions = listOf(
                     Def(Properties.message, FailedActionResponse::message),
                     Def(Properties.failType, FailedActionResponse::failType)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = FailedActionResponse(
+                message = map[0] as String,
+                failType = map[1] as FailType
+        )
+    }
 }

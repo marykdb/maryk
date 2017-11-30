@@ -12,11 +12,10 @@ data class ServerFail<DO: Any>(
     override val statusType = StatusType.SERVER_FAIL
 
     companion object: QueryDataModel<ServerFail<*>>(
-            construct = {
-                ServerFail<Any>(it[0] as String)
-            },
             definitions = listOf(
                     Def(reasonDefinition, ServerFail<*>::reason)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = ServerFail<Any>(map[0] as String)
+    }
 }

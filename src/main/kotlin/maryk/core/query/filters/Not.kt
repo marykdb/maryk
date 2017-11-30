@@ -23,14 +23,13 @@ data class Not(
     }
 
     companion object: QueryDataModel<Not>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Not(
-                        filter = (it[0] as TypedValue<IsFilter>).value
-                )
-            },
             definitions = listOf(
                     Def(Properties.filter, { not: Not -> TypedValue(not.filter.filterType.index, not.filter)})
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Not(
+                filter = (map[0] as TypedValue<IsFilter>).value
+        )
+    }
 }

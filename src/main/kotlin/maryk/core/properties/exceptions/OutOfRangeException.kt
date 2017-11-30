@@ -32,19 +32,18 @@ data class OutOfRangeException(
     }
 
     companion object: QueryDataModel<OutOfRangeException>(
-            construct = {
-                OutOfRangeException(
-                        reference = it[0] as IsPropertyReference<*, *>,
-                        value = it[1] as String,
-                        min = it[2] as String?,
-                        max = it[3] as String?
-                )
-            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, OutOfRangeException::reference),
                     Def(ValidationException.Properties.value, OutOfRangeException::value),
                     Def(Properties.min, OutOfRangeException::min),
                     Def(Properties.max, OutOfRangeException::max)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = OutOfRangeException(
+                reference = map[0] as IsPropertyReference<*, *>,
+                value = map[1] as String,
+                min = map[2] as String?,
+                max = map[3] as String?
+        )
+    }
 }

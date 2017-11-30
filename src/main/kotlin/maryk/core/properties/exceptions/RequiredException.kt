@@ -17,13 +17,12 @@ data class RequiredException(
     override val validationExceptionType = ValidationExceptionType.REQUIRED
 
     companion object: QueryDataModel<RequiredException>(
-            construct = {
-                RequiredException(
-                        reference = it[0] as IsPropertyReference<*, *>
-                )
-            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, RequiredException::reference)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = RequiredException(
+                reference = map[0] as IsPropertyReference<*, *>
+        )
+    }
 }

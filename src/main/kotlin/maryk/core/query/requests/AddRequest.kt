@@ -29,18 +29,17 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<AddRequest<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                AddRequest(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        objectsToAdd = it[1] as List<Any>
-                )
-            },
             definitions = listOf(
                     Def(IsObjectRequest.Properties.dataModel, AddRequest<*, *>::dataModel),
                     Def(Properties.objectsToAdd, {
                         it.objectsToAdd.toList()
                     })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = AddRequest(
+                dataModel = map[0] as RootDataModel<Any>,
+                objectsToAdd = map[1] as List<Any>
+        )
+    }
 }

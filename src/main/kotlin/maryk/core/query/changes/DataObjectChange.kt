@@ -50,18 +50,17 @@ data class DataObjectChange<out DO: Any>(
     }
 
     companion object: QueryDataModel<DataObjectChange<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                DataObjectChange(
-                        key = it[0] as Key<Any>,
-                        changes = (it[1] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList(),
-                        lastVersion = it[2] as UInt64?
-                )
-            },
             definitions = listOf(
                     Def(Properties.key, DataObjectChange<*>::key),
                     Def(Properties.changes, { it.changes.map { TypedValue(it.changeType.index, it) } }),
                     Def(Properties.lastVersion, DataObjectChange<*>::lastVersion)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = DataObjectChange(
+                key = map[0] as Key<Any>,
+                changes = (map[1] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList(),
+                lastVersion = map[2] as UInt64?
+        )
+    }
 }

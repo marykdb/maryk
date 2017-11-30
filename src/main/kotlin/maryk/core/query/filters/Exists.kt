@@ -16,14 +16,13 @@ data class Exists<T: Any>(
     override val filterType = FilterType.EXISTS
 
     companion object: QueryDataModel<Exists<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Exists(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, Exists<*>::reference)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Exists(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
+        )
+    }
 }

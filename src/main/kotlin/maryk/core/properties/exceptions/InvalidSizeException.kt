@@ -24,19 +24,18 @@ data class InvalidSizeException(
     }
 
     companion object: QueryDataModel<InvalidSizeException>(
-            construct = {
-                InvalidSizeException(
-                        reference = it[0] as IsPropertyReference<*, *>,
-                        value = it[1] as String,
-                        min = it[2] as Int?,
-                        max = it[3] as Int?
-                )
-            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, InvalidSizeException::reference),
                     Def(ValidationException.Properties.value, InvalidSizeException::value),
                     Def(Properties.min, InvalidSizeException::min),
                     Def(Properties.max, InvalidSizeException::max)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = InvalidSizeException(
+                reference = map[0] as IsPropertyReference<*, *>,
+                value = map[1] as String,
+                min = map[2] as Int?,
+                max = map[3] as Int?
+        )
+    }
 }

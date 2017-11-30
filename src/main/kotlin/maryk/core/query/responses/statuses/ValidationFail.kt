@@ -32,14 +32,13 @@ data class ValidationFail<DO: Any>(
     }
 
     companion object: QueryDataModel<ValidationFail<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ValidationFail<Any>(
-                        exceptions = (it[0] as List<TypedValue<ValidationException>>?)?.map { it.value } ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(Properties.exceptions, { it.exceptions.map { TypedValue(it.validationExceptionType.index, it) } })
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ValidationFail<Any>(
+                exceptions = (map[0] as List<TypedValue<ValidationException>>?)?.map { it.value } ?: emptyList()
+        )
+    }
 }

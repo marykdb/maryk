@@ -145,26 +145,6 @@ data class TestMarykObject(
 
     companion object: RootDataModel<TestMarykObject>(
             name = "TestMarykObject",
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                TestMarykObject(
-                        string = it[0] as String,
-                        int = it[1] as Int,
-                        uint = it[2] as UInt32,
-                        double = it[3] as Double,
-                        dateTime = it[4] as DateTime,
-                        bool = it[5] as Boolean?,
-                        enum = it[6] as Option,
-                        list = it[7] as List<Int>?,
-                        set = it[8] as Set<Date>?,
-                        map = it[9] as Map<Time, String>?,
-                        valueObject = it[10] as TestValueObject?,
-                        subModel = it[11] as SubMarykObject?,
-                        multi = it[12] as TypedValue<*>?,
-                        reference = it[13] as Key<SubMarykObject>?,
-                        listOfString = it[14] as List<String>?
-                )
-            },
             keyDefinitions = definitions(
                     Properties.uint,
                     Properties.bool,
@@ -187,7 +167,26 @@ data class TestMarykObject(
                     Def(Properties.reference, TestMarykObject::reference),
                     Def(Properties.listOfString, TestMarykObject::listOfString)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = TestMarykObject(
+                string = map[0] as String,
+                int = map[1] as Int,
+                uint = map[2] as UInt32,
+                double = map[3] as Double,
+                dateTime = map[4] as DateTime,
+                bool = map[5] as Boolean?,
+                enum = map[6] as Option,
+                list = map[7] as List<Int>?,
+                set = map[8] as Set<Date>?,
+                map = map[9] as Map<Time, String>?,
+                valueObject = map[10] as TestValueObject?,
+                subModel = map[11] as SubMarykObject?,
+                multi = map[12] as TypedValue<*>?,
+                reference = map[13] as Key<SubMarykObject>?,
+                listOfString = map[14] as List<String>?
+        )
+    }
 }
 
 data class SubMarykObject(
@@ -201,8 +200,12 @@ data class SubMarykObject(
     }
     companion object: RootDataModel<SubMarykObject>(
             name = "SubMarykObject",
-            construct = { SubMarykObject(it[0] as String) }, definitions = listOf(
+            definitions = listOf(
                     Def(Properties.value, SubMarykObject::value)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = SubMarykObject(
+                map[0] as String
+        )
+    }
 }

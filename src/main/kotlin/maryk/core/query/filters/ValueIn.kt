@@ -33,16 +33,15 @@ data class ValueIn<T: Any>(
     }
 
     companion object: QueryDataModel<ValueIn<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ValueIn(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        values = it[1] as Set<Any>
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, ValueIn<*>::reference),
                     Def(Properties.values, ValueIn<*>::values)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ValueIn(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                values = map[1] as Set<Any>
+        )
+    }
 }

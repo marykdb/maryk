@@ -31,7 +31,6 @@ internal class ReversedTest {
         }
         companion object: RootDataModel<MarykObject>(
                 name = "MarykObject",
-                construct = { MarykObject(it[0] as Boolean, it[1] as DateTime) },
                 keyDefinitions = definitions(
                         Reversed(Properties.boolean),
                         Reversed(Properties.dateTime)
@@ -39,7 +38,12 @@ internal class ReversedTest {
                         Def(Properties.boolean, MarykObject::boolean),
                         Def(Properties.dateTime, MarykObject::dateTime)
                 )
-        )
+        ) {
+            override fun invoke(map: Map<Int, *>) = MarykObject(
+                    map[0] as Boolean,
+                    map[1] as DateTime
+            )
+        }
     }
 
     @Test

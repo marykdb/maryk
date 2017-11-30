@@ -21,16 +21,15 @@ data class PropertyCheck<T: Any>(
     override val changeType = ChangeType.PROP_CHECK
 
     companion object: QueryDataModel<PropertyCheck<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                PropertyCheck(
-                        reference = it[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
-                        valueToCompare = it[1]
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, PropertyCheck<*>::reference),
                     Def(IsPropertyOperation.Properties.valueToCompare, PropertyCheck<*>::valueToCompare)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = PropertyCheck(
+                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                valueToCompare = map[1]
+        )
+    }
 }

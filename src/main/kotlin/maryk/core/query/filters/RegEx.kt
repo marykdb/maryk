@@ -26,16 +26,15 @@ data class RegEx(
     }
 
     companion object: QueryDataModel<RegEx>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                RegEx(
-                        reference = it[0] as IsPropertyReference<String, StringDefinition>,
-                        regEx = it[1] as String
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, RegEx::reference),
                     Def(Properties.regEx, RegEx::regEx)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = RegEx(
+                reference = map[0] as IsPropertyReference<String, StringDefinition>,
+                regEx = map[1] as String
+        )
+    }
 }

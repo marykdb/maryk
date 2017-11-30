@@ -34,16 +34,15 @@ data class DataObjectVersionedChange<out DO: Any>(
     }
 
     companion object: QueryDataModel<DataObjectVersionedChange<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                DataObjectVersionedChange(
-                        key = it[0] as Key<Any>,
-                        changes = (it[1] as List<VersionedChanges>?) ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(Properties.key, DataObjectVersionedChange<*>::key),
                     Def(Properties.changes, DataObjectVersionedChange<*>::changes)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = DataObjectVersionedChange(
+                key = map[0] as Key<Any>,
+                changes = (map[1] as List<VersionedChanges>?) ?: emptyList()
+        )
+    }
 }

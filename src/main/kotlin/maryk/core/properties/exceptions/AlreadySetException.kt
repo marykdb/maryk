@@ -19,13 +19,12 @@ data class AlreadySetException(
     override val validationExceptionType = ValidationExceptionType.ALREADY_SET
 
     companion object: QueryDataModel<AlreadySetException>(
-            construct = {
-                AlreadySetException(
-                        reference = it[0] as IsPropertyReference<*, *>
-                )
-            },
             definitions = listOf(
                     Def(Properties.reference, AlreadySetException::reference)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = AlreadySetException(
+                reference = map[0] as IsPropertyReference<*, *>
+        )
+    }
 }

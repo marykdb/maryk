@@ -12,11 +12,10 @@ data class RequestFail<DO: Any>(
     override val statusType = StatusType.REQUEST_FAIL
 
     companion object: QueryDataModel<RequestFail<*>>(
-            construct = {
-                RequestFail<Any>(it[0] as String)
-            },
             definitions = listOf(
                     Def(reasonDefinition, RequestFail<*>::reason)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = RequestFail<Any>(map[0] as String)
+    }
 }

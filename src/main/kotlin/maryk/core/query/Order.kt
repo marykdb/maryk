@@ -35,16 +35,15 @@ data class Order(
     }
 
     companion object: QueryDataModel<Order>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                Order(
-                        propertyReference = it[0] as IsPropertyReference<*, *>,
-                        direction = it[1] as Direction
-                )
-            },
             definitions = listOf(
                     Def(Properties.propertyReference, Order::propertyReference),
                     Def(Properties.direction, Order::direction)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Order(
+                propertyReference = map[0] as IsPropertyReference<*, *>,
+                direction = map[1] as Direction
+        )
+    }
 }

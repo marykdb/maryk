@@ -70,17 +70,6 @@ data class ListPropertyChange<T: Any>(
     }
 
     companion object: QueryDataModel<ListPropertyChange<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ListPropertyChange(
-                        reference = it[0] as ListReference<Any, IsPropertyContext>,
-                        valueToCompare = it[1] as List<Any>?,
-                        addValuesToEnd = it[2] as List<Any>?,
-                        addValuesAtIndex = it[3] as Map<Int, Any>?,
-                        deleteValues = it[4] as List<Any>?,
-                        deleteAtIndex = it[5] as List<Int>?
-                )
-            },
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, ListPropertyChange<*>::reference),
                     Def(Properties.valueToCompare, ListPropertyChange<*>::valueToCompare),
@@ -89,5 +78,15 @@ data class ListPropertyChange<T: Any>(
                     Def(Properties.deleteValues, ListPropertyChange<*>::deleteValues),
                     Def(Properties.deleteAtIndex, ListPropertyChange<*>::deleteAtIndex)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ListPropertyChange(
+                reference = map[0] as ListReference<Any, IsPropertyContext>,
+                valueToCompare = map[1] as List<Any>?,
+                addValuesToEnd = map[2] as List<Any>?,
+                addValuesAtIndex = map[3] as Map<Int, Any>?,
+                deleteValues = map[4] as List<Any>?,
+                deleteAtIndex = map[5] as List<Int>?
+        )
+    }
 }

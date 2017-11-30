@@ -42,18 +42,6 @@ data class ScanRequest<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<ScanRequest<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ScanRequest(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        startKey = it[1] as Key<Any>,
-                        filter = (it[2] as TypedValue<IsFilter>?)?.value,
-                        order = it[3] as Order?,
-                        toVersion = it[4] as UInt64?,
-                        filterSoftDeleted = it[5] as Boolean,
-                        limit = it[6] as UInt32
-                )
-            },
             definitions = listOf(
                     Def(IsObjectRequest.Properties.dataModel, ScanRequest<*, *>::dataModel),
                     Def(ScanRequest.Properties.startKey, ScanRequest<*, *>::startKey),
@@ -65,5 +53,16 @@ data class ScanRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(IsFetchRequest.Properties.filterSoftDeleted, ScanRequest<*, *>::filterSoftDeleted),
                     Def(ScanRequest.Properties.limit, ScanRequest<*, *>::limit)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ScanRequest(
+                dataModel = map[0] as RootDataModel<Any>,
+                startKey = map[1] as Key<Any>,
+                filter = (map[2] as TypedValue<IsFilter>?)?.value,
+                order = map[3] as Order?,
+                toVersion = map[4] as UInt64?,
+                filterSoftDeleted = map[5] as Boolean,
+                limit = map[6] as UInt32
+        )
+    }
 }

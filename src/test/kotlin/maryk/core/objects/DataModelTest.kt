@@ -140,7 +140,7 @@ private val prettyJsonWithSkip = """{
 internal class DataModelTest {
     @Test
     fun testIndexConstruction() {
-        TestMarykObject.construct(mapOf(
+        TestMarykObject(mapOf(
                 0 to testObject.string,
                 1 to testObject.int,
                 2 to testObject.uint,

@@ -28,16 +28,15 @@ data class ObjectChangesResponse<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<ObjectChangesResponse<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ObjectChangesResponse(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        changes = it[1] as List<DataObjectChange<Any>>
-                )
-            },
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, ObjectChangesResponse<*, *>::dataModel),
                     Def(Properties.changes, ObjectChangesResponse<*, *>::changes)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ObjectChangesResponse(
+                dataModel = map[0] as RootDataModel<Any>,
+                changes = map[1] as List<DataObjectChange<Any>>
+        )
+    }
 }

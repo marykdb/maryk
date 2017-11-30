@@ -28,17 +28,16 @@ data class TooMuchItemsException(
     }
     
     companion object: QueryDataModel<TooMuchItemsException>(
-            construct = {
-                TooMuchItemsException(
-                        reference = it[0] as IsPropertyReference<*, *>,
-                        size = it[1] as Int,
-                        maxSize = it[2] as Int
-                )
-            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, TooMuchItemsException::reference),
                     Def(Properties.size, TooMuchItemsException::size),
                     Def(Properties.maxSize, TooMuchItemsException::maxSize)
             )
-    )
+    ) {
+        override fun invoke(map: Map<Int, *>) = TooMuchItemsException(
+                reference = map[0] as IsPropertyReference<*, *>,
+                size = map[1] as Int,
+                maxSize = map[2] as Int
+        )
+    }
 }

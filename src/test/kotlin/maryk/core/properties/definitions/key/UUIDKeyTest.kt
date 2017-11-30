@@ -19,10 +19,14 @@ internal class UUIDKeyTest {
         }
         companion object: RootDataModel<MarykObject>(
                 name = "MarykObject",
-                construct = { MarykObject(it[0] as String) }, definitions = listOf(
+                definitions = listOf(
                         Def(Properties.value, MarykObject::value)
                 )
-        )
+        ) {
+            override fun invoke(map: Map<Int, *>) = MarykObject(
+                    map[0] as String
+            )
+        }
     }
 
     @Test

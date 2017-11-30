@@ -24,14 +24,6 @@ data class AddSuccess<DO: Any>(
     override val statusType = StatusType.ADD_SUCCESS
 
     companion object: QueryDataModel<AddSuccess<*>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                AddSuccess(
-                        key = it[0] as Key<Any>,
-                        version = it[1] as UInt64,
-                        changes = (it[2] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList()
-                )
-            },
             definitions = listOf(
                     Def(keyDefinition, AddSuccess<*>::key),
                     Def(
@@ -51,5 +43,12 @@ data class AddSuccess<DO: Any>(
                             { it.changes.map { TypedValue(it.changeType.index, it) } }
                     )
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = AddSuccess(
+                key = map[0] as Key<Any>,
+                version = map[1] as UInt64,
+                changes = (map[2] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList()
+        )
+    }
 }

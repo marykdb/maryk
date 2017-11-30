@@ -28,16 +28,15 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO>>(
     }
 
     companion object: QueryDataModel<ObjectsResponse<*, *>>(
-            construct = {
-                @Suppress("UNCHECKED_CAST")
-                ObjectsResponse(
-                        dataModel = it[0] as RootDataModel<Any>,
-                        objects = it[1] as List<DataObjectWithMetaData<Any>>
-                )
-            },
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, ObjectsResponse<*, *>::dataModel),
                     Def(Properties.objects, ObjectsResponse<*, *>::objects)
             )
-    )
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ObjectsResponse(
+                dataModel = map[0] as RootDataModel<Any>,
+                objects = map[1] as List<DataObjectWithMetaData<Any>>
+        )
+    }
 }

@@ -5,6 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -27,7 +28,7 @@ data class DataObjectChange<out DO: Any>(
             lastVersion: UInt64? = null
     ) : this(key, change.toList(), lastVersion)
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<DataObjectChange<*>>() {
         val key = ContextualReferenceDefinition<DataModelPropertyContext>(
                 name = "key",
                 index = 0,

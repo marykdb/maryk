@@ -6,6 +6,7 @@ import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.DateTime
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -15,7 +16,7 @@ internal class ReversedTest {
             val boolean: Boolean,
             val dateTime: DateTime
     ){
-        object Properties {
+        object Properties : PropertyDefinitions<MarykObject>() {
             val boolean = BooleanDefinition(
                     index = 0,
                     name = "boolean",

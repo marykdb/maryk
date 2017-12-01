@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 
 /** Does an OR comparison against given filters. If one returns true the entire result will be true.
@@ -16,7 +17,7 @@ data class Or(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<Or>() {
         val filters = ListDefinition(
                 name = "filters",
                 index = 0,

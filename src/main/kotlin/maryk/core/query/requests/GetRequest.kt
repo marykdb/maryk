@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -36,7 +37,7 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
             filterSoftDeleted: Boolean = true
     ) : this(dataModel, key.toList(), filter, order, toVersion, filterSoftDeleted)
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<GetRequest<*, *>>() {
         val keys = ListDefinition(
                 name = "keys",
                 index = 1,

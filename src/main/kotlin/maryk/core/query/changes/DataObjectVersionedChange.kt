@@ -3,6 +3,7 @@ package maryk.core.query.changes
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
@@ -16,7 +17,7 @@ data class DataObjectVersionedChange<out DO: Any>(
         val key: Key<DO>,
         val changes: List<VersionedChanges>
 ) {
-    object Properties {
+    internal object Properties : PropertyDefinitions<DataObjectVersionedChange<*>>() {
         val key = ContextualReferenceDefinition<DataModelPropertyContext>(
                 name = "key",
                 index = 0,

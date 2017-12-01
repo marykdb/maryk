@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -29,7 +30,7 @@ data class SetPropertyChange<T: Any>(
 ) : IsPropertyOperation<Set<T>> {
     override val changeType = ChangeType.SET_CHANGE
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<SetPropertyChange<*>>() {
         @Suppress("UNCHECKED_CAST")
         private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
             (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition.valueDefinition

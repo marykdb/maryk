@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.references.IsPropertyReference
 
@@ -17,7 +18,7 @@ data class Prefix(
 ) : IsPropertyCheck<String> {
     override val filterType = FilterType.PREFIX
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<Prefix>() {
         val prefix = StringDefinition(
                 name = "prefix",
                 index = 1,

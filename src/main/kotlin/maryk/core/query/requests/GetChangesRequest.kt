@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
@@ -34,7 +35,7 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
             filterSoftDeleted: Boolean = true
     ) : this(dataModel, key.toList(), filter, order, fromVersion, toVersion, filterSoftDeleted)
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<GetChangesRequest<*, *>>() {
         val fromVersion = NumberDefinition(
                 name = "fromVersion",
                 index = 6,

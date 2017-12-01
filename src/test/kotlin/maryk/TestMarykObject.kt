@@ -207,11 +207,11 @@ data class TestMarykObject(
 data class SubMarykObject(
         val value: String
 ){
-    object Properties {
-        val value = StringDefinition(
+    object Properties : PropertyDefinitions<SubMarykObject>() {
+        val value = add(0, "value", StringDefinition(
                 name = "value",
                 index = 0
-        )
+        ), SubMarykObject::value)
     }
     companion object: RootDataModel<SubMarykObject>(
             name = "SubMarykObject",

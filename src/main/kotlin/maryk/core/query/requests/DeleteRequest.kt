@@ -5,6 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
@@ -24,7 +25,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
             dataModel: DM, vararg objectToDelete: Key<DO>, hardDelete: Boolean
     ) : this(dataModel, objectToDelete.toList(), hardDelete)
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<DeleteRequest<*, *>>() {
         val objectsToDelete = ListDefinition(
                 name = "objectsToDelete",
                 index = 1,

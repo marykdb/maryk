@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.ListReference
@@ -33,7 +34,7 @@ data class ListPropertyChange<T: Any>(
 ) : IsPropertyOperation<List<T>> {
     override val changeType = ChangeType.LIST_CHANGE
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<ListPropertyChange<*>>() {
         @Suppress("UNCHECKED_CAST")
         private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
             (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition.valueDefinition

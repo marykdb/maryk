@@ -3,6 +3,7 @@ package maryk.core.query
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
@@ -20,7 +21,7 @@ data class Order(
         val propertyReference: IsPropertyReference<*, *>,
         val direction: Direction = Direction.ASC
 ) {
-    object Properties {
+    internal object Properties : PropertyDefinitions<Order>() {
         val propertyReference = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                 name = "propertyReference",
                 index = 0,

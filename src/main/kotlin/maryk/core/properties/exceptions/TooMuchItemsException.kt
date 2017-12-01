@@ -3,6 +3,7 @@ package maryk.core.properties.exceptions
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
@@ -22,7 +23,7 @@ data class TooMuchItemsException(
 ) {
     override val validationExceptionType = ValidationExceptionType.TOO_MUCH_ITEMS
 
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<TooMuchItemsException>() {
         val size = NumberDefinition("size", 1, type = SInt32)
         val maxSize = NumberDefinition("maxSize", 2, type = SInt32)
     }

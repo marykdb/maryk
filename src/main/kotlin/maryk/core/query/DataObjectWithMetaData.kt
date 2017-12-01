@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.properties.types.Key
@@ -16,7 +17,7 @@ data class DataObjectWithMetaData<out DO: Any>(
         val lastVersion: UInt64,
         val isDeleted: Boolean
 ) {
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<DataObjectWithMetaData<*>>() {
         val key = ContextualReferenceDefinition<DataModelPropertyContext>(
                 name = "key",
                 index = 0,

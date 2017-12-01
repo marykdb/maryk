@@ -3,6 +3,7 @@ package maryk.core.query.responses
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.listOfStatuses
@@ -15,7 +16,7 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO>>(
         override val dataModel: DM,
         val statuses: List<IsDeleteResponseStatus<DO>>
 ) : IsDataModelResponse<DO, DM> {
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<DeleteResponse<*, *>>() {
         val statuses = listOfStatuses
     }
 

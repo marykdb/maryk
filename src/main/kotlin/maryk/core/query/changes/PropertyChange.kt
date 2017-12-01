@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -22,7 +23,7 @@ data class PropertyChange<T: Any>(
 ) : IsPropertyOperation<T> {
     override val changeType = ChangeType.PROP_CHANGE
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<PropertyChange<*>>() {
         val newValue = ContextualValueDefinition(
                 name = "newValue",
                 index = 2,

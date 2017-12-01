@@ -3,6 +3,7 @@ package maryk.core.query.responses
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.IndexedEnum
 
@@ -24,7 +25,7 @@ data class FailedActionResponse(
         val message: String,
         val failType: FailType
 ) : IsResponse {
-    object Properties {
+    internal object Properties : PropertyDefinitions<FailedActionResponse>() {
         val message = StringDefinition(
                 name = "message",
                 index = 0,

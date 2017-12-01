@@ -3,6 +3,7 @@ package maryk.core.query.filters
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 
 /** Reverses the boolean check for given filter
@@ -13,7 +14,7 @@ data class Not(
 ) : IsFilter {
     override val filterType = FilterType.NOT
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<Not>() {
         val filter = MultiTypeDefinition(
                 name = "filter",
                 index = 0,

@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
@@ -28,7 +29,7 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
         override val toVersion: UInt64? = null,
         override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsChangesRequest<DO, DM> {
-    object Properties {
+    internal object Properties : PropertyDefinitions<ScanChangesRequest<*, *>>() {
         val fromVersion = NumberDefinition(
                 name = "fromVersion",
                 index = 7,

@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.query.DataModelPropertyContext
 
@@ -17,15 +18,15 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
 ) : IsObjectRequest<DO, DM> {
     constructor(dataModel: DM, vararg objectToAdd: DO) : this(dataModel, objectToAdd.toList())
 
-    object Properties {
-        val objectsToAdd = ListDefinition(
+    internal object Properties : PropertyDefinitions<AddRequest<*, *>>() {
+        val objectsToAdd = add(1, "objectsToAdd",ListDefinition(
                 name = "objectsToAdd",
                 index = 1,
                 required = true,
                 valueDefinition = ContextualSubModelDefinition<DataModelPropertyContext>(
                         contextualResolver = { it!!.dataModel!! }
                 )
-        )
+        ), AddRequest<*, *>::objectsToAdd)
     }
 
     companion object: QueryDataModel<AddRequest<*, *>>(

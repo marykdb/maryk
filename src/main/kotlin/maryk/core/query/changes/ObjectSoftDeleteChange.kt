@@ -3,6 +3,7 @@ package maryk.core.query.changes
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 
 /** Defines a change in DataObject Soft Delete state
  * @param isDeleted true if DataObject was soft deleted and false if not
@@ -12,7 +13,7 @@ data class ObjectSoftDeleteChange(
 ) : IsChange {
     override val changeType = ChangeType.OBJECT_DELETE
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<ObjectSoftDeleteChange>() {
         val isDeleted = BooleanDefinition(
                 name = "isDeleted",
                 index = 0

@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -19,7 +20,7 @@ data class ValueIn<T: Any>(
 ) : IsPropertyCheck<T> {
     override val filterType = FilterType.VALUE_IN
 
-    object Properties {
+    object Properties : PropertyDefinitions<ValueIn<*>>() {
         val values = SetDefinition(
                 name = "values",
                 index = 1,

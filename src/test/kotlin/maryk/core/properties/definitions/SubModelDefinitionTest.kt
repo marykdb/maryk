@@ -17,7 +17,7 @@ internal class SubModelDefinitionTest {
     private data class MarykObject(
             val string: String = "jur"
     ){
-        object Properties {
+        object Properties : PropertyDefinitions<MarykObject>() {
             val string = StringDefinition(
                     name = "string",
                     index = 0,

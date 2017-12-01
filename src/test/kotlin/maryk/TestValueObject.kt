@@ -5,6 +5,7 @@ import maryk.core.objects.ValueDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
@@ -14,7 +15,7 @@ data class TestValueObject(
         val dateTime: DateTime,
         val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
-    object Properties {
+    object Properties : PropertyDefinitions<TestValueObject>() {
         val int = NumberDefinition(
                 name = "int",
                 type = SInt32,

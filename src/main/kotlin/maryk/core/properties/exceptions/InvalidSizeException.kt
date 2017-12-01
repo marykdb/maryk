@@ -3,6 +3,7 @@ package maryk.core.properties.exceptions
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
@@ -18,7 +19,7 @@ data class InvalidSizeException(
 ) {
     override val validationExceptionType = ValidationExceptionType.INVALID_SIZE
 
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<InvalidSizeException>() {
         val min = NumberDefinition("min", 2, type = SInt32)
         val max = NumberDefinition("max", 3, type = SInt32)
     }

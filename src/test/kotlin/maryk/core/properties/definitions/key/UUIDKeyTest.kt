@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -11,11 +12,11 @@ internal class UUIDKeyTest {
     private data class MarykObject(
             val value: String
     ){
-        object Properties {
-            val value = StringDefinition(
+        object Properties : PropertyDefinitions<MarykObject>() {
+            val value = add(0, "value", StringDefinition(
                     name = "value",
                     index = 0
-            )
+            ), MarykObject::value)
         }
         companion object: RootDataModel<MarykObject>(
                 name = "MarykObject",

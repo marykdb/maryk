@@ -3,6 +3,7 @@ package maryk.core.properties.exceptions
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
@@ -22,7 +23,7 @@ data class TooLittleItemsException(
 ) {
     override val validationExceptionType = ValidationExceptionType.TOO_LITTLE_ITEMS
 
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<TooLittleItemsException>() {
         val size = NumberDefinition("size", 1, type = SInt32)
         val minSize = NumberDefinition("minSize", 2, type = SInt32)
     }

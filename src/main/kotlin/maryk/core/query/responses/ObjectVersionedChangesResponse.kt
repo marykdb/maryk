@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.query.changes.DataObjectVersionedChange
 
@@ -15,7 +16,7 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO>>(
         override val dataModel: DM,
         val changes: List<DataObjectVersionedChange<DO>>
 ) : IsDataModelResponse<DO, DM> {
-    object Properties {
+    internal object Properties : PropertyDefinitions<ObjectVersionedChangesResponse<*, *>>() {
         val changes = ListDefinition(
                 name = "changes",
                 index = 1,

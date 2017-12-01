@@ -9,6 +9,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractSubDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.test.shouldBe
@@ -18,15 +19,15 @@ internal class TypeIdTest {
     private data class MarykObject(
             val multi: TypedValue<*>
     ){
-        object Properties {
-            val multi = MultiTypeDefinition(
+        object Properties : PropertyDefinitions<MarykObject>() {
+            val multi = add(0, "multi", MultiTypeDefinition(
                     name = "multi",
                     index = 0,
                     getDefinition = mapOf<Int, AbstractSubDefinition<*, IsPropertyContext>>(
                             0 to StringDefinition(),
                             1 to BooleanDefinition()
                     )::get
-            )
+            ), MarykObject::multi)
         }
         companion object: RootDataModel<MarykObject>(
                 name = "MarykObject",
@@ -54,8 +55,8 @@ internal class TypeIdTest {
 
         val keyDef = MarykObject.key.keyDefinitions[0]
 
-        (keyDef is TypeId) shouldBe true
-        val specificDef = keyDef as TypeId
+        (keyDef is TypeId<*>) shouldBe true
+        val specificDef = keyDef as TypeId<*>
         specificDef.multiTypeDefinition shouldBe MarykObject.Properties.multi
 
         specificDef.getValue(MarykObject, obj) shouldBe 1

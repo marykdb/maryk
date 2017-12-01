@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.mapOfValidationExceptionDefinitions
@@ -19,7 +20,7 @@ data class ValidationFail<DO: Any>(
 
     override val statusType = StatusType.VALIDATION_FAIL
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<ValidationFail<*>>() {
         val exceptions = ListDefinition(
                 name = "exceptions",
                 index = 0,

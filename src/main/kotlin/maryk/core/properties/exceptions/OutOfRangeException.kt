@@ -2,6 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.references.IsPropertyReference
 
@@ -26,7 +27,7 @@ data class OutOfRangeException(
 ) {
     override val validationExceptionType = ValidationExceptionType.OUT_OF_RANGE
 
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<OutOfRangeException>() {
         val min = StringDefinition("min", 2)
         val max = StringDefinition("max", 3)
     }

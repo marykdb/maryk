@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -22,7 +23,7 @@ data class ValidationUmbrellaException(
 ) {
     override val validationExceptionType = ValidationExceptionType.UMBRELLA
 
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<ValidationUmbrellaException>() {
         val reference = ContextCaptureDefinition(
                 ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                         name = "reference",

@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.query.changes.DataObjectChange
 
@@ -17,8 +18,8 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
 ) : IsObjectRequest<DO, DM> {
     constructor(dataModel: DM, vararg objectChange: DataObjectChange<DO>) : this(dataModel, objectChange.toList())
 
-    object Properties {
-        val objectChanges = ListDefinition(
+    internal object Properties : PropertyDefinitions<ChangeRequest<*, *>>() {
+        val objectChanges = add(1, "", ListDefinition(
                 name = "objectChanges",
                 index = 1,
                 required = true,
@@ -26,7 +27,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
                         required = true,
                         dataModel = DataObjectChange
                 )
-        )
+        ), ChangeRequest<*, *>::objectChanges)
     }
 
     companion object: QueryDataModel<ChangeRequest<*, *>>(

@@ -5,6 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
 
@@ -16,7 +17,7 @@ data class VersionedChanges(
         val version: UInt64,
         val changes: List<IsChange>
 ) {
-    object Properties {
+    object Properties : PropertyDefinitions<VersionedChanges>() {
         val version = NumberDefinition(
                 name = "version",
                 index = 0,

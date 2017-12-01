@@ -5,6 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -26,7 +27,7 @@ data class Range<T: Any>(
 ) : IsPropertyCheck<T> {
     override val filterType = FilterType.RANGE
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<Range<*>>() {
         val from = ContextualValueDefinition(
                 name = "from",
                 index = 1,

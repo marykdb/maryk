@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 
 /** Does an AND comparison against given filters. Only if all given filters return true will the entire result be true.
@@ -16,8 +17,8 @@ data class And(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    object Properties {
-        val filters = ListDefinition(
+    internal object Properties : PropertyDefinitions<And>() {
+        val filters = add(0, "filters", ListDefinition(
                 name = "filters",
                 index = 0,
                 required = true,
@@ -25,7 +26,7 @@ data class And(
                         required = true,
                         getDefinition = { mapOfFilterDefinitions[it] }
                 )
-        )
+        )){ it.filters.map { TypedValue(it.filterType.index, it) } }
     }
 
     companion object: QueryDataModel<And>(

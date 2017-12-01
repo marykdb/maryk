@@ -2,6 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
@@ -26,7 +27,7 @@ abstract class ValidationException(
 
     abstract val validationExceptionType: ValidationExceptionType
 
-    internal object Properties {
+    internal object Properties : PropertyDefinitions<ValidationException>() {
         val reference = ContextCaptureDefinition(
                 ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                         name = "reference",

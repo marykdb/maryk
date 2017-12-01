@@ -5,6 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -29,7 +30,7 @@ data class MapPropertyChange<K: Any, V: Any>(
 ) : IsPropertyOperation<Map<K, V>> {
     override val changeType = ChangeType.MAP_CHANGE
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<MapPropertyChange<*, *>>() {
         @Suppress("UNCHECKED_CAST")
         private val keyDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
             (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.keyDefinition

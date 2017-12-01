@@ -19,7 +19,7 @@ import maryk.core.protobuf.WireType
  * Definition for objects with multiple types
  * @param getDefinition method to get definition
  */
-class MultiTypeDefinition<in CX: IsPropertyContext>(
+class MultiTypeDefinition<CX: IsPropertyContext>(
         name: String? = null,
         index: Int = -1,
         indexed: Boolean = false,
@@ -29,7 +29,7 @@ class MultiTypeDefinition<in CX: IsPropertyContext>(
         val getDefinition: (Int) -> AbstractSubDefinition<*, CX>?
 ) : AbstractValueDefinition<TypedValue<*>, CX>(
         name, index, indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
-) {
+), IsSerializableFlexBytesEncodable<TypedValue<*>, CX> {
     override fun asString(value: TypedValue<*>, context: CX?): String {
         var string = ""
         this.writeJsonValue(value, maryk.core.json.JsonWriter {

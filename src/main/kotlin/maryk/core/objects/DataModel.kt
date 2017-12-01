@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
@@ -285,12 +286,17 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      * @param context with context parameters for conversion (for dynamically dependent properties)
      */
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
-        val propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
+        var propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
+
 
         // CANNOT READ LIST VALUE
         if (propertyDefinition == null) {
             ProtoBuf.skipField(key.wireType, byteReader)
         } else {
+            if (propertyDefinition is IsDataObjectProperty<*, CX, *>) {
+                propertyDefinition = propertyDefinition.property
+            }
+
             when (propertyDefinition) {
                 is IsByteTransportableValue<*, CX> -> valueMap.put(
                         key.tag,

@@ -18,7 +18,7 @@ class BooleanDefinition(
         unique: Boolean = false
 ): AbstractSimpleDefinition<Boolean, IsPropertyContext>(
     name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue = false, maxValue = true
-), IsFixedBytesEncodable<Boolean> {
+), IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext> {
     override val byteSize = 1
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = initBoolean(reader)

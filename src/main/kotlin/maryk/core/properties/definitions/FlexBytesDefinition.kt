@@ -21,7 +21,7 @@ class FlexBytesDefinition(
         override val maxSize: Int? = null
 ): AbstractSimpleDefinition<Bytes, IsPropertyContext>(
     name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), HasSizeDefinition {
+), HasSizeDefinition, IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext> {
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(length, reader)
 
     override fun calculateStorageByteLength(value: Bytes) = value.size

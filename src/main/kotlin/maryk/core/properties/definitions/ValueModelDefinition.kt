@@ -28,7 +28,7 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
         val dataModel: D
 ) : AbstractSimpleDefinition<DO, IsPropertyContext>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), IsFixedBytesEncodable<DO> {
+), IsSerializableFixedBytesEncodable<DO, IsPropertyContext> {
     override val byteSize = dataModel.byteSize
 
     override fun calculateStorageByteLength(value: DO) = this.byteSize

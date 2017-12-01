@@ -20,7 +20,7 @@ class ReferenceDefinition<DO: Any>(
         val dataModel: RootDataModel<DO>
 ): AbstractSimpleDefinition<Key<DO>, IsPropertyContext>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), IsFixedBytesEncodable<Key<DO>> {
+), IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext> {
     override val byteSize = dataModel.key.size
 
     override fun calculateStorageByteLength(value: Key<DO>) = this.byteSize

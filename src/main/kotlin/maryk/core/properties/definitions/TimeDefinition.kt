@@ -25,7 +25,7 @@ class TimeDefinition(
         precision: TimePrecision = TimePrecision.SECONDS
 ) : AbstractTimeDefinition<Time>(
         name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow, precision
-), IsFixedBytesEncodable<Time> {
+), IsSerializableFixedBytesEncodable<Time, IsPropertyContext> {
     override val byteSize = Time.byteSize(precision)
 
     override fun createNow() = Time.nowUTC()

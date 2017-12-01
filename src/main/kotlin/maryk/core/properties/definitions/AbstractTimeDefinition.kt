@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.IsTime
 import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.WireType
@@ -23,7 +24,7 @@ abstract class AbstractTimeDefinition<T : IsTime<T>>(
         val precision: TimePrecision
 ) : AbstractMomentDefinition<T>(
         name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue, fillWithNow
-), IsFixedBytesEncodable<T> {
+), IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
     override fun calculateStorageByteLength(value: T) = this.byteSize
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)

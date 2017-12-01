@@ -25,7 +25,7 @@ class StringDefinition(
         val regEx: String? = null
 ) : AbstractSimpleDefinition<String, IsPropertyContext>(
         name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), HasSizeDefinition {
+), HasSizeDefinition, IsSerializableFlexBytesEncodable<String, IsPropertyContext> {
     private val _regEx by lazy {
         when {
             this.regEx != null -> Regex(this.regEx)

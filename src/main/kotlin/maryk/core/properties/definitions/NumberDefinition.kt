@@ -24,7 +24,7 @@ class NumberDefinition<T: Comparable<T>>(
         val type: NumberDescriptor<T>
 ): AbstractNumericDefinition<T>(
     name, index, indexed, searchable, required, final, type.wireType, unique, minValue, maxValue, random
-), IsFixedBytesEncodable<T> {
+), IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
     override val byteSize = type.size
 
     override fun createRandom() = type.createRandom()

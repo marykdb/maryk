@@ -34,7 +34,7 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         val valueDefinition: AbstractSubDefinition<V, CX>
 ) : AbstractPropertyDefinition<Map<K, V>>(
         name, index, indexed, searchable, required, final
-), HasSizeDefinition, IsByteTransportableMap<K, V, CX> {
+), HasSizeDefinition, IsByteTransportableMap<K, V, CX>, IsMapDefinition<K, V, CX> {
     init {
         assert(keyDefinition.required, { "Definition for key should be required on map: $name" })
         assert(valueDefinition.required, { "Definition for value should be required on map: $name" })

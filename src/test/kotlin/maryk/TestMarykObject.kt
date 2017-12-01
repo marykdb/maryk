@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -49,78 +50,90 @@ data class TestMarykObject(
         val reference: Key<SubMarykObject>? = null,
         val listOfString: List<String>? = null
 ) {
-    object Properties {
-        val string = StringDefinition(
+    object Properties: PropertyDefinitions<TestMarykObject>() {
+        val string = add(0, "string", StringDefinition(
                 name = "string",
                 required = true,
                 regEx = "ha.*",
                 index = 0
-        )
-        val int = NumberDefinition(
+        ), TestMarykObject::string)
+
+        val int = add(1, "int", NumberDefinition(
                 name = "int",
                 type = SInt32,
                 index = 1,
                 maxValue = 6
-        )
-        val uint = NumberDefinition(
+        ), TestMarykObject::int)
+
+        val uint = add(2, "uint", NumberDefinition(
                 name = "uint",
                 type = UInt32,
                 index = 2,
                 required = true,
                 final = true
-        )
-        val double = NumberDefinition(
+        ), TestMarykObject::uint)
+
+        val double = add(3, "double", NumberDefinition(
                 name = "double",
                 type = Float64,
                 index = 3
-        )
-        val dateTime = DateTimeDefinition(
+        ), TestMarykObject::double)
+
+        val dateTime = add(4, "dateTime", DateTimeDefinition(
                 name = "dateTime",
                 index = 4
-        )
-        val bool = BooleanDefinition(
+        ), TestMarykObject::dateTime)
+
+        val bool = add(5, "bool", BooleanDefinition(
                 name = "bool",
                 index = 5,
                 required = true,
                 final = true
-        )
-        val enum = EnumDefinition(
+        ), TestMarykObject::bool)
+
+        val enum = add(6, "enum", EnumDefinition(
                 name = "enum",
                 index = 6,
                 values = Option.values(),
                 required = true,
                 final = true
-        )
-        val list = ListDefinition(
+        ), TestMarykObject::enum)
+
+        val list = add(7, "list", ListDefinition(
                 name = "list",
                 index = 7,
                 valueDefinition = NumberDefinition(
                         required = true,
                         type = SInt32
                 )
-        )
-        val set = SetDefinition(
+        ), TestMarykObject::list)
+
+        val set = add(8, "set", SetDefinition(
                 name = "set",
                 index = 8,
                 valueDefinition = DateDefinition(required = true)
-        )
-        val map = MapDefinition(
+        ), TestMarykObject::set)
+
+        val map = add(9, "map", MapDefinition(
                 name = "map",
                 index = 9,
                 keyDefinition = TimeDefinition(required = true),
                 valueDefinition = StringDefinition(required = true)
-        )
-        val valueObject = ValueModelDefinition(
+        ), TestMarykObject::map)
+
+        val valueObject = add(10, "valueObject", ValueModelDefinition(
                 name = "valueObject",
                 index = 10,
                 dataModel = TestValueObject
-        )
-        val subModel = SubModelDefinition(
+        ), TestMarykObject::valueObject)
+
+        val subModel = add(11, "subModel", SubModelDefinition(
                 name = "subModel",
                 index = 11,
                 dataModel = SubMarykObject
-        )
-        val multi = MultiTypeDefinition(
+        ), TestMarykObject::subModel)
+
+        val multi = add(12, "multi", MultiTypeDefinition(
                 name = "multi",
                 index = 12,
                 getDefinition = mapOf(
@@ -130,17 +143,19 @@ data class TestMarykObject(
                                 dataModel = SubMarykObject
                         )
                 )::get
-        )
-        val reference = ReferenceDefinition(
+        ), TestMarykObject::multi)
+
+        val reference = add(13, "reference", ReferenceDefinition(
                 name = "reference",
                 index = 13,
                 dataModel = SubMarykObject
-        )
-        val listOfString = ListDefinition(
+        ), TestMarykObject::reference)
+
+        val listOfString = add(14, "listOfString", ListDefinition(
                 name = "listOfString",
                 index = 14,
                 valueDefinition = StringDefinition(required = true)
-        )
+        ), TestMarykObject::listOfString)
     }
 
     companion object: RootDataModel<TestMarykObject>(

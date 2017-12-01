@@ -25,7 +25,7 @@ class DateTimeDefinition(
         precision: TimePrecision = TimePrecision.SECONDS
 ) : AbstractTimeDefinition<DateTime>(
         name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow, precision
-), IsFixedBytesEncodable<DateTime> {
+), IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext> {
     override val byteSize = DateTime.byteSize(precision)
 
     override fun createNow() = DateTime.nowUTC()

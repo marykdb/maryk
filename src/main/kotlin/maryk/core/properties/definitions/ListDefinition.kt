@@ -18,7 +18,7 @@ class ListDefinition<T: Any, in CX: IsPropertyContext>(
         valueDefinition: AbstractValueDefinition<T, CX>
 ) : AbstractCollectionDefinition<T, List<T>, CX, AbstractValueDefinition<T, CX>>(
         name, index, indexed, searchable, required, final, minSize, maxSize, valueDefinition
-), HasSizeDefinition {
+), HasSizeDefinition, IsCollectionDefinition<List<T>, CX> {
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()
 
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =

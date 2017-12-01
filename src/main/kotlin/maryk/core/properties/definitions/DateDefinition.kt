@@ -21,7 +21,7 @@ class DateDefinition(
         fillWithNow: Boolean = false
 ) : AbstractMomentDefinition<Date>(
         name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow
-), IsFixedBytesEncodable<Date> {
+), IsSerializableFixedBytesEncodable<Date, IsPropertyContext> {
     override val byteSize = 8
 
     override fun createNow() = Date.nowUTC()

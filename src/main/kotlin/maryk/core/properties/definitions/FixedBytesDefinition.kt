@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.randomBytes
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
 
@@ -19,7 +20,7 @@ class FixedBytesDefinition(
         override val byteSize: Int
 ): AbstractNumericDefinition<Bytes>(
     name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue, random
-), IsFixedBytesEncodable<Bytes> {
+), IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext> {
     override fun createRandom() = Bytes(randomBytes(this.byteSize))
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(byteSize, reader)

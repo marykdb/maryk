@@ -34,11 +34,11 @@ abstract class RootDataModel<DM: Any>(
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */
-    inner class KeyDefinition(vararg val keyDefinitions: IsFixedBytesEncodable<*>) {
+    inner class KeyDefinition(vararg val keyDefinitions: IsFixedBytesEncodable<out Any>) {
         val size: Int
 
         init {
-            var totalBytes = keyDefinitions.size - 1 // Start with size of separators
+            var totalBytes = keyDefinitions.size - 1 // Start with adding size of separators
 
             keyDefinitions.forEach {
                 when {

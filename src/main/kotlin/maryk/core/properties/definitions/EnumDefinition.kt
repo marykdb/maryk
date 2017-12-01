@@ -24,7 +24,7 @@ class EnumDefinition<E: IndexedEnum<E>>(
         val values: Array<E>
 ) : AbstractSimpleDefinition<E, IsPropertyContext>(
         name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue
-), IsFixedBytesEncodable<E> {
+), IsSerializableFixedBytesEncodable<E, IsPropertyContext> {
     override val byteSize = 2
 
     private val valueByString: Map<String, E> by lazy {

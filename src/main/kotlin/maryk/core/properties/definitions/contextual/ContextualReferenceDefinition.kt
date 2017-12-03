@@ -5,6 +5,7 @@ import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
@@ -21,7 +22,7 @@ class ContextualReferenceDefinition<in CX: IsPropertyContext>(
         required = true,
         final = true,
         wireType = WireType.LENGTH_DELIMITED
-) {
+), IsSerializableFlexBytesEncodable<Key<*>, CX> {
     override fun fromString(string: String, context: CX?)
             = contextualResolver(context).get(string)
 

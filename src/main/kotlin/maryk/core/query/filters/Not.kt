@@ -26,7 +26,15 @@ data class Not(
     companion object: QueryDataModel<Not>(
             definitions = listOf(
                     Def(Properties.filter, { not: Not -> TypedValue(not.filter.filterType.index, not.filter)})
-            )
+            ),
+            properties = object : PropertyDefinitions<Not>() {
+                init {
+                    add(0, "filters", MultiTypeDefinition(
+                            required = true,
+                            getDefinition = { mapOfFilterDefinitions[it] }
+                    )) { not: Not -> TypedValue(not.filter.filterType.index, not.filter)}
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Not(

@@ -5,6 +5,7 @@ import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
@@ -20,7 +21,7 @@ internal class ContextualSubModelDefinition<in CX: IsPropertyContext>(
         required = true,
         final = true,
         wireType = WireType.LENGTH_DELIMITED
-) {
+), IsSerializableFlexBytesEncodable<Any, CX> {
     override fun fromString(string: String, context: CX?): Any {
         val stringIterator = string.iterator()
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)

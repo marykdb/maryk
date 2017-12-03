@@ -30,6 +30,7 @@ data class And(
     }
 
     companion object: QueryDataModel<And>(
+            properties = Properties,
             definitions = listOf(
                     Def(Properties.filters, { it.filters.map { TypedValue(it.filterType.index, it) } })
             )

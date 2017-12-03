@@ -17,7 +17,7 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO>> constructor(
         val statuses: List<IsAddResponseStatus<DO>>
 ): IsDataModelResponse<DO, DM> {
     internal object Properties : PropertyDefinitions<AddResponse<*, *>>() {
-        val statuses = add(1, "statusses", listOfStatuses) {
+        val statuses = add(1, "statuses", listOfStatuses) {
             it.statuses.map { TypedValue(it.statusType.index, it) }
         }
     }
@@ -26,7 +26,15 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO>> constructor(
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, AddResponse<*, *>::dataModel),
                     Def(Properties.statuses, { it.statuses.map { TypedValue(it.statusType.index, it) } })
-            )
+            ),
+            properties = object : PropertyDefinitions<AddResponse<*, *>>() {
+                init {
+                    IsDataModelResponse.addDataModel(this, AddResponse<*, *>::dataModel)
+                    add(1, "statuses", listOfStatuses) {
+                        it.statuses.map { TypedValue(it.statusType.index, it) }
+                    }
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddResponse(

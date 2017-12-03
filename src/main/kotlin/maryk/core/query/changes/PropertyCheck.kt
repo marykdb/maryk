@@ -5,6 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Value change for a property
@@ -24,7 +25,13 @@ data class PropertyCheck<T: Any>(
             definitions = listOf(
                     Def(IsPropertyOperation.Properties.reference, PropertyCheck<*>::reference),
                     Def(IsPropertyOperation.Properties.valueToCompare, PropertyCheck<*>::valueToCompare)
-            )
+            ),
+            properties = object : PropertyDefinitions<PropertyCheck<*>>() {
+                init {
+                    IsPropertyOperation.addReference(this, PropertyCheck<*>::reference)
+                    IsPropertyOperation.addValueToCompare(this, PropertyCheck<*>::valueToCompare)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = PropertyCheck(

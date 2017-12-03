@@ -2,6 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /**
@@ -18,9 +19,20 @@ data class AlreadySetException(
 ) {
     override val validationExceptionType = ValidationExceptionType.ALREADY_SET
 
+    internal object Properties : PropertyDefinitions<AlreadySetException>() {
+        init {
+            add(
+                    0, "reference",
+                    ValidationException.Properties.reference,
+                    AlreadySetException::reference
+            )
+        }
+    }
+
     companion object: QueryDataModel<AlreadySetException>(
+            properties = AlreadySetException.Properties,
             definitions = listOf(
-                    Def(Properties.reference, AlreadySetException::reference)
+                    Def(ValidationException.Properties.reference, AlreadySetException::reference)
             )
     ) {
         override fun invoke(map: Map<Int, *>) = AlreadySetException(

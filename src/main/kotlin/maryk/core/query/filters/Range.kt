@@ -43,12 +43,12 @@ data class Range<T: Any>(
                 }
         )
         val inclusiveStart = BooleanDefinition(
-                name = "inclusiveStart",
+                name = "inclusiveFrom",
                 index = 3,
                 required = true
         )
         val inclusiveEnd = BooleanDefinition(
-                name = "inclusiveEnd",
+                name = "inclusiveTo",
                 index = 4,
                 required = true
         )
@@ -61,7 +61,26 @@ data class Range<T: Any>(
                     Def(Properties.to, Range<*>::to),
                     Def(Properties.inclusiveStart, Range<*>::inclusiveFrom),
                     Def(Properties.inclusiveEnd, Range<*>::inclusiveTo)
-            )
+            ),
+            properties = object : PropertyDefinitions<Range<*>>() {
+                init {
+                    IsPropertyCheck.addReference(this, Range<*>::reference)
+                    add(1, "from", ContextualValueDefinition(
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                context!!.reference!!.propertyDefinition
+                            }
+                    ), Range<*>::from)
+
+                    add(2, "to", ContextualValueDefinition(
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                context!!.reference!!.propertyDefinition
+                            }
+                    ), Range<*>::to)
+
+                    add(3, "inclusiveFrom", BooleanDefinition(), Range<*>::inclusiveFrom)
+                    add(4, "inclusiveTo", BooleanDefinition(), Range<*>::inclusiveTo)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Range(

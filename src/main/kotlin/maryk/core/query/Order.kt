@@ -39,7 +39,19 @@ data class Order(
             definitions = listOf(
                     Def(Properties.propertyReference, Order::propertyReference),
                     Def(Properties.direction, Order::direction)
-            )
+            ),
+            properties = object : PropertyDefinitions<Order>() {
+                init {
+                    add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                            contextualResolver = { it!!.dataModel!! }
+                    ), Order::propertyReference)
+
+                    add(1, "direction", EnumDefinition(
+                            required = true,
+                            values = Direction.values()
+                    ), Order::direction)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Order(

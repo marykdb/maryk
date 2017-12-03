@@ -32,7 +32,19 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO>>(
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, ObjectVersionedChangesResponse<*, *>::dataModel),
                     Def(Properties.changes, ObjectVersionedChangesResponse<*, *>::changes)
-            )
+            ),
+            properties = object : PropertyDefinitions<ObjectVersionedChangesResponse<*, *>>() {
+                init {
+                    IsDataModelResponse.addDataModel(this, ObjectVersionedChangesResponse<*, *>::dataModel)
+                    add(1, "changes", ListDefinition(
+                            required = true,
+                            valueDefinition = SubModelDefinition(
+                                    required = true,
+                                    dataModel = DataObjectVersionedChange
+                            )
+                    ), ObjectVersionedChangesResponse<*, *>::changes)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ObjectVersionedChangesResponse(

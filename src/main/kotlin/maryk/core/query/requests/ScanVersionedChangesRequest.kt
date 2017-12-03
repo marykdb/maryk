@@ -52,7 +52,22 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(ScanRequest.Properties.limit, ScanVersionedChangesRequest<*, *>::limit),
                     Def(ScanChangesRequest.Properties.fromVersion, ScanVersionedChangesRequest<*, *>::fromVersion),
                     Def(Properties.maxVersions, ScanVersionedChangesRequest<*, *>::maxVersions)
-            )
+            ),
+            properties = object : PropertyDefinitions<ScanVersionedChangesRequest<*, *>>() {
+                init {
+                    IsObjectRequest.addDataModel(this, ScanVersionedChangesRequest<*, *>::dataModel)
+                    IsScanRequest.addStartKey(this, ScanVersionedChangesRequest<*, *>::startKey)
+                    IsFetchRequest.addFilter(this) {
+                        it.filter?.let { TypedValue(it.filterType.index, it) }
+                    }
+                    IsFetchRequest.addOrder(this, ScanVersionedChangesRequest<*, *>::order)
+                    IsFetchRequest.addToVersion(this, ScanVersionedChangesRequest<*, *>::toVersion)
+                    IsFetchRequest.addFilterSoftDeleted(this, ScanVersionedChangesRequest<*, *>::filterSoftDeleted)
+                    IsScanRequest.addLimit(this, ScanVersionedChangesRequest<*, *>::limit)
+                    IsChangesRequest.addFromVersion(7, this, ScanVersionedChangesRequest<*, *>::fromVersion)
+                    IsVersionedChangesRequest.addMaxVersions(8, this, ScanVersionedChangesRequest<*, *>::maxVersions)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ScanVersionedChangesRequest(

@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
@@ -20,7 +21,7 @@ class ContextualCollectionDefinition<in CX: IsPropertyContext>(
         searchable = false,
         required = true,
         final = true
-), IsByteTransportableCollection<Any, Collection<Any>, CX> {
+), IsByteTransportableCollection<Any, Collection<Any>, CX>, IsSerializableFlexBytesEncodable<Collection<Any>, CX> {
     override fun isPacked(context: CX?, encodedWireType: WireType)
             = contextualResolver(context).isPacked(context, encodedWireType)
 

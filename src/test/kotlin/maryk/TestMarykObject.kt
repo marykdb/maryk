@@ -165,6 +165,7 @@ data class TestMarykObject(
                     Properties.bool,
                     Properties.enum
             ),
+            properties = Properties,
             definitions = listOf(
                     Def(Properties.string, TestMarykObject::string),
                     Def(Properties.int, TestMarykObject::int),
@@ -217,7 +218,8 @@ data class SubMarykObject(
             name = "SubMarykObject",
             definitions = listOf(
                     Def(Properties.value, SubMarykObject::value)
-            )
+            ),
+            properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = SubMarykObject(
                 map[0] as String

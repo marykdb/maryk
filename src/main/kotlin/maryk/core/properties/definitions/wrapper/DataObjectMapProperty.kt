@@ -9,10 +9,10 @@ import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 
-data class DataObjectMapProperty<K: Any, V: Any, in CX: IsPropertyContext, DM: Any>(
+data class DataObjectMapProperty<K: Any, V: Any, in CX: IsPropertyContext, out D: MapDefinition<K, V, CX>, in DM: Any>(
         override val index: Int,
         override val name: String,
-        override val property: MapDefinition<K, V, CX>,
+        override val property: D,
         override val getter: (DM) -> Map<K, V>?
 ) :
         IsMapDefinition<K, V, CX> by property,

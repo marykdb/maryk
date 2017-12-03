@@ -36,7 +36,8 @@ internal class TypeIdTest {
                 ),
                 definitions = listOf(
                     Def(Properties.multi, MarykObject::multi)
-                )
+                ),
+                properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
                     map[0] as TypedValue<*>

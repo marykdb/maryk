@@ -30,7 +30,15 @@ data class Prefix(
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, Prefix::reference),
                     Def(Properties.prefix, Prefix::prefix)
-            )
+            ),
+            properties = object : PropertyDefinitions<Prefix>() {
+                init {
+                    IsPropertyCheck.addReference(this, Prefix::reference)
+                    add(1, "prefix", StringDefinition(
+                            required = true
+                    ), Prefix::prefix)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Prefix(

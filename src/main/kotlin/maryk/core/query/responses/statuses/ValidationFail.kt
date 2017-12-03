@@ -33,6 +33,13 @@ data class ValidationFail<DO: Any>(
     }
 
     companion object: QueryDataModel<ValidationFail<*>>(
+            properties = object : PropertyDefinitions<ValidationFail<*>>() {
+                init {
+                    add(0, "exceptions", Properties.exceptions) {
+                        it.exceptions.map { TypedValue(it.validationExceptionType.index, it) }
+                    }
+                }
+            },
             definitions = listOf(
                     Def(Properties.exceptions, { it.exceptions.map { TypedValue(it.validationExceptionType.index, it) } })
             )

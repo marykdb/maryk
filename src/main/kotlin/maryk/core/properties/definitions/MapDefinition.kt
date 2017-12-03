@@ -30,8 +30,8 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         final: Boolean = false,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
-        val keyDefinition: AbstractSimpleValueDefinition<K, CX>,
-        val valueDefinition: AbstractSubDefinition<V, CX>
+        override val keyDefinition: AbstractSimpleValueDefinition<K, CX>,
+        override val valueDefinition: AbstractSubDefinition<V, CX>
 ) : AbstractPropertyDefinition<Map<K, V>>(
         name, index, indexed, searchable, required, final
 ), HasSizeDefinition, IsByteTransportableMap<K, V, CX>, IsMapDefinition<K, V, CX> {

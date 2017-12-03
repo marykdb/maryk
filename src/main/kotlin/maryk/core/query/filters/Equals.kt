@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Compares given value against referenced value
@@ -21,7 +22,13 @@ data class Equals<T: Any>(
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, Equals<*>::reference),
                     Def(IsPropertyComparison.Properties.value, Equals<*>::value)
-            )
+            ),
+            properties = object : PropertyDefinitions<Equals<*>>() {
+                init {
+                    IsPropertyCheck.addReference(this, Equals<*>::reference)
+                    IsPropertyComparison.addValue(this, Equals<*>::value)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Equals(

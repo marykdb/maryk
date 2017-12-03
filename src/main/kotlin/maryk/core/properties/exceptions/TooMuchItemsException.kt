@@ -29,6 +29,13 @@ data class TooMuchItemsException(
     }
     
     companion object: QueryDataModel<TooMuchItemsException>(
+            properties = object : PropertyDefinitions<TooMuchItemsException>() {
+                init {
+                    ValidationException.addReference(this, TooMuchItemsException::reference)
+                    add(1, "size", NumberDefinition(type = SInt32), TooMuchItemsException::size)
+                    add(2, "maxSize", NumberDefinition(type = SInt32), TooMuchItemsException::maxSize)
+                }
+            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, TooMuchItemsException::reference),
                     Def(Properties.size, TooMuchItemsException::size),

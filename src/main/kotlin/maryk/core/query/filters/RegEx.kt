@@ -30,7 +30,16 @@ data class RegEx(
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, RegEx::reference),
                     Def(Properties.regEx, RegEx::regEx)
-            )
+            ),
+            properties = object : PropertyDefinitions<RegEx>() {
+                init {
+                    IsPropertyCheck.addReference(this, RegEx::reference)
+
+                    add(1, "regEx", StringDefinition(
+                            required = true
+                    ), RegEx::regEx)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = RegEx(

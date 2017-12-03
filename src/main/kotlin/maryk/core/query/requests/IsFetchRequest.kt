@@ -4,7 +4,9 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
@@ -43,5 +45,30 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO>> : IsObjectRequest<D
                 name = "filterSoftDeleted",
                 index = 5
         )
+    }
+
+    companion object {
+        fun <DM: Any> addFilter(definitions: PropertyDefinitions<DM>, getter: (DM) -> TypedValue<Any>?) {
+            definitions.add(2, "filter", MultiTypeDefinition(
+                    required = true,
+                    getDefinition = { mapOfFilterDefinitions[it] }
+            ), getter)
+        }
+
+        fun <DM: Any> addOrder(definitions: PropertyDefinitions<DM>, getter: (DM) -> Order?) {
+            definitions.add(3, "order", SubModelDefinition(
+                    dataModel = Order
+            ), getter)
+        }
+
+        fun <DM: Any> addToVersion(definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
+            definitions.add(4, "filter", NumberDefinition(
+                    type = UInt64
+            ), getter)
+        }
+
+        fun <DM: Any> addFilterSoftDeleted(definitions: PropertyDefinitions<DM>, getter: (DM) -> Boolean?) {
+            definitions.add(5, "filterSoftDeleted", BooleanDefinition(), getter)
+        }
     }
 }

@@ -9,6 +9,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.exceptions.ParseException
@@ -29,8 +30,9 @@ fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
 abstract class RootDataModel<DM: Any>(
         val name: String,
         keyDefinitions: Array<IsFixedBytesEncodable<out Any>> = arrayOf(UUIDKey),
+        properties: PropertyDefinitions<DM>,
         definitions: List<Def<*, DM, IsPropertyContext>>
-) : DataModel<DM, IsPropertyContext>(definitions){
+) : DataModel<DM, IsPropertyContext>(properties, definitions){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */
@@ -107,7 +109,7 @@ abstract class RootDataModel<DM: Any>(
             propertyReference = when (propertyReference) {
                 null -> getDefinition(name)?.getRef({ propertyReference })
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
-                else -> throw DefNotFoundException("More property references found on property ${this.name} that cannot have any ")
+                else -> throw DefNotFoundException("${this.name}: Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist on ${this.name}")
         }
 

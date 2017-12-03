@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Referenced value should be less than or equal given value
@@ -21,7 +22,13 @@ data class LessThanEquals<T: Any>(
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, LessThanEquals<*>::reference),
                     Def(IsPropertyComparison.Properties.value, LessThanEquals<*>::value)
-            )
+            ),
+            properties = object : PropertyDefinitions<LessThanEquals<*>>() {
+                init {
+                    IsPropertyCheck.addReference(this, LessThanEquals<*>::reference)
+                    IsPropertyComparison.addValue(this, LessThanEquals<*>::value)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = LessThanEquals(

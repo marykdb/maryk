@@ -60,7 +60,21 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(IsFetchRequest.Properties.filterSoftDeleted, GetVersionedChangesRequest<*, *>::filterSoftDeleted),
                     Def(GetChangesRequest.Properties.fromVersion, GetVersionedChangesRequest<*, *>::fromVersion),
                     Def(GetVersionedChangesRequest.Properties.maxVersions, GetVersionedChangesRequest<*, *>::maxVersions)
-            )
+            ),
+            properties = object : PropertyDefinitions<GetVersionedChangesRequest<*, *>>() {
+                init {
+                    IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*, *>::dataModel)
+                    IsGetRequest.addKeys(this, GetVersionedChangesRequest<*, *>::keys)
+                    IsFetchRequest.addFilter(this) {
+                        it.filter?.let { TypedValue(it.filterType.index, it) }
+                    }
+                    IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*, *>::order)
+                    IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*, *>::toVersion)
+                    IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*, *>::filterSoftDeleted)
+                    IsChangesRequest.addFromVersion(6, this, GetVersionedChangesRequest<*, *>::fromVersion)
+                    IsVersionedChangesRequest.addMaxVersions(7, this, GetVersionedChangesRequest<*, *>::maxVersions)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = GetVersionedChangesRequest(

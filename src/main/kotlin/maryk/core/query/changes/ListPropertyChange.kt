@@ -78,7 +78,27 @@ data class ListPropertyChange<T: Any>(
                     Def(Properties.addValuesAtIndex, ListPropertyChange<*>::addValuesAtIndex),
                     Def(Properties.deleteValues, ListPropertyChange<*>::deleteValues),
                     Def(Properties.deleteAtIndex, ListPropertyChange<*>::deleteAtIndex)
-            )
+            ),
+            properties = object : PropertyDefinitions<ListPropertyChange<*>>() {
+                init {
+                    IsPropertyOperation.addReference(this, ListPropertyChange<*>::reference)
+                    @Suppress("UNCHECKED_CAST")
+                    add(1, "valueToCompare", ContextualCollectionDefinition(
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
+                            }
+                    ), ListPropertyChange<*>::valueToCompare)
+                    add(2, "addValuesToEnd", valueListDefinition, ListPropertyChange<*>::addValuesToEnd)
+                    add(3, "addValuesAtIndex", MapDefinition(
+                            keyDefinition = NumberDefinition(required = true, type = SInt32),
+                            valueDefinition = valueDefinition
+                    ), ListPropertyChange<*>::addValuesAtIndex)
+                    add(4, "deleteValues", valueListDefinition, ListPropertyChange<*>::deleteValues)
+                    add(5, "deleteAtIndex", ListDefinition(
+                            valueDefinition = NumberDefinition(required = true, type = SInt32)
+                    ), ListPropertyChange<*>::deleteAtIndex)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ListPropertyChange(
@@ -91,3 +111,12 @@ data class ListPropertyChange<T: Any>(
         )
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
+    (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition.valueDefinition
+})
+
+private val valueListDefinition = ListDefinition(
+        valueDefinition = valueDefinition
+)

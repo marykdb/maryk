@@ -26,8 +26,10 @@ internal class SubModelDefinitionTest {
         }
         companion object: DataModel<MarykObject, IsPropertyContext>(
                 definitions = listOf(
-                Def(Properties.string, MarykObject::string)
-        )) {
+                    Def(Properties.string, MarykObject::string)
+                ),
+                properties = Properties
+        ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
                     map[0] as String
             )

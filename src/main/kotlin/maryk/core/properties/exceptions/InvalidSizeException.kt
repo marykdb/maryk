@@ -25,6 +25,14 @@ data class InvalidSizeException(
     }
 
     companion object: QueryDataModel<InvalidSizeException>(
+            properties = object: PropertyDefinitions<InvalidSizeException>() {
+                init {
+                    ValidationException.addReference(this, InvalidSizeException::reference)
+                    ValidationException.addValue(this, InvalidSizeException::value)
+                    add(2, "min", NumberDefinition(type = SInt32), InvalidSizeException::min)
+                    add(3, "max", NumberDefinition(type = SInt32), InvalidSizeException::max)
+                }
+            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, InvalidSizeException::reference),
                     Def(ValidationException.Properties.value, InvalidSizeException::value),

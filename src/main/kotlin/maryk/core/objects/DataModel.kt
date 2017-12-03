@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.ValidationException
@@ -31,6 +32,7 @@ class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: 
  * @param CX: Type of context object
  */
 abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
+        val properties: PropertyDefinitions<DO>,
         val definitions: List<Def<*, DO, CX>>
 ) : IsDataModel<DO> {
     private val indexToDefinition: Map<Int, Def<*, DO, CX>>

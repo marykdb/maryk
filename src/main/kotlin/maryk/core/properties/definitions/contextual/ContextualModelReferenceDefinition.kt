@@ -8,6 +8,7 @@ import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
@@ -24,7 +25,7 @@ class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
         required = true,
         final = true,
         wireType = WireType.LENGTH_DELIMITED
-) {
+), IsSerializableFlexBytesEncodable<RootDataModel<*>, CX> {
     override fun asString(value: RootDataModel<*>, context: CX?)
             = value.name
 

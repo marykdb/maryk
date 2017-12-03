@@ -24,7 +24,15 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO>>(
             definitions = listOf(
                     Def(IsDataModelResponse.Properties.dataModel, DeleteResponse<*, *>::dataModel),
                     Def(Properties.statuses, { it.statuses.map { TypedValue(it.statusType.index, it) } })
-            )
+            ),
+            properties = object : PropertyDefinitions<DeleteResponse<*, *>>() {
+                init {
+                    IsDataModelResponse.addDataModel(this, DeleteResponse<*, *>::dataModel)
+                    add(1, "statuses", listOfStatuses) {
+                        it.statuses.map { TypedValue(it.statusType.index, it) }
+                    }
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DeleteResponse(

@@ -37,7 +37,20 @@ data class ValueIn<T: Any>(
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, ValueIn<*>::reference),
                     Def(Properties.values, ValueIn<*>::values)
-            )
+            ),
+            properties = object : PropertyDefinitions<ValueIn<*>>() {
+                init {
+                    IsPropertyCheck.addReference(this, ValueIn<*>::reference)
+                    add(1, "values", SetDefinition(
+                            valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
+                                    contextualResolver = {
+                                        @Suppress("UNCHECKED_CAST")
+                                        it!!.reference!!.propertyDefinition
+                                    }
+                            )
+                    ), ValueIn<*>::values)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValueIn(

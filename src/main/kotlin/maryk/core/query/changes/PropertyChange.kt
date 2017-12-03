@@ -38,7 +38,19 @@ data class PropertyChange<T: Any>(
                     Def(IsPropertyOperation.Properties.reference, PropertyChange<*>::reference),
                     Def(IsPropertyOperation.Properties.valueToCompare, PropertyChange<*>::valueToCompare),
                     Def(Properties.newValue, PropertyChange<*>::newValue)
-            )
+            ),
+            properties = object : PropertyDefinitions<PropertyChange<*>>() {
+                init {
+                    IsPropertyOperation.addReference(this, PropertyChange<*>::reference)
+                    IsPropertyOperation.addValueToCompare(this, PropertyChange<*>::valueToCompare)
+
+                    add(2, "newValue", ContextualValueDefinition(
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                context!!.reference!!.propertyDefinition
+                            }
+                    ), PropertyChange<*>::newValue)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = PropertyChange(

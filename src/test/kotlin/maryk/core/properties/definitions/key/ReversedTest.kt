@@ -35,10 +35,12 @@ internal class ReversedTest {
                 keyDefinitions = definitions(
                         Reversed(Properties.boolean),
                         Reversed(Properties.dateTime)
-                ), definitions = listOf(
+                ),
+                definitions = listOf(
                         Def(Properties.boolean, MarykObject::boolean),
                         Def(Properties.dateTime, MarykObject::dateTime)
-                )
+                ),
+                properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
                     map[0] as Boolean,

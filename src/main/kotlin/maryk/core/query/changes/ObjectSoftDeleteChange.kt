@@ -23,7 +23,12 @@ data class ObjectSoftDeleteChange(
     companion object: QueryDataModel<ObjectSoftDeleteChange>(
             definitions = listOf(
                     Def(Properties.isDeleted, ObjectSoftDeleteChange::isDeleted)
-            )
+            ),
+            properties = object : PropertyDefinitions<ObjectSoftDeleteChange>() {
+                init {
+                    add(0, "isDeleted", BooleanDefinition(), ObjectSoftDeleteChange::isDeleted)
+                }
+            }
     ) {
         override fun invoke(map: Map<Int, *>) = ObjectSoftDeleteChange(
                 isDeleted = map[0] as Boolean

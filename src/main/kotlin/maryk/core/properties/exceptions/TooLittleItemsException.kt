@@ -29,6 +29,13 @@ data class TooLittleItemsException(
     }
 
     companion object: QueryDataModel<TooLittleItemsException>(
+            properties = object : PropertyDefinitions<TooLittleItemsException>() {
+                init {
+                    ValidationException.addReference(this, TooLittleItemsException::reference)
+                    add(1, "size", NumberDefinition(type = SInt32), TooLittleItemsException::size)
+                    add(2, "minSize", NumberDefinition(type = SInt32), TooLittleItemsException::minSize)
+                }
+            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, TooLittleItemsException::reference),
                     Def(Properties.size, TooLittleItemsException::size),

@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
@@ -42,7 +42,7 @@ data class MapPropertyChange<K: Any, V: Any>(
                 contextualResolver = { context: DataModelPropertyContext? ->
                     (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition
                 }
-        ) as IsSerializablePropertyDefinition<Map<*, *>, DataModelPropertyContext>
+        ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
         @Suppress("UNCHECKED_CAST")
         val valuesToAdd = ContextualMapDefinition(
                 name = "valuesToAdd",
@@ -50,7 +50,7 @@ data class MapPropertyChange<K: Any, V: Any>(
                 contextualResolver = { context: DataModelPropertyContext? ->
                     (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition
                 }
-        ) as IsSerializablePropertyDefinition<Map<*, *>, DataModelPropertyContext>
+        ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
         val keysToDelete = SetDefinition(
                 name = "keysToDelete",
                 index = 3,
@@ -64,7 +64,15 @@ data class MapPropertyChange<K: Any, V: Any>(
                     Def(Properties.valueToCompare, MapPropertyChange<*, *>::valueToCompare),
                     Def(Properties.valuesToAdd, MapPropertyChange<*, *>::valuesToAdd),
                     Def(Properties.keysToDelete, MapPropertyChange<*, *>::keysToDelete)
-            )
+            ),
+            properties = object : PropertyDefinitions<MapPropertyChange<*, *>>() {
+                init {
+                    IsPropertyOperation.addReference(this, MapPropertyChange<*, *>::reference)
+                    add(1, "valueToCompare", Properties.valueToCompare, MapPropertyChange<*, *>::valueToCompare)
+                    add(2, "valuesToAdd", Properties.valuesToAdd, MapPropertyChange<*, *>::valuesToAdd)
+                    add(3, "keysToDelete", Properties.keysToDelete, MapPropertyChange<*, *>::keysToDelete)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MapPropertyChange(

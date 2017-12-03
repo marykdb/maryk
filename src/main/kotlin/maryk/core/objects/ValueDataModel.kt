@@ -4,6 +4,7 @@ import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
 /** DataModel for objects that can be encoded in fixed length width
@@ -11,8 +12,9 @@ import maryk.core.properties.types.ValueDataObject
  * @param DO: Type of DataObject contained
  */
 abstract class ValueDataModel<DO: ValueDataObject>(
+        properties: PropertyDefinitions<DO>,
         definitions: List<Def<*, DO, IsPropertyContext>>
-) : DataModel<DO, IsPropertyContext>(definitions) {
+) : DataModel<DO, IsPropertyContext>(properties, definitions) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {

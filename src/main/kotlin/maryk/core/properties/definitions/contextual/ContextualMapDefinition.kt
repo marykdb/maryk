@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.protobuf.ByteLengthContainer
 
 /** Definition which refers to specific map property value definition based on context */
@@ -19,7 +20,7 @@ class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         searchable = false,
         required = true,
         final = true
-), IsByteTransportableMap<K, V, CX> {
+), IsByteTransportableMap<K, V, CX>, IsSerializableFlexBytesEncodable<Map<K, V>, CX> {
     override fun getEmbeddedByName(name: String): IsPropertyDefinition<out Any>? = null
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null

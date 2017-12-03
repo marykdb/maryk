@@ -45,7 +45,21 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(IsObjectRequest.Properties.dataModel, DeleteRequest<*, *>::dataModel),
                     Def(Properties.objectsToDelete, DeleteRequest<*, *>::objectsToDelete),
                     Def(Properties.hardDelete, DeleteRequest<*,*>::hardDelete)
-            )
+            ),
+            properties = object : PropertyDefinitions<DeleteRequest<*, *>>() {
+                init {
+                    IsObjectRequest.addDataModel(this, DeleteRequest<*, *>::dataModel)
+
+                    add(1, "objectsToDelete", ListDefinition(
+                            required = true,
+                            valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
+                                    contextualResolver = { it!!.dataModel!!.key }
+                            )
+                    ),DeleteRequest<*, *>::objectsToDelete)
+
+                    add(2, "hardDelete", BooleanDefinition(), DeleteRequest<*,*>::hardDelete)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DeleteRequest(

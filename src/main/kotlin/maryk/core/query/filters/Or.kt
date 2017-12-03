@@ -32,7 +32,20 @@ data class Or(
     companion object: QueryDataModel<Or>(
             definitions = listOf(
                     Def(Properties.filters, { it.filters.map { TypedValue(it.filterType.index, it) } })
-            )
+            ),
+            properties = object : PropertyDefinitions<Or>() {
+                init {
+                    add(0, "filters", ListDefinition(
+                            required = true,
+                            valueDefinition = MultiTypeDefinition(
+                                    required = true,
+                                    getDefinition = { mapOfFilterDefinitions[it] }
+                            )
+                    )) {
+                        it.filters.map { TypedValue(it.filterType.index, it) }
+                    }
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Or(

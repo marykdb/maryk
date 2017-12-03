@@ -22,7 +22,8 @@ internal class UUIDKeyTest {
                 name = "MarykObject",
                 definitions = listOf(
                         Def(Properties.value, MarykObject::value)
-                )
+                ),
+                properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
                     map[0] as String

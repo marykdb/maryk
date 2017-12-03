@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 
 /** DataModel to contain query actions so they can be validated and transported
@@ -7,5 +8,6 @@ import maryk.core.query.DataModelPropertyContext
  * @param DM: Type of DataModel contained
  */
 abstract class QueryDataModel<DM: Any>(
+        properties: PropertyDefinitions<DM>,
         definitions: List<Def<*, DM, DataModelPropertyContext>>
-) : DataModel<DM, DataModelPropertyContext>(definitions)
+) : DataModel<DM, DataModelPropertyContext>(properties, definitions)

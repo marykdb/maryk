@@ -1,5 +1,6 @@
 package maryk.core.query.filters
 
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.query.DataModelPropertyContext
 
@@ -17,5 +18,19 @@ interface IsPropertyComparison<T: Any>: IsPropertyCheck<T> {
                     context!!.reference!!.propertyDefinition
                 }
         )
+    }
+
+    companion object {
+        fun <DM: Any> addValue(definitions: PropertyDefinitions<DM>, getter: (DM) -> Any?) {
+            definitions.add(
+                    1, "value",
+                    ContextualValueDefinition(
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                context!!.reference!!.propertyDefinition
+                            }
+                    ),
+                    getter
+            )
+        }
     }
 }

@@ -6,19 +6,20 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another property */
 class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
-        name: String,
+        name: String? = null,
         index: Int = -1,
         required: Boolean = true,
         val contextualResolver: (context: CX?) -> RootDataModel<Any>
 ): AbstractValueDefinition<IsPropertyReference<*, IsPropertyDefinition<*>>, CX>(
         name, index, false, true, required, false, WireType.LENGTH_DELIMITED
-) {
+), IsSerializableFlexBytesEncodable<IsPropertyReference<*, IsPropertyDefinition<*>>, CX> {
     override fun asString(value: IsPropertyReference<*, IsPropertyDefinition<*>>, context: CX?)
             = value.completeName!!
 

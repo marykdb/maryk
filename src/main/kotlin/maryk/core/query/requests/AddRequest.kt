@@ -35,7 +35,18 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(Properties.objectsToAdd, {
                         it.objectsToAdd.toList()
                     })
-            )
+            ),
+            properties = object : PropertyDefinitions<AddRequest<*, *>>() {
+                init {
+                    IsObjectRequest.addDataModel(this, AddRequest<*, *>::dataModel)
+                    add(1, "objectsToAdd", ListDefinition(
+                            required = true,
+                            valueDefinition = ContextualSubModelDefinition<DataModelPropertyContext>(
+                                    contextualResolver = { it!!.dataModel!! }
+                            )
+                    ), AddRequest<*, *>::objectsToAdd)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddRequest(

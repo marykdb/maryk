@@ -43,7 +43,19 @@ data class FailedActionResponse(
             definitions = listOf(
                     Def(Properties.message, FailedActionResponse::message),
                     Def(Properties.failType, FailedActionResponse::failType)
-            )
+            ),
+            properties = object : PropertyDefinitions<FailedActionResponse>() {
+                init {
+                    add(0, "message", StringDefinition(
+                            required = true
+                    ), FailedActionResponse::message)
+
+                    add(1, "failType", EnumDefinition(
+                            required = true,
+                            values = FailType.values()
+                    ), FailedActionResponse::failType)
+                }
+            }
     ) {
         override fun invoke(map: Map<Int, *>) = FailedActionResponse(
                 message = map[0] as String,

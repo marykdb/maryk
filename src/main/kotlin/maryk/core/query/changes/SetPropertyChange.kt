@@ -32,7 +32,7 @@ data class SetPropertyChange<T: Any>(
 
     internal object Properties : PropertyDefinitions<SetPropertyChange<*>>() {
         @Suppress("UNCHECKED_CAST")
-        private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
+        val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
             (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition.valueDefinition
         })
         @Suppress("UNCHECKED_CAST")
@@ -61,7 +61,19 @@ data class SetPropertyChange<T: Any>(
                     Def(Properties.valueToCompare, SetPropertyChange<*>::valueToCompare),
                     Def(Properties.addValues, SetPropertyChange<*>::addValues),
                     Def(Properties.deleteValues, SetPropertyChange<*>::deleteValues)
-            )
+            ),
+            properties = object : PropertyDefinitions<SetPropertyChange<*>>() {
+                init {
+                    IsPropertyOperation.addReference(this, SetPropertyChange<*>::reference)
+                    IsPropertyOperation.addValueToCompare(this, SetPropertyChange<*>::valueToCompare)
+                    add(2, "addValues", SetDefinition(
+                            valueDefinition = Properties.valueDefinition
+                    ), SetPropertyChange<*>::addValues)
+                    add(3, "deleteValues", SetDefinition(
+                            valueDefinition = Properties.valueDefinition
+                    ), SetPropertyChange<*>::deleteValues)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = SetPropertyChange(

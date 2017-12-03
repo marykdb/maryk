@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Checks if reference exists
@@ -18,7 +19,12 @@ data class Exists<T: Any>(
     companion object: QueryDataModel<Exists<*>>(
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, Exists<*>::reference)
-            )
+            ),
+            properties = object : PropertyDefinitions<Exists<*>>() {
+                init {
+                    IsPropertyCheck.addReference(this, Exists<*>::reference)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Exists(

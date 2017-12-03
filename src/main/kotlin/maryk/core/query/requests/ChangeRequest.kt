@@ -19,7 +19,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
     constructor(dataModel: DM, vararg objectChange: DataObjectChange<DO>) : this(dataModel, objectChange.toList())
 
     internal object Properties : PropertyDefinitions<ChangeRequest<*, *>>() {
-        val objectChanges = add(1, "", ListDefinition(
+        val objectChanges = ListDefinition(
                 name = "objectChanges",
                 index = 1,
                 required = true,
@@ -27,14 +27,26 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
                         required = true,
                         dataModel = DataObjectChange
                 )
-        ), ChangeRequest<*, *>::objectChanges)
+        )
     }
 
     companion object: QueryDataModel<ChangeRequest<*, *>>(
             definitions = listOf(
                     Def(IsObjectRequest.Properties.dataModel, ChangeRequest<*, *>::dataModel),
                     Def(Properties.objectChanges, ChangeRequest<*, *>::objectChanges)
-            )
+            ),
+            properties = object : PropertyDefinitions<ChangeRequest<*, *>>() {
+                init {
+                    IsObjectRequest.addDataModel(this, ChangeRequest<*, *>::dataModel)
+                    add(1, "objectChanges", ListDefinition(
+                            required = true,
+                            valueDefinition = SubModelDefinition(
+                                    required = true,
+                                    dataModel = DataObjectChange
+                            )
+                    ), ChangeRequest<*, *>::objectChanges)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ChangeRequest(

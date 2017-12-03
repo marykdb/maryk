@@ -26,7 +26,7 @@ class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>
         val dataModel: D
 ) : AbstractValueDefinition<DO, CX>(
         name, index, indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<DO, CX> {
+), IsSerializablePropertyDefinition<DO, CX>, IsSubModelDefinition<DO, CX> {
     override fun asString(value: DO, context: CX?): String {
         var string = ""
         this.writeJsonValue(value, maryk.core.json.JsonWriter {

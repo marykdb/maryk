@@ -55,7 +55,28 @@ data class DataObjectChange<out DO: Any>(
                     Def(Properties.key, DataObjectChange<*>::key),
                     Def(Properties.changes, { it.changes.map { TypedValue(it.changeType.index, it) } }),
                     Def(Properties.lastVersion, DataObjectChange<*>::lastVersion)
-            )
+            ),
+            properties = object : PropertyDefinitions<DataObjectChange<*>>() {
+                init {
+                    add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+                            contextualResolver = { it!!.dataModel!!.key }
+                    ), DataObjectChange<*>::key)
+
+                    add(1, "changes", ListDefinition(
+                            required = true,
+                            valueDefinition = MultiTypeDefinition(
+                                    required = true,
+                                    getDefinition = mapOfChangeDefinitions::get
+                            )
+                    )) {
+                        it.changes.map { TypedValue(it.changeType.index, it) }
+                    }
+
+                    add(2, "lastVersion", NumberDefinition(
+                            type = UInt64
+                    ), DataObjectChange<*>::lastVersion)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DataObjectChange(

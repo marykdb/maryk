@@ -37,7 +37,8 @@ data class TestValueObject(
                     Def(Properties.int, TestValueObject::int),
                     Def(Properties.dateTime, TestValueObject::dateTime),
                     Def(Properties.bool, TestValueObject::bool)
-            )
+            ),
+            properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = TestValueObject(
                 int = map[0] as Int,

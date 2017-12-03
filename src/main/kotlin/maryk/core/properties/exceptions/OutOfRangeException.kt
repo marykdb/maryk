@@ -33,6 +33,14 @@ data class OutOfRangeException(
     }
 
     companion object: QueryDataModel<OutOfRangeException>(
+            properties = object: PropertyDefinitions<OutOfRangeException>() {
+                init {
+                    ValidationException.addReference(this, OutOfRangeException::reference)
+                    ValidationException.addValue(this, OutOfRangeException::value)
+                    add(2, "min", StringDefinition(), OutOfRangeException::min)
+                    add(3, "max", StringDefinition(), OutOfRangeException::max)
+                }
+            },
             definitions = listOf(
                     Def(ValidationException.Properties.reference, OutOfRangeException::reference),
                     Def(ValidationException.Properties.value, OutOfRangeException::value),

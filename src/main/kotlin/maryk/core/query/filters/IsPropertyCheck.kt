@@ -2,6 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -23,6 +24,16 @@ interface IsPropertyCheck<T: Any> : IsFilter {
         ) { context, value ->
             @Suppress("UNCHECKED_CAST")
             context!!.reference = value as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
+        }
+    }
+
+    companion object {
+        fun <DM: Any> addReference(definitions: PropertyDefinitions<DM>, getter: (DM) -> IsPropertyReference<*, *>?) {
+            definitions.add(
+                    0, "reference",
+                    Properties.reference,
+                    getter
+            )
         }
     }
 }

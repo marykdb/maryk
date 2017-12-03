@@ -2,6 +2,8 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.StringDefinition
 
 /** Something was wrong with the request
  * @param reason of failure
@@ -12,6 +14,11 @@ data class RequestFail<DO: Any>(
     override val statusType = StatusType.REQUEST_FAIL
 
     companion object: QueryDataModel<RequestFail<*>>(
+            properties = object : PropertyDefinitions<RequestFail<*>>() {
+                init {
+                    add(0, "reason", StringDefinition(required = true), RequestFail<*>::reason)
+                }
+            },
             definitions = listOf(
                     Def(reasonDefinition, RequestFail<*>::reason)
             )

@@ -54,7 +54,20 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
                     Def(IsFetchRequest.Properties.toVersion, GetChangesRequest<*, *>::toVersion),
                     Def(IsFetchRequest.Properties.filterSoftDeleted, GetChangesRequest<*, *>::filterSoftDeleted),
                     Def(GetChangesRequest.Properties.fromVersion, GetChangesRequest<*, *>::fromVersion)
-            )
+            ),
+            properties = object : PropertyDefinitions<GetChangesRequest<*, *>>() {
+                init {
+                    IsObjectRequest.addDataModel(this, GetChangesRequest<*, *>::dataModel)
+                    IsGetRequest.addKeys(this, GetChangesRequest<*, *>::keys)
+                    IsFetchRequest.addFilter(this) {
+                        it.filter?.let { TypedValue(it.filterType.index, it) }
+                    }
+                    IsFetchRequest.addOrder(this, GetChangesRequest<*, *>::order)
+                    IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
+                    IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
+                    IsChangesRequest.addFromVersion(6, this, GetChangesRequest<*, *>::fromVersion)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = GetChangesRequest(

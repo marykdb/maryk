@@ -44,8 +44,26 @@ abstract class ValidationException(
                 required = true
         )
     }
-}
 
+    companion object {
+        fun <DM: ValidationException> addReference(definitions: PropertyDefinitions<DM>, getter: (DM) -> IsPropertyReference<*, *>?) {
+            definitions.add(
+                    0, "reference",
+                    Properties.reference,
+                    getter
+            )
+        }
+        fun <DM: ValidationException> addValue(definitions: PropertyDefinitions<DM>, getter: (DM) -> String?) {
+            definitions.add(
+                    1, "value",
+                    StringDefinition(
+                            required = true
+                    ),
+                    getter
+            )
+        }
+    }
+}
 
 internal val mapOfValidationExceptionDefinitions = mapOf(
         ValidationExceptionType.ALREADY_SET.index to SubModelDefinition(

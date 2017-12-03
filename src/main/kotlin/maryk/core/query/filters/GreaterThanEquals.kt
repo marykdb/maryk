@@ -4,6 +4,7 @@ import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Referenced value should be greater than or equal given value
@@ -21,7 +22,13 @@ data class GreaterThanEquals<T: Any>(
             definitions = listOf(
                     Def(IsPropertyCheck.Properties.reference, GreaterThanEquals<*>::reference),
                     Def(IsPropertyComparison.Properties.value, GreaterThanEquals<*>::value)
-            )
+            ),
+            properties = object : PropertyDefinitions<GreaterThanEquals<*>>() {
+                init {
+                    IsPropertyCheck.addReference(this, GreaterThanEquals<*>::reference)
+                    IsPropertyComparison.addValue(this, GreaterThanEquals<*>::value)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = GreaterThanEquals(

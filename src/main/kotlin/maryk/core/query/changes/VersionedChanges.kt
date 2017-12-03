@@ -38,7 +38,24 @@ data class VersionedChanges(
             definitions = listOf(
                     Def(Properties.version, VersionedChanges::version),
                     Def(Properties.changes, { it.changes.map { TypedValue(it.changeType.index, it) } })
-            )
+            ),
+            properties = object : PropertyDefinitions<VersionedChanges>() {
+                init {
+                    add(0, "version", NumberDefinition(
+                            type = UInt64
+                    ), VersionedChanges::version)
+
+                    add(1, "changes", ListDefinition(
+                            required = true,
+                            valueDefinition = MultiTypeDefinition(
+                                    required = true,
+                                    getDefinition = mapOfChangeDefinitions::get
+                            )
+                    )) {
+                        it.changes.map { TypedValue(it.changeType.index, it) }
+                    }
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = VersionedChanges(

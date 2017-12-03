@@ -38,7 +38,22 @@ data class DataObjectVersionedChange<out DO: Any>(
             definitions = listOf(
                     Def(Properties.key, DataObjectVersionedChange<*>::key),
                     Def(Properties.changes, DataObjectVersionedChange<*>::changes)
-            )
+            ),
+            properties = object : PropertyDefinitions<DataObjectVersionedChange<*>>() {
+                init {
+                    add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+                            contextualResolver = { it!!.dataModel!!.key }
+                    ), DataObjectVersionedChange<*>::key)
+
+                    add(1, "changes", ListDefinition(
+                            required = true,
+                            valueDefinition = SubModelDefinition(
+                                    required = true,
+                                    dataModel = VersionedChanges
+                            )
+                    ), DataObjectVersionedChange<*>::changes)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DataObjectVersionedChange(

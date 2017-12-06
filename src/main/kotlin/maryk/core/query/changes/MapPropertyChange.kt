@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.DataObjectMapProperty
+import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.query.DataModelPropertyContext
@@ -23,7 +23,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param V: type of value to be operated on
  */
 data class MapPropertyChange<K: Any, V: Any>(
-        override val reference: IsPropertyReference<Map<K, V>, DataObjectMapProperty<K, V, *, *>>,
+        override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *>>,
         val valuesToAdd: Map<K, V>? = null,
         val keysToDelete: Set<K>? = null,
         override val valueToCompare: Map<K, V>? = null
@@ -40,13 +40,13 @@ data class MapPropertyChange<K: Any, V: Any>(
         @Suppress("UNCHECKED_CAST")
         val valueToCompare = ContextualMapDefinition(
                 contextualResolver = { context: DataModelPropertyContext? ->
-                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.property as IsByteTransportableMap<Any, Any, IsPropertyContext>
+                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
         ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
         @Suppress("UNCHECKED_CAST")
         val valuesToAdd = ContextualMapDefinition(
                 contextualResolver = { context: DataModelPropertyContext? ->
-                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.property as IsByteTransportableMap<Any, Any, IsPropertyContext>
+                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
         ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
         val keysToDelete = SetDefinition(
@@ -66,7 +66,7 @@ data class MapPropertyChange<K: Any, V: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MapPropertyChange(
-                reference = map[0] as IsPropertyReference<Map<Any, Any>, DataObjectMapProperty<Any, Any, *, *>>,
+                reference = map[0] as IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *>>,
                 valueToCompare = map[1] as Map<Any, Any>?,
                 valuesToAdd = map[2] as Map<Any, Any>?,
                 keysToDelete = map[3] as Set<Any>?

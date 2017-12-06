@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -19,7 +19,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param T: type of value to be operated on
  */
 data class Range<T: Any>(
-        override val reference: IsPropertyReference<T, IsDataObjectValueProperty<T, IsPropertyContext, *>>,
+        override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
         val from: T,
         val to: T,
         val inclusiveFrom: Boolean = true,
@@ -34,14 +34,14 @@ data class Range<T: Any>(
                     add(1, "from", ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 @Suppress("UNCHECKED_CAST")
-                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
+                                context!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ), Range<*>::from)
 
                     add(2, "to", ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 @Suppress("UNCHECKED_CAST")
-                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
+                                context!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ), Range<*>::to)
 
@@ -52,7 +52,7 @@ data class Range<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Range(
-                reference = map[0] as IsPropertyReference<Any, IsDataObjectValueProperty<Any, IsPropertyContext, *>>,
+                reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
                 from = map[1] as Any,
                 to = map[2] as Any,
                 inclusiveFrom = map[3] as Boolean,

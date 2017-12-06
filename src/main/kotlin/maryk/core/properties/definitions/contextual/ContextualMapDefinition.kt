@@ -6,7 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.ByteLengthContainer
 
 /** Definition which refers to specific map property value definition based on context */
@@ -18,9 +18,9 @@ class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         required = true,
         final = true
 ), IsByteTransportableMap<K, V, CX>, IsSerializableFlexBytesEncodable<Map<K, V>, CX> {
-    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     override fun writeJsonValue(value: Map<K, V>, writer: JsonWriter, context: CX?)
             = contextualResolver(context).writeJsonValue(value, writer, context)

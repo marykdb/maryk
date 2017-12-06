@@ -2,24 +2,24 @@ package maryk.core.properties.definitions
 
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.DataObjectFixedBytesProperty
-import maryk.core.properties.definitions.wrapper.DataObjectListProperty
-import maryk.core.properties.definitions.wrapper.DataObjectMapProperty
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
-import maryk.core.properties.definitions.wrapper.DataObjectSetProperty
-import maryk.core.properties.definitions.wrapper.DataObjectSubModelProperty
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 
 abstract class PropertyDefinitions<DM: Any> {
     @Suppress("PropertyName")
-    internal val __allProperties = mutableListOf<IsDataObjectProperty<*, *, DM>>()
+    internal val __allProperties = mutableListOf<IsPropertyDefinitionWrapper<*, *, DM>>()
 
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
             index: Int,
             name: String,
             definition: D,
             getter: (DM) -> T? = { null }
-    ) = DataObjectProperty(index, name, definition, getter).apply {
+    ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
 
@@ -28,7 +28,7 @@ abstract class PropertyDefinitions<DM: Any> {
             name: String,
             definition: D,
             getter: (DM) -> T? = { null }
-    ) = DataObjectFixedBytesProperty(index, name, definition, getter).apply {
+    ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
 
@@ -37,7 +37,7 @@ abstract class PropertyDefinitions<DM: Any> {
             name: String,
             definition: ListDefinition<T, CX>,
             getter: (DM) -> List<T>? = { null }
-    ) = DataObjectListProperty(index, name, definition, getter).apply {
+    ) = ListPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
 
@@ -46,7 +46,7 @@ abstract class PropertyDefinitions<DM: Any> {
             name: String,
             definition: SetDefinition<T, CX>,
             getter: (DM) -> Set<T>? = { null }
-    ) = DataObjectSetProperty(index, name, definition, getter).apply {
+    ) = SetPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
 
@@ -55,7 +55,7 @@ abstract class PropertyDefinitions<DM: Any> {
             name: String,
             definition: MapDefinition<K, V, CX>,
             getter: (DM) -> Map<K, V>? = { null }
-    ) = DataObjectMapProperty(index, name, definition, getter).apply {
+    ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
 
@@ -64,7 +64,7 @@ abstract class PropertyDefinitions<DM: Any> {
             name: String,
             definition: SubModelDefinition<DO, D, CX>,
             getter: (DM) -> DO? = { null }
-    ) = DataObjectSubModelProperty(index, name, definition, getter).apply {
+    ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
 }

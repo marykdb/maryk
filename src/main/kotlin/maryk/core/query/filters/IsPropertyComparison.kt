@@ -19,7 +19,7 @@ interface IsPropertyComparison<T: Any>: IsPropertyCheck<T> {
                     ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 @Suppress("UNCHECKED_CAST")
-                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
+                                context!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ),
                     getter

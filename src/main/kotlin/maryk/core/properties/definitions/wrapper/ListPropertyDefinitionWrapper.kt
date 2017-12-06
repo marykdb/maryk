@@ -7,14 +7,14 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 
-data class DataObjectListProperty<T: Any, CX: IsPropertyContext, in DM: Any>(
+data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: Any>(
         override val index: Int,
         override val name: String,
-        override val property: ListDefinition<T, CX>,
+        override val definition: ListDefinition<T, CX>,
         override val getter: (DM) -> List<T>?
 ) :
-        IsCollectionDefinition<T, List<T>, CX> by property,
-        IsDataObjectProperty<List<T>, CX, DM>
+        IsCollectionDefinition<T, List<T>, CX> by definition,
+        IsPropertyDefinitionWrapper<List<T>, CX, DM>
 {
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             ListReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
@@ -24,5 +24,5 @@ data class DataObjectListProperty<T: Any, CX: IsPropertyContext, in DM: Any>(
      * @param parentRefFactory (optional) factory to create parent ref
      */
     fun getItemRef(index: Int, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.property.getItemRef(index, this.getRef(parentRefFactory))
+            = this.definition.getItemRef(index, this.getRef(parentRefFactory))
 }

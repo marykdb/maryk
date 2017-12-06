@@ -7,14 +7,14 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
 
-data class DataObjectSetProperty<T: Any, CX: IsPropertyContext, in DM: Any>(
+data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: Any>(
         override val index: Int,
         override val name: String,
-        override val property: SetDefinition<T, CX>,
+        override val definition: SetDefinition<T, CX>,
         override val getter: (DM) -> Set<T>?
 ) :
-        IsCollectionDefinition<T, Set<T>, CX> by property,
-        IsDataObjectProperty<Set<T>, CX, DM>
+        IsCollectionDefinition<T, Set<T>, CX> by definition,
+        IsPropertyDefinitionWrapper<Set<T>, CX, DM>
 {
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             SetReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
@@ -24,5 +24,5 @@ data class DataObjectSetProperty<T: Any, CX: IsPropertyContext, in DM: Any>(
      * @param parentRefFactory (optional) factory to create parent ref
      */
     fun getItemRef(value: T, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.property.getItemRef(value, this.getRef(parentRefFactory))
+            = this.definition.getItemRef(value, this.getRef(parentRefFactory))
 }

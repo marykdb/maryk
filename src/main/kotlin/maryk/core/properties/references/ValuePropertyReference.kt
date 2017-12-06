@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.ByteLengthContainer
 
 /**
@@ -10,7 +10,7 @@ import maryk.core.protobuf.ByteLengthContainer
  * @param <T> Type of reference
  * @param <D> Definition of property
  */
-open class ValuePropertyReference<T: Any, out D : IsDataObjectProperty<T, *, *>, out P: IsPropertyReference<*, *>> (
+open class ValuePropertyReference<T: Any, out D : IsPropertyDefinitionWrapper<T, *, *>, out P: IsPropertyReference<*, *>> (
         propertyDefinition: D,
         parentReference: P?
 ): PropertyReference<T, D, P>(propertyDefinition, parentReference) {

@@ -5,7 +5,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.definitions.IsByteTransportableMap
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Time
 import maryk.core.protobuf.ProtoBuf
@@ -23,13 +23,13 @@ class ContextualMapDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualMapDefinition<Any, Any, DataModelPropertyContext>(
-            contextualResolver = { it!!.reference!!.propertyDefinition.property as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
+            contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(),
-            reference = TestMarykObject.Properties.map.getRef() as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
+            reference = TestMarykObject.Properties.map.getRef() as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test

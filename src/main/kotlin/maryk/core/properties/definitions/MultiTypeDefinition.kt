@@ -8,7 +8,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -59,9 +59,9 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
         }
     }
 
-    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     override fun writeJsonValue(value: TypedValue<*>, writer: JsonWriter, context: CX?) {
         writer.writeStartArray()

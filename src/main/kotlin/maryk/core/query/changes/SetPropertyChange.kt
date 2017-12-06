@@ -36,7 +36,7 @@ data class SetPropertyChange<T: Any>(
                     @Suppress("UNCHECKED_CAST")
                     add(1, "valueToCompare", ContextualCollectionDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
-                                context!!.reference!!.propertyDefinition.property as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
+                                context!!.reference!!.propertyDefinition.definition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
                             }
                     ), SetPropertyChange<*>::valueToCompare)
                     add(2, "addValues", SetDefinition(
@@ -60,5 +60,5 @@ data class SetPropertyChange<T: Any>(
 
 @Suppress("UNCHECKED_CAST")
 private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-    (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition.property.valueDefinition
+    (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition.definition.valueDefinition
 })

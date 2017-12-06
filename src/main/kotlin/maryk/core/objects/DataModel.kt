@@ -12,7 +12,7 @@ import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
@@ -34,11 +34,11 @@ class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: 
 abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
         val properties: PropertyDefinitions<DO>
 ) : IsDataModel<DO> {
-    private val indexToDefinition: Map<Int, IsDataObjectProperty<Any, CX, DO>>
-    private val nameToDefinition: Map<String, IsDataObjectProperty<Any, CX, DO>>
+    private val indexToDefinition: Map<Int, IsPropertyDefinitionWrapper<Any, CX, DO>>
+    private val nameToDefinition: Map<String, IsPropertyDefinitionWrapper<Any, CX, DO>>
 
     @Suppress("UNCHECKED_CAST")
-    val definitions: List<IsDataObjectProperty<Any, CX, DO>> = properties.__allProperties as List<IsDataObjectProperty<Any, CX, DO>>
+    val definitions: List<IsPropertyDefinitionWrapper<Any, CX, DO>> = properties.__allProperties as List<IsPropertyDefinitionWrapper<Any, CX, DO>>
 
     init {
         indexToDefinition = mutableMapOf()
@@ -108,7 +108,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
 
             writer.writeFieldName(name)
 
-            def.property.writeJsonValue(value, writer, context)
+            def.definition.writeJsonValue(value, writer, context)
         }
         writer.writeEndObject()
     }
@@ -125,7 +125,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
             val name = def.name
 
             writer.writeFieldName(name)
-            def.property.writeJsonValue(value, writer, context)
+            def.definition.writeJsonValue(value, writer, context)
         }
         writer.writeEndObject()
     }
@@ -159,7 +159,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
 
                         valueMap.put(
                                 definition.index,
-                                definition.property.readJson(reader, context)
+                                definition.definition.readJson(reader, context)
                         )
                     }
                 }
@@ -188,7 +188,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
         var totalByteLength = 0
         for ((key, value) in map) {
             val def = indexToDefinition[key] ?: continue
-            totalByteLength += def.property.calculateTransportByteLengthWithKey(def.index, value, lengthCacher, context)
+            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, lengthCacher, context)
         }
         return totalByteLength
     }
@@ -203,7 +203,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
         var totalByteLength = 0
         for (def in definitions) {
             val value = def.getter(obj) ?: continue
-            totalByteLength += def.property.calculateTransportByteLengthWithKey(def.index, value, lengthCacher, context)
+            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, lengthCacher, context)
         }
         return totalByteLength
     }
@@ -217,7 +217,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
     fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
             val def = indexToDefinition[key] ?: continue
-            def.property.writeTransportBytesWithKey(def.index, value, lengthCacheGetter, writer, context)
+            def.definition.writeTransportBytesWithKey(def.index, value, lengthCacheGetter, writer, context)
         }
     }
 
@@ -230,7 +230,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
     fun writeProtoBuf(obj: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (def in definitions) {
             val value = def.getter(obj) ?: continue
-            def.property.writeTransportBytesWithKey(def.index, value, lengthCacheGetter, writer, context)
+            def.definition.writeTransportBytesWithKey(def.index, value, lengthCacheGetter, writer, context)
         }
     }
 
@@ -278,7 +278,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      */
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
         val dataObjectPropertyDefinition = indexToDefinition[key.tag]
-        val propertyDefinition = dataObjectPropertyDefinition?.property
+        val propertyDefinition = dataObjectPropertyDefinition?.definition
 
         if (propertyDefinition == null) {
             ProtoBuf.skipField(key.wireType, byteReader)

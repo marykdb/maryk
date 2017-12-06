@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -30,7 +30,7 @@ interface IsPropertyOperation<T: Any> : IsChange {
                             )
                     ) { context, value ->
                         @Suppress("UNCHECKED_CAST")
-                        context!!.reference = value as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
+                        context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
                     },
                     getter
             )
@@ -42,7 +42,7 @@ interface IsPropertyOperation<T: Any> : IsChange {
                     ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 @Suppress("UNCHECKED_CAST")
-                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
+                                context!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ),
                     getter

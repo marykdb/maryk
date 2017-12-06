@@ -69,7 +69,7 @@ data class ListPropertyChange<T: Any>(
 
 @Suppress("UNCHECKED_CAST")
 private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-    (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition.property.valueDefinition
+    (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition.definition.valueDefinition
 })
 
 private val valueListDefinition = ListDefinition(

@@ -4,8 +4,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
-import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -13,7 +13,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param T: type of value to be operated on
  */
 interface IsPropertyCheck<T: Any> : IsFilter {
-    val reference: IsPropertyReference<T, IsDataObjectValueProperty<T, IsPropertyContext, *>>
+    val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>
 
     object Properties {
         val reference = ContextCaptureDefinition(
@@ -22,7 +22,7 @@ interface IsPropertyCheck<T: Any> : IsFilter {
                 )
         ) { context, value ->
             @Suppress("UNCHECKED_CAST")
-            context!!.reference = value as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
+            context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
         }
     }
 

@@ -5,7 +5,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType
@@ -42,9 +42,9 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO>>(
 
     override fun fromString(string: String) = this.dataModel.fromString(string)
 
-    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = dataModel.getDefinition(name)
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.getDefinition(name)
 
-    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = dataModel.getDefinition(index)
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         super.validateWithRef(previousValue, newValue, refGetter)

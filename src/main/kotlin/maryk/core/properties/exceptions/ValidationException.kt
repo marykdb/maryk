@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -33,7 +33,7 @@ abstract class ValidationException(
                 )
         ) { context, value ->
             @Suppress("UNCHECKED_CAST")
-            context!!.reference = value as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
+            context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
         }
     }
 

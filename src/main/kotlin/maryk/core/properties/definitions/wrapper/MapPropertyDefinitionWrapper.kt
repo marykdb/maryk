@@ -7,14 +7,14 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
 
-data class DataObjectMapProperty<K: Any, V: Any, CX: IsPropertyContext, in DM: Any>(
+data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, in DM: Any>(
         override val index: Int,
         override val name: String,
-        override val property: MapDefinition<K, V, CX>,
+        override val definition: MapDefinition<K, V, CX>,
         override val getter: (DM) -> Map<K, V>?
 ) :
-        IsMapDefinition<K, V, CX> by property,
-        IsDataObjectProperty<Map<K,V>, CX, DM>
+        IsMapDefinition<K, V, CX> by definition,
+        IsPropertyDefinitionWrapper<Map<K,V>, CX, DM>
 {
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?): MapReference<K, V, CX> =
             MapReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
@@ -24,12 +24,12 @@ data class DataObjectMapProperty<K: Any, V: Any, CX: IsPropertyContext, in DM: A
      * @param parentRefFactory (optional) factory to create parent ref
      */
     fun getKeyRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.property.getKeyRef(key, this.getRef(parentRefFactory))
+            = this.definition.getKeyRef(key, this.getRef(parentRefFactory))
 
     /** Get a reference to a specific map value by key
      * @param key to get reference to value for
      * @param parentRefFactory (optional) factory to create parent ref
      */
     fun getValueRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.property.getValueRef(key, this.getRef(parentRefFactory))
+            = this.definition.getValueRef(key, this.getRef(parentRefFactory))
 }

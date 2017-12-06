@@ -1,7 +1,7 @@
 package maryk.core.objects
 
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
@@ -9,12 +9,12 @@ interface IsDataModel<DO: Any> {
     /** Get the definition with a property name
      * @param name to get property of
      */
-    fun getDefinition(name: String): IsDataObjectProperty<*, *, DO>?
+    fun getDefinition(name: String): IsPropertyDefinitionWrapper<*, *, DO>?
 
     /** Get the definition with a property index
      * @param index to get property of
      */
-    fun getDefinition(index: Int): IsDataObjectProperty<*, *, DO>?
+    fun getDefinition(index: Int): IsPropertyDefinitionWrapper<*, *, DO>?
 
     /** Get a method to retrieve property from DataObject by name
      * @param name of value to retrieve

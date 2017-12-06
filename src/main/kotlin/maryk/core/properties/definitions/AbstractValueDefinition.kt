@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -72,9 +72,9 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      */
     abstract fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
 
-    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     /** Get the value from a string
      * @param string to convert

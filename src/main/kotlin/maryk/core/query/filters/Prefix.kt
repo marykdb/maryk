@@ -4,7 +4,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
 /** Compares given prefix string against referenced property
@@ -12,7 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
  * @param value the value which the compared property should start with
  */
 data class Prefix(
-        override val reference: IsPropertyReference<String, IsDataObjectValueProperty<String, IsPropertyContext, *>>,
+        override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
         val prefix: String
 ) : IsPropertyCheck<String> {
     override val filterType = FilterType.PREFIX
@@ -29,7 +29,7 @@ data class Prefix(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Prefix(
-                reference = map[0] as IsPropertyReference<String, IsDataObjectValueProperty<String, IsPropertyContext, *>>,
+                reference = map[0] as IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
                 prefix = map[1] as String
         )
     }

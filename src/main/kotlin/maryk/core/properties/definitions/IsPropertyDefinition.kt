@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 
@@ -21,10 +21,10 @@ interface IsPropertyDefinition<T: Any> {
     /** To get embedded properties by name
      * @param name to fetch property of
      */
-    fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>?
+    fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>?
 
     /** To get embedded properties by index
      * @param index to fetch property of
      */
-    fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>?
+    fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>?
 }

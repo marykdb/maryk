@@ -6,7 +6,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.definitions.IsByteTransportableCollection
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -27,7 +27,7 @@ class ContextualCollectionDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(),
-            reference = TestMarykObject.Properties.listOfString.getRef() as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
+            reference = TestMarykObject.Properties.listOfString.getRef() as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test

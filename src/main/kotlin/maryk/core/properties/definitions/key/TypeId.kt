@@ -6,11 +6,11 @@ import maryk.core.objects.IsDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 
 class TypeId<CX: IsPropertyContext>(
-        val multiTypeDefinition: DataObjectProperty<TypedValue<*>, CX, MultiTypeDefinition<CX>, *>
+        val multiTypeDefinition: PropertyDefinitionWrapper<TypedValue<*>, CX, MultiTypeDefinition<CX>, *>
 ) : IsFixedBytesProperty<Int> {
     override val byteSize = 2
 

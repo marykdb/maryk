@@ -17,7 +17,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {
-            val def = it.property as IsFixedBytesEncodable<*>
+            val def = it.definition as IsFixedBytesEncodable<*>
             size += def.byteSize
         }
         size

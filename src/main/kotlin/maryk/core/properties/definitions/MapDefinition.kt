@@ -7,7 +7,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.TooLittleItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
@@ -38,9 +38,9 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         assert(valueDefinition.required, { "Definition for value should be required on map" })
     }
 
-    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     /** Get a reference to a specific map key
      * @param key to get reference for

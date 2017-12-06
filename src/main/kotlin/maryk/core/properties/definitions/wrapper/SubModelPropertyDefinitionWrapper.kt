@@ -8,14 +8,14 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SubModelPropertyRef
 
-data class DataObjectSubModelProperty<DO: Any, D: DataModel<DO, CX>, CX: IsPropertyContext, in DM: Any>(
+data class SubModelPropertyDefinitionWrapper<DO: Any, D: DataModel<DO, CX>, CX: IsPropertyContext, in DM: Any>(
         override val index: Int,
         override val name: String,
-        override val property: SubModelDefinition<DO, D, CX>,
+        override val definition: SubModelDefinition<DO, D, CX>,
         override val getter: (DM) -> DO?
 ) :
-        IsSubModelDefinition<DO, CX> by property,
-        IsDataObjectProperty<DO, CX, DM>
+        IsSubModelDefinition<DO, CX> by definition,
+        IsPropertyDefinitionWrapper<DO, CX, DM>
 {
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             SubModelPropertyRef(
@@ -25,6 +25,6 @@ data class DataObjectSubModelProperty<DO: Any, D: DataModel<DO, CX>, CX: IsPrope
                     }
             )
     override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        this.property.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory) })
+        this.definition.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory) })
     }
 }

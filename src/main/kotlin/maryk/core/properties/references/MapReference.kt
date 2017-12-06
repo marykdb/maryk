@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.wrapper.DataObjectMapProperty
+import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 
@@ -12,9 +12,9 @@ import maryk.core.protobuf.ProtoBuf
  * @param <D> Definition of property
  */
 open class MapReference<K: Any, V: Any, CX: IsPropertyContext> (
-        propertyDefinition: DataObjectMapProperty<K, V, CX, *>,
+        propertyDefinition: MapPropertyDefinitionWrapper<K, V, CX, *>,
         parentReference: CanHaveComplexChildReference<*, *, *>?
-) : ValuePropertyReference<Map<K, V>, DataObjectMapProperty<K, V, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+) : ValuePropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, CX, *>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition,
         parentReference
 ), HasEmbeddedPropertyReference<Map<K, V>> {
@@ -23,14 +23,14 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> (
                 propertyDefinition.keyDefinition.fromString(
                         name.substring(1)
                 ),
-                propertyDefinition.property,
+                propertyDefinition.definition,
                 this
         )
         '$' -> MapKeyReference(
                 propertyDefinition.keyDefinition.fromString(
                         name.substring(1)
                 ),
-                propertyDefinition.property,
+                propertyDefinition.definition,
                 this
         )
         else -> throw ParseException("Unknown List type $name[0]")
@@ -45,7 +45,7 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> (
                                 ProtoBuf.getLength(protoKey.wireType, reader),
                                 reader
                         ),
-                        this.propertyDefinition.property,
+                        this.propertyDefinition.definition,
                         this
                 )
             }
@@ -55,7 +55,7 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> (
                                 ProtoBuf.getLength(protoKey.wireType, reader),
                                 reader
                         ),
-                        this.propertyDefinition.property,
+                        this.propertyDefinition.definition,
                         this
                 )
             }

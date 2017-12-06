@@ -7,15 +7,15 @@ import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 
-data class DataObjectFixedBytesProperty<T: Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DM: Any>(
+data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DM: Any>(
         override val index: Int,
         override val name: String,
-        override val property: D,
+        override val definition: D,
         override val getter: (DM) -> T?
 ) :
-        IsSerializableFixedBytesEncodable<T, CX> by property,
-        IsDataObjectProperty<T, CX, DM>,
-        IsDataObjectValueProperty<T, CX, DM>,
+        IsSerializableFixedBytesEncodable<T, CX> by definition,
+        IsPropertyDefinitionWrapper<T, CX, DM>,
+        IsValuePropertyDefinitionWrapper<T, CX, DM>,
         IsFixedBytesProperty<T>
 {
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?)
@@ -33,6 +33,6 @@ data class DataObjectFixedBytesProperty<T: Any, CX: IsPropertyContext, out D: Is
     }
 
     override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        this.property.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory) })
+        this.definition.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory) })
     }
 }

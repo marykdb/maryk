@@ -25,13 +25,13 @@ class SetItemReference<T: Any, CX: IsPropertyContext>(
 
     override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         val parentLength = this.parentReference!!.calculateTransportByteLength(lengthCacher)
-        val valueLength = this.parentReference.propertyDefinition.property.valueDefinition.calculateTransportByteLength(value, lengthCacher)
+        val valueLength = this.parentReference.propertyDefinition.definition.valueDefinition.calculateTransportByteLength(value, lengthCacher)
         return parentLength + 1 + valueLength
     }
 
     override fun writeTransportBytes(lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
-        this.parentReference!!.propertyDefinition.property.valueDefinition.writeTransportBytes(value, lengthCacheGetter, writer)
+        this.parentReference!!.propertyDefinition.definition.valueDefinition.writeTransportBytes(value, lengthCacheGetter, writer)
     }
 }

@@ -5,7 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -17,7 +17,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param T: type of value to be operated on
  */
 data class PropertyChange<T: Any>(
-        override val reference: IsPropertyReference<T, IsDataObjectValueProperty<T, IsPropertyContext, *>>,
+        override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
         val newValue: T,
         override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
@@ -32,7 +32,7 @@ data class PropertyChange<T: Any>(
                     add(2, "newValue", ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 @Suppress("UNCHECKED_CAST")
-                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
+                                context!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ), PropertyChange<*>::newValue)
                 }
@@ -40,7 +40,7 @@ data class PropertyChange<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = PropertyChange(
-                reference = map[0] as IsPropertyReference<Any, IsDataObjectValueProperty<Any, IsPropertyContext, Any>>,
+                reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, Any>>,
                 valueToCompare = map[1],
                 newValue = map[2] as Any
         )

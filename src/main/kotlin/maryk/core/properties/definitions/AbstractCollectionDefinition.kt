@@ -7,7 +7,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.TooLittleItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
@@ -37,9 +37,9 @@ abstract class AbstractCollectionDefinition<
         assert(valueDefinition.required, { "Definition should have required=true on collection" })
     }
 
-    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?) {
         super.validateWithRef(previousValue, newValue, refGetter)

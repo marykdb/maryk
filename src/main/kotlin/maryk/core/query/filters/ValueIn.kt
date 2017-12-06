@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -15,7 +15,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param T: type of value to be operated on
  */
 data class ValueIn<T: Any>(
-        override val reference: IsPropertyReference<T, IsDataObjectValueProperty<T, IsPropertyContext, *>>,
+        override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
         val values: Set<T>
 ) : IsPropertyCheck<T> {
     override val filterType = FilterType.VALUE_IN
@@ -28,7 +28,7 @@ data class ValueIn<T: Any>(
                             valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
                                     contextualResolver = {
                                         @Suppress("UNCHECKED_CAST")
-                                        it!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
+                                        it!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
                                     }
                             )
                     ), ValueIn<*>::values)
@@ -37,7 +37,7 @@ data class ValueIn<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValueIn(
-                reference = map[0] as IsPropertyReference<Any, IsDataObjectValueProperty<Any, IsPropertyContext, *>>,
+                reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
                 values = map[1] as Set<Any>
         )
     }

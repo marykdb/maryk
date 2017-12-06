@@ -6,7 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
-import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
@@ -28,9 +28,9 @@ class ContextualCollectionDefinition<in CX: IsPropertyContext>(
     override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?)
             = contextualResolver(context).readPackedCollectionTransportBytes(length, reader, context)
 
-    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     override fun newMutableCollection(context: CX?)
             = contextualResolver(context).newMutableCollection(context)

@@ -5,13 +5,13 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.DataObjectSubModelProperty
+import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.protobuf.ByteLengthContainer
 
 class SubModelPropertyRef<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>(
-        propertyDefinition: DataObjectSubModelProperty<DO, D, CX, *>,
+        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, D, CX, *>,
         parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveSimpleChildReference<DO, DataObjectSubModelProperty<DO, D, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+): CanHaveSimpleChildReference<DO, SubModelPropertyDefinitionWrapper<DO, D, CX, *>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name
@@ -22,11 +22,11 @@ class SubModelPropertyRef<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext
     } ?: name
 
     override fun getEmbedded(name: String)
-            = this.propertyDefinition.property.dataModel.getDefinition(name)!!.getRef({ this })
+            = this.propertyDefinition.definition.dataModel.getDefinition(name)!!.getRef({ this })
 
     override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
         val index = initIntByVar(reader)
-        return this.propertyDefinition.property.dataModel.getDefinition(index)!!.getRef({ this })
+        return this.propertyDefinition.definition.dataModel.getDefinition(index)!!.getRef({ this })
     }
 
     /** Calculate the transport length of encoding this reference

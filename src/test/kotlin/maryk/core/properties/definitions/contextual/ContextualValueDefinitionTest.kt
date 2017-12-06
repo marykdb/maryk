@@ -7,7 +7,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
-import maryk.core.properties.definitions.wrapper.DataObjectProperty
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
@@ -21,7 +21,7 @@ class ContextualValueDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualValueDefinition<DataModelPropertyContext>(
-            contextualResolver = { it!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext> }
+            contextualResolver = { it!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -31,7 +31,7 @@ class ContextualValueDefinitionTest {
                     SubMarykObject.name to SubMarykObject
             ),
             dataModel = TestMarykObject as RootDataModel<Any>,
-            reference = TestMarykObject.Properties.string.getRef() as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
+            reference = TestMarykObject.Properties.string.getRef() as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test

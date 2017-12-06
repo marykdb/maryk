@@ -6,11 +6,11 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 
-interface IsDataObjectProperty<T: Any, in CX:IsPropertyContext, in DM>
+interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DM>
     : IsSerializablePropertyDefinition<T, CX> {
     val index: Int
     val name: String
-    val property: IsSerializablePropertyDefinition<T, CX>
+    val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DM) -> T?
 
     /**

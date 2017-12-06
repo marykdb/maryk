@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
-import maryk.core.properties.definitions.wrapper.DataObjectFixedBytesProperty
+import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -46,14 +46,14 @@ abstract class RootDataModel<DM: Any>(
 
             keyDefinitions.forEach {
                 when {
-                    it is DataObjectFixedBytesProperty<*, *, *, *>
-                            && it.property is AbstractValueDefinition<*, *>-> {
-                        checkDefinition(it.name, it.property as AbstractValueDefinition<*, *>)
+                    it is FixedBytesPropertyDefinitionWrapper<*, *, *, *>
+                            && it.definition is AbstractValueDefinition<*, *>-> {
+                        checkDefinition(it.name, it.definition as AbstractValueDefinition<*, *>)
                     }
                     it is Reversed<*>
-                            && it.definition is DataObjectFixedBytesProperty<*, *, *, *>
-                            && it.definition.property is AbstractValueDefinition<*, *> -> {
-                        checkDefinition(it.definition.name, it.definition.property)
+                            && it.definition is FixedBytesPropertyDefinitionWrapper<*, *, *, *>
+                            && it.definition.definition is AbstractValueDefinition<*, *> -> {
+                        checkDefinition(it.definition.name, it.definition.definition)
                     }
                 }
                 totalBytes += it.byteSize

@@ -50,81 +50,138 @@ data class TestMarykObject(
         val listOfString: List<String>? = null
 ) {
     object Properties: PropertyDefinitions<TestMarykObject>() {
-        val string = add(0, "string", StringDefinition(
-                required = true,
-                regEx = "ha.*"
-        ), TestMarykObject::string)
-
-        val int = add(1, "int", NumberDefinition(
-                type = SInt32,
-                maxValue = 6
-        ), TestMarykObject::int)
-
-        val uint = add(2, "uint", NumberDefinition(
-                type = UInt32,
-                required = true,
-                final = true
-        ), TestMarykObject::uint)
-
-        val double = add(3, "double", NumberDefinition(
-                type = Float64
-        ), TestMarykObject::double)
-
-        val dateTime = add(4, "dateTime", DateTimeDefinition(
-        ), TestMarykObject::dateTime)
-
-        val bool = add(5, "bool", BooleanDefinition(
-                required = true,
-                final = true
-        ), TestMarykObject::bool)
-
-        val enum = add(6, "enum", EnumDefinition(
-                values = Option.values(),
-                required = true,
-                final = true
-        ), TestMarykObject::enum)
-
-        val list = add(7, "list", ListDefinition(
-                valueDefinition = NumberDefinition(
+        val string = add(
+                index = 0, name = "string",
+                definition = StringDefinition(
                         required = true,
-                        type = SInt32
-                )
-        ), TestMarykObject::list)
+                        regEx = "ha.*"
+                ),
+                getter = TestMarykObject::string
+        )
 
-        val set = add(8, "set", SetDefinition(
-                valueDefinition = DateDefinition(required = true)
-        ), TestMarykObject::set)
+        val int = add(
+                index = 1, name = "int",
+                definition = NumberDefinition(
+                        type = SInt32,
+                        maxValue = 6
+                ),
+                getter = TestMarykObject::int
+        )
 
-        val map = add(9, "map", MapDefinition(
-                keyDefinition = TimeDefinition(required = true),
-                valueDefinition = StringDefinition(required = true)
-        ), TestMarykObject::map)
+        val uint = add(
+                index = 2, name = "uint",
+                definition = NumberDefinition(
+                        type = UInt32,
+                        required = true,
+                        final = true
+                ),
+                getter = TestMarykObject::uint
+        )
 
-        val valueObject = add(10, "valueObject", ValueModelDefinition(
-                dataModel = TestValueObject
-        ), TestMarykObject::valueObject)
+        val double = add(
+                index = 3, name = "double",
+                definition = NumberDefinition(type = Float64),
+                getter = TestMarykObject::double
+        )
 
-        val subModel = add(11, "subModel", SubModelDefinition(
-                dataModel = SubMarykObject
-        ), TestMarykObject::subModel)
+        val dateTime = add(
+                index = 4, name = "dateTime",
+                definition = DateTimeDefinition(),
+                getter = TestMarykObject::dateTime
+        )
 
-        val multi = add(12, "multi", MultiTypeDefinition(
-                getDefinition = mapOf(
-                        0 to StringDefinition(),
-                        1 to NumberDefinition(type = SInt32),
-                        2 to SubModelDefinition(
-                                dataModel = SubMarykObject
+        val bool = add(
+                index = 5, name = "bool",
+                definition = BooleanDefinition(
+                        required = true,
+                        final = true
+                ),
+                getter = TestMarykObject::bool
+        )
+
+        val enum = add(
+                index = 6, name = "enum",
+                definition = EnumDefinition(
+                        values = Option.values(),
+                        required = true,
+                        final = true
+                ),
+                getter = TestMarykObject::enum
+        )
+
+        val list = add(
+                index = 7, name = "list",
+                definition = ListDefinition(
+                        valueDefinition = NumberDefinition(
+                            required = true,
+                            type = SInt32
                         )
-                )::get
-        ), TestMarykObject::multi)
+                ),
+                getter = TestMarykObject::list
+        )
 
-        val reference = add(13, "reference", ReferenceDefinition(
-                dataModel = SubMarykObject
-        ), TestMarykObject::reference)
+        val set = add(
+                index = 8, name = "set",
+                definition = SetDefinition(
+                        valueDefinition = DateDefinition(required = true)
+                ),
+                getter = TestMarykObject::set
+        )
 
-        val listOfString = add(14, "listOfString", ListDefinition(
-                valueDefinition = StringDefinition(required = true)
-        ), TestMarykObject::listOfString)
+        val map = add(
+                index = 9, name = "map",
+                definition = MapDefinition(
+                        keyDefinition = TimeDefinition(required = true),
+                        valueDefinition = StringDefinition(required = true)
+                ),
+                getter = TestMarykObject::map
+        )
+
+        val valueObject = add(
+                index = 10, name = "valueObject",
+                definition = ValueModelDefinition(
+                        dataModel = TestValueObject
+                ),
+                getter = TestMarykObject::valueObject
+        )
+
+        val subModel = add(
+                index = 11, name = "subModel",
+                definition = SubModelDefinition(
+                        dataModel = SubMarykObject
+                ),
+                getter = TestMarykObject::subModel
+        )
+
+        val multi = add(
+                index = 12, name = "multi",
+                definition = MultiTypeDefinition(
+                        getDefinition = mapOf(
+                                0 to StringDefinition(),
+                                1 to NumberDefinition(type = SInt32),
+                                2 to SubModelDefinition(
+                                        dataModel = SubMarykObject
+                                )
+                        )::get
+                ),
+                getter = TestMarykObject::multi
+        )
+
+        val reference = add(
+                index = 13, name = "reference",
+                definition = ReferenceDefinition(
+                        dataModel = SubMarykObject
+                ),
+                getter = TestMarykObject::reference
+        )
+
+        val listOfString = add(
+                index = 14, name = "listOfString",
+                definition = ListDefinition(
+                        valueDefinition = StringDefinition(required = true)
+                ),
+                getter = TestMarykObject::listOfString
+        )
     }
 
     companion object: RootDataModel<TestMarykObject>(
@@ -161,8 +218,11 @@ data class SubMarykObject(
         val value: String
 ){
     object Properties : PropertyDefinitions<SubMarykObject>() {
-        val value = add(0, "value", StringDefinition(
-        ), SubMarykObject::value)
+        val value = add(
+                index = 0, name = "value",
+                definition = StringDefinition(),
+                getter = SubMarykObject::value
+        )
     }
     companion object: RootDataModel<SubMarykObject>(
             name = "SubMarykObject",

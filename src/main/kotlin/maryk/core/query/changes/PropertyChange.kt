@@ -1,11 +1,11 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -17,28 +17,13 @@ import maryk.core.query.DataModelPropertyContext
  * @param T: type of value to be operated on
  */
 data class PropertyChange<T: Any>(
-        override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
+        override val reference: IsPropertyReference<T, IsDataObjectValueProperty<T, IsPropertyContext, *>>,
         val newValue: T,
         override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
     override val changeType = ChangeType.PROP_CHANGE
 
-    internal object Properties : PropertyDefinitions<PropertyChange<*>>() {
-        val newValue = ContextualValueDefinition(
-                name = "newValue",
-                index = 2,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    context!!.reference!!.propertyDefinition
-                }
-        )
-    }
-
     companion object: QueryDataModel<PropertyChange<*>>(
-            definitions = listOf(
-                    Def(IsPropertyOperation.Properties.reference, PropertyChange<*>::reference),
-                    Def(IsPropertyOperation.Properties.valueToCompare, PropertyChange<*>::valueToCompare),
-                    Def(Properties.newValue, PropertyChange<*>::newValue)
-            ),
             properties = object : PropertyDefinitions<PropertyChange<*>>() {
                 init {
                     IsPropertyOperation.addReference(this, PropertyChange<*>::reference)
@@ -46,7 +31,8 @@ data class PropertyChange<T: Any>(
 
                     add(2, "newValue", ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
-                                context!!.reference!!.propertyDefinition
+                                @Suppress("UNCHECKED_CAST")
+                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ), PropertyChange<*>::newValue)
                 }
@@ -54,7 +40,7 @@ data class PropertyChange<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = PropertyChange(
-                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                reference = map[0] as IsPropertyReference<Any, IsDataObjectValueProperty<Any, IsPropertyContext, Any>>,
                 valueToCompare = map[1],
                 newValue = map[2] as Any
         )

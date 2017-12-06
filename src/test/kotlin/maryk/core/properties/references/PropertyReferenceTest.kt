@@ -3,6 +3,7 @@ package maryk.core.properties.references
 import maryk.TestMarykObject
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.test.shouldBe
@@ -10,16 +11,14 @@ import maryk.test.shouldNotBe
 import kotlin.test.Test
 
 internal class PropertyReferenceTest {
-    private val modelDefinition = SubModelDefinition(
-            index = 2,
-            name = "subModel",
-            dataModel = TestMarykObject
-    )
 
-    private val definition = StringDefinition(
-            index = 1,
-            name = "test"
-    )
+    private object Properties : PropertyDefinitions<Any>()
+
+    private val modelDefinition = Properties.add(2, "subModel", SubModelDefinition(
+            dataModel = TestMarykObject
+    ))
+
+    private val definition = Properties.add(1, "test", StringDefinition())
 
     private val ref = this.definition.getRef()
     private val subRef = this.definition.getRef({ modelDefinition.getRef() })

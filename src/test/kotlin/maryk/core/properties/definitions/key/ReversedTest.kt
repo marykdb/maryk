@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.key
 
-import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -17,28 +16,20 @@ internal class ReversedTest {
             val dateTime: DateTime
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
-            val boolean = BooleanDefinition(
-                    index = 0,
-                    name = "boolean",
+            val boolean = add(0, "bool", BooleanDefinition(
                     required = true,
                     final = true
-            )
-            val dateTime = DateTimeDefinition(
-                    name = "dateTime",
-                    index = 1,
+            ), MarykObject::boolean)
+            val dateTime = add(1, "dateTime", DateTimeDefinition(
                     required = true,
                     final = true
-            )
+            ), MarykObject::dateTime)
         }
         companion object: RootDataModel<MarykObject>(
                 name = "MarykObject",
                 keyDefinitions = definitions(
                         Reversed(Properties.boolean),
                         Reversed(Properties.dateTime)
-                ),
-                definitions = listOf(
-                        Def(Properties.boolean, MarykObject::boolean),
-                        Def(Properties.dateTime, MarykObject::dateTime)
                 ),
                 properties = Properties
         ) {

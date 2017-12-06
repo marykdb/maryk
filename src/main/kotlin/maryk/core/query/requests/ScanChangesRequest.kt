@@ -1,9 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -29,27 +27,7 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
         override val toVersion: UInt64? = null,
         override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsChangesRequest<DO, DM> {
-    internal object Properties : PropertyDefinitions<ScanChangesRequest<*, *>>() {
-        val fromVersion = NumberDefinition(
-                name = "fromVersion",
-                index = 7,
-                type = UInt64
-        )
-    }
-
     companion object: QueryDataModel<ScanChangesRequest<*, *>>(
-            definitions = listOf(
-                    Def(IsObjectRequest.Properties.dataModel, ScanChangesRequest<*, *>::dataModel),
-                    Def(ScanRequest.Properties.startKey, ScanChangesRequest<*, *>::startKey),
-                    Def(IsFetchRequest.Properties.filter) {
-                        it.filter?.let { TypedValue(it.filterType.index, it) }
-                    },
-                    Def(IsFetchRequest.Properties.order, ScanChangesRequest<*, *>::order),
-                    Def(IsFetchRequest.Properties.toVersion, ScanChangesRequest<*, *>::toVersion),
-                    Def(IsFetchRequest.Properties.filterSoftDeleted, ScanChangesRequest<*, *>::filterSoftDeleted),
-                    Def(ScanRequest.Properties.limit, ScanChangesRequest<*, *>::limit),
-                    Def(ScanChangesRequest.Properties.fromVersion, ScanChangesRequest<*, *>::fromVersion)
-            ),
             properties = object : PropertyDefinitions<ScanChangesRequest<*, *>>() {
                 init {
                     IsObjectRequest.addDataModel(this, ScanChangesRequest<*, *>::dataModel)

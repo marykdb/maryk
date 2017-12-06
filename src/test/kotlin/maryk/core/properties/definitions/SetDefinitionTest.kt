@@ -18,14 +18,11 @@ import kotlin.test.assertTrue
 
 internal class SetDefinitionTest {
     private val subDef = StringDefinition(
-            name = "string",
             regEx = "T.*",
             required = true
     )
 
     private val def = SetDefinition(
-            name = "stringSet",
-            index = 4,
             minSize = 2,
             maxSize = 4,
             required = true,
@@ -33,38 +30,37 @@ internal class SetDefinitionTest {
     )
 
     private val def2 = SetDefinition(
-            name = "stringSet",
             valueDefinition = subDef
     )
 
     @Test
     fun testValidateRequired() {
-        def2.validate(newValue = null)
+        def2.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
-            def.validate(newValue = null)
+            def.validateWithRef(newValue = null)
         }
     }
 
     @Test
     fun testValidateSize() {
-        def.validate(newValue = setOf("T", "T2"))
-        def.validate(newValue = setOf("T", "T2", "T3"))
-        def.validate(newValue = setOf("T", "T2", "T3", "T4"))
+        def.validateWithRef(newValue = setOf("T", "T2"))
+        def.validateWithRef(newValue = setOf("T", "T2", "T3"))
+        def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4"))
 
         shouldThrow<TooLittleItemsException> {
-            def.validate(newValue = setOf("T"))
+            def.validateWithRef(newValue = setOf("T"))
         }
 
         shouldThrow<TooMuchItemsException> {
-            def.validate(newValue = setOf("T", "T2", "T3", "T4", "T5"))
+            def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
     fun testValidateContent() {
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validate(newValue = setOf("T", "WRONG", "WRONG2"))
+            def.validateWithRef(newValue = setOf("T", "WRONG", "WRONG2"))
         }
         e.exceptions.size shouldBe 2
 
@@ -80,9 +76,9 @@ internal class SetDefinitionTest {
         val asHex = "220154220254322202543322025434"
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(value, bc::addToCache)
+            def.calculateTransportByteLengthWithKey(4, value, bc::addToCache)
         )
-        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(4, value, bc::nextLengthFromCache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 

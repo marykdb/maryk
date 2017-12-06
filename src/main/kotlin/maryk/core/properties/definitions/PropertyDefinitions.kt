@@ -18,7 +18,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: D,
-            getter: (DM) -> T?
+            getter: (DM) -> T? = { null }
     ) = DataObjectProperty(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -27,7 +27,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: D,
-            getter: (DM) -> T?
+            getter: (DM) -> T? = { null }
     ) = DataObjectFixedBytesProperty(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -36,7 +36,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: ListDefinition<T, CX>,
-            getter: (DM) -> List<T>?
+            getter: (DM) -> List<T>? = { null }
     ) = DataObjectListProperty(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -45,7 +45,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: SetDefinition<T, CX>,
-            getter: (DM) -> Set<T>?
+            getter: (DM) -> Set<T>? = { null }
     ) = DataObjectSetProperty(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -54,7 +54,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: MapDefinition<K, V, CX>,
-            getter: (DM) -> Map<K, V>?
+            getter: (DM) -> Map<K, V>? = { null }
     ) = DataObjectMapProperty(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -63,7 +63,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: SubModelDefinition<DO, D, CX>,
-            getter: (DM) -> DO?
+            getter: (DM) -> DO? = { null }
     ) = DataObjectSubModelProperty(index, name, definition, getter).apply {
         __allProperties.add(this)
     }

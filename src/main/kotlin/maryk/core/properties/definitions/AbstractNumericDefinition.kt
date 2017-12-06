@@ -10,8 +10,6 @@ import maryk.core.protobuf.WireType
  * @param <T> Type of comparable properties contain
  */
 abstract class AbstractNumericDefinition<T: Comparable<T>>(
-        name: String?,
-        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,
@@ -22,7 +20,7 @@ abstract class AbstractNumericDefinition<T: Comparable<T>>(
         maxValue: T?,
         val random:Boolean
 ) : AbstractSimpleDefinition<T, IsPropertyContext>(
-        name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue
+        indexed, searchable, required, final, wireType, unique, minValue, maxValue
 ) {
     /** @return random value */
     abstract fun createRandom(): T

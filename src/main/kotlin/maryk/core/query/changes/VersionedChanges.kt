@@ -1,6 +1,5 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -17,28 +16,7 @@ data class VersionedChanges(
         val version: UInt64,
         val changes: List<IsChange>
 ) {
-    object Properties : PropertyDefinitions<VersionedChanges>() {
-        val version = NumberDefinition(
-                name = "version",
-                index = 0,
-                type = UInt64
-        )
-        val changes = ListDefinition(
-                name = "changes",
-                index = 1,
-                required = true,
-                valueDefinition = MultiTypeDefinition(
-                        required = true,
-                        getDefinition = mapOfChangeDefinitions::get
-                )
-        )
-    }
-
     companion object: QueryDataModel<VersionedChanges>(
-            definitions = listOf(
-                    Def(Properties.version, VersionedChanges::version),
-                    Def(Properties.changes, { it.changes.map { TypedValue(it.changeType.index, it) } })
-            ),
             properties = object : PropertyDefinitions<VersionedChanges>() {
                 init {
                     add(0, "version", NumberDefinition(

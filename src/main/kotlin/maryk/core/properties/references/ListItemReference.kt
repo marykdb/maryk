@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -13,15 +14,16 @@ import maryk.core.protobuf.WireType
  * @param parentReference reference to parent
  * @param <T> value type
  */
-class ListItemReference<T: Any, in CX: IsPropertyContext> (
+class ListItemReference<T: Any, CX: IsPropertyContext> (
         val index: Int,
-        parentReference: ListReference<T, CX>
+        listDefinition: ListDefinition<T, CX>,
+        parentReference: ListReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T, CX>, ListReference<T, CX>>(
-        parentReference.propertyDefinition.valueDefinition, parentReference
+        listDefinition.valueDefinition, parentReference
 ) {
-    override val name = parentReference.name
-
-    override val completeName: String get() = "${this.parentReference!!.completeName}.@$index"
+    override val completeName: String get() = this.parentReference?.let {
+        "${it.completeName}.@$index"
+    } ?: "@$index"
 
     override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         val parentLength = parentReference?.calculateTransportByteLength(lengthCacher) ?: 0

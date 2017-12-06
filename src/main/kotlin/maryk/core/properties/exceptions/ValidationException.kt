@@ -1,12 +1,11 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.wrapper.DataObjectProperty
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -30,19 +29,12 @@ abstract class ValidationException(
     internal object Properties : PropertyDefinitions<ValidationException>() {
         val reference = ContextCaptureDefinition(
                 ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                        name = "reference",
-                        index = 0,
                         contextualResolver = { it!!.dataModel!! }
                 )
         ) { context, value ->
             @Suppress("UNCHECKED_CAST")
-            context!!.reference = value as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
+            context!!.reference = value as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
         }
-        val value = StringDefinition(
-                name = "value",
-                index = 1,
-                required = true
-        )
     }
 
     companion object {

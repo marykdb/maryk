@@ -8,6 +8,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -20,15 +21,13 @@ import maryk.core.protobuf.WireType
  * @param getDefinition method to get definition
  */
 class MultiTypeDefinition<CX: IsPropertyContext>(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,
         val getDefinition: (Int) -> AbstractSubDefinition<*, CX>?
 ) : AbstractValueDefinition<TypedValue<*>, CX>(
-        name, index, indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
+        indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
 ), IsSerializableFlexBytesEncodable<TypedValue<*>, CX> {
     override fun asString(value: TypedValue<*>, context: CX?): String {
         var string = ""
@@ -43,32 +42,33 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun validate(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        super.validate(previousValue, newValue, parentRefFactory)
+    override fun validateWithRef(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, refGetter: () -> IsPropertyReference<TypedValue<*>, IsPropertyDefinition<TypedValue<*>>>?) {
+        super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             @Suppress("UNCHECKED_CAST")
             val definition = this.getDefinition(newValue.typeIndex) as AbstractSubDefinition<Any, CX>?
-                    ?: throw DefNotFoundException("No def found for index ${newValue.typeIndex} for ${this.getRef(parentRefFactory).completeName}")
+                    ?: throw DefNotFoundException("No def found for index ${newValue.typeIndex}")
 
-            definition.validate(
+            definition.validateWithRef(
                     previousValue?.value,
                     newValue.value
             ) {
-                getRef(parentRefFactory)
+                @Suppress("UNCHECKED_CAST")
+                refGetter() as IsPropertyReference<Any, IsPropertyDefinition<Any>>?
             }
         }
     }
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
+    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
+    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
 
     override fun writeJsonValue(value: TypedValue<*>, writer: JsonWriter, context: CX?) {
         writer.writeStartArray()
         writer.writeValue(value.typeIndex.toString())
         @Suppress("UNCHECKED_CAST")
         val definition = this.getDefinition(value.typeIndex) as AbstractSubDefinition<Any, CX>?
-                ?: throw DefNotFoundException("No def found for index ${value.typeIndex} for $name")
+                ?: throw DefNotFoundException("No def found for index ${value.typeIndex}")
 
         definition.writeJsonValue(value.value, writer, context)
         writer.writeEndArray()
@@ -83,12 +83,12 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
         try {
             index = reader.lastValue.toInt()
         }catch (e: Throwable) {
-            throw ParseException("Invalid multitype index ${reader.lastValue} for $name")
+            throw ParseException("Invalid multitype index ${reader.lastValue}")
         }
         reader.nextToken()
 
         val definition: AbstractSubDefinition<*, CX>? = this.getDefinition(index)
-                ?: throw ParseException("Unknown multitype index ${reader.lastValue} for $name")
+                ?: throw ParseException("Unknown multitype index ${reader.lastValue}")
 
         val value = definition!!.readJson(reader, context)
 
@@ -104,7 +104,7 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
 
         // Second the data itself
         val key = ProtoBuf.readKey(reader)
-        val def = this.getDefinition(typeIndex) ?: throw ParseException("Unknown multitype index $typeIndex for $name")
+        val def = this.getDefinition(typeIndex) ?: throw ParseException("Unknown multitype index $typeIndex")
 
         val value = def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, reader),
@@ -138,6 +138,6 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
 
         @Suppress("UNCHECKED_CAST")
         val def = this.getDefinition(value.typeIndex)!! as AbstractSubDefinition<Any, CX>
-        def.writeTransportBytesWithIndexKey(2, value.value, lengthCacheGetter, writer, context)
+        def.writeTransportBytesWithKey(2, value.value, lengthCacheGetter, writer, context)
     }
 }

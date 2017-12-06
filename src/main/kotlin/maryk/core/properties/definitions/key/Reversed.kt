@@ -2,14 +2,12 @@ package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.objects.IsDataModel
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedBytesProperty
 import kotlin.experimental.xor
 
 class Reversed<T: Any>(
-        val definition: IsFixedBytesEncodable<T>
-) : IsFixedBytesEncodable<T> {
-    override val index: Int = definition.index
-
+        val definition: IsFixedBytesProperty<T>
+) : IsFixedBytesProperty<T> {
     override val byteSize = definition.byteSize
     override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO) = definition.getValue(dataModel, dataObject)
 

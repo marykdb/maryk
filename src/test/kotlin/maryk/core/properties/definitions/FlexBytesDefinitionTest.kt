@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -18,7 +18,6 @@ internal class FlexBytesDefinitionTest {
     )
 
     val def = FlexBytesDefinition(
-            name = "test",
             minSize = 4,
             maxSize = 10
     )
@@ -26,15 +25,15 @@ internal class FlexBytesDefinitionTest {
     @Test
     fun validate() {
         // Should both succeed without errors
-        def.validate(newValue = Bytes(ByteArray(4, { 0x00.toByte() } )))
-        def.validate(newValue = Bytes(ByteArray(5, { 0x00.toByte() } )))
-        def.validate(newValue = Bytes(ByteArray(10, { 0x00.toByte() } )))
+        def.validateWithRef(newValue = Bytes(ByteArray(4, { 0x00.toByte() } )))
+        def.validateWithRef(newValue = Bytes(ByteArray(5, { 0x00.toByte() } )))
+        def.validateWithRef(newValue = Bytes(ByteArray(10, { 0x00.toByte() } )))
 
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = Bytes(ByteArray(1, { 0x00.toByte() } )))
+            def.validateWithRef(newValue = Bytes(ByteArray(1, { 0x00.toByte() } )))
         }
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = Bytes(ByteArray(20, { 0x00.toByte() } )))
+            def.validateWithRef(newValue = Bytes(ByteArray(20, { 0x00.toByte() } )))
         }
     }
 

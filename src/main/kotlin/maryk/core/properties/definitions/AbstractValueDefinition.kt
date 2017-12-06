@@ -3,9 +3,8 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.PropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -17,19 +16,14 @@ import maryk.core.protobuf.WireType
  * @param <T> Type of objects contained in property
  */
 abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
-        name: String?,
-        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,
         final: Boolean,
         val wireType: WireType
 ) : AbstractSubDefinition<T, CX>(
-        name, index, indexed, searchable, required, final
+        indexed, searchable, required, final
 ) {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?)
-            = PropertyReference(this, parentRefFactory())
-
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?) : Int {
         var totalByteLength = 0
         totalByteLength += ProtoBuf.calculateKeyLength(index)
@@ -55,9 +49,6 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    override fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
-            = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher, context)
-
     /** Calculates the needed bytes to transport the value
      * @param value to get length of
      * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order
@@ -66,7 +57,7 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      */
     abstract fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null): Int
 
-    override final fun writeTransportBytesWithIndexKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override final fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, this.wireType, writer)
         if (this.wireType == WireType.LENGTH_DELIMITED) {
             lengthCacheGetter().writeVarBytes(writer)
@@ -81,9 +72,9 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      */
     abstract fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
+    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<*>? = null
+    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
 
     /** Get the value from a string
      * @param string to convert

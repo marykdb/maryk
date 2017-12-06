@@ -1,6 +1,5 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -17,23 +16,18 @@ data class And(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    internal object Properties : PropertyDefinitions<And>() {
-        val filters = add(0, "filters", ListDefinition(
-                name = "filters",
-                index = 0,
-                required = true,
-                valueDefinition = MultiTypeDefinition(
-                        required = true,
-                        getDefinition = { mapOfFilterDefinitions[it] }
-                )
-        )){ it.filters.map { TypedValue(it.filterType.index, it) } }
-    }
-
     companion object: QueryDataModel<And>(
-            properties = Properties,
-            definitions = listOf(
-                    Def(Properties.filters, { it.filters.map { TypedValue(it.filterType.index, it) } })
-            )
+            properties = object : PropertyDefinitions<And>() {
+                init {
+                    add(0, "filters", ListDefinition(
+                            required = true,
+                            valueDefinition = MultiTypeDefinition(
+                                    required = true,
+                                    getDefinition = { mapOfFilterDefinitions[it] }
+                            )
+                    )) { it.filters.map { TypedValue(it.filterType.index, it) } }
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = And(

@@ -1,10 +1,9 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
 import maryk.core.properties.references.IsPropertyReference
 
 /** Compares given value against referenced value
@@ -13,16 +12,12 @@ import maryk.core.properties.references.IsPropertyReference
  * @param T: type of value to be operated on
  */
 data class Equals<T: Any>(
-        override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
+        override val reference: IsPropertyReference<T, IsDataObjectValueProperty<T, IsPropertyContext, *>>,
         override val value: T
 ) : IsPropertyComparison<T> {
     override val filterType = FilterType.EQUALS
 
     companion object: QueryDataModel<Equals<*>>(
-            definitions = listOf(
-                    Def(IsPropertyCheck.Properties.reference, Equals<*>::reference),
-                    Def(IsPropertyComparison.Properties.value, Equals<*>::value)
-            ),
             properties = object : PropertyDefinitions<Equals<*>>() {
                 init {
                     IsPropertyCheck.addReference(this, Equals<*>::reference)
@@ -32,7 +27,7 @@ data class Equals<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Equals(
-                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                reference = map[0] as IsPropertyReference<Any, IsDataObjectValueProperty<Any, IsPropertyContext, *>>,
                 value = map[1] as Any
         )
     }

@@ -19,12 +19,9 @@ internal class DateTimeDefinitionTest {
             DateTime.MIN
     )
 
-    private val def = DateTimeDefinition(
-            name = "seconds"
-    )
+    private val def = DateTimeDefinition()
 
     private val defMilli = DateTimeDefinition(
-            name = "milli",
             precision = TimePrecision.MILLIS
     )
 

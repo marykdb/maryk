@@ -7,6 +7,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.TooLittleItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
@@ -22,8 +23,6 @@ abstract class AbstractCollectionDefinition<
         in CX: IsPropertyContext,
         out ST: AbstractValueDefinition<T, CX>
 >(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = true,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -32,32 +31,32 @@ abstract class AbstractCollectionDefinition<
         override val maxSize: Int? = null,
         val valueDefinition: ST
 ) : AbstractPropertyDefinition<C>(
-        name, index, indexed, searchable, required, final
-), HasSizeDefinition, IsByteTransportableCollection<T, C, CX>, IsSerializablePropertyDefinition<C, CX> {
+        indexed, searchable, required, final
+), HasSizeDefinition, IsCollectionDefinition<T, C, CX>, IsSerializablePropertyDefinition<C, CX> {
     init {
-        assert(valueDefinition.required, { "Definition should have required=true on collection «$name»" })
+        assert(valueDefinition.required, { "Definition should have required=true on collection" })
     }
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
+    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
+    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
 
-    override fun validate(previousValue: C?, newValue: C?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        super.validate(previousValue, newValue, parentRefFactory)
+    override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?) {
+        super.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             val size = newValue.size
             if (isSizeToSmall(size)) {
-                throw TooLittleItemsException(this.getRef(parentRefFactory), size, this.minSize!!)
+                throw TooLittleItemsException(refGetter(), size, this.minSize!!)
             }
             if (isSizeToBig(size)) {
-                throw TooMuchItemsException(this.getRef(parentRefFactory), size, this.maxSize!!)
+                throw TooMuchItemsException(refGetter(), size, this.maxSize!!)
             }
 
-            createValidationUmbrellaException(parentRefFactory) { addException ->
-                validateCollectionForExceptions(parentRefFactory, newValue) { item, refFactory ->
+            createValidationUmbrellaException(refGetter) { addException ->
+                validateCollectionForExceptions(refGetter, newValue) { item, itemRefFactory ->
                     try {
-                        this.valueDefinition.validate(null, item, refFactory)
+                        this.valueDefinition.validateWithRef(null, item, { itemRefFactory() })
                     } catch (e: ValidationException) {
                         addException(e)
                     }
@@ -67,7 +66,7 @@ abstract class AbstractCollectionDefinition<
     }
 
     /** Validates the collection content */
-    abstract internal fun validateCollectionForExceptions(parentRefFactory: () -> IsPropertyReference<*, *>?, newValue: C, validator: (item: T, parentRefFactory: () -> IsPropertyReference<*, *>?) -> Any)
+    abstract internal fun validateCollectionForExceptions(refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?, newValue: C, validator: (item: T, itemRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) -> Any)
 
     /** Creates a new mutable instance of the collection */
     abstract override fun newMutableCollection(context: CX?): MutableCollection<T>
@@ -82,7 +81,7 @@ abstract class AbstractCollectionDefinition<
 
     override fun readJson(reader: JsonReader, context: CX?): C {
         if (reader.currentToken !is JsonToken.START_ARRAY) {
-            throw ParseException("JSON value for $name should be an Array")
+            throw ParseException("JSON value should be an Array")
         }
         val collection: MutableCollection<T> = newMutableCollection(context)
 
@@ -95,7 +94,7 @@ abstract class AbstractCollectionDefinition<
         return collection as C
     }
 
-    override fun calculateTransportByteLengthWithKey(value: C, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: C, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         var totalByteSize = 0
         when(this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
@@ -108,18 +107,18 @@ abstract class AbstractCollectionDefinition<
                 }
                 container.length = totalByteSize
 
-                totalByteSize += ProtoBuf.calculateKeyLength(this.index)
+                totalByteSize += ProtoBuf.calculateKeyLength(index)
                 totalByteSize += container.length.calculateVarByteLength()
             }
             else -> value.forEach { item ->
-                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(this.index, item, lengthCacher, context)
+                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(index, item, lengthCacher, context)
             }
         }
 
         return totalByteSize
     }
 
-    override fun writeTransportBytesWithIndexKey(index: Int, value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(index: Int, value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         when(this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
                 ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
@@ -129,7 +128,7 @@ abstract class AbstractCollectionDefinition<
                 }
             }
             else -> value.forEach { item ->
-                valueDefinition.writeTransportBytesWithIndexKey(index, item, lengthCacheGetter, writer, context)
+                valueDefinition.writeTransportBytesWithKey(index, item, lengthCacheGetter, writer, context)
             }
         }
     }

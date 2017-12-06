@@ -1,16 +1,13 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
-import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
 
@@ -29,7 +26,7 @@ data class AddSuccess<DO: Any>(
     companion object: QueryDataModel<AddSuccess<*>>(
             properties = object : PropertyDefinitions<AddSuccess<*>>(){
                 init {
-                    add(0,"key", keyDefinition, AddSuccess<*>::key)
+                    IsResponseStatus.addKey(this, AddSuccess<*>::key)
                     add(1,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
                     add(2,"changes", ListDefinition(
                             required = true,
@@ -39,26 +36,7 @@ data class AddSuccess<DO: Any>(
                             )
                     )) { it.changes.map { TypedValue(it.changeType.index, it) } }
                 }
-            },
-            definitions = listOf(
-                    Def(keyDefinition, AddSuccess<*>::key),
-                    Def(
-                            NumberDefinition("version", 1, type = UInt64),
-                            AddSuccess<*>::version
-                    ),
-                    Def(
-                            ListDefinition(
-                                    name = "changes",
-                                    index = 2,
-                                    required = true,
-                                    valueDefinition = MultiTypeDefinition(
-                                            required = true,
-                                            getDefinition = mapOfChangeDefinitions::get
-                                    )
-                            ),
-                            { it.changes.map { TypedValue(it.changeType.index, it) } }
-                    )
-            )
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddSuccess(

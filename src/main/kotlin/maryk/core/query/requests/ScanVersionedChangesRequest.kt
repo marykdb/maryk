@@ -1,9 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -31,28 +29,7 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
         override val maxVersions: UInt32 = 100.toUInt32(),
         override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
-    internal object Properties : PropertyDefinitions<ScanVersionedChangesRequest<*, *>>() {
-        val maxVersions = NumberDefinition(
-                name = "maxVersions",
-                index = 8,
-                type = UInt32
-        )
-    }
-
     companion object: QueryDataModel<ScanVersionedChangesRequest<*, *>>(
-            definitions = listOf(
-                    Def(IsObjectRequest.Properties.dataModel, ScanVersionedChangesRequest<*, *>::dataModel),
-                    Def(ScanRequest.Properties.startKey, ScanVersionedChangesRequest<*, *>::startKey),
-                    Def(IsFetchRequest.Properties.filter)  {
-                        it.filter?.let { TypedValue(it.filterType.index, it) }
-                    },
-                    Def(IsFetchRequest.Properties.order, ScanVersionedChangesRequest<*, *>::order),
-                    Def(IsFetchRequest.Properties.toVersion, ScanVersionedChangesRequest<*, *>::toVersion),
-                    Def(IsFetchRequest.Properties.filterSoftDeleted, ScanVersionedChangesRequest<*, *>::filterSoftDeleted),
-                    Def(ScanRequest.Properties.limit, ScanVersionedChangesRequest<*, *>::limit),
-                    Def(ScanChangesRequest.Properties.fromVersion, ScanVersionedChangesRequest<*, *>::fromVersion),
-                    Def(Properties.maxVersions, ScanVersionedChangesRequest<*, *>::maxVersions)
-            ),
             properties = object : PropertyDefinitions<ScanVersionedChangesRequest<*, *>>() {
                 init {
                     IsObjectRequest.addDataModel(this, ScanVersionedChangesRequest<*, *>::dataModel)

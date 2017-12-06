@@ -12,11 +12,8 @@ import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
 class ContextualReferenceDefinition<in CX: IsPropertyContext>(
-        name: String? = null,
-        index: Int = -1,
         val contextualResolver: (context: CX?) -> RootDataModel<*>.KeyDefinition
 ): AbstractValueDefinition<Key<*>, CX>(
-        name, index,
         indexed = false,
         searchable = false,
         required = true,

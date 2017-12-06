@@ -9,8 +9,6 @@ import maryk.core.protobuf.WireType
 
 /** Definition for Date properties */
 class DateDefinition(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -20,7 +18,7 @@ class DateDefinition(
         maxValue: Date? = null,
         fillWithNow: Boolean = false
 ) : AbstractMomentDefinition<Date>(
-        name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow
+        indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow
 ), IsSerializableFixedBytesEncodable<Date, IsPropertyContext> {
     override val byteSize = 8
 

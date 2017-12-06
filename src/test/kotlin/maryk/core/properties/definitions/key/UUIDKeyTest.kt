@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.key
 
-import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -14,15 +13,10 @@ internal class UUIDKeyTest {
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val value = add(0, "value", StringDefinition(
-                    name = "value",
-                    index = 0
             ), MarykObject::value)
         }
         companion object: RootDataModel<MarykObject>(
                 name = "MarykObject",
-                definitions = listOf(
-                        Def(Properties.value, MarykObject::value)
-                ),
                 properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(

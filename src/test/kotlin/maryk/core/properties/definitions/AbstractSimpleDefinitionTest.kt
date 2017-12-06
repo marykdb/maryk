@@ -9,7 +9,6 @@ internal class AbstractSimpleDefinitionTest {
     val test: String = "test"
 
     val def = StringDefinition(
-            name = "test",
             unique = true,
             minValue = "bbb",
             maxValue = "ddd"
@@ -24,13 +23,13 @@ internal class AbstractSimpleDefinitionTest {
 
     @Test
     fun validateValueSize() {
-        def.validate(newValue = "ccc")
+        def.validateWithRef(newValue = "ccc")
         shouldThrow<OutOfRangeException> {
-            def.validate(newValue = "b")
+            def.validateWithRef(newValue = "b")
         }
 
         shouldThrow<OutOfRangeException> {
-            def.validate(newValue = "z")
+            def.validateWithRef(newValue = "z")
         }
     }
 }

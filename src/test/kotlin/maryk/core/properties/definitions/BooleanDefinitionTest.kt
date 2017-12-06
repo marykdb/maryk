@@ -10,10 +10,7 @@ import kotlin.test.Test
 import kotlin.test.fail
 
 internal class BooleanDefinitionTest {
-    val def = BooleanDefinition(
-            name = "test",
-            index = 222
-    )
+    val def = BooleanDefinition()
 
     @Test
     fun testStorageConversion() {
@@ -33,11 +30,11 @@ internal class BooleanDefinitionTest {
         val bc = ByteCollector()
         booleanArrayOf(true, false).forEach {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(it, { fail("Should not call") }, null)
+                def.calculateTransportByteLengthWithKey(23, it, { fail("Should not call") }, null)
             )
-            def.writeTransportBytesWithKey(it, { fail("Should not call") }, bc::write, null)
+            def.writeTransportBytesWithKey(23, it, { fail("Should not call") }, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
-            key.tag shouldBe 222
+            key.tag shouldBe 23
             key.wireType shouldBe WireType.VAR_INT
             def.readTransportBytes(
                     ProtoBuf.getLength(WireType.VAR_INT, bc::read),

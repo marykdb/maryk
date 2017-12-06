@@ -26,8 +26,6 @@ internal class ListDefinitionTest {
     )
 
     private val def = ListDefinition(
-            index = 3,
-            name = "stringList",
             minSize = 2,
             maxSize = 4,
             required = true,
@@ -35,66 +33,59 @@ internal class ListDefinitionTest {
     )
 
     private val def2 = ListDefinition(
-            name = "stringList2",
             minSize = 2,
             maxSize = 4,
             valueDefinition = subDef
     )
 
     private val defVarInt = ListDefinition(
-            name = "varIntList",
-            index = 5,
             valueDefinition = NumberDefinition(type = UInt32, required = true)
     )
 
     private val def64Int = ListDefinition(
-            name = "64IntList",
-            index = 6,
             valueDefinition = NumberDefinition(type = Float64, required = true)
     )
 
     private val def32Int = ListDefinition(
-            name = "32IntList",
-            index = 7,
             valueDefinition = NumberDefinition(type = Float32, required = true)
     )
 
     @Test
     fun testValidateRequired() {
-        def2.validate(newValue = null)
+        def2.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
-            def.validate(newValue = null)
+            def.validateWithRef(newValue = null)
         }
     }
 
     @Test
     fun testValidateSize() {
-        def.validate(newValue = listOf("T", "T2"))
-        def.validate(newValue = listOf("T", "T2", "T3"))
-        def.validate(newValue = listOf("T", "T2", "T3", "T4"))
+        def.validateWithRef(newValue = listOf("T", "T2"))
+        def.validateWithRef(newValue = listOf("T", "T2", "T3"))
+        def.validateWithRef(newValue = listOf("T", "T2", "T3", "T4"))
 
         shouldThrow<TooLittleItemsException> {
-            def.validate(newValue = listOf("T"))
+            def.validateWithRef(newValue = listOf("T"))
         }
 
         shouldThrow<TooMuchItemsException> {
-            def.validate(newValue = listOf("T", "T2", "T3", "T4", "T5"))
+            def.validateWithRef(newValue = listOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
     fun testValidateContent() {
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validate(newValue = listOf("T", "WRONG", "WRONG2"))
+            def.validateWithRef(newValue = listOf("T", "WRONG", "WRONG2"))
         }
         e.exceptions.size shouldBe 2
 
         with(e.exceptions[0] as InvalidValueException) {
-            this.reference.completeName shouldBe "stringList.@1"
+            this.reference!!.completeName shouldBe "@1"
         }
         with(e.exceptions[1] as InvalidValueException) {
-            this.reference.completeName shouldBe "stringList.@2"
+            this.reference!!.completeName shouldBe "@2"
         }
     }
 
@@ -103,19 +94,19 @@ internal class ListDefinitionTest {
         val bc = ByteCollectorWithLengthCacher()
 
         val value = listOf("T", "T2", "T3", "T4")
-        val asHex = "1a01541a0254321a0254331a025434"
+        val asHex = "0a01540a0254320a0254330a025434"
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(1, value, bc::addToCache)
         )
-        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(1, value, bc::nextLengthFromCache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
-            key.tag shouldBe 3
+            key.tag shouldBe 1
         }
 
         fun readValue() = def.readCollectionTransportBytes(
@@ -138,9 +129,9 @@ internal class ListDefinitionTest {
                 25423.toUInt32(),
                 42.toUInt32()
         )
-        val asHex = "2a09ebd504f712cfc6012a"
+        val asHex = "1209ebd504f712cfc6012a"
 
-        this.testPackedTransportConversion(defVarInt, value, asHex, 5)
+        this.testPackedTransportConversion(defVarInt, value, asHex, 2)
     }
 
     @Test
@@ -151,9 +142,9 @@ internal class ListDefinitionTest {
                 0.000222F,
                 236453165416F
         )
-        val asHex = "3a104064395947638de13968c8ad525c36d5"
+        val asHex = "22104064395947638de13968c8ad525c36d5"
 
-        this.testPackedTransportConversion(def32Int, value, asHex, 7)
+        this.testPackedTransportConversion(def32Int, value, asHex, 4)
     }
 
     @Test
@@ -164,25 +155,24 @@ internal class ListDefinitionTest {
                 0.0002222222222,
                 2364531654162343428.0
         )
-        val asHex = "3220400c30e5336d62274334b22a641083fd3f2d208a5a84aba343c06840817d41b4"
+        val asHex = "1a20400c30e5336d62274334b22a641083fd3f2d208a5a84aba343c06840817d41b4"
 
-        this.testPackedTransportConversion(def64Int, value, asHex, 6)
+        this.testPackedTransportConversion(def64Int, value, asHex, 3)
     }
 
     private fun <T: Any> testPackedTransportConversion(def: ListDefinition<T, *>, list: List<T>, hex: String, index: Int) {
         val bc = ByteCollectorWithLengthCacher()
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(list, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(index, list, bc::addToCache)
         )
-        def.writeTransportBytesWithKey(list, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(index, list, bc::nextLengthFromCache, bc::write)
 
         bc.bytes!!.toHex() shouldBe hex
 
         val key = ProtoBuf.readKey(bc::read)
         key.wireType shouldBe WireType.LENGTH_DELIMITED
         key.tag shouldBe index
-
 
         val readList = def.readPackedCollectionTransportBytes(
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),

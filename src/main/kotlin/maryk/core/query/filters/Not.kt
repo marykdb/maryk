@@ -14,19 +14,7 @@ data class Not(
 ) : IsFilter {
     override val filterType = FilterType.NOT
 
-    internal object Properties : PropertyDefinitions<Not>() {
-        val filter = MultiTypeDefinition(
-                name = "filter",
-                index = 0,
-                required = true,
-                getDefinition = { mapOfFilterDefinitions[it] }
-        )
-    }
-
     companion object: QueryDataModel<Not>(
-            definitions = listOf(
-                    Def(Properties.filter, { not: Not -> TypedValue(not.filter.filterType.index, not.filter)})
-            ),
             properties = object : PropertyDefinitions<Not>() {
                 init {
                     add(0, "filters", MultiTypeDefinition(

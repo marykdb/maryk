@@ -24,29 +24,6 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO>> : IsObjectRequest<D
     val toVersion: UInt64?
     val filterSoftDeleted: Boolean
 
-    object Properties {
-        val filter = MultiTypeDefinition(
-                name = "filter",
-                index = 2,
-                required = true,
-                getDefinition = { mapOfFilterDefinitions[it] }
-        )
-        val order = SubModelDefinition(
-                name = "order",
-                index = 3,
-                dataModel = Order
-        )
-        val toVersion = NumberDefinition(
-                name = "toVersion",
-                index = 4,
-                type = UInt64
-        )
-        val filterSoftDeleted = BooleanDefinition(
-                name = "filterSoftDeleted",
-                index = 5
-        )
-    }
-
     companion object {
         fun <DM: Any> addFilter(definitions: PropertyDefinitions<DM>, getter: (DM) -> TypedValue<Any>?) {
             definitions.add(2, "filter", MultiTypeDefinition(
@@ -62,7 +39,7 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO>> : IsObjectRequest<D
         }
 
         fun <DM: Any> addToVersion(definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
-            definitions.add(4, "filter", NumberDefinition(
+            definitions.add(4, "toVersion", NumberDefinition(
                     type = UInt64
             ), getter)
         }

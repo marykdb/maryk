@@ -1,6 +1,5 @@
 package maryk.core.query.responses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
@@ -16,23 +15,7 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO>>(
         override val dataModel: DM,
         val objects: List<DataObjectWithMetaData<DO>>
 ) : IsDataModelResponse<DO, DM> {
-    internal object Properties : PropertyDefinitions<ObjectsResponse<*, *>>() {
-        val objects = ListDefinition(
-                name = "objects",
-                index = 1,
-                required = true,
-                valueDefinition = SubModelDefinition(
-                        required = true,
-                        dataModel = DataObjectWithMetaData
-                )
-        )
-    }
-
     companion object: QueryDataModel<ObjectsResponse<*, *>>(
-            definitions = listOf(
-                    Def(IsDataModelResponse.Properties.dataModel, ObjectsResponse<*, *>::dataModel),
-                    Def(Properties.objects, ObjectsResponse<*, *>::objects)
-            ),
             properties = object : PropertyDefinitions<ObjectsResponse<*, *>>() {
                 init {
                     IsDataModelResponse.addDataModel(this, ObjectsResponse<*, *>::dataModel)

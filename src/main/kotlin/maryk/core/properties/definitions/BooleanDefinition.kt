@@ -9,15 +9,13 @@ import maryk.core.protobuf.WireType
 
 /** Definition for Boolean properties */
 class BooleanDefinition(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,
         unique: Boolean = false
 ): AbstractSimpleDefinition<Boolean, IsPropertyContext>(
-    name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue = false, maxValue = true
+    indexed, searchable, required, final, WireType.VAR_INT, unique, minValue = false, maxValue = true
 ), IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext> {
     override val byteSize = 1
 

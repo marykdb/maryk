@@ -16,9 +16,7 @@ internal class DateDefinitionTest {
             Date.MIN
     )
 
-    val def = DateDefinition(
-            name = "dateTime"
-    )
+    private val def = DateDefinition()
 
     @Test
     fun createNow() {
@@ -44,7 +42,7 @@ internal class DateDefinitionTest {
         val bc = ByteCollector()
         datesToTest.forEach {
             bc.reserve(
-                def.calculateTransportByteLength(it, { fail("Should not call") })
+                    def.calculateTransportByteLength(it, { fail("Should not call") })
             )
             def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it

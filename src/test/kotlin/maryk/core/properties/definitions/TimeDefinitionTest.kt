@@ -22,12 +22,9 @@ internal class TimeDefinitionTest {
 
     private val timesToTestSeconds = arrayOf(Time.MAX_IN_SECONDS, Time.MIN, Time(13, 55, 44))
 
-    val def = TimeDefinition(
-            name = "seconds"
-    )
+    private val def = TimeDefinition()
 
     private val defMilli = TimeDefinition(
-            name = "milli",
             precision = TimePrecision.MILLIS
     )
 

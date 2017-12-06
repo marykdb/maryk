@@ -1,6 +1,5 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -18,10 +17,7 @@ data class RequestFail<DO: Any>(
                 init {
                     add(0, "reason", StringDefinition(required = true), RequestFail<*>::reason)
                 }
-            },
-            definitions = listOf(
-                    Def(reasonDefinition, RequestFail<*>::reason)
-            )
+            }
     ) {
         override fun invoke(map: Map<Int, *>) = RequestFail<Any>(map[0] as String)
     }

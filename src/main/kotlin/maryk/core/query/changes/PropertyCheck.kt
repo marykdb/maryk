@@ -1,6 +1,5 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
@@ -22,10 +21,6 @@ data class PropertyCheck<T: Any>(
     override val changeType = ChangeType.PROP_CHECK
 
     companion object: QueryDataModel<PropertyCheck<*>>(
-            definitions = listOf(
-                    Def(IsPropertyOperation.Properties.reference, PropertyCheck<*>::reference),
-                    Def(IsPropertyOperation.Properties.valueToCompare, PropertyCheck<*>::valueToCompare)
-            ),
             properties = object : PropertyDefinitions<PropertyCheck<*>>() {
                 init {
                     IsPropertyOperation.addReference(this, PropertyCheck<*>::reference)

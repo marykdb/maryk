@@ -7,12 +7,12 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.TooLittleItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
-import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
@@ -21,9 +21,7 @@ import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
-class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
-        name: String? = null,
-        index: Int = -1,
+class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -33,55 +31,58 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         override val keyDefinition: AbstractSimpleValueDefinition<K, CX>,
         override val valueDefinition: AbstractSubDefinition<V, CX>
 ) : AbstractPropertyDefinition<Map<K, V>>(
-        name, index, indexed, searchable, required, final
+        indexed, searchable, required, final
 ), HasSizeDefinition, IsByteTransportableMap<K, V, CX>, IsMapDefinition<K, V, CX> {
     init {
-        assert(keyDefinition.required, { "Definition for key should be required on map: $name" })
-        assert(valueDefinition.required, { "Definition for value should be required on map: $name" })
+        assert(keyDefinition.required, { "Definition for key should be required on map" })
+        assert(valueDefinition.required, { "Definition for value should be required on map" })
     }
 
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?): MapReference<K, V, CX> =
-            MapReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
+    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = null
+
+    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = null
 
     /** Get a reference to a specific map key
      * @param key to get reference for
-     * @param parentRefFactory (optional) factory to create parent ref
+     * @param parentMap (optional) reference to parent map
      */
-    fun getKeyRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = MapKeyReference(key, this.getRef(parentRefFactory))
+    fun getKeyRef(key: K, parentMap: MapReference<K, V, CX>?)
+            = MapKeyReference(key, this, parentMap)
 
     /** Get a reference to a specific map value by key
      * @param key to get reference to value for
-     * @param parentRefFactory (optional) factory to create parent ref
+     * @param parentMap (optional) reference to parent map
      */
-    fun getValueRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = MapValueReference(key, this.getRef(parentRefFactory))
+    fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?)
+            = MapValueReference(key, this, parentMap)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = null
-
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = null
-
-    override fun validate(previousValue: Map<K,V>?, newValue: Map<K,V>?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        super.validate(previousValue, newValue, parentRefFactory)
+    override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>>?) {
+        super.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             val mapSize = newValue.size
             if (isSizeToSmall(mapSize)) {
-                throw TooLittleItemsException(this.getRef(parentRefFactory), mapSize, this.minSize!!)
+                throw TooLittleItemsException(refGetter(), mapSize, this.minSize!!)
             }
             if (isSizeToBig(mapSize)) {
-                throw TooMuchItemsException(this.getRef(parentRefFactory), mapSize, this.maxSize!!)
+                throw TooMuchItemsException(refGetter(), mapSize, this.maxSize!!)
             }
 
-            createValidationUmbrellaException(parentRefFactory) { addException ->
+            createValidationUmbrellaException(refGetter) { addException ->
                 newValue.forEach { (key, value) ->
                     try {
-                        this.keyDefinition.validate(null, key) { this.getKeyRef(key, parentRefFactory) }
+                        this.keyDefinition.validateWithRef(null, key, {
+                            @Suppress("UNCHECKED_CAST")
+                            this.getKeyRef(key, refGetter() as MapReference<K, V, CX>?)
+                        })
                     } catch (e: ValidationException) {
                         addException(e)
                     }
                     try {
-                        this.valueDefinition.validate(null, value) { this.getValueRef(key, parentRefFactory) }
+                        this.valueDefinition.validateWithRef(null, value, {
+                            @Suppress("UNCHECKED_CAST")
+                            this.getValueRef(key, refGetter() as MapReference<K, V, CX>?)
+                        })
                     } catch (e: ValidationException) {
                         addException(e)
                     }
@@ -103,7 +104,7 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
 
     override fun readJson(reader: JsonReader, context: CX?): Map<K, V> {
         if (reader.currentToken !is JsonToken.START_OBJECT) {
-            throw ParseException("JSON value for $name should be an Object")
+            throw ParseException("JSON value should be an Object")
         }
         val map: MutableMap<K, V> = mutableMapOf()
 
@@ -119,10 +120,10 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         return map
     }
 
-    override fun calculateTransportByteLengthWithKey(value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
         var totalByteLength = 0
         value.forEach { (key, item) ->
-            totalByteLength += ProtoBuf.calculateKeyLength(this.index)
+            totalByteLength += ProtoBuf.calculateKeyLength(index)
 
             // Cache length for length delimiter
             val container = ByteLengthContainer()
@@ -139,12 +140,12 @@ class MapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithIndexKey(index: Int, value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(index: Int, value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         value.forEach { (key, item) ->
             ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
             lengthCacheGetter().writeVarBytes(writer)
-            keyDefinition.writeTransportBytesWithIndexKey(1, key, lengthCacheGetter, writer, context)
-            valueDefinition.writeTransportBytesWithIndexKey(2, item, lengthCacheGetter, writer, context)
+            keyDefinition.writeTransportBytesWithKey(1, key, lengthCacheGetter, writer, context)
+            valueDefinition.writeTransportBytesWithKey(2, item, lengthCacheGetter, writer, context)
         }
     }
 

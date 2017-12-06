@@ -1,12 +1,10 @@
 package maryk.core.query.responses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
-import maryk.core.query.responses.statuses.listOfStatuses
 
 /** Response to an Delete request
  * @param dataModel to which objects were added
@@ -16,19 +14,11 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO>>(
         override val dataModel: DM,
         val statuses: List<IsDeleteResponseStatus<DO>>
 ) : IsDataModelResponse<DO, DM> {
-    internal object Properties : PropertyDefinitions<DeleteResponse<*, *>>() {
-        val statuses = listOfStatuses
-    }
-
     companion object: QueryDataModel<DeleteResponse<*, *>>(
-            definitions = listOf(
-                    Def(IsDataModelResponse.Properties.dataModel, DeleteResponse<*, *>::dataModel),
-                    Def(Properties.statuses, { it.statuses.map { TypedValue(it.statusType.index, it) } })
-            ),
             properties = object : PropertyDefinitions<DeleteResponse<*, *>>() {
                 init {
                     IsDataModelResponse.addDataModel(this, DeleteResponse<*, *>::dataModel)
-                    add(1, "statuses", listOfStatuses) {
+                    IsDataModelResponse.addStatuses(this) {
                         it.statuses.map { TypedValue(it.statusType.index, it) }
                     }
                 }

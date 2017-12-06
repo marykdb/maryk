@@ -1,9 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -40,27 +38,7 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
             filterSoftDeleted: Boolean = true
     ) : this(dataModel, key.toList(), filter, order, toVersion, fromVersion, maxVersions, filterSoftDeleted)
 
-    internal object Properties : PropertyDefinitions<GetVersionedChangesRequest<*, *>>() {
-        val maxVersions = NumberDefinition(
-                name = "maxVersions",
-                index = 7,
-                type = UInt32
-        )
-    }
-
     companion object: QueryDataModel<GetVersionedChangesRequest<*, *>>(
-            definitions = listOf(
-                    Def(IsObjectRequest.Properties.dataModel, GetVersionedChangesRequest<*, *>::dataModel),
-                    Def(GetRequest.Properties.keys, GetVersionedChangesRequest<*, *>::keys),
-                    Def(IsFetchRequest.Properties.filter)  {
-                        it.filter?.let { TypedValue(it.filterType.index, it) }
-                    },
-                    Def(IsFetchRequest.Properties.order, GetVersionedChangesRequest<*, *>::order),
-                    Def(IsFetchRequest.Properties.toVersion, GetVersionedChangesRequest<*, *>::toVersion),
-                    Def(IsFetchRequest.Properties.filterSoftDeleted, GetVersionedChangesRequest<*, *>::filterSoftDeleted),
-                    Def(GetChangesRequest.Properties.fromVersion, GetVersionedChangesRequest<*, *>::fromVersion),
-                    Def(GetVersionedChangesRequest.Properties.maxVersions, GetVersionedChangesRequest<*, *>::maxVersions)
-            ),
             properties = object : PropertyDefinitions<GetVersionedChangesRequest<*, *>>() {
                 init {
                     IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*, *>::dataModel)

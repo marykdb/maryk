@@ -14,8 +14,7 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class ValueModelDefinitionTest {
-    val def = ValueModelDefinition(
-            name = "test",
+    private val def = ValueModelDefinition(
             dataModel = TestValueObject
     )
 
@@ -58,13 +57,13 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun validate() {
-        def.validate(newValue = TestValueObject(
+        def.validateWithRef(newValue = TestValueObject(
                 int = 4,
                 dateTime = DateTime.nowUTC(),
                 bool = true
         ))
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validate(newValue = TestValueObject(
+            def.validateWithRef(newValue = TestValueObject(
                     int = 1000,
                     dateTime = DateTime.nowUTC(),
                     bool = true
@@ -74,7 +73,7 @@ internal class ValueModelDefinitionTest {
         e.exceptions.size shouldBe 1
 
         with (e.exceptions[0] as OutOfRangeException) {
-            this.reference.completeName shouldBe "test.int"
+            this.reference!!.completeName shouldBe "int"
         }
     }
 }

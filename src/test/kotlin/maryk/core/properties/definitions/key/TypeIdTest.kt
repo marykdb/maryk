@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.toHex
-import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -21,8 +20,6 @@ internal class TypeIdTest {
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val multi = add(0, "multi", MultiTypeDefinition(
-                    name = "multi",
-                    index = 0,
                     getDefinition = mapOf<Int, AbstractSubDefinition<*, IsPropertyContext>>(
                             0 to StringDefinition(),
                             1 to BooleanDefinition()
@@ -33,9 +30,6 @@ internal class TypeIdTest {
                 name = "MarykObject",
                 keyDefinitions = definitions(
                         TypeId(Properties.multi)
-                ),
-                definitions = listOf(
-                    Def(Properties.multi, MarykObject::multi)
                 ),
                 properties = Properties
         ) {

@@ -20,8 +20,6 @@ internal class ReferenceDefinitionTest {
     )
 
     val def = ReferenceDefinition(
-            name = "test",
-            index = 8,
             dataModel = TestMarykObject
     )
 

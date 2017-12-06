@@ -1,5 +1,4 @@
 package maryk
-import maryk.core.objects.Def
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -52,56 +51,40 @@ data class TestMarykObject(
 ) {
     object Properties: PropertyDefinitions<TestMarykObject>() {
         val string = add(0, "string", StringDefinition(
-                name = "string",
                 required = true,
-                regEx = "ha.*",
-                index = 0
+                regEx = "ha.*"
         ), TestMarykObject::string)
 
         val int = add(1, "int", NumberDefinition(
-                name = "int",
                 type = SInt32,
-                index = 1,
                 maxValue = 6
         ), TestMarykObject::int)
 
         val uint = add(2, "uint", NumberDefinition(
-                name = "uint",
                 type = UInt32,
-                index = 2,
                 required = true,
                 final = true
         ), TestMarykObject::uint)
 
         val double = add(3, "double", NumberDefinition(
-                name = "double",
-                type = Float64,
-                index = 3
+                type = Float64
         ), TestMarykObject::double)
 
         val dateTime = add(4, "dateTime", DateTimeDefinition(
-                name = "dateTime",
-                index = 4
         ), TestMarykObject::dateTime)
 
         val bool = add(5, "bool", BooleanDefinition(
-                name = "bool",
-                index = 5,
                 required = true,
                 final = true
         ), TestMarykObject::bool)
 
         val enum = add(6, "enum", EnumDefinition(
-                name = "enum",
-                index = 6,
                 values = Option.values(),
                 required = true,
                 final = true
         ), TestMarykObject::enum)
 
         val list = add(7, "list", ListDefinition(
-                name = "list",
-                index = 7,
                 valueDefinition = NumberDefinition(
                         required = true,
                         type = SInt32
@@ -109,33 +92,23 @@ data class TestMarykObject(
         ), TestMarykObject::list)
 
         val set = add(8, "set", SetDefinition(
-                name = "set",
-                index = 8,
                 valueDefinition = DateDefinition(required = true)
         ), TestMarykObject::set)
 
         val map = add(9, "map", MapDefinition(
-                name = "map",
-                index = 9,
                 keyDefinition = TimeDefinition(required = true),
                 valueDefinition = StringDefinition(required = true)
         ), TestMarykObject::map)
 
         val valueObject = add(10, "valueObject", ValueModelDefinition(
-                name = "valueObject",
-                index = 10,
                 dataModel = TestValueObject
         ), TestMarykObject::valueObject)
 
         val subModel = add(11, "subModel", SubModelDefinition(
-                name = "subModel",
-                index = 11,
                 dataModel = SubMarykObject
         ), TestMarykObject::subModel)
 
         val multi = add(12, "multi", MultiTypeDefinition(
-                name = "multi",
-                index = 12,
                 getDefinition = mapOf(
                         0 to StringDefinition(),
                         1 to NumberDefinition(type = SInt32),
@@ -146,14 +119,10 @@ data class TestMarykObject(
         ), TestMarykObject::multi)
 
         val reference = add(13, "reference", ReferenceDefinition(
-                name = "reference",
-                index = 13,
                 dataModel = SubMarykObject
         ), TestMarykObject::reference)
 
         val listOfString = add(14, "listOfString", ListDefinition(
-                name = "listOfString",
-                index = 14,
                 valueDefinition = StringDefinition(required = true)
         ), TestMarykObject::listOfString)
     }
@@ -165,24 +134,7 @@ data class TestMarykObject(
                     Properties.bool,
                     Properties.enum
             ),
-            properties = Properties,
-            definitions = listOf(
-                    Def(Properties.string, TestMarykObject::string),
-                    Def(Properties.int, TestMarykObject::int),
-                    Def(Properties.uint, TestMarykObject::uint),
-                    Def(Properties.double, TestMarykObject::double),
-                    Def(Properties.bool, TestMarykObject::bool),
-                    Def(Properties.dateTime, TestMarykObject::dateTime),
-                    Def(Properties.enum, TestMarykObject::enum),
-                    Def(Properties.list, TestMarykObject::list),
-                    Def(Properties.set, TestMarykObject::set),
-                    Def(Properties.map, TestMarykObject::map),
-                    Def(Properties.valueObject, TestMarykObject::valueObject),
-                    Def(Properties.subModel, TestMarykObject::subModel),
-                    Def(Properties.multi, TestMarykObject::multi),
-                    Def(Properties.reference, TestMarykObject::reference),
-                    Def(Properties.listOfString, TestMarykObject::listOfString)
-            )
+            properties = Properties
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = TestMarykObject(
@@ -210,15 +162,10 @@ data class SubMarykObject(
 ){
     object Properties : PropertyDefinitions<SubMarykObject>() {
         val value = add(0, "value", StringDefinition(
-                name = "value",
-                index = 0
         ), SubMarykObject::value)
     }
     companion object: RootDataModel<SubMarykObject>(
             name = "SubMarykObject",
-            definitions = listOf(
-                    Def(Properties.value, SubMarykObject::value)
-            ),
             properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = SubMarykObject(

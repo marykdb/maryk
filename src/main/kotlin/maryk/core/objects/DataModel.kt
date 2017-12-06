@@ -27,28 +27,28 @@ class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: 
  * A Data Model for converting and validating DataObjects
  * @param <DO> Type of DataObject which is modeled
  *
- * @param definitions: All definitions for properties contained in this model
+ * @param properties: All definitions for properties contained in this model
  * @param DO: Type of DataModel contained
  * @param CX: Type of context object
  */
 abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
-        val properties: PropertyDefinitions<DO>,
-        val definitions: List<Def<*, DO, CX>>
+        val properties: PropertyDefinitions<DO>
 ) : IsDataModel<DO> {
-    private val indexToDefinition: Map<Int, Def<*, DO, CX>>
-    private val nameToDefinition: Map<String, Def<*, DO, CX>>
+    private val indexToDefinition: Map<Int, IsDataObjectProperty<Any, CX, DO>>
+    private val nameToDefinition: Map<String, IsDataObjectProperty<Any, CX, DO>>
+
+    @Suppress("UNCHECKED_CAST")
+    val definitions: List<IsDataObjectProperty<Any, CX, DO>> = properties.__allProperties as List<IsDataObjectProperty<Any, CX, DO>>
 
     init {
         indexToDefinition = mutableMapOf()
         nameToDefinition = mutableMapOf()
 
-        definitions.forEach {
-            val def = it.propertyDefinition
+        this.definitions.forEach { def ->
             assert(def.index in (0..Short.MAX_VALUE), { "${def.index} for ${def.name} is outside range $(0..Short.MAX_VALUE)" })
-            assert(indexToDefinition[def.index] == null, { "Duplicate index ${def.index} for ${def.name} and ${indexToDefinition[def.index]?.propertyDefinition?.name}" })
-            assert(def.name != null, {"Name of property should be set"})
-            indexToDefinition[def.index] = it
-            nameToDefinition[def.name!!] = it
+            assert(indexToDefinition[def.index] == null, { "Duplicate index ${def.index} for ${def.name} and ${indexToDefinition[def.index]?.name}" })
+            indexToDefinition[def.index] = def
+            nameToDefinition[def.name] = def
         }
     }
 
@@ -58,21 +58,19 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      */
     abstract operator fun invoke(map: Map<Int, *>): DO
 
-    override fun getDefinition(name: String) = nameToDefinition[name]?.propertyDefinition
-    override fun getDefinition(index: Int) = indexToDefinition[index]?.propertyDefinition
+    override fun getDefinition(name: String) = nameToDefinition[name]
+    override fun getDefinition(index: Int) = indexToDefinition[index]
 
-    override fun getPropertyGetter(name: String) = nameToDefinition[name]?.propertyGetter
-    override fun getPropertyGetter(index: Int) = indexToDefinition[index]?.propertyGetter
+    override fun getPropertyGetter(name: String) = nameToDefinition[name]?.getter
+    override fun getPropertyGetter(index: Int) = indexToDefinition[index]?.getter
 
-    override fun validate(dataObject: DO, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        createValidationUmbrellaException(parentRefFactory) { addException ->
+    override fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+        createValidationUmbrellaException(refGetter) { addException ->
             definitions.forEach {
-                @Suppress("UNCHECKED_CAST")
-                val def: IsPropertyDefinition<Any> = it.propertyDefinition as IsPropertyDefinition<Any>
                 try {
-                    def.validate(
-                            newValue = it.propertyGetter(dataObject),
-                            parentRefFactory = parentRefFactory
+                    it.validate(
+                            newValue = it.getter(dataObject),
+                            parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
                     addException(e)
@@ -81,17 +79,14 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
         }
     }
 
-    override fun validate(map: Map<Int, Any>, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        createValidationUmbrellaException(parentRefFactory) { addException ->
+    override fun validate(map: Map<Int, Any>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+        createValidationUmbrellaException(refGetter) { addException ->
             map.forEach { (key, value) ->
                 val definition = indexToDefinition[key] ?: return@forEach
-
-                @Suppress("UNCHECKED_CAST")
-                val def = definition.propertyDefinition as IsPropertyDefinition<Any>
                 try {
-                    def.validate(
+                    definition.validate(
                             newValue = value,
-                            parentRefFactory = parentRefFactory
+                            parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
                     addException(e)
@@ -107,14 +102,13 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      */
     fun writeJson(obj: DO, writer: JsonWriter, context: CX? = null) {
         writer.writeStartObject()
-        @Suppress("UNCHECKED_CAST")
-        for (def in definitions as List<Def<Any, DO, CX>>) {
-            val name = def.propertyDefinition.name!!
-            val value = def.propertyGetter(obj) ?: continue
+        for (def in definitions) {
+            val name = def.name
+            val value = def.getter(obj) ?: continue
 
             writer.writeFieldName(name)
 
-            def.propertyDefinition.writeJsonValue(value, writer, context)
+            def.property.writeJsonValue(value, writer, context)
         }
         writer.writeEndObject()
     }
@@ -127,12 +121,11 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
     fun writeJson(map: Map<Int, Any>, writer: JsonWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
-            @Suppress("UNCHECKED_CAST")
-            val def = indexToDefinition[key] as Def<Any, DO, CX>? ?: continue
-            val name = def.propertyDefinition.name!!
+            val def = indexToDefinition[key] ?: continue
+            val name = def.name
 
             writer.writeFieldName(name)
-            def.propertyDefinition.writeJsonValue(value, writer, context)
+            def.property.writeJsonValue(value, writer, context)
         }
         writer.writeEndObject()
     }
@@ -166,7 +159,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
 
                         valueMap.put(
                                 definition.index,
-                                definition.readJson(reader, context)
+                                definition.property.readJson(reader, context)
                         )
                     }
                 }
@@ -194,9 +187,8 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
     fun calculateProtoBufLength(map: Map<Int, Any>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null) : Int {
         var totalByteLength = 0
         for ((key, value) in map) {
-            @Suppress("UNCHECKED_CAST")
-            val def = indexToDefinition[key] as Def<Any, DO, CX>? ?: continue
-            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher, context)
+            val def = indexToDefinition[key] ?: continue
+            totalByteLength += def.property.calculateTransportByteLengthWithKey(def.index, value, lengthCacher, context)
         }
         return totalByteLength
     }
@@ -209,10 +201,9 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      */
     fun calculateProtoBufLength(obj: DO, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null) : Int {
         var totalByteLength = 0
-        @Suppress("UNCHECKED_CAST")
-        for (def in definitions as List<Def<Any, DO, CX>>) {
-            val value = def.propertyGetter(obj) ?: continue
-            totalByteLength += def.propertyDefinition.calculateTransportByteLengthWithKey(value, lengthCacher, context)
+        for (def in definitions) {
+            val value = def.getter(obj) ?: continue
+            totalByteLength += def.property.calculateTransportByteLengthWithKey(def.index, value, lengthCacher, context)
         }
         return totalByteLength
     }
@@ -225,9 +216,8 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      */
     fun writeProtoBuf(map: Map<Int, Any>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
-            @Suppress("UNCHECKED_CAST")
-            val def = indexToDefinition[key] as Def<Any, DO, CX>? ?: continue
-            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer, context)
+            val def = indexToDefinition[key] ?: continue
+            def.property.writeTransportBytesWithKey(def.index, value, lengthCacheGetter, writer, context)
         }
     }
 
@@ -238,10 +228,9 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
     fun writeProtoBuf(obj: DO, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null) {
-        @Suppress("UNCHECKED_CAST")
-        for (def in definitions as List<Def<Any, DO, CX>>) {
-            val value = def.propertyGetter(obj) ?: continue
-            def.propertyDefinition.writeTransportBytesWithKey(value, lengthCacheGetter, writer, context)
+        for (def in definitions) {
+            val value = def.getter(obj) ?: continue
+            def.property.writeTransportBytesWithKey(def.index, value, lengthCacheGetter, writer, context)
         }
     }
 
@@ -288,17 +277,12 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
      * @param context with context parameters for conversion (for dynamically dependent properties)
      */
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
-        var propertyDefinition = indexToDefinition[key.tag]?.propertyDefinition
+        val dataObjectPropertyDefinition = indexToDefinition[key.tag]
+        val propertyDefinition = dataObjectPropertyDefinition?.property
 
-
-        // CANNOT READ LIST VALUE
         if (propertyDefinition == null) {
             ProtoBuf.skipField(key.wireType, byteReader)
         } else {
-            if (propertyDefinition is IsDataObjectProperty<*, CX, *>) {
-                propertyDefinition = propertyDefinition.property
-            }
-
             when (propertyDefinition) {
                 is IsByteTransportableValue<*, CX> -> valueMap.put(
                         key.tag,
@@ -354,7 +338,7 @@ abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
                         valueMap[key.tag] = mutableMapOf(value)
                     }
                 }
-                else -> throw ParseException("Unknown property type for ${propertyDefinition.name}")
+                else -> throw ParseException("Unknown property type for ${dataObjectPropertyDefinition.name}")
             }
         }
     }

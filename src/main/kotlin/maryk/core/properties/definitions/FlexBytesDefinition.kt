@@ -8,8 +8,6 @@ import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
 class FlexBytesDefinition(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -20,7 +18,7 @@ class FlexBytesDefinition(
         override val minSize: Int? = null,
         override val maxSize: Int? = null
 ): AbstractSimpleDefinition<Bytes, IsPropertyContext>(
-    name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
+    indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), HasSizeDefinition, IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext> {
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(length, reader)
 
@@ -32,12 +30,12 @@ class FlexBytesDefinition(
 
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 
-    override fun validate(previousValue: Bytes?, newValue: Bytes?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        super.validate(previousValue, newValue, parentRefFactory)
+    override fun validateWithRef(previousValue: Bytes?, newValue: Bytes?, refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>>?) {
+        super.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null && (isSizeToSmall(newValue.size) || isSizeToBig(newValue.size))) {
             throw InvalidSizeException(
-                    this.getRef(parentRefFactory), newValue.toHex(), this.minSize, this.maxSize
+                    refGetter(), newValue.toHex(), this.minSize, this.maxSize
             )
         }
     }

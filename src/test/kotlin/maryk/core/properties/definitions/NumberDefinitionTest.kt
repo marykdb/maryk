@@ -14,19 +14,17 @@ import kotlin.test.fail
 
 internal class NumberDefinitionTest {
     private val def = NumberDefinition(
-            name = "test",
             type = UInt32
+    )
+
+    private val defFloat32 = NumberDefinition(
+            type = Float32
     )
 
     private val intArray = arrayOf(
             UInt32.MIN_VALUE,
             UInt32.MAX_VALUE,
             32373957.toUInt32()
-    )
-
-    private val defFloat32 = NumberDefinition(
-            name = "test",
-            type = Float32
     )
 
     private val floatArray = arrayOf(
@@ -63,12 +61,12 @@ internal class NumberDefinitionTest {
         val bc = ByteCollector()
         intArray.forEach { value ->
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(value, { fail("Should not call") })
+                    def.calculateTransportByteLengthWithKey(1, value, { fail("Should not call") })
             )
-            def.writeTransportBytesWithKey(value, { fail("Should not call") }, bc::write)
+            def.writeTransportBytesWithKey(1, value, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.VAR_INT
-            key.tag shouldBe -1
+            key.tag shouldBe 1
             def.readTransportBytes(
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
@@ -82,12 +80,12 @@ internal class NumberDefinitionTest {
         val bc = ByteCollector()
         floatArray.forEach { value ->
             bc.reserve(
-                    defFloat32.calculateTransportByteLengthWithKey(value, { fail("Should not call") })
+                    defFloat32.calculateTransportByteLengthWithKey(2, value, { fail("Should not call") })
             )
-            defFloat32.writeTransportBytesWithKey(value, { fail("Should not call") }, bc::write)
+            defFloat32.writeTransportBytesWithKey(2, value, { fail("Should not call") }, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.BIT_32
-            key.tag shouldBe -1
+            key.tag shouldBe 2
             defFloat32.readTransportBytes(
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read

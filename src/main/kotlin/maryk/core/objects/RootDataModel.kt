@@ -7,36 +7,38 @@ import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractPropertyDefinition
+import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
+import maryk.core.properties.definitions.wrapper.DataObjectFixedBytesProperty
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 
-fun definitions(vararg keys: IsFixedBytesEncodable<*>) = arrayOf(*keys)
+fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
 
 /** DataModel which is on root level so it can be stored and thus can have a key
  * If no key is defined the datamodel will get a UUID
  *
  * @param name: Name of the datamodel. Used also to resolve DataModels
  * @param keyDefinitions: Ordered array with all key part definitions
- * @param definitions: All definitions for properties contained in this model
+ * @param properties: All definitions for properties contained in this model
  * @param DM: Type of DataModel contained
  */
 abstract class RootDataModel<DM: Any>(
         val name: String,
-        keyDefinitions: Array<IsFixedBytesEncodable<out Any>> = arrayOf(UUIDKey),
-        properties: PropertyDefinitions<DM>,
-        definitions: List<Def<*, DM, IsPropertyContext>>
-) : DataModel<DM, IsPropertyContext>(properties, definitions){
+        keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
+        properties: PropertyDefinitions<DM>
+) : DataModel<DM, IsPropertyContext>(properties){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */
-    inner class KeyDefinition(vararg val keyDefinitions: IsFixedBytesEncodable<out Any>) {
+    inner class KeyDefinition(vararg val keyDefinitions: IsFixedBytesProperty<out Any>) {
         val size: Int
 
         init {
@@ -44,11 +46,14 @@ abstract class RootDataModel<DM: Any>(
 
             keyDefinitions.forEach {
                 when {
-                    it is AbstractPropertyDefinition<*> -> {
-                        checkDefinition(it)
+                    it is DataObjectFixedBytesProperty<*, *, *, *>
+                            && it.property is AbstractValueDefinition<*, *>-> {
+                        checkDefinition(it.name, it.property as AbstractValueDefinition<*, *>)
                     }
-                    it is Reversed<*> && it.definition is AbstractPropertyDefinition<*> -> {
-                        checkDefinition(it.definition)
+                    it is Reversed<*>
+                            && it.definition is DataObjectFixedBytesProperty<*, *, *, *>
+                            && it.definition.property is AbstractValueDefinition<*, *> -> {
+                        checkDefinition(it.definition.name, it.definition.property)
                     }
                 }
                 totalBytes += it.byteSize
@@ -56,9 +61,9 @@ abstract class RootDataModel<DM: Any>(
             this.size = totalBytes
         }
 
-        private fun checkDefinition(it: AbstractPropertyDefinition<*>) {
-            assert(it.required, { "Definition ${it.name} should be required" })
-            assert(it.final, { "Definition ${it.name} should be final" })
+        private fun checkDefinition(name: String, it: AbstractPropertyDefinition<*>) {
+            assert(it.required, { "Definition of $name should be required" })
+            assert(it.final, { "Definition of $name should be final" })
         }
 
         /** Get Key by byte array */

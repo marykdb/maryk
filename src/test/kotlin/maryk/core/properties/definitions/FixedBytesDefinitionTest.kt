@@ -17,7 +17,6 @@ internal class FixedBytesDefinitionTest {
     )
 
     val def = FixedBytesDefinition(
-            name = "test",
             byteSize = 5
     )
 

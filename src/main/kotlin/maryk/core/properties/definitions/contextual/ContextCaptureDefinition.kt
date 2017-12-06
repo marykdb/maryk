@@ -11,8 +11,6 @@ class ContextCaptureDefinition<T: Any, CX: IsPropertyContext>(
         val definition: AbstractValueDefinition<T, CX>,
         private val capturer: (CX?, T) -> Unit
 ) : AbstractValueDefinition<T, CX>(
-        name = definition.name,
-        index = definition.index,
         indexed = definition.indexed,
         searchable = definition.searchable,
         required = definition.required,

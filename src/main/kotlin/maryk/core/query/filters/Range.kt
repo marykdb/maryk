@@ -1,12 +1,12 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.IsDataObjectValueProperty
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -19,7 +19,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param T: type of value to be operated on
  */
 data class Range<T: Any>(
-        override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
+        override val reference: IsPropertyReference<T, IsDataObjectValueProperty<T, IsPropertyContext, *>>,
         val from: T,
         val to: T,
         val inclusiveFrom: Boolean = true,
@@ -27,53 +27,21 @@ data class Range<T: Any>(
 ) : IsPropertyCheck<T> {
     override val filterType = FilterType.RANGE
 
-    internal object Properties : PropertyDefinitions<Range<*>>() {
-        val from = ContextualValueDefinition(
-                name = "from",
-                index = 1,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    context!!.reference!!.propertyDefinition
-                }
-        )
-        val to = ContextualValueDefinition(
-                name = "to",
-                index = 2,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    context!!.reference!!.propertyDefinition
-                }
-        )
-        val inclusiveStart = BooleanDefinition(
-                name = "inclusiveFrom",
-                index = 3,
-                required = true
-        )
-        val inclusiveEnd = BooleanDefinition(
-                name = "inclusiveTo",
-                index = 4,
-                required = true
-        )
-    }
-
     companion object: QueryDataModel<Range<*>>(
-            definitions = listOf(
-                    Def(IsPropertyCheck.Properties.reference, Range<*>::reference),
-                    Def(Properties.from, Range<*>::from),
-                    Def(Properties.to, Range<*>::to),
-                    Def(Properties.inclusiveStart, Range<*>::inclusiveFrom),
-                    Def(Properties.inclusiveEnd, Range<*>::inclusiveTo)
-            ),
             properties = object : PropertyDefinitions<Range<*>>() {
                 init {
                     IsPropertyCheck.addReference(this, Range<*>::reference)
                     add(1, "from", ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
-                                context!!.reference!!.propertyDefinition
+                                @Suppress("UNCHECKED_CAST")
+                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ), Range<*>::from)
 
                     add(2, "to", ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
-                                context!!.reference!!.propertyDefinition
+                                @Suppress("UNCHECKED_CAST")
+                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ), Range<*>::to)
 
@@ -84,7 +52,7 @@ data class Range<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Range(
-                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                reference = map[0] as IsPropertyReference<Any, IsDataObjectValueProperty<Any, IsPropertyContext, *>>,
                 from = map[1] as Any,
                 to = map[2] as Any,
                 inclusiveFrom = map[3] as Boolean,

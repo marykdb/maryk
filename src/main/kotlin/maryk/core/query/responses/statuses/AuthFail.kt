@@ -12,7 +12,6 @@ class AuthFail<DO: Any> : IsAddResponseStatus<DO>, IsChangeResponseStatus<DO>, I
     override fun toString() = "AuthFail"
 
     companion object: QueryDataModel<AuthFail<*>>(
-            definitions = listOf(),
             properties = object : PropertyDefinitions<AuthFail<*>>() {}
     ) {
         override fun invoke(map: Map<Int, *>) = AuthFail<Any>()

@@ -1,6 +1,5 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -34,52 +33,8 @@ data class ListPropertyChange<T: Any>(
 ) : IsPropertyOperation<List<T>> {
     override val changeType = ChangeType.LIST_CHANGE
 
-    internal object Properties : PropertyDefinitions<ListPropertyChange<*>>() {
-        @Suppress("UNCHECKED_CAST")
-        private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-            (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition.valueDefinition
-        })
-        @Suppress("UNCHECKED_CAST")
-        val valueToCompare = ContextualCollectionDefinition(
-                name = "valueToCompare",
-                index = 1,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
-                }
-        )
-        val addValuesToEnd = ListDefinition(
-                name = "addValuesToEnd",
-                index = 2,
-                valueDefinition = valueDefinition
-        )
-        val addValuesAtIndex = MapDefinition(
-                name = "addValuesAtIndex",
-                index = 3,
-                keyDefinition = NumberDefinition(required = true, type = SInt32),
-                valueDefinition = valueDefinition
-        )
-        val deleteValues = ListDefinition(
-                name = "deleteValues",
-                index = 4,
-                valueDefinition = valueDefinition
-        )
-        val deleteAtIndex = ListDefinition(
-                name = "deleteAtIndex",
-                index = 5,
-                valueDefinition = NumberDefinition(required = true, type = SInt32)
-        )
-    }
-
     companion object: QueryDataModel<ListPropertyChange<*>>(
-            definitions = listOf(
-                    Def(IsPropertyOperation.Properties.reference, ListPropertyChange<*>::reference),
-                    Def(Properties.valueToCompare, ListPropertyChange<*>::valueToCompare),
-                    Def(Properties.addValuesToEnd, ListPropertyChange<*>::addValuesToEnd),
-                    Def(Properties.addValuesAtIndex, ListPropertyChange<*>::addValuesAtIndex),
-                    Def(Properties.deleteValues, ListPropertyChange<*>::deleteValues),
-                    Def(Properties.deleteAtIndex, ListPropertyChange<*>::deleteAtIndex)
-            ),
-            properties = object : PropertyDefinitions<ListPropertyChange<*>>() {
+             properties = object : PropertyDefinitions<ListPropertyChange<*>>() {
                 init {
                     IsPropertyOperation.addReference(this, ListPropertyChange<*>::reference)
                     @Suppress("UNCHECKED_CAST")
@@ -114,7 +69,7 @@ data class ListPropertyChange<T: Any>(
 
 @Suppress("UNCHECKED_CAST")
 private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-    (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition.valueDefinition
+    (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition.property.valueDefinition
 })
 
 private val valueListDefinition = ListDefinition(

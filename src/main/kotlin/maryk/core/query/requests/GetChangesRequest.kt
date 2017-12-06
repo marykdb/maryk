@@ -1,9 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -35,26 +33,7 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO>>(
             filterSoftDeleted: Boolean = true
     ) : this(dataModel, key.toList(), filter, order, fromVersion, toVersion, filterSoftDeleted)
 
-    internal object Properties : PropertyDefinitions<GetChangesRequest<*, *>>() {
-        val fromVersion = NumberDefinition(
-                name = "fromVersion",
-                index = 6,
-                type = UInt64
-        )
-    }
-
     companion object: QueryDataModel<GetChangesRequest<*, *>>(
-            definitions = listOf(
-                    Def(IsObjectRequest.Properties.dataModel, GetChangesRequest<*, *>::dataModel),
-                    Def(GetRequest.Properties.keys, GetChangesRequest<*, *>::keys),
-                    Def(IsFetchRequest.Properties.filter)  {
-                        it.filter?.let { TypedValue(it.filterType.index, it) }
-                    },
-                    Def(IsFetchRequest.Properties.order, GetChangesRequest<*, *>::order),
-                    Def(IsFetchRequest.Properties.toVersion, GetChangesRequest<*, *>::toVersion),
-                    Def(IsFetchRequest.Properties.filterSoftDeleted, GetChangesRequest<*, *>::filterSoftDeleted),
-                    Def(GetChangesRequest.Properties.fromVersion, GetChangesRequest<*, *>::fromVersion)
-            ),
             properties = object : PropertyDefinitions<GetChangesRequest<*, *>>() {
                 init {
                     IsObjectRequest.addDataModel(this, GetChangesRequest<*, *>::dataModel)

@@ -1,15 +1,11 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.UInt64
-import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 
@@ -36,29 +32,7 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
             toVersion: UInt64? = null,
             filterSoftDeleted: Boolean = true
     ) : this(dataModel, key.toList(), filter, order, toVersion, filterSoftDeleted)
-
-    internal object Properties : PropertyDefinitions<GetRequest<*, *>>() {
-        val keys = ListDefinition(
-                name = "keys",
-                index = 1,
-                required = true,
-                valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
-                        contextualResolver = { it!!.dataModel!!.key }
-                )
-        )
-    }
-
     companion object: QueryDataModel<GetRequest<*, *>>(
-            definitions = listOf(
-                    Def(IsObjectRequest.Properties.dataModel, GetRequest<*, *>::dataModel),
-                    Def(Properties.keys, GetRequest<*, *>::keys),
-                    Def(IsFetchRequest.Properties.filter)  {
-                        it.filter?.let { TypedValue(it.filterType.index, it) }
-                    },
-                    Def(IsFetchRequest.Properties.order, GetRequest<*, *>::order),
-                    Def(IsFetchRequest.Properties.toVersion, GetRequest<*, *>::toVersion),
-                    Def(IsFetchRequest.Properties.filterSoftDeleted, GetRequest<*, *>::filterSoftDeleted)
-            ),
             properties = object : PropertyDefinitions<GetRequest<*, *>>() {
                 init {
                     IsObjectRequest.addDataModel(this, GetRequest<*, *>::dataModel)

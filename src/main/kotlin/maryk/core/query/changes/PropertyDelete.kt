@@ -1,6 +1,5 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
@@ -21,10 +20,6 @@ data class PropertyDelete<T: Any>(
     override val changeType = ChangeType.PROP_DELETE
 
     companion object: QueryDataModel<PropertyDelete<*>>(
-            definitions = listOf(
-                    Def(IsPropertyOperation.Properties.reference, PropertyDelete<*>::reference),
-                    Def(IsPropertyOperation.Properties.valueToCompare, PropertyDelete<*>::valueToCompare)
-            ),
             properties = object : PropertyDefinitions<PropertyDelete<*>>() {
                 init {
                     IsPropertyOperation.addReference(this, PropertyDelete<*>::reference)

@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.MapDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -12,15 +13,16 @@ import maryk.core.protobuf.WireType
  * @param <K> key
  * @param <V> value
  */
-class MapKeyReference<K: Any, V: Any, in CX: IsPropertyContext>(
+class MapKeyReference<K: Any, V: Any, CX: IsPropertyContext>(
         val key: K,
-        parentReference: MapReference<K, V, CX>
+        mapDefinition: MapDefinition<K, V, CX>,
+        parentReference: MapReference<K, V, CX>?
 ) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V, CX>>(
-        parentReference.propertyDefinition.keyDefinition, parentReference
+        mapDefinition.keyDefinition, parentReference
 ) {
-    override val name = parentReference.name
-
-    override val completeName get() = "${this.parentReference!!.completeName}.$$key"
+    override val completeName get() = this.parentReference?.let {
+        "${it.completeName}.$$key"
+    } ?: "$$key"
 
     override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
         val parentLength = this.parentReference!!.calculateTransportByteLength(lengthCacher)

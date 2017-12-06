@@ -4,15 +4,14 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.wrapper.DataObjectProperty
 import maryk.core.properties.types.TypedValue
 
 class TypeId<CX: IsPropertyContext>(
         val multiTypeDefinition: DataObjectProperty<TypedValue<*>, CX, MultiTypeDefinition<CX>, *>
-) : IsFixedBytesEncodable<Int> {
-    override val index: Int = multiTypeDefinition.index
+) : IsFixedBytesProperty<Int> {
     override val byteSize = 2
 
     override fun <T : Any> getValue(dataModel: IsDataModel<T>, dataObject: T): Int {

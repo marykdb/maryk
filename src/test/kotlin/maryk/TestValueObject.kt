@@ -16,28 +16,17 @@ data class TestValueObject(
         val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
     object Properties : PropertyDefinitions<TestValueObject>() {
-        val int = NumberDefinition(
-                name = "int",
+        val int = add(0, "int", NumberDefinition(
                 type = SInt32,
-                index = 0,
                 maxValue = 6
-        )
-        val dateTime = DateTimeDefinition(
-                name = "dateTime",
-                index = 1
-        )
-        val bool = BooleanDefinition(
-                name = "bool",
-                index = 2
-        )
+        ), TestValueObject::int)
+
+        val dateTime = add(1, "dateTime", DateTimeDefinition(), TestValueObject::dateTime)
+
+        val bool = add(2, "bool", BooleanDefinition(), TestValueObject::bool)
     }
 
     companion object: ValueDataModel<TestValueObject>(
-            definitions = listOf(
-                    Def(Properties.int, TestValueObject::int),
-                    Def(Properties.dateTime, TestValueObject::dateTime),
-                    Def(Properties.bool, TestValueObject::bool)
-            ),
             properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = TestValueObject(

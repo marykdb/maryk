@@ -12,9 +12,7 @@ import maryk.core.protobuf.WireType
  * This is used for simple single value properties and not for lists and maps.
  * @param <T> Type of objects contained in property
  */
-abstract class AbstractSimpleDefinition<T: Comparable<T>, CX: IsPropertyContext>(
-        name: String?,
-        index: Int,
+abstract class AbstractSimpleDefinition<T: Comparable<T>, in CX: IsPropertyContext>(
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,
@@ -24,25 +22,25 @@ abstract class AbstractSimpleDefinition<T: Comparable<T>, CX: IsPropertyContext>
         val minValue: T?,
         val maxValue: T?
 ) : AbstractSimpleValueDefinition<T, CX>(
-        name, index, indexed, searchable, required, final, wireType
+        indexed, searchable, required, final, wireType
 ) {
     /**
      * Validate the contents of the native type
      * @param newValue to validate
      * @throws ValidationException thrown if property is invalid
      */
-    override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        super.validate(previousValue, newValue, parentRefFactory)
+    override fun validateWithRef(previousValue: T?, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) {
+        super.validateWithRef(previousValue, newValue, refGetter)
         when {
             newValue != null -> {
                 when {
-                    this.minValue != null && newValue.compareTo(this.minValue) < 0
+                    this.minValue != null && newValue < this.minValue
                             -> throw OutOfRangeException(
-                                this.getRef(parentRefFactory), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
+                                    refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
                             )
-                    this.maxValue != null && newValue.compareTo(this.maxValue) > 0
+                    this.maxValue != null && newValue > this.maxValue
                             -> throw OutOfRangeException(
-                                this.getRef(parentRefFactory), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
+                                    refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
                             )
                 }
             }

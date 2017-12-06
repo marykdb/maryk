@@ -16,18 +16,15 @@ import maryk.core.protobuf.WireType
  * @param <T> Type of objects contained in property
  */
 abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
-        name: String?,
-        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,
         final: Boolean,
         wireType: WireType
 ) : AbstractValueDefinition<T, CX>(
-        name, index, indexed, searchable, required, final, wireType
+        indexed, searchable, required, final, wireType
 ) {
     /** Convert to value from a byte reader
-     * @param context for contextual parameters
      * @param length of bytes to read
      * @param reader to read bytes from
      * @return stored value
@@ -87,7 +84,7 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
 
     override fun readJson(reader: JsonReader, context: CX?): T {
         if (reader.currentToken !is JsonToken.OBJECT_VALUE && reader.currentToken !is JsonToken.ARRAY_VALUE) {
-            throw ParseException("JSON value for $name should be a simple value")
+            throw ParseException("JSON value should be a simple value")
         }
         return this.fromString(reader.lastValue, context)
     }

@@ -1,12 +1,10 @@
 package maryk.core.query.responses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsAddResponseStatus
-import maryk.core.query.responses.statuses.listOfStatuses
 
 /** Response to an Add request
  * @param dataModel to which objects were added
@@ -16,21 +14,11 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO>> constructor(
         override val dataModel: DM,
         val statuses: List<IsAddResponseStatus<DO>>
 ): IsDataModelResponse<DO, DM> {
-    internal object Properties : PropertyDefinitions<AddResponse<*, *>>() {
-        val statuses = add(1, "statuses", listOfStatuses) {
-            it.statuses.map { TypedValue(it.statusType.index, it) }
-        }
-    }
-
     companion object: QueryDataModel<AddResponse<*, *>>(
-            definitions = listOf(
-                    Def(IsDataModelResponse.Properties.dataModel, AddResponse<*, *>::dataModel),
-                    Def(Properties.statuses, { it.statuses.map { TypedValue(it.statusType.index, it) } })
-            ),
             properties = object : PropertyDefinitions<AddResponse<*, *>>() {
                 init {
                     IsDataModelResponse.addDataModel(this, AddResponse<*, *>::dataModel)
-                    add(1, "statuses", listOfStatuses) {
+                    IsDataModelResponse.addStatuses(this) {
                         it.statuses.map { TypedValue(it.statusType.index, it) }
                     }
                 }

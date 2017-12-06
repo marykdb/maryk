@@ -8,8 +8,6 @@ import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -19,7 +17,7 @@ class ReferenceDefinition<DO: Any>(
         maxValue: Key<DO>? = null,
         val dataModel: RootDataModel<DO>
 ): AbstractSimpleDefinition<Key<DO>, IsPropertyContext>(
-        name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
+        indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext> {
     override val byteSize = dataModel.key.size
 

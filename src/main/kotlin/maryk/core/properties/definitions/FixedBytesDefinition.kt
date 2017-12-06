@@ -7,8 +7,6 @@ import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
 class FixedBytesDefinition(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -19,7 +17,7 @@ class FixedBytesDefinition(
         random: Boolean = false,
         override val byteSize: Int
 ): AbstractNumericDefinition<Bytes>(
-    name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue, random
+    indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue, random
 ), IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext> {
     override fun createRandom() = Bytes(randomBytes(this.byteSize))
 

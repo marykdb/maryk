@@ -11,8 +11,6 @@ import maryk.core.properties.types.numeric.SInt64
 
 /** Definition for Number properties */
 class NumberDefinition<T: Comparable<T>>(
-        name: String? = null,
-        index: Int = -1,
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -23,7 +21,7 @@ class NumberDefinition<T: Comparable<T>>(
         random: Boolean = false,
         val type: NumberDescriptor<T>
 ): AbstractNumericDefinition<T>(
-    name, index, indexed, searchable, required, final, type.wireType, unique, minValue, maxValue, random
+    indexed, searchable, required, final, type.wireType, unique, minValue, maxValue, random
 ), IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
     override val byteSize = type.size
 

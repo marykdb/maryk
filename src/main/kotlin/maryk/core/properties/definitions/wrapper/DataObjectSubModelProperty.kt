@@ -19,9 +19,12 @@ data class DataObjectSubModelProperty<DO: Any, D: DataModel<DO, CX>, CX: IsPrope
 {
     override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
             SubModelPropertyRef(
-                    this.property,
+                    this,
                     parentRefFactory()?.let {
                         it as CanHaveComplexChildReference<*, *, *>
                     }
             )
+    override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
+        this.property.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory) })
+    }
 }

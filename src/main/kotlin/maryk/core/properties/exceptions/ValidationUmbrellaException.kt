@@ -1,6 +1,5 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -20,8 +19,6 @@ data class ValidationUmbrellaException(
 
     internal object Properties : PropertyDefinitions<ValidationUmbrellaException>() {
         val exceptions = ListDefinition(
-                name = "exceptions",
-                index = 1,
                 required = true,
                 valueDefinition = MultiTypeDefinition(
                         required = true,
@@ -38,11 +35,7 @@ data class ValidationUmbrellaException(
                         it.exceptions.map { TypedValue(it.validationExceptionType.index, it) }
                     }
                 }
-            },
-            definitions = listOf(
-                    Def(ValidationException.Properties.reference, ValidationUmbrellaException::reference),
-                    Def(Properties.exceptions, { it.exceptions.map { TypedValue(it.validationExceptionType.index, it) } })
-            )
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
@@ -63,7 +56,7 @@ private fun createReason(reference: IsPropertyReference<*, *>?, exceptions: List
 }
 
 /** Convenience method to create a new ValidationUmbrellaException */
-fun createValidationUmbrellaException(parentRefFactory: () -> IsPropertyReference<*, *>?, exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit){
+fun createValidationUmbrellaException(refGetter: () -> IsPropertyReference<*, *>?, exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit){
     var hasExceptions = false
     val exceptions by lazy {
         hasExceptions = true
@@ -75,6 +68,6 @@ fun createValidationUmbrellaException(parentRefFactory: () -> IsPropertyReferenc
     }
 
     if (hasExceptions) {
-        throw ValidationUmbrellaException(parentRefFactory(), exceptions)
+        throw ValidationUmbrellaException(refGetter(), exceptions)
     }
 }

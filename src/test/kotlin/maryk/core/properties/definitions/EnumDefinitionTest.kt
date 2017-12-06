@@ -18,8 +18,6 @@ internal class EnumDefinitionTest {
     )
 
     val def = EnumDefinition(
-            name = "enum",
-            index = 14,
             values = Option.values()
     )
 
@@ -47,9 +45,9 @@ internal class EnumDefinitionTest {
 
         enumsToTest.zip(expected).forEach { (enum, expected) ->
             bc.reserve(
-                    def.calculateTransportByteLengthWithKey(enum, { fail("Should not call") }, null)
+                    def.calculateTransportByteLengthWithKey(14, enum, { fail("Should not call") }, null)
             )
-            def.writeTransportBytesWithKey(enum, { fail("Should not call") }, bc::write, null)
+            def.writeTransportBytesWithKey(14, enum, { fail("Should not call") }, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 14
             key.wireType shouldBe WireType.VAR_INT

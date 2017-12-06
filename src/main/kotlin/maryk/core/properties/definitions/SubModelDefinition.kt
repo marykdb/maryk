@@ -4,9 +4,8 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.references.CanHaveComplexChildReference
+import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.SubModelPropertyRef
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
@@ -16,16 +15,14 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>(
-        name: String? = null,
-        index: Int = -1,
+class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, in CX: IsPropertyContext>(
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
         final: Boolean = false,
         val dataModel: D
 ) : AbstractValueDefinition<DO, CX>(
-        name, index, indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
+        indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
 ), IsSerializablePropertyDefinition<DO, CX>, IsSubModelDefinition<DO, CX> {
     override fun asString(value: DO, context: CX?): String {
         var string = ""
@@ -40,23 +37,15 @@ class SubModelDefinition<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
-            SubModelPropertyRef(
-                this,
-                parentRefFactory()?.let {
-                    it as CanHaveComplexChildReference<*, *, *>
-                }
-            )
+    override fun getEmbeddedByName(name: String): IsDataObjectProperty<*, *, *>? = dataModel.getDefinition(name)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinition<*>? = dataModel.getDefinition(name)
+    override fun getEmbeddedByIndex(index: Int): IsDataObjectProperty<*, *, *>? = dataModel.getDefinition(index)
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinition<out Any>? = dataModel.getDefinition(index)
-
-    override fun validate(previousValue: DO?, newValue: DO?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        super.validate(previousValue, newValue, parentRefFactory)
+    override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+        super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
-                    parentRefFactory = { this.getRef(parentRefFactory) },
+                    refGetter = refGetter,
                     dataObject = newValue
             )
         }

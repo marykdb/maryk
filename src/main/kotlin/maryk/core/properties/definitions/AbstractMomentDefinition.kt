@@ -9,8 +9,6 @@ import maryk.core.protobuf.WireType
  * @param <T> Comparable type defining type of moment contained by property
  */
 abstract class AbstractMomentDefinition<T: IsTemporal<T>>(
-        name: String?,
-        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,
@@ -21,7 +19,7 @@ abstract class AbstractMomentDefinition<T: IsTemporal<T>>(
         maxValue: T?,
         val fillWithNow: Boolean
 ) : AbstractSimpleDefinition<T, IsPropertyContext>(
-        name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue
+        indexed, searchable, required, final, wireType, unique, minValue, maxValue
 ) {
     /** @return a new value representing the current time */
     abstract fun createNow(): T

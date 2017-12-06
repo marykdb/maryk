@@ -20,8 +20,6 @@ class ContextualReferenceDefinitionTest {
     )
 
     private val def = ContextualReferenceDefinition<DataModelPropertyContext>(
-            index = 14,
-            name = "test",
             contextualResolver = { it!!.dataModel!!.key }
     )
 

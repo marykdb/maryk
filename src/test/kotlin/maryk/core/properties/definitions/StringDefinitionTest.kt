@@ -27,39 +27,36 @@ internal class StringDefinitionTest {
             "👩‍💻" to "f09f91a9e2808df09f92bb"
     )
 
-    val def = StringDefinition(
-            index = 14,
+    private val def = StringDefinition(
             minSize = 3,
-            maxSize = 6,
-            name = "test"
+            maxSize = 6
     )
 
-    val defRegEx = StringDefinition(
-            name = "test",
+    private val defRegEx = StringDefinition(
             regEx = "^[abcd]{3,4}$"
     )
 
     @Test
     fun validate() {
         // Should both succeed without errors
-        def.validate(newValue = "abc")
-        def.validate(newValue = "abcdef")
+        def.validateWithRef(newValue = "abc")
+        def.validateWithRef(newValue = "abcdef")
 
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = "ab")
+            def.validateWithRef(newValue = "ab")
         }
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = "abcdefg")
+            def.validateWithRef(newValue = "abcdefg")
         }
     }
 
     @Test
     fun validateRegex() {
         // Should succeed
-        defRegEx.validate(newValue = "abc")
+        defRegEx.validateWithRef(newValue = "abc")
 
         shouldThrow<InvalidValueException> {
-            defRegEx.validate(newValue = "efgh")
+            defRegEx.validateWithRef(newValue = "efgh")
         }
     }
 
@@ -82,10 +79,10 @@ internal class StringDefinitionTest {
         val bc = ByteCollectorWithLengthCacher()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
-                    def.calculateTransportByteLengthWithKey(value, bc::addToCache)
+                    def.calculateTransportByteLengthWithKey(14, value, bc::addToCache)
             )
             bc.bytes!!.size shouldBe value.calculateUTF8ByteLength() + 2
-            def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
+            def.writeTransportBytesWithKey(14, value, bc::nextLengthFromCache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe 14

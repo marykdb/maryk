@@ -4,9 +4,8 @@ import maryk.TestMarykObject
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsByteTransportableMap
+import maryk.core.properties.definitions.wrapper.DataObjectProperty
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Time
 import maryk.core.protobuf.ProtoBuf
@@ -24,15 +23,13 @@ class ContextualMapDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualMapDefinition<Any, Any, DataModelPropertyContext>(
-            index = 8,
-            name = "test",
-            contextualResolver = { it!!.reference!!.propertyDefinition as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
+            contextualResolver = { it!!.reference!!.propertyDefinition.property as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(),
-            reference = TestMarykObject.Properties.map.getRef() as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
+            reference = TestMarykObject.Properties.map.getRef() as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
     )
 
     @Test
@@ -42,9 +39,9 @@ class ContextualMapDefinitionTest {
         val value = mapToTest
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(value, bc::addToCache, this.context)
+                def.calculateTransportByteLengthWithKey(8, value, bc::addToCache, this.context)
         )
-        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write, this.context)
+        def.writeTransportBytesWithKey(8, value, bc::nextLengthFromCache, bc::write, this.context)
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)

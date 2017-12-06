@@ -1,6 +1,5 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -19,13 +18,7 @@ data class Success<DO: Any>(
                 init {
                     add(0, "version", NumberDefinition(type = UInt64), Success<*>::version)
                 }
-            },
-            definitions = listOf(
-                    Def(
-                            NumberDefinition("version", 0, type = UInt64),
-                            Success<*>::version
-                    )
-            )
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Success<Any>(

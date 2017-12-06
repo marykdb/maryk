@@ -12,20 +12,16 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class MultiTypeDefinitionTest {
-    val intDef = NumberDefinition<Int>(
-            name = "int",
+    val intDef = NumberDefinition(
             type = SInt32,
             maxValue = 1000
     )
 
     val stringDef = StringDefinition(
-            name = "string",
             regEx = "#.*"
     )
 
     val def = MultiTypeDefinition(
-            name = "multitype",
-            index = 1,
             getDefinition = { when(it) {
                     0 -> stringDef
                     1 -> intDef
@@ -46,21 +42,21 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun testValidation() {
-        def.validate(newValue = TypedValue(0, "#test"))
-        def.validate(newValue = TypedValue(1, 400))
+        def.validateWithRef(newValue = TypedValue(0, "#test"))
+        def.validateWithRef(newValue = TypedValue(1, 400))
 
         shouldThrow<OutOfRangeException> {
-            def.validate(newValue = TypedValue(1, 3000))
+            def.validateWithRef(newValue = TypedValue(1, 3000))
         }
         shouldThrow<InvalidValueException> {
-            def.validate(newValue = TypedValue(0, "WRONG"))
+            def.validateWithRef(newValue = TypedValue(0, "WRONG"))
         }
     }
 
     @Test
     fun testValidationInvalidField() {
         shouldThrow<DefNotFoundException> {
-            def.validate(newValue = TypedValue(2, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(2, "NonExistingField"))
         }
     }
 

@@ -8,17 +8,16 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
 /** DataModel for objects that can be encoded in fixed length width
- * @param definitions: All definitions for properties contained in this model
+ * @param properties: All definitions for properties contained in this model
  * @param DO: Type of DataObject contained
  */
 abstract class ValueDataModel<DO: ValueDataObject>(
-        properties: PropertyDefinitions<DO>,
-        definitions: List<Def<*, DO, IsPropertyContext>>
-) : DataModel<DO, IsPropertyContext>(properties, definitions) {
+        properties: PropertyDefinitions<DO>
+) : DataModel<DO, IsPropertyContext>(properties) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {
-            val def = it.propertyDefinition as IsFixedBytesEncodable<*>
+            val def = it.property as IsFixedBytesEncodable<*>
             size += def.byteSize
         }
         size
@@ -34,9 +33,9 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         this.definitions.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
 
-            val def = it.propertyDefinition as IsFixedBytesEncodable<*>
+            val def = it as IsFixedBytesEncodable<*>
             values.put(
-                    key = def.index,
+                    key = it.index,
                     value = def.readStorageBytes(def.byteSize, reader)
             )
         }
@@ -52,7 +51,7 @@ abstract class ValueDataModel<DO: ValueDataObject>(
 
         this.definitions.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
-            val def = it.propertyDefinition as IsFixedBytesEncodable<in Any>
+            val def = it as IsFixedBytesEncodable<in Any>
             def.writeStorageBytes(inputs[index], {
                 bytes[offset++] = it
             })

@@ -15,8 +15,6 @@ class ContextualModelReferenceDefinitionTest {
     )
 
     private val def = ContextualModelReferenceDefinition<DataModelPropertyContext>(
-            index = 12,
-            name = "test",
             contextualResolver = { context, name ->  context!!.dataModels[name]!! }
     )
 

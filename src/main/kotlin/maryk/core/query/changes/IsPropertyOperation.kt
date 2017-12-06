@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.DataObjectProperty
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
@@ -20,31 +21,17 @@ interface IsPropertyOperation<T: Any> : IsChange {
     val reference: IsPropertyReference<T, IsPropertyDefinition<T>>
     val valueToCompare: T?
 
-    object Properties {
-        val reference = ContextCaptureDefinition(
-                ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                        name = "reference",
-                        index = 0,
-                        contextualResolver = { it!!.dataModel!! }
-                )
-        ) { context, value ->
-            @Suppress("UNCHECKED_CAST")
-            context!!.reference = value as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
-        }
-        val valueToCompare = ContextualValueDefinition(
-                name = "valueToCompare",
-                index = 1,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    context!!.reference!!.propertyDefinition
-                }
-        )
-    }
-
     companion object {
         fun <DM: Any> addReference(definitions: PropertyDefinitions<DM>, getter: (DM) -> IsPropertyReference<*, *>?) {
             definitions.add(
-                    0, "reference",
-                    Properties.reference,
+                    0, "reference", ContextCaptureDefinition(
+                            ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                                    contextualResolver = { it!!.dataModel!! }
+                            )
+                    ) { context, value ->
+                        @Suppress("UNCHECKED_CAST")
+                        context!!.reference = value as IsPropertyReference<*, DataObjectProperty<*, *, *, *>>
+                    },
                     getter
             )
         }
@@ -54,7 +41,8 @@ interface IsPropertyOperation<T: Any> : IsChange {
                     1, "valueToCompare",
                     ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
-                                context!!.reference!!.propertyDefinition
+                                @Suppress("UNCHECKED_CAST")
+                                context!!.reference!!.propertyDefinition.property as AbstractValueDefinition<Any, IsPropertyContext>
                             }
                     ),
                     getter

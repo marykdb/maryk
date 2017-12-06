@@ -10,11 +10,8 @@ import maryk.core.protobuf.WireType
 
 /** Definition which refers to specific property value definition based on context */
 class ContextualValueDefinition<in CX: IsPropertyContext>(
-        name: String? = null,
-        index: Int = -1,
         val contextualResolver: (context: CX?) -> AbstractValueDefinition<Any, IsPropertyContext>
 ): AbstractValueDefinition<Any, CX>(
-        name, index,
         indexed = false,
         searchable = false,
         required = true,

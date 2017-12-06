@@ -1,6 +1,5 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -13,17 +12,7 @@ data class ObjectSoftDeleteChange(
 ) : IsChange {
     override val changeType = ChangeType.OBJECT_DELETE
 
-    internal object Properties : PropertyDefinitions<ObjectSoftDeleteChange>() {
-        val isDeleted = BooleanDefinition(
-                name = "isDeleted",
-                index = 0
-        )
-    }
-
     companion object: QueryDataModel<ObjectSoftDeleteChange>(
-            definitions = listOf(
-                    Def(Properties.isDeleted, ObjectSoftDeleteChange::isDeleted)
-            ),
             properties = object : PropertyDefinitions<ObjectSoftDeleteChange>() {
                 init {
                     add(0, "isDeleted", BooleanDefinition(), ObjectSoftDeleteChange::isDeleted)

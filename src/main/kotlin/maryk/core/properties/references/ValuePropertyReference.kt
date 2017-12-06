@@ -1,33 +1,25 @@
 package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.DataModel
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.DataObjectSubModelProperty
+import maryk.core.properties.definitions.wrapper.IsDataObjectProperty
 import maryk.core.protobuf.ByteLengthContainer
 
-class SubModelPropertyRef<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>(
-        propertyDefinition: DataObjectSubModelProperty<DO, D, CX, *>,
-        parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveSimpleChildReference<DO, DataObjectSubModelProperty<DO, D, CX, *>, CanHaveComplexChildReference<*, *, *>>(
-        propertyDefinition, parentReference
-), HasEmbeddedPropertyReference<DO> {
-    val name = this.propertyDefinition.name
+/**
+ * Reference to a property
+ * @param <T> Type of reference
+ * @param <D> Definition of property
+ */
+open class ValuePropertyReference<T: Any, out D : IsDataObjectProperty<T, *, *>, out P: IsPropertyReference<*, *>> (
+        propertyDefinition: D,
+        parentReference: P?
+): PropertyReference<T, D, P>(propertyDefinition, parentReference) {
+    open val name = this.propertyDefinition.name
 
     /** The name of property which is referenced */
     override val completeName: String? get() = this.parentReference?.let {
         "${it.completeName}.$name"
     } ?: name
-
-    override fun getEmbedded(name: String)
-            = this.propertyDefinition.property.dataModel.getDefinition(name)!!.getRef({ this })
-
-    override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
-        val index = initIntByVar(reader)
-        return this.propertyDefinition.property.dataModel.getDefinition(index)!!.getRef({ this })
-    }
 
     /** Calculate the transport length of encoding this reference
      * @param lengthCacher to cache length with

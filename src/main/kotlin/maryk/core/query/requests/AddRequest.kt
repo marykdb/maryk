@@ -1,6 +1,5 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
@@ -18,24 +17,7 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
 ) : IsObjectRequest<DO, DM> {
     constructor(dataModel: DM, vararg objectToAdd: DO) : this(dataModel, objectToAdd.toList())
 
-    internal object Properties : PropertyDefinitions<AddRequest<*, *>>() {
-        val objectsToAdd = add(1, "objectsToAdd",ListDefinition(
-                name = "objectsToAdd",
-                index = 1,
-                required = true,
-                valueDefinition = ContextualSubModelDefinition<DataModelPropertyContext>(
-                        contextualResolver = { it!!.dataModel!! }
-                )
-        ), AddRequest<*, *>::objectsToAdd)
-    }
-
     companion object: QueryDataModel<AddRequest<*, *>>(
-            definitions = listOf(
-                    Def(IsObjectRequest.Properties.dataModel, AddRequest<*, *>::dataModel),
-                    Def(Properties.objectsToAdd, {
-                        it.objectsToAdd.toList()
-                    })
-            ),
             properties = object : PropertyDefinitions<AddRequest<*, *>>() {
                 init {
                     IsObjectRequest.addDataModel(this, AddRequest<*, *>::dataModel)

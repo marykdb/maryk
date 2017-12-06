@@ -1,6 +1,5 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -17,22 +16,7 @@ data class Or(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    internal object Properties : PropertyDefinitions<Or>() {
-        val filters = ListDefinition(
-                name = "filters",
-                index = 0,
-                required = true,
-                valueDefinition = MultiTypeDefinition(
-                        required = true,
-                        getDefinition = { mapOfFilterDefinitions[it] }
-                )
-        )
-    }
-
     companion object: QueryDataModel<Or>(
-            definitions = listOf(
-                    Def(Properties.filters, { it.filters.map { TypedValue(it.filterType.index, it) } })
-            ),
             properties = object : PropertyDefinitions<Or>() {
                 init {
                     add(0, "filters", ListDefinition(

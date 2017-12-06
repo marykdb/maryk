@@ -10,8 +10,6 @@ import maryk.core.protobuf.WireType
  * @param <T> Comparable type defining a time
  */
 abstract class AbstractTimeDefinition<T : IsTime<T>>(
-        name: String?,
-        index: Int,
         indexed: Boolean,
         searchable: Boolean,
         required: Boolean,
@@ -23,7 +21,7 @@ abstract class AbstractTimeDefinition<T : IsTime<T>>(
         fillWithNow: Boolean,
         val precision: TimePrecision
 ) : AbstractMomentDefinition<T>(
-        name, index, indexed, searchable, required, final, wireType, unique, minValue, maxValue, fillWithNow
+        indexed, searchable, required, final, wireType, unique, minValue, maxValue, fillWithNow
 ), IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
     override fun calculateStorageByteLength(value: T) = this.byteSize
 

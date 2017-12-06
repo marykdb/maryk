@@ -4,10 +4,9 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.generateUUID
 import maryk.core.objects.IsDataModel
-import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsFixedBytesProperty
 
-object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>> {
-    override val index: Int = -1
+object UUIDKey: IsFixedBytesProperty<Pair<Long, Long>> {
     override val byteSize = 16
 
     override fun <T : Any> getValue(dataModel: IsDataModel<T>, dataObject: T) = generateUUID()

@@ -1,6 +1,5 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
@@ -14,12 +13,9 @@ data class AlreadyExists<DO: Any>(
     override val statusType = StatusType.ALREADY_EXISTS
 
     companion object: QueryDataModel<AlreadyExists<*>>(
-            definitions = listOf(
-                    Def(keyDefinition, AlreadyExists<*>::key)
-            ),
             properties = object : PropertyDefinitions<AlreadyExists<*>>() {
                 init {
-                    add(0, "key", keyDefinition, AlreadyExists<*>::key)
+                    IsResponseStatus.addKey(this, AlreadyExists<*>::key)
                 }
             }
     ) {

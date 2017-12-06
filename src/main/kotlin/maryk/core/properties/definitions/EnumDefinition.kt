@@ -11,7 +11,7 @@ import maryk.core.properties.types.IndexedEnum
 import maryk.core.protobuf.WireType
 
 /** Definition for Enum properties */
-class EnumDefinition<E: IndexedEnum<E>>(
+class EnumDefinition<E>(
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = false,
@@ -22,7 +22,7 @@ class EnumDefinition<E: IndexedEnum<E>>(
         val values: Array<E>
 ) : AbstractSimpleDefinition<E, IsPropertyContext>(
         indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue
-), IsSerializableFixedBytesEncodable<E, IsPropertyContext> {
+), IsSerializableFixedBytesEncodable<E, IsPropertyContext> where E : Enum<E>, E : IndexedEnum<E> {
     override val byteSize = 2
 
     private val valueByString: Map<String, E> by lazy {

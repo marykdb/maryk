@@ -7,6 +7,17 @@ import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 
+/** Contains a Fixed Bytes property definition which can be used for keys.
+ * @param index: of definition to encode into protobuf
+ * @param name: of definition to display in human readable format
+ * @param definition: to be wrapped for DataObject
+ * @param getter: to get property value on a DataObject
+ *
+ * @param T: value type of property
+ * @param CX: Context type for property
+ * @param D: Type of Definition contained
+ * @param DM: Type of DataModel which contains this property
+ */
 data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DM: Any>(
         override val index: Int,
         override val name: String,
@@ -30,9 +41,5 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
         return dataModel.getPropertyGetter(
                 this.index
         )?.invoke(dataObject) as T
-    }
-
-    override fun validate(previousValue: T?, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>?) {
-        this.definition.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory) })
     }
 }

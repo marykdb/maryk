@@ -6,6 +6,16 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 
+/** Wraps a Property Definition to give it more context about DataObject which contains this Definition.
+ * @param index: of definition to encode into protobuf
+ * @param name: of definition to display in human readable format
+ * @param definition: to be wrapped for DataObject
+ * @param getter: to get property value on a DataObject
+ *
+ * @param T: value type of property
+ * @param CX: Context type for property
+ * @param DM: Type of DataModel which contains this property
+ */
 interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DM>
     : IsSerializablePropertyDefinition<T, CX> {
     val index: Int

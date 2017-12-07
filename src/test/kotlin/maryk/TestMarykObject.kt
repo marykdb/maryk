@@ -187,7 +187,7 @@ data class TestMarykObject(
         )
     }
 
-    companion object: RootDataModel<TestMarykObject>(
+    companion object: RootDataModel<TestMarykObject, Properties>(
             name = "TestMarykObject",
             keyDefinitions = definitions(
                     Properties.uint,
@@ -219,7 +219,8 @@ data class TestMarykObject(
 
 data class SubMarykObject(
         val value: String,
-        val model: SubMarykObject? = null
+        val model: SubMarykObject? = null,
+        val marykModel: TestMarykObject? = null
 ){
     object Properties : PropertyDefinitions<SubMarykObject>() {
         val value = add(
@@ -235,8 +236,16 @@ data class SubMarykObject(
                 ),
                 getter = SubMarykObject::model
         )
+        val marykModel = add(
+                index = 2, name = "marykModel",
+                definition = SubModelDefinition(
+                        required = false,
+                        dataModel = { TestMarykObject }
+                ),
+                getter = SubMarykObject::marykModel
+        )
     }
-    companion object: RootDataModel<SubMarykObject>(
+    companion object: RootDataModel<SubMarykObject, Properties>(
             name = "SubMarykObject",
             properties = Properties
     ) {

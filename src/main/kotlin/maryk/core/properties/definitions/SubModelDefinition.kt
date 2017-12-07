@@ -15,7 +15,7 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, in CX: IsPropertyContext>(
+class SubModelDefinition<DO : Any, P: PropertyDefinitions<DO>, out D : DataModel<DO, P, CX>, in CX: IsPropertyContext>(
         indexed: Boolean = false,
         searchable: Boolean = true,
         required: Boolean = true,

@@ -5,11 +5,12 @@ import maryk.core.json.JsonWriter
 import maryk.core.objects.DataModel
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.test.shouldBe
 
 fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
         value: T,
-        dataModel: DataModel<T, CX>,
+        dataModel: DataModel<T, PropertyDefinitions<T>, CX>,
         context: CX,
         checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
@@ -25,7 +26,7 @@ fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
 
 fun <T: Any, CX: IsPropertyContext> checkJsonConversion(
         value: T,
-        dataModel: DataModel<T, CX>,
+        dataModel: DataModel<T, PropertyDefinitions<T>, CX>,
         context: CX,
         checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {

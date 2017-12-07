@@ -23,7 +23,7 @@ internal class SubModelDefinitionTest {
                 ), MarykObject::string)
             }
         }
-        companion object: DataModel<MarykObject, IsPropertyContext>(
+        companion object: DataModel<MarykObject, Properties, IsPropertyContext>(
                 properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(

@@ -10,7 +10,6 @@ import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
@@ -21,8 +20,6 @@ import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 
-class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: IsSerializablePropertyDefinition<T, CX>, val propertyGetter: (DM) -> T?)
-
 /**
  * A Data Model for converting and validating DataObjects
  * @param <DO> Type of DataObject which is modeled
@@ -31,8 +28,8 @@ class Def<T: Any, in DM: Any, in CX: IsPropertyContext>(val propertyDefinition: 
  * @param DO: Type of DataModel contained
  * @param CX: Type of context object
  */
-abstract class DataModel<DO: Any, in CX: IsPropertyContext>(
-        val properties: PropertyDefinitions<DO>
+abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>, in CX: IsPropertyContext>(
+        val properties: P
 ) : IsDataModel<DO> {
     private val indexToDefinition: Map<Int, IsPropertyDefinitionWrapper<Any, CX, DO>>
     private val nameToDefinition: Map<String, IsPropertyDefinitionWrapper<Any, CX, DO>>

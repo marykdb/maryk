@@ -15,7 +15,7 @@ internal class UUIDKeyTest {
             val value = add(0, "value", StringDefinition(
             ), MarykObject::value)
         }
-        companion object: RootDataModel<MarykObject>(
+        companion object: RootDataModel<MarykObject, Properties>(
                 name = "MarykObject",
                 properties = Properties
         ) {

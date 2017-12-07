@@ -4,6 +4,7 @@ import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
@@ -30,7 +31,7 @@ class ValidationExceptionTest {
             mapOf(
                     SubMarykObject.name to SubMarykObject
             ),
-            dataModel = SubMarykObject as RootDataModel<Any>
+            dataModel = SubMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

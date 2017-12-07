@@ -7,6 +7,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -30,7 +31,7 @@ class ContextualValueDefinitionTest {
                     TestMarykObject.name to TestMarykObject,
                     SubMarykObject.name to SubMarykObject
             ),
-            dataModel = TestMarykObject as RootDataModel<Any>,
+            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>,
             reference = TestMarykObject.Properties.string.getRef() as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 

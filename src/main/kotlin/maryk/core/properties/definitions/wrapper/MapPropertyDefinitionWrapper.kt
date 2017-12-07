@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
@@ -43,4 +44,18 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
      */
     fun getValueRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
             = this.definition.getValueRef(key, this.getRef(parentRefFactory))
+
+    /** For quick notation to get a map key reference
+     * @param key to get reference for
+     */
+    infix fun key(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+        return { this.getKeyRef(key, { it }) }
+    }
+
+    /** For quick notation to get a map value reference at given key
+     * @param key to get reference for value
+     */
+    infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+        return { this.getValueRef(key, { it }) }
+    }
 }

@@ -9,4 +9,4 @@ import maryk.core.query.DataModelPropertyContext
  */
 abstract class QueryDataModel<DM: Any>(
         properties: PropertyDefinitions<DM>
-) : DataModel<DM, DataModelPropertyContext>(properties)
+) : DataModel<DM, PropertyDefinitions<DM>, DataModelPropertyContext>(properties)

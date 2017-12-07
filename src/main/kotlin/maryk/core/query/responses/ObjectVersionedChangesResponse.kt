@@ -11,7 +11,7 @@ import maryk.core.query.changes.DataObjectVersionedChange
  * @param dataModel from which response data was retrieved
  * @param changes which occurred since given start version
  */
-data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO>>(
+data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val changes: List<DataObjectVersionedChange<DO>>
 ) : IsDataModelResponse<DO, DM> {
@@ -21,7 +21,7 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO>>(
                     IsDataModelResponse.addDataModel(this, ObjectVersionedChangesResponse<*, *>::dataModel)
                     add(1, "changes", ListDefinition(
                             valueDefinition = SubModelDefinition(
-                                    dataModel = DataObjectVersionedChange
+                                    dataModel = { DataObjectVersionedChange }
                             )
                     ), ObjectVersionedChangesResponse<*, *>::changes)
                 }
@@ -29,7 +29,7 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ObjectVersionedChangesResponse(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 changes = map[1] as List<DataObjectVersionedChange<Any>>
         )
     }

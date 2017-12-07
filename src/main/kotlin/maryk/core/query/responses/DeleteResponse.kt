@@ -10,7 +10,7 @@ import maryk.core.query.responses.statuses.IsDeleteResponseStatus
  * @param dataModel to which objects were added
  * @param statuses of all specific delete object actions
  */
-data class DeleteResponse<DO: Any, out DM: RootDataModel<DO>>(
+data class DeleteResponse<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val statuses: List<IsDeleteResponseStatus<DO>>
 ) : IsDataModelResponse<DO, DM> {
@@ -26,7 +26,7 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DeleteResponse(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 statuses = (map[1] as List<TypedValue<IsDeleteResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
         )
     }

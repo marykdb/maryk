@@ -9,7 +9,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.DataModelPropertyContext
 
 /** Defines a Scan from key request. */
-interface IsScanRequest<DO: Any, out DM: RootDataModel<DO>> : IsFetchRequest<DO, DM> {
+interface IsScanRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsFetchRequest<DO, DM> {
     val startKey: Key<DO>
     val limit: UInt32
 

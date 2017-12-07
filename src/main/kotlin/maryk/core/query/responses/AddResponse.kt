@@ -10,7 +10,7 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
  * @param dataModel to which objects were added
  * @param statuses of all specific add objects
  */
-data class AddResponse<DO: Any, out DM: RootDataModel<DO>> constructor(
+data class AddResponse<DO: Any, out DM: RootDataModel<DO, *>> constructor(
         override val dataModel: DM,
         val statuses: List<IsAddResponseStatus<DO>>
 ): IsDataModelResponse<DO, DM> {
@@ -26,7 +26,7 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO>> constructor(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddResponse(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 statuses = (map[1] as List<TypedValue<IsAddResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
         )
     }

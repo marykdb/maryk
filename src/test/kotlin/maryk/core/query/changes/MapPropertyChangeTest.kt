@@ -5,6 +5,7 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Time
 import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
@@ -32,7 +33,7 @@ class MapPropertyChangeTest {
             mapOf(
                     TestMarykObject.name to SubMarykObject
             ),
-            dataModel = TestMarykObject as RootDataModel<Any>
+            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

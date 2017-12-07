@@ -14,30 +14,30 @@ import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
 class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
-        val contextualResolver: (context: CX?, name: String) -> RootDataModel<*>
-): AbstractValueDefinition<RootDataModel<*>, CX>(
+        val contextualResolver: (context: CX?, name: String) -> RootDataModel<*, *>
+): AbstractValueDefinition<RootDataModel<*, *>, CX>(
         indexed = false,
         searchable = false,
         required = true,
         final = true,
         wireType = WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<RootDataModel<*>, CX> {
-    override fun asString(value: RootDataModel<*>, context: CX?)
+), IsSerializableFlexBytesEncodable<RootDataModel<*, *>, CX> {
+    override fun asString(value: RootDataModel<*, *>, context: CX?)
             = value.name
 
     override fun fromString(string: String, context: CX?)
             = contextualResolver(context, string)
 
-    override fun writeJsonValue(value: RootDataModel<*>, writer: JsonWriter, context: CX?)
+    override fun writeJsonValue(value: RootDataModel<*, *>, writer: JsonWriter, context: CX?)
             = writer.writeString(this.asString(value, context))
 
     override fun readJson(reader: JsonReader, context: CX?)
             = this.fromString(reader.lastValue, context)
 
-    override fun calculateTransportByteLength(value: RootDataModel<*>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
+    override fun calculateTransportByteLength(value: RootDataModel<*, *>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
             = value.name.calculateUTF8ByteLength()
 
-    override fun writeTransportBytes(value: RootDataModel<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
+    override fun writeTransportBytes(value: RootDataModel<*, *>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
             = value.name.writeUTF8Bytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)

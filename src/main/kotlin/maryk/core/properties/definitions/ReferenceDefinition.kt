@@ -15,7 +15,7 @@ class ReferenceDefinition<DO: Any>(
         unique: Boolean = false,
         minValue: Key<DO>? = null,
         maxValue: Key<DO>? = null,
-        val dataModel: RootDataModel<DO>
+        val dataModel: RootDataModel<DO, *>
 ): AbstractSimpleDefinition<Key<DO>, IsPropertyContext>(
         indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
 ), IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext> {

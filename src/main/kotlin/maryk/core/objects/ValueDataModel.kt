@@ -11,9 +11,9 @@ import maryk.core.properties.types.ValueDataObject
  * @param properties: All definitions for properties contained in this model
  * @param DO: Type of DataObject contained
  */
-abstract class ValueDataModel<DO: ValueDataObject>(
-        properties: PropertyDefinitions<DO>
-) : DataModel<DO, IsPropertyContext>(properties) {
+abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
+        properties: P
+) : DataModel<DO, P, IsPropertyContext>(properties) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {

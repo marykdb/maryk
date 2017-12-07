@@ -18,7 +18,7 @@ import maryk.core.query.filters.mapOfFilterDefinitions
  * @param order to use for ordering the found data
  * @param toVersion until which version to retrieve data. (exclusive)
  */
-interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO>> : IsObjectRequest<DO, DM> {
+interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsObjectRequest<DO, DM> {
     val filter: IsFilter?
     val order: Order?
     val toVersion: UInt64?

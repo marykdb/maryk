@@ -5,6 +5,7 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -61,7 +62,7 @@ class ObjectVersionedChangesResponseTest {
                     SubMarykObject.name to SubMarykObject,
                     TestMarykObject.name to TestMarykObject
             ),
-            dataModel = TestMarykObject as RootDataModel<Any>
+            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

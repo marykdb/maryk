@@ -11,7 +11,7 @@ import maryk.core.query.changes.DataObjectChange
  * @param dataModel Root model of data to change objects in
  * @param objectChanges Array of object changes
  */
-data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
+data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val objectChanges: List<DataObjectChange<DO>>
 ) : IsObjectRequest<DO, DM> {
@@ -31,7 +31,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ChangeRequest(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 objectChanges = map[1] as List<DataObjectChange<Any>>
         )
     }

@@ -11,7 +11,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param dataModel Root model of data to add objects to
  * @param objectsToAdd Array of objects to add
  */
-data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
+data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val objectsToAdd: List<DO>
 ) : IsObjectRequest<DO, DM> {
@@ -31,7 +31,7 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddRequest(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 objectsToAdd = map[1] as List<Any>
         )
     }

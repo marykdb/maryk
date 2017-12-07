@@ -15,6 +15,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -30,11 +31,11 @@ fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
  * @param properties: All definitions for properties contained in this model
  * @param DM: Type of DataModel contained
  */
-abstract class RootDataModel<DM: Any>(
+abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
         val name: String,
         keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
-        properties: PropertyDefinitions<DM>
-) : DataModel<DM, IsPropertyContext>(properties){
+        properties: P
+) : DataModel<DM, P, IsPropertyContext>(properties){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */
@@ -101,6 +102,22 @@ abstract class RootDataModel<DM: Any>(
             }
             return Key(bytes)
         }
+    }
+
+    /** For quick notation to fetch property references below submodels
+     * @param referenceGetter The sub getter to fetch a reference
+     * @return a reference to property
+     */
+    operator fun invoke(referenceGetter: P.()-> (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>>): IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+        return referenceGetter(this.properties)(null)
+    }
+
+    /** To get a top level reference on a model
+     * @param propertyDefinitionGetter The fetcher for the property definition to get reference of
+     * @return a reference to property
+     */
+    fun <T: IsPropertyDefinitionWrapper<*, *, *>> ref(propertyDefinitionGetter: P.()-> T): IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+        return propertyDefinitionGetter(this.properties).getRef()
     }
 
     /** Get PropertyReference by name

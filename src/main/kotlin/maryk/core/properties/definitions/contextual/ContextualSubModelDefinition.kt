@@ -6,12 +6,13 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
 internal class ContextualSubModelDefinition<in CX: IsPropertyContext>(
-        val contextualResolver: (context: CX?) -> RootDataModel<Any>
+        val contextualResolver: (context: CX?) -> RootDataModel<Any, PropertyDefinitions<Any>>
 ): AbstractValueDefinition<Any, CX>(
         indexed = false,
         searchable = false,

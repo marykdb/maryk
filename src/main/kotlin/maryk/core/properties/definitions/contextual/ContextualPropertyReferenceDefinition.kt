@@ -6,6 +6,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
@@ -13,7 +14,7 @@ import maryk.core.protobuf.WireType
 /** Definition for a reference to another property */
 class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
         required: Boolean = true,
-        val contextualResolver: (context: CX?) -> RootDataModel<Any>
+        val contextualResolver: (context: CX?) -> RootDataModel<*, *>
 ): AbstractValueDefinition<IsPropertyReference<*, *>, CX>(
         false, true, required, false, WireType.LENGTH_DELIMITED
 ), IsSerializableFlexBytesEncodable<IsPropertyReference<*, *>, CX> {

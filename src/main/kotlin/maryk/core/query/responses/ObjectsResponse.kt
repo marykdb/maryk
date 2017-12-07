@@ -11,7 +11,7 @@ import maryk.core.query.DataObjectWithMetaData
  * @param dataModel from which response data was retrieved
  * @param objects found which match the request
  */
-data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO>>(
+data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val objects: List<DataObjectWithMetaData<DO>>
 ) : IsDataModelResponse<DO, DM> {
@@ -21,7 +21,7 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO>>(
                     IsDataModelResponse.addDataModel(this, ObjectsResponse<*, *>::dataModel)
                     add(1, "objects", ListDefinition(
                             valueDefinition = SubModelDefinition(
-                                    dataModel = DataObjectWithMetaData
+                                    dataModel = { DataObjectWithMetaData }
                             )
                     ), ObjectsResponse<*, *>::objects)
                 }
@@ -29,7 +29,7 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ObjectsResponse(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 objects = map[1] as List<DataObjectWithMetaData<Any>>
         )
     }

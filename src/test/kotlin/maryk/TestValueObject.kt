@@ -1,6 +1,5 @@
 package maryk
 
-import maryk.core.objects.Def
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -26,7 +25,7 @@ data class TestValueObject(
         val bool = add(2, "bool", BooleanDefinition(), TestValueObject::bool)
     }
 
-    companion object: ValueDataModel<TestValueObject>(
+    companion object: ValueDataModel<TestValueObject, Properties>(
             properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = TestValueObject(

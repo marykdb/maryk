@@ -5,13 +5,14 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.protobuf.ByteLengthContainer
 
-class SubModelPropertyRef<DO : Any, D : DataModel<DO, CX>, CX: IsPropertyContext>(
-        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, D, CX, *>,
+class SubModelPropertyRef<DO : Any, P: PropertyDefinitions<DO>, D : DataModel<DO, P, CX>, CX: IsPropertyContext>(
+        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, D, CX, *>,
         parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveSimpleChildReference<DO, SubModelPropertyDefinitionWrapper<DO, D, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+): CanHaveComplexChildReference<DO, SubModelPropertyDefinitionWrapper<DO, P, D, CX, *>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name

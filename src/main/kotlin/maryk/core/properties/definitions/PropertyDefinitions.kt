@@ -3,12 +3,12 @@ package maryk.core.properties.definitions
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 
 abstract class PropertyDefinitions<DM: Any> {
     @Suppress("PropertyName")
@@ -59,10 +59,10 @@ abstract class PropertyDefinitions<DM: Any> {
         __allProperties.add(this)
     }
 
-    fun <DO: Any, D: DataModel<DO, CX>, CX: IsPropertyContext> add(
+    fun <DO: Any, P: PropertyDefinitions<DO>, D: DataModel<DO, P, CX>, CX: IsPropertyContext> add(
             index: Int,
             name: String,
-            definition: SubModelDefinition<DO, D, CX>,
+            definition: SubModelDefinition<DO, P, D, CX>,
             getter: (DM) -> DO? = { null }
     ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)

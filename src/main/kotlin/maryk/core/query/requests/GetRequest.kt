@@ -16,7 +16,7 @@ import maryk.core.query.filters.IsFilter
  * @param toVersion until which version to retrieve data. (exclusive)
  * @param keys Array of keys to retrieve object of
  */
-data class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
+data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         override val keys: List<Key<DO>>,
         override val filter: IsFilter? = null,
@@ -48,7 +48,7 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = GetRequest(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 keys = map[1] as List<Key<Any>>,
                 filter = (map[2] as TypedValue<IsFilter>?)?.value,
                 order = map[3] as Order?,

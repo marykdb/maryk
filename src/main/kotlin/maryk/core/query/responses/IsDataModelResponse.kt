@@ -20,11 +20,11 @@ import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 
 /** A response for a data operation on a DataModel */
-interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO>>{
+interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*>?) {
+        internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
             definitions.add(0, "dataModel", dataModel, getter)
         }
         internal fun <DM: Any> addStatuses(definitions: PropertyDefinitions<DM>, getter: (DM) -> List<TypedValue<*>>?){
@@ -41,7 +41,7 @@ private val dataModel = ContextCaptureDefinition(
         )
 ){ context, value ->
     @Suppress("UNCHECKED_CAST")
-    context!!.dataModel = value as RootDataModel<Any>
+    context!!.dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
 }
 
 private val listOfStatuses = ListDefinition(

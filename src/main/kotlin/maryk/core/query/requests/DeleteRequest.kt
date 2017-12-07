@@ -15,7 +15,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param hardDelete false means data will still exist but be not requestable
  * and true will mean the data will be totally deleted
  */
-data class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
+data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val objectsToDelete: List<Key<DO>>,
         val hardDelete: Boolean = false
@@ -41,7 +41,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DeleteRequest(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 objectsToDelete = map[1] as List<Key<Any>>,
                 hardDelete = map[2] as Boolean
         )

@@ -7,6 +7,7 @@ import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.extensions.bytes.ZEROBYTE
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
@@ -29,7 +30,7 @@ class ContextualReferenceDefinitionTest {
                     TestMarykObject.name to TestMarykObject,
                     SubMarykObject.name to SubMarykObject
             ),
-            dataModel = TestMarykObject as RootDataModel<Any>
+            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

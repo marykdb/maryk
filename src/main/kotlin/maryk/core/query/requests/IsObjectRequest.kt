@@ -7,11 +7,11 @@ import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefi
 import maryk.core.query.DataModelPropertyContext
 
 /** A request for a data operation */
-interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO>>{
+interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO, *>>{
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*>?) {
+        internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
             definitions.add(
                     0, "dataModel",
                     ContextCaptureDefinition(
@@ -22,7 +22,7 @@ interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO>>{
                             )
                     ) { context, value ->
                             @Suppress("UNCHECKED_CAST")
-                            context!!.dataModel = value as RootDataModel<Any>
+                            context!!.dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
                     },
                     getter
             )

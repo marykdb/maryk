@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
@@ -35,4 +36,11 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: An
      */
     fun getItemRef(value: T, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
             = this.definition.getItemRef(value, this.getRef(parentRefFactory))
+
+    /** For quick notation to get a set item reference
+     * @param item to get reference at index
+     */
+    infix fun at(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+        return { this.getItemRef(item, { it }) }
+    }
 }

@@ -16,7 +16,7 @@ import maryk.core.query.filters.IsFilter
  * @param startKey to start scan at (inclusive)
  * @param limit amount of items to fetch
  */
-data class ScanRequest<DO: Any, out DM: RootDataModel<DO>>(
+data class ScanRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         override val startKey: Key<DO>,
         override val filter: IsFilter? = null,
@@ -42,7 +42,7 @@ data class ScanRequest<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ScanRequest(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 startKey = map[1] as Key<Any>,
                 filter = (map[2] as TypedValue<IsFilter>?)?.value,
                 order = map[3] as Order?,

@@ -10,7 +10,7 @@ import maryk.core.query.responses.statuses.IsChangeResponseStatus
  * @param dataModel to which objects were changed
  * @param statuses of all specific change object actions
  */
-data class ChangeResponse<DO: Any, out DM: RootDataModel<DO>>(
+data class ChangeResponse<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val statuses: List<IsChangeResponseStatus<DO>>
 ) : IsDataModelResponse<DO, DM> {
@@ -26,7 +26,7 @@ data class ChangeResponse<DO: Any, out DM: RootDataModel<DO>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ChangeResponse(
-                dataModel = map[0] as RootDataModel<Any>,
+                dataModel = map[0] as RootDataModel<Any, *>,
                 statuses = (map[1] as List<TypedValue<IsChangeResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
         )
     }

@@ -30,10 +30,10 @@ data class SubModelPropertyDefinitionWrapper<DO: Any, P: PropertyDefinitions<DO>
         IsSubModelDefinition<DO, CX> by definition,
         IsPropertyDefinitionWrapper<DO, CX, DM>
 {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
+    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
             SubModelPropertyRef(
                     this,
-                    parentRefFactory()?.let {
+                    parentRef?.let {
                         it as CanHaveComplexChildReference<*, *, *>
                     }
             )
@@ -43,7 +43,7 @@ data class SubModelPropertyDefinitionWrapper<DO: Any, P: PropertyDefinitions<DO>
      * @return a reference to property
      */
     infix fun ref(definitionGetter: P.() -> IsPropertyDefinitionWrapper<*, *, *>): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { definitionGetter(definition.dataModel.properties).getRef({ this.getRef { it } }) }
+        return { definitionGetter(definition.dataModel.properties).getRef(this.getRef(it)) }
     }
 
     /** For quick notation to fetch property references below submodels
@@ -51,6 +51,6 @@ data class SubModelPropertyDefinitionWrapper<DO: Any, P: PropertyDefinitions<DO>
      * @return a reference to property
      */
     operator fun invoke(referenceGetter: P.() -> (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>>): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { referenceGetter(definition.dataModel.properties)(this.getRef { it } ) }
+        return { referenceGetter(definition.dataModel.properties)(this.getRef(it)) }
     }
 }

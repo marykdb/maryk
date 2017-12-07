@@ -21,7 +21,7 @@ internal class PropertyReferenceTest {
     private val definition = Properties.add(1, "test", StringDefinition())
 
     private val ref = this.definition.getRef()
-    private val subRef = this.definition.getRef({ modelDefinition.getRef() })
+    private val subRef = this.definition.getRef(modelDefinition.getRef())
 
     @Test
     fun getCompleteName() {

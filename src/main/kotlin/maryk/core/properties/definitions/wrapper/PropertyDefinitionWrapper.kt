@@ -22,6 +22,6 @@ data class PropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, D: IsSeriali
         override val definition: D,
         override val getter: (DM) -> T?
 ) : IsSerializableFlexBytesEncodable<T, CX> by definition, IsValuePropertyDefinitionWrapper<T, CX, DM> {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?)
-            = ValuePropertyReference(this, parentRefFactory())
+    override fun getRef(parentRef: IsPropertyReference<*, *>?)
+            = ValuePropertyReference(this, parentRef)
 }

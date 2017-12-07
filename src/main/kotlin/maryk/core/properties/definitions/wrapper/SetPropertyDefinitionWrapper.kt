@@ -27,20 +27,20 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: An
         IsCollectionDefinition<T, Set<T>, CX> by definition,
         IsPropertyDefinitionWrapper<Set<T>, CX, DM>
 {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
-            SetReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
+    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+            SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific set item
      * @param key to get reference for
-     * @param parentRefFactory (optional) factory to create parent ref
+     * @param parentRef (optional) reference to parent reference
      */
-    fun getItemRef(value: T, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.definition.getItemRef(value, this.getRef(parentRefFactory))
+    fun getItemRef(value: T, parentRef: IsPropertyReference<*, *>? = null)
+            = this.definition.getItemRef(value, this.getRef(parentRef))
 
     /** For quick notation to get a set item reference
      * @param item to get reference at index
      */
     infix fun at(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { this.getItemRef(item, { it }) }
+        return { this.getItemRef(item, it) }
     }
 }

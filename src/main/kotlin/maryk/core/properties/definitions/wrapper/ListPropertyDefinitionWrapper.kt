@@ -27,20 +27,20 @@ data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: A
         IsCollectionDefinition<T, List<T>, CX> by definition,
         IsPropertyDefinitionWrapper<List<T>, CX, DM>
 {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?) =
-            ListReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
+    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+            ListReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific list item by index
      * @param index to get list item reference for
-     * @param parentRefFactory (optional) factory to create parent ref
+     * @param parentRef (optional) parent reference
      */
-    fun getItemRef(index: Int, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.definition.getItemRef(index, this.getRef(parentRefFactory))
+    fun getItemRef(index: Int, parentRef: IsPropertyReference<*, *>? = null)
+            = this.definition.getItemRef(index, this.getRef(parentRef))
 
     /** For quick notation to get a list item reference
      * @param index to get reference at index
      */
     infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { this.getItemRef(index, { it }) }
+        return { this.getItemRef(index, it) }
     }
 }

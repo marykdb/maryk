@@ -12,10 +12,8 @@ import kotlin.test.Test
 
 class ContextualPropertyReferenceDefinitionTest {
     private val refsToTest = listOf(
-            TestMarykObject.Properties.string.getRef(),
-            SubMarykObject.Properties.value.getRef(
-                    { TestMarykObject.Properties.subModel.getRef() }
-            )
+            TestMarykObject.ref { string },
+            TestMarykObject { subModel ref { value } }
     )
 
     private val def = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(

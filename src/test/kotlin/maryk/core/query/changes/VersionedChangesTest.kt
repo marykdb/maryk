@@ -11,7 +11,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class VersionedChangesTest {
-    private val subModel = { TestMarykObject.Properties.subModel.getRef() }
+    private val subModel = TestMarykObject.Properties.subModel.getRef()
 
     private val versionedChanges = VersionedChanges(
             219674127L.toUInt64(),

@@ -29,8 +29,8 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
         IsValuePropertyDefinitionWrapper<T, CX, DM>,
         IsFixedBytesProperty<T>
 {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?)
-            = ValuePropertyReference(this, parentRefFactory())
+    override fun getRef(parentRef: IsPropertyReference<*, *>?)
+            = ValuePropertyReference(this, parentRef)
 
     /** Get the value to be used in a key
      * @param dataModel to use to fetch property if relevant

@@ -25,10 +25,10 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DM>
 
     /**
      * Get a reference to this definition
-     * @param parentReference reference to parent property if present
+     * @param parentRef reference to parent property if present
      * @return Complete property reference
      */
-    fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>? = { null }): IsPropertyReference<T, *>
+    fun getRef(parentRef: IsPropertyReference<*, *>? = null): IsPropertyReference<T, *>
 
     /**
      * Validates the values on propertyDefinition
@@ -38,7 +38,7 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DM>
      * @throws ValidationException when encountering invalid new value
      */
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>? = { null }) {
-        this.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory) })
+        this.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory()) })
     }
 
     /** Calculates the needed bytes to transport the value

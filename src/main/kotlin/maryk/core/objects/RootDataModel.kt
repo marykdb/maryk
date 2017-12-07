@@ -129,7 +129,7 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
         var propertyReference: IsPropertyReference<*, *>? = null
         for (name in names) {
             propertyReference = when (propertyReference) {
-                null -> getDefinition(name)?.getRef({ propertyReference })
+                null -> getDefinition(name)?.getRef(propertyReference)
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
                 else -> throw DefNotFoundException("${this.name}: Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist on ${this.name}")
@@ -155,7 +155,7 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
             propertyReference = when (propertyReference) {
                 null -> {
                     val index = initIntByVar(lengthReader)
-                    getDefinition(index)?.getRef({ propertyReference })
+                    getDefinition(index)?.getRef(propertyReference)
                 }
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader)
                 else -> throw DefNotFoundException("More property references found on property ${this.name} that cannot have any ")

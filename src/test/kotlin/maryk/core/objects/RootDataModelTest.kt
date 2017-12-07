@@ -29,7 +29,7 @@ internal class RootDataModelTest {
             )
     }
 
-    private val subModelRef = SubMarykObject.Properties.value.getRef { TestMarykObject.Properties.subModel.getRef() }
+    private val subModelRef = SubMarykObject.Properties.value.getRef(TestMarykObject.Properties.subModel.getRef())
     private val mapRef = TestMarykObject.Properties.map.getRef()
     private val mapKeyRef = TestMarykObject.Properties.map.getKeyRef(Time(12, 33, 44))
 

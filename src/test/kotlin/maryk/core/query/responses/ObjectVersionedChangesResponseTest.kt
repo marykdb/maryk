@@ -26,7 +26,7 @@ class ObjectVersionedChangesResponseTest {
             byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
-    private val subModel = { TestMarykObject.Properties.subModel.getRef() }
+    private val subModel = TestMarykObject.Properties.subModel.getRef()
 
     private val objectVersionedChangesResponse = ObjectVersionedChangesResponse(
             TestMarykObject,

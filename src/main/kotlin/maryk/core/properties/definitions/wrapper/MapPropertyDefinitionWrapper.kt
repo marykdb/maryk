@@ -28,34 +28,34 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
         IsMapDefinition<K, V, CX> by definition,
         IsPropertyDefinitionWrapper<Map<K,V>, CX, DM>
 {
-    override fun getRef(parentRefFactory: () -> IsPropertyReference<*, *>?): MapReference<K, V, CX> =
-            MapReference(this, parentRefFactory() as CanHaveComplexChildReference<*, *, *>?)
+    override fun getRef(parentRef: IsPropertyReference<*, *>?): MapReference<K, V, CX> =
+            MapReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific map key
      * @param key to get reference for
      * @param parentRefFactory (optional) factory to create parent ref
      */
-    fun getKeyRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.definition.getKeyRef(key, this.getRef(parentRefFactory))
+    fun getKeyRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
+            = this.definition.getKeyRef(key, this.getRef(parentRef))
 
     /** Get a reference to a specific map value by key
      * @param key to get reference to value for
      * @param parentRefFactory (optional) factory to create parent ref
      */
-    fun getValueRef(key: K, parentRefFactory: () -> IsPropertyReference<*, *>? = { null })
-            = this.definition.getValueRef(key, this.getRef(parentRefFactory))
+    fun getValueRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
+            = this.definition.getValueRef(key, this.getRef(parentRef))
 
     /** For quick notation to get a map key reference
      * @param key to get reference for
      */
     infix fun key(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { this.getKeyRef(key, { it }) }
+        return { this.getKeyRef(key, it) }
     }
 
     /** For quick notation to get a map value reference at given key
      * @param key to get reference for value
      */
     infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { this.getValueRef(key, { it }) }
+        return { this.getValueRef(key, it) }
     }
 }

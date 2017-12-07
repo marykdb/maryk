@@ -53,7 +53,6 @@ data class TestMarykObject(
         val string = add(
                 index = 0, name = "string",
                 definition = StringDefinition(
-                        required = true,
                         regEx = "ha.*"
                 ),
                 getter = TestMarykObject::string
@@ -72,7 +71,6 @@ data class TestMarykObject(
                 index = 2, name = "uint",
                 definition = NumberDefinition(
                         type = UInt32,
-                        required = true,
                         final = true
                 ),
                 getter = TestMarykObject::uint
@@ -93,7 +91,6 @@ data class TestMarykObject(
         val bool = add(
                 index = 5, name = "bool",
                 definition = BooleanDefinition(
-                        required = true,
                         final = true
                 ),
                 getter = TestMarykObject::bool
@@ -103,7 +100,6 @@ data class TestMarykObject(
                 index = 6, name = "enum",
                 definition = EnumDefinition(
                         values = Option.values(),
-                        required = true,
                         final = true
                 ),
                 getter = TestMarykObject::enum
@@ -112,8 +108,8 @@ data class TestMarykObject(
         val list = add(
                 index = 7, name = "list",
                 definition = ListDefinition(
+                        required = false,
                         valueDefinition = NumberDefinition(
-                            required = true,
                             type = SInt32
                         )
                 ),
@@ -123,7 +119,8 @@ data class TestMarykObject(
         val set = add(
                 index = 8, name = "set",
                 definition = SetDefinition(
-                        valueDefinition = DateDefinition(required = true)
+                        required = false,
+                        valueDefinition = DateDefinition()
                 ),
                 getter = TestMarykObject::set
         )
@@ -131,8 +128,9 @@ data class TestMarykObject(
         val map = add(
                 index = 9, name = "map",
                 definition = MapDefinition(
-                        keyDefinition = TimeDefinition(required = true),
-                        valueDefinition = StringDefinition(required = true)
+                        required = false,
+                        keyDefinition = TimeDefinition(),
+                        valueDefinition = StringDefinition()
                 ),
                 getter = TestMarykObject::map
         )
@@ -140,6 +138,7 @@ data class TestMarykObject(
         val valueObject = add(
                 index = 10, name = "valueObject",
                 definition = ValueModelDefinition(
+                        required = false,
                         dataModel = TestValueObject
                 ),
                 getter = TestMarykObject::valueObject
@@ -148,6 +147,7 @@ data class TestMarykObject(
         val subModel = add(
                 index = 11, name = "subModel",
                 definition = SubModelDefinition(
+                        required = false,
                         dataModel = SubMarykObject
                 ),
                 getter = TestMarykObject::subModel
@@ -156,6 +156,7 @@ data class TestMarykObject(
         val multi = add(
                 index = 12, name = "multi",
                 definition = MultiTypeDefinition(
+                        required = false,
                         getDefinition = mapOf(
                                 0 to StringDefinition(),
                                 1 to NumberDefinition(type = SInt32),
@@ -170,6 +171,7 @@ data class TestMarykObject(
         val reference = add(
                 index = 13, name = "reference",
                 definition = ReferenceDefinition(
+                        required = false,
                         dataModel = SubMarykObject
                 ),
                 getter = TestMarykObject::reference
@@ -178,7 +180,8 @@ data class TestMarykObject(
         val listOfString = add(
                 index = 14, name = "listOfString",
                 definition = ListDefinition(
-                        valueDefinition = StringDefinition(required = true)
+                        required = false,
+                        valueDefinition = StringDefinition()
                 ),
                 getter = TestMarykObject::listOfString
         )

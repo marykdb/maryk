@@ -17,11 +17,9 @@ internal class ReversedTest {
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val boolean = add(0, "bool", BooleanDefinition(
-                    required = true,
                     final = true
             ), MarykObject::boolean)
             val dateTime = add(1, "dateTime", DateTimeDefinition(
-                    required = true,
                     final = true
             ), MarykObject::dateTime)
         }

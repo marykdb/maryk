@@ -26,22 +26,15 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO>> : IsObjectRequest<D
 
     companion object {
         fun <DM: Any> addFilter(definitions: PropertyDefinitions<DM>, getter: (DM) -> TypedValue<Any>?) {
-            definitions.add(2, "filter", MultiTypeDefinition(
-                    required = true,
-                    getDefinition = { mapOfFilterDefinitions[it] }
-            ), getter)
+            definitions.add(2, "filter", MultiTypeDefinition(required = false, getDefinition = { mapOfFilterDefinitions[it] }), getter)
         }
 
         fun <DM: Any> addOrder(definitions: PropertyDefinitions<DM>, getter: (DM) -> Order?) {
-            definitions.add(3, "order", SubModelDefinition(
-                    dataModel = Order
-            ), getter)
+            definitions.add(3, "order", SubModelDefinition(required = false, dataModel = Order), getter)
         }
 
         fun <DM: Any> addToVersion(definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
-            definitions.add(4, "toVersion", NumberDefinition(
-                    type = UInt64
-            ), getter)
+            definitions.add(4, "toVersion", NumberDefinition(required = false, type = UInt64), getter)
         }
 
         fun <DM: Any> addFilterSoftDeleted(definitions: PropertyDefinitions<DM>, getter: (DM) -> Boolean?) {

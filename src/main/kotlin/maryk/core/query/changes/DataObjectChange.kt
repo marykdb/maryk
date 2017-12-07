@@ -35,9 +35,7 @@ data class DataObjectChange<out DO: Any>(
                     ), DataObjectChange<*>::key)
 
                     add(1, "changes", ListDefinition(
-                            required = true,
                             valueDefinition = MultiTypeDefinition(
-                                    required = true,
                                     getDefinition = mapOfChangeDefinitions::get
                             )
                     )) {

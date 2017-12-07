@@ -24,9 +24,7 @@ data class DataObjectVersionedChange<out DO: Any>(
                     ), DataObjectVersionedChange<*>::key)
 
                     add(1, "changes", ListDefinition(
-                            required = true,
                             valueDefinition = SubModelDefinition(
-                                    required = true,
                                     dataModel = VersionedChanges
                             )
                     ), DataObjectVersionedChange<*>::changes)

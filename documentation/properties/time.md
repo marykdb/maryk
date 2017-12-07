@@ -32,7 +32,7 @@ in seconds and milliseconds.
 val def = TimeDefinition(
     name = "meetingTime",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     unique = true,
     minValue = Time(8, 30),

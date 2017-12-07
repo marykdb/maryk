@@ -20,9 +20,7 @@ data class ObjectChangesResponse<DO: Any, out DM: RootDataModel<DO>>(
                 init {
                     IsDataModelResponse.addDataModel(this, ObjectChangesResponse<*, *>::dataModel)
                     add(1, "changes", ListDefinition(
-                            required = true,
                             valueDefinition = SubModelDefinition(
-                                    required = true,
                                     dataModel = DataObjectChange
                             )
                     ), ObjectChangesResponse<*, *>::changes)

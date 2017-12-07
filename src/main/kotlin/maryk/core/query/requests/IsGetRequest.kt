@@ -14,7 +14,6 @@ interface IsGetRequest<DO: Any, out DM: RootDataModel<DO>> : IsFetchRequest<DO, 
     companion object {
         internal fun <DM: Any> addKeys(definitions: PropertyDefinitions<DM>, getter: (DM) -> List<Key<Any>>?) {
             definitions.add(1, "keys", ListDefinition(
-                    required = true,
                     valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                             contextualResolver = { it!!.dataModel!!.key }
                     )

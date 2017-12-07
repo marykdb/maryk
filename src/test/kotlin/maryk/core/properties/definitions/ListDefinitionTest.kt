@@ -21,33 +21,32 @@ import kotlin.test.Test
 
 internal class ListDefinitionTest {
     private val subDef = StringDefinition(
-            required = true,
             regEx = "T.*"
     )
 
     private val def = ListDefinition(
             minSize = 2,
             maxSize = 4,
-            required = true,
             valueDefinition = subDef
     )
 
     private val def2 = ListDefinition(
             minSize = 2,
             maxSize = 4,
+            required = false,
             valueDefinition = subDef
     )
 
     private val defVarInt = ListDefinition(
-            valueDefinition = NumberDefinition(type = UInt32, required = true)
+            valueDefinition = NumberDefinition(type = UInt32)
     )
 
     private val def64Int = ListDefinition(
-            valueDefinition = NumberDefinition(type = Float64, required = true)
+            valueDefinition = NumberDefinition(type = Float64)
     )
 
     private val def32Int = ListDefinition(
-            valueDefinition = NumberDefinition(type = Float32, required = true)
+            valueDefinition = NumberDefinition(type = Float32)
     )
 
     @Test

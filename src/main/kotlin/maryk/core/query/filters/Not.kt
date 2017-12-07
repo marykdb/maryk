@@ -1,6 +1,5 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -17,8 +16,7 @@ data class Not(
     companion object: QueryDataModel<Not>(
             properties = object : PropertyDefinitions<Not>() {
                 init {
-                    add(0, "filters", MultiTypeDefinition(
-                            required = true,
+                    add(0, "filter", MultiTypeDefinition(
                             getDefinition = { mapOfFilterDefinitions[it] }
                     )) { not: Not -> TypedValue(not.filter.filterType.index, not.filter)}
                 }

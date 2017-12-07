@@ -20,9 +20,7 @@ data class Or(
             properties = object : PropertyDefinitions<Or>() {
                 init {
                     add(0, "filters", ListDefinition(
-                            required = true,
                             valueDefinition = MultiTypeDefinition(
-                                    required = true,
                                     getDefinition = { mapOfFilterDefinitions[it] }
                             )
                     )) {

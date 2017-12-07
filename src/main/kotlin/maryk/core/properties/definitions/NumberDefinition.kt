@@ -13,7 +13,7 @@ import maryk.core.properties.types.numeric.SInt64
 class NumberDefinition<T: Comparable<T>>(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         unique: Boolean = false,
         minValue: T? = null,

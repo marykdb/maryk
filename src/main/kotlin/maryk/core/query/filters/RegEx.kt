@@ -22,9 +22,7 @@ data class RegEx(
                 init {
                     IsPropertyCheck.addReference(this, RegEx::reference)
 
-                    add(1, "regEx", StringDefinition(
-                            required = true
-                    ), RegEx::regEx)
+                    add(1, "regEx", StringDefinition(), RegEx::regEx)
                 }
             }
     ) {

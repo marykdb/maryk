@@ -23,9 +23,7 @@ data class ValidationFail<DO: Any>(
             properties = object : PropertyDefinitions<ValidationFail<*>>() {
                 init {
                     add(0, "exceptions", ListDefinition(
-                            required = true,
                             valueDefinition = MultiTypeDefinition(
-                                    required = true,
                                     getDefinition = { mapOfValidationExceptionDefinitions.get(it) }
                             )
                     )) {

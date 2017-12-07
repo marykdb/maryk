@@ -35,14 +35,17 @@ data class SetPropertyChange<T: Any>(
                     IsPropertyOperation.addReference(this, SetPropertyChange<*>::reference)
                     @Suppress("UNCHECKED_CAST")
                     add(1, "valueToCompare", ContextualCollectionDefinition(
+                            required = false,
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 context!!.reference!!.propertyDefinition.definition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
                             }
                     ), SetPropertyChange<*>::valueToCompare)
                     add(2, "addValues", SetDefinition(
+                            required = false,
                             valueDefinition = valueDefinition
                     ), SetPropertyChange<*>::addValues)
                     add(3, "deleteValues", SetDefinition(
+                            required = false,
                             valueDefinition = valueDefinition
                     ), SetPropertyChange<*>::deleteValues)
                 }

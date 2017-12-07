@@ -8,7 +8,7 @@ import maryk.core.properties.references.SetReference
 class SetDefinition<T: Any, CX: IsPropertyContext>(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         minSize: Int? = null,
         maxSize: Int? = null,

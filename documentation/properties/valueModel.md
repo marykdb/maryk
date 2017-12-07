@@ -30,7 +30,7 @@ This makes them usable as map keys and list/set items.
 val def = ValueModelDefinition(
     name = "personRoleInPeriod",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     dataModel = PersonRoleInPeriod
 )

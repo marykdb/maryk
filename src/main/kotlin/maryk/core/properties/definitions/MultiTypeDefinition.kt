@@ -23,7 +23,7 @@ import maryk.core.protobuf.WireType
 class MultiTypeDefinition<CX: IsPropertyContext>(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         val getDefinition: (Int) -> AbstractSubDefinition<*, CX>?
 ) : AbstractValueDefinition<TypedValue<*>, CX>(

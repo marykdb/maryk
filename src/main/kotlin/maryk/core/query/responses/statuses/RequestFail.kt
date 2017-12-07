@@ -15,7 +15,7 @@ data class RequestFail<DO: Any>(
     companion object: QueryDataModel<RequestFail<*>>(
             properties = object : PropertyDefinitions<RequestFail<*>>() {
                 init {
-                    add(0, "reason", StringDefinition(required = true), RequestFail<*>::reason)
+                    add(0, "reason", StringDefinition(), RequestFail<*>::reason)
                 }
             }
     ) {

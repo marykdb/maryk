@@ -28,13 +28,14 @@ be null.
 - keyDefinition
 - valueDefinition
 
-**Example of a kotlin Set definition**
+**Example of a kotlin Map definition**
 ```kotlin
-val def = ListDefinition(
-    name = "listOfNames",
+val def = MapDefinition(
+    name = "mapOfIntString",
     index = 0,
-    required = true,
+    required = false,
     final = true,
+    keyDefinition = NumberDefinition(type = UInt32),
     valueDefinition = StringDefinition()
 )
 ```

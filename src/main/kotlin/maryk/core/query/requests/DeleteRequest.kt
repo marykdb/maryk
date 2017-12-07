@@ -30,7 +30,6 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO>>(
                     IsObjectRequest.addDataModel(this, DeleteRequest<*, *>::dataModel)
 
                     add(1, "objectsToDelete", ListDefinition(
-                            required = true,
                             valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                                     contextualResolver = { it!!.dataModel!!.key }
                             )

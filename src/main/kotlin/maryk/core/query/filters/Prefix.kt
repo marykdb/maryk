@@ -21,9 +21,7 @@ data class Prefix(
             properties = object : PropertyDefinitions<Prefix>() {
                 init {
                     IsPropertyCheck.addReference(this, Prefix::reference)
-                    add(1, "prefix", StringDefinition(
-                            required = true
-                    ), Prefix::prefix)
+                    add(1, "prefix", StringDefinition(), Prefix::prefix)
                 }
             }
     ) {

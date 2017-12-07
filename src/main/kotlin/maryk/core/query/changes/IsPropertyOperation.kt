@@ -40,6 +40,7 @@ interface IsPropertyOperation<T: Any> : IsChange {
             definitions.add(
                     1, "valueToCompare",
                     ContextualValueDefinition(
+                            required = false,
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 @Suppress("UNCHECKED_CAST")
                                 context!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>

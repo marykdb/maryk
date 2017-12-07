@@ -7,7 +7,7 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class AbstractPropertyDefinitionTest {
-    val def = StringDefinition(required = true, final = true)
+    private val def = StringDefinition(final = true)
 
     @Test
     fun hasValues() {

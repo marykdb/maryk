@@ -37,20 +37,28 @@ data class ListPropertyChange<T: Any>(
              properties = object : PropertyDefinitions<ListPropertyChange<*>>() {
                 init {
                     IsPropertyOperation.addReference(this, ListPropertyChange<*>::reference)
+
                     @Suppress("UNCHECKED_CAST")
                     add(1, "valueToCompare", ContextualCollectionDefinition(
+                            required = false,
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 (context!!.reference!! as ListReference<Any, IsPropertyContext>).propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
                             }
                     ), ListPropertyChange<*>::valueToCompare)
+
                     add(2, "addValuesToEnd", valueListDefinition, ListPropertyChange<*>::addValuesToEnd)
+
                     add(3, "addValuesAtIndex", MapDefinition(
-                            keyDefinition = NumberDefinition(required = true, type = SInt32),
+                            required = false,
+                            keyDefinition = NumberDefinition(type = SInt32),
                             valueDefinition = valueDefinition
                     ), ListPropertyChange<*>::addValuesAtIndex)
+
                     add(4, "deleteValues", valueListDefinition, ListPropertyChange<*>::deleteValues)
+
                     add(5, "deleteAtIndex", ListDefinition(
-                            valueDefinition = NumberDefinition(required = true, type = SInt32)
+                            required = false,
+                            valueDefinition = NumberDefinition(type = SInt32)
                     ), ListPropertyChange<*>::deleteAtIndex)
                 }
             }
@@ -73,5 +81,6 @@ private val valueDefinition = ContextualValueDefinition(contextualResolver = { c
 })
 
 private val valueListDefinition = ListDefinition(
+        required = false,
         valueDefinition = valueDefinition
 )

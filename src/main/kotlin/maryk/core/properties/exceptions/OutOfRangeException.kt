@@ -31,7 +31,7 @@ data class OutOfRangeException(
                 init {
                     ValidationException.addReference(this, OutOfRangeException::reference)
                     ValidationException.addValue(this, OutOfRangeException::value)
-                    add(2, "min", StringDefinition(), OutOfRangeException::min)
+                    add(2, "min", StringDefinition(required = false), OutOfRangeException::min)
                     add(3, "max", StringDefinition(), OutOfRangeException::max)
                 }
             }

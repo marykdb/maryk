@@ -23,8 +23,8 @@ data class InvalidSizeException(
                 init {
                     ValidationException.addReference(this, InvalidSizeException::reference)
                     ValidationException.addValue(this, InvalidSizeException::value)
-                    add(2, "min", NumberDefinition(type = SInt32), InvalidSizeException::min)
-                    add(3, "max", NumberDefinition(type = SInt32), InvalidSizeException::max)
+                    add(2, "min", NumberDefinition(type = SInt32, required = false), InvalidSizeException::min)
+                    add(3, "max", NumberDefinition(type = SInt32, required = false), InvalidSizeException::max)
                 }
             }
     ) {

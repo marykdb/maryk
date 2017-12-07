@@ -25,15 +25,9 @@ data class DataObjectWithMetaData<out DO: Any>(
                     add(1, "dataObject", ContextualSubModelDefinition<DataModelPropertyContext>(
                             contextualResolver = { it!!.dataModel!! }
                     ), DataObjectWithMetaData<*>::dataObject)
-                    add(2, "firstVersion", NumberDefinition(
-                            required = true,
-                            type = UInt64
-                    ), DataObjectWithMetaData<*>::firstVersion)
-                    add(3, "lastVersion", NumberDefinition(
-                            required = true,
-                            type = UInt64
-                    ),DataObjectWithMetaData<*>::lastVersion)
-                    add(4, "isDeleted", BooleanDefinition(required = true), DataObjectWithMetaData<*>::isDeleted)
+                    add(2, "firstVersion", NumberDefinition(type = UInt64), DataObjectWithMetaData<*>::firstVersion)
+                    add(3, "lastVersion", NumberDefinition(type = UInt64), DataObjectWithMetaData<*>::lastVersion)
+                    add(4, "isDeleted", BooleanDefinition(), DataObjectWithMetaData<*>::isDeleted)
                 }
             }
     ) {

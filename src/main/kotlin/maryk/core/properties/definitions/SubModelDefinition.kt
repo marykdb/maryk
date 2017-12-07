@@ -18,7 +18,7 @@ import maryk.core.protobuf.WireType
 class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, in CX: IsPropertyContext>(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         val dataModel: D
 ) : AbstractValueDefinition<DO, CX>(

@@ -12,11 +12,12 @@ import maryk.core.protobuf.WireType
 
 /** Definition which refers to specific property value definition based on context */
 class ContextualCollectionDefinition<in CX: IsPropertyContext>(
-        private val contextualResolver: (context: CX?) -> IsByteTransportableCollection<Any, Collection<Any>, CX>
+        private val contextualResolver: (context: CX?) -> IsByteTransportableCollection<Any, Collection<Any>, CX>,
+        required: Boolean = true
 ): AbstractPropertyDefinition<Collection<Any>>(
         indexed = false,
         searchable = false,
-        required = true,
+        required = required,
         final = true
 ), IsByteTransportableCollection<Any, Collection<Any>, CX>, IsSerializableFlexBytesEncodable<Collection<Any>, CX> {
     override fun isPacked(context: CX?, encodedWireType: WireType)

@@ -10,7 +10,7 @@ import maryk.core.protobuf.WireType
 class FlexBytesDefinition(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         unique: Boolean = false,
         minValue: Bytes? = null,

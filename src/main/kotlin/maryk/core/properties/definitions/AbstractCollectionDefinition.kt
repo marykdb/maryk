@@ -23,12 +23,12 @@ abstract class AbstractCollectionDefinition<
         in CX: IsPropertyContext,
         out ST: AbstractValueDefinition<T, CX>
 >(
-        indexed: Boolean = true,
-        searchable: Boolean = true,
-        required: Boolean = false,
+        indexed: Boolean,
+        searchable: Boolean,
+        required: Boolean,
         final: Boolean = false,
-        override val minSize: Int? = null,
-        override val maxSize: Int? = null,
+        override val minSize: Int?,
+        override val maxSize: Int?,
         val valueDefinition: ST
 ) : AbstractPropertyDefinition<C>(
         indexed, searchable, required, final

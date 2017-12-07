@@ -11,11 +11,12 @@ import maryk.core.protobuf.ByteLengthContainer
 
 /** Definition which refers to specific map property value definition based on context */
 class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
-        private val contextualResolver: (context: CX?) -> IsByteTransportableMap<K, V, CX>
+        private val contextualResolver: (context: CX?) -> IsByteTransportableMap<K, V, CX>,
+        required: Boolean = true
 ): AbstractPropertyDefinition<Map<K, V>>(
         indexed = false,
         searchable = false,
-        required = true,
+        required = required,
         final = true
 ), IsByteTransportableMap<K, V, CX>, IsSerializableFlexBytesEncodable<Map<K, V>, CX> {
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null

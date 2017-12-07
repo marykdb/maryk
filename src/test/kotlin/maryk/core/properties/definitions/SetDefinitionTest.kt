@@ -18,18 +18,17 @@ import kotlin.test.assertTrue
 
 internal class SetDefinitionTest {
     private val subDef = StringDefinition(
-            regEx = "T.*",
-            required = true
+            regEx = "T.*"
     )
 
     private val def = SetDefinition(
             minSize = 2,
             maxSize = 4,
-            required = true,
             valueDefinition = subDef
     )
 
     private val def2 = SetDefinition(
+            required = false,
             valueDefinition = subDef
     )
 

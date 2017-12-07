@@ -26,31 +26,26 @@ abstract class ValidationException(
 
     abstract val validationExceptionType: ValidationExceptionType
 
-    internal object Properties : PropertyDefinitions<ValidationException>() {
-        val reference = ContextCaptureDefinition(
-                ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                        contextualResolver = { it!!.dataModel!! }
-                )
-        ) { context, value ->
-            @Suppress("UNCHECKED_CAST")
-            context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
-        }
-    }
-
     companion object {
         fun <DM: ValidationException> addReference(definitions: PropertyDefinitions<DM>, getter: (DM) -> IsPropertyReference<*, *>?) {
             definitions.add(
-                    0, "reference",
-                    Properties.reference,
-                    getter
+                    index = 0, name = "reference",
+                    definition = ContextCaptureDefinition(
+                            ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                                    required = false,
+                                    contextualResolver = { it!!.dataModel!! }
+                            )
+                    ) { context, value ->
+                        @Suppress("UNCHECKED_CAST")
+                        context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                    },
+                    getter = getter
             )
         }
         fun <DM: ValidationException> addValue(definitions: PropertyDefinitions<DM>, getter: (DM) -> String?) {
             definitions.add(
                     1, "value",
-                    StringDefinition(
-                            required = true
-                    ),
+                    StringDefinition(),
                     getter
             )
         }
@@ -58,36 +53,12 @@ abstract class ValidationException(
 }
 
 internal val mapOfValidationExceptionDefinitions = mapOf(
-        ValidationExceptionType.ALREADY_SET.index to SubModelDefinition(
-                required = true,
-                dataModel = AlreadySetException
-        ),
-        ValidationExceptionType.INVALID_SIZE.index to SubModelDefinition(
-                required = true,
-                dataModel = InvalidSizeException
-        ),
-        ValidationExceptionType.INVALID_VALUE.index to SubModelDefinition(
-                required = true,
-                dataModel = InvalidValueException
-        ),
-        ValidationExceptionType.OUT_OF_RANGE.index to SubModelDefinition(
-                required = true,
-                dataModel = OutOfRangeException
-        ),
-        ValidationExceptionType.REQUIRED.index to SubModelDefinition(
-                required = true,
-                dataModel = RequiredException
-        ),
-        ValidationExceptionType.TOO_LITTLE_ITEMS.index to SubModelDefinition(
-                required = true,
-                dataModel = TooLittleItemsException
-        ),
-        ValidationExceptionType.TOO_MUCH_ITEMS.index to SubModelDefinition(
-                required = true,
-                dataModel = TooMuchItemsException
-        ),
-        ValidationExceptionType.UMBRELLA.index to SubModelDefinition(
-                required = true,
-                dataModel = ValidationUmbrellaException
-        )
+        ValidationExceptionType.ALREADY_SET.index to SubModelDefinition(dataModel = AlreadySetException),
+        ValidationExceptionType.INVALID_SIZE.index to SubModelDefinition(dataModel = InvalidSizeException),
+        ValidationExceptionType.INVALID_VALUE.index to SubModelDefinition(dataModel = InvalidValueException),
+        ValidationExceptionType.OUT_OF_RANGE.index to SubModelDefinition(dataModel = OutOfRangeException),
+        ValidationExceptionType.REQUIRED.index to SubModelDefinition(dataModel = RequiredException),
+        ValidationExceptionType.TOO_LITTLE_ITEMS.index to SubModelDefinition(dataModel = TooLittleItemsException),
+        ValidationExceptionType.TOO_MUCH_ITEMS.index to SubModelDefinition(dataModel = TooMuchItemsException),
+        ValidationExceptionType.UMBRELLA.index to SubModelDefinition(dataModel = ValidationUmbrellaException)
 )

@@ -17,21 +17,15 @@ data class ValidationUmbrellaException(
 ) {
     override val validationExceptionType = ValidationExceptionType.UMBRELLA
 
-    internal object Properties : PropertyDefinitions<ValidationUmbrellaException>() {
-        val exceptions = ListDefinition(
-                required = true,
-                valueDefinition = MultiTypeDefinition(
-                        required = true,
-                        getDefinition = { mapOfValidationExceptionDefinitions.get(it) }
-                )
-        )
-    }
-
     companion object: QueryDataModel<ValidationUmbrellaException>(
             properties = object : PropertyDefinitions<ValidationUmbrellaException>() {
                 init {
                     ValidationException.addReference(this, ValidationUmbrellaException::reference)
-                    add(1, "exceptions", Properties.exceptions) {
+                    add(1, "exceptions", ListDefinition(
+                            valueDefinition = MultiTypeDefinition(
+                                    getDefinition = { mapOfValidationExceptionDefinitions.get(it) }
+                            )
+                    )) {
                         it.exceptions.map { TypedValue(it.validationExceptionType.index, it) }
                     }
                 }

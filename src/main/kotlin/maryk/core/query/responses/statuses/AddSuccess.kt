@@ -29,9 +29,7 @@ data class AddSuccess<DO: Any>(
                     IsResponseStatus.addKey(this, AddSuccess<*>::key)
                     add(1,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
                     add(2,"changes", ListDefinition(
-                            required = true,
                             valueDefinition = MultiTypeDefinition(
-                                    required = true,
                                     getDefinition = mapOfChangeDefinitions::get
                             )
                     )) { it.changes.map { TypedValue(it.changeType.index, it) } }

@@ -10,11 +10,12 @@ import maryk.core.protobuf.WireType
 
 /** Definition which refers to specific property value definition based on context */
 class ContextualValueDefinition<in CX: IsPropertyContext>(
-        val contextualResolver: (context: CX?) -> AbstractValueDefinition<Any, IsPropertyContext>
+        val contextualResolver: (context: CX?) -> AbstractValueDefinition<Any, IsPropertyContext>,
+        required: Boolean = true
 ): AbstractValueDefinition<Any, CX>(
         indexed = false,
         searchable = false,
-        required = true,
+        required = required,
         final = true,
         wireType = WireType.LENGTH_DELIMITED
 ), IsSerializableFlexBytesEncodable<Any, CX> {

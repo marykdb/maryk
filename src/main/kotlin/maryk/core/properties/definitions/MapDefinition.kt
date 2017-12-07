@@ -24,7 +24,7 @@ import maryk.core.protobuf.WireType
 class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,

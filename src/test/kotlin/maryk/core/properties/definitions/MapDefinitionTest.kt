@@ -19,12 +19,10 @@ import kotlin.test.Test
 internal class MapDefinitionTest {
     private val intDef = NumberDefinition(
             type = SInt32,
-            required = true,
             maxValue = 1000
     )
 
     private val stringDef = StringDefinition(
-            required = true,
             regEx = "#.*"
     )
 

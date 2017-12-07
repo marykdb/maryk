@@ -24,9 +24,7 @@ data class VersionedChanges(
                     ), VersionedChanges::version)
 
                     add(1, "changes", ListDefinition(
-                            required = true,
                             valueDefinition = MultiTypeDefinition(
-                                    required = true,
                                     getDefinition = mapOfChangeDefinitions::get
                             )
                     )) {

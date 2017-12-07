@@ -39,17 +39,20 @@ data class MapPropertyChange<K: Any, V: Any>(
         )
         @Suppress("UNCHECKED_CAST")
         val valueToCompare = ContextualMapDefinition(
+                required = false,
                 contextualResolver = { context: DataModelPropertyContext? ->
                     (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
         ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
         @Suppress("UNCHECKED_CAST")
         val valuesToAdd = ContextualMapDefinition(
+                required = false,
                 contextualResolver = { context: DataModelPropertyContext? ->
                     (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
         ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
         val keysToDelete = SetDefinition(
+                required = false,
                 valueDefinition = keyDefinition
         )
     }

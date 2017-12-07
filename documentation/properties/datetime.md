@@ -31,7 +31,7 @@ A DateTime Property which can be used to represent the time in a date plus time.
 val def = DateTimeDefinition(
     name = "meetingDateTime",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     unique = true,
     minValue = DateTime(Date(2017, 12, 1),Time(8, 30)),

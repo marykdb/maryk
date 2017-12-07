@@ -48,8 +48,8 @@ Check the page for each type of property to see what is possible.
 
 ### Validation present on all properties:
 
-* Required - Property needs to be set.
-* Final - Property can never be changed.
+* Required - Property needs to be set. Default = true
+* Final - Property can never be changed. Default = false
 
 ### Validation present depending on the type:
 

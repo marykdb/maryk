@@ -11,7 +11,7 @@ import maryk.core.protobuf.WireType
 class BooleanDefinition(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         unique: Boolean = false
 ): AbstractSimpleDefinition<Boolean, IsPropertyContext>(

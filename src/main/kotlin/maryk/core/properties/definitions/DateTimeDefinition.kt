@@ -14,7 +14,7 @@ import maryk.core.protobuf.WireType
 class DateTimeDefinition(
         indexed: Boolean = false,
         searchable: Boolean = true,
-        required: Boolean = false,
+        required: Boolean = true,
         final: Boolean = false,
         unique: Boolean = false,
         minValue: DateTime? = null,

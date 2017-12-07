@@ -27,14 +27,8 @@ data class FailedActionResponse(
     companion object: QueryDataModel<FailedActionResponse>(
             properties = object : PropertyDefinitions<FailedActionResponse>() {
                 init {
-                    add(0, "message", StringDefinition(
-                            required = true
-                    ), FailedActionResponse::message)
-
-                    add(1, "failType", EnumDefinition(
-                            required = true,
-                            values = FailType.values()
-                    ), FailedActionResponse::failType)
+                    add(0, "message", StringDefinition(), FailedActionResponse::message)
+                    add(1, "failType", EnumDefinition(values = FailType.values()), FailedActionResponse::failType)
                 }
             }
     ) {

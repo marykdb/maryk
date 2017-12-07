@@ -11,10 +11,7 @@ interface IsVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO>> : IsChan
 
     companion object {
         fun <DM: Any> addMaxVersions(index: Int, definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt32?) {
-            definitions.add(index, "maxVersions", NumberDefinition(
-                    type = UInt32,
-                    required = true
-            ), getter)
+            definitions.add(index, "maxVersions", NumberDefinition(type = UInt32), getter)
         }
     }
 }

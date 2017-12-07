@@ -29,7 +29,7 @@ Defines a property of a fixed bytes length.
 val def = FixedBytesDefinition(
     name = "encodedValue",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     unique = true,
     byteSize = 4,

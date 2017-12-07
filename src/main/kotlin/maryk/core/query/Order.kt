@@ -1,6 +1,5 @@
 package maryk.core.query
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -29,7 +28,6 @@ data class Order(
                     ), Order::propertyReference)
 
                     add(1, "direction", EnumDefinition(
-                            required = true,
                             values = Direction.values()
                     ), Order::direction)
                 }

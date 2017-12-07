@@ -20,9 +20,7 @@ data class And(
             properties = object : PropertyDefinitions<And>() {
                 init {
                     add(0, "filters", ListDefinition(
-                            required = true,
                             valueDefinition = MultiTypeDefinition(
-                                    required = true,
                                     getDefinition = { mapOfFilterDefinitions[it] }
                             )
                     )) { it.filters.map { TypedValue(it.filterType.index, it) } }

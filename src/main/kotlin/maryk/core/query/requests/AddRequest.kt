@@ -22,7 +22,6 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO>>(
                 init {
                     IsObjectRequest.addDataModel(this, AddRequest<*, *>::dataModel)
                     add(1, "objectsToAdd", ListDefinition(
-                            required = true,
                             valueDefinition = ContextualSubModelDefinition<DataModelPropertyContext>(
                                     contextualResolver = { it!!.dataModel!! }
                             )

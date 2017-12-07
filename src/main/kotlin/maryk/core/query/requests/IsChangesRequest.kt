@@ -11,10 +11,7 @@ interface IsChangesRequest<DO: Any, out DM: RootDataModel<DO>> : IsFetchRequest<
 
     companion object {
         fun <DM: Any> addFromVersion(index: Int, definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
-            definitions.add(index, "fromVersion", NumberDefinition(
-                    type = UInt64,
-                    required = true
-            ), getter)
+            definitions.add(index, "fromVersion", NumberDefinition(type = UInt64), getter)
         }
     }
 }

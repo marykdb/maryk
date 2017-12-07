@@ -29,7 +29,7 @@ Property definitions need to be required and values can thus not be null.
 val def = ListDefinition(
     name = "listOfNames",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     valueDefinition = StringDefinition()
 )

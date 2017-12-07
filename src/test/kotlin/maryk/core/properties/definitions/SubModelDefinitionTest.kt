@@ -33,7 +33,7 @@ internal class SubModelDefinitionTest {
     }
 
     private val def = SubModelDefinition(
-            dataModel = MarykObject
+            dataModel = { MarykObject }
     )
 
     @Test

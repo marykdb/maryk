@@ -53,12 +53,12 @@ abstract class ValidationException(
 }
 
 internal val mapOfValidationExceptionDefinitions = mapOf(
-        ValidationExceptionType.ALREADY_SET.index to SubModelDefinition(dataModel = AlreadySetException),
-        ValidationExceptionType.INVALID_SIZE.index to SubModelDefinition(dataModel = InvalidSizeException),
-        ValidationExceptionType.INVALID_VALUE.index to SubModelDefinition(dataModel = InvalidValueException),
-        ValidationExceptionType.OUT_OF_RANGE.index to SubModelDefinition(dataModel = OutOfRangeException),
-        ValidationExceptionType.REQUIRED.index to SubModelDefinition(dataModel = RequiredException),
-        ValidationExceptionType.TOO_LITTLE_ITEMS.index to SubModelDefinition(dataModel = TooLittleItemsException),
-        ValidationExceptionType.TOO_MUCH_ITEMS.index to SubModelDefinition(dataModel = TooMuchItemsException),
-        ValidationExceptionType.UMBRELLA.index to SubModelDefinition(dataModel = ValidationUmbrellaException)
+        ValidationExceptionType.ALREADY_SET.index to SubModelDefinition(dataModel = { AlreadySetException }),
+        ValidationExceptionType.INVALID_SIZE.index to SubModelDefinition(dataModel = { InvalidSizeException }),
+        ValidationExceptionType.INVALID_VALUE.index to SubModelDefinition(dataModel = { InvalidValueException }),
+        ValidationExceptionType.OUT_OF_RANGE.index to SubModelDefinition(dataModel = { OutOfRangeException }),
+        ValidationExceptionType.REQUIRED.index to SubModelDefinition(dataModel = { RequiredException }),
+        ValidationExceptionType.TOO_LITTLE_ITEMS.index to SubModelDefinition(dataModel = { TooLittleItemsException }),
+        ValidationExceptionType.TOO_MUCH_ITEMS.index to SubModelDefinition(dataModel = { TooMuchItemsException }),
+        ValidationExceptionType.UMBRELLA.index to SubModelDefinition(dataModel = { ValidationUmbrellaException })
 )

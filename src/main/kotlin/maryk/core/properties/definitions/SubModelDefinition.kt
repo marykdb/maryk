@@ -20,10 +20,14 @@ class SubModelDefinition<DO : Any, out D : DataModel<DO, CX>, in CX: IsPropertyC
         searchable: Boolean = true,
         required: Boolean = true,
         final: Boolean = false,
-        val dataModel: D
+        dataModel: () -> D
 ) : AbstractValueDefinition<DO, CX>(
         indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
 ), IsSerializablePropertyDefinition<DO, CX>, IsSubModelDefinition<DO, CX> {
+    private val internalDataModel = lazy(dataModel)
+
+    val dataModel: D get() = internalDataModel.value
+
     override fun asString(value: DO, context: CX?): String {
         var string = ""
         this.writeJsonValue(value, maryk.core.json.JsonWriter {

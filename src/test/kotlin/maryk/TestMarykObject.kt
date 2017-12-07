@@ -148,7 +148,7 @@ data class TestMarykObject(
                 index = 11, name = "subModel",
                 definition = SubModelDefinition(
                         required = false,
-                        dataModel = SubMarykObject
+                        dataModel = { SubMarykObject }
                 ),
                 getter = TestMarykObject::subModel
         )
@@ -161,7 +161,7 @@ data class TestMarykObject(
                                 0 to StringDefinition(),
                                 1 to NumberDefinition(type = SInt32),
                                 2 to SubModelDefinition(
-                                        dataModel = SubMarykObject
+                                        dataModel = { SubMarykObject }
                                 )
                         )::get
                 ),
@@ -218,7 +218,8 @@ data class TestMarykObject(
 }
 
 data class SubMarykObject(
-        val value: String
+        val value: String,
+        val model: SubMarykObject? = null
 ){
     object Properties : PropertyDefinitions<SubMarykObject>() {
         val value = add(
@@ -226,13 +227,22 @@ data class SubMarykObject(
                 definition = StringDefinition(),
                 getter = SubMarykObject::value
         )
+        val model = add(
+                index = 1, name = "model",
+                definition = SubModelDefinition(
+                        required = false,
+                        dataModel = { SubMarykObject }
+                ),
+                getter = SubMarykObject::model
+        )
     }
     companion object: RootDataModel<SubMarykObject>(
             name = "SubMarykObject",
             properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = SubMarykObject(
-                map[0] as String
+                map[0] as String,
+                map[1] as SubMarykObject?
         )
     }
 }

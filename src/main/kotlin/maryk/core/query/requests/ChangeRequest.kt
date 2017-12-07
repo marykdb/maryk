@@ -23,7 +23,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO>>(
                     IsObjectRequest.addDataModel(this, ChangeRequest<*, *>::dataModel)
                     add(1, "objectChanges", ListDefinition(
                             valueDefinition = SubModelDefinition(
-                                    dataModel = DataObjectChange
+                                    dataModel = { DataObjectChange }
                             )
                     ), ChangeRequest<*, *>::objectChanges)
                 }

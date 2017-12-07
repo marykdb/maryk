@@ -15,7 +15,7 @@ internal class PropertyReferenceTest {
     private object Properties : PropertyDefinitions<Any>()
 
     private val modelDefinition = Properties.add(2, "subModel", SubModelDefinition(
-            dataModel = TestMarykObject
+            dataModel = { TestMarykObject }
     ))
 
     private val definition = Properties.add(1, "test", StringDefinition())

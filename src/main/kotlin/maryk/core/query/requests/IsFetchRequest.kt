@@ -30,7 +30,7 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO>> : IsObjectRequest<D
         }
 
         fun <DM: Any> addOrder(definitions: PropertyDefinitions<DM>, getter: (DM) -> Order?) {
-            definitions.add(3, "order", SubModelDefinition(required = false, dataModel = Order), getter)
+            definitions.add(3, "order", SubModelDefinition(required = false, dataModel = { Order }), getter)
         }
 
         fun <DM: Any> addToVersion(definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {

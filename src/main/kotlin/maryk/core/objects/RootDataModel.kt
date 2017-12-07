@@ -104,23 +104,6 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
         }
     }
 
-    /** For quick notation to fetch property references below submodels
-     * @param referenceGetter The sub getter to fetch a reference
-     * @return a reference to property
-     */
-    operator fun invoke(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, referenceGetter: P.()-> (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>>): IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return referenceGetter(this.properties)(parent)
-    }
-
-    /** To get a top level reference on a model
-     * @param propertyDefinitionGetter The fetcher for the property definition to get reference of
-     * @return a reference to property
-     */
-    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *>> ref(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, propertyDefinitionGetter: P.()-> W): IsPropertyReference<T, W> {
-        @Suppress("UNCHECKED_CAST")
-        return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
-    }
-
     /** Get PropertyReference by name
      * @param referenceName to parse for a property reference
      */

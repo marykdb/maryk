@@ -6,7 +6,9 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.MapValueReference
 
 /** Wraps a map definition to contain the context on how it relates to DataObject
  * @param index: of definition to encode into protobuf
@@ -48,14 +50,14 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
     /** For quick notation to get a map key reference
      * @param key to get reference for
      */
-    infix fun key(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+    infix fun key(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> MapKeyReference<K, V, *> {
         return { this.getKeyRef(key, it) }
     }
 
     /** For quick notation to get a map value reference at given key
      * @param key to get reference for value
      */
-    infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+    infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> MapValueReference<K, V, *> {
         return { this.getValueRef(key, it) }
     }
 }

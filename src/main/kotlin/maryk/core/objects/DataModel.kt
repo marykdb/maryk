@@ -61,6 +61,28 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>, in CX: IsPrope
     override fun getPropertyGetter(name: String) = nameToDefinition[name]?.getter
     override fun getPropertyGetter(index: Int) = indexToDefinition[index]?.getter
 
+    /** For quick notation to fetch property references below submodels
+     * @param referenceGetter The sub getter to fetch a reference
+     * @return a reference to property
+     */
+    operator fun <T: Any, W: IsPropertyDefinition<T>> invoke(
+            parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
+            referenceGetter: P.() ->
+            (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) ->
+            IsPropertyReference<T, W>
+    ): IsPropertyReference<T, W> {
+        return referenceGetter(this.properties)(parent)
+    }
+
+    /** To get a top level reference on a model
+     * @param propertyDefinitionGetter The fetcher for the property definition to get reference of
+     * @return a reference to property
+     */
+    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *>> ref(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, propertyDefinitionGetter: P.()-> W): IsPropertyReference<T, W> {
+        @Suppress("UNCHECKED_CAST")
+        return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
+    }
+
     override fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         createValidationUmbrellaException(refGetter) { addException ->
             definitions.forEach {

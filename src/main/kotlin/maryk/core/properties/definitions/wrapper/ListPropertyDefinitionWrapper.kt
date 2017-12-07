@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 
 /** Wrapper for a list definition
@@ -40,7 +41,7 @@ data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: A
     /** For quick notation to get a list item reference
      * @param index to get reference at index
      */
-    infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+    infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> ListItemReference<T, CX> {
         return { this.getItemRef(index, it) }
     }
 }

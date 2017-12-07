@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 
 /** Wrapper for a set definition to contain the context on how it relates to DataObject
@@ -40,7 +41,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: An
     /** For quick notation to get a set item reference
      * @param item to get reference at index
      */
-    infix fun at(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
+    infix fun at(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> SetItemReference<T, *> {
         return { this.getItemRef(item, it) }
     }
 }

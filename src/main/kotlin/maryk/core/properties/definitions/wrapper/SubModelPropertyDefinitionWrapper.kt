@@ -39,18 +39,24 @@ data class SubModelPropertyDefinitionWrapper<DO: Any, P: PropertyDefinitions<DO>
             )
 
     /** To get a top level reference on a model
-     * @param definitionGetter The fetcher for the property definition to get reference of
+     * @param propertyDefinitionGetter The fetcher for the property definition to get reference of
      * @return a reference to property
      */
-    infix fun ref(definitionGetter: P.() -> IsPropertyDefinitionWrapper<*, *, *>): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { definitionGetter(definition.dataModel.properties).getRef(this.getRef(it)) }
+    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *>> ref(
+            propertyDefinitionGetter: P.()-> W
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W> {
+        return { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }
     }
 
     /** For quick notation to fetch property references below submodels
      * @param referenceGetter The sub getter to fetch a reference
      * @return a reference to property
      */
-    operator fun invoke(referenceGetter: P.() -> (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>>): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<out Any, IsPropertyDefinition<*>> {
-        return { referenceGetter(definition.dataModel.properties)(this.getRef(it)) }
+    operator fun <T: Any, W: IsPropertyDefinition<T>> invoke(
+            referenceGetter: P.() ->
+            (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) ->
+            IsPropertyReference<T, W>
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W> {
+        return { this.definition.dataModel(this.getRef(it), referenceGetter) }
     }
 }

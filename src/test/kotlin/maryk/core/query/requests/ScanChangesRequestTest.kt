@@ -22,8 +22,8 @@ class ScanChangesRequestTest {
     private val scanChangeMaxRequest = ScanChangesRequest(
             SubMarykObject,
             startKey = key1,
-            filter = Exists(SubMarykObject.Properties.value.getRef()),
-            order = Order(SubMarykObject.Properties.value.getRef()),
+            filter = Exists(SubMarykObject.ref { value }),
+            order = Order(SubMarykObject.ref { value }),
             limit = 100.toUInt32(),
             filterSoftDeleted = true,
             toVersion = 2345L.toUInt64(),

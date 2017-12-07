@@ -23,8 +23,8 @@ class GetRequestTest {
             SubMarykObject,
             key1,
             key2,
-            filter = Exists(SubMarykObject.Properties.value.getRef()),
-            order = Order(SubMarykObject.Properties.value.getRef()),
+            filter = Exists(SubMarykObject.ref { value }),
+            order = Order(SubMarykObject.ref { value }),
             toVersion = 333L.toUInt64(),
             filterSoftDeleted = true
     )

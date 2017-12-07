@@ -7,9 +7,9 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class MapReferenceTest {
-    val mapReference = TestMarykObject.Properties.map.getRef()
-    val keyReference = TestMarykObject.Properties.map.getKeyRef(Time(12, 0, 1))
-    val valReference = TestMarykObject.Properties.map.getValueRef(Time(15, 22, 55))
+    val mapReference = TestMarykObject.ref { map }
+    val keyReference = TestMarykObject { map key Time(12, 0, 1) }
+    val valReference = TestMarykObject { map at Time(15, 22, 55) }
 
     @Test
     fun testProtoBufConversion() {

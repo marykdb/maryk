@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class RegExTest {
     private val regEx = RegEx(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             regEx = ".*"
     )
 

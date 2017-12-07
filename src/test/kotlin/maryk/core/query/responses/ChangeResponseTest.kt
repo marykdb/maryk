@@ -26,7 +26,7 @@ class ChangeResponseTest {
                     Success(32352L.toUInt64()),
                     DoesNotExist(key),
                     ValidationFail(ValidationUmbrellaException(null, listOf(
-                            InvalidValueException(SubMarykObject.Properties.value.getRef(), "wrong")
+                            InvalidValueException(SubMarykObject.ref{ value }, "wrong")
                     ))),
                     RequestFail("Request was wrong"),
                     AuthFail(),

@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class EqualsTest {
     private val equals = Equals(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             value = "test"
     )
 

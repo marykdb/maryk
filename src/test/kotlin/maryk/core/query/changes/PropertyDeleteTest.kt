@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class PropertyDeleteTest {
     private val propertyDelete = PropertyDelete(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             valueToCompare = "test"
     )
 

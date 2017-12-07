@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class RangeTest {
     private val range = Range(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             from = "test",
             to = "test999",
             inclusiveFrom = true,

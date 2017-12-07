@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class ValueInTest {
     private val valueIn = ValueIn(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             values = setOf("t1", "t2", "t3")
     )
 

@@ -22,8 +22,8 @@ class ScanVersionedChangesRequestTest {
     private val scanVersionedChangesMaxRequest = ScanVersionedChangesRequest(
             SubMarykObject,
             startKey = key1,
-            filter = Exists(SubMarykObject.Properties.value.getRef()),
-            order = Order(SubMarykObject.Properties.value.getRef()),
+            filter = Exists(SubMarykObject.ref { value }),
+            order = Order(SubMarykObject.ref { value }),
             limit = 300.toUInt32(),
             toVersion = 2345L.toUInt64(),
             fromVersion = 1234L.toUInt64(),

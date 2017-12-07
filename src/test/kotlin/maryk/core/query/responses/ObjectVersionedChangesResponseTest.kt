@@ -26,7 +26,7 @@ class ObjectVersionedChangesResponseTest {
             byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
-    private val subModel = TestMarykObject.Properties.subModel.getRef()
+    private val subModel = TestMarykObject.ref { subModel }
 
     private val objectVersionedChangesResponse = ObjectVersionedChangesResponse(
             TestMarykObject,
@@ -38,17 +38,17 @@ class ObjectVersionedChangesResponseTest {
                                             219674127L.toUInt64(),
                                             listOf(
                                                     ObjectSoftDeleteChange(true),
-                                                    ListPropertyChange(TestMarykObject.Properties.list.getRef()),
-                                                    SetPropertyChange(TestMarykObject.Properties.set.getRef()),
-                                                    MapPropertyChange(TestMarykObject.Properties.map.getRef())
+                                                    ListPropertyChange(TestMarykObject.ref { list }),
+                                                    SetPropertyChange(TestMarykObject.ref { set }),
+                                                    MapPropertyChange(TestMarykObject.ref { map })
                                             )
                                     ),
                                     VersionedChanges(
                                             319674127L.toUInt64(),
                                             listOf(
-                                                    PropertyChange(SubMarykObject.Properties.value.getRef(subModel), "new"),
-                                                    PropertyDelete(SubMarykObject.Properties.value.getRef(subModel)),
-                                                    PropertyCheck(SubMarykObject.Properties.value.getRef(subModel))
+                                                    PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
+                                                    PropertyDelete(SubMarykObject.ref(subModel) { value }),
+                                                    PropertyCheck(SubMarykObject.ref(subModel) { value })
                                             )
                                     )
                             )

@@ -11,7 +11,7 @@ import kotlin.test.Test
 
 class SetPropertyChangeTest {
     private val setPropertyChange = SetPropertyChange(
-            reference = TestMarykObject.Properties.set.getRef(),
+            reference = TestMarykObject.ref { set },
             addValues = setOf(
                     Date(2014, 4, 14),
                     Date(2013, 3, 13)

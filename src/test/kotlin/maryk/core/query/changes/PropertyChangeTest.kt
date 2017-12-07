@@ -11,7 +11,7 @@ import kotlin.test.Test
 
 class PropertyChangeTest {
     private val valueChange = PropertyChange(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             newValue = "test",
             valueToCompare = "old"
     )
@@ -26,7 +26,7 @@ class PropertyChangeTest {
 
     @Test
     fun testValueChange() {
-        valueChange.reference shouldBe SubMarykObject.Properties.value.getRef()
+        valueChange.reference shouldBe SubMarykObject.ref { value }
         valueChange.newValue shouldBe "test"
     }
 

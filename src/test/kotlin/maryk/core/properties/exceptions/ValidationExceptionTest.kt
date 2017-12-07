@@ -9,7 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class ValidationExceptionTest {
-    private val ref = SubMarykObject.Properties.value.getRef()
+    private val ref = SubMarykObject.ref { value }
 
     private val validationUmbrellaException = ValidationUmbrellaException(null, listOf(
             AlreadySetException(ref),

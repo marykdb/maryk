@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class ExistsTest {
     private val exists = Exists(
-            reference = SubMarykObject.Properties.value.getRef()
+            reference = SubMarykObject.ref { value }
     )
 
     @Suppress("UNCHECKED_CAST")

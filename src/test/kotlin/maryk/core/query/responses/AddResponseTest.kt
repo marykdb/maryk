@@ -25,12 +25,12 @@ class AddResponseTest {
             listOf(
                     AddSuccess(
                             key, 32352L.toUInt64(), listOf(
-                                    PropertyChange(SubMarykObject.Properties.value.getRef(), "new")
+                                    PropertyChange(SubMarykObject.ref{ value }, "new")
                             )
                     ),
                     AlreadyExists(key),
                     ValidationFail(ValidationUmbrellaException(null, listOf(
-                            InvalidValueException(SubMarykObject.Properties.value.getRef(), "wrong")
+                            InvalidValueException(SubMarykObject.ref{ value }, "wrong")
                     ))),
                     AuthFail(),
                     ServerFail("Something went wrong")

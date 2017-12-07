@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class NotTest {
     private val not = Not(
-            Exists(SubMarykObject.Properties.value.getRef())
+            Exists(SubMarykObject.ref { value })
     )
 
     @Suppress("UNCHECKED_CAST")

@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class PropertyCheckTest {
     private val valueCheck = PropertyCheck(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             valueToCompare = "test"
     )
 

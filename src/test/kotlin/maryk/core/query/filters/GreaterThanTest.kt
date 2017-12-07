@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class GreaterThanTest {
     private val greaterThan = GreaterThan(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             value = "test"
     )
 

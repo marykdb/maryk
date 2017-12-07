@@ -20,8 +20,8 @@ class ObjectChangesResponseTest {
             listOf(
                     DataObjectChange(
                             key,
-                            PropertyChange(SubMarykObject.Properties.value.getRef(), "hoho"),
-                            PropertyDelete(SubMarykObject.Properties.value.getRef()),
+                            PropertyChange(SubMarykObject.ref { value }, "hoho"),
+                            PropertyDelete(SubMarykObject.ref { value }),
                             lastVersion = 14141L.toUInt64()
                     )
             )

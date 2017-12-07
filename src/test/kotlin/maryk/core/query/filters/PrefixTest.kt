@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class PrefixTest {
     private val prefix = Prefix(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             prefix = "te"
     )
 

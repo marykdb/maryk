@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class LessThanEqualsTest {
     private val lessThanEquals = LessThanEquals(
-            reference = SubMarykObject.Properties.value.getRef(),
+            reference = SubMarykObject.ref { value },
             value = "test"
     )
 

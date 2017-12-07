@@ -12,7 +12,7 @@ import kotlin.test.Test
 
 class MapPropertyChangeTest {
     private val mapPropertyChange = MapPropertyChange(
-            reference = TestMarykObject.Properties.map.getRef(),
+            reference = TestMarykObject.ref { map },
             keysToDelete = setOf(
                     Time(12, 33, 12)
             ),

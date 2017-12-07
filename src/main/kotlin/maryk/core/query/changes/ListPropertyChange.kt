@@ -3,12 +3,14 @@ package maryk.core.query.changes
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.DataModelPropertyContext
@@ -24,7 +26,7 @@ import maryk.core.query.DataModelPropertyContext
  * @param T: type of value to be operated on
  */
 data class ListPropertyChange<T: Any>(
-        override val reference: ListReference<T, IsPropertyContext>,
+        override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>,
         val addValuesToEnd: List<T>? = null,
         val addValuesAtIndex: Map<Int, T>? = null,
         val deleteValues: List<T>? = null,

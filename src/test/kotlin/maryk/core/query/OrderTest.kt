@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class OrderTest {
     private val order = Order(
-            SubMarykObject.Properties.value.getRef(),
+            SubMarykObject.ref { value },
             Direction.ASC
     )
 
@@ -25,7 +25,7 @@ class OrderTest {
     @Test
     fun testOrder() {
         this.order.direction shouldBe Direction.ASC
-        this.order.propertyReference shouldBe SubMarykObject.Properties.value.getRef()
+        this.order.propertyReference shouldBe SubMarykObject.ref { value }
     }
 
     @Test

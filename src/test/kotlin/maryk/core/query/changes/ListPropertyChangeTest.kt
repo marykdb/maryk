@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class ListPropertyChangeTest {
     private val listPropertyChange = ListPropertyChange(
-            reference = TestMarykObject.Properties.listOfString.getRef(),
+            reference = TestMarykObject.ref { listOfString },
             addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
             addValuesToEnd = listOf("four", "five"),
             deleteAtIndex = listOf(0, 1),

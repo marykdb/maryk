@@ -10,8 +10,8 @@ import kotlin.test.Test
 
 class AndTest {
     private val and = And(
-            Exists(SubMarykObject.Properties.value.getRef()),
-            Equals(SubMarykObject.Properties.value.getRef(), "hoi")
+            Exists(SubMarykObject.ref{ value }),
+            Equals(SubMarykObject.ref{ value }, "hoi")
     )
 
     @Suppress("UNCHECKED_CAST")

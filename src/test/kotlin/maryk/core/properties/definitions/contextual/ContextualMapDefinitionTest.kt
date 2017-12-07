@@ -29,7 +29,7 @@ class ContextualMapDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(),
-            reference = TestMarykObject.Properties.map.getRef() as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+            reference = TestMarykObject.ref { map } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test

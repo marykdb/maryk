@@ -25,8 +25,8 @@ class GetChangesRequestTest {
             SubMarykObject,
             key1,
             key2,
-            filter = Exists(SubMarykObject.Properties.value.getRef()),
-            order = Order(SubMarykObject.Properties.value.getRef()),
+            filter = Exists(SubMarykObject.ref { value }),
+            order = Order(SubMarykObject.ref { value }),
             fromVersion = 1234L.toUInt64(),
             toVersion = 3456L.toUInt64(),
             filterSoftDeleted = true

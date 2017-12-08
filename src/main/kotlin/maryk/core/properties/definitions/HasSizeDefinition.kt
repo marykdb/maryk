@@ -9,10 +9,10 @@ interface HasSizeDefinition {
 
     /** The max allowed size for defined property */
     val maxSize: Int?
+
+    fun isSizeToSmall(newSize: Int): Boolean =
+            this.minSize != null && newSize < this.minSize!!
+
+    fun isSizeToBig(newSize: Int): Boolean =
+            this.maxSize != null && newSize > this.maxSize!!
 }
-
-fun HasSizeDefinition.isSizeToSmall(newSize: Int): Boolean =
-        this.minSize != null && newSize < this.minSize!!
-
-fun HasSizeDefinition.isSizeToBig(newSize: Int): Boolean =
-        this.maxSize != null && newSize > this.maxSize!!

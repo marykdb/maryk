@@ -31,6 +31,7 @@ class EnumDefinition<E>(
     private val valueByIndex: Map<Int, E> by lazy {
         values.associate { Pair(it.index, it) }
     }
+
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =

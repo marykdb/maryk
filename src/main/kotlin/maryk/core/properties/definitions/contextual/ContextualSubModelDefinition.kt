@@ -4,22 +4,22 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
-internal class ContextualSubModelDefinition<in CX: IsPropertyContext>(
+internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(
         val contextualResolver: (context: CX?) -> RootDataModel<Any, PropertyDefinitions<Any>>
-): AbstractValueDefinition<Any, CX>(
-        indexed = false,
-        searchable = false,
-        required = true,
-        final = true,
-        wireType = WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<Any, CX> {
+): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
+    override val indexed = false
+    override val searchable = false
+    override val required = true
+    override val final = true
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun fromString(string: String, context: CX?): Any {
         val stringIterator = string.iterator()
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)

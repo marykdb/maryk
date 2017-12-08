@@ -5,7 +5,7 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-internal class AbstractSimpleDefinitionTest {
+internal class IsSimpleDefinitionTest {
     val test: String = "test"
 
     val def = StringDefinition(

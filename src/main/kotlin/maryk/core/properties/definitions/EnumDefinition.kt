@@ -12,17 +12,16 @@ import maryk.core.protobuf.WireType
 
 /** Definition for Enum properties */
 class EnumDefinition<E>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: E? = null,
-        maxValue: E? = null,
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: E? = null,
+        override val maxValue: E? = null,
         val values: Array<E>
-) : AbstractSimpleDefinition<E, IsPropertyContext>(
-        indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue
-), IsSerializableFixedBytesEncodable<E, IsPropertyContext> where E : Enum<E>, E : IndexedEnum<E> {
+) : IsSimpleDefinition<E, IsPropertyContext>, IsSerializableFixedBytesEncodable<E, IsPropertyContext> where E : Enum<E>, E : IndexedEnum<E> {
+    override val wireType = WireType.VAR_INT
     override val byteSize = 2
 
     private val valueByString: Map<String, E> by lazy {

@@ -11,19 +11,19 @@ import maryk.core.protobuf.WireType
 
 /** Definition for String properties */
 class StringDefinition(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: String? = null,
-        maxValue: String? = null,
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: String? = null,
+        override val maxValue: String? = null,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
         val regEx: String? = null
-) : AbstractSimpleDefinition<String, IsPropertyContext>(
-        indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), HasSizeDefinition, IsSerializableFlexBytesEncodable<String, IsPropertyContext> {
+) : IsSimpleDefinition<String, IsPropertyContext>, HasSizeDefinition, IsSerializableFlexBytesEncodable<String, IsPropertyContext> {
+    override val wireType = WireType.LENGTH_DELIMITED
+
     private val _regEx by lazy {
         when {
             this.regEx != null -> Regex(this.regEx)
@@ -44,7 +44,7 @@ class StringDefinition(
     override fun fromString(string: String) = string
 
     override fun validateWithRef(previousValue: String?, newValue: String?, refGetter: () -> IsPropertyReference<String, IsPropertyDefinition<String>>?) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsSimpleDefinition>.validateWithRef(previousValue, newValue, refGetter)
 
         when {
             newValue != null -> {

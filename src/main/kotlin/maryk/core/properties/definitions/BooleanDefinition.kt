@@ -9,14 +9,12 @@ import maryk.core.protobuf.WireType
 
 /** Definition for Boolean properties */
 class BooleanDefinition(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false
-): AbstractSimpleDefinition<Boolean, IsPropertyContext>(
-    indexed, searchable, required, final, WireType.VAR_INT, unique, minValue = false, maxValue = true
-), IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext> {
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false
+): IsSimpleValueDefinition<Boolean, IsPropertyContext>, IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext> {
+    override val wireType = WireType.VAR_INT
     override val byteSize = 1
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = initBoolean(reader)

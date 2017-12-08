@@ -15,15 +15,15 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-class SubModelDefinition<DO : Any, P: PropertyDefinitions<DO>, out D : DataModel<DO, P, CX>, in CX: IsPropertyContext>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
+class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out D : DataModel<DO, P, CX>, in CX: IsPropertyContext>(
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
         dataModel: () -> D
-) : AbstractValueDefinition<DO, CX>(
-        indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
-), IsSerializablePropertyDefinition<DO, CX>, IsSubModelDefinition<DO, CX> {
+) : IsValueDefinition<DO, CX>, IsSerializablePropertyDefinition<DO, CX>, IsSubModelDefinition<DO, CX> {
+    override val wireType = WireType.LENGTH_DELIMITED
+
     private val internalDataModel = lazy(dataModel)
 
     val dataModel: D get() = internalDataModel.value
@@ -46,7 +46,7 @@ class SubModelDefinition<DO : Any, P: PropertyDefinitions<DO>, out D : DataModel
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsValueDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
                     refGetter = refGetter,

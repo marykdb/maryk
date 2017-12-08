@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -53,7 +53,7 @@ data class SetPropertyChange<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = SetPropertyChange(
-                reference = map[0] as IsPropertyReference<Set<Any>, AbstractValueDefinition<Set<Any>, IsPropertyContext>>,
+                reference = map[0] as IsPropertyReference<Set<Any>, IsValueDefinition<Set<Any>, IsPropertyContext>>,
                 valueToCompare = map[1] as Set<Any>?,
                 addValues = map[2] as Set<Any>?,
                 deleteValues = map[3] as Set<Any>?

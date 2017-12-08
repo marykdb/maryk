@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
@@ -30,7 +30,7 @@ data class PropertyCheck<T: Any>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = PropertyCheck(
-                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                reference = map[0] as IsPropertyReference<Any, IsValueDefinition<Any, IsPropertyContext>>,
                 valueToCompare = map[1]
         )
     }

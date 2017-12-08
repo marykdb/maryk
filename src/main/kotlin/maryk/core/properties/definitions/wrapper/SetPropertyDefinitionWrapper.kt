@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
@@ -25,7 +26,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: An
         override val definition: SetDefinition<T, CX>,
         override val getter: (DM) -> Set<T>?
 ) :
-        IsCollectionDefinition<T, Set<T>, CX> by definition,
+        IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,
         IsPropertyDefinitionWrapper<Set<T>, CX, DM>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =

@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractPropertyDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -13,13 +12,12 @@ import maryk.core.protobuf.WireType
 /** Definition which refers to specific property value definition based on context */
 class ContextualCollectionDefinition<in CX: IsPropertyContext>(
         private val contextualResolver: (context: CX?) -> IsByteTransportableCollection<Any, Collection<Any>, CX>,
-        required: Boolean = true
-): AbstractPropertyDefinition<Collection<Any>>(
-        indexed = false,
-        searchable = false,
-        required = required,
-        final = true
-), IsByteTransportableCollection<Any, Collection<Any>, CX>, IsSerializableFlexBytesEncodable<Collection<Any>, CX> {
+        override val required: Boolean = true
+): IsByteTransportableCollection<Any, Collection<Any>, CX>, IsSerializableFlexBytesEncodable<Collection<Any>, CX> {
+    override val indexed = false
+    override val searchable = false
+    override val final = true
+
     override fun isPacked(context: CX?, encodedWireType: WireType)
             = contextualResolver(context).isPacked(context, encodedWireType)
 

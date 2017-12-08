@@ -4,8 +4,8 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
@@ -13,13 +13,13 @@ import maryk.core.protobuf.WireType
 /** Definition for a reference to another DataObject*/
 class ContextualReferenceDefinition<in CX: IsPropertyContext>(
         val contextualResolver: (context: CX?) -> RootDataModel<*, *>.KeyDefinition
-): AbstractValueDefinition<Key<*>, CX>(
-        indexed = false,
-        searchable = false,
-        required = true,
-        final = true,
-        wireType = WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<Key<*>, CX> {
+): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
+    override val indexed = false
+    override val searchable = false
+    override val required = true
+    override val final = true
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun fromString(string: String, context: CX?)
             = contextualResolver(context).get(string)
 

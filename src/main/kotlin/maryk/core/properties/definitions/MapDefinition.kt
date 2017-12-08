@@ -22,17 +22,15 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
 class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
-        override val keyDefinition: AbstractSimpleValueDefinition<K, CX>,
-        override val valueDefinition: AbstractSubDefinition<V, CX>
-) : AbstractPropertyDefinition<Map<K, V>>(
-        indexed, searchable, required, final
-), HasSizeDefinition, IsByteTransportableMap<K, V, CX>, IsMapDefinition<K, V, CX> {
+        override val keyDefinition: IsSimpleValueDefinition<K, CX>,
+        override val valueDefinition: IsSubDefinition<V, CX>
+) : HasSizeDefinition, IsByteTransportableMap<K, V, CX>, IsMapDefinition<K, V, CX> {
     init {
         assert(keyDefinition.required, { "Definition for key should be required on map" })
         assert(valueDefinition.required, { "Definition for value should be required on map" })
@@ -57,7 +55,7 @@ class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             = MapValueReference(key, this, parentMap)
 
     override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>>?) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             val mapSize = newValue.size

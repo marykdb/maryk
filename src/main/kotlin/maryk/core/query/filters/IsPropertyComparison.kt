@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.query.DataModelPropertyContext
@@ -19,7 +19,7 @@ interface IsPropertyComparison<T: Any>: IsPropertyCheck<T> {
                     ContextualValueDefinition(
                             contextualResolver = { context: DataModelPropertyContext? ->
                                 @Suppress("UNCHECKED_CAST")
-                                context!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
+                                context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
                             }
                     ),
                     getter

@@ -11,18 +11,17 @@ import maryk.core.properties.types.numeric.SInt64
 
 /** Definition for Number properties */
 class NumberDefinition<T: Comparable<T>>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: T? = null,
-        maxValue: T? = null,
-        random: Boolean = false,
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: T? = null,
+        override val maxValue: T? = null,
+        override val random: Boolean = false,
         val type: NumberDescriptor<T>
-): AbstractNumericDefinition<T>(
-    indexed, searchable, required, final, type.wireType, unique, minValue, maxValue, random
-), IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
+): IsNumericDefinition<T>, IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
+    override val wireType = type.wireType
     override val byteSize = type.size
 
     override fun createRandom() = type.createRandom()

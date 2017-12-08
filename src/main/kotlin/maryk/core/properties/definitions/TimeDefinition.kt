@@ -12,18 +12,17 @@ import maryk.core.protobuf.WireType
  * Definition for Time properties
  */
 class TimeDefinition(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: Time? = null,
-        maxValue: Time? = null,
-        fillWithNow: Boolean = false,
-        precision: TimePrecision = TimePrecision.SECONDS
-) : AbstractTimeDefinition<Time>(
-        indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow, precision
-), IsSerializableFixedBytesEncodable<Time, IsPropertyContext> {
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: Time? = null,
+        override val maxValue: Time? = null,
+        override val fillWithNow: Boolean = false,
+        override val precision: TimePrecision = TimePrecision.SECONDS
+) : IsTimeDefinition<Time>, IsSerializableFixedBytesEncodable<Time, IsPropertyContext> {
+    override val wireType = WireType.VAR_INT
     override val byteSize = Time.byteSize(precision)
 
     override fun createNow() = Time.nowUTC()

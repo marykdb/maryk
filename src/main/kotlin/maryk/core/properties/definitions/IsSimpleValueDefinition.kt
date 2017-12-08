@@ -7,7 +7,6 @@ import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ByteLengthContainer
-import maryk.core.protobuf.WireType
 
 /**
  * Abstract Property Definition to define properties.
@@ -15,33 +14,25 @@ import maryk.core.protobuf.WireType
  * This is used for simple single value properties and not for lists and maps.
  * @param <T> Type of objects contained in property
  */
-abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
-        indexed: Boolean,
-        searchable: Boolean,
-        required: Boolean,
-        final: Boolean,
-        wireType: WireType
-) : AbstractValueDefinition<T, CX>(
-        indexed, searchable, required, final, wireType
-) {
+interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDefinition<T, CX> {
     /** Convert to value from a byte reader
      * @param length of bytes to read
      * @param reader to read bytes from
      * @return stored value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
-    abstract fun readStorageBytes(length: Int, reader: () -> Byte): T
+    fun readStorageBytes(length: Int, reader: () -> Byte): T
 
     /** Calculate byte length of a value
      * @param value to calculate length of
      */
-    abstract fun calculateStorageByteLength(value: T): Int
+    fun calculateStorageByteLength(value: T): Int
 
     /** Convert a value to bytes
      * @param value to convert
      * @param writer to write bytes to
      */
-    abstract fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
+    fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) = readStorageBytes(length, reader)
 
@@ -49,20 +40,20 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
         writeStorageBytes(value, writer)
     }
 
-    final override fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
+    override fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
             = this.calculateTransportByteLength(value)
 
     /** Calculates the needed bytes to transport the value
      * @param value to get length of
      * @return the total length
      */
-    abstract fun calculateTransportByteLength(value: T): Int
+    fun calculateTransportByteLength(value: T): Int
 
     /** Convert value to String
      * @param value to convert
      * @return value as String
      */
-    open fun asString(value: T) = value.toString()
+    fun asString(value: T) = value.toString()
 
     override fun asString(value: T, context: CX?) = this.asString(value)
 
@@ -72,9 +63,9 @@ abstract class AbstractSimpleValueDefinition<T: Any, in CX: IsPropertyContext>(
      * @return the value
      * @throws ParseException when encountering unparsable content
      */
-    abstract internal fun fromString(string: String): T
+    fun fromString(string: String): T
 
-    override final fun fromString(string: String, context: CX?) = this.fromString(string)
+    override fun fromString(string: String, context: CX?) = this.fromString(string)
 
     override fun writeJsonValue(value: T, writer: JsonWriter, context: CX?) {
         writer.writeString(

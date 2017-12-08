@@ -3,20 +3,20 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.ByteLengthContainer
 
-class ContextCaptureDefinition<T: Any, CX: IsPropertyContext>(
-        val definition: AbstractValueDefinition<T, CX>,
+data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
+        val definition: IsValueDefinition<T, CX>,
         private val capturer: (CX?, T) -> Unit
-) : AbstractValueDefinition<T, CX>(
-        indexed = definition.indexed,
-        searchable = definition.searchable,
-        required = definition.required,
-        final = definition.final,
-        wireType = definition.wireType
-), IsSerializableFlexBytesEncodable<T, CX> {
+) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
+    override val wireType = definition.wireType
+    override val indexed = definition.indexed
+    override val searchable = definition.searchable
+    override val required = definition.required
+    override val final = definition.final
+
     override fun fromString(string: String, context: CX?)
             = this.definition.fromString(string, context).also { capturer(context, it) }
 

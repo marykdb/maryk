@@ -3,22 +3,21 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition which refers to specific property value definition based on context */
-class ContextualValueDefinition<in CX: IsPropertyContext>(
-        val contextualResolver: (context: CX?) -> AbstractValueDefinition<Any, IsPropertyContext>,
-        required: Boolean = true
-): AbstractValueDefinition<Any, CX>(
-        indexed = false,
-        searchable = false,
-        required = required,
-        final = true,
-        wireType = WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<Any, CX> {
+internal data class ContextualValueDefinition<in CX: IsPropertyContext>(
+        val contextualResolver: (context: CX?) -> IsValueDefinition<Any, IsPropertyContext>,
+        override val required: Boolean = true
+): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
+    override val indexed = false
+    override val searchable = false
+    override val final = true
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun asString(value: Any, context: CX?)
             = contextualResolver(context).asString(value, context)
 

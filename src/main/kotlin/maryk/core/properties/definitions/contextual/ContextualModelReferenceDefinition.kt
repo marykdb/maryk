@@ -7,21 +7,21 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
-class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
+data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
         val contextualResolver: (context: CX?, name: String) -> RootDataModel<*, *>
-): AbstractValueDefinition<RootDataModel<*, *>, CX>(
-        indexed = false,
-        searchable = false,
-        required = true,
-        final = true,
-        wireType = WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<RootDataModel<*, *>, CX> {
+): IsValueDefinition<RootDataModel<*, *>, CX>, IsSerializableFlexBytesEncodable<RootDataModel<*, *>, CX> {
+    override val indexed = false
+    override val searchable = false
+    override val required = true
+    override val final = true
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun asString(value: RootDataModel<*, *>, context: CX?)
             = value.name
 

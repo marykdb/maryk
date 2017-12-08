@@ -20,15 +20,15 @@ import maryk.core.protobuf.WireType
  * Definition for objects with multiple types
  * @param getDefinition method to get definition
  */
-class MultiTypeDefinition<CX: IsPropertyContext>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        val getDefinition: (Int) -> AbstractSubDefinition<*, CX>?
-) : AbstractValueDefinition<TypedValue<*>, CX>(
-        indexed, searchable, required, final, wireType = WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<TypedValue<*>, CX> {
+class MultiTypeDefinition<in CX: IsPropertyContext>(
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        val getDefinition: (Int) -> IsSubDefinition<*, CX>?
+) : IsValueDefinition<TypedValue<*>, CX>, IsSerializableFlexBytesEncodable<TypedValue<*>, CX> {
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun asString(value: TypedValue<*>, context: CX?): String {
         var string = ""
         this.writeJsonValue(value, maryk.core.json.JsonWriter {
@@ -43,10 +43,10 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
     }
 
     override fun validateWithRef(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, refGetter: () -> IsPropertyReference<TypedValue<*>, IsPropertyDefinition<TypedValue<*>>>?) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             @Suppress("UNCHECKED_CAST")
-            val definition = this.getDefinition(newValue.typeIndex) as AbstractSubDefinition<Any, CX>?
+            val definition = this.getDefinition(newValue.typeIndex) as IsSubDefinition<Any, CX>?
                     ?: throw DefNotFoundException("No def found for index ${newValue.typeIndex}")
 
             definition.validateWithRef(
@@ -67,7 +67,7 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
         writer.writeStartArray()
         writer.writeValue(value.typeIndex.toString())
         @Suppress("UNCHECKED_CAST")
-        val definition = this.getDefinition(value.typeIndex) as AbstractSubDefinition<Any, CX>?
+        val definition = this.getDefinition(value.typeIndex) as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("No def found for index ${value.typeIndex}")
 
         definition.writeJsonValue(value.value, writer, context)
@@ -87,7 +87,7 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
         }
         reader.nextToken()
 
-        val definition: AbstractSubDefinition<*, CX>? = this.getDefinition(index)
+        val definition: IsSubDefinition<*, CX>? = this.getDefinition(index)
                 ?: throw ParseException("Unknown multitype index ${reader.lastValue}")
 
         val value = definition!!.readJson(reader, context)
@@ -126,7 +126,7 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
 
         // value
         @Suppress("UNCHECKED_CAST")
-        val def = this.getDefinition(value.typeIndex)!! as AbstractSubDefinition<Any, CX>
+        val def = this.getDefinition(value.typeIndex)!! as IsSubDefinition<Any, CX>
         totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, lengthCacher, context)
 
         return totalByteLength
@@ -137,7 +137,7 @@ class MultiTypeDefinition<CX: IsPropertyContext>(
         value.typeIndex.writeVarBytes(writer)
 
         @Suppress("UNCHECKED_CAST")
-        val def = this.getDefinition(value.typeIndex)!! as AbstractSubDefinition<Any, CX>
+        val def = this.getDefinition(value.typeIndex)!! as IsSubDefinition<Any, CX>
         def.writeTransportBytesWithKey(2, value.value, lengthCacheGetter, writer, context)
     }
 }

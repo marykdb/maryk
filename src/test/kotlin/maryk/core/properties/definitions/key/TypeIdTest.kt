@@ -5,8 +5,8 @@ import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractSubDefinition
 import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -20,7 +20,7 @@ internal class TypeIdTest {
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val multi = add(0, "multi", MultiTypeDefinition(
-                    getDefinition = mapOf<Int, AbstractSubDefinition<*, IsPropertyContext>>(
+                    getDefinition = mapOf<Int, IsSubDefinition<*, IsPropertyContext>>(
                             0 to StringDefinition(),
                             1 to BooleanDefinition()
                     )::get

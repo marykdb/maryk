@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -28,7 +28,7 @@ data class ValueIn<T: Any>(
                             valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
                                     contextualResolver = {
                                         @Suppress("UNCHECKED_CAST")
-                                        it!!.reference!!.propertyDefinition.definition as AbstractValueDefinition<Any, IsPropertyContext>
+                                        it!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
                                     }
                             )
                     ), ValueIn<*>::values)

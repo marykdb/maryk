@@ -3,7 +3,7 @@ package maryk.core.properties.references
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -18,7 +18,7 @@ class ListItemReference<T: Any, CX: IsPropertyContext> (
         val index: Int,
         listDefinition: ListDefinition<T, CX>,
         parentReference: ListReference<T, CX>?
-) : CanHaveSimpleChildReference<T, AbstractValueDefinition<T, CX>, ListReference<T, CX>>(
+) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>>(
         listDefinition.valueDefinition, parentReference
 ) {
     override val completeName: String get() = this.parentReference?.let {

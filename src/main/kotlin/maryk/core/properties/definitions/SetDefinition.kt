@@ -6,21 +6,23 @@ import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 
 class SetDefinition<T: Any, CX: IsPropertyContext>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        minSize: Int? = null,
-        maxSize: Int? = null,
-        valueDefinition: AbstractValueDefinition<T, CX>
-) : AbstractCollectionDefinition<T, Set<T>, CX, AbstractValueDefinition<T, CX>>(
-        indexed, searchable, required, final, minSize, maxSize, valueDefinition
-) {
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val minSize: Int? = null,
+        override val maxSize: Int? = null,
+        override val valueDefinition: IsValueDefinition<T, CX>
+) : IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> {
+    init {
+        assert(valueDefinition.required, { "Definition for value should have required=true on set" })
+    }
+
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
 
     /** Get a reference to a specific set item
-     * @param key to get reference for
-     * @param parentRefFactory (optional) factory to create parent ref
+     * @param value to get reference for
+     * @param setReference (optional) factory to create parent ref
      */
     fun getItemRef(value: T, setReference: SetReference<T, CX>?)
             = SetItemReference(value, this, setReference)

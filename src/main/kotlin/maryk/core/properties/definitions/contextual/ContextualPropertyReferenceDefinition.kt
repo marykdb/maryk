@@ -4,20 +4,22 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another property */
-class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
-        required: Boolean = true,
+data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
+        override val required: Boolean = true,
         val contextualResolver: (context: CX?) -> RootDataModel<*, *>
-): AbstractValueDefinition<IsPropertyReference<*, *>, CX>(
-        false, true, required, false, WireType.LENGTH_DELIMITED
-), IsSerializableFlexBytesEncodable<IsPropertyReference<*, *>, CX> {
+): IsValueDefinition<IsPropertyReference<*, *>, CX>, IsSerializableFlexBytesEncodable<IsPropertyReference<*, *>, CX> {
+    override val indexed = false
+    override val searchable = false
+    override val final = true
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun asString(value: IsPropertyReference<*, *>, context: CX?)
             = value.completeName!!
 

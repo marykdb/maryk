@@ -8,17 +8,16 @@ import maryk.core.protobuf.WireType
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: Key<DO>? = null,
-        maxValue: Key<DO>? = null,
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: Key<DO>? = null,
+        override val maxValue: Key<DO>? = null,
         val dataModel: RootDataModel<DO, *>
-): AbstractSimpleDefinition<Key<DO>, IsPropertyContext>(
-        indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext> {
+): IsSimpleDefinition<Key<DO>, IsPropertyContext>, IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext> {
+    override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize = dataModel.key.size
 
     override fun calculateStorageByteLength(value: Key<DO>) = this.byteSize

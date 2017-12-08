@@ -8,18 +8,18 @@ import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
 class FlexBytesDefinition(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: Bytes? = null,
-        maxValue: Bytes? = null,
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: Bytes? = null,
+        override val maxValue: Bytes? = null,
         override val minSize: Int? = null,
         override val maxSize: Int? = null
-): AbstractSimpleDefinition<Bytes, IsPropertyContext>(
-    indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), HasSizeDefinition, IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext> {
+): IsSimpleDefinition<Bytes, IsPropertyContext>, HasSizeDefinition, IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext> {
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(length, reader)
 
     override fun calculateStorageByteLength(value: Bytes) = value.size
@@ -31,7 +31,7 @@ class FlexBytesDefinition(
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 
     override fun validateWithRef(previousValue: Bytes?, newValue: Bytes?, refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>>?) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null && (isSizeToSmall(newValue.size) || isSizeToBig(newValue.size))) {
             throw InvalidSizeException(

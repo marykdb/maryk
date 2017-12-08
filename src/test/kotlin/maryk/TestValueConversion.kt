@@ -2,14 +2,14 @@ package maryk
 
 import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.test.shouldBe
 
 fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
         bc: ByteCollectorWithLengthCacher = ByteCollectorWithLengthCacher(),
         value: T,
-        def: AbstractValueDefinition<T, CX>,
+        def: IsValueDefinition<T, CX>,
         context: CX? = null
 ) {
     bc.reserve(

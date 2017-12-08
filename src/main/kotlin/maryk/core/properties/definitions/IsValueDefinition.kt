@@ -15,15 +15,9 @@ import maryk.core.protobuf.WireType
  * This is used for simple single value properties and not for lists and maps.
  * @param <T> Type of objects contained in property
  */
-abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
-        indexed: Boolean,
-        searchable: Boolean,
-        required: Boolean,
-        final: Boolean,
-        val wireType: WireType
-) : AbstractSubDefinition<T, CX>(
-        indexed, searchable, required, final
-) {
+interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<T, CX> {
+    val wireType: WireType
+
     override fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?) : Int {
         var totalByteLength = 0
         totalByteLength += ProtoBuf.calculateKeyLength(index)
@@ -55,9 +49,9 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      * @param context with possible context values for Dynamic property writers
      * @return the total length
      */
-    abstract fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null): Int
+    fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null): Int
 
-    override final fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, this.wireType, writer)
         if (this.wireType == WireType.LENGTH_DELIMITED) {
             lengthCacheGetter().writeVarBytes(writer)
@@ -70,7 +64,7 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      * @param writer to write bytes to
      * @param context with possible context values for Dynamic writers
      */
-    abstract fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
+    fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
@@ -82,12 +76,12 @@ abstract class AbstractValueDefinition<T: Any, in CX: IsPropertyContext>(
      * @param context with possible context values for Dynamic writers
      * @throws ParseException if conversion fails
      */
-    abstract fun fromString(string: String, context: CX? = null): T
+    fun fromString(string: String, context: CX? = null): T
 
     /** Convert value to String
      * @param value to convert
      * @param context with possible context values for Dynamic writers
      * @return value as String
      */
-    open fun asString(value: T, context: CX? = null) = value.toString()
+    fun asString(value: T, context: CX? = null) = value.toString()
 }

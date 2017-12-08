@@ -6,8 +6,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractPropertyDefinition
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -15,7 +14,6 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -48,12 +46,12 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
             keyDefinitions.forEach {
                 when {
                     it is FixedBytesPropertyDefinitionWrapper<*, *, *, *>
-                            && it.definition is AbstractValueDefinition<*, *>-> {
-                        checkDefinition(it.name, it.definition as AbstractValueDefinition<*, *>)
+                            && it.definition is IsValueDefinition<*, *>-> {
+                        checkDefinition(it.name, it.definition as IsValueDefinition<*, *>)
                     }
                     it is Reversed<*>
                             && it.definition is FixedBytesPropertyDefinitionWrapper<*, *, *, *>
-                            && it.definition.definition is AbstractValueDefinition<*, *> -> {
+                            && it.definition.definition is IsValueDefinition<*, *> -> {
                         checkDefinition(it.definition.name, it.definition.definition)
                     }
                 }
@@ -62,7 +60,7 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
             this.size = totalBytes
         }
 
-        private fun checkDefinition(name: String, it: AbstractPropertyDefinition<*>) {
+        private fun checkDefinition(name: String, it: IsPropertyDefinition<*>) {
             assert(it.required, { "Definition of $name should be required" })
             assert(it.final, { "Definition of $name should be final" })
         }

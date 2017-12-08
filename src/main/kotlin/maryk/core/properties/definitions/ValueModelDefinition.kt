@@ -16,17 +16,16 @@ import maryk.core.protobuf.WireType
  * @param <DO> DataModel which is contained within SubModel
  */
 class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO, *>>(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: DO? = null,
-        maxValue: DO? = null,
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: DO? = null,
+        override val maxValue: DO? = null,
         val dataModel: D
-) : AbstractSimpleDefinition<DO, IsPropertyContext>(
-        indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), IsSerializableFixedBytesEncodable<DO, IsPropertyContext> {
+) : IsSimpleDefinition<DO, IsPropertyContext>, IsSerializableFixedBytesEncodable<DO, IsPropertyContext> {
+    override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize
 
     override fun calculateStorageByteLength(value: DO) = this.byteSize
@@ -47,7 +46,7 @@ class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO, *>>(
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsSimpleDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
                     refGetter = refGetter,

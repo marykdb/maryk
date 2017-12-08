@@ -9,17 +9,16 @@ import maryk.core.protobuf.WireType
 
 /** Definition for Date properties */
 class DateDefinition(
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = true,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: Date? = null,
-        maxValue: Date? = null,
-        fillWithNow: Boolean = false
-) : AbstractMomentDefinition<Date>(
-        indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow
-), IsSerializableFixedBytesEncodable<Date, IsPropertyContext> {
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: Date? = null,
+        override val maxValue: Date? = null,
+        override val fillWithNow: Boolean = false
+) : IsMomentDefinition<Date>, IsSerializableFixedBytesEncodable<Date, IsPropertyContext> {
+    override val wireType = WireType.VAR_INT
     override val byteSize = 8
 
     override fun createNow() = Date.nowUTC()

@@ -46,7 +46,7 @@ private val dataModel = ContextCaptureDefinition(
 
 private val listOfStatuses = ListDefinition(
         valueDefinition = MultiTypeDefinition(
-                getDefinition = mapOf(
+                definitionMap = mapOf(
                         StatusType.SUCCESS.index to SubModelDefinition(dataModel = {  Success } ),
                         StatusType.ADD_SUCCESS.index to SubModelDefinition(dataModel = {  AddSuccess } ),
                         StatusType.AUTH_FAIL.index to SubModelDefinition(dataModel = {  AuthFail } ),
@@ -55,6 +55,6 @@ private val listOfStatuses = ListDefinition(
                         StatusType.VALIDATION_FAIL.index to SubModelDefinition(dataModel = {  ValidationFail } ),
                         StatusType.ALREADY_EXISTS.index to SubModelDefinition(dataModel = {  AlreadyExists } ),
                         StatusType.DOES_NOT_EXIST.index to SubModelDefinition(dataModel = {  DoesNotExist } )
-                )::get
+                )
         )
 )

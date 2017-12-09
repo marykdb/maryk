@@ -30,7 +30,7 @@ data class AddSuccess<DO: Any>(
                     add(1,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
                     add(2,"changes", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
-                                    getDefinition = mapOfChangeDefinitions::get
+                                    definitionMap = mapOfChangeDefinitions
                             )
                     )) { it.changes.map { TypedValue(it.changeType.index, it) } }
                 }

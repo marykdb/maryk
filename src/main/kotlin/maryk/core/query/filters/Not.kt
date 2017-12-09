@@ -17,7 +17,7 @@ data class Not(
             properties = object : PropertyDefinitions<Not>() {
                 init {
                     add(0, "filter", MultiTypeDefinition(
-                            getDefinition = { mapOfFilterDefinitions[it] }
+                            definitionMap = mapOfFilterDefinitions
                     )) { not: Not -> TypedValue(not.filter.filterType.index, not.filter)}
                 }
             }

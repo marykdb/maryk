@@ -157,13 +157,13 @@ data class TestMarykObject(
                 index = 12, name = "multi",
                 definition = MultiTypeDefinition(
                         required = false,
-                        getDefinition = mapOf(
+                        definitionMap = mapOf(
                                 0 to StringDefinition(),
                                 1 to NumberDefinition(type = SInt32),
                                 2 to SubModelDefinition(
                                         dataModel = { SubMarykObject }
                                 )
-                        )::get
+                        )
                 ),
                 getter = TestMarykObject::multi
         )

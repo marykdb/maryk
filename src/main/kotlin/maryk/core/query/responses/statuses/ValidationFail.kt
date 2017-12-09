@@ -24,7 +24,7 @@ data class ValidationFail<DO: Any>(
                 init {
                     add(0, "exceptions", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
-                                    getDefinition = { mapOfValidationExceptionDefinitions.get(it) }
+                                    definitionMap = mapOfValidationExceptionDefinitions
                             )
                     )) {
                         it.exceptions.map { TypedValue(it.validationExceptionType.index, it) }

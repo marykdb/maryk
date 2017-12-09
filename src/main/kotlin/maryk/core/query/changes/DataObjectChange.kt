@@ -36,7 +36,7 @@ data class DataObjectChange<out DO: Any>(
 
                     add(1, "changes", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
-                                    getDefinition = mapOfChangeDefinitions::get
+                                    definitionMap = mapOfChangeDefinitions
                             )
                     )) {
                         it.changes.map { TypedValue(it.changeType.index, it) }

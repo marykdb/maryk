@@ -20,10 +20,10 @@ internal class TypeIdTest {
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val multi = add(0, "multi", MultiTypeDefinition(
-                    getDefinition = mapOf<Int, IsSubDefinition<*, IsPropertyContext>>(
+                    definitionMap = mapOf<Int, IsSubDefinition<*, IsPropertyContext>>(
                             0 to StringDefinition(),
                             1 to BooleanDefinition()
-                    )::get
+                    )
             ), MarykObject::multi)
         }
         companion object: RootDataModel<MarykObject, Properties>(

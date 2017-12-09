@@ -21,7 +21,7 @@ data class Or(
                 init {
                     add(0, "filters", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
-                                    getDefinition = { mapOfFilterDefinitions[it] }
+                                    definitionMap = mapOfFilterDefinitions
                             )
                     )) {
                         it.filters.map { TypedValue(it.filterType.index, it) }

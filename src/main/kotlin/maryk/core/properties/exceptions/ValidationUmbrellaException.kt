@@ -23,7 +23,7 @@ data class ValidationUmbrellaException(
                     ValidationException.addReference(this, ValidationUmbrellaException::reference)
                     add(1, "exceptions", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
-                                    getDefinition = { mapOfValidationExceptionDefinitions.get(it) }
+                                    definitionMap = mapOfValidationExceptionDefinitions
                             )
                     )) {
                         it.exceptions.map { TypedValue(it.validationExceptionType.index, it) }

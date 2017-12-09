@@ -10,7 +10,7 @@ interface IsResponseStatus {
     val statusType: StatusType
 
     companion object {
-        internal fun <DM: Any> addKey(definitions: PropertyDefinitions<DM>, getter: (DM) -> Key<*>?) {
+        internal fun <DO: Any> addKey(definitions: PropertyDefinitions<DO>, getter: (DO) -> Key<*>?) {
             definitions.add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = { it!!.dataModel!!.key }
             ), getter)

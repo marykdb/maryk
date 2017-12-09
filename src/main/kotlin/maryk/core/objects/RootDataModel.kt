@@ -23,16 +23,16 @@ fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
 /** DataModel which is on root level so it can be stored and thus can have a key
  * If no key is defined the datamodel will get a UUID
  *
- * @param name: Name of the datamodel. Used also to resolve DataModels
+ * @param name: Name of the data model. Used also to resolve DataModels
  * @param keyDefinitions: Ordered array with all key part definitions
  * @param properties: All definitions for properties contained in this model
- * @param DM: Type of DataModel contained
+ * @param DO: Type of DataObject contained
  */
-abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
+abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         val name: String,
         keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
         properties: P
-) : DataModel<DM, P, IsPropertyContext>(properties){
+) : DataModel<DO, P, IsPropertyContext>(properties){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */
@@ -65,7 +65,7 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
         }
 
         /** Get Key by byte array */
-        fun get(bytes: ByteArray): Key<DM> {
+        fun get(bytes: ByteArray): Key<DO> {
             if (bytes.size != this.size) {
                throw ParseException("Invalid byte length for key")
             }
@@ -73,15 +73,15 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
         }
 
         /** Get Key by base64 byte representation */
-        fun get(base64: String): Key<DM> = this.get(Base64.decode(base64))
+        fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
 
         /** Get Key by byte reader */
-        fun get(reader: () -> Byte): Key<DM> = Key<DM>(
+        fun get(reader: () -> Byte): Key<DO> = Key<DO>(
                 initByteArray(size, reader)
         )
 
         /** Get Key based on DataObject */
-        fun getKey(dataObject: DM): Key<DM> {
+        fun getKey(dataObject: DO): Key<DO> {
             val bytes = ByteArray(this.size)
             var index = 0
             keyDefinitions.forEach {

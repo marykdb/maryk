@@ -18,16 +18,16 @@ import maryk.core.properties.references.ListReference
  *
  * @param T: value type of property for list
  * @param CX: Context type for property
- * @param DM: Type of DataModel which contains this property
+ * @param DO: Type of DataObject which contains this property
  */
-data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: Any>(
+data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any>(
         override val index: Int,
         override val name: String,
         override val definition: ListDefinition<T, CX>,
-        override val getter: (DM) -> List<T>?
+        override val getter: (DO) -> List<T>?
 ) :
         IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> by definition,
-        IsPropertyDefinitionWrapper<List<T>, CX, DM>
+        IsPropertyDefinitionWrapper<List<T>, CX, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
             ListReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)

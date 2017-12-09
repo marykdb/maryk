@@ -9,10 +9,10 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.protobuf.ByteLengthContainer
 
-class SubModelPropertyRef<DO : Any, P: PropertyDefinitions<DO>, D : DataModel<DO, P, CX>, CX: IsPropertyContext>(
-        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, D, CX, *>,
+class SubModelPropertyRef<DO : Any, P: PropertyDefinitions<DO>, DM : DataModel<DO, P, CX>, CX: IsPropertyContext>(
+        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, DM, CX, *>,
         parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveComplexChildReference<DO, SubModelPropertyDefinitionWrapper<DO, P, D, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+): CanHaveComplexChildReference<DO, SubModelPropertyDefinitionWrapper<DO, P, DM, CX, *>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name

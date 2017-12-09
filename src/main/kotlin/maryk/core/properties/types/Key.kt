@@ -1,3 +1,3 @@
 package maryk.core.properties.types
 
-class Key<out DM: Any>(bytes: ByteArray) : Bytes(bytes)
+class Key<out DO: Any>(bytes: ByteArray) : Bytes(bytes)

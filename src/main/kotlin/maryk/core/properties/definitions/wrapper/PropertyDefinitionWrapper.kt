@@ -14,14 +14,14 @@ import maryk.core.properties.references.ValuePropertyReference
  * @param T: value type of property
  * @param CX: Context type for property
  * @param D: Type of Definition contained
- * @param DM: Type of DataModel which contains this property
+ * @param DO: Type of DataObject which contains this property
  */
-data class PropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DM: Any>(
+data class PropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DO: Any>(
         override val index: Int,
         override val name: String,
         override val definition: D,
-        override val getter: (DM) -> T?
-) : IsSerializableFlexBytesEncodable<T, CX> by definition, IsValuePropertyDefinitionWrapper<T, CX, DM> {
+        override val getter: (DO) -> T?
+) : IsSerializableFlexBytesEncodable<T, CX> by definition, IsValuePropertyDefinitionWrapper<T, CX, DO> {
     override fun getRef(parentRef: IsPropertyReference<*, *>?)
             = ValuePropertyReference(this, parentRef)
 }

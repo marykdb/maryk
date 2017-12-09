@@ -19,16 +19,16 @@ import maryk.core.properties.references.MapValueReference
  * @param K: type of key property for map
  * @param V: type of value property for map
  * @param CX: Context type for property
- * @param DM: Type of DataModel which contains this property
+ * @param DO: Type of DataObject which contains this property
  */
-data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, in DM: Any>(
+data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, in DO: Any>(
         override val index: Int,
         override val name: String,
         override val definition: MapDefinition<K, V, CX>,
-        override val getter: (DM) -> Map<K, V>?
+        override val getter: (DO) -> Map<K, V>?
 ) :
         IsMapDefinition<K, V, CX> by definition,
-        IsPropertyDefinitionWrapper<Map<K,V>, CX, DM>
+        IsPropertyDefinitionWrapper<Map<K,V>, CX, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?): MapReference<K, V, CX> =
             MapReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)

@@ -14,14 +14,14 @@ import maryk.core.protobuf.ByteLengthContainer
  *
  * @param T: value type of property
  * @param CX: Context type for property
- * @param DM: Type of DataModel which contains this property
+ * @param DO: Type of DataObject which contains this property
  */
-interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DM>
+interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO>
     : IsSerializablePropertyDefinition<T, CX> {
     val index: Int
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
-    val getter: (DM) -> T?
+    val getter: (DO) -> T?
 
     /**
      * Get a reference to this definition

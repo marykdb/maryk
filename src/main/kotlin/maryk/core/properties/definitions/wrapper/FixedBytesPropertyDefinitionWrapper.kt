@@ -16,17 +16,17 @@ import maryk.core.properties.references.ValuePropertyReference
  * @param T: value type of property
  * @param CX: Context type for property
  * @param D: Type of Definition contained
- * @param DM: Type of DataModel which contains this property
+ * @param DO: Type of DataObject which contains this property
  */
-data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DM: Any>(
+data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DO: Any>(
         override val index: Int,
         override val name: String,
         override val definition: D,
-        override val getter: (DM) -> T?
+        override val getter: (DO) -> T?
 ) :
         IsSerializableFixedBytesEncodable<T, CX> by definition,
-        IsPropertyDefinitionWrapper<T, CX, DM>,
-        IsValuePropertyDefinitionWrapper<T, CX, DM>,
+        IsPropertyDefinitionWrapper<T, CX, DO>,
+        IsValuePropertyDefinitionWrapper<T, CX, DO>,
         IsFixedBytesProperty<T>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?)
@@ -36,7 +36,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
      * @param dataModel to use to fetch property if relevant
      * @param dataObject to get property from
      */
-    override fun <DM : Any> getValue(dataModel: IsDataModel<DM>, dataObject: DM): T {
+    override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO): T {
         @Suppress("UNCHECKED_CAST")
         return dataModel.getPropertyGetter(
                 this.index

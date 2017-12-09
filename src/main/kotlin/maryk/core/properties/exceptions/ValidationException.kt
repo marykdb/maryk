@@ -27,7 +27,7 @@ abstract class ValidationException(
     abstract val validationExceptionType: ValidationExceptionType
 
     companion object {
-        fun <DM: ValidationException> addReference(definitions: PropertyDefinitions<DM>, getter: (DM) -> IsPropertyReference<*, *>?) {
+        fun <DO: ValidationException> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
                     index = 0, name = "reference",
                     definition = ContextCaptureDefinition(
@@ -42,7 +42,7 @@ abstract class ValidationException(
                     getter = getter
             )
         }
-        fun <DM: ValidationException> addValue(definitions: PropertyDefinitions<DM>, getter: (DM) -> String?) {
+        fun <DO: ValidationException> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> String?) {
             definitions.add(
                     1, "value",
                     StringDefinition(),

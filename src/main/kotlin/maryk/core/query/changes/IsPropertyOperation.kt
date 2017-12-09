@@ -1,8 +1,8 @@
 package maryk.core.query.changes
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -22,7 +22,7 @@ interface IsPropertyOperation<T: Any> : IsChange {
     val valueToCompare: T?
 
     companion object {
-        fun <DM: Any> addReference(definitions: PropertyDefinitions<DM>, getter: (DM) -> IsPropertyReference<*, *>?) {
+        fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
                     0, "reference", ContextCaptureDefinition(
                             ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
@@ -36,7 +36,7 @@ interface IsPropertyOperation<T: Any> : IsChange {
             )
         }
 
-        fun <DM: Any> addValueToCompare(definitions: PropertyDefinitions<DM>, getter: (DM) -> Any?) {
+        fun <DO: Any> addValueToCompare(definitions: PropertyDefinitions<DO>, getter: (DO) -> Any?) {
             definitions.add(
                     1, "valueToCompare",
                     ContextualValueDefinition(

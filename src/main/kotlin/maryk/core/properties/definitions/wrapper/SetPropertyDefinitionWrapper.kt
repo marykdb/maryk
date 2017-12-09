@@ -18,16 +18,16 @@ import maryk.core.properties.references.SetReference
  *
  * @param T: value type of property for list
  * @param CX: Context type for property
- * @param DM: Type of DataModel which contains this property
+ * @param DO: Type of DataObject which contains this property
  */
-data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DM: Any>(
+data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any>(
         override val index: Int,
         override val name: String,
         override val definition: SetDefinition<T, CX>,
-        override val getter: (DM) -> Set<T>?
+        override val getter: (DO) -> Set<T>?
 ) :
         IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,
-        IsPropertyDefinitionWrapper<Set<T>, CX, DM>
+        IsPropertyDefinitionWrapper<Set<T>, CX, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
             SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)

@@ -12,10 +12,10 @@ import maryk.core.protobuf.WireType
 
 /** Definition for value model properties
  * @param dataModel definition of the DataObject
- * @param <D>  Type of model for this definition
+ * @param <DM>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-data class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO, *>>(
+data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO, *>>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,
@@ -23,7 +23,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO, 
         override val unique: Boolean = false,
         override val minValue: DO? = null,
         override val maxValue: DO? = null,
-        val dataModel: D
+        val dataModel: DM
 ) : IsSimpleDefinition<DO, IsPropertyContext>, IsSerializableFixedBytesEncodable<DO, IsPropertyContext> {
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize

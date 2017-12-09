@@ -16,19 +16,20 @@ import maryk.core.properties.references.SubModelPropertyRef
  * @param definition: to be wrapped for DataObject
  * @param getter: to get property value on a DataObject
  *
- * @param DO: DataObject value type of property for list
+ * @param SDO: DataObject value type of property for sub object
  * @param P: Properties object for DataModel
+ * @param DM: type of DataModel which describes the DataObject
  * @param CX: Context type for property
- * @param DM: Type of DataModel which contains this property
+ * @param DO: Type of DataObject which contains this property
  */
-data class SubModelPropertyDefinitionWrapper<DO: Any, P: PropertyDefinitions<DO>, D: DataModel<DO, P, CX>, CX: IsPropertyContext, in DM: Any>(
+data class SubModelPropertyDefinitionWrapper<SDO: Any, P: PropertyDefinitions<SDO>, DM: DataModel<SDO, P, CX>, CX: IsPropertyContext, in DO: Any>(
         override val index: Int,
         override val name: String,
-        override val definition: SubModelDefinition<DO, P, D, CX>,
-        override val getter: (DM) -> DO?
+        override val definition: SubModelDefinition<SDO, P, DM, CX>,
+        override val getter: (DO) -> SDO?
 ) :
-        IsSubModelDefinition<DO, CX> by definition,
-        IsPropertyDefinitionWrapper<DO, CX, DM>
+        IsSubModelDefinition<SDO, CX> by definition,
+        IsPropertyDefinitionWrapper<SDO, CX, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
             SubModelPropertyRef(

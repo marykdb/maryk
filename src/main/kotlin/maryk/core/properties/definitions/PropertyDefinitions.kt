@@ -10,15 +10,15 @@ import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 
-abstract class PropertyDefinitions<DM: Any> {
+abstract class PropertyDefinitions<DO: Any> {
     @Suppress("PropertyName")
-    internal val __allProperties = mutableListOf<IsPropertyDefinitionWrapper<*, *, DM>>()
+    internal val __allProperties = mutableListOf<IsPropertyDefinitionWrapper<*, *, DO>>()
 
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
             index: Int,
             name: String,
             definition: D,
-            getter: (DM) -> T? = { null }
+            getter: (DO) -> T? = { null }
     ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -27,7 +27,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: D,
-            getter: (DM) -> T? = { null }
+            getter: (DO) -> T? = { null }
     ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -36,7 +36,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: ListDefinition<T, CX>,
-            getter: (DM) -> List<T>? = { null }
+            getter: (DO) -> List<T>? = { null }
     ) = ListPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -45,7 +45,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: SetDefinition<T, CX>,
-            getter: (DM) -> Set<T>? = { null }
+            getter: (DO) -> Set<T>? = { null }
     ) = SetPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -54,7 +54,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: MapDefinition<K, V, CX>,
-            getter: (DM) -> Map<K, V>? = { null }
+            getter: (DO) -> Map<K, V>? = { null }
     ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
@@ -63,7 +63,7 @@ abstract class PropertyDefinitions<DM: Any> {
             index: Int,
             name: String,
             definition: SubModelDefinition<DO, P, D, CX>,
-            getter: (DM) -> DO? = { null }
+            getter: (DO) -> DO? = { null }
     ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }

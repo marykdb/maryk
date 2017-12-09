@@ -24,7 +24,7 @@ import maryk.core.protobuf.ProtoBufKey
  * @param <DO> Type of DataObject which is modeled
  *
  * @param properties: All definitions for properties contained in this model
- * @param DO: Type of DataModel contained
+ * @param DO: Type of DataObject contained
  * @param CX: Type of context object
  */
 abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>, in CX: IsPropertyContext>(

@@ -12,20 +12,20 @@ import maryk.core.protobuf.WireType
 /**
  * Definition for submodel properties
  * @param dataModel definition of the DataObject
- * @param <D>  Type of model for this definition
- * @param <DO> DataModel which is contained within SubModel
+ * @param <DM>  Type of model for this definition
+ * @param <DO> Type of DataObject which is contained within SubModel
  */
-class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out D : DataModel<DO, P, CX>, in CX: IsPropertyContext>(
+class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : DataModel<DO, P, CX>, in CX: IsPropertyContext>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,
         override val final: Boolean = false,
-        dataModel: () -> D
+        dataModel: () -> DM
 ) : IsValueDefinition<DO, CX>, IsSerializablePropertyDefinition<DO, CX>, IsSubModelDefinition<DO, CX> {
     override val wireType = WireType.LENGTH_DELIMITED
 
     private val internalDataModel = lazy(dataModel)
-    val dataModel: D get() = internalDataModel.value
+    val dataModel: DM get() = internalDataModel.value
 
     override fun asString(value: DO, context: CX?): String {
         var string = ""

@@ -13,7 +13,7 @@ interface IsPropertyComparison<T: Any>: IsPropertyCheck<T> {
     val value: T
 
     companion object {
-        fun <DM: Any> addValue(definitions: PropertyDefinitions<DM>, getter: (DM) -> Any?) {
+        fun <DO: Any> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> Any?) {
             definitions.add(
                     1, "value",
                     ContextualValueDefinition(

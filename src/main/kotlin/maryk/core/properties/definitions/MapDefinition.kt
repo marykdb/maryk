@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.assert
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
@@ -32,8 +31,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         override val valueDefinition: IsSubDefinition<V, CX>
 ) : HasSizeDefinition, IsByteTransportableMap<K, V, CX>, IsMapDefinition<K, V, CX> {
     init {
-        assert(keyDefinition.required, { "Definition for key should be required on map" })
-        assert(valueDefinition.required, { "Definition for value should be required on map" })
+        require(keyDefinition.required, { "Definition for key should be required on map" })
+        require(valueDefinition.required, { "Definition for value should be required on map" })
     }
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null

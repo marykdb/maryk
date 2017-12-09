@@ -1,6 +1,5 @@
 package maryk.core.objects
 
-import maryk.core.assert
 import maryk.core.json.IllegalJsonOperation
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
@@ -42,8 +41,8 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>, in CX: IsPrope
         nameToDefinition = mutableMapOf()
 
         this.definitions.forEach { def ->
-            assert(def.index in (0..Short.MAX_VALUE), { "${def.index} for ${def.name} is outside range $(0..Short.MAX_VALUE)" })
-            assert(indexToDefinition[def.index] == null, { "Duplicate index ${def.index} for ${def.name} and ${indexToDefinition[def.index]?.name}" })
+            require(def.index in (0..Short.MAX_VALUE), { "${def.index} for ${def.name} is outside range $(0..Short.MAX_VALUE)" })
+            require(indexToDefinition[def.index] == null, { "Duplicate index ${def.index} for ${def.name} and ${indexToDefinition[def.index]?.name}" })
             indexToDefinition[def.index] = def
             nameToDefinition[def.name] = def
         }

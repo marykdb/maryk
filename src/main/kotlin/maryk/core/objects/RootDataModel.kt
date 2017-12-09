@@ -1,15 +1,14 @@
 package maryk.core.objects
 
-import maryk.core.assert
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
@@ -61,8 +60,8 @@ abstract class RootDataModel<DM: Any, P: PropertyDefinitions<DM>>(
         }
 
         private fun checkDefinition(name: String, it: IsPropertyDefinition<*>) {
-            assert(it.required, { "Definition of $name should be required" })
-            assert(it.final, { "Definition of $name should be final" })
+            require(it.required, { "Definition of $name should be required" })
+            require(it.final, { "Definition of $name should be final" })
         }
 
         /** Get Key by byte array */

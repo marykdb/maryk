@@ -59,11 +59,11 @@ abstract class PropertyDefinitions<DO: Any> {
         __allProperties.add(this)
     }
 
-    fun <DO: Any, P: PropertyDefinitions<DO>, D: DataModel<DO, P, CX>, CX: IsPropertyContext> add(
+    fun <SDO: Any, P: PropertyDefinitions<SDO>, D: DataModel<SDO, P, CX>, CX: IsPropertyContext> add(
             index: Int,
             name: String,
-            definition: SubModelDefinition<DO, P, D, CX>,
-            getter: (DO) -> DO? = { null }
+            definition: SubModelDefinition<SDO, P, D, CX>,
+            getter: (DO) -> SDO? = { null }
     ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }

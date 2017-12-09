@@ -15,7 +15,7 @@ import maryk.core.protobuf.WireType
  * @param <D>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO, *>>(
+data class ValueModelDefinition<DO: ValueDataObject, out D : ValueDataModel<DO, *>>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

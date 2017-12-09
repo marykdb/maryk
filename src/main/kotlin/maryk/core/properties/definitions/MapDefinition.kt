@@ -21,7 +21,7 @@ import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 
-class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
+data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

@@ -10,7 +10,7 @@ import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.SInt64
 
 /** Definition for Number properties */
-class NumberDefinition<T: Comparable<T>>(
+data class NumberDefinition<T: Comparable<T>>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

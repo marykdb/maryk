@@ -5,7 +5,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 
-class ListDefinition<T: Any, CX: IsPropertyContext>(
+data class ListDefinition<T: Any, CX: IsPropertyContext>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

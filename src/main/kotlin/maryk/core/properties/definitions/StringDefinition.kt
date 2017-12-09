@@ -10,7 +10,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 
 /** Definition for String properties */
-class StringDefinition(
+data class StringDefinition(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

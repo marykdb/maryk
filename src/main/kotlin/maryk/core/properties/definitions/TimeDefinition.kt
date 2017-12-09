@@ -11,7 +11,7 @@ import maryk.core.protobuf.WireType
 /**
  * Definition for Time properties
  */
-class TimeDefinition(
+data class TimeDefinition(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

@@ -6,7 +6,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
-class FixedBytesDefinition(
+data class FixedBytesDefinition(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

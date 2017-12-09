@@ -11,7 +11,7 @@ import maryk.core.protobuf.WireType
 /**
  * Definition for DateTime properties
  */
-class DateTimeDefinition(
+data class DateTimeDefinition(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

@@ -8,7 +8,7 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
 
 /** Definition for Boolean properties */
-class BooleanDefinition(
+data class BooleanDefinition(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

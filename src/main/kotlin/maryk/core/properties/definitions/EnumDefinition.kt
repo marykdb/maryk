@@ -11,7 +11,7 @@ import maryk.core.properties.types.IndexedEnum
 import maryk.core.protobuf.WireType
 
 /** Definition for Enum properties */
-class EnumDefinition<E>(
+data class EnumDefinition<E>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

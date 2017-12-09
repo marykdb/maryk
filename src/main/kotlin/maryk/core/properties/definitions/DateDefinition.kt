@@ -8,7 +8,7 @@ import maryk.core.properties.types.Date
 import maryk.core.protobuf.WireType
 
 /** Definition for Date properties */
-class DateDefinition(
+data class DateDefinition(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,

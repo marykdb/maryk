@@ -47,7 +47,8 @@ data class TestMarykObject(
         val subModel: SubMarykObject? = null,
         val multi: TypedValue<*>? = null,
         val reference: Key<SubMarykObject>? = null,
-        val listOfString: List<String>? = null
+        val listOfString: List<String>? = null,
+        val selfReference: Key<TestMarykObject>? = null
 ) {
     object Properties: PropertyDefinitions<TestMarykObject>() {
         val string = add(
@@ -172,7 +173,7 @@ data class TestMarykObject(
                 index = 13, name = "reference",
                 definition = ReferenceDefinition(
                         required = false,
-                        dataModel = SubMarykObject
+                        dataModel = { SubMarykObject }
                 ),
                 getter = TestMarykObject::reference
         )
@@ -184,6 +185,15 @@ data class TestMarykObject(
                         valueDefinition = StringDefinition()
                 ),
                 getter = TestMarykObject::listOfString
+        )
+
+        val selfReference = add(
+                index = 15, name = "selfReference",
+                definition = ReferenceDefinition(
+                        required = false,
+                        dataModel = { TestMarykObject }
+                ),
+                getter = TestMarykObject::selfReference
         )
     }
 

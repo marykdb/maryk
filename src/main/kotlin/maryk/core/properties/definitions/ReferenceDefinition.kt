@@ -15,10 +15,13 @@ class ReferenceDefinition<DO: Any>(
         override val unique: Boolean = false,
         override val minValue: Key<DO>? = null,
         override val maxValue: Key<DO>? = null,
-        val dataModel: RootDataModel<DO, *>
+        dataModel: () -> RootDataModel<DO, *>
 ): IsSimpleDefinition<Key<DO>, IsPropertyContext>, IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext> {
     override val wireType = WireType.LENGTH_DELIMITED
-    override val byteSize = dataModel.key.size
+    override val byteSize get() = dataModel.key.size
+
+    private val internalDataModel = lazy(dataModel)
+    val dataModel: RootDataModel<DO, *> get() = internalDataModel.value
 
     override fun calculateStorageByteLength(value: Key<DO>) = this.byteSize
 

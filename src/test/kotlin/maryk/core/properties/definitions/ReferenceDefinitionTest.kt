@@ -20,7 +20,7 @@ internal class ReferenceDefinitionTest {
     )
 
     val def = ReferenceDefinition(
-            dataModel = TestMarykObject
+            dataModel = { TestMarykObject }
     )
 
     @Test

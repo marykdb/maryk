@@ -25,7 +25,6 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out D : DataM
     override val wireType = WireType.LENGTH_DELIMITED
 
     private val internalDataModel = lazy(dataModel)
-
     val dataModel: D get() = internalDataModel.value
 
     override fun asString(value: DO, context: CX?): String {

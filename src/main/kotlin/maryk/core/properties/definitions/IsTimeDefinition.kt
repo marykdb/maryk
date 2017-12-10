@@ -13,4 +13,10 @@ interface IsTimeDefinition<T : IsTime<T>> : IsMomentDefinition<T>, IsSerializabl
     override fun calculateStorageByteLength(value: T) = this.byteSize
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
+
+    companion object {
+        internal fun <DO : Any> addPrecision(definitions: PropertyDefinitions<DO>, getter: (DO) -> TimePrecision) {
+            definitions.add(8, "precision", EnumDefinition(values = TimePrecision.values()), getter)
+        }
+    }
 }

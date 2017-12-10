@@ -6,18 +6,17 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 
 /**
- * Abstract Property Definition to define properties.
+ * Property Definition to define comparable properties.
  *
  * This is used for simple single value properties and not for lists and maps.
  * @param <T> Type of objects contained in property
  */
-interface IsSimpleDefinition<T: Comparable<T>, in CX: IsPropertyContext> : IsSimpleValueDefinition<T, CX> {
+interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : IsSimpleValueDefinition<T, CX> {
     val unique: Boolean
     val minValue: T?
     val maxValue: T?
 
-    /**
-     * Validate the contents of the native type
+    /** Validate the contents of the native type
      * @param newValue to validate
      * @throws ValidationException thrown if property is invalid
      */
@@ -36,6 +35,12 @@ interface IsSimpleDefinition<T: Comparable<T>, in CX: IsPropertyContext> : IsSim
                             )
                 }
             }
+        }
+    }
+
+    companion object {
+        internal fun <DO : Any> addUnique(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+            definitions.add(4, "unique", BooleanDefinition(), getter)
         }
     }
 }

@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
 import maryk.core.properties.ByteCollectorWithLengthCacher
@@ -50,7 +49,7 @@ internal class SubModelDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
 
         val value = MarykObject()
@@ -71,23 +70,6 @@ internal class SubModelDefinitionTest {
         def.readTransportBytes(
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
-        ) shouldBe value
-    }
-
-    @Test
-    fun testTransportWithLengthConversion() {
-        val value = MarykObject()
-        val bytes = initByteArrayByHex("0a0502036a7572")
-        var index = 0
-        val reader = { bytes[index++] }
-
-        val key = ProtoBuf.readKey(reader)
-        key.wireType shouldBe WireType.LENGTH_DELIMITED
-        key.tag shouldBe 1
-
-        def.readTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, reader),
-                reader
         ) shouldBe value
     }
 }

@@ -24,7 +24,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
         override val minValue: DO? = null,
         override val maxValue: DO? = null,
         val dataModel: DM
-) : IsSimpleDefinition<DO, IsPropertyContext>, IsSerializableFixedBytesEncodable<DO, IsPropertyContext> {
+) : IsComparableDefinition<DO, IsPropertyContext>, IsSerializableFixedBytesEncodable<DO, IsPropertyContext> {
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize
 
@@ -46,7 +46,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
-        super<IsSimpleDefinition>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
                     refGetter = refGetter,

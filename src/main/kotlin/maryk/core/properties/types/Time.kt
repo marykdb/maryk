@@ -7,8 +7,8 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.time.Instant
 import kotlin.math.floor
 
-enum class TimePrecision {
-    SECONDS, MILLIS
+enum class TimePrecision(override val index: Int): IndexedEnum<TimePrecision> {
+    SECONDS(0), MILLIS(1)
 }
 
 /** Time with hours, minutes, seconds and millis */

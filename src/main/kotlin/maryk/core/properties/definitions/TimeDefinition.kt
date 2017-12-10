@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
@@ -49,4 +50,32 @@ data class TimeDefinition(
     }
 
     override fun fromString(string: String) = Time.parse(string)
+
+    companion object : DataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>, IsPropertyContext>(
+            properties = object : PropertyDefinitions<TimeDefinition>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)
+                    IsPropertyDefinition.addSearchable(this, TimeDefinition::searchable)
+                    IsPropertyDefinition.addRequired(this, TimeDefinition::required)
+                    IsPropertyDefinition.addFinal(this, TimeDefinition::final)
+                    IsComparableDefinition.addUnique(this, TimeDefinition::unique)
+                    add(5, "minValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::minValue)
+                    add(6, "maxValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::maxValue)
+                    IsMomentDefinition.addFillWithNow(this, TimeDefinition::fillWithNow)
+                    IsTimeDefinition.addPrecision(this, TimeDefinition::precision)
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = TimeDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean,
+                unique = map[4] as Boolean,
+                minValue = map[5] as Time?,
+                maxValue = map[6] as Time?,
+                fillWithNow = map[7] as Boolean,
+                precision = map[8] as TimePrecision
+        )
+    }
 }

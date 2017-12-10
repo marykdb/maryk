@@ -29,21 +29,21 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         refToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
     }
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun testStorageConversion() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         refToTest.forEach {
             bc.reserve(
@@ -56,7 +56,7 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
         refToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }

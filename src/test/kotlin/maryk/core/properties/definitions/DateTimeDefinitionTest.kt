@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.DateTime
@@ -25,8 +27,20 @@ internal class DateTimeDefinitionTest {
             precision = TimePrecision.MILLIS
     )
 
+    private val defMaxDefined = DateTimeDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            fillWithNow = true,
+            precision = TimePrecision.MILLIS,
+            minValue = DateTime.MIN,
+            maxValue = DateTime.MAX_IN_MILLIS
+    )
+
     @Test
-    fun createNow() {
+    fun `create now date time`() {
         val now = def.createNow().toEpochMilli()
         val expected = Instant.getCurrentEpochTimeInMillis()
 
@@ -36,7 +50,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytesMillis() {
+    fun `convert values with milliseconds precision to storage bytes and back`() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(
@@ -49,7 +63,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytesSeconds() {
+    fun `convert values with seconds precision to storage bytes and back`() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(
@@ -62,7 +76,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertTransportBytesMillis() {
+    fun `convert values with seconds precision to transport bytes and back`() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(defMilli.calculateTransportByteLength(it, { fail("Should not call") }))
@@ -73,7 +87,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertTransportBytesSeconds() {
+    fun `convert values with millisecond precision to transport bytes and back`() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(def.calculateTransportByteLength(it, { fail("Should not call") }))
@@ -84,7 +98,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         dateTimesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -92,9 +106,21 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, DateTimeDefinition)
+        checkProtoBufConversion(this.defMaxDefined, DateTimeDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, DateTimeDefinition)
+        checkJsonConversion(this.defMaxDefined, DateTimeDefinition)
     }
 }

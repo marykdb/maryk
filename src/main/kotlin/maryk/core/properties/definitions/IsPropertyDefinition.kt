@@ -38,4 +38,22 @@ interface IsPropertyDefinition<T: Any> {
      * @param index to fetch property of
      */
     fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>?
+
+    companion object {
+        internal fun <DO:Any> addIndexed(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+            definitions.add(0, "indexed", BooleanDefinition(), getter)
+        }
+
+        internal fun <DO:Any> addSearchable(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+            definitions.add(1, "searchable", BooleanDefinition(), getter)
+        }
+
+        internal fun <DO:Any> addRequired(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+            definitions.add(2, "required", BooleanDefinition(), getter)
+        }
+
+        internal fun <DO:Any> addFinal(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+            definitions.add(3, "final", BooleanDefinition(), getter)
+        }
+    }
 }

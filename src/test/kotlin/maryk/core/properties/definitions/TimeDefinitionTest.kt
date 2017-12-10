@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
@@ -28,8 +30,21 @@ internal class TimeDefinitionTest {
             precision = TimePrecision.MILLIS
     )
 
+
+    private val defMaxDefined = TimeDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = Time.MIN,
+            maxValue = Time.MAX_IN_MILLIS,
+            fillWithNow = true,
+            precision = TimePrecision.MILLIS
+    )
+
     @Test
-    fun createNow() {
+    fun `create now time`() {
         val expected = Instant.getCurrentEpochTimeInMillis()% (24 * 60 * 60 * 1000) / 1000
         val now = def.createNow().toSecondsOfDay()
 
@@ -39,7 +54,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytesMillis() {
+    fun `convert millisecond precision values to storage bytes and back`() {
         val bc = ByteCollector()
         arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
             bc.reserve(
@@ -52,7 +67,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytesSeconds() {
+    fun `convert seconds precision values to storage bytes and back`() {
         val bc = ByteCollector()
         timesToTestSeconds.forEach {
             bc.reserve(
@@ -65,7 +80,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertTransportBytesSeconds() {
+    fun `convert seconds precision values to transport bytes and back`() {
         val bc = ByteCollector()
         timesToTestSeconds.forEach {
             bc.reserve(def.calculateTransportByteLength(it, { fail("Should not call") }))
@@ -76,7 +91,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertTransportBytesMillis() {
+    fun `convert millis precision values to transport bytes and back`() {
         val bc = ByteCollector()
         timesToTestMillis.forEach {
             bc.reserve(defMilli.calculateTransportByteLength(it, { fail("Should not call") }))
@@ -87,16 +102,29 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         timesToTestMillis.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
     }
+
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, TimeDefinition)
+        checkProtoBufConversion(this.defMaxDefined, TimeDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, TimeDefinition)
+        checkJsonConversion(this.defMaxDefined, TimeDefinition)
     }
 }

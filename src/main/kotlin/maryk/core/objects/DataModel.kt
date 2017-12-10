@@ -27,7 +27,7 @@ import maryk.core.protobuf.ProtoBufKey
  * @param DO: Type of DataObject contained
  * @param CX: Type of context object
  */
-abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>, in CX: IsPropertyContext>(
+abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>, CX: IsPropertyContext>(
         val properties: P
 ) : IsDataModel<DO> {
     private val indexToDefinition: Map<Int, IsPropertyDefinitionWrapper<Any, CX, DO>>

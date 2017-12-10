@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.JsonWriter
+import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
@@ -34,6 +35,24 @@ data class BooleanDefinition(
     override fun writeJsonValue(value: Boolean, writer: JsonWriter, context: IsPropertyContext?) {
         writer.writeValue(
                 this.asString(value)
+        )
+    }
+
+    companion object : DataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>, IsPropertyContext>(
+            properties = object : PropertyDefinitions<BooleanDefinition>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)
+                    IsPropertyDefinition.addSearchable(this, BooleanDefinition::searchable)
+                    IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
+                    IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = BooleanDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean
         )
     }
 }

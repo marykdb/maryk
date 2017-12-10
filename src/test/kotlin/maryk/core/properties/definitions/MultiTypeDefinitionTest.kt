@@ -60,7 +60,7 @@ internal class MultiTypeDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
         multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }

@@ -11,7 +11,7 @@ import maryk.test.shouldBe
 fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
         value: T,
         dataModel: DataModel<T, PropertyDefinitions<T>, CX>,
-        context: CX,
+        context: CX? = null,
         checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     val bc = ByteCollectorWithLengthCacher()
@@ -27,7 +27,7 @@ fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
 fun <T: Any, CX: IsPropertyContext> checkJsonConversion(
         value: T,
         dataModel: DataModel<T, PropertyDefinitions<T>, CX>,
-        context: CX,
+        context: CX? = null,
         checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     var output = ""

@@ -1,6 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.Option
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
@@ -21,8 +23,19 @@ internal class EnumDefinitionTest {
             values = Option.values()
     )
 
+    val defMaxDefined = EnumDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = Option.V0,
+            maxValue = Option.V2,
+            values = Option.values()
+    )
+
     @Test
-    fun convertStorageBytes() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         enumsToTest.forEach {
             bc.reserve(
@@ -35,7 +48,7 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
 
         val expected = arrayOf(
@@ -63,7 +76,7 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         enumsToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -71,9 +84,26 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, EnumDefinition, null, ::compare)
+        checkProtoBufConversion(this.defMaxDefined, EnumDefinition, null, ::compare)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, EnumDefinition, null, ::compare)
+        checkJsonConversion(this.defMaxDefined, EnumDefinition, null, ::compare)
+    }
+}
+
+private fun compare(converted: EnumDefinition<*>, original: EnumDefinition<*>) {
+    converted shouldBe original
+    converted.hashCode() shouldBe original.hashCode()
 }

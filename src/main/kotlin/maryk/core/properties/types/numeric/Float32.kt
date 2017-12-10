@@ -7,7 +7,8 @@ import maryk.core.protobuf.WireType
 
 object Float32 : NumberDescriptor<Float>(
         size = 4,
-        wireType = WireType.BIT_32
+        wireType = WireType.BIT_32,
+        type = NumberType.FLOAT32
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Float = initFloat(reader)
     override fun writeStorageBytes(value: Float, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

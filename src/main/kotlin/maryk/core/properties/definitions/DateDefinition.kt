@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Date
 import maryk.core.protobuf.WireType
@@ -39,4 +40,30 @@ data class DateDefinition(
     }
 
     override fun fromString(string: String) = Date.parse(string)
+
+    companion object : DataModel<DateDefinition, PropertyDefinitions<DateDefinition>, IsPropertyContext>(
+            properties = object : PropertyDefinitions<DateDefinition>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)
+                    IsPropertyDefinition.addSearchable(this, DateDefinition::searchable)
+                    IsPropertyDefinition.addRequired(this, DateDefinition::required)
+                    IsPropertyDefinition.addFinal(this, DateDefinition::final)
+                    IsComparableDefinition.addUnique(this, DateDefinition::unique)
+                    add(5, "minValue", DateDefinition(), DateDefinition::minValue)
+                    add(6, "maxValue", DateDefinition(), DateDefinition::maxValue)
+                    IsMomentDefinition.addFillWithNow(this, DateDefinition::fillWithNow)
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = DateDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean,
+                unique = map[4] as Boolean,
+                minValue = map[5] as Date?,
+                maxValue = map[6] as Date?,
+                fillWithNow = map[7] as Boolean
+        )
+    }
 }

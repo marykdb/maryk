@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
@@ -48,4 +49,32 @@ data class DateTimeDefinition(
     }
 
     override fun fromString(string: String) = DateTime.parse(string)
+
+    companion object : DataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>, IsPropertyContext>(
+            properties = object : PropertyDefinitions<DateTimeDefinition>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, DateTimeDefinition::indexed)
+                    IsPropertyDefinition.addSearchable(this, DateTimeDefinition::searchable)
+                    IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
+                    IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
+                    IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
+                    add(5, "minValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::minValue)
+                    add(6, "maxValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::maxValue)
+                    IsMomentDefinition.addFillWithNow(this, DateTimeDefinition::fillWithNow)
+                    IsTimeDefinition.addPrecision(this, DateTimeDefinition::precision)
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = DateTimeDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean,
+                unique = map[4] as Boolean,
+                minValue = map[5] as DateTime?,
+                maxValue = map[6] as DateTime?,
+                fillWithNow = map[7] as Boolean,
+                precision = map[8] as TimePrecision
+        )
+    }
 }

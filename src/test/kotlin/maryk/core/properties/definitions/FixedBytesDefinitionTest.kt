@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ByteCollectorWithLengthCacher
@@ -20,13 +21,25 @@ internal class FixedBytesDefinitionTest {
             byteSize = 5
     )
 
+    val defMaxDefined = FixedBytesDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = Bytes.ofHex("0000000000"),
+            maxValue = Bytes.ofHex("AAAAAAAAAA"),
+            random = true,
+            byteSize = 5
+    )
+
     @Test
-    fun createRandom() {
+    fun `create random value`() {
         def.createRandom()
     }
 
     @Test
-    fun testStorageConversion() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         fixedBytesToTest.forEach {
             bc.reserve(
@@ -39,22 +52,35 @@ internal class FixedBytesDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
         fixedBytesToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test
-    fun convertToString() {
+    fun `convert values to String and back`() {
         fixedBytesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
     }
+
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, FixedBytesDefinition)
+        checkProtoBufConversion(this.defMaxDefined, FixedBytesDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, FixedBytesDefinition)
+        checkJsonConversion(this.defMaxDefined, FixedBytesDefinition)
     }
 }

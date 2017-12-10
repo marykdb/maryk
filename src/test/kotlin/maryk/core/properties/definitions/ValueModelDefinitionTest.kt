@@ -30,7 +30,7 @@ internal class ValueModelDefinitionTest {
     )
 
     @Test
-    fun testConvertStorageBytes() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         bc.reserve(
                 def.calculateStorageByteLength(value)
@@ -42,14 +42,14 @@ internal class ValueModelDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
 
         checkProtoBufConversion(bc, value, this.def)
     }
 
     @Test
-    fun testConvertString() {
+    fun `convert values to String and back`() {
         def.fromString(
                 def.asString(value)
         ) shouldBe value

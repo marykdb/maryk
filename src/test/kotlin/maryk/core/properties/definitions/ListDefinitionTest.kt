@@ -89,7 +89,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
 
         val value = listOf("T", "T2", "T3", "T4")

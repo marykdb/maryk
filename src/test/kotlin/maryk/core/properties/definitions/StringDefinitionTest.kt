@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
@@ -37,7 +39,7 @@ internal class StringDefinitionTest {
     )
 
     @Test
-    fun validate() {
+    fun `validate values`() {
         // Should both succeed without errors
         def.validateWithRef(newValue = "abc")
         def.validateWithRef(newValue = "abcdef")
@@ -51,7 +53,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun validateRegex() {
+    fun `validate values with regular expression`() {
         // Should succeed
         defRegEx.validateWithRef(newValue = "abc")
 
@@ -61,7 +63,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytes() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
@@ -75,7 +77,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
@@ -96,11 +98,21 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         stringsToTest.keys.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, StringDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, StringDefinition)
     }
 }
 

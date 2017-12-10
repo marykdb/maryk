@@ -96,7 +96,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollectorWithLengthCacher()
 
         bc.reserve(

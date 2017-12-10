@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
@@ -17,15 +19,25 @@ internal class DateDefinitionTest {
     )
 
     private val def = DateDefinition()
+    private val defMaxDefined = DateDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            fillWithNow = true,
+            maxValue = Date.MAX,
+            minValue = Date.MIN
+    )
 
     @Test
-    fun createNow() {
+    fun `create now date`() {
         val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
         def.createNow().epochDay shouldBe currentEpochDay
     }
 
     @Test
-    fun testStorageBytesConversion() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         datesToTest.forEach {
             bc.reserve(
@@ -38,7 +50,7 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun testTransportBytesConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
         datesToTest.forEach {
             bc.reserve(
@@ -51,7 +63,7 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         datesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -59,9 +71,21 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, DateDefinition)
+        checkProtoBufConversion(this.defMaxDefined, DateDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, DateDefinition)
+        checkJsonConversion(this.defMaxDefined, DateDefinition)
     }
 }

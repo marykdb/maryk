@@ -5,9 +5,10 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Reference to a List Item by index
  * @param index           index of property reference
@@ -25,13 +26,13 @@ class ListItemReference<T: Any, CX: IsPropertyContext> (
         "${it.completeName}.@$index"
     } ?: "@$index"
 
-    override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val parentLength = parentReference?.calculateTransportByteLength(lengthCacher) ?: 0
+    override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
+        val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0
         return parentLength + 1 + index.calculateVarByteLength()
     }
 
-    override fun writeTransportBytes(lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
+    override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
         index.writeVarBytes(writer)
     }

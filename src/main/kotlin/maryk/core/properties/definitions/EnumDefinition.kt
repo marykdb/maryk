@@ -12,6 +12,7 @@ import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
 
 /** Definition for Enum properties */
 class EnumDefinition<E : IndexedEnum<E>>(
@@ -51,7 +52,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
 
     override fun calculateTransportByteLength(value: E) = value.index.calculateVarByteLength()
 
-    override fun writeTransportBytes(value: E, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?)
+    override fun writeTransportBytes(value: E, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?)
             = value.index.writeVarBytes(writer)
 
     override fun asString(value: E) = value.name
@@ -93,7 +94,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    companion object : DataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, IsPropertyContext>(
+    companion object : DataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
             properties = object : PropertyDefinitions<EnumDefinition<*>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)

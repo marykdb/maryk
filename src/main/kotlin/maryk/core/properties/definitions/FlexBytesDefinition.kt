@@ -43,7 +43,7 @@ data class FlexBytesDefinition(
         }
     }
 
-    companion object : DataModel<FlexBytesDefinition, PropertyDefinitions<FlexBytesDefinition>, IsPropertyContext>(
+    companion object : DataModel<FlexBytesDefinition, PropertyDefinitions<FlexBytesDefinition>>(
             properties = object : PropertyDefinitions<FlexBytesDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, FlexBytesDefinition::indexed)

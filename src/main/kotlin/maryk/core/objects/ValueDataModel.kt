@@ -2,7 +2,6 @@ package maryk.core.objects
 
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
@@ -13,7 +12,7 @@ import maryk.core.properties.types.ValueDataObject
  */
 abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
         properties: P
-) : DataModel<DO, P, IsPropertyContext>(properties) {
+) : DataModel<DO, P>(properties) {
     val byteSize: Int by lazy {
         var size = this.definitions.size - 1
         this.definitions.forEach {

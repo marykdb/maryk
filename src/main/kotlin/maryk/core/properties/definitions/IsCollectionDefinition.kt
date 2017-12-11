@@ -16,6 +16,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext, out ST: IsValueDefinition<T, CX>>
     : IsByteTransportableCollection<T, C, CX>, HasSizeDefinition {
@@ -78,16 +80,16 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         return collection as C
     }
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: C, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: C, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteSize = 0
         when(this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
                 // Cache length for length delimiter
                 val container = ByteLengthContainer()
-                lengthCacher(container)
+                cacher.addLengthToCache(container)
 
                 value.forEach { item ->
-                    totalByteSize += valueDefinition.calculateTransportByteLength(item, lengthCacher, context)
+                    totalByteSize += valueDefinition.calculateTransportByteLength(item, cacher, context)
                 }
                 container.length = totalByteSize
 
@@ -95,24 +97,24 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
                 totalByteSize += container.length.calculateVarByteLength()
             }
             else -> value.forEach { item ->
-                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(index, item, lengthCacher, context)
+                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(index, item, cacher, context)
             }
         }
 
         return totalByteSize
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: C, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(index: Int, value: C, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         when(this.valueDefinition.wireType) {
             WireType.BIT_64, WireType.BIT_32, WireType.VAR_INT -> {
                 ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
-                lengthCacheGetter().writeVarBytes(writer)
+                cacheGetter.nextLengthFromCache().writeVarBytes(writer)
                 value.forEach { item ->
-                    valueDefinition.writeTransportBytes(item, lengthCacheGetter, writer, context)
+                    valueDefinition.writeTransportBytes(item, cacheGetter, writer, context)
                 }
             }
             else -> value.forEach { item ->
-                valueDefinition.writeTransportBytesWithKey(index, item, lengthCacheGetter, writer, context)
+                valueDefinition.writeTransportBytesWithKey(index, item, cacheGetter, writer, context)
             }
         }
     }

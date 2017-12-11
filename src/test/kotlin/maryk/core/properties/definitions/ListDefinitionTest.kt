@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.TooLittleItemsException
@@ -15,6 +15,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -90,15 +91,17 @@ internal class ListDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
 
         val value = listOf("T", "T2", "T3", "T4")
         val asHex = "0a01540a0254320a0254330a025434"
 
+        val cache = WriteCache()
+
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(1, value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(1, value, cache)
         )
-        def.writeTransportBytesWithKey(1, value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(1, value, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 
@@ -160,12 +163,13 @@ internal class ListDefinitionTest {
     }
 
     private fun <T: Any> testPackedTransportConversion(def: ListDefinition<T, *>, list: List<T>, hex: String, index: Int) {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(index, list, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(index, list, cache)
         )
-        def.writeTransportBytesWithKey(index, list, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(index, list, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe hex
 

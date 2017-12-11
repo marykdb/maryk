@@ -3,13 +3,13 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
 import maryk.core.time.Instant
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
-import kotlin.test.fail
 
 internal class DateDefinitionTest {
     private val datesToTest = arrayOf(
@@ -52,11 +52,13 @@ internal class DateDefinitionTest {
     @Test
     fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         datesToTest.forEach {
             bc.reserve(
-                    def.calculateTransportByteLength(it, { fail("Should not call") })
+                    def.calculateTransportByteLength(it, cacheFailer)
             )
-            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }

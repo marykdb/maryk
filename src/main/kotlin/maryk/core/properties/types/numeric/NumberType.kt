@@ -1,16 +1,20 @@
 package maryk.core.properties.types.numeric
 
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.UInt64
 
-enum class NumberType(override val index: Int) : IndexedEnum<NumberType> {
-    SINT8(0),
-    SINT16(1),
-    SINT32(2),
-    SINT64(3),
-    UINT8(4),
-    UINT16(5),
-    UINT32(6),
-    UINT64(7),
-    FLOAT32(8),
-    FLOAT64(9)
+enum class NumberType(
+        override val index: Int,
+        val descriptor: ()-> NumberDescriptor<*>
+) : IndexedEnum<NumberType> {
+    SINT8(0, { SInt8 }),
+    SINT16(1, { SInt16 }),
+    SINT32(2, { SInt32 }),
+    SINT64(3, { SInt64 }),
+    UINT8(4, { UInt8 }),
+    UINT16(5, { UInt16 }),
+    UINT32(6, { UInt32 }),
+    UINT64(7, { UInt64 }),
+    FLOAT32(8, { Float32 }),
+    FLOAT64(9, { Float64 })
 }

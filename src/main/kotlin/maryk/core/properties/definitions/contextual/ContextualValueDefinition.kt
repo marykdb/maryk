@@ -5,8 +5,9 @@ import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Definition which refers to specific property value definition based on context */
 internal data class ContextualValueDefinition<in CX: IsPropertyContext>(
@@ -33,9 +34,9 @@ internal data class ContextualValueDefinition<in CX: IsPropertyContext>(
     override fun readJson(reader: JsonReader, context: CX?)
             = contextualResolver(context).readJson(reader, context)
 
-    override fun writeTransportBytes(value: Any, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
-            = contextualResolver(context).writeTransportBytes(value, lengthCacheGetter, writer, context)
+    override fun writeTransportBytes(value: Any, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?)
+            = contextualResolver(context).writeTransportBytes(value, cacheGetter, writer, context)
 
-    override fun calculateTransportByteLength(value: Any, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
-            = contextualResolver(context).calculateTransportByteLength(value, lengthCacher, context)
+    override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?)
+            = contextualResolver(context).calculateTransportByteLength(value, cacher, context)
 }

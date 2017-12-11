@@ -65,7 +65,7 @@ data class StringDefinition(
         }
     }
 
-    companion object : DataModel<StringDefinition, PropertyDefinitions<StringDefinition>, IsPropertyContext>(
+    companion object : DataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
             properties = object : PropertyDefinitions<StringDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)

@@ -6,7 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.extensions.bytes.ZEROBYTE
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
@@ -35,7 +35,7 @@ class ContextualReferenceDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
         refsToTest.forEach { value ->
             checkProtoBufConversion(bc, value, this.def, this.context)
         }

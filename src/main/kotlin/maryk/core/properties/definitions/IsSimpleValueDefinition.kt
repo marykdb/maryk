@@ -6,7 +6,8 @@ import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.protobuf.ByteLengthContainer
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /**
  * Abstract Property Definition to define properties.
@@ -36,11 +37,11 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) = readStorageBytes(length, reader)
 
-    override fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         writeStorageBytes(value, writer)
     }
 
-    override fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
+    override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?)
             = this.calculateTransportByteLength(value)
 
     /** Calculates the needed bytes to transport the value

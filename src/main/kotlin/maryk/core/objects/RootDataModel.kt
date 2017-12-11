@@ -4,7 +4,6 @@ import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -32,7 +31,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         val name: String,
         keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
         properties: P
-) : DataModel<DO, P, IsPropertyContext>(properties){
+) : DataModel<DO, P>(properties){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */

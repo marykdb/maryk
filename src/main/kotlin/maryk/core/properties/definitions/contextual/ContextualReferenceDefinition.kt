@@ -7,8 +7,9 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.types.Key
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Definition for a reference to another DataObject*/
 class ContextualReferenceDefinition<in CX: IsPropertyContext>(
@@ -31,10 +32,10 @@ class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     override fun readJson(reader: JsonReader, context: CX?)
             = contextualResolver(context).get(reader.lastValue)
 
-    override fun calculateTransportByteLength(value: Key<*>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
+    override fun calculateTransportByteLength(value: Key<*>, cacher: WriteCacheWriter, context: CX?)
             = value.size
 
-    override fun writeTransportBytes(value: Key<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
+    override fun writeTransportBytes(value: Key<*>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?)
             = value.writeBytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)

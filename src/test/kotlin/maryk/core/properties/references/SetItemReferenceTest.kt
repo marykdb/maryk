@@ -1,8 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.TestMarykObject
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.types.Date
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -11,12 +12,13 @@ class SetItemReferenceTest {
 
     @Test
     fun testProtoBufConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-                this.reference.calculateTransportByteLength(bc::addToCache)
+                this.reference.calculateTransportByteLength(cache)
         )
-        this.reference.writeTransportBytes(bc::nextLengthFromCache, bc::write)
+        this.reference.writeTransportBytes(cache, bc::write)
 
         val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
         converted shouldBe this.reference

@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooLittleItemsException
@@ -12,6 +12,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -97,12 +98,13 @@ internal class MapDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(4, value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(4, value, cache)
         )
-        def.writeTransportBytesWithKey(4, value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "220c08181207237477656c7665220c083c120723746869727479220e08c80112082368756e64726564220f08d00f12092374686f7573616e64"
 

@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubModelDefinition
@@ -19,17 +19,18 @@ import maryk.core.properties.references.SubModelPropertyRef
  * @param SDO: DataObject value type of property for sub object
  * @param P: Properties object for DataModel
  * @param DM: type of DataModel which describes the DataObject
+ * @param CXI: Input Context type for property
  * @param CX: Context type for property
  * @param DO: Type of DataObject which contains this property
  */
-data class SubModelPropertyDefinitionWrapper<SDO: Any, P: PropertyDefinitions<SDO>, DM: DataModel<SDO, P, CX>, CX: IsPropertyContext, in DO: Any>(
+data class SubModelPropertyDefinitionWrapper<SDO: Any, out P: PropertyDefinitions<SDO>, out DM: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext, in DO: Any>(
         override val index: Int,
         override val name: String,
-        override val definition: SubModelDefinition<SDO, P, DM, CX>,
+        override val definition: SubModelDefinition<SDO, P, DM, CXI, CX>,
         override val getter: (DO) -> SDO?
 ) :
-        IsSubModelDefinition<SDO, CX> by definition,
-        IsPropertyDefinitionWrapper<SDO, CX, DO>
+        IsSubModelDefinition<SDO, CXI> by definition,
+        IsPropertyDefinitionWrapper<SDO, CXI, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
             SubModelPropertyRef(

@@ -8,7 +8,7 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -18,6 +18,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -237,7 +238,8 @@ internal class DataModelTest {
 
     @Test
     fun testWriteProtoBufConversionWithMap() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         val map = mapOf(
                 0 to "hay",
@@ -251,10 +253,10 @@ internal class DataModelTest {
         )
 
         bc.reserve(
-            TestMarykObject.calculateProtoBufLength(map, bc::addToCache)
+            TestMarykObject.calculateProtoBufLength(map, cache)
         )
 
-        TestMarykObject.writeProtoBuf(map, bc::nextLengthFromCache, bc::write)
+        TestMarykObject.writeProtoBuf(map, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a1001050105010501050105010501050105"
     }
@@ -280,26 +282,28 @@ internal class DataModelTest {
 
     @Test
     fun testProtoBufConversionWithMap() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-                TestMarykObject.calculateProtoBufLength(testMap, bc::addToCache)
+                TestMarykObject.calculateProtoBufLength(testMap, cache)
         )
 
-        TestMarykObject.writeProtoBuf(testMap, bc::nextLengthFromCache, bc::write)
+        TestMarykObject.writeProtoBuf(testMap, cache, bc::write)
 
         TestMarykObject.readProtoBuf(bc.size, bc::read) shouldBe testMap
     }
 
     @Test
     fun testProtoBufConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-                TestMarykObject.calculateProtoBufLength(testExtendedObject, bc::addToCache)
+                TestMarykObject.calculateProtoBufLength(testExtendedObject, cache)
         )
 
-        TestMarykObject.writeProtoBuf(testExtendedObject, bc::nextLengthFromCache, bc::write)
+        TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
 
         TestMarykObject.readProtoBufToObject(bc.size, bc::read) shouldBe testExtendedObject
     }

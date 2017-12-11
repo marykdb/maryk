@@ -12,9 +12,10 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /**
  * Definition for objects with multiple types
@@ -118,7 +119,7 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
         )
     }
 
-    override fun calculateTransportByteLength(value: TypedValue<*>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
+    override fun calculateTransportByteLength(value: TypedValue<*>, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
         // Type index
         totalByteLength += ProtoBuf.calculateKeyLength(1)
@@ -127,17 +128,17 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
         // value
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMap[value.typeIndex]!! as IsSubDefinition<Any, CX>
-        totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, lengthCacher, context)
+        totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, cacher, context)
 
         return totalByteLength
     }
 
-    override fun writeTransportBytes(value: TypedValue<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytes(value: TypedValue<*>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
         value.typeIndex.writeVarBytes(writer)
 
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMap[value.typeIndex]!! as IsSubDefinition<Any, CX>
-        def.writeTransportBytesWithKey(2, value.value, lengthCacheGetter, writer, context)
+        def.writeTransportBytesWithKey(2, value.value, cacheGetter, writer, context)
     }
 }

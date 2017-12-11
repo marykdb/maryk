@@ -3,9 +3,10 @@ package maryk.core.properties.references
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.SetDefinition
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Reference to a Set Item by value
  * @param value           index of property reference
@@ -23,15 +24,15 @@ class SetItemReference<T: Any, CX: IsPropertyContext>(
         "${it.completeName}.$$value"
     } ?: "$$value"
 
-    override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val parentLength = this.parentReference!!.calculateTransportByteLength(lengthCacher)
-        val valueLength = this.parentReference.propertyDefinition.definition.valueDefinition.calculateTransportByteLength(value, lengthCacher)
+    override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
+        val parentLength = this.parentReference!!.calculateTransportByteLength(cacher)
+        val valueLength = this.parentReference.propertyDefinition.definition.valueDefinition.calculateTransportByteLength(value, cacher)
         return parentLength + 1 + valueLength
     }
 
-    override fun writeTransportBytes(lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
+    override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
-        this.parentReference!!.propertyDefinition.definition.valueDefinition.writeTransportBytes(value, lengthCacheGetter, writer)
+        this.parentReference!!.propertyDefinition.definition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
     }
 }

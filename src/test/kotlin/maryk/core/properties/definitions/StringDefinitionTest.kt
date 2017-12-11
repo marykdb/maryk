@@ -5,11 +5,11 @@ import maryk.checkProtoBufConversion
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -78,13 +78,14 @@ internal class StringDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
-                    def.calculateTransportByteLengthWithKey(14, value, bc::addToCache)
+                    def.calculateTransportByteLengthWithKey(14, value, cache)
             )
             bc.bytes!!.size shouldBe value.calculateUTF8ByteLength() + 2
-            def.writeTransportBytesWithKey(14, value, bc::nextLengthFromCache, bc::write)
+            def.writeTransportBytesWithKey(14, value, cache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe 14

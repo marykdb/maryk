@@ -9,6 +9,8 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Definition for a reference to another DataObject*/
 internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(
@@ -39,11 +41,11 @@ internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(
     override fun readJson(reader: JsonReader, context: CX?)
             = contextualResolver(context).readJsonToObject(reader, context)
 
-    override fun calculateTransportByteLength(value: Any, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
-            = contextualResolver(context).calculateProtoBufLength(value, lengthCacher, context)
+    override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?)
+            = contextualResolver(context).calculateProtoBufLength(value, cacher, context)
 
-    override fun writeTransportBytes(value: Any, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
-            = contextualResolver(context).writeProtoBuf(value, lengthCacheGetter, writer, context)
+    override fun writeTransportBytes(value: Any, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?)
+            = contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)
             = contextualResolver(context).readProtoBufToObject(length, reader, context)

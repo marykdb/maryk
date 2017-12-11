@@ -19,6 +19,8 @@ import maryk.core.properties.references.MapValueReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         override val indexed: Boolean = false,
@@ -117,18 +119,18 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return map
     }
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: Map<K, V>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?): Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: Map<K, V>, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
         value.forEach { (key, item) ->
             totalByteLength += ProtoBuf.calculateKeyLength(index)
 
             // Cache length for length delimiter
             val container = ByteLengthContainer()
-            lengthCacher(container)
+            cacher.addLengthToCache(container)
 
             var fieldLength = 0
-            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, lengthCacher, context)
-            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, lengthCacher, context)
+            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, cacher, context)
+            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
             fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
             container.length = fieldLength // set length for value
 
@@ -137,12 +139,12 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    override fun writeTransportBytesWithKey(index: Int, value: Map<K, V>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(index: Int, value: Map<K, V>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         value.forEach { (key, item) ->
             ProtoBuf.writeKey(index, WireType.LENGTH_DELIMITED, writer)
-            lengthCacheGetter().writeVarBytes(writer)
-            keyDefinition.writeTransportBytesWithKey(1, key, lengthCacheGetter, writer, context)
-            valueDefinition.writeTransportBytesWithKey(2, item, lengthCacheGetter, writer, context)
+            cacheGetter.nextLengthFromCache().writeVarBytes(writer)
+            keyDefinition.writeTransportBytesWithKey(1, key, cacheGetter, writer, context)
+            valueDefinition.writeTransportBytesWithKey(2, item, cacheGetter, writer, context)
         }
     }
 

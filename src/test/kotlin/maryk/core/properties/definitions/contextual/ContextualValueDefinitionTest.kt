@@ -4,7 +4,7 @@ import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -37,7 +37,7 @@ class ContextualValueDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
         valuesToTest.forEach { value ->
             checkProtoBufConversion(bc, value, this.def, this.context)
         }

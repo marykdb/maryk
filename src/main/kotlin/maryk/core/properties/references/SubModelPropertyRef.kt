@@ -3,16 +3,17 @@ package maryk.core.properties.references
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.DataModel
+import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
-import maryk.core.protobuf.ByteLengthContainer
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
-class SubModelPropertyRef<DO : Any, P: PropertyDefinitions<DO>, DM : DataModel<DO, P, CX>, CX: IsPropertyContext>(
-        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, DM, CX, *>,
+class SubModelPropertyRef<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>,
         parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveComplexChildReference<DO, SubModelPropertyDefinitionWrapper<DO, P, DM, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+): CanHaveComplexChildReference<DO, SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *>>(
         propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name
@@ -31,18 +32,18 @@ class SubModelPropertyRef<DO : Any, P: PropertyDefinitions<DO>, DM : DataModel<D
     }
 
     /** Calculate the transport length of encoding this reference
-     * @param lengthCacher to cache length with
+     * @param cacher to cache length with
      */
-    override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val parentLength = this.parentReference?.calculateTransportByteLength(lengthCacher) ?: 0
+    override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
+        val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
         return this.propertyDefinition.index.calculateVarByteLength() + parentLength
     }
 
     /** Write transport bytes of property reference
      * @param writer: To write bytes to
      */
-    override fun writeTransportBytes(lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
+    override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeTransportBytes(cacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)
     }
 }

@@ -2,11 +2,11 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
-import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -22,7 +22,7 @@ internal class SubModelDefinitionTest {
                 ), MarykObject::string)
             }
         }
-        companion object: DataModel<MarykObject, Properties, IsPropertyContext>(
+        companion object: DataModel<MarykObject, Properties>(
                 properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
@@ -50,16 +50,17 @@ internal class SubModelDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         val value = MarykObject()
         val asHex = "2a0502036a7572"
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(5, value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(5, value, cache)
         )
         bc.bytes!!.size shouldBe 7
-        def.writeTransportBytesWithKey(5, value, bc::nextLengthFromCache, bc::write, null)
+        def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
 
         bc.bytes!!.toHex() shouldBe asHex
 

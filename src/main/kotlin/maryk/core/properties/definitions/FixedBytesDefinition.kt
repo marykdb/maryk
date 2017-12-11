@@ -33,7 +33,7 @@ data class FixedBytesDefinition(
 
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 
-    companion object : DataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>, IsPropertyContext>(
+    companion object : DataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
             properties = object : PropertyDefinitions<FixedBytesDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, FixedBytesDefinition::indexed)

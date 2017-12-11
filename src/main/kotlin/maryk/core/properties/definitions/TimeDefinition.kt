@@ -8,6 +8,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
 
 /**
  * Definition for Time properties
@@ -41,7 +42,7 @@ data class TimeDefinition(
         TimePrecision.MILLIS -> value.toMillisOfDay().calculateVarByteLength()
     }
 
-    override fun writeTransportBytes(value: Time, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
+    override fun writeTransportBytes(value: Time, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         val toEncode = when(this.precision) {
             TimePrecision.SECONDS -> value.toSecondsOfDay()
             TimePrecision.MILLIS -> value.toMillisOfDay()
@@ -51,7 +52,7 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = Time.parse(string)
 
-    companion object : DataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>, IsPropertyContext>(
+    companion object : DataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
             properties = object : PropertyDefinitions<TimeDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)

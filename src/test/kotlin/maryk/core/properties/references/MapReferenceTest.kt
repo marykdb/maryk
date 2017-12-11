@@ -1,8 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.TestMarykObject
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.types.Time
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -13,12 +14,14 @@ class MapReferenceTest {
 
     @Test
     fun testProtoBufConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
+
         arrayOf(mapReference, keyReference, valReference).forEach {
             bc.reserve(
-                    it.calculateTransportByteLength(bc::addToCache)
+                    it.calculateTransportByteLength(cache)
             )
-            it.writeTransportBytes(bc::nextLengthFromCache, bc::write)
+            it.writeTransportBytes(cache, bc::write)
 
             val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
             converted shouldBe it

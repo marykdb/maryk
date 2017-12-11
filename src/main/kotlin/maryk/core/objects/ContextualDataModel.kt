@@ -8,8 +8,9 @@ import maryk.core.properties.definitions.PropertyDefinitions
  * @param DO: Type of DataObject contained
  * @param P: PropertyDefinitions type for reference retrieval
  */
-abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
-        properties: P
-) : AbstractDataModel<DO, P, IsPropertyContext, IsPropertyContext>(
-        properties
-)
+abstract class ContextualDataModel<DO: Any, out P: PropertyDefinitions<DO>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+        properties: P,
+        val contextTransformer: (CXI?) -> CX?
+) : AbstractDataModel<DO, P, CXI, CX>(properties) {
+    override fun transformContext(context: CXI?) = this.contextTransformer(context)
+}

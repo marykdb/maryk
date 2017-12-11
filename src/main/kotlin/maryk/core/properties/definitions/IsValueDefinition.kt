@@ -8,6 +8,8 @@ import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /**
  * Abstract Property Definition to define properties.
@@ -18,7 +20,7 @@ import maryk.core.protobuf.WireType
 interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<T, CX> {
     val wireType: WireType
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?) : Int {
+    override fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX?) : Int {
         var totalByteLength = 0
         totalByteLength += ProtoBuf.calculateKeyLength(index)
 
@@ -27,17 +29,17 @@ interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<
             // Otherwise byte lengths contained by value could be cached before
             // This way order is maintained
             val container = ByteLengthContainer()
-            lengthCacher(container)
+            cacher.addLengthToCache(container)
 
             // calculate field length
-            this.calculateTransportByteLength(value, lengthCacher, context).let {
+            this.calculateTransportByteLength(value, cacher, context).let {
                 container.length = it
                 totalByteLength += it
                 totalByteLength += it.calculateVarByteLength()
             }
         } else {
             // calculate field length
-            totalByteLength += this.calculateTransportByteLength(value, lengthCacher, context)
+            totalByteLength += this.calculateTransportByteLength(value, cacher, context)
         }
 
         return totalByteLength
@@ -45,18 +47,18 @@ interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<
 
     /** Calculates the needed bytes to transport the value
      * @param value to get length of
-     * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order
+     * @param cacher to cache calculated lengths or contexts. Ordered so it can be read back in the same order
      * @param context with possible context values for Dynamic property writers
      * @return the total length
      */
-    fun calculateTransportByteLength(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null): Int
+    fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX? = null): Int
 
-    override fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(index, this.wireType, writer)
         if (this.wireType == WireType.LENGTH_DELIMITED) {
-            lengthCacheGetter().writeVarBytes(writer)
+            cacheGetter.nextLengthFromCache().writeVarBytes(writer)
         }
-        this.writeTransportBytes(value, lengthCacheGetter, writer, context)
+        this.writeTransportBytes(value, cacheGetter, writer, context)
     }
 
     /** Convert a value to bytes for transportation
@@ -64,7 +66,7 @@ interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<
      * @param writer to write bytes to
      * @param context with possible context values for Dynamic writers
      */
-    fun writeTransportBytes(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
+    fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 

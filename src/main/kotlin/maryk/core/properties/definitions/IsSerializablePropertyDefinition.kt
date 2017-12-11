@@ -4,7 +4,8 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.protobuf.ByteLengthContainer
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /**
  * Interface to define this is a serializable property definition
@@ -28,18 +29,18 @@ interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : I
     /** Calculates the needed bytes to transport the value
      * @param index to write this value for
      * @param value to get length of
-     * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order
+     * @param cacher to cache calculated values. Ordered so it can be read back in the same order
      * @param context with possible context values for Dynamic property writers
      * @return the total length
      */
-    fun calculateTransportByteLengthWithKey(index: Int, value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null) : Int
+    fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX? = null) : Int
 
     /** Convert a value to bytes for transportation and adds the key with tag and wiretype
      * @param index to write this value for
      * @param value to write
-     * @param lengthCacheGetter to fetch next cached length
+     * @param cacheGetter to fetch next cached item
      * @param writer to write bytes to
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeTransportBytesWithKey(index: Int, value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
+    fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
 }

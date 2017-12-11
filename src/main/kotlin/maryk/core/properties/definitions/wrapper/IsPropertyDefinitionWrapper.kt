@@ -4,7 +4,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.protobuf.ByteLengthContainer
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Wraps a Property Definition to give it more context about DataObject which contains this Definition.
  * @param index: of definition to encode into protobuf
@@ -47,8 +48,8 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO>
      * @param context with possible context values for Dynamic property writers
      * @return the total length
      */
-    fun calculateTransportByteLengthWithKey(value: T, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX? = null)
-            = this.calculateTransportByteLengthWithKey(this.index, value, lengthCacher, context)
+    fun calculateTransportByteLengthWithKey(value: T, cacher: WriteCacheWriter, context: CX? = null)
+            = this.calculateTransportByteLengthWithKey(this.index, value, cacher, context)
 
     /** Convert a value to bytes for transportation and adds the key with tag and wiretype
      * @param value to write
@@ -56,6 +57,6 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO>
      * @param writer to write bytes to
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeTransportBytesWithKey(value: T, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX? = null)
-            = this.writeTransportBytesWithKey(this.index, value, lengthCacheGetter, writer, context)
+    fun writeTransportBytesWithKey(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
+            = this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
 }

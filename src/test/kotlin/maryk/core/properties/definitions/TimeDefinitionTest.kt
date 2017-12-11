@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
@@ -11,7 +12,6 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(
@@ -82,9 +82,11 @@ internal class TimeDefinitionTest {
     @Test
     fun `convert seconds precision values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         timesToTestSeconds.forEach {
-            bc.reserve(def.calculateTransportByteLength(it, { fail("Should not call") }))
-            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            bc.reserve(def.calculateTransportByteLength(it, cacheFailer))
+            def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
@@ -93,9 +95,11 @@ internal class TimeDefinitionTest {
     @Test
     fun `convert millis precision values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         timesToTestMillis.forEach {
-            bc.reserve(defMilli.calculateTransportByteLength(it, { fail("Should not call") }))
-            defMilli.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            bc.reserve(defMilli.calculateTransportByteLength(it, cacheFailer))
+            defMilli.writeTransportBytes(it, cacheFailer, bc::write)
             defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }

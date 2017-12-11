@@ -2,32 +2,37 @@ package maryk
 
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.objects.DataModel
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.objects.AbstractDataModel
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 
-fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
+fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
         value: T,
-        dataModel: DataModel<T, PropertyDefinitions<T>, CX>,
-        context: CX? = null,
+        dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+        context: CXI? = null,
         checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
-    val bc = ByteCollectorWithLengthCacher()
-    val byteLength = dataModel.calculateProtoBufLength(value, bc::addToCache, context)
-    bc.reserve(byteLength)
-    dataModel.writeProtoBuf(value, bc::nextLengthFromCache, bc::write, context)
+    val newContext = dataModel.transformContext(context)
 
-    val converted = dataModel.readProtoBufToObject(byteLength, bc::read, context)
+    val bc = ByteCollector()
+    val cache = WriteCache()
+
+    val byteLength = dataModel.calculateProtoBufLength(value, cache, newContext)
+    bc.reserve(byteLength)
+    dataModel.writeProtoBuf(value, cache, bc::write, newContext)
+
+    val converted = dataModel.readProtoBufToObject(byteLength, bc::read, newContext)
 
     checker(converted, value)
 }
 
-fun <T: Any, CX: IsPropertyContext> checkJsonConversion(
+fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
         value: T,
-        dataModel: DataModel<T, PropertyDefinitions<T>, CX>,
-        context: CX? = null,
+        dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+        context: CXI? = null,
         checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     var output = ""
@@ -36,11 +41,13 @@ fun <T: Any, CX: IsPropertyContext> checkJsonConversion(
         output += it
     }
 
-    dataModel.writeJson(value, writer, context)
+    val newContext = dataModel.transformContext(context)
+
+    dataModel.writeJson(value, writer, newContext)
 
     val chars = output.iterator()
     val reader = JsonReader { chars.nextChar() }
-    val converted = dataModel.readJsonToObject(reader, context)
+    val converted = dataModel.readJsonToObject(reader, newContext)
 
     checker(converted, value)
 }

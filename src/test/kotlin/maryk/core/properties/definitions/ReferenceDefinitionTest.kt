@@ -5,7 +5,6 @@ import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.extensions.bytes.ZEROBYTE
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 import maryk.test.shouldBe
@@ -57,7 +56,7 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
         refToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 }

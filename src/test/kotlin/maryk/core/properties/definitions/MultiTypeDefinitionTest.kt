@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkProtoBufConversion
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.types.TypedValue
@@ -61,7 +61,7 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
         multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 }

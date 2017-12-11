@@ -3,13 +3,13 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
-import kotlin.test.fail
 
 internal class BooleanDefinitionTest {
     val def = BooleanDefinition()
@@ -36,11 +36,13 @@ internal class BooleanDefinitionTest {
     @Test
     fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         booleanArrayOf(true, false).forEach {
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(23, it, { fail("Should not call") }, null)
+                def.calculateTransportByteLengthWithKey(23, it, cacheFailer, null)
             )
-            def.writeTransportBytesWithKey(23, it, { fail("Should not call") }, bc::write, null)
+            def.writeTransportBytesWithKey(23, it, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 23
             key.wireType shouldBe WireType.VAR_INT

@@ -3,9 +3,10 @@ package maryk.core.properties.references
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Reference to a map value by a key
  * @param key             key of property reference
@@ -24,15 +25,15 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext>(
         "${it.completeName}.@$key"
     } ?: "@$key"
 
-    override fun calculateTransportByteLength(lengthCacher: (length: ByteLengthContainer) -> Unit): Int {
-        val parentLength = this.parentReference!!.calculateTransportByteLength(lengthCacher)
-        val valueLength = this.parentReference.propertyDefinition.keyDefinition.calculateTransportByteLength(key, lengthCacher)
+    override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
+        val parentLength = this.parentReference!!.calculateTransportByteLength(cacher)
+        val valueLength = this.parentReference.propertyDefinition.keyDefinition.calculateTransportByteLength(key, cacher)
         return parentLength + 1 + valueLength
     }
 
-    override fun writeTransportBytes(lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit) {
-        this.parentReference?.writeTransportBytes(lengthCacheGetter, writer)
+    override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
-        this.parentReference!!.propertyDefinition.keyDefinition.writeTransportBytes(key, lengthCacheGetter, writer)
+        this.parentReference!!.propertyDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
     }
 }

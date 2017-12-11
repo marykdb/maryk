@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
@@ -11,7 +12,6 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
 internal class DateTimeDefinitionTest {
     private val dateTimesToTest = arrayOf(
@@ -78,9 +78,11 @@ internal class DateTimeDefinitionTest {
     @Test
     fun `convert values with seconds precision to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         for(it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
-            bc.reserve(defMilli.calculateTransportByteLength(it, { fail("Should not call") }))
-            defMilli.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            bc.reserve(defMilli.calculateTransportByteLength(it, cacheFailer))
+            defMilli.writeTransportBytes(it, cacheFailer, bc::write)
             defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
@@ -89,9 +91,11 @@ internal class DateTimeDefinitionTest {
     @Test
     fun `convert values with millisecond precision to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
-            bc.reserve(def.calculateTransportByteLength(it, { fail("Should not call") }))
-            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            bc.reserve(def.calculateTransportByteLength(it, cacheFailer))
+            def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }

@@ -9,6 +9,8 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Definition for a reference to another property */
 data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
@@ -33,11 +35,11 @@ data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
     override fun readJson(reader: JsonReader, context: CX?)
             = fromString(reader.lastValue, context)
 
-    override fun calculateTransportByteLength(value: IsPropertyReference<*, *>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
-            = value.calculateTransportByteLength(lengthCacher)
+    override fun calculateTransportByteLength(value: IsPropertyReference<*, *>, cacher: WriteCacheWriter, context: CX?)
+            = value.calculateTransportByteLength(cacher)
 
-    override fun writeTransportBytes(value: IsPropertyReference<*, *>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?) {
-        value.writeTransportBytes(lengthCacheGetter, writer)
+    override fun writeTransportBytes(value: IsPropertyReference<*, *>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+        value.writeTransportBytes(cacheGetter, writer)
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): IsPropertyReference<*, *>

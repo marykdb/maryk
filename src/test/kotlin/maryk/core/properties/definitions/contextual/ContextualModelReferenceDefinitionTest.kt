@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -28,7 +28,7 @@ class ContextualModelReferenceDefinitionTest {
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
         modelsToTest.forEach { value ->
             checkProtoBufConversion(bc, value, this.def, this.context)
         }

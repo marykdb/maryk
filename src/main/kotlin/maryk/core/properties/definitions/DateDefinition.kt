@@ -7,6 +7,7 @@ import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Date
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
 
 /** Definition for Date properties */
 data class DateDefinition(
@@ -34,14 +35,14 @@ data class DateDefinition(
 
     override fun calculateTransportByteLength(value: Date) = value.epochDay.calculateVarByteLength()
 
-    override fun writeTransportBytes(value: Date, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
+    override fun writeTransportBytes(value: Date, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         val epochDay = value.epochDay
         epochDay.writeVarBytes(writer)
     }
 
     override fun fromString(string: String) = Date.parse(string)
 
-    companion object : DataModel<DateDefinition, PropertyDefinitions<DateDefinition>, IsPropertyContext>(
+    companion object : DataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
             properties = object : PropertyDefinitions<DateDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)

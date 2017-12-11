@@ -2,10 +2,11 @@ package maryk.core.properties.references
 
 import maryk.TestMarykObject
 import maryk.core.extensions.toHex
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldNotBe
 import kotlin.test.Test
@@ -42,12 +43,13 @@ internal class PropertyReferenceTest {
 
     @Test
     fun testProtoBufWrite() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-            this.subRef.calculateTransportByteLength(bc::addToCache)
+            this.subRef.calculateTransportByteLength(cache)
         )
-        this.subRef.writeTransportBytes(bc::nextLengthFromCache, bc::write)
+        this.subRef.writeTransportBytes(cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "0201"
     }

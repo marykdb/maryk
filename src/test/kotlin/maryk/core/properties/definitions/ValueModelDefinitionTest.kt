@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.TestValueObject
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.Date
@@ -43,7 +42,7 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
 
         checkProtoBufConversion(bc, value, this.def)
     }

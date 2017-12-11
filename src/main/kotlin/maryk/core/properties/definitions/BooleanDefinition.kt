@@ -38,7 +38,7 @@ data class BooleanDefinition(
         )
     }
 
-    companion object : DataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>, IsPropertyContext>(
+    companion object : DataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
             properties = object : PropertyDefinitions<BooleanDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)

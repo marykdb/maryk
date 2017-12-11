@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.TooLittleItemsException
@@ -11,6 +11,7 @@ import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -69,15 +70,16 @@ internal class SetDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         val value = setOf("T", "T2", "T3", "T4")
         val asHex = "220154220254322202543322025434"
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(4, value, bc::addToCache)
+            def.calculateTransportByteLengthWithKey(4, value, cache)
         )
-        def.writeTransportBytesWithKey(4, value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 

@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
@@ -65,7 +64,7 @@ internal class FlexBytesDefinitionTest {
 
     @Test
     fun `convert values to transport bytes and back`() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
         flexBytesToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 

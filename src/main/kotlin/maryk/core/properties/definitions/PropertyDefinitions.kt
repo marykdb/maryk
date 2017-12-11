@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -59,10 +59,10 @@ abstract class PropertyDefinitions<DO: Any> {
         __allProperties.add(this)
     }
 
-    fun <SDO: Any, P: PropertyDefinitions<SDO>, D: DataModel<SDO, P, CX>, CX: IsPropertyContext> add(
+    fun <SDO: Any, P: PropertyDefinitions<SDO>, D: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
             index: Int,
             name: String,
-            definition: SubModelDefinition<SDO, P, D, CX>,
+            definition: SubModelDefinition<SDO, P, D, CXI, CX>,
             getter: (DO) -> SDO? = { null }
     ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)

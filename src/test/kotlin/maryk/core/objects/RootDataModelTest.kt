@@ -3,11 +3,12 @@ package maryk.core.objects
 import maryk.Option
 import maryk.SubMarykObject
 import maryk.TestMarykObject
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.numeric.toUInt32
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -41,13 +42,14 @@ internal class RootDataModelTest {
 
     @Test
     fun testPropertyReferenceByWriter() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         arrayOf(subModelRef, mapRef, mapKeyRef).forEach {
             bc.reserve(
-                    it.calculateTransportByteLength(bc::addToCache)
+                    it.calculateTransportByteLength(cache)
             )
-            it.writeTransportBytes(bc::nextLengthFromCache, bc::write)
+            it.writeTransportBytes(cache, bc::write)
 
             TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe it
 

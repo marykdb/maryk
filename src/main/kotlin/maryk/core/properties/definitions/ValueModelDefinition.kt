@@ -24,7 +24,12 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
         override val minValue: DO? = null,
         override val maxValue: DO? = null,
         val dataModel: DM
-) : IsComparableDefinition<DO, IsPropertyContext>, IsSerializableFixedBytesEncodable<DO, IsPropertyContext> {
+) :
+        IsComparableDefinition<DO, IsPropertyContext>,
+        IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.ValueModel
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize
 

@@ -25,7 +25,12 @@ data class NumberDefinition<T: Comparable<T>>(
         override val maxValue: T? = null,
         override val random: Boolean = false,
         val type: NumberDescriptor<T>
-): IsNumericDefinition<T>, IsSerializableFixedBytesEncodable<T, IsPropertyContext> {
+):
+        IsNumericDefinition<T>,
+        IsSerializableFixedBytesEncodable<T, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Number
     override val wireType = type.wireType
     override val byteSize = type.size
 

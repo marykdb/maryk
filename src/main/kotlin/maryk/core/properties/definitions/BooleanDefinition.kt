@@ -14,7 +14,12 @@ data class BooleanDefinition(
         override val searchable: Boolean = true,
         override val required: Boolean = true,
         override val final: Boolean = false
-): IsSimpleValueDefinition<Boolean, IsPropertyContext>, IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext> {
+):
+        IsSimpleValueDefinition<Boolean, IsPropertyContext>,
+        IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Boolean
     override val wireType = WireType.VAR_INT
     override val byteSize = 1
 

@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
@@ -31,10 +33,13 @@ internal class ListDefinitionTest {
             valueDefinition = subDef
     )
 
-    private val def2 = ListDefinition(
+    private val defMaxDefined = ListDefinition(
+            indexed = true,
+            searchable = false,
+            final = true,
+            required = false,
             minSize = 2,
             maxSize = 4,
-            required = false,
             valueDefinition = subDef
     )
 
@@ -51,8 +56,8 @@ internal class ListDefinitionTest {
     )
 
     @Test
-    fun testValidateRequired() {
-        def2.validateWithRef(newValue = null)
+    fun `validate required`() {
+        defMaxDefined.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
             def.validateWithRef(newValue = null)
@@ -60,7 +65,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun testValidateSize() {
+    fun `validate list size`() {
         def.validateWithRef(newValue = listOf("T", "T2"))
         def.validateWithRef(newValue = listOf("T", "T2", "T3"))
         def.validateWithRef(newValue = listOf("T", "T2", "T3", "T4"))
@@ -75,7 +80,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun testValidateContent() {
+    fun `validate list content`() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = listOf("T", "WRONG", "WRONG2"))
         }
@@ -124,7 +129,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun testTransportVarIntConversion() {
+    fun `convert varInt values to packed transport bytes and back`() {
         val value = listOf(
                 76523.toUInt32(),
                 2423.toUInt32(),
@@ -137,7 +142,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun testTransport32BitConversion() {
+    fun `convert 32 bit values to packed transport bytes and back`() {
         val value = listOf(
                 3.566F,
                 58253.87652F,
@@ -150,7 +155,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun testTransport64BitConversion() {
+    fun `convert 64 bit values to packed transport bytes and back`() {
         val value = listOf(
                 3.523874666,
                 5825394671387643.87652,
@@ -187,7 +192,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun testJsonConversion() {
+    fun `convert values values to JSON String and back`() {
         val value = listOf("T", "T2", "T3", "T4")
 
         var totalString = ""
@@ -201,5 +206,17 @@ internal class ListDefinitionTest {
         val converted = def.readJson(reader)
 
         converted shouldBe value
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, ListDefinition)
+        checkProtoBufConversion(this.defMaxDefined, ListDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, ListDefinition)
+        checkJsonConversion(this.defMaxDefined, ListDefinition)
     }
 }

@@ -27,7 +27,12 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
         override val required: Boolean = true,
         override val final: Boolean = false,
         val definitionMap: Map<Int, IsSubDefinition<*, CX>>
-) : IsValueDefinition<TypedValue<*>, CX>, IsSerializableFlexBytesEncodable<TypedValue<*>, CX> {
+) :
+        IsValueDefinition<TypedValue<*>, CX>,
+        IsSerializableFlexBytesEncodable<TypedValue<*>, CX>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED
 
     override fun asString(value: TypedValue<*>, context: CX?): String {

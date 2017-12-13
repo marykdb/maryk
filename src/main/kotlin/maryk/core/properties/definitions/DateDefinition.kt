@@ -19,7 +19,12 @@ data class DateDefinition(
         override val minValue: Date? = null,
         override val maxValue: Date? = null,
         override val fillWithNow: Boolean = false
-) : IsMomentDefinition<Date>, IsSerializableFixedBytesEncodable<Date, IsPropertyContext> {
+) :
+        IsMomentDefinition<Date>,
+        IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = WireType.VAR_INT
     override val byteSize = 8
 

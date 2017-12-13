@@ -23,7 +23,12 @@ data class TimeDefinition(
         override val maxValue: Time? = null,
         override val fillWithNow: Boolean = false,
         override val precision: TimePrecision = TimePrecision.SECONDS
-) : IsTimeDefinition<Time>, IsSerializableFixedBytesEncodable<Time, IsPropertyContext> {
+) :
+        IsTimeDefinition<Time>,
+        IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = WireType.VAR_INT
     override val byteSize = Time.byteSize(precision)
 

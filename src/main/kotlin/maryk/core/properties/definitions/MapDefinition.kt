@@ -31,7 +31,14 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         override val maxSize: Int? = null,
         override val keyDefinition: IsSimpleValueDefinition<K, CX>,
         override val valueDefinition: IsSubDefinition<V, CX>
-) : HasSizeDefinition, IsByteTransportableMap<K, V, CX>, IsMapDefinition<K, V, CX> {
+) :
+        HasSizeDefinition,
+        IsByteTransportableMap<K, V, CX>,
+        IsMapDefinition<K, V, CX>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Map
+
     init {
         require(keyDefinition.required, { "Definition for key should be required on map" })
         require(valueDefinition.required, { "Definition for value should be required on map" })

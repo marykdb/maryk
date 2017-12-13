@@ -19,12 +19,12 @@ interface HasSizeDefinition {
             this.maxSize != null && newSize > this.maxSize!!
 
     companion object {
-        fun <DO: Any> addMinSize(definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
-            definitions.add(7, "minSize", NumberDefinition(type = UInt32), getter)
+        fun <DO: Any> addMinSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
+            definitions.add(index, "minSize", NumberDefinition(type = UInt32), getter)
         }
 
-        fun <DO: Any> addMaxSize(definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
-            definitions.add(8, "maxSize", NumberDefinition(type = UInt32), getter)
+        fun <DO: Any> addMaxSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
+            definitions.add(index, "maxSize", NumberDefinition(type = UInt32), getter)
         }
     }
 }

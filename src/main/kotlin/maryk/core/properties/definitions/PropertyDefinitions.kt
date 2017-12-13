@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
+import maryk.core.properties.types.TypedValue
 
 abstract class PropertyDefinitions<DO: Any> {
     @Suppress("PropertyName")
@@ -56,6 +57,15 @@ abstract class PropertyDefinitions<DO: Any> {
             definition: MapDefinition<K, V, CX>,
             getter: (DO) -> Map<K, V>? = { null }
     ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
+        __allProperties.add(this)
+    }
+
+    protected fun <CX: IsPropertyContext> add(
+            index: Int,
+            name: String,
+            definition: MultiTypeDefinition<CX>,
+            getter: (DO) -> TypedValue<*>? = { null }
+    ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
         __allProperties.add(this)
     }
 

@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
@@ -28,14 +30,19 @@ internal class SetDefinitionTest {
             valueDefinition = subDef
     )
 
-    private val def2 = SetDefinition(
+    private val defMaxDefined = SetDefinition(
+            indexed = true,
+            searchable = false,
+            final = true,
             required = false,
+            minSize = 2,
+            maxSize = 4,
             valueDefinition = subDef
     )
 
     @Test
-    fun testValidateRequired() {
-        def2.validateWithRef(newValue = null)
+    fun `validate required`() {
+        defMaxDefined.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
             def.validateWithRef(newValue = null)
@@ -43,7 +50,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun testValidateSize() {
+    fun `validate set size`() {
         def.validateWithRef(newValue = setOf("T", "T2"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4"))
@@ -58,7 +65,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun testValidateContent() {
+    fun `validate set content`() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = setOf("T", "WRONG", "WRONG2"))
         }
@@ -102,7 +109,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun testJsonConversion() {
+    fun `convert values values to JSON String and back`() {
         val value = setOf("T", "T2", "T3", "T4")
 
         var totalString = ""
@@ -116,5 +123,17 @@ internal class SetDefinitionTest {
         val converted = def.readJson(reader)
 
         converted shouldBe value
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, SetDefinition)
+        checkProtoBufConversion(this.defMaxDefined, SetDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, SetDefinition)
+        checkJsonConversion(this.defMaxDefined, SetDefinition)
     }
 }

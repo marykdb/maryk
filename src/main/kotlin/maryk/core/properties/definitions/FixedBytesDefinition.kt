@@ -18,7 +18,12 @@ data class FixedBytesDefinition(
         override val maxValue: Bytes? = null,
         override val random: Boolean = false,
         override val byteSize: Int
-): IsNumericDefinition<Bytes>, IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext> {
+):
+        IsNumericDefinition<Bytes>,
+        IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.FixedBytes
     override val wireType = WireType.LENGTH_DELIMITED
 
     override fun createRandom() = Bytes(randomBytes(this.byteSize))

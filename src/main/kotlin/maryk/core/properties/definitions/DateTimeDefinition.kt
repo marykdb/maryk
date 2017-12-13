@@ -23,7 +23,12 @@ data class DateTimeDefinition(
         override val maxValue: DateTime? = null,
         override val fillWithNow: Boolean = false,
         override val precision: TimePrecision = TimePrecision.SECONDS
-) : IsTimeDefinition<DateTime>, IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext> {
+) :
+        IsTimeDefinition<DateTime>,
+        IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.DateTime
     override val wireType = WireType.VAR_INT
     override val byteSize = DateTime.byteSize(precision)
 

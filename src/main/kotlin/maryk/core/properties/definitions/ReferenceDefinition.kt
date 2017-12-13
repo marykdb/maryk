@@ -16,7 +16,12 @@ class ReferenceDefinition<DO: Any>(
         override val minValue: Key<DO>? = null,
         override val maxValue: Key<DO>? = null,
         dataModel: () -> RootDataModel<DO, *>
-): IsComparableDefinition<Key<DO>, IsPropertyContext>, IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext> {
+):
+        IsComparableDefinition<Key<DO>, IsPropertyContext>,
+        IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize get() = dataModel.key.size
 

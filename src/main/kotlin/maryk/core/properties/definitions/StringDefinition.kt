@@ -24,7 +24,13 @@ data class StringDefinition(
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
         val regEx: String? = null
-) : IsComparableDefinition<String, IsPropertyContext>, HasSizeDefinition, IsSerializableFlexBytesEncodable<String, IsPropertyContext> {
+) :
+        IsComparableDefinition<String, IsPropertyContext>,
+        HasSizeDefinition,
+        IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.String
     override val wireType = WireType.LENGTH_DELIMITED
 
     private val _regEx by lazy {
@@ -75,8 +81,8 @@ data class StringDefinition(
                     IsComparableDefinition.addUnique(this, StringDefinition::unique)
                     add(5, "minValue", StringDefinition(), StringDefinition::minValue)
                     add(6, "maxValue", StringDefinition(), StringDefinition::maxValue)
-                    HasSizeDefinition.addMinSize(this) { it.minSize?.toUInt32() }
-                    HasSizeDefinition.addMaxSize(this) { it.maxSize?.toUInt32() }
+                    HasSizeDefinition.addMinSize(7, this) { it.minSize?.toUInt32() }
+                    HasSizeDefinition.addMaxSize(8, this) { it.maxSize?.toUInt32() }
                     add(9, "regEx", StringDefinition(), StringDefinition::regEx)
                 }
             }

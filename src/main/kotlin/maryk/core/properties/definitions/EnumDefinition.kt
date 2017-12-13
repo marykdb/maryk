@@ -24,7 +24,12 @@ class EnumDefinition<E : IndexedEnum<E>>(
         override val minValue: E? = null,
         override val maxValue: E? = null,
         val values: Array<E>
-) : IsComparableDefinition<E, IsPropertyContext>, IsSerializableFixedBytesEncodable<E, IsPropertyContext> {
+) :
+        IsComparableDefinition<E, IsPropertyContext>,
+        IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Enum
     override val wireType = WireType.VAR_INT
     override val byteSize = 2
 

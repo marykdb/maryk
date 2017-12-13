@@ -23,7 +23,13 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         override val required: Boolean = true,
         override val final: Boolean = false,
         dataModel: () -> DM
-) : IsValueDefinition<DO, CXI>, IsSerializableFlexBytesEncodable<DO, CXI>, IsSubModelDefinition<DO, CXI> {
+) :
+        IsValueDefinition<DO, CXI>,
+        IsSerializableFlexBytesEncodable<DO, CXI>,
+        IsSubModelDefinition<DO, CXI>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.SubModel
     override val wireType = WireType.LENGTH_DELIMITED
 
     private val internalDataModel = lazy(dataModel)

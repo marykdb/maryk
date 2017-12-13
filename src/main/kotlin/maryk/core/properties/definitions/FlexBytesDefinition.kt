@@ -20,7 +20,13 @@ data class FlexBytesDefinition(
         override val maxValue: Bytes? = null,
         override val minSize: Int? = null,
         override val maxSize: Int? = null
-): IsComparableDefinition<Bytes, IsPropertyContext>, HasSizeDefinition, IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext> {
+):
+        IsComparableDefinition<Bytes, IsPropertyContext>,
+        HasSizeDefinition,
+        IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.FlexBytes
     override val wireType = WireType.LENGTH_DELIMITED
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(length, reader)
@@ -53,8 +59,8 @@ data class FlexBytesDefinition(
                     IsComparableDefinition.addUnique(this, FlexBytesDefinition::unique)
                     add(5, "minValue", FlexBytesDefinition(), FlexBytesDefinition::minValue)
                     add(6, "maxValue", FlexBytesDefinition(), FlexBytesDefinition::maxValue)
-                    HasSizeDefinition.addMinSize(this) { it.minSize?.toUInt32() }
-                    HasSizeDefinition.addMaxSize(this) { it.maxSize?.toUInt32() }
+                    HasSizeDefinition.addMinSize(7, this) { it.minSize?.toUInt32() }
+                    HasSizeDefinition.addMaxSize(8, this) { it.maxSize?.toUInt32() }
                 }
             }
     ) {

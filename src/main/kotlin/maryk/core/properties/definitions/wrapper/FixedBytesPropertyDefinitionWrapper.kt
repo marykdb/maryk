@@ -1,11 +1,15 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.objects.DataModel
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
+import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.UInt32
 
 /** Contains a Fixed Bytes property definition which can be used for keys.
  * @param index: of definition to encode into protobuf
@@ -41,5 +45,23 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
         return dataModel.getPropertyGetter(
                 this.index
         )?.invoke(dataObject) as T
+    }
+
+    companion object : DataModel<FixedBytesPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<FixedBytesPropertyDefinitionWrapper<*, *, *, *>>>(
+            properties = object : PropertyDefinitions<FixedBytesPropertyDefinitionWrapper<*, *, *, *>>() {
+                init {
+                    IsPropertyDefinitionWrapper.addIndex(this, FixedBytesPropertyDefinitionWrapper<*, *, *, *>::index)
+                    IsPropertyDefinitionWrapper.addName(this, FixedBytesPropertyDefinitionWrapper<*, *, *, *>::name)
+                    IsPropertyDefinitionWrapper.addDefinition(this, FixedBytesPropertyDefinitionWrapper<*, *, *, *>::definition)
+                }
+            }
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = FixedBytesPropertyDefinitionWrapper(
+                index = (map[0] as UInt32).toInt(),
+                name = map[1] as String,
+                definition = (map[2] as TypedValue<IsSerializableFixedBytesEncodable<Any, IsPropertyContext>>).value,
+                getter = { _: Any -> null }
+        )
     }
 }

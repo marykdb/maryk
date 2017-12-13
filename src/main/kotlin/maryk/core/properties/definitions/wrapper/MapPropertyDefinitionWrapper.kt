@@ -1,14 +1,18 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.UInt32
 
 /** Wraps a map definition to contain the context on how it relates to DataObject
  * @param index: of definition to encode into protobuf
@@ -35,14 +39,14 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
 
     /** Get a reference to a specific map key
      * @param key to get reference for
-     * @param parentRefFactory (optional) factory to create parent ref
+     * @param parentRef (optional) parent reference
      */
     fun getKeyRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
             = this.definition.getKeyRef(key, this.getRef(parentRef))
 
     /** Get a reference to a specific map value by key
      * @param key to get reference to value for
-     * @param parentRefFactory (optional) factory to create parent ref
+     * @param parentRef (optional) fparent reference
      */
     fun getValueRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
             = this.definition.getValueRef(key, this.getRef(parentRef))
@@ -59,5 +63,23 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
      */
     infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> MapValueReference<K, V, *> {
         return { this.getValueRef(key, it) }
+    }
+
+    companion object : DataModel<MapPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<MapPropertyDefinitionWrapper<*, *, *, *>>>(
+            properties = object : PropertyDefinitions<MapPropertyDefinitionWrapper<*, *, *, *>>() {
+                init {
+                    IsPropertyDefinitionWrapper.addIndex(this, MapPropertyDefinitionWrapper<*, *, *, *>::index)
+                    IsPropertyDefinitionWrapper.addName(this, MapPropertyDefinitionWrapper<*, *, *, *>::name)
+                    IsPropertyDefinitionWrapper.addDefinition(this, MapPropertyDefinitionWrapper<*, *, *, *>::definition)
+                }
+            }
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = MapPropertyDefinitionWrapper(
+                index = (map[0] as UInt32).toInt(),
+                name = map[1] as String,
+                definition = (map[2] as TypedValue<MapDefinition<Any, Any, IsPropertyContext>>).value,
+                getter = { _: Any -> null }
+        )
     }
 }

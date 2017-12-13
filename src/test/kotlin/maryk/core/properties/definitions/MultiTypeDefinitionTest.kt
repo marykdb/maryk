@@ -14,12 +14,12 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class MultiTypeDefinitionTest {
-    val intDef = NumberDefinition(
+    private val intDef = NumberDefinition(
             type = SInt32,
             maxValue = 1000
     )
 
-    val stringDef = StringDefinition(
+    private val stringDef = StringDefinition(
             regEx = "#.*"
     )
 

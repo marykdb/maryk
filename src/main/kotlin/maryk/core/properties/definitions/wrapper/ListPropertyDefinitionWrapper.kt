@@ -1,14 +1,18 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
+import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.UInt32
 
 /** Wrapper for a list definition
  * @param index: of definition to encode into protobuf
@@ -44,5 +48,23 @@ data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: A
      */
     infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> ListItemReference<T, CX> {
         return { this.getItemRef(index, it) }
+    }
+
+    companion object : DataModel<ListPropertyDefinitionWrapper<*, *, *>, PropertyDefinitions<ListPropertyDefinitionWrapper<*, *, *>>>(
+            properties = object : PropertyDefinitions<ListPropertyDefinitionWrapper<*, *, *>>() {
+                init {
+                    IsPropertyDefinitionWrapper.addIndex(this, ListPropertyDefinitionWrapper<*, *, *>::index)
+                    IsPropertyDefinitionWrapper.addName(this, ListPropertyDefinitionWrapper<*, *, *>::name)
+                    IsPropertyDefinitionWrapper.addDefinition(this, ListPropertyDefinitionWrapper<*, *, *>::definition)
+                }
+            }
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = ListPropertyDefinitionWrapper(
+                index = (map[0] as UInt32).toInt(),
+                name = map[1] as String,
+                definition = (map[2] as TypedValue<ListDefinition<Any, IsPropertyContext>>).value,
+                getter = { _: Any -> null }
+        )
     }
 }

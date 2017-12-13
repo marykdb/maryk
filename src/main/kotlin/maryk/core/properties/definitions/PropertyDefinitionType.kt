@@ -2,6 +2,12 @@ package maryk.core.properties.definitions
 
 import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnum
 
 /** Indexed type of property definitions */
@@ -47,3 +53,26 @@ internal val mapOfPropertyDefSubModelDefinitions = mapOf(
         PropertyDefinitionType.Time.index to SubModelDefinition(dataModel = { TimeDefinition })
 //        PropertyDefinitionType.ValueModel.index to SubModelDefinition(dataModel = { ValueModelDefinition })
 )
+
+val propertyDefinitionWrapper = SubModelDefinition(dataModel = { PropertyDefinitionWrapper })
+val fixedBytesPropertyDefinitionWrapper = SubModelDefinition(dataModel = { FixedBytesPropertyDefinitionWrapper })
+
+internal val mapOfPropertyDefWrapperDefinitions = mapOf(
+        PropertyDefinitionType.Boolean.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.Date.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.DateTime.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.Enum.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.FixedBytes.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.FlexBytes.index to propertyDefinitionWrapper,
+        PropertyDefinitionType.List.index to SubModelDefinition(dataModel = { ListPropertyDefinitionWrapper }),
+        PropertyDefinitionType.Map.index to SubModelDefinition(dataModel = { MapPropertyDefinitionWrapper }),
+        PropertyDefinitionType.MultiType.index to propertyDefinitionWrapper,
+        PropertyDefinitionType.Number.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.Reference.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.Set.index to SubModelDefinition(dataModel = { SetPropertyDefinitionWrapper }),
+        PropertyDefinitionType.String.index to propertyDefinitionWrapper,
+        PropertyDefinitionType.SubModel.index to SubModelDefinition(dataModel = { SubModelPropertyDefinitionWrapper }),
+        PropertyDefinitionType.Time.index to fixedBytesPropertyDefinitionWrapper,
+        PropertyDefinitionType.ValueModel.index to propertyDefinitionWrapper
+)
+

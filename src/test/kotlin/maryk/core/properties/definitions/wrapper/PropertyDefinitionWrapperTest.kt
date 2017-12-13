@@ -1,0 +1,32 @@
+package maryk.core.properties.definitions.wrapper
+
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
+import maryk.core.properties.definitions.StringDefinition
+import maryk.test.shouldBe
+import kotlin.test.Test
+
+class PropertyDefinitionWrapperTest {
+    private val def = PropertyDefinitionWrapper(
+            index = 1,
+            name = "wrapper",
+            definition = StringDefinition(),
+            getter = { _: Any -> null }
+    )
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, PropertyDefinitionWrapper, null, ::compare)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, PropertyDefinitionWrapper, null, ::compare)
+    }
+
+    private fun compare(converted: PropertyDefinitionWrapper<*, *, *, *>, original: PropertyDefinitionWrapper<*, *, *, *>) {
+        converted.index shouldBe original.index
+        converted.name shouldBe original.name
+        converted.definition shouldBe original.definition
+    }
+}

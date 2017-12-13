@@ -2,8 +2,17 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.mapOfPropertyDefSubModelDefinitions
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
@@ -59,4 +68,25 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO>
      */
     fun writeTransportBytesWithKey(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
             = this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
+
+    companion object {
+        internal fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) {
+            definitions.add(0, "index", NumberDefinition(type = UInt32)) {
+                getter(it).toUInt32()
+            }
+        }
+
+        internal fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
+            definitions.add(1, "name", StringDefinition(), getter)
+        }
+
+        internal fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) {
+            definitions.add(2, "definition", MultiTypeDefinition(
+                    definitionMap = mapOfPropertyDefSubModelDefinitions
+            )) {
+                val def = getter(it) as IsTransportablePropertyDefinitionType
+                TypedValue(def.propertyDefinitionType.index, def)
+            }
+        }
+    }
 }

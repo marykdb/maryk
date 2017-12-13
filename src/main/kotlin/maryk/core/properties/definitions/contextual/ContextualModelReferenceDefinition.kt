@@ -13,7 +13,7 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Definition for a reference to another DataObject*/
+/** Definition for a reference to another DataObject. */
 data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
         val contextualResolver: (context: CX?, name: String) -> RootDataModel<*, *>
 ): IsValueDefinition<RootDataModel<*, *>, CX>, IsSerializableFlexBytesEncodable<RootDataModel<*, *>, CX> {

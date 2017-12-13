@@ -3,12 +3,15 @@ package maryk.core.objects
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 
-/** DataModel for non contextual models
+/** DataModel which create contexts so properties know the values of other properties.
+ * Use it to create a context on starting an action which needs a context.
+ * This context is cached if it is needed to read multiple times
+ *
  * @param properties: All definitions for properties contained in this model
  * @param DO: Type of DataObject contained
  * @param P: PropertyDefinitions type for reference retrieval
  */
-abstract class ContextualDataModel<DO: Any, out P: PropertyDefinitions<DO>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+abstract class ContextualDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
         properties: P,
         val contextTransformer: (CXI?) -> CX?
 ) : AbstractDataModel<DO, P, CXI, CX>(properties) {

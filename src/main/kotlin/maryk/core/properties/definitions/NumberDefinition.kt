@@ -51,8 +51,8 @@ data class NumberDefinition<T: Comparable<T>>(
         type.ofString(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
 
-    override fun writeJsonValue(value: T, writer: JsonWriter, context: IsPropertyContext?) = when {
-        type !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
+    override fun writeJsonValue(value: T, writer: JsonWriter, context: IsPropertyContext?) = when (type) {
+        !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
             writer.writeValue(
                     this.asString(value)
             )
@@ -60,8 +60,8 @@ data class NumberDefinition<T: Comparable<T>>(
         else -> super.writeJsonValue(value, writer, context)
     }
 
-    companion object : ContextualDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, ContextualNumberDefinition.NumericContext>(
-            contextTransformer = { ContextualNumberDefinition.NumericContext() },
+    companion object : ContextualDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
+            contextTransformer = { NumericContext },
             properties = object : PropertyDefinitions<NumberDefinition<*>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, NumberDefinition<*>::indexed)
@@ -71,18 +71,18 @@ data class NumberDefinition<T: Comparable<T>>(
                     IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
                     add(5, "type", ContextCaptureDefinition(
                             definition = EnumDefinition(values = NumberType.values()),
-                            capturer = { context: ContextualNumberDefinition.NumericContext?, value ->
+                            capturer = { context: NumericContext?, value ->
                                 @Suppress("UNCHECKED_CAST")
                                 context!!.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
                             }
                     )) {
                         it.type.type
                     }
-                    add(6, "minValue", ContextualNumberDefinition(required = false)) {
+                    add(6, "minValue", ContextualNumberDefinition<NumericContext>(required = false) { it!!.numberType!! }) {
                         @Suppress("UNCHECKED_CAST")
                         it.minValue as Comparable<Any>?
                     }
-                    add(7, "maxValue", ContextualNumberDefinition(required = false)) {
+                    add(7, "maxValue", ContextualNumberDefinition<NumericContext>(required = false) { it!!.numberType!! }) {
                         @Suppress("UNCHECKED_CAST")
                         it.maxValue as Comparable<Any>?
                     }
@@ -103,4 +103,8 @@ data class NumberDefinition<T: Comparable<T>>(
                 random = map[8] as Boolean
         )
     }
+}
+
+object NumericContext : IsPropertyContext {
+    var numberType: NumberDescriptor<Comparable<Any>>? = null
 }

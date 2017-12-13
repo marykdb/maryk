@@ -16,10 +16,13 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Definition for Number properties */
-class ContextualNumberDefinition(
-        override val required: Boolean = true
-): IsSubDefinition<Comparable<Any>, ContextualNumberDefinition.NumericContext>, IsSerializableFlexBytesEncodable<Comparable<Any>, ContextualNumberDefinition.NumericContext> {
+/** Definition for Number properties which are based on a context which can be set by a property which defines
+ * the number type
+ */
+class ContextualNumberDefinition<in CX: IsPropertyContext>(
+        override val required: Boolean = true,
+        val contextualResolver: (context: CX?) -> NumberDescriptor<Comparable<Any>>
+): IsSubDefinition<Comparable<Any>, CX>, IsSerializableFlexBytesEncodable<Comparable<Any>, CX> {
     override val indexed = false
     override val searchable = false
     override val final = true
@@ -27,23 +30,24 @@ class ContextualNumberDefinition(
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun calculateTransportByteLengthWithKey(index: Int, value: Comparable<Any>, cacher: WriteCacheWriter, context: NumericContext?)
-            = ProtoBuf.calculateKeyLength(index) + context!!.numberType!!.calculateTransportByteLength(value)
+    override fun calculateTransportByteLengthWithKey(index: Int, value: Comparable<Any>, cacher: WriteCacheWriter, context: CX?)
+            = ProtoBuf.calculateKeyLength(index) + contextualResolver(context).calculateTransportByteLength(value)
 
-    override fun writeTransportBytesWithKey(index: Int, value: Comparable<Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: NumericContext?) {
-        ProtoBuf.writeKey(index, context!!.numberType!!.wireType, writer)
-        context.numberType!!.writeTransportBytes(value, writer)
+    override fun writeTransportBytesWithKey(index: Int, value: Comparable<Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+        val numType = contextualResolver(context)
+        ProtoBuf.writeKey(index, numType.wireType, writer)
+        numType.writeTransportBytes(value, writer)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: NumericContext?)
-            = context!!.numberType!!.readTransportBytes(reader)
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)
+            = contextualResolver(context).readTransportBytes(reader)
 
-    override fun readJson(reader: JsonReader, context: NumericContext?)= try {
-        context!!.numberType!!.ofString(reader.lastValue)
+    override fun readJson(reader: JsonReader, context: CX?)= try {
+        contextualResolver(context).ofString(reader.lastValue)
     } catch (e: Throwable) { throw ParseException(reader.lastValue, e) }
 
-    override fun writeJsonValue(value: Comparable<Any>, writer: JsonWriter, context: NumericContext?) = when {
-        context!!.numberType!! !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
+    override fun writeJsonValue(value: Comparable<Any>, writer: JsonWriter, context: CX?) = when {
+        contextualResolver(context) !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
             writer.writeValue(
                     value.toString()
             )
@@ -53,9 +57,5 @@ class ContextualNumberDefinition(
                     value.toString()
             )
         }
-    }
-
-    class NumericContext : IsPropertyContext {
-        var numberType: NumberDescriptor<Comparable<Any>>? = null
     }
 }

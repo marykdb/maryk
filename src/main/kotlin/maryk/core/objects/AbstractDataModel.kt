@@ -28,7 +28,7 @@ import maryk.core.protobuf.WriteCacheWriter
  * @param DO: Type of DataObject contained
  * @param CX: Type of context object
  */
-abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
         val properties: P
 ) : IsDataModel<DO> {
     private val indexToDefinition: Map<Int, IsPropertyDefinitionWrapper<Any, CX, DO>>

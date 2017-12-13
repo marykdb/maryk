@@ -7,11 +7,14 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
+import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -145,5 +148,38 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMap[value.typeIndex]!! as IsSubDefinition<Any, CX>
         def.writeTransportBytesWithKey(2, value.value, cacheGetter, writer, context)
+    }
+
+    companion object : DataModel<MultiTypeDefinition<*>, PropertyDefinitions<MultiTypeDefinition<*>>>(
+            properties = object : PropertyDefinitions<MultiTypeDefinition<*>>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*>::indexed)
+                    IsPropertyDefinition.addSearchable(this, MultiTypeDefinition<*>::searchable)
+                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*>::required)
+                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*>::final)
+                    add(4, "definitionMap", MapDefinition(
+                            keyDefinition = NumberDefinition(type = UInt32),
+                            valueDefinition =  MultiTypeDefinition(
+                                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                            )
+                    )) {
+                        it.definitionMap.map {
+                            val defType = it.value as IsTransportablePropertyDefinitionType
+                            it.key.toUInt32() to TypedValue(defType.propertyDefinitionType.index, it.value)
+                        }.toMap()
+                    }
+                }
+            }
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = MultiTypeDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean,
+                definitionMap = (map[4] as Map<UInt32, TypedValue<IsValueDefinition<*, *>>>).map {
+                    it.key.toInt() to it.value.value
+                }.toMap()
+        )
     }
 }

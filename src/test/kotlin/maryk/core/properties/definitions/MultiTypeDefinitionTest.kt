@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.ByteCollector
@@ -29,19 +30,30 @@ internal class MultiTypeDefinitionTest {
             )
     )
 
+    val defMaxDefined = MultiTypeDefinition<IsPropertyContext>(
+            indexed = true,
+            searchable = false,
+            final = true,
+            required = false,
+            definitionMap = mapOf(
+                    0 to stringDef,
+                    1 to intDef
+            )
+    )
+
     val multisToTest = arrayOf(
             TypedValue(0, "#test"),
             TypedValue(1, 400)
     )
 
     @Test
-    fun testGet() {
+    fun `get properties`() {
         def.definitionMap[0] shouldBe stringDef
         def.definitionMap[1] shouldBe intDef
     }
 
     @Test
-    fun testValidation() {
+    fun `validate content`() {
         def.validateWithRef(newValue = TypedValue(0, "#test"))
         def.validateWithRef(newValue = TypedValue(1, 400))
 
@@ -54,7 +66,7 @@ internal class MultiTypeDefinitionTest {
     }
 
     @Test
-    fun testValidationInvalidField() {
+    fun `invalid field should throw exception`() {
         shouldThrow<DefNotFoundException> {
             def.validateWithRef(newValue = TypedValue(2, "NonExistingField"))
         }
@@ -64,5 +76,17 @@ internal class MultiTypeDefinitionTest {
     fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
         multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, MultiTypeDefinition)
+        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, MultiTypeDefinition)
+        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition)
     }
 }

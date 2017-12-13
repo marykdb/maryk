@@ -75,7 +75,9 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?): Int {
         var totalByteLength = 0
         val newContext = if (this.dataModel is ContextualDataModel<*, *, *, *>) {
-            this.dataModel.transformContext(context)!!
+            this.dataModel.transformContext(context)!!.apply {
+                cacher.addContextToCache(this)
+            }
         } else {
             @Suppress("UNCHECKED_CAST")
             context as CX?

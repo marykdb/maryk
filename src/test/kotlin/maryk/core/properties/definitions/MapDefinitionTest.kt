@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
@@ -34,6 +36,17 @@ internal class MapDefinitionTest {
             valueDefinition = stringDef
     )
 
+    private val defMaxDefined = MapDefinition(
+            indexed = true,
+            searchable = false,
+            final = true,
+            required = false,
+            minSize = 2,
+            maxSize = 4,
+            keyDefinition = intDef,
+            valueDefinition = stringDef
+    )
+
     private val value = mapOf(
             12 to "#twelve",
             30 to "#thirty",
@@ -42,7 +55,7 @@ internal class MapDefinitionTest {
     )
 
     @Test
-    fun testValidateSize() {
+    fun `validate map size`() {
         def.validateWithRef(newValue = mapOf(
                 12 to "#twelve",
                 30 to "#thirty"
@@ -72,7 +85,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun testValidateContent() {
+    fun `validate map content`() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = mapOf(
                     12 to "#twelve",
@@ -128,7 +141,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun testJsonConversion() {
+    fun `convert values values to JSON String and back`() {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })
 
@@ -140,5 +153,17 @@ internal class MapDefinitionTest {
         val converted = def.readJson(reader)
 
         converted shouldBe this.value
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, MapDefinition)
+        checkProtoBufConversion(this.defMaxDefined, MapDefinition)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, MapDefinition)
+        checkJsonConversion(this.defMaxDefined, MapDefinition)
     }
 }

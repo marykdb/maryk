@@ -33,6 +33,18 @@ internal class StringDefinitionTest {
             minSize = 3,
             maxSize = 6
     )
+    private val defMaxDefined = StringDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minSize = 3,
+            maxSize = 6,
+            regEx = "^[abcd]{3,4}$",
+            minValue = "aaa",
+            maxValue = "zzzzz"
+    )
 
     private val defRegEx = StringDefinition(
             regEx = "^[abcd]{3,4}$"
@@ -109,11 +121,13 @@ internal class StringDefinitionTest {
     @Test
     fun `convert definition to ProtoBuf and back`() {
         checkProtoBufConversion(this.def, StringDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, StringDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
         checkJsonConversion(this.def, StringDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, StringDefinition.Model)
     }
 }
 

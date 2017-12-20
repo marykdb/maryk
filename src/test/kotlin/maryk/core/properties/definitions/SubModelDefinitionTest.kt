@@ -38,6 +38,13 @@ internal class SubModelDefinitionTest {
     private val def = SubModelDefinition(
             dataModel = { MarykObject }
     )
+    private val defMaxDefined = SubModelDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            dataModel = { MarykObject }
+    )
 
     @Test
     fun hasValues() {
@@ -81,10 +88,12 @@ internal class SubModelDefinitionTest {
     @Test
     fun `convert definition to ProtoBuf and back`() {
         checkProtoBufConversion(this.def, SubModelDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
     }
 
     @Test
     fun `convert definition to JSON and back`() {
         checkJsonConversion(this.def, SubModelDefinition.Model, DataModelContext())
+        checkJsonConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
     }
 }

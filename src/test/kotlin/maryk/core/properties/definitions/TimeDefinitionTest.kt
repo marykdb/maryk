@@ -30,7 +30,6 @@ internal class TimeDefinitionTest {
             precision = TimePrecision.MILLIS
     )
 
-
     private val defMaxDefined = TimeDefinition(
             indexed = true,
             required = false,

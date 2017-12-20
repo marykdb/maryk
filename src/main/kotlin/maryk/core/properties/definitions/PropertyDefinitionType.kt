@@ -46,12 +46,12 @@ internal val mapOfPropertyDefSubModelDefinitions = mapOf(
         PropertyDefinitionType.Map.index to SubModelDefinition(dataModel = { MapDefinition.Model }),
         PropertyDefinitionType.MultiType.index to SubModelDefinition(dataModel = { MultiTypeDefinition.Model }),
         PropertyDefinitionType.Number.index to SubModelDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
-//        PropertyDefinitionType.Reference.index to SubModelDefinition(dataModel = { ReferenceDefinition }),
+        PropertyDefinitionType.Reference.index to SubModelDefinition(dataModel = { ReferenceDefinition.Model }),
         PropertyDefinitionType.Set.index to SubModelDefinition(dataModel = { SetDefinition.Model }),
         PropertyDefinitionType.String.index to SubModelDefinition(dataModel = { StringDefinition.Model }),
         PropertyDefinitionType.SubModel.index to SubModelDefinition(dataModel = { SubModelDefinition.Model }),
-        PropertyDefinitionType.Time.index to SubModelDefinition(dataModel = { TimeDefinition.Model })
-//        PropertyDefinitionType.ValueModel.index to SubModelDefinition(dataModel = { ValueModelDefinition })
+        PropertyDefinitionType.Time.index to SubModelDefinition(dataModel = { TimeDefinition.Model }),
+        PropertyDefinitionType.ValueModel.index to SubModelDefinition(dataModel = { ValueModelDefinition.Model })
 )
 
 val propertyDefinitionWrapper = SubModelDefinition(dataModel = { PropertyDefinitionWrapper })

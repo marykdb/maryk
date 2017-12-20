@@ -26,6 +26,7 @@ data class TestValueObject(
     }
 
     companion object: ValueDataModel<TestValueObject, Properties>(
+            name = "TestValueObject",
             properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = TestValueObject(

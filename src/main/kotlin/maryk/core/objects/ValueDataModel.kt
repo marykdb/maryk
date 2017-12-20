@@ -11,8 +11,9 @@ import maryk.core.properties.types.ValueDataObject
  * @param DO: Type of DataObject contained
  */
 abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
+        name: String,
         properties: P
-) : SimpleDataModel<DO, P>(properties) {
+) : DataModel<DO, P>(name, properties) {
     val byteSize: Int by lazy {
         var size = - 1
         this.properties.forEach {

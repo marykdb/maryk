@@ -1,12 +1,14 @@
 package maryk.core.properties.definitions
 
 import maryk.TestMarykObject
+import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAXBYTE
 import maryk.core.extensions.bytes.ZEROBYTE
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -19,6 +21,16 @@ internal class ReferenceDefinitionTest {
     )
 
     val def = ReferenceDefinition(
+            dataModel = { TestMarykObject }
+    )
+    val defMaxDefined = ReferenceDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = refToTest[0],
+            maxValue = refToTest[1],
             dataModel = { TestMarykObject }
     )
 
@@ -58,5 +70,17 @@ internal class ReferenceDefinitionTest {
     fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
         refToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, ReferenceDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, ReferenceDefinition.Model, DataModelContext())
+        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
     }
 }

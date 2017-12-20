@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Date
 import maryk.core.protobuf.WireType
@@ -47,7 +47,7 @@ data class DateDefinition(
 
     override fun fromString(string: String) = Date.parse(string)
 
-    companion object : DataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
+    companion object : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
             properties = object : PropertyDefinitions<DateDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)

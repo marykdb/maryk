@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.bytes.initString
 import maryk.core.bytes.writeUTF8Bytes
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -71,7 +71,7 @@ data class StringDefinition(
         }
     }
 
-    companion object : DataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
+    companion object : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
             properties = object : PropertyDefinitions<StringDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)

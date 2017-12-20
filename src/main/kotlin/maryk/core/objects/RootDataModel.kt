@@ -28,10 +28,10 @@ fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
  * @param DO: Type of DataObject contained
  */
 abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
-        val name: String,
+        name: String,
         keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
         properties: P
-) : DataModel<DO, P>(properties){
+) : DataModel<DO, P>(name, properties){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key */

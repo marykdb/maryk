@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.JsonWriter
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
@@ -43,7 +43,7 @@ data class BooleanDefinition(
         )
     }
 
-    companion object : DataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
+    companion object : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
             properties = object : PropertyDefinitions<BooleanDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)

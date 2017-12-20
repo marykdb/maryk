@@ -12,12 +12,12 @@ import maryk.core.properties.types.ValueDataObject
  */
 abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
         properties: P
-) : DataModel<DO, P>(properties) {
+) : SimpleDataModel<DO, P>(properties) {
     val byteSize: Int by lazy {
-        var size = this.definitions.size - 1
-        this.definitions.forEach {
+        var size = - 1
+        this.properties.forEach {
             val def = it.definition as IsFixedBytesEncodable<*>
-            size += def.byteSize
+            size += def.byteSize + 1
         }
         size
     }
@@ -29,7 +29,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
      */
     fun readFromBytes(reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
-        this.definitions.forEachIndexed { index, it ->
+        this.properties.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
 
             val def = it as IsFixedBytesEncodable<*>
@@ -48,7 +48,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
         val bytes =  ByteArray(this.byteSize)
         var offset = 0
 
-        this.definitions.forEachIndexed { index, it ->
+        this.properties.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it as IsFixedBytesEncodable<in Any>
             def.writeStorageBytes(inputs[index], {

@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -65,7 +65,7 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
         return { this.getValueRef(key, it) }
     }
 
-    companion object : DataModel<MapPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<MapPropertyDefinitionWrapper<*, *, *, *>>>(
+    companion object : SimpleDataModel<MapPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<MapPropertyDefinitionWrapper<*, *, *, *>>>(
             properties = object : PropertyDefinitions<MapPropertyDefinitionWrapper<*, *, *, *>>() {
                 init {
                     IsPropertyDefinitionWrapper.addIndex(this, MapPropertyDefinitionWrapper<*, *, *, *>::index)

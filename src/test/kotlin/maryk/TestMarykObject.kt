@@ -1,4 +1,5 @@
 package maryk
+import maryk.core.objects.DataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.IsPropertyContext
@@ -47,7 +48,7 @@ data class TestMarykObject(
         val valueObject: TestValueObject? = null,
         val subModel: SubMarykObject? = null,
         val multi: TypedValue<*>? = null,
-        val reference: Key<SubMarykObject>? = null,
+        val reference: Key<TestMarykObject>? = null,
         val listOfString: List<String>? = null,
         val selfReference: Key<TestMarykObject>? = null
 ) {
@@ -174,7 +175,7 @@ data class TestMarykObject(
                 index = 13, name = "reference",
                 definition = ReferenceDefinition(
                         required = false,
-                        dataModel = { SubMarykObject }
+                        dataModel = { TestMarykObject }
                 ),
                 getter = TestMarykObject::reference
         )
@@ -222,7 +223,7 @@ data class TestMarykObject(
                 valueObject = map[10] as TestValueObject?,
                 subModel = map[11] as SubMarykObject?,
                 multi = map[12] as TypedValue<*>?,
-                reference = map[13] as Key<SubMarykObject>?,
+                reference = map[13] as Key<TestMarykObject>?,
                 listOfString = map[14] as List<String>?
         )
     }
@@ -256,13 +257,14 @@ data class SubMarykObject(
                 getter = SubMarykObject::marykModel
         )
     }
-    companion object: RootDataModel<SubMarykObject, Properties>(
+    companion object: DataModel<SubMarykObject, Properties>(
             name = "SubMarykObject",
             properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = SubMarykObject(
                 map[0] as String,
-                map[1] as SubMarykObject?
+                map[1] as SubMarykObject?,
+                map[2] as TestMarykObject?
         )
     }
 }

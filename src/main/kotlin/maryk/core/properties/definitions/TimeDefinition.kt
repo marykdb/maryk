@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
@@ -57,7 +57,7 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = Time.parse(string)
 
-    companion object : DataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
+    companion object : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
             properties = object : PropertyDefinitions<TimeDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)

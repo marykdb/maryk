@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.objects.AbstractDataModel
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubModelDefinition
@@ -65,7 +65,7 @@ data class SubModelPropertyDefinitionWrapper<SDO: Any, out P: PropertyDefinition
         return { this.definition.dataModel(this.getRef(it), referenceGetter) }
     }
 
-    companion object : DataModel<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>, PropertyDefinitions<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>>>(
+    companion object : SimpleDataModel<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>, PropertyDefinitions<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>>>(
             properties = object : PropertyDefinitions<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>>() {
                 init {
                     IsPropertyDefinitionWrapper.addIndex(this, SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>::index)

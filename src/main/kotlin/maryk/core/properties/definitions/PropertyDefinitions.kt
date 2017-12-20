@@ -11,9 +11,16 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 
-abstract class PropertyDefinitions<DO: Any> {
+abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapper<*, *, DO>> {
+    override fun iterator() = __allProperties.iterator()
+
     @Suppress("PropertyName")
     internal val __allProperties = mutableListOf<IsPropertyDefinitionWrapper<*, *, DO>>()
+
+    /** Add a single property definition wrapper */
+    internal fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DO>) {
+        __allProperties.add(propertyDefinitionWrapper)
+    }
 
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
             index: Int,

@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.DataModel
 import maryk.core.objects.IsDataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
@@ -47,7 +47,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
         )?.invoke(dataObject) as T
     }
 
-    companion object : DataModel<FixedBytesPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<FixedBytesPropertyDefinitionWrapper<*, *, *, *>>>(
+    companion object : SimpleDataModel<FixedBytesPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<FixedBytesPropertyDefinitionWrapper<*, *, *, *>>>(
             properties = object : PropertyDefinitions<FixedBytesPropertyDefinitionWrapper<*, *, *, *>>() {
                 init {
                     IsPropertyDefinitionWrapper.addIndex(this, FixedBytesPropertyDefinitionWrapper<*, *, *, *>::index)

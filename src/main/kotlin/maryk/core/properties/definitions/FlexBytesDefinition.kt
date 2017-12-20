@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.references.IsPropertyReference
@@ -49,7 +50,7 @@ data class FlexBytesDefinition(
         }
     }
 
-    companion object : DataModel<FlexBytesDefinition, PropertyDefinitions<FlexBytesDefinition>>(
+    companion object : SimpleDataModel<FlexBytesDefinition, PropertyDefinitions<FlexBytesDefinition>>(
             properties = object : PropertyDefinitions<FlexBytesDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, FlexBytesDefinition::indexed)

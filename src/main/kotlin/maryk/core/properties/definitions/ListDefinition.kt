@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
@@ -45,7 +46,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    companion object : DataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>>(
+    companion object : SimpleDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>>(
             properties = object : PropertyDefinitions<ListDefinition<*, *>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)

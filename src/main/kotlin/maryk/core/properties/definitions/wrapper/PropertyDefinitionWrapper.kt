@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -32,7 +32,7 @@ data class PropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, D: IsSeriali
     override fun getRef(parentRef: IsPropertyReference<*, *>?)
             = ValuePropertyReference(this, parentRef)
 
-    companion object : DataModel<PropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<PropertyDefinitionWrapper<*, *, *, *>>>(
+    companion object : SimpleDataModel<PropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<PropertyDefinitionWrapper<*, *, *, *>>>(
             properties = object : PropertyDefinitions<PropertyDefinitionWrapper<*, *, *, *>>() {
                 init {
                     IsPropertyDefinitionWrapper.addIndex(this, PropertyDefinitionWrapper<*, *, *, *>::index)

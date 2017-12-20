@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -50,7 +50,7 @@ data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: A
         return { this.getItemRef(index, it) }
     }
 
-    companion object : DataModel<ListPropertyDefinitionWrapper<*, *, *>, PropertyDefinitions<ListPropertyDefinitionWrapper<*, *, *>>>(
+    companion object : SimpleDataModel<ListPropertyDefinitionWrapper<*, *, *>, PropertyDefinitions<ListPropertyDefinitionWrapper<*, *, *>>>(
             properties = object : PropertyDefinitions<ListPropertyDefinitionWrapper<*, *, *>>() {
                 init {
                     IsPropertyDefinitionWrapper.addIndex(this, ListPropertyDefinitionWrapper<*, *, *>::index)

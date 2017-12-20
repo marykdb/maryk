@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 
 /** DataModel for non contextual models
@@ -7,9 +8,8 @@ import maryk.core.properties.definitions.PropertyDefinitions
  * @param DO: Type of DataObject contained
  * @param P: PropertyDefinitions type for reference retrieval
  */
-abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
-        val name: String,
+abstract class SimpleDataModel<DO: Any, out P: PropertyDefinitions<DO>>(
         properties: P
-) : SimpleDataModel<DO, P>(
+) : AbstractDataModel<DO, P, IsPropertyContext, IsPropertyContext>(
         properties
 )

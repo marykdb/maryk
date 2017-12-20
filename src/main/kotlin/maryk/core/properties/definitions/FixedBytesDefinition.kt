@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.randomBytes
 import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.UInt32
@@ -38,7 +39,7 @@ data class FixedBytesDefinition(
 
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 
-    companion object : DataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
+    companion object : SimpleDataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
             properties = object : PropertyDefinitions<FixedBytesDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, FixedBytesDefinition::indexed)

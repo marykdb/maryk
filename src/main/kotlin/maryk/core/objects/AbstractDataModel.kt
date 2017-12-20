@@ -35,7 +35,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     private val nameToDefinition: Map<String, IsPropertyDefinitionWrapper<Any, CX, DO>>
 
     @Suppress("UNCHECKED_CAST")
-    val definitions: List<IsPropertyDefinitionWrapper<Any, CX, DO>> = properties.__allProperties as List<IsPropertyDefinitionWrapper<Any, CX, DO>>
+    internal val definitions: List<IsPropertyDefinitionWrapper<Any, CX, DO>> = properties.__allProperties as List<IsPropertyDefinitionWrapper<Any, CX, DO>>
 
     init {
         indexToDefinition = mutableMapOf()

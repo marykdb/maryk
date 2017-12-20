@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
@@ -45,7 +45,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    companion object : DataModel<SetDefinition<*, *>, PropertyDefinitions<SetDefinition<*, *>>>(
+    companion object : SimpleDataModel<SetDefinition<*, *>, PropertyDefinitions<SetDefinition<*, *>>>(
             properties = object : PropertyDefinitions<SetDefinition<*, *>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)

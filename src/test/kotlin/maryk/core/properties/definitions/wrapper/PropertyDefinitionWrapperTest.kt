@@ -6,6 +6,12 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.test.shouldBe
 import kotlin.test.Test
 
+fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *, *>, original: IsPropertyDefinitionWrapper<*, *, *>) {
+    converted.index shouldBe original.index
+    converted.name shouldBe original.name
+    converted.definition shouldBe original.definition
+}
+
 class PropertyDefinitionWrapperTest {
     private val def = PropertyDefinitionWrapper(
             index = 1,
@@ -16,17 +22,11 @@ class PropertyDefinitionWrapperTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, PropertyDefinitionWrapper, null, ::compare)
+        checkProtoBufConversion(this.def, PropertyDefinitionWrapper, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, PropertyDefinitionWrapper, null, ::compare)
-    }
-
-    private fun compare(converted: PropertyDefinitionWrapper<*, *, *, *>, original: PropertyDefinitionWrapper<*, *, *, *>) {
-        converted.index shouldBe original.index
-        converted.name shouldBe original.name
-        converted.definition shouldBe original.definition
+        checkJsonConversion(this.def, PropertyDefinitionWrapper, null, ::comparePropertyDefinitionWrapper)
     }
 }

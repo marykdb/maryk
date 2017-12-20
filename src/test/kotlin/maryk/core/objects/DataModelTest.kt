@@ -249,7 +249,7 @@ internal class DataModelTest {
                 4 to DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
                 5 to true,
                 6 to Option.V2,
-                13 to SubMarykObject.key.get(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5))
+                13 to TestMarykObject.key.get(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
         )
 
         bc.reserve(
@@ -258,26 +258,27 @@ internal class DataModelTest {
 
         TestMarykObject.writeProtoBuf(map, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a1001050105010501050105010501050105"
+        bc.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501"
     }
 
     @Test
     fun testFromProtoBufConversionWithMap() {
-        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d72280130026a1001050105010501050105010501050105")
+        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
         val map = TestMarykObject.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 
-        map.size shouldBe 7
+        map.size shouldBe 8
         map[0] shouldBe "hay"
         map[1] shouldBe 4
         map[2] shouldBe 32.toUInt32()
         map[3] shouldBe 3.555
+        map[4] shouldBe  DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
         map[5] shouldBe true
         map[6] shouldBe Option.V2
-        (map[13] as Key<*>).bytes.toHex() shouldBe "01050105010501050105010501050105"
+        (map[13] as Key<*>).bytes.toHex() shouldBe "010501050105010501"
     }
 
     @Test

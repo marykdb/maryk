@@ -23,6 +23,7 @@ internal class SubModelDefinitionTest {
             }
         }
         companion object: DataModel<MarykObject, Properties>(
+                name = "MarykObject",
                 properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(

@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.IndexedEnum
@@ -99,7 +99,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    companion object : DataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
+    companion object : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
             properties = object : PropertyDefinitions<EnumDefinition<*>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)

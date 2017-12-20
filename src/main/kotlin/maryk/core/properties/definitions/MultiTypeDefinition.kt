@@ -8,6 +8,7 @@ import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
@@ -150,7 +151,7 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
         def.writeTransportBytesWithKey(2, value.value, cacheGetter, writer, context)
     }
 
-    companion object : DataModel<MultiTypeDefinition<*>, PropertyDefinitions<MultiTypeDefinition<*>>>(
+    companion object : SimpleDataModel<MultiTypeDefinition<*>, PropertyDefinitions<MultiTypeDefinition<*>>>(
             properties = object : PropertyDefinitions<MultiTypeDefinition<*>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*>::indexed)

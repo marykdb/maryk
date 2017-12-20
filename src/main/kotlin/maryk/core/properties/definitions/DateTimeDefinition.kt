@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.DataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
@@ -56,7 +57,7 @@ data class DateTimeDefinition(
 
     override fun fromString(string: String) = DateTime.parse(string)
 
-    companion object : DataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>>(
+    companion object : SimpleDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>>(
             properties = object : PropertyDefinitions<DateTimeDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, DateTimeDefinition::indexed)

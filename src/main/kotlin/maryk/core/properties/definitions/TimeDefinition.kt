@@ -57,7 +57,7 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = Time.parse(string)
 
-    companion object : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
+    object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
             properties = object : PropertyDefinitions<TimeDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)

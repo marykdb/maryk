@@ -43,7 +43,7 @@ data class BooleanDefinition(
         )
     }
 
-    companion object : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
+    object Model : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
             properties = object : PropertyDefinitions<BooleanDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)

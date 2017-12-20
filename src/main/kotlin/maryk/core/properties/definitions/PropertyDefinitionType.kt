@@ -33,24 +33,24 @@ enum class PropertyDefinitionType(
 }
 
 
-val a  = SubModelDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition })
+val a  = SubModelDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model })
 
 internal val mapOfPropertyDefSubModelDefinitions = mapOf(
-        PropertyDefinitionType.Boolean.index to SubModelDefinition(dataModel = { BooleanDefinition }),
-        PropertyDefinitionType.Date.index to SubModelDefinition(dataModel = { DateDefinition }),
-        PropertyDefinitionType.DateTime.index to SubModelDefinition(dataModel = { DateTimeDefinition }),
-        PropertyDefinitionType.Enum.index to SubModelDefinition<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, AbstractDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>(dataModel = { EnumDefinition }),
-        PropertyDefinitionType.FixedBytes.index to SubModelDefinition(dataModel = { FixedBytesDefinition }),
-        PropertyDefinitionType.FlexBytes.index to SubModelDefinition(dataModel = { FlexBytesDefinition }),
-        PropertyDefinitionType.List.index to SubModelDefinition(dataModel = { ListDefinition }),
-        PropertyDefinitionType.Map.index to SubModelDefinition(dataModel = { MapDefinition }),
-        PropertyDefinitionType.MultiType.index to SubModelDefinition(dataModel = { MultiTypeDefinition }),
-        PropertyDefinitionType.Number.index to SubModelDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition }),
+        PropertyDefinitionType.Boolean.index to SubModelDefinition(dataModel = { BooleanDefinition.Model }),
+        PropertyDefinitionType.Date.index to SubModelDefinition(dataModel = { DateDefinition.Model }),
+        PropertyDefinitionType.DateTime.index to SubModelDefinition(dataModel = { DateTimeDefinition.Model }),
+        PropertyDefinitionType.Enum.index to SubModelDefinition<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, AbstractDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>(dataModel = { EnumDefinition.Model }),
+        PropertyDefinitionType.FixedBytes.index to SubModelDefinition(dataModel = { FixedBytesDefinition.Model }),
+        PropertyDefinitionType.FlexBytes.index to SubModelDefinition(dataModel = { FlexBytesDefinition.Model }),
+        PropertyDefinitionType.List.index to SubModelDefinition(dataModel = { ListDefinition.Model }),
+        PropertyDefinitionType.Map.index to SubModelDefinition(dataModel = { MapDefinition.Model }),
+        PropertyDefinitionType.MultiType.index to SubModelDefinition(dataModel = { MultiTypeDefinition.Model }),
+        PropertyDefinitionType.Number.index to SubModelDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
 //        PropertyDefinitionType.Reference.index to SubModelDefinition(dataModel = { ReferenceDefinition }),
-        PropertyDefinitionType.Set.index to SubModelDefinition(dataModel = { SetDefinition }),
-        PropertyDefinitionType.String.index to SubModelDefinition(dataModel = { StringDefinition }),
-//        PropertyDefinitionType.SubModel.index to SubModelDefinition(dataModel = { SubModelDefinition }),
-        PropertyDefinitionType.Time.index to SubModelDefinition(dataModel = { TimeDefinition })
+        PropertyDefinitionType.Set.index to SubModelDefinition(dataModel = { SetDefinition.Model }),
+        PropertyDefinitionType.String.index to SubModelDefinition(dataModel = { StringDefinition.Model }),
+        PropertyDefinitionType.SubModel.index to SubModelDefinition(dataModel = { SubModelDefinition.Model }),
+        PropertyDefinitionType.Time.index to SubModelDefinition(dataModel = { TimeDefinition.Model })
 //        PropertyDefinitionType.ValueModel.index to SubModelDefinition(dataModel = { ValueModelDefinition })
 )
 

@@ -73,13 +73,13 @@ internal class FixedBytesDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, FixedBytesDefinition)
-        checkProtoBufConversion(this.defMaxDefined, FixedBytesDefinition)
+        checkProtoBufConversion(this.def, FixedBytesDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, FixedBytesDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, FixedBytesDefinition)
-        checkJsonConversion(this.defMaxDefined, FixedBytesDefinition)
+        checkJsonConversion(this.def, FixedBytesDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, FixedBytesDefinition.Model)
     }
 }

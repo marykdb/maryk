@@ -99,7 +99,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    companion object : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
+    object Model : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
             properties = object : PropertyDefinitions<EnumDefinition<*>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)

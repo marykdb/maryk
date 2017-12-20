@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
 import maryk.core.properties.ByteCollector
@@ -7,6 +9,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -73,5 +76,15 @@ internal class SubModelDefinitionTest {
                 ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
                 bc::read
         ) shouldBe value
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, SubModelDefinition.Model, DataModelContext())
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, SubModelDefinition.Model, DataModelContext())
     }
 }

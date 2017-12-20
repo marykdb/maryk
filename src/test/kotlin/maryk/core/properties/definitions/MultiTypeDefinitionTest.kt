@@ -80,13 +80,13 @@ internal class MultiTypeDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, MultiTypeDefinition)
-        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition)
+        checkProtoBufConversion(this.def, MultiTypeDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, MultiTypeDefinition)
-        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition)
+        checkJsonConversion(this.def, MultiTypeDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model)
     }
 }

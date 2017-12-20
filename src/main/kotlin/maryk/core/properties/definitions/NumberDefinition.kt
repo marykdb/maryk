@@ -65,7 +65,7 @@ data class NumberDefinition<T: Comparable<T>>(
         else -> super.writeJsonValue(value, writer, context)
     }
 
-    companion object : ContextualDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
+    object Model : ContextualDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
             contextTransformer = { NumericContext },
             properties = object : PropertyDefinitions<NumberDefinition<*>>() {
                 init {

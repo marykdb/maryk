@@ -4,11 +4,15 @@ import maryk.Option
 import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.TestValueObject
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -19,6 +23,7 @@ import maryk.core.properties.types.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -373,5 +378,25 @@ internal class DataModelTest {
             output = ""
         }
     }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(SubMarykObject, DataModel, DataModelContext(),  ::compareDataModels)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(SubMarykObject, DataModel, DataModelContext(), ::compareDataModels)
+    }
+
+    private fun compareDataModels(converted: DataModel<*, *>, original: DataModel<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        (converted.properties as PropertyDefinitions<Any>)
+                .zip(original.properties as PropertyDefinitions<Any>)
+                .forEach { (convertedWrapper, originalWrapper) ->
+                    comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
+                }
+    }
+
 }
 

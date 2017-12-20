@@ -122,13 +122,13 @@ internal class TimeDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, TimeDefinition)
-        checkProtoBufConversion(this.defMaxDefined, TimeDefinition)
+        checkProtoBufConversion(this.def, TimeDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, TimeDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, TimeDefinition)
-        checkJsonConversion(this.defMaxDefined, TimeDefinition)
+        checkJsonConversion(this.def, TimeDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, TimeDefinition.Model)
     }
 }

@@ -72,13 +72,13 @@ internal class BooleanDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, BooleanDefinition)
-        checkProtoBufConversion(this.defMaxDefined, BooleanDefinition)
+        checkProtoBufConversion(this.def, BooleanDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, BooleanDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, BooleanDefinition)
-        checkJsonConversion(this.defMaxDefined, BooleanDefinition)
+        checkJsonConversion(this.def, BooleanDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, BooleanDefinition.Model)
     }
 }

@@ -93,14 +93,14 @@ internal class EnumDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, EnumDefinition, null, ::compare)
-        checkProtoBufConversion(this.defMaxDefined, EnumDefinition, null, ::compare)
+        checkProtoBufConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkProtoBufConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, EnumDefinition, null, ::compare)
-        checkJsonConversion(this.defMaxDefined, EnumDefinition, null, ::compare)
+        checkJsonConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkJsonConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
     }
 }
 

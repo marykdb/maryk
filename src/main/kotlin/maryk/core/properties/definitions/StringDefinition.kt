@@ -71,7 +71,7 @@ data class StringDefinition(
         }
     }
 
-    companion object : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
+    object Model : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
             properties = object : PropertyDefinitions<StringDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)

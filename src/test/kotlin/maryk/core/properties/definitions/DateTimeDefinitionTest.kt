@@ -118,13 +118,13 @@ internal class DateTimeDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, DateTimeDefinition)
-        checkProtoBufConversion(this.defMaxDefined, DateTimeDefinition)
+        checkProtoBufConversion(this.def, DateTimeDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, DateTimeDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, DateTimeDefinition)
-        checkJsonConversion(this.defMaxDefined, DateTimeDefinition)
+        checkJsonConversion(this.def, DateTimeDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, DateTimeDefinition.Model)
     }
 }

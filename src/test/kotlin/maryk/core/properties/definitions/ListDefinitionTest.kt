@@ -210,13 +210,13 @@ internal class ListDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, ListDefinition)
-        checkProtoBufConversion(this.defMaxDefined, ListDefinition)
+        checkProtoBufConversion(this.def, ListDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, ListDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, ListDefinition)
-        checkJsonConversion(this.defMaxDefined, ListDefinition)
+        checkJsonConversion(this.def, ListDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, ListDefinition.Model)
     }
 }

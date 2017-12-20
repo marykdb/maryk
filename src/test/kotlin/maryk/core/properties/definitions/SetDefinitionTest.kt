@@ -127,13 +127,13 @@ internal class SetDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, SetDefinition)
-        checkProtoBufConversion(this.defMaxDefined, SetDefinition)
+        checkProtoBufConversion(this.def, SetDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, SetDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, SetDefinition)
-        checkJsonConversion(this.defMaxDefined, SetDefinition)
+        checkJsonConversion(this.def, SetDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, SetDefinition.Model)
     }
 }

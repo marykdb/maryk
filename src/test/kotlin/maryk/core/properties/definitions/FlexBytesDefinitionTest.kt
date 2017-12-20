@@ -85,13 +85,13 @@ internal class FlexBytesDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, FlexBytesDefinition)
-        checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition)
+        checkProtoBufConversion(this.def, FlexBytesDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, FlexBytesDefinition)
-        checkJsonConversion(this.defMaxDefined, FlexBytesDefinition)
+        checkJsonConversion(this.def, FlexBytesDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }
 }

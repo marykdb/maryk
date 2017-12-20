@@ -157,13 +157,13 @@ internal class MapDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, MapDefinition)
-        checkProtoBufConversion(this.defMaxDefined, MapDefinition)
+        checkProtoBufConversion(this.def, MapDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, MapDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, MapDefinition)
-        checkJsonConversion(this.defMaxDefined, MapDefinition)
+        checkJsonConversion(this.def, MapDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, MapDefinition.Model)
     }
 }

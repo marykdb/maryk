@@ -108,12 +108,12 @@ internal class StringDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, StringDefinition)
+        checkProtoBufConversion(this.def, StringDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, StringDefinition)
+        checkJsonConversion(this.def, StringDefinition.Model)
     }
 }
 

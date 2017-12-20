@@ -47,7 +47,7 @@ data class DateDefinition(
 
     override fun fromString(string: String) = Date.parse(string)
 
-    companion object : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
+    object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
             properties = object : PropertyDefinitions<DateDefinition>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)

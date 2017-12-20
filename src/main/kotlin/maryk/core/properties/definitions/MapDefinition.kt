@@ -5,7 +5,6 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
-import maryk.core.objects.DataModel
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -183,7 +182,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return Pair(key, value)
     }
 
-    companion object : SimpleDataModel<MapDefinition<*, *, *>, PropertyDefinitions<MapDefinition<*, *, *>>>(
+    object Model : SimpleDataModel<MapDefinition<*, *, *>, PropertyDefinitions<MapDefinition<*, *, *>>>(
             properties = object : PropertyDefinitions<MapDefinition<*, *, *>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)

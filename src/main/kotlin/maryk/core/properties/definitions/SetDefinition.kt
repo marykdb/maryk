@@ -45,7 +45,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    companion object : SimpleDataModel<SetDefinition<*, *>, PropertyDefinitions<SetDefinition<*, *>>>(
+    object Model : SimpleDataModel<SetDefinition<*, *>, PropertyDefinitions<SetDefinition<*, *>>>(
             properties = object : PropertyDefinitions<SetDefinition<*, *>>() {
                 init {
                     IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)

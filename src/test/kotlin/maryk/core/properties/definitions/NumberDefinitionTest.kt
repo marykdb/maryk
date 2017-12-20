@@ -130,13 +130,13 @@ internal class NumberDefinitionTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, NumberDefinition)
-        checkProtoBufConversion(this.defMaxDefined, NumberDefinition)
+        checkProtoBufConversion(this.def, NumberDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, NumberDefinition.Model)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, NumberDefinition)
-        checkJsonConversion(this.defMaxDefined, NumberDefinition)
+        checkJsonConversion(this.def, NumberDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, NumberDefinition.Model)
     }
 }

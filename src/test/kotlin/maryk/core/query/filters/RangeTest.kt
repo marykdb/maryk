@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class RangeTest {
     private val range = Range(
-            reference = SubMarykObject.ref { value },
+            reference = SimpleMarykObject.ref { value },
             from = "test",
             to = "test999",
             inclusiveFrom = true,
@@ -20,9 +20,9 @@ class RangeTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(
-                    SubMarykObject.name to SubMarykObject
+                    SimpleMarykObject.name to SimpleMarykObject
             ),
-            dataModel = SubMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

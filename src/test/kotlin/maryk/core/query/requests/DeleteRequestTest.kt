@@ -1,24 +1,24 @@
 package maryk.core.query.requests
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class DeleteRequestTest {
-    private val key1 = SubMarykObject.key.getKey(SubMarykObject("test1"))
-    private val key2 = SubMarykObject.key.getKey(SubMarykObject("test2"))
+    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
+    private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
 
     private val deleteRequest = DeleteRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             key1,
             key2,
             hardDelete = true
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

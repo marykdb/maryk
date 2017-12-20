@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.types.toUInt64
@@ -11,24 +11,24 @@ import maryk.core.query.changes.PropertyDelete
 import kotlin.test.Test
 
 class ObjectChangesResponseTest {
-    private val value = SubMarykObject(value = "haha1")
+    private val value = SimpleMarykObject(value = "haha1")
 
-    private val key = SubMarykObject.key.getKey(this.value)
+    private val key = SimpleMarykObject.key.getKey(this.value)
 
     private val objectChangesResponse = ObjectChangesResponse(
-            SubMarykObject,
+            SimpleMarykObject,
             listOf(
                     DataObjectChange(
                             key,
-                            PropertyChange(SubMarykObject.ref { value }, "hoho"),
-                            PropertyDelete(SubMarykObject.ref { value }),
+                            PropertyChange(SimpleMarykObject.ref { value }, "hoho"),
+                            PropertyDelete(SimpleMarykObject.ref { value }),
                             lastVersion = 14141L.toUInt64()
                     )
             )
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

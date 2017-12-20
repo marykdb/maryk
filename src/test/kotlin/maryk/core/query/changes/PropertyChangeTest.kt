@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
@@ -11,7 +11,7 @@ import kotlin.test.Test
 
 class PropertyChangeTest {
     private val valueChange = PropertyChange(
-            reference = SubMarykObject.ref { value },
+            reference = SimpleMarykObject.ref { value },
             newValue = "test",
             valueToCompare = "old"
     )
@@ -19,14 +19,14 @@ class PropertyChangeTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(
-                    SubMarykObject.name to SubMarykObject
+                    SimpleMarykObject.name to SimpleMarykObject
             ),
-            dataModel = SubMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
     fun testValueChange() {
-        valueChange.reference shouldBe SubMarykObject.ref { value }
+        valueChange.reference shouldBe SimpleMarykObject.ref { value }
         valueChange.newValue shouldBe "test"
     }
 

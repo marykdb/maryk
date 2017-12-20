@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.query.DataModelPropertyContext
@@ -9,23 +9,23 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ChangeRequestTest {
-    private val key1 = SubMarykObject.key.getKey(SubMarykObject("test1"))
-    private val key2 = SubMarykObject.key.getKey(SubMarykObject("test2"))
+    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
+    private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
 
     private val changeRequest = ChangeRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             DataObjectChange(key1),
             DataObjectChange(key2)
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test
     fun testChangeRequest(){
         changeRequest.objectChanges.size shouldBe 2
-        changeRequest.dataModel shouldBe SubMarykObject
+        changeRequest.dataModel shouldBe SimpleMarykObject
     }
 
     @Test

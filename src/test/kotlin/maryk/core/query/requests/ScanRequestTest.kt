@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.SimpleMarykObject
 import maryk.SubMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -11,15 +12,15 @@ import maryk.core.query.filters.Exists
 import kotlin.test.Test
 
 class ScanRequestTest {
-    private val key1 = SubMarykObject.key.getKey(SubMarykObject("test1"))
+    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
 
     private val scanRequest = ScanRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             startKey = key1
     )
 
     private val scanMaxRequest = ScanRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             startKey = key1,
             filter = Exists(SubMarykObject.ref { value }),
             order = Order(SubMarykObject.ref { value }),
@@ -29,7 +30,7 @@ class ScanRequestTest {
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

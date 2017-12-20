@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
@@ -11,8 +11,8 @@ import kotlin.test.Test
 
 class ContextualSubModelDefinitionTest {
     private val subModelsToTest = listOf(
-            SubMarykObject("test1"),
-            SubMarykObject("test2")
+            SimpleMarykObject("test1"),
+            SimpleMarykObject("test2")
     )
 
     private val def = ContextualSubModelDefinition<DataModelPropertyContext>(
@@ -22,9 +22,9 @@ class ContextualSubModelDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(
-                    SubMarykObject.name to SubMarykObject
+                    SimpleMarykObject.name to SimpleMarykObject
             ),
-            dataModel = SubMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

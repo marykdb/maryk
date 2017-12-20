@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.types.toUInt64
@@ -9,12 +9,12 @@ import maryk.core.query.DataObjectWithMetaData
 import kotlin.test.Test
 
 class ObjectsResponseTest {
-    private val value = SubMarykObject(value = "haha1")
+    private val value = SimpleMarykObject(value = "haha1")
 
-    private val key = SubMarykObject.key.getKey(this.value)
+    private val key = SimpleMarykObject.key.getKey(this.value)
 
     private val objectsResponse = ObjectsResponse(
-            SubMarykObject,
+            SimpleMarykObject,
             listOf(
                     DataObjectWithMetaData(
                             key = key,
@@ -27,7 +27,7 @@ class ObjectsResponseTest {
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

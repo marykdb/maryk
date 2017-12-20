@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class OrTest {
     private val or = Or(
-            Exists(SubMarykObject.ref { value }),
-            Equals(SubMarykObject.ref { value }, "hoi")
+            Exists(SimpleMarykObject.ref { value }),
+            Equals(SimpleMarykObject.ref { value }, "hoi")
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(
-                    SubMarykObject.name to SubMarykObject
+                    SimpleMarykObject.name to SimpleMarykObject
             ),
-            dataModel = SubMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

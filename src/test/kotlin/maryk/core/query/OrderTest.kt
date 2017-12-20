@@ -1,6 +1,6 @@
 package maryk.core.query
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
@@ -10,22 +10,22 @@ import kotlin.test.Test
 
 class OrderTest {
     private val order = Order(
-            SubMarykObject.ref { value },
+            SimpleMarykObject.ref { value },
             Direction.ASC
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(
-                    SubMarykObject.name to SubMarykObject
+                    SimpleMarykObject.name to SimpleMarykObject
             ),
-            dataModel = SubMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
     fun testOrder() {
         this.order.direction shouldBe Direction.ASC
-        this.order.propertyReference shouldBe SubMarykObject.ref { value }
+        this.order.propertyReference shouldBe SimpleMarykObject.ref { value }
     }
 
     @Test

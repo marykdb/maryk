@@ -381,12 +381,12 @@ internal class DataModelTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(SubMarykObject, DataModel, DataModelContext(),  ::compareDataModels)
+        checkProtoBufConversion(SubMarykObject, DataModel.Model, DataModelContext(),  ::compareDataModels)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(SubMarykObject, DataModel, DataModelContext(), ::compareDataModels)
+        checkJsonConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
     }
 
     private fun compareDataModels(converted: DataModel<*, *>, original: DataModel<*, *>) {

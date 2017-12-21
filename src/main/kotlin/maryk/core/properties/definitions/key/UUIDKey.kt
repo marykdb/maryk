@@ -3,8 +3,10 @@ package maryk.core.properties.definitions.key
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.generateUUID
+import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.IsFixedBytesProperty
+import maryk.core.properties.definitions.PropertyDefinitions
 
 object UUIDKey: IsFixedBytesProperty<Pair<Long, Long>> {
     override val byteSize = 16
@@ -19,5 +21,11 @@ object UUIDKey: IsFixedBytesProperty<Pair<Long, Long>> {
     override fun writeStorageBytes(value: Pair<Long, Long>, writer: (byte: Byte) -> Unit) {
         value.first.writeBytes(writer)
         value.second.writeBytes(writer)
+    }
+
+    object Model : DefinitionDataModel<UUIDKey>(
+            properties = object : PropertyDefinitions<UUIDKey>() {}
+    ) {
+        override fun invoke(map: Map<Int, *>) = UUIDKey
     }
 }

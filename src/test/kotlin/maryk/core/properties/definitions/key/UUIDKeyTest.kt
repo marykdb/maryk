@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.key
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -47,5 +49,15 @@ internal class UUIDKeyTest {
         specificDef.writeStorageBytes(uuid, bc::write)
 
         bc.bytes!! contentEquals key.bytes shouldBe true
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(UUIDKey, UUIDKey.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(UUIDKey, UUIDKey.Model)
     }
 }

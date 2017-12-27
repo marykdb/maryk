@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.DataModelPropertyContext
 
 /** Contains changes for a specific DataObject by key

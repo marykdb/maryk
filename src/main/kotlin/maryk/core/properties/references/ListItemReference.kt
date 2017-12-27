@@ -13,7 +13,7 @@ import maryk.core.protobuf.WriteCacheWriter
 /** Reference to a List Item by index
  * @param index           index of property reference
  * @param parentReference reference to parent
- * @param <T> value type
+ * @param T value type
  */
 class ListItemReference<T: Any, CX: IsPropertyContext> (
         val index: Int,

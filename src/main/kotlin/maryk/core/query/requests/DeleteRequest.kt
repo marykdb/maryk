@@ -9,11 +9,8 @@ import maryk.core.properties.definitions.contextual.ContextualReferenceDefinitio
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
 
-/** A Request to delete DataObjects for specific DataModel
- * @param dataModel Root model of data to remove objects from
- * @param objectsToDelete Array of object keys to delete object for
- * @param hardDelete false means data will still exist but be not requestable
- * and true will mean the data will be totally deleted
+/** A Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
+ * not possible to request from server.
  */
 data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,

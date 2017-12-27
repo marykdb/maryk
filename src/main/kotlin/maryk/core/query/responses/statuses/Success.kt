@@ -3,7 +3,7 @@ package maryk.core.query.responses.statuses
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 
 /** Action was completed successfully
  * @param version of the persisted changes

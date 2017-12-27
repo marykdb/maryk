@@ -13,7 +13,7 @@ internal fun Int.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
     (0 until length).forEach {
         val b = (this shr (length-1-it) * 8 and 0xFF).toByte()
         writer(
-                if(it == 0) b xor SIGNBYTE else b
+                if(it == 0) b xor SIGN_BYTE else b
         )
     }
 }
@@ -27,7 +27,7 @@ internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
     val firstByte = reader()
     // Skip bytes if below certain length
     if (length < 4) {
-        val negative = firstByte and SIGNBYTE != SIGNBYTE
+        val negative = firstByte and SIGN_BYTE != SIGN_BYTE
         (0 until 8 - length).forEach {
             if (negative) { // Set to max byte to have correct value if negative
                 int = int xor 0xFF
@@ -35,7 +35,7 @@ internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
             int = int shl 8
         }
     }
-    int = int xor ((firstByte xor SIGNBYTE).toInt() and 0xFF)
+    int = int xor ((firstByte xor SIGN_BYTE).toInt() and 0xFF)
     (1 until length).forEach {
         int = int shl 8
         int = int xor (reader().toInt() and 0xFF)

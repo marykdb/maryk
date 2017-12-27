@@ -113,19 +113,16 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     }
 
     override fun readJson(reader: JsonReader, context: CX?): Map<K, V> {
-        if (reader.currentToken !is JsonToken.START_OBJECT) {
+        if (reader.currentToken !is JsonToken.StartObject) {
             throw ParseException("JSON value should be an Object")
         }
         val map: MutableMap<K, V> = mutableMapOf()
 
-        while (reader.nextToken() !is JsonToken.END_OBJECT) {
+        while (reader.nextToken() !is JsonToken.EndObject) {
             val key = keyDefinition.fromString(reader.lastValue)
             reader.nextToken()
 
-            map.put(
-                    key,
-                    valueDefinition.readJson(reader, context)
-            )
+            map[key] = valueDefinition.readJson(reader, context)
         }
         return map
     }

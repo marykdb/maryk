@@ -7,7 +7,7 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class TimeTest {
-    fun cleanToSeconds(time: Time) = Time(time.hour, time.minute, time.second)
+    private fun cleanToSeconds(time: Time) = Time(time.hour, time.minute, time.second)
 
     private val timesWithSecondsToTest = arrayOf(
             cleanToSeconds(Time.nowUTC()),

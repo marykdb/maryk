@@ -8,5 +8,4 @@ import maryk.core.properties.IsPropertyContext
  * @param <T> Type of objects contained
  */
 interface IsSubDefinition<T: Any, in CX: IsPropertyContext>
-    : IsSerializablePropertyDefinition<T, CX>, IsByteTransportableValue<T, CX> {
-}
+    : IsSerializablePropertyDefinition<T, CX>, IsByteTransportableValue<T, CX>

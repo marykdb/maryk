@@ -5,9 +5,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 
-/** Reverses the boolean check for given filter
- * @param filter to check against
- */
+/** Reverses the boolean check for given [filter] */
 data class Not(
         val filter: IsFilter
 ) : IsFilter {

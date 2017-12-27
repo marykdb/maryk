@@ -7,10 +7,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
-/** Compares given regular expression against referenced property
- * @param reference to property to compare against
- * @param value the regex which the compared property should start with
- */
+/** Compares given regular expression [regEx] against referenced property [reference] */
 data class RegEx(
         override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
         val regEx: String

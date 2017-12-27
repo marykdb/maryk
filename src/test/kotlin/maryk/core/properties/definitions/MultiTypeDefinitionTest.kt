@@ -41,7 +41,7 @@ internal class MultiTypeDefinitionTest {
             )
     )
 
-    val multisToTest = arrayOf(
+    private val multisToTest = arrayOf(
             TypedValue(0, "#test"),
             TypedValue(1, 400)
     )

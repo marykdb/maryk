@@ -7,9 +7,8 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
-/** Value change for a property
+/** Value check for a property
  * @param reference to property affected by the change
- * @param newValue the value in which property is/was changed
  * @param valueToCompare (optional) if set the current value is checked against this value.
  * Operation will only complete if they both are equal
  * @param T: type of value to be operated on

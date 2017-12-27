@@ -11,11 +11,11 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 
+/** A collection of Property Definitions which can be used to model a DataModel */
 abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> {
-    override fun iterator() = __allProperties.iterator()
+    override fun iterator() = _allProperties.iterator()
 
-    @Suppress("PropertyName")
-    internal val __allProperties = mutableListOf<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
+    private val _allProperties = mutableListOf<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
 
     private val indexToDefinition = mutableMapOf<Int, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
     private val nameToDefinition = mutableMapOf<String, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
@@ -33,7 +33,7 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
     /** Add a single property definition wrapper */
     internal fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DO>) {
         @Suppress("UNCHECKED_CAST")
-        __allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>)
+        _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>)
 
         require(propertyDefinitionWrapper.index in (0..Short.MAX_VALUE), { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" })
         require(indexToDefinition[propertyDefinitionWrapper.index] == null, { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" })

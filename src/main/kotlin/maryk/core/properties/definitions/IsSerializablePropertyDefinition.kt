@@ -35,7 +35,7 @@ interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : I
      */
     fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX? = null) : Int
 
-    /** Convert a value to bytes for transportation and adds the key with tag and wiretype
+    /** Convert a value to bytes for transportation and adds the key with tag and wire type
      * @param index to write this value for
      * @param value to write
      * @param cacheGetter to fetch next cached item

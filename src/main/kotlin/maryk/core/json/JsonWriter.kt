@@ -1,6 +1,6 @@
 package maryk.core.json
 
-/** Describes JSON elements that can be writen */
+/** Describes JSON elements that can be written */
 private enum class JsonType {
     START, START_OBJ, END_OBJ, FIELD_NAME, OBJ_VALUE, START_ARRAY, END_ARRAY, ARRAY_VALUE
 }

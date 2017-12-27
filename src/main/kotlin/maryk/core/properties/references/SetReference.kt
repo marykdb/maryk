@@ -5,11 +5,7 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 
-/**
- * Reference to a set
- * @param <T> Type of reference
- * @param <CX> Context of reference
- */
+/** Reference to a Set property of type [T] and context [CX] */
 open class SetReference<T: Any, CX: IsPropertyContext> (
         propertyDefinition: SetPropertyDefinitionWrapper<T, CX, *>,
         parentReference: CanHaveComplexChildReference<*, *, *>?

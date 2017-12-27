@@ -66,12 +66,12 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
     }
 
     override fun readJson(reader: JsonReader, context: CX?): C {
-        if (reader.currentToken !is JsonToken.START_ARRAY) {
+        if (reader.currentToken !is JsonToken.StartArray) {
             throw ParseException("JSON value should be an Array")
         }
         val collection: MutableCollection<T> = newMutableCollection(context)
 
-        while (reader.nextToken() !is JsonToken.END_ARRAY) {
+        while (reader.nextToken() !is JsonToken.EndArray) {
             collection.add(
                     valueDefinition.readJson(reader, context)
             )

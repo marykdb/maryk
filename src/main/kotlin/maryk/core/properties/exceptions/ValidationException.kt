@@ -9,9 +9,7 @@ import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
-/**
- * Validation Exception for properties
- */
+/** Validation Exception for properties */
 abstract class ValidationException(
         newMessage: String
 ) : Throwable(

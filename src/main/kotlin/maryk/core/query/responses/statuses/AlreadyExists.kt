@@ -4,9 +4,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 
-/** Given object already exists
- * @param key of already existing object
- */
+/** Given object with [key] already exists */
 data class AlreadyExists<DO: Any>(
         val key: Key<DO>
 ) : IsAddResponseStatus<DO> {

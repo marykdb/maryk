@@ -9,9 +9,7 @@ import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
-/** Property Check
- * @param T: type of value to be operated on
- */
+/** Check of property of type [T] */
 interface IsPropertyCheck<T: Any> : IsFilter {
     val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>
 

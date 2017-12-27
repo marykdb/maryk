@@ -17,17 +17,11 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /** Wraps a Property Definition to give it more context about DataObject which contains this Definition.
- * @param index: of definition to encode into protobuf
- * @param name: of definition to display in human readable format
- * @param definition: to be wrapped for DataObject
- * @param getter: to get property value on a DataObject
- *
  * @param T: value type of property
  * @param CX: Context type for property
  * @param DO: Type of DataObject which contains this property
  */
-interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO>
-    : IsSerializablePropertyDefinition<T, CX> {
+interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : IsSerializablePropertyDefinition<T, CX> {
     val index: Int
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
@@ -53,16 +47,16 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO>
 
     /** Calculates the needed bytes to transport the value
      * @param value to get length of
-     * @param lengthCacher to cache calculated lengths. Ordered so it can be read back in the same order
+     * @param cacher to cache calculated lengths. Ordered so it can be read back in the same order
      * @param context with possible context values for Dynamic property writers
      * @return the total length
      */
     fun calculateTransportByteLengthWithKey(value: T, cacher: WriteCacheWriter, context: CX? = null)
             = this.calculateTransportByteLengthWithKey(this.index, value, cacher, context)
 
-    /** Convert a value to bytes for transportation and adds the key with tag and wiretype
+    /** Convert a value to bytes for transportation and adds the key with tag and wire type
      * @param value to write
-     * @param lengthCacheGetter to fetch next cached length
+     * @param cacheGetter to fetch next cached length
      * @param writer to write bytes to
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */

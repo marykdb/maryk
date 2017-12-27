@@ -75,7 +75,7 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
     }
 
     override fun readJson(reader: JsonReader, context: CX?): T {
-        if (reader.currentToken !is JsonToken.OBJECT_VALUE && reader.currentToken !is JsonToken.ARRAY_VALUE) {
+        if (reader.currentToken !is JsonToken.ObjectValue && reader.currentToken !is JsonToken.ArrayValue) {
             throw ParseException("JSON value should be a simple value")
         }
         return this.fromString(reader.lastValue, context)

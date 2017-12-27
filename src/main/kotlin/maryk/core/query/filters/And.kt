@@ -6,9 +6,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 
-/** Does an AND comparison against given filters. Only if all given filters return true will the entire result be true.
- * @param filters to check against with and
- */
+/** Does an AND comparison against given [filters]. Only if all given filters return true will the entire result be true. */
 data class And(
         val filters: List<IsFilter>
 ) : IsFilter {

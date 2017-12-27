@@ -1,4 +1,4 @@
-package maryk.core.properties.types
+package maryk.core.properties.types.numeric
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLong
@@ -9,9 +9,6 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.random
 import maryk.core.extensions.toHex
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.types.numeric.NumberType
-import maryk.core.properties.types.numeric.UInt
-import maryk.core.properties.types.numeric.UnsignedNumberDescriptor
 
 /** Base class for 64 bit/8 byte unsigned integers */
 class UInt64 internal constructor(number: Long): UInt<Long>(number) {

@@ -5,15 +5,11 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 
-/** A Request to get DataObject changes by key for specific DataModel
- * @param dataModel Root model of data to retrieve objects from
- * @param keys Array of keys to retrieve object of
- * @param fromVersion the version to start getting objects of (Inclusive)
- */
+/** A Request to get changes on [dataModel] by [keys]. It will only get changes after [fromVersion] */
 data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         override val keys: List<Key<DO>>,

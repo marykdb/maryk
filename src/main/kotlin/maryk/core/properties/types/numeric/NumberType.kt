@@ -1,7 +1,6 @@
 package maryk.core.properties.types.numeric
 
 import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.UInt64
 
 enum class NumberType(
         override val index: Int,

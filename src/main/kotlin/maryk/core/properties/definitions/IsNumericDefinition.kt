@@ -5,7 +5,7 @@ import maryk.core.properties.IsPropertyContext
 /**
  * Property Definition to define numeric properties.
  *
- * Implements methods usefull for numeric definitions
+ * Implements methods useful for numeric definitions
  * @param <T> Type of comparable properties contain
  */
 interface IsNumericDefinition<T: Comparable<T>> : IsComparableDefinition<T, IsPropertyContext> {

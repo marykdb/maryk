@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor

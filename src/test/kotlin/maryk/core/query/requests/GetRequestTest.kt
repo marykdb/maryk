@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.properties.types.toUInt64
+import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.Order
 import maryk.core.query.filters.Exists

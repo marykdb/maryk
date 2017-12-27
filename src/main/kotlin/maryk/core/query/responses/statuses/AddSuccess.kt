@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
 

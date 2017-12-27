@@ -14,7 +14,7 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>> {
     val propertyDefinition: D
 
     /** Calculate the transport length of encoding this reference
-     * @param lengthCacher to cache length with
+     * @param cacher to cache length with
      * @return size of this reference part
      */
     fun calculateTransportByteLength(cacher: WriteCacheWriter): Int

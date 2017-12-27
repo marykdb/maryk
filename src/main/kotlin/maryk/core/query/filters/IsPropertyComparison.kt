@@ -6,9 +6,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.query.DataModelPropertyContext
 
-/** Property Comparison
- * @param T: type of value to be operated on
- */
+/** Comparison of property of type [T] */
 interface IsPropertyComparison<T: Any>: IsPropertyCheck<T> {
     val value: T
 

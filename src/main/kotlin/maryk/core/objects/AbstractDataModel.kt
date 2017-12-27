@@ -27,12 +27,10 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /**
- * A Data Model for converting and validating DataObjects
- * @param <DO> Type of DataObject which is modeled
- *
- * @param properties: All definitions for properties contained in this model
- * @param DO: Type of DataObject contained
- * @param CX: Type of context object
+ * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for
+ * this Model. [DO] is the type of DataObjects described by this model and [CX] the context to be used on the properties
+ * to read and write. [CXI] is the input Context for properties. This can be different because the DataModel can create
+ * its own context by transforming the given context.
  */
 abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
         override val properties: P
@@ -43,7 +41,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     abstract operator fun invoke(map: Map<Int, *>): DO
 
-    /** For quick notation to fetch property references below submodels
+    /** For quick notation to fetch property references below sub models
      * @param referenceGetter The sub getter to fetch a reference
      * @return a reference to property
      */
@@ -137,11 +135,11 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @return map with all the values
      */
     fun readJson(reader: JsonReader, context: CX? = null): Map<Int, Any> {
-        if (reader.currentToken == JsonToken.START_JSON){
+        if (reader.currentToken == JsonToken.StartJSON){
             reader.nextToken()
         }
 
-        if (reader.currentToken != JsonToken.START_OBJECT) {
+        if (reader.currentToken != JsonToken.StartObject) {
             throw IllegalJsonOperation("Expected object at start of json")
         }
 
@@ -150,7 +148,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         walker@ do {
             val token = reader.currentToken
             when (token) {
-                JsonToken.FIELD_NAME -> {
+                JsonToken.FieldName -> {
                     val definition = properties.getDefinition(reader.lastValue)
                     if (definition == null) {
                         reader.skipUntilNextField()
@@ -164,7 +162,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                 else -> break@walker
             }
             reader.nextToken()
-        } while (token !is JsonToken.STOPPED)
+        } while (token !is JsonToken.Stopped)
 
         return valueMap
     }
@@ -180,7 +178,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param map with values to calculate byte length for
      * @param cacher to cache lengths and contexts
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
-     * @return total bytesize of object
+     * @return total byte size of object
      */
     fun calculateProtoBufLength(map: Map<Int, Any>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
@@ -195,7 +193,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param obj to calculate byte length for
      * @param cacher to cache lengths and contexts
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
-     * @return total bytesize of object
+     * @return total byte size of object
      */
     fun calculateProtoBufLength(obj: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
@@ -206,7 +204,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         return totalByteLength
     }
 
-    /** Write a protobuf from a map with values
+    /** Write a ProtoBuf from a map with values
      * @param map to write
      * @param cacheGetter to get next cached length or context
      * @param writer to write bytes with
@@ -219,7 +217,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         }
     }
 
-    /** Write a protobuf from a DataObject
+    /** Write a ProtoBuf from a DataObject
      * @param obj DataObject to write
      * @param cacheGetter to get next length or context
      * @param writer to write bytes with
@@ -328,7 +326,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                     if (valueMap.contains(key.tag)) {
                         @Suppress("UNCHECKED_CAST")
                         val map = valueMap[key.tag] as MutableMap<Any, Any>
-                        map.put(value.first, value.second)
+                        map[value.first] = value.second
                     } else {
                         valueMap[key.tag] = mutableMapOf(value)
                     }

@@ -6,11 +6,8 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/**
- * Reference to a property
- * @param <T> Type of reference
- * @param <D> Definition of property
- */
+/** Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper
+ * [D] and referred by PropertyReference of type [P]. */
 open class ValuePropertyReference<T: Any, out D : IsPropertyDefinitionWrapper<T, *, *>, out P: IsPropertyReference<*, *>> (
         propertyDefinition: D,
         parentReference: P?
@@ -23,7 +20,7 @@ open class ValuePropertyReference<T: Any, out D : IsPropertyDefinitionWrapper<T,
     } ?: name
 
     /** Calculate the transport length of encoding this reference
-     * @param lengthCacher to cache length with
+     * @param cacher to cache length with
      */
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0

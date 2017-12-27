@@ -15,7 +15,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 
 /** Wraps a map definition to contain the context on how it relates to DataObject
- * @param index: of definition to encode into protobuf
+ * @param index: of definition to encode into ProtoBuf
  * @param name: of definition to display in human readable format
  * @param definition: to be wrapped for DataObject
  * @param getter: to get property value on a DataObject
@@ -41,14 +41,14 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
      * @param key to get reference for
      * @param parentRef (optional) parent reference
      */
-    fun getKeyRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
+    private fun getKeyRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
             = this.definition.getKeyRef(key, this.getRef(parentRef))
 
     /** Get a reference to a specific map value by key
      * @param key to get reference to value for
-     * @param parentRef (optional) fparent reference
+     * @param parentRef (optional) parent reference
      */
-    fun getValueRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
+    private fun getValueRef(key: K, parentRef: IsPropertyReference<*, *>? = null)
             = this.definition.getValueRef(key, this.getRef(parentRef))
 
     /** For quick notation to get a map key reference

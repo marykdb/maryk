@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 
 /** Contains a list of changes that belongs to a version
  * @param version of which changes belong to

@@ -6,7 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor

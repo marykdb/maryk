@@ -2,21 +2,16 @@ package maryk.core.query.filters
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
-/** Checks if reference is within given range
- * @param reference to property to compare against
- * @param from which value the range should start
- * @param to which value the range should reach
- * @param inclusiveFrom if true (default) the from value will be included in the range
- * @param inclusiveTo if true (default) the to value will be included in the range.
- * @param T: type of value to be operated on
+/** Checks if [reference] is within given range of [from] until [to] of type [T].
+ * With [inclusiveFrom] and [inclusiveTo] set to true (default) it will search the range including [from] or [to]
  */
 data class Range<T: Any>(
         override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,

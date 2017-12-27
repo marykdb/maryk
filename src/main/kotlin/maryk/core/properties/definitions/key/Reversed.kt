@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.key
 
-import maryk.core.extensions.bytes.MAXBYTE
+import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import kotlin.experimental.xor
@@ -13,13 +13,13 @@ class Reversed<T: Any>(
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
         definition.writeStorageBytes(value, {
-            writer(MAXBYTE xor it)
+            writer(MAX_BYTE xor it)
         })
     }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): T {
         return definition.readStorageBytes(byteSize, {
-            MAXBYTE xor reader()
+            MAX_BYTE xor reader()
         })
     }
 }

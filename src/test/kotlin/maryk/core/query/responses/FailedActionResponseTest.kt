@@ -7,10 +7,6 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class FailedActionResponseTest {
-    private val value = SimpleMarykObject(value = "haha1")
-
-    private val key = SimpleMarykObject.key.getKey(this.value)
-
     private val failedActionResponse = FailedActionResponse(
             "Something went wrong",
             FailType.CONNECTION

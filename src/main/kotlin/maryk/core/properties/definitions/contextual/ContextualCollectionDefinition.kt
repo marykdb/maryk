@@ -6,7 +6,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter

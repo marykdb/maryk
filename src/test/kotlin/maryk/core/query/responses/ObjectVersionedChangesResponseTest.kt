@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.toUInt64
+import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ListPropertyChange
@@ -20,8 +20,6 @@ import maryk.core.query.changes.VersionedChanges
 import kotlin.test.Test
 
 class ObjectVersionedChangesResponseTest {
-    private val value = SubMarykObject(value = "haha1")
-
     private val key = TestMarykObject.key.get(
             byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )

@@ -5,7 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.types.toUInt64
+import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.statuses.DoesNotExist

@@ -6,11 +6,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
-/** Referenced value should be greater than and not equal given value
- * @param reference to property to compare
- * @param value the value which is checked against
- * @param T: type of value to be operated on
- */
+/** Referenced value [reference] should be greater than and not equal given [value] of type [T] */
 data class GreaterThan<T: Any>(
         override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
         override val value: T

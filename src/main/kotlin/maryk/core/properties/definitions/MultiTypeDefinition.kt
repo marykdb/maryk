@@ -20,9 +20,8 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/**
- * Definition for objects with multiple types
- * @param definitionMap method to get definition
+/** Definition for objects which can be of multiple defined types. The type mapping is defined in the given
+ * [definitionMap].
  */
 data class MultiTypeDefinition<in CX: IsPropertyContext>(
         override val indexed: Boolean = false,
@@ -84,7 +83,7 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
     }
 
     override fun readJson(reader: JsonReader, context: CX?): TypedValue<*> {
-        if(reader.nextToken() !is JsonToken.ARRAY_VALUE) {
+        if(reader.nextToken() !is JsonToken.ArrayValue) {
             throw ParseException("Expected an array value at start")
         }
 
@@ -92,12 +91,12 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
         try {
             index = reader.lastValue.toInt()
         }catch (e: Throwable) {
-            throw ParseException("Invalid multitype index ${reader.lastValue}")
+            throw ParseException("Invalid multi type index ${reader.lastValue}")
         }
         reader.nextToken()
 
         val definition: IsSubDefinition<*, CX>? = this.definitionMap[index]
-                ?: throw ParseException("Unknown multitype index ${reader.lastValue}")
+                ?: throw ParseException("Unknown multi type index ${reader.lastValue}")
 
         val value = definition!!.readJson(reader, context)
 
@@ -113,7 +112,7 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
 
         // Second the data itself
         val key = ProtoBuf.readKey(reader)
-        val def = this.definitionMap[typeIndex] ?: throw ParseException("Unknown multitype index $typeIndex")
+        val def = this.definitionMap[typeIndex] ?: throw ParseException("Unknown multi type index $typeIndex")
 
         val value = def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, reader),

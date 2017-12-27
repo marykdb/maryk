@@ -10,10 +10,7 @@ import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrappe
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
-/** Checks if reference exists in Value set
- * @param reference to property to compare against
- * @param T: type of value to be operated on
- */
+/** Checks if [reference] exists in set with [values] of type [T] */
 data class ValueIn<T: Any>(
         override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
         val values: Set<T>

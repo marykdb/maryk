@@ -15,7 +15,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 
 /** Wrapper for a list definition
- * @param index: of definition to encode into protobuf
+ * @param index: of definition to encode into ProtoBuf
  * @param name: of definition to display in human readable format
  * @param definition: to be wrapped for DataObject
  * @param getter: to get property value on a DataObject

@@ -1,33 +1,31 @@
 package maryk.core.json
 
 sealed class JsonToken(val name: String) {
-    object START_JSON : JsonToken("START_JSON")
-    object START_OBJECT: JsonToken("START_OBJECT")
-    object FIELD_NAME: JsonToken("FIELD_NAME")
-    object OBJECT_SEPARATOR : JsonToken("OBJECT_SEPARATOR")
-    object OBJECT_VALUE : JsonToken("OBJECT_VALUE")
-    object END_OBJECT: JsonToken("END_OBJECT")
-    object START_ARRAY: JsonToken("START_ARRAY")
-    object ARRAY_VALUE : JsonToken("ARRAY_VALUE")
-    object ARRAY_SEPARATOR : JsonToken("ARRAY_SEPARATOR")
-    object END_ARRAY: JsonToken("END_ARRAY")
-    abstract class STOPPED(name: String): JsonToken(name)
-    object END_JSON: STOPPED("END_JSON")
-    class SUSPENDED(val lastToken: JsonToken): STOPPED("Stopped reader")
-    class JSON_EXCEPTION(val e: InvalidJsonContent) : STOPPED("JSON_EXCEPTION")
+    object StartJSON : JsonToken("StartJSON")
+    object StartObject : JsonToken("StartObject")
+    object FieldName : JsonToken("FieldName")
+    object ObjectSeparator : JsonToken("ObjectSeparator")
+    object ObjectValue : JsonToken("ObjectValue")
+    object EndObject : JsonToken("EndObject")
+    object StartArray : JsonToken("StartArray")
+    object ArrayValue : JsonToken("ArrayValue")
+    object ArraySeparator : JsonToken("ArraySeparator")
+    object EndArray : JsonToken("EndArray")
+    abstract class Stopped(name: String): JsonToken(name)
+    object EndJSON : Stopped("EndJSON")
+    class Suspended(val lastToken: JsonToken): Stopped("Stopped reader")
+    class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
 }
 
 private val whiteSpaceChars = charArrayOf(' ', '\t', '\n', '\r')
 private val numberChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
-private val skipArray = arrayOf(JsonToken.OBJECT_SEPARATOR, JsonToken.ARRAY_SEPARATOR, JsonToken.START_JSON)
+private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartJSON)
 
-/** Parses JSON
- * @param reader to read json from
- */
+/** Reads JSON from the supplied [reader] */
 class JsonReader(
         private val reader: () -> Char
 ) {
-    var currentToken: JsonToken = JsonToken.START_JSON
+    var currentToken: JsonToken = JsonToken.StartJSON
     var lastValue: String = ""
     private val typeStack: MutableList<JsonObjectType> = mutableListOf()
     private var lastChar: Char = ' '
@@ -37,7 +35,7 @@ class JsonReader(
         lastValue = ""
         try {
             when (currentToken) {
-                JsonToken.START_JSON -> {
+                JsonToken.StartJSON -> {
                     lastChar = readSkipWhitespace()
                     when(lastChar) {
                         '{' -> startObject()
@@ -45,7 +43,7 @@ class JsonReader(
                         else -> throwJsonException()
                     }
                 }
-                JsonToken.START_OBJECT -> {
+                JsonToken.StartObject -> {
                     typeStack.add(JsonObjectType.OBJECT)
                     when(lastChar) {
                         '}' -> endObject()
@@ -53,51 +51,51 @@ class JsonReader(
                         else -> throwJsonException()
                     }
                 }
-                JsonToken.END_OBJECT -> {
+                JsonToken.EndObject -> {
                     continueComplexRead()
                 }
-                JsonToken.START_ARRAY -> {
+                JsonToken.StartArray -> {
                     typeStack.add(JsonObjectType.ARRAY)
                     if (lastChar == ']') {
                         endArray()
                     } else {
-                        readValue(JsonToken.ARRAY_VALUE)
+                        readValue(JsonToken.ArrayValue)
                     }
                 }
-                JsonToken.END_ARRAY -> {
+                JsonToken.EndArray -> {
                     continueComplexRead()
                 }
-                JsonToken.FIELD_NAME -> {
-                    readValue(JsonToken.OBJECT_VALUE)
+                JsonToken.FieldName -> {
+                    readValue(JsonToken.ObjectValue)
                 }
-                JsonToken.OBJECT_VALUE -> {
+                JsonToken.ObjectValue -> {
                     readObject()
                 }
-                JsonToken.OBJECT_SEPARATOR -> {
+                JsonToken.ObjectSeparator -> {
                     when(lastChar) {
                         '"' -> readFieldName()
                         else -> throwJsonException()
                     }
                 }
-                JsonToken.ARRAY_VALUE -> {
+                JsonToken.ArrayValue -> {
                     readArray()
                 }
-                JsonToken.ARRAY_SEPARATOR -> {
-                    readValue(JsonToken.ARRAY_VALUE)
+                JsonToken.ArraySeparator -> {
+                    readValue(JsonToken.ArrayValue)
                 }
-                is JsonToken.SUSPENDED -> {
-                    currentToken = (currentToken as JsonToken.SUSPENDED).lastToken
+                is JsonToken.Suspended -> {
+                    currentToken = (currentToken as JsonToken.Suspended).lastToken
                     readSkipWhitespace()
                     return nextToken()
                 }
-                is JsonToken.STOPPED -> {
+                is JsonToken.Stopped -> {
                     return currentToken
                 }
             }
         } catch (e: ExceptionWhileReadingJson) {
-            currentToken = JsonToken.SUSPENDED(currentToken)
+            currentToken = JsonToken.Suspended(currentToken)
         } catch (e: InvalidJsonContent) {
-            currentToken = JsonToken.JSON_EXCEPTION(e)
+            currentToken = JsonToken.JsonException(e)
             throw e
         }
 
@@ -108,12 +106,12 @@ class JsonReader(
         return currentToken
     }
 
-    /** Method that walks the JSON until a next value at same level is discovered */
+    /** Skips all JSON values until a next value at same level is discovered */
     fun skipUntilNextField() {
         val currentDepth = typeStack.count()
         do {
             nextToken()
-        } while (!(currentToken == JsonToken.FIELD_NAME && typeStack.count() <= currentDepth))
+        } while (!(currentToken == JsonToken.FieldName && typeStack.count() <= currentDepth))
     }
 
     private fun read() = try {
@@ -136,7 +134,7 @@ class JsonReader(
 
     private fun continueComplexRead() {
         when {
-            typeStack.isEmpty() -> currentToken = JsonToken.END_JSON
+            typeStack.isEmpty() -> currentToken = JsonToken.EndJSON
             else -> when (typeStack.last()) {
                 JsonObjectType.OBJECT -> readObject()
                 JsonObjectType.ARRAY -> readArray()
@@ -147,7 +145,7 @@ class JsonReader(
     private fun readArray() {
         when(lastChar) {
             ',' -> {
-                currentToken = JsonToken.ARRAY_SEPARATOR
+                currentToken = JsonToken.ArraySeparator
                 readSkipWhitespace()
             }
             ']' -> endArray()
@@ -158,7 +156,7 @@ class JsonReader(
     private fun readObject() {
         when(lastChar) {
             ',' -> {
-                currentToken = JsonToken.OBJECT_SEPARATOR
+                currentToken = JsonToken.ObjectSeparator
                 readSkipWhitespace()
             }
             '}' -> endObject()
@@ -204,7 +202,7 @@ class JsonReader(
             read()
         }
 
-        // read number
+        // Read number
         do {
             addAndAdvance()
         } while (lastChar in numberChars)
@@ -216,7 +214,7 @@ class JsonReader(
             throwJsonException()
         }
 
-        // read fraction
+        // Read fraction
         if(lastChar == '.') {
             addAndAdvance()
             if (lastChar !in numberChars) throwJsonException()
@@ -274,7 +272,7 @@ class JsonReader(
     }
 
     private fun readFieldName() {
-        currentToken = JsonToken.FIELD_NAME
+        currentToken = JsonToken.FieldName
         readStringValue()
         if (lastChar != ':') {
             throwJsonException()
@@ -294,26 +292,26 @@ class JsonReader(
     }
 
     private fun startObject() {
-        currentToken = JsonToken.START_OBJECT
+        currentToken = JsonToken.StartObject
         readSkipWhitespace()
     }
 
     private fun endObject() {
         typeStack.removeAt(typeStack.lastIndex)
-        currentToken = JsonToken.END_OBJECT
+        currentToken = JsonToken.EndObject
         if(!typeStack.isEmpty()) {
             readSkipWhitespace()
         }
     }
 
     private fun startArray() {
-        currentToken = JsonToken.START_ARRAY
+        currentToken = JsonToken.StartArray
         readSkipWhitespace()
     }
 
     private fun endArray() {
         typeStack.removeAt(typeStack.lastIndex)
-        currentToken = JsonToken.END_ARRAY
+        currentToken = JsonToken.EndArray
         if(!typeStack.isEmpty()) {
             readSkipWhitespace()
         }

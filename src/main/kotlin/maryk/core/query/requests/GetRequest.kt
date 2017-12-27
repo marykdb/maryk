@@ -5,16 +5,13 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 
-/** A Request to get DataObjects by key for specific DataModel
- * @param dataModel Root model of data to retrieve objects from
- * @param filter to use to filter data
- * @param order to use for ordering the found data
- * @param toVersion until which version to retrieve data. (exclusive)
- * @param keys Array of keys to retrieve object of
+/** A Request to get DataObjects of type [DO] by [keys] and [filter] for specific DataModel of type [DM].
+ * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
+ * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
 data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,

@@ -7,10 +7,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.query.changes.DataObjectChange
 
-/** A Request to change DataObjects for specific DataModel
- * @param dataModel Root model of data to change objects in
- * @param objectChanges Array of object changes
- */
+/** A Request to change DataObjects for [dataModel] with [objectChanges] */
 data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val objectChanges: List<DataObjectChange<DO>>

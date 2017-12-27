@@ -10,7 +10,7 @@ open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDat
 
     fun toBase64(): String = Base64.encode(this._bytes)
 
-    override final fun equals(other: Any?): Boolean {
+    final override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ValueDataObject) return false
 
@@ -19,7 +19,7 @@ open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDat
         return true
     }
 
-    override final fun hashCode(): Int {
+    final override fun hashCode(): Int {
         return Arrays.hashCode(_bytes)
     }
 }

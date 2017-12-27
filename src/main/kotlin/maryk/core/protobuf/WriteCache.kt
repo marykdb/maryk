@@ -3,10 +3,10 @@ package maryk.core.protobuf
 import maryk.core.properties.IsPropertyContext
 
 class WriteCache : WriteCacheReader, WriteCacheWriter {
-    val lengths = mutableListOf<ByteLengthContainer>()
+    private val lengths = mutableListOf<ByteLengthContainer>()
     private var lengthCacheIndex = 0
 
-    val contexts = mutableListOf<IsPropertyContext>()
+    private val contexts = mutableListOf<IsPropertyContext>()
     private var contextCacheIndex = 0
 
     override fun addLengthToCache(item: ByteLengthContainer) {

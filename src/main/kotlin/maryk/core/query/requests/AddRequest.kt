@@ -7,10 +7,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.query.DataModelPropertyContext
 
-/** A Request to add DataObjects for specific DataModel
- * @param dataModel Root model of data to add objects to
- * @param objectsToAdd Array of objects to add
- */
+/** A Request to add [objectsToAdd] to [dataModel] */
 data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override val dataModel: DM,
         val objectsToAdd: List<DO>

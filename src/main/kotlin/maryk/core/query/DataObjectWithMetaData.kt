@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 
 data class DataObjectWithMetaData<out DO: Any>(
         val key: Key<DO>,

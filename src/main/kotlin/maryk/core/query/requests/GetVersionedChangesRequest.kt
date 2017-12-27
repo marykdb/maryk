@@ -5,15 +5,13 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.UInt64
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 
-/** A Request to get DataObject versioned changes by key for specific DataModel
- * @param dataModel Root model of data to retrieve objects from
- * @param keys Array of keys to retrieve object of
+/** A Request to get DataObject of type [DO] its versioned changes by value [keys] for specific [dataModel] of type [DM]
  * @param fromVersion the version to start getting objects of (Inclusive)
  * @param maxVersions Max amount of versions to fetch (Default=1000)
  */

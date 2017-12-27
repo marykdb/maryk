@@ -14,7 +14,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 
 /** Wrapper for a sub model definition to contain the context on how it relates to DataObject
- * @param index: of definition to encode into protobuf
+ * @param index: of definition to encode into ProtoBuf
  * @param name: of definition to display in human readable format
  * @param definition: to be wrapped for DataObject
  * @param getter: to get property value on a DataObject
@@ -53,7 +53,7 @@ data class SubModelPropertyDefinitionWrapper<SDO: Any, out P: PropertyDefinition
         return { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }
     }
 
-    /** For quick notation to fetch property references below submodels
+    /** For quick notation to fetch property references below sub models
      * @param referenceGetter The sub getter to fetch a reference
      * @return a reference to property
      */

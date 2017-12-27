@@ -8,7 +8,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.numeric.toUInt32
-import maryk.core.properties.types.toUInt64
+import maryk.core.properties.types.numeric.toUInt64
 import kotlin.test.Test
 
 class DataObjectWithMetaDataTest {

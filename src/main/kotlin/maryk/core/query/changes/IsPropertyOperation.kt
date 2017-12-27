@@ -11,12 +11,7 @@ import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
-/** An operation on a property
- * @param reference of property to operate on
- * @param valueToCompare (optional) if set the current value is checked against this value.
- * Operation will only complete if they both are equal
- * @param T: type of value to be operated on
- */
+/** An operation on a property of type [T] */
 interface IsPropertyOperation<T: Any> : IsChange {
     val reference: IsPropertyReference<T, IsPropertyDefinition<T>>
     val valueToCompare: T?

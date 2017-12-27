@@ -7,8 +7,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
 /** Exception for when a map or collection property has too much items
- *
- * @param ref   of property
+ * @param reference   of property
  * @param size   current size
  * @param maxSize  maximum of size
  */

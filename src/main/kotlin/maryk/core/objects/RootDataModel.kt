@@ -20,7 +20,7 @@ import maryk.core.properties.types.Key
 fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
 
 /** DataModel which is on root level so it can be stored and thus can have a key
- * If no key is defined the datamodel will get a UUID
+ * If no key is defined the data model will get a UUID
  *
  * @param name: Name of the data model. Used also to resolve DataModels
  * @param keyDefinitions: Ordered array with all key part definitions
@@ -75,7 +75,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
 
         /** Get Key by byte reader */
-        fun get(reader: () -> Byte): Key<DO> = Key<DO>(
+        fun get(reader: () -> Byte): Key<DO> = Key(
                 initByteArray(size, reader)
         )
 

@@ -7,10 +7,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
-/** Compares given prefix string against referenced property
- * @param reference to property to compare against
- * @param value the value which the compared property should start with
- */
+/** Compares given [prefix] string against referenced property [reference] */
 data class Prefix(
         override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
         val prefix: String

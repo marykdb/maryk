@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.bytes.MAXBYTE
-import maryk.core.extensions.bytes.ZEROBYTE
+import maryk.core.extensions.bytes.MAX_BYTE
+import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
@@ -15,9 +15,9 @@ import kotlin.test.Test
 
 internal class ReferenceDefinitionTest {
     private val refToTest = arrayOf<Key<TestMarykObject>>(
-            Key(ByteArray(9, { ZEROBYTE })),
-            Key(ByteArray(9, { MAXBYTE })),
-            Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAXBYTE }))
+            Key(ByteArray(9, { ZERO_BYTE })),
+            Key(ByteArray(9, { MAX_BYTE })),
+            Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE }))
     )
 
     val def = ReferenceDefinition(

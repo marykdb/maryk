@@ -11,7 +11,7 @@ internal fun Short.writeBytes(writer: (byte: Byte) -> Unit) {
     (0 until 2).forEach {
         val b = (this.toInt() shr (1-it) * 8 and 0xFF).toByte()
         writer(
-                if(it == 0) b xor SIGNBYTE else b
+                if(it == 0) b xor SIGN_BYTE else b
         )
     }
 }
@@ -21,7 +21,7 @@ internal fun Short.writeBytes(writer: (byte: Byte) -> Unit) {
  * @return Short represented by bytes
  */
 internal fun initShort(reader: () -> Byte): Short {
-    var short = ((reader() xor SIGNBYTE).toInt() and 0xFF)
+    var short = ((reader() xor SIGN_BYTE).toInt() and 0xFF)
     short = short shl 8
     short = short xor (reader().toInt() and 0xFF)
     return short.toShort()
@@ -62,9 +62,9 @@ internal fun initShortByVar(reader: () -> Byte): Short {
     var shift = 0
     var result = 0
     while (shift < 16) {
-        val b = (reader() and MAXBYTE)
+        val b = (reader() and MAX_BYTE)
         result = result or ((b and 0x7F).toInt() shl shift)
-        if (b and SIGNBYTE == ZEROBYTE) {
+        if (b and SIGN_BYTE == ZERO_BYTE) {
             return result.toShort()
         }
         shift += 7

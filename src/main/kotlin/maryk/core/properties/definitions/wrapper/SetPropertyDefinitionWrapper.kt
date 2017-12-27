@@ -15,7 +15,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 
 /** Wrapper for a set definition to contain the context on how it relates to DataObject
- * @param index: of definition to encode into protobuf
+ * @param index: of definition to encode into ProtoBuf
  * @param name: of definition to display in human readable format
  * @param definition: to be wrapped for DataObject
  * @param getter: to get property value on a DataObject
@@ -37,7 +37,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
             SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific set item
-     * @param key to get reference for
+     * @param value to get reference for
      * @param parentRef (optional) reference to parent reference
      */
     fun getItemRef(value: T, parentRef: IsPropertyReference<*, *>? = null)

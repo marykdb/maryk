@@ -42,7 +42,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
      */
     override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO): T {
         @Suppress("UNCHECKED_CAST")
-        return dataModel.getPropertyGetter(
+        return dataModel.properties.getPropertyGetter(
                 this.index
         )?.invoke(dataObject) as T
     }

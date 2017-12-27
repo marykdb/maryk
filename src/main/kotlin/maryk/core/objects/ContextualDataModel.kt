@@ -9,7 +9,6 @@ import maryk.core.properties.definitions.PropertyDefinitions
  *
  * @param properties: All definitions for properties contained in this model
  * @param DO: Type of DataObject contained
- * @param P: PropertyDefinitions type for reference retrieval
  */
 abstract class ContextualDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
         properties: P,

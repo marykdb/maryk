@@ -20,7 +20,7 @@ import maryk.core.query.DataModelContext
  * @param <DM>  Type of model for this definition
  * @param <DO> DataModel which is contained within SubModel
  */
-data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO, *>>(
+data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO, PropertyDefinitions<DO>>>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,
@@ -51,9 +51,9 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
 
     override fun fromString(string: String) = this.dataModel.fromString(string)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.getDefinition(name)
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.properties.getDefinition(name)
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.getDefinition(index)
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.properties.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)

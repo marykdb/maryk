@@ -35,37 +35,13 @@ import maryk.core.protobuf.WriteCacheWriter
  * @param CX: Type of context object
  */
 abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
-        val properties: P
+        override val properties: P
 ) : IsDataModel<DO> {
-    private val indexToDefinition: Map<Int, IsPropertyDefinitionWrapper<Any, CX, DO>>
-    private val nameToDefinition: Map<String, IsPropertyDefinitionWrapper<Any, CX, DO>>
-
-    @Suppress("UNCHECKED_CAST")
-    internal val definitions: List<IsPropertyDefinitionWrapper<Any, CX, DO>> = properties.__allProperties as List<IsPropertyDefinitionWrapper<Any, CX, DO>>
-
-    init {
-        indexToDefinition = mutableMapOf()
-        nameToDefinition = mutableMapOf()
-
-        this.definitions.forEach { def ->
-            require(def.index in (0..Short.MAX_VALUE), { "${def.index} for ${def.name} is outside range $(0..Short.MAX_VALUE)" })
-            require(indexToDefinition[def.index] == null, { "Duplicate index ${def.index} for ${def.name} and ${indexToDefinition[def.index]?.name}" })
-            indexToDefinition[def.index] = def
-            nameToDefinition[def.name] = def
-        }
-    }
-
     /** Creates a Data Object by map
      * @param map with index mapped to value
      * @return newly created Data Object from map
      */
     abstract operator fun invoke(map: Map<Int, *>): DO
-
-    override fun getDefinition(name: String) = nameToDefinition[name]
-    override fun getDefinition(index: Int) = indexToDefinition[index]
-
-    override fun getPropertyGetter(name: String) = nameToDefinition[name]?.getter
-    override fun getPropertyGetter(index: Int) = indexToDefinition[index]?.getter
 
     /** For quick notation to fetch property references below submodels
      * @param referenceGetter The sub getter to fetch a reference
@@ -91,7 +67,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
     override fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         createValidationUmbrellaException(refGetter) { addException ->
-            definitions.forEach {
+            this.properties.forEach {
                 try {
                     it.validate(
                             newValue = it.getter(dataObject),
@@ -107,7 +83,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     override fun validate(map: Map<Int, Any>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         createValidationUmbrellaException(refGetter) { addException ->
             map.forEach { (key, value) ->
-                val definition = indexToDefinition[key] ?: return@forEach
+                val definition = properties.getDefinition(key) ?: return@forEach
                 try {
                     definition.validate(
                             newValue = value,
@@ -127,7 +103,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     fun writeJson(obj: DO, writer: JsonWriter, context: CX? = null) {
         writer.writeStartObject()
-        for (def in definitions) {
+        for (def in this.properties) {
             val name = def.name
             val value = def.getter(obj) ?: continue
 
@@ -146,7 +122,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     fun writeJson(map: Map<Int, Any>, writer: JsonWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
-            val def = indexToDefinition[key] ?: continue
+            val def = properties.getDefinition(key) ?: continue
             val name = def.name
 
             writer.writeFieldName(name)
@@ -175,17 +151,14 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             val token = reader.currentToken
             when (token) {
                 JsonToken.FIELD_NAME -> {
-                    val definition = getDefinition(reader.lastValue)
+                    val definition = properties.getDefinition(reader.lastValue)
                     if (definition == null) {
                         reader.skipUntilNextField()
                         continue@walker
                     } else {
                         reader.nextToken()
 
-                        valueMap.put(
-                                definition.index,
-                                definition.definition.readJson(reader, context)
-                        )
+                        valueMap[definition.index] = definition.definition.readJson(reader, context)
                     }
                 }
                 else -> break@walker
@@ -212,7 +185,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     fun calculateProtoBufLength(map: Map<Int, Any>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for ((key, value) in map) {
-            val def = indexToDefinition[key] ?: continue
+            val def = properties.getDefinition(key) ?: continue
             totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
         }
         return totalByteLength
@@ -226,7 +199,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     fun calculateProtoBufLength(obj: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
-        for (def in definitions) {
+        for (def in this.properties) {
             val value = def.getter(obj) ?: continue
             totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
         }
@@ -241,7 +214,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     fun writeProtoBuf(map: Map<Int, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
-            val def = indexToDefinition[key] ?: continue
+            val def = properties.getDefinition(key) ?: continue
             def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
         }
     }
@@ -253,7 +226,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
     fun writeProtoBuf(obj: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
-        for (def in definitions) {
+        for (def in this.properties) {
             val value = def.getter(obj) ?: continue
             def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
         }
@@ -302,20 +275,17 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param context with context parameters for conversion (for dynamically dependent properties)
      */
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
-        val dataObjectPropertyDefinition = indexToDefinition[key.tag]
+        val dataObjectPropertyDefinition = properties.getDefinition(key.tag)
         val propertyDefinition = dataObjectPropertyDefinition?.definition
 
         if (propertyDefinition == null) {
             ProtoBuf.skipField(key.wireType, byteReader)
         } else {
             when (propertyDefinition) {
-                is IsByteTransportableValue<*, CX> -> valueMap.put(
-                        key.tag,
-                        propertyDefinition.readTransportBytes(
-                                ProtoBuf.getLength(key.wireType, byteReader),
-                                byteReader,
-                                context
-                        )
+                is IsByteTransportableValue<*, CX> -> valueMap[key.tag] = propertyDefinition.readTransportBytes(
+                        ProtoBuf.getLength(key.wireType, byteReader),
+                        byteReader,
+                        context
                 )
                 is IsByteTransportableCollection<*, *, CX> -> {
                     when {

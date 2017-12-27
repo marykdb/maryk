@@ -24,11 +24,11 @@ class SubModelPropertyRef<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abs
     } ?: name
 
     override fun getEmbedded(name: String)
-            = this.propertyDefinition.definition.dataModel.getDefinition(name)!!.getRef(this)
+            = this.propertyDefinition.definition.dataModel.properties.getDefinition(name)!!.getRef(this)
 
     override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
         val index = initIntByVar(reader)
-        return this.propertyDefinition.definition.dataModel.getDefinition(index)!!.getRef(this)
+        return this.propertyDefinition.definition.dataModel.properties.getDefinition(index)!!.getRef(this)
     }
 
     /** Calculate the transport length of encoding this reference

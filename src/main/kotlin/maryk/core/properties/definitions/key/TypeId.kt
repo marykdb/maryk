@@ -15,7 +15,7 @@ class TypeId<CX: IsPropertyContext>(
     override val byteSize = 2
 
     override fun <T : Any> getValue(dataModel: IsDataModel<T>, dataObject: T): Int {
-        val multiType = dataModel.getPropertyGetter(
+        val multiType = dataModel.properties.getPropertyGetter(
                 multiTypeDefinition.index
         )?.invoke(dataObject) as TypedValue<*>
         return multiType.typeIndex

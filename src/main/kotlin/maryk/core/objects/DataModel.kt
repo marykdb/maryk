@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
@@ -28,7 +29,7 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
         override fun invoke(map: Map<Int, *>) = object : DataModel<Any, PropertyDefinitions<Any>>(
                 properties = object : PropertyDefinitions<Any>(){
                     init {
-                        (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<*, *, Any>>>).forEach {
+                        (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<*, IsPropertyContext, Any>>>).forEach {
                             add(it.value)
                         }
                     }

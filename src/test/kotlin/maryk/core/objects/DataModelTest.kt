@@ -83,9 +83,9 @@ private val testMap = listOf(
         14 to listOf("test1", "another test", "🤗")
 ).toMap()
 
-private const val json = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
+private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
-private const val prettyJson = """{
+private const val PRETTY_JSON = """{
 	"string": "hay",
 	"int": 4,
 	"uint": 32,
@@ -114,7 +114,7 @@ private const val prettyJson = """{
 }"""
 
 // Test if unknown values will be skipped
-private val prettyJsonWithSkip = """{
+private const val PRETTY_JSON_WITH_SKIP = """{
 	"string": "hay",
 	"int": 4,
 	"uint": 32,
@@ -191,38 +191,38 @@ internal class DataModelTest {
 
     @Test
     fun testDefinitionByName() {
-        TestMarykObject.getDefinition("string") shouldBe TestMarykObject.Properties.string
-        TestMarykObject.getDefinition("int") shouldBe TestMarykObject.Properties.int
-        TestMarykObject.getDefinition("dateTime") shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.getDefinition("bool") shouldBe TestMarykObject.Properties.bool
+        TestMarykObject.properties.getDefinition("string") shouldBe TestMarykObject.Properties.string
+        TestMarykObject.properties.getDefinition("int") shouldBe TestMarykObject.Properties.int
+        TestMarykObject.properties.getDefinition("dateTime") shouldBe TestMarykObject.Properties.dateTime
+        TestMarykObject.properties.getDefinition("bool") shouldBe TestMarykObject.Properties.bool
     }
 
     @Test
     fun testDefinitionByIndex() {
-        TestMarykObject.getDefinition(0) shouldBe TestMarykObject.Properties.string
-        TestMarykObject.getDefinition(1) shouldBe TestMarykObject.Properties.int
-        TestMarykObject.getDefinition(2) shouldBe TestMarykObject.Properties.uint
-        TestMarykObject.getDefinition(3) shouldBe TestMarykObject.Properties.double
-        TestMarykObject.getDefinition(4) shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.getDefinition(5) shouldBe TestMarykObject.Properties.bool
+        TestMarykObject.properties.getDefinition(0) shouldBe TestMarykObject.Properties.string
+        TestMarykObject.properties.getDefinition(1) shouldBe TestMarykObject.Properties.int
+        TestMarykObject.properties.getDefinition(2) shouldBe TestMarykObject.Properties.uint
+        TestMarykObject.properties.getDefinition(3) shouldBe TestMarykObject.Properties.double
+        TestMarykObject.properties.getDefinition(4) shouldBe TestMarykObject.Properties.dateTime
+        TestMarykObject.properties.getDefinition(5) shouldBe TestMarykObject.Properties.bool
     }
 
     @Test
     fun testPropertyGetterByName() {
-        TestMarykObject.getPropertyGetter("string") shouldBe TestMarykObject::string
-        TestMarykObject.getPropertyGetter("int") shouldBe TestMarykObject::int
-        TestMarykObject.getPropertyGetter("dateTime") shouldBe TestMarykObject::dateTime
-        TestMarykObject.getPropertyGetter("bool") shouldBe TestMarykObject::bool
+        TestMarykObject.properties.getPropertyGetter("string") shouldBe TestMarykObject::string
+        TestMarykObject.properties.getPropertyGetter("int") shouldBe TestMarykObject::int
+        TestMarykObject.properties.getPropertyGetter("dateTime") shouldBe TestMarykObject::dateTime
+        TestMarykObject.properties.getPropertyGetter("bool") shouldBe TestMarykObject::bool
     }
 
     @Test
     fun testPropertyGetterByIndex() {
-        TestMarykObject.getPropertyGetter(0) shouldBe TestMarykObject::string
-        TestMarykObject.getPropertyGetter(1) shouldBe TestMarykObject::int
-        TestMarykObject.getPropertyGetter(2) shouldBe TestMarykObject::uint
-        TestMarykObject.getPropertyGetter(3) shouldBe TestMarykObject::double
-        TestMarykObject.getPropertyGetter(4) shouldBe TestMarykObject::dateTime
-        TestMarykObject.getPropertyGetter(5) shouldBe TestMarykObject::bool
+        TestMarykObject.properties.getPropertyGetter(0) shouldBe TestMarykObject::string
+        TestMarykObject.properties.getPropertyGetter(1) shouldBe TestMarykObject::int
+        TestMarykObject.properties.getPropertyGetter(2) shouldBe TestMarykObject::uint
+        TestMarykObject.properties.getPropertyGetter(3) shouldBe TestMarykObject::double
+        TestMarykObject.properties.getPropertyGetter(4) shouldBe TestMarykObject::dateTime
+        TestMarykObject.properties.getPropertyGetter(5) shouldBe TestMarykObject::bool
     }
 
     @Test
@@ -231,8 +231,8 @@ internal class DataModelTest {
         val writer = { string: String -> output += string }
 
         mapOf(
-                json to JsonWriter(writer = writer),
-                prettyJson to JsonWriter(pretty = true, writer = writer)
+                JSON to JsonWriter(writer = writer),
+                PRETTY_JSON to JsonWriter(pretty = true, writer = writer)
         ).forEach { (result, generator) ->
             TestMarykObject.writeJson(testExtendedObject, generator)
 
@@ -334,8 +334,8 @@ internal class DataModelTest {
         val jsonReader = { JsonReader(reader = reader) }
 
         listOf(
-                json,
-                prettyJsonWithSkip
+                JSON,
+                PRETTY_JSON_WITH_SKIP
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
@@ -351,8 +351,8 @@ internal class DataModelTest {
         val jsonReader = { JsonReader(reader = reader) }
 
         listOf(
-                json,
-                prettyJsonWithSkip
+                JSON,
+                PRETTY_JSON_WITH_SKIP
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0

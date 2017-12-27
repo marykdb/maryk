@@ -11,15 +11,34 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 
-abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapper<*, *, DO>> {
+abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> {
     override fun iterator() = __allProperties.iterator()
 
     @Suppress("PropertyName")
-    internal val __allProperties = mutableListOf<IsPropertyDefinitionWrapper<*, *, DO>>()
+    internal val __allProperties = mutableListOf<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
+
+    private val indexToDefinition = mutableMapOf<Int, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
+    private val nameToDefinition = mutableMapOf<String, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
+
+    /** Get the definition with a property [name] */
+    fun getDefinition(name: String) = nameToDefinition[name]
+    /** Get the definition with a property [index] */
+    fun getDefinition(index: Int) = indexToDefinition[index]
+
+    /** Get a method to retrieve property from DataObject by [name] */
+    fun getPropertyGetter(name: String) = nameToDefinition[name]?.getter
+    /** Get a method to retrieve property from DataObject by [index] */
+    fun getPropertyGetter(index: Int) = indexToDefinition[index]?.getter
 
     /** Add a single property definition wrapper */
     internal fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DO>) {
-        __allProperties.add(propertyDefinitionWrapper)
+        @Suppress("UNCHECKED_CAST")
+        __allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>)
+
+        require(propertyDefinitionWrapper.index in (0..Short.MAX_VALUE), { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" })
+        require(indexToDefinition[propertyDefinitionWrapper.index] == null, { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" })
+        indexToDefinition[propertyDefinitionWrapper.index] = propertyDefinitionWrapper
+        nameToDefinition[propertyDefinitionWrapper.name] = propertyDefinitionWrapper
     }
 
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
@@ -28,7 +47,7 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
             definition: D,
             getter: (DO) -> T? = { null }
     ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
-        __allProperties.add(this)
+        add(this)
     }
 
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFixedBytesEncodable<T, CX>> add(
@@ -37,16 +56,16 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
             definition: D,
             getter: (DO) -> T? = { null }
     ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        __allProperties.add(this)
+        add(this)
     }
 
-    fun <T: Any, CX: IsPropertyContext> add(
+    fun <T: Any> add(
             index: Int,
             name: String,
-            definition: ListDefinition<T, CX>,
+            definition: ListDefinition<T, *>,
             getter: (DO) -> List<T>? = { null }
     ) = ListPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        __allProperties.add(this)
+        add(this)
     }
 
     fun <T: Any, CX: IsPropertyContext> add(
@@ -55,7 +74,7 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
             definition: SetDefinition<T, CX>,
             getter: (DO) -> Set<T>? = { null }
     ) = SetPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        __allProperties.add(this)
+        add(this)
     }
 
     protected fun <K: Any, V: Any, CX: IsPropertyContext> add(
@@ -64,7 +83,7 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
             definition: MapDefinition<K, V, CX>,
             getter: (DO) -> Map<K, V>? = { null }
     ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        __allProperties.add(this)
+        add(this)
     }
 
     protected fun <CX: IsPropertyContext> add(
@@ -73,7 +92,7 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
             definition: MultiTypeDefinition<CX>,
             getter: (DO) -> TypedValue<*>? = { null }
     ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
-        __allProperties.add(this)
+        add(this)
     }
 
     fun <SDO: Any, P: PropertyDefinitions<SDO>, D: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
@@ -82,6 +101,6 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
             definition: SubModelDefinition<SDO, P, D, CXI, CX>,
             getter: (DO) -> SDO? = { null }
     ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        __allProperties.add(this)
+        add(this)
     }
 }

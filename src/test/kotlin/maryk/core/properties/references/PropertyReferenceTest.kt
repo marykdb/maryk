@@ -11,34 +11,33 @@ import maryk.test.shouldBe
 import maryk.test.shouldNotBe
 import kotlin.test.Test
 
+private object Properties : PropertyDefinitions<Any>()
+
+private val modelDefinition = Properties.add(2, "subModel", SubModelDefinition(
+        dataModel = { TestMarykObject }
+))
+
+private val definition = Properties.add(1, "test", StringDefinition())
+
+private val ref = definition.getRef()
+private val subRef = definition.getRef(modelDefinition.getRef())
+
 internal class PropertyReferenceTest {
-
-    private object Properties : PropertyDefinitions<Any>()
-
-    private val modelDefinition = Properties.add(2, "subModel", SubModelDefinition(
-            dataModel = { TestMarykObject }
-    ))
-
-    private val definition = Properties.add(1, "test", StringDefinition())
-
-    private val ref = this.definition.getRef()
-    private val subRef = this.definition.getRef(modelDefinition.getRef())
-
     @Test
     fun getCompleteName() {
-        this.ref.completeName shouldBe "test"
-        this.subRef.completeName shouldBe "subModel.test"
+        ref.completeName shouldBe "test"
+        subRef.completeName shouldBe "subModel.test"
     }
 
     @Test
     fun testHashCode() {
-        this.ref.hashCode() shouldBe 3556498
+        ref.hashCode() shouldBe 3556498
     }
 
     @Test
     fun testCompareTo() {
-        this.ref shouldBe  definition.getRef()
-        this.ref shouldNotBe modelDefinition.getRef()
+        ref shouldBe  definition.getRef()
+        ref shouldNotBe modelDefinition.getRef()
     }
 
     @Test
@@ -47,9 +46,9 @@ internal class PropertyReferenceTest {
         val cache = WriteCache()
 
         bc.reserve(
-            this.subRef.calculateTransportByteLength(cache)
+            subRef.calculateTransportByteLength(cache)
         )
-        this.subRef.writeTransportBytes(cache, bc::write)
+        subRef.writeTransportBytes(cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "0201"
     }

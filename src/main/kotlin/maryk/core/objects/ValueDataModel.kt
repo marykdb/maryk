@@ -10,7 +10,7 @@ import maryk.core.properties.types.ValueDataObject
  * @param properties: All definitions for properties contained in this model
  * @param DO: Type of DataObject contained
  */
-abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
+abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO>>(
         name: String,
         properties: P
 ) : DataModel<DO, P>(name, properties) {
@@ -34,10 +34,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
             if (index != 0) reader() // skip separation byte
 
             val def = it as IsFixedBytesEncodable<*>
-            values.put(
-                    key = it.index,
-                    value = def.readStorageBytes(def.byteSize, reader)
-            )
+            values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
         return this(values)
     }

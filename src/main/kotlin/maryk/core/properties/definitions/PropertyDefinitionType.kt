@@ -32,9 +32,6 @@ enum class PropertyDefinitionType(
     ValueModel(15)
 }
 
-
-val a  = SubModelDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model })
-
 internal val mapOfPropertyDefSubModelDefinitions = mapOf(
         PropertyDefinitionType.Boolean.index to SubModelDefinition(dataModel = { BooleanDefinition.Model }),
         PropertyDefinitionType.Date.index to SubModelDefinition(dataModel = { DateDefinition.Model }),
@@ -75,4 +72,3 @@ internal val mapOfPropertyDefWrapperDefinitions = mapOf(
         PropertyDefinitionType.Time.index to fixedBytesPropertyDefinitionWrapper,
         PropertyDefinitionType.ValueModel.index to propertyDefinitionWrapper
 )
-

@@ -390,6 +390,8 @@ internal class DataModelTest {
     }
 
     private fun compareDataModels(converted: DataModel<*, *>, original: DataModel<*, *>) {
+        converted.name shouldBe original.name
+
         @Suppress("UNCHECKED_CAST")
         (converted.properties as PropertyDefinitions<Any>)
                 .zip(original.properties as PropertyDefinitions<Any>)

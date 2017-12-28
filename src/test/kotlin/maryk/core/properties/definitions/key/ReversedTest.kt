@@ -1,5 +1,8 @@
 package maryk.core.properties.definitions.key
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
+import maryk.core.objects.PropertyDefinitionsContext
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -58,5 +61,27 @@ internal class ReversedTest {
         }
 
         key.toHex() shouldBe "fe017fffffa6540703"
+    }
+
+    private val context = PropertyDefinitionsContext(
+            propertyDefinitions = MarykObject.Properties
+    )
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(
+                value = Reversed(MarykObject.Properties.boolean.getRef()),
+                dataModel = Reversed.Model,
+                context = context
+        )
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(
+                value = Reversed(MarykObject.Properties.boolean.getRef()),
+                dataModel = Reversed.Model,
+                context = context
+        )
     }
 }

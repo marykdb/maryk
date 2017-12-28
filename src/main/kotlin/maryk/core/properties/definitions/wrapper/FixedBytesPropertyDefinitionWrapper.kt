@@ -6,8 +6,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 
@@ -34,7 +34,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
         IsFixedBytesProperty<T>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?)
-            = ValuePropertyReference(this, parentRef)
+            = ValueWithFixedBytesPropertyReference(this, parentRef)
 
     /** Get the value to be used in a key
      * @param dataModel to use to fetch property if relevant

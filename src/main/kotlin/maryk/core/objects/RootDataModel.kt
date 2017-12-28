@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 
 fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
@@ -42,10 +43,10 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                             && it.definition is IsValueDefinition<*, *>-> {
                         checkDefinition(it.name, it.definition as IsValueDefinition<*, *>)
                     }
-                    it is Reversed<*>
-                            && it.definition is FixedBytesPropertyDefinitionWrapper<*, *, *, *>
-                            && it.definition.definition is IsValueDefinition<*, *> -> {
-                        checkDefinition(it.definition.name, it.definition.definition)
+                    it is Reversed<*> -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val reference = it.reference as ValueWithFixedBytesPropertyReference<Any, *, *>
+                        checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                     }
                 }
                 totalBytes += it.byteSize

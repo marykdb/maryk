@@ -32,7 +32,7 @@ internal class TypeIdTest {
         companion object: RootDataModel<MarykObject, Properties>(
                 name = "MarykObject",
                 keyDefinitions = definitions(
-                        TypeId(Properties.multi.getRef())
+                        TypeId(Properties.multi)
                 ),
                 properties = Properties
         ) {

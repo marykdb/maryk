@@ -1,0 +1,38 @@
+package maryk.core.properties.references
+
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
+
+/** Reference to a value property containing values of type [T] which are of fixed byte length. This can be used inside
+ * keys. The property is defined by Property Definition Wrapper [propertyDefinition] of type [D]
+ * and referred by PropertyReference of type [P]. */
+open class ValueWithFixedBytesPropertyReference<T: Any, out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *>, out P: IsPropertyReference<*, *>> (
+        propertyDefinition: D,
+        parentReference: P?
+): PropertyReference<T, D, P>(propertyDefinition, parentReference) {
+    open val name = this.propertyDefinition.name
+
+    /** The name of property which is referenced */
+    override val completeName: String? get() = this.parentReference?.let {
+        "${it.completeName}.$name"
+    } ?: name
+
+    /** Calculate the transport length of encoding this reference
+     * @param cacher to cache length with
+     */
+    override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
+        val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
+        return this.propertyDefinition.index.calculateVarByteLength() + parentLength
+    }
+
+    /** Write transport bytes of property reference
+     * @param writer: To write bytes to
+     */
+    override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeTransportBytes(cacheGetter, writer)
+        this.propertyDefinition.index.writeVarBytes(writer)
+    }
+}

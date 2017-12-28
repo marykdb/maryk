@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
 
@@ -19,6 +20,8 @@ data class TypeId(
         val multiTypeReference: ValuePropertyReference<TypedValue<*>, IsPropertyDefinitionWrapper<TypedValue<*>, IsPropertyContext, *>, *>
 ) : IsFixedBytesProperty<Int> {
     override val byteSize = 2
+
+    constructor(multiTypeDefinition: PropertyDefinitionWrapper<TypedValue<*>, IsPropertyContext, *, *>) : this(multiTypeReference = multiTypeDefinition.getRef())
 
     override fun <T : Any> getValue(dataModel: IsDataModel<T>, dataObject: T): Int {
         val multiType = dataModel.properties.getPropertyGetter(

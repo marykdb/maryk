@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions.key
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
+import maryk.core.objects.PropertyDefinitionsContext
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -29,7 +32,7 @@ internal class TypeIdTest {
         companion object: RootDataModel<MarykObject, Properties>(
                 name = "MarykObject",
                 keyDefinitions = definitions(
-                        TypeId(Properties.multi)
+                        TypeId(Properties.multi.getRef())
                 ),
                 properties = Properties
         ) {
@@ -50,9 +53,9 @@ internal class TypeIdTest {
 
         val keyDef = MarykObject.key.keyDefinitions[0]
 
-        (keyDef is TypeId<*>) shouldBe true
-        val specificDef = keyDef as TypeId<*>
-        specificDef.multiTypeDefinition shouldBe MarykObject.Properties.multi
+        (keyDef is TypeId) shouldBe true
+        val specificDef = keyDef as TypeId
+        specificDef.multiTypeReference shouldBe MarykObject.Properties.multi.getRef()
 
         specificDef.getValue(MarykObject, obj) shouldBe 1
 
@@ -60,5 +63,27 @@ internal class TypeIdTest {
         bc.reserve(2)
         specificDef.writeStorageBytes(1, bc::write)
         specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1
+    }
+
+    private val context = PropertyDefinitionsContext(
+            propertyDefinitions = MarykObject.Properties
+    )
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(
+                value = TypeId(MarykObject.Properties.multi.getRef()),
+                dataModel = TypeId.Model,
+                context = context
+        )
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(
+                value = TypeId(MarykObject.Properties.multi.getRef()),
+                dataModel = TypeId.Model,
+                context = context
+        )
     }
 }

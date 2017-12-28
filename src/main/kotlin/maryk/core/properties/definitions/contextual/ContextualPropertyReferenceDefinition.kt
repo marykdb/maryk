@@ -2,10 +2,10 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -14,7 +14,7 @@ import maryk.core.protobuf.WriteCacheWriter
 /** Definition for a reference to another property */
 data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
         override val required: Boolean = true,
-        val contextualResolver: (context: CX?) -> RootDataModel<*, *>
+        val contextualResolver: (context: CX?) -> PropertyDefinitions<*>
 ): IsValueDefinition<IsPropertyReference<*, *>, CX>, IsSerializableFlexBytesEncodable<IsPropertyReference<*, *>, CX> {
     override val indexed = false
     override val searchable = false

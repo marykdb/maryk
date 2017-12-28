@@ -31,7 +31,7 @@ abstract class ValidationException(
                     definition = ContextCaptureDefinition(
                             ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                                     required = false,
-                                    contextualResolver = { it!!.dataModel!! }
+                                    contextualResolver = { it!!.dataModel!!.properties }
                             )
                     ) { context, value ->
                         @Suppress("UNCHECKED_CAST")

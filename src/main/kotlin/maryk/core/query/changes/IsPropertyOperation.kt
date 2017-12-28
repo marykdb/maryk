@@ -21,7 +21,7 @@ interface IsPropertyOperation<T: Any> : IsChange {
             definitions.add(
                     0, "reference", ContextCaptureDefinition(
                             ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                                    contextualResolver = { it!!.dataModel!! }
+                                    contextualResolver = { it!!.dataModel!!.properties }
                             )
                     ) { context, value ->
                         @Suppress("UNCHECKED_CAST")

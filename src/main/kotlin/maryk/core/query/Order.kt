@@ -24,7 +24,7 @@ data class Order(
             properties = object : PropertyDefinitions<Order>() {
                 init {
                     add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                            contextualResolver = { it!!.dataModel!! }
+                            contextualResolver = { it!!.dataModel!!.properties }
                     ), Order::propertyReference)
 
                     add(1, "direction", EnumDefinition(

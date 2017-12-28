@@ -3,7 +3,6 @@ package maryk.core.objects
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -13,19 +12,15 @@ import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.references.HasEmbeddedPropertyReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 
 fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
 
-/** DataModel which is on root level so it can be stored and thus can have a key
- * If no key is defined the data model will get a UUID
+/** DataModel defining data objects of type [DO] which is on root level so it can be stored and thus can have a [key].
+ * The key is defined by passing an ordered array of key definitions.
+ * If no key is defined the data model will get a UUID.
  *
- * @param name: Name of the data model. Used also to resolve DataModels
- * @param keyDefinitions: Ordered array with all key part definitions
- * @param properties: All definitions for properties contained in this model
- * @param DO: Type of DataObject contained
+ * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
 abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         name: String,
@@ -34,7 +29,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
 ) : DataModel<DO, P>(name, properties){
     val key = KeyDefinition(*keyDefinitions)
 
-    /** Defines the structure of the Key */
+    /** Defines the structure of the Key by passing [keyDefinitions] */
     inner class KeyDefinition(vararg val keyDefinitions: IsFixedBytesProperty<out Any>) {
         val size: Int
 
@@ -63,7 +58,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             require(it.final, { "Definition of $name should be final" })
         }
 
-        /** Get Key by byte array */
+        /** Get Key by [bytes] array */
         fun get(bytes: ByteArray): Key<DO> {
             if (bytes.size != this.size) {
                throw ParseException("Invalid byte length for key")
@@ -71,15 +66,15 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             return Key(bytes)
         }
 
-        /** Get Key by base64 byte representation */
+        /** Get Key by [base64] bytes as string representation */
         fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
 
-        /** Get Key by byte reader */
+        /** Get Key by byte [reader] */
         fun get(reader: () -> Byte): Key<DO> = Key(
                 initByteArray(size, reader)
         )
 
-        /** Get Key based on DataObject */
+        /** Get Key based on [dataObject] */
         fun getKey(dataObject: DO): Key<DO> {
             val bytes = ByteArray(this.size)
             var index = 0
@@ -100,48 +95,17 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         }
     }
 
-    /** Get PropertyReference by name
-     * @param referenceName to parse for a property reference
-     */
-    fun getPropertyReferenceByName(referenceName: String): IsPropertyReference<*, IsPropertyDefinition<*>> {
-        val names = referenceName.split(".")
-
-        var propertyReference: IsPropertyReference<*, *>? = null
-        for (name in names) {
-            propertyReference = when (propertyReference) {
-                null -> this.properties.getDefinition(name)?.getRef(propertyReference)
-                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
-                else -> throw DefNotFoundException("${this.name}: Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
-            } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist on ${this.name}")
-        }
-
-        return propertyReference!!
+    /** Get PropertyReference by [referenceName] */
+    fun getPropertyReferenceByName(referenceName: String) = try {
+        this.properties.getPropertyReferenceByName(referenceName)
+    } catch (e: DefNotFoundException) {
+        throw DefNotFoundException("Model ${this.name}: ${e.message}")
     }
 
-    /** Get PropertyReference by bytes
-     * @param length of bytes to read
-     * @param reader to read for a property reference
-     */
-    fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>> {
-        var readLength = 0
-
-        val lengthReader = {
-            readLength++
-            reader()
-        }
-
-        var propertyReference: IsPropertyReference<*, *>? = null
-        while (readLength < length) {
-            propertyReference = when (propertyReference) {
-                null -> {
-                    val index = initIntByVar(lengthReader)
-                    this.properties.getDefinition(index)?.getRef(propertyReference)
-                }
-                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader)
-                else -> throw DefNotFoundException("More property references found on property ${this.name} that cannot have any ")
-            } ?: throw DefNotFoundException("Property reference does not exist on ${this.name}")
-        }
-
-        return propertyReference!!
+    /** Get PropertyReference by bytes by reading the [reader] until [length] is reached. */
+    fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte) = try {
+        this.properties.getPropertyReferenceByBytes(length, reader)
+    } catch (e: DefNotFoundException) {
+        throw DefNotFoundException("Model ${this.name}: ${e.message}")
     }
 }

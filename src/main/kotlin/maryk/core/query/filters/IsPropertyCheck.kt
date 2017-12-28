@@ -19,7 +19,7 @@ interface IsPropertyCheck<T: Any> : IsFilter {
                     index = 0, name = "reference",
                     definition = ContextCaptureDefinition(
                             ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                                    contextualResolver = { it!!.dataModel!! }
+                                    contextualResolver = { it!!.dataModel!!.properties }
                             )
                     ) { context, value ->
                         @Suppress("UNCHECKED_CAST")

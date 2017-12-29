@@ -2,7 +2,6 @@ package maryk.core.properties.definitions.key
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector

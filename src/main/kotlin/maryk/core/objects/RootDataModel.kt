@@ -47,9 +47,8 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                             && it.definition is IsValueDefinition<*, *>-> {
                         checkDefinition(it.name, it.definition as IsValueDefinition<*, *>)
                     }
-                    it is Reversed<*> -> {
-                        @Suppress("UNCHECKED_CAST")
-                        val reference = it.reference as ValueWithFixedBytesPropertyReference<Any, *, *>
+                    it is Reversed<out Any> -> {
+                        val reference = it.reference as ValueWithFixedBytesPropertyReference<out Any, *, *>
                         checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                     }
                 }

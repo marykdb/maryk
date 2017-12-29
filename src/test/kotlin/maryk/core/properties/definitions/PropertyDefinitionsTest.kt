@@ -18,10 +18,9 @@ class PropertyDefinitionsTest {
         checkJsonConversion(TestMarykObject.properties, PropertyDefinitions.Model, DataModelContext(), ::compareDataModels)
     }
 
-    private fun compareDataModels(converted: PropertyDefinitions<*>, original: PropertyDefinitions<*>) {
-        @Suppress("UNCHECKED_CAST")
-        (converted as PropertyDefinitions<Any>)
-                .zip(original as PropertyDefinitions<Any>)
+    private fun compareDataModels(converted: PropertyDefinitions<out Any>, original: PropertyDefinitions<out Any>) {
+        (converted)
+                .zip(original)
                 .forEach { (convertedWrapper, originalWrapper) ->
                     comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
                 }

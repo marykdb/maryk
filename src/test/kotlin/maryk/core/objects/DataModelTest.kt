@@ -389,12 +389,11 @@ internal class DataModelTest {
         checkJsonConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
     }
 
-    private fun compareDataModels(converted: DataModel<*, *>, original: DataModel<*, *>) {
+    private fun compareDataModels(converted: DataModel<out Any, PropertyDefinitions<out Any>>, original: DataModel<out Any, PropertyDefinitions<out Any>>) {
         converted.name shouldBe original.name
 
-        @Suppress("UNCHECKED_CAST")
-        (converted.properties as PropertyDefinitions<Any>)
-                .zip(original.properties as PropertyDefinitions<Any>)
+        (converted.properties)
+                .zip(original.properties)
                 .forEach { (convertedWrapper, originalWrapper) ->
                     comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
                 }

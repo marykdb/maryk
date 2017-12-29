@@ -30,7 +30,7 @@ data class MapPropertyChange<K: Any, V: Any>(
 ) : IsPropertyOperation<Map<K, V>> {
     override val changeType = ChangeType.MAP_CHANGE
 
-    internal object Properties : PropertyDefinitions<MapPropertyChange<*, *>>() {
+    internal object Properties : PropertyDefinitions<MapPropertyChange<out Any, out Any>>() {
         @Suppress("UNCHECKED_CAST")
         private val keyDefinition = ContextualValueDefinition(
                 contextualResolver = { context: DataModelPropertyContext? ->
@@ -43,14 +43,14 @@ data class MapPropertyChange<K: Any, V: Any>(
                 contextualResolver = { context: DataModelPropertyContext? ->
                     (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
-        ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
+        ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>
         @Suppress("UNCHECKED_CAST")
         val valuesToAdd = ContextualMapDefinition(
                 required = false,
                 contextualResolver = { context: DataModelPropertyContext? ->
                     (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
-        ) as IsSerializableFlexBytesEncodable<Map<*, *>, DataModelPropertyContext>
+        ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>
         val keysToDelete = SetDefinition(
                 required = false,
                 valueDefinition = keyDefinition

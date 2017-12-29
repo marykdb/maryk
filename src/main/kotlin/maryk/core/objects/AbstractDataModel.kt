@@ -282,7 +282,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                         byteReader,
                         context
                 )
-                is IsByteTransportableCollection<*, *, CX> -> {
+                is IsByteTransportableCollection<out Any, *, CX> -> {
                     when {
                         propertyDefinition.isPacked(context, key.wireType) -> {
                             @Suppress("UNCHECKED_CAST")
@@ -314,7 +314,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                         }
                     }
                 }
-                is IsByteTransportableMap<*, *, CX> -> {
+                is IsByteTransportableMap<out Any, out Any, CX> -> {
                     ProtoBuf.getLength(key.wireType, byteReader)
                     val value = propertyDefinition.readMapTransportBytes(
                             byteReader,
@@ -338,7 +338,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     open fun transformContext(context: CXI?): CX?  = context as CX?
 
     companion object {
-        internal fun <DO: DataModel<Any, PropertyDefinitions<Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
+        internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
             definitions.add(0, "properties", ContextCaptureDefinition(
                     SubModelDefinition(
                         dataModel = { PropertyDefinitions.Model }
@@ -348,7 +348,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             }
         }
 
-        internal fun <DO: DataModel<Any, PropertyDefinitions<Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
+        internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
             definitions.add(1, "name", StringDefinition(), getter)
         }
     }

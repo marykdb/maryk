@@ -42,7 +42,7 @@ abstract class PropertyDefinitions<DO: Any>(
     }
 
     /** Add a single property definition wrapper */
-    private fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DO>) {
+    private fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<out Any, *, DO>) {
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>)
 
@@ -160,9 +160,9 @@ abstract class PropertyDefinitions<DO: Any>(
         return propertyReference!!
     }
 
-    @Suppress("UNCHECKED_CAST")
-    object Model : DefinitionDataModel<PropertyDefinitions<*>>(
-            properties = object : PropertyDefinitions<PropertyDefinitions<*>>() {
+
+    object Model : DefinitionDataModel<PropertyDefinitions<out Any>>(
+            properties = object : PropertyDefinitions<PropertyDefinitions<out Any>>() {
                 init {
                     add(0, "properties", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
@@ -177,6 +177,7 @@ abstract class PropertyDefinitions<DO: Any>(
                 }
             }
     ) {
+        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : PropertyDefinitions<PropertyDefinitions<Any>>(
                 properties =
                     (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>).map {

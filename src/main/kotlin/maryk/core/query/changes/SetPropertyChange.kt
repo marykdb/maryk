@@ -29,21 +29,23 @@ data class SetPropertyChange<T: Any>(
 ) : IsPropertyOperation<Set<T>> {
     override val changeType = ChangeType.SET_CHANGE
 
-    companion object: QueryDataModel<SetPropertyChange<*>>(
+    companion object: QueryDataModel<SetPropertyChange<out Any>>(
             properties = object : PropertyDefinitions<SetPropertyChange<*>>() {
                 init {
                     IsPropertyOperation.addReference(this, SetPropertyChange<*>::reference)
-                    @Suppress("UNCHECKED_CAST")
                     add(1, "valueToCompare", ContextualCollectionDefinition(
                             required = false,
                             contextualResolver = { context: DataModelPropertyContext? ->
+                                @Suppress("UNCHECKED_CAST")
                                 context!!.reference!!.propertyDefinition.definition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
                             }
                     ), SetPropertyChange<*>::valueToCompare)
+
                     add(2, "addValues", SetDefinition(
                             required = false,
                             valueDefinition = valueDefinition
                     ), SetPropertyChange<*>::addValues)
+
                     add(3, "deleteValues", SetDefinition(
                             required = false,
                             valueDefinition = valueDefinition

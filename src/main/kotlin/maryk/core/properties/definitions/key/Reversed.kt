@@ -36,8 +36,8 @@ data class Reversed<T: Any>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : DefinitionDataModel<Reversed<*>>(
-            properties = object : PropertyDefinitions<Reversed<*>>() {
+    object Model : DefinitionDataModel<Reversed<out Any>>(
+            properties = object : PropertyDefinitions<Reversed<out Any>>() {
                 init {
                     add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
                             contextualResolver = { it!!.propertyDefinitions!! }

@@ -28,7 +28,7 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
         override val searchable: Boolean = true,
         override val required: Boolean = true,
         override val final: Boolean = false,
-        val definitionMap: Map<Int, IsSubDefinition<*, CX>>
+        val definitionMap: Map<Int, IsSubDefinition<out Any, CX>>
 ) :
         IsValueDefinition<TypedValue<*>, CX>,
         IsSerializableFlexBytesEncodable<TypedValue<*>, CX>,

@@ -12,17 +12,17 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
 ) : SimpleDataModel<DO, P>(
         properties
 ) {
-    @Suppress("UNCHECKED_CAST")
     object Model : DefinitionDataModel<DataModel<*, *>>(
-            properties = object : PropertyDefinitions<DataModel<*, *>>() {
+            properties = object : PropertyDefinitions<DataModel<out Any, PropertyDefinitions<out Any>>>() {
                 init {
-                    AbstractDataModel.addProperties(this as PropertyDefinitions<DataModel<Any, PropertyDefinitions<Any>>>)
-                    AbstractDataModel.addName(this as PropertyDefinitions<DataModel<Any, PropertyDefinitions<Any>>>) {
+                    AbstractDataModel.addProperties(this)
+                    AbstractDataModel.addName(this) {
                         it.name
                     }
                 }
             }
     ) {
+        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : DataModel<Any, PropertyDefinitions<Any>>(
                 properties = map[0] as PropertyDefinitions<Any>,
                 name = map[1] as String

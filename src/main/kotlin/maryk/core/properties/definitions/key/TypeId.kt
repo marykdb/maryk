@@ -2,9 +2,8 @@ package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.objects.AbstractDataModel
+import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
-import maryk.core.objects.PropertyDefinitionsContext
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -13,12 +12,14 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DataModelContext
 
 /** Defines a key part which refers to a multi type definition with [multiTypeReference].
  * With this key part it is possible to query all objects which contain a property of a certain type */
 data class TypeId(
         val multiTypeReference: ValuePropertyReference<TypedValue<*>, IsPropertyDefinitionWrapper<TypedValue<*>, IsPropertyContext, *>, *>
 ) : IsFixedBytesProperty<Int> {
+    override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
 
     constructor(multiTypeDefinition: PropertyDefinitionWrapper<TypedValue<*>, IsPropertyContext, *, *>) : this(multiTypeReference = multiTypeDefinition.getRef())
@@ -37,10 +38,10 @@ data class TypeId(
     override fun readStorageBytes(length: Int, reader: () -> Byte)
             = initShort(reader).toInt() - Short.MIN_VALUE
 
-    object Model : AbstractDataModel<TypeId, PropertyDefinitions<TypeId>, PropertyDefinitionsContext, PropertyDefinitionsContext>(
+    object Model : DefinitionDataModel<TypeId>(
             properties = object : PropertyDefinitions<TypeId>() {
                 init {
-                    add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<PropertyDefinitionsContext>(
+                    add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
                         contextualResolver = { it!!.propertyDefinitions!! }
                     )) {
                         it.multiTypeReference

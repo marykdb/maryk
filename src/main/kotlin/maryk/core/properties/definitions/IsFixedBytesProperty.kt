@@ -1,3 +1,7 @@
 package maryk.core.properties.definitions
 
-interface IsFixedBytesProperty<T: Any>: IsFixedBytesValueGetter<T>, IsFixedBytesEncodable<T>
+import maryk.core.properties.definitions.key.KeyPartType
+
+interface IsFixedBytesProperty<T: Any>: IsFixedBytesValueGetter<T>, IsFixedBytesEncodable<T> {
+    val keyPartType: KeyPartType
+}

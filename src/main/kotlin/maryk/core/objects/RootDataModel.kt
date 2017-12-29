@@ -3,17 +3,23 @@ package maryk.core.objects
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
+import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 
 fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
 
@@ -108,5 +114,51 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         this.properties.getPropertyReferenceByBytes(length, reader)
     } catch (e: DefNotFoundException) {
         throw DefNotFoundException("Model ${this.name}: ${e.message}")
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
+            properties = object : PropertyDefinitions<RootDataModel<*, *>>() {
+                init {
+                    AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
+                    AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
+                        it.name
+                    }
+                    add(2, "keyDefinitions", ListDefinition(
+                            valueDefinition = MultiTypeDefinition(
+                                    definitionMap = mapOfKeyPartDefinitions
+                            )
+                    )) {
+                        it.key.keyDefinitions.map {
+                            val def: Any = when(it) {
+                                is FixedBytesPropertyDefinitionWrapper<*, *, *, *> -> it.getRef()
+                                else -> it
+                            }
+                            TypedValue(it.keyPartType.index, def)
+                        }
+                    }
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
+                properties = object : PropertyDefinitions<Any>(){
+                    init {
+                        (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<*, IsPropertyContext, Any>>>).forEach {
+                            add(it.value)
+                        }
+                    }
+                },
+                name = map[1] as String,
+                keyDefinitions = (map[2] as List<TypedValue<*>>).map {
+                    when(it.value) {
+                        is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
+                        else -> it.value as IsFixedBytesProperty<*>
+                    }
+                }.toTypedArray()
+        ){
+            override fun invoke(map: Map<Int, *>): Any {
+                return object : Any(){}
+            }
+        }
     }
 }

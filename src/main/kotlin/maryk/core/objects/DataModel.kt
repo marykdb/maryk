@@ -16,7 +16,7 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
         properties
 ) {
     @Suppress("UNCHECKED_CAST")
-    object Model : SimpleDataModel<DataModel<*, *>, PropertyDefinitions<DataModel<*, *>>>(
+    object Model : DefinitionDataModel<DataModel<*, *>>(
             properties = object : PropertyDefinitions<DataModel<*, *>>() {
                 init {
                     AbstractDataModel.addProperties(this as PropertyDefinitions<DataModel<Any, PropertyDefinitions<Any>>>)

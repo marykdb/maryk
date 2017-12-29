@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.key
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.objects.PropertyDefinitionsContext
+import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.DateTime
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -63,7 +64,7 @@ internal class ReversedTest {
         key.toHex() shouldBe "fe017fffffa6540703"
     }
 
-    private val context = PropertyDefinitionsContext(
+    private val context = DataModelContext(
             propertyDefinitions = MarykObject.Properties
     )
 

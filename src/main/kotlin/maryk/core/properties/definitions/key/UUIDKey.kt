@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 
 object UUIDKey: IsFixedBytesProperty<Pair<Long, Long>> {
+    override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
 
     override fun <T : Any> getValue(dataModel: IsDataModel<T>, dataObject: T) = generateUUID()

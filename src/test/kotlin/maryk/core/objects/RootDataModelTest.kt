@@ -3,12 +3,17 @@ package maryk.core.objects
 import maryk.Option
 import maryk.SubMarykObject
 import maryk.TestMarykObject
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -55,5 +60,26 @@ internal class RootDataModelTest {
 
             bc.reset()
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(TestMarykObject, RootDataModel.Model, DataModelContext(propertyDefinitions = TestMarykObject.properties),  ::compareDataModels)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(TestMarykObject, RootDataModel.Model, DataModelContext(propertyDefinitions = TestMarykObject.properties), ::compareDataModels)
+    }
+
+    private fun compareDataModels(converted: RootDataModel<*, *>, original: RootDataModel<*, *>) {
+        converted.name shouldBe original.name
+
+        @Suppress("UNCHECKED_CAST")
+        (converted.properties as PropertyDefinitions<Any>)
+                .zip(original.properties as PropertyDefinitions<Any>)
+                .forEach { (convertedWrapper, originalWrapper) ->
+                    comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
+                }
     }
 }

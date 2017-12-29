@@ -1,21 +1,22 @@
 package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.objects.AbstractDataModel
+import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
-import maryk.core.objects.PropertyDefinitionsContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.query.DataModelContext
 import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
         val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *>, *>
 ) : IsFixedBytesProperty<T> {
+    override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
     override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO) = this.reference.propertyDefinition.getValue(dataModel, dataObject)
 
@@ -35,10 +36,10 @@ data class Reversed<T: Any>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : AbstractDataModel<Reversed<*>, PropertyDefinitions<Reversed<*>>, PropertyDefinitionsContext, PropertyDefinitionsContext>(
+    object Model : DefinitionDataModel<Reversed<*>>(
             properties = object : PropertyDefinitions<Reversed<*>>() {
                 init {
-                    add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<PropertyDefinitionsContext>(
+                    add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
                             contextualResolver = { it!!.propertyDefinitions!! }
                     )) {
                         it.reference as IsPropertyReference<Any, *>

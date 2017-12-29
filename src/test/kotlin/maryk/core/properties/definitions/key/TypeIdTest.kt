@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.key
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
-import maryk.core.objects.PropertyDefinitionsContext
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -14,6 +13,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -65,7 +65,7 @@ internal class TypeIdTest {
         specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1
     }
 
-    private val context = PropertyDefinitionsContext(
+    private val context = DataModelContext(
             propertyDefinitions = MarykObject.Properties
     )
 

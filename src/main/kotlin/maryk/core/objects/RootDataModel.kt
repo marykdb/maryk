@@ -122,7 +122,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                     AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
                         it.name
                     }
-                    add(2, "keyDefinitions", ListDefinition(
+                    add(2, "key", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
                                     definitionMap = mapOfKeyPartDefinitions
                             )

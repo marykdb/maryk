@@ -9,18 +9,15 @@ import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.mapOfPropertyDefWrapperDefinitions
+import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
@@ -342,15 +339,12 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
     companion object {
         internal fun <DO: DataModel<Any, PropertyDefinitions<Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
-            definitions.add(0, "properties", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                            definitionMap = mapOfPropertyDefWrapperDefinitions
+            definitions.add(0, "properties", ContextCaptureDefinition(
+                    SubModelDefinition(
+                        dataModel = { PropertyDefinitions.Model }
                     )
-            )) { dataModel ->
-                dataModel.properties.map {
-                    val def = it.definition as IsTransportablePropertyDefinitionType
-                    TypedValue(def.propertyDefinitionType.index, it)
-                }
+            ) { context, propDefs -> context!!.propertyDefinitions = propDefs }) { dataModel ->
+                dataModel.properties
             }
         }
 

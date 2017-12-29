@@ -3,7 +3,6 @@ package maryk.core.objects
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -15,7 +14,6 @@ import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
@@ -141,13 +139,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             }
     ) {
         override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
-                properties = object : PropertyDefinitions<Any>(){
-                    init {
-                        (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<*, IsPropertyContext, Any>>>).forEach {
-                            add(it.value)
-                        }
-                    }
-                },
+                properties = map[0] as PropertyDefinitions<Any>,
                 name = map[1] as String,
                 keyDefinitions = (map[2] as List<TypedValue<*>>).map {
                     when(it.value) {

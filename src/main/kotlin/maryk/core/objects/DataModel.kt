@@ -1,9 +1,6 @@
 package maryk.core.objects
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.types.TypedValue
 
 /** DataModel for non contextual models. Contains a [name] to identify the model and [properties] which define how the
  * properties should be validated. It models the DataObjects of type [DO] which can be validated. And it contains a
@@ -27,13 +24,7 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
             }
     ) {
         override fun invoke(map: Map<Int, *>) = object : DataModel<Any, PropertyDefinitions<Any>>(
-                properties = object : PropertyDefinitions<Any>(){
-                    init {
-                        (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<*, IsPropertyContext, Any>>>).forEach {
-                            add(it.value)
-                        }
-                    }
-                },
+                properties = map[0] as PropertyDefinitions<Any>,
                 name = map[1] as String
         ){
             override fun invoke(map: Map<Int, *>): Any {

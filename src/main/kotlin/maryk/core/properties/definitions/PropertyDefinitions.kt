@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.objects.AbstractDataModel
+import maryk.core.objects.DefinitionDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -16,10 +17,12 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 
 /** A collection of Property Definitions which can be used to model a DataModel */
-abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> {
+abstract class PropertyDefinitions<DO: Any>(
+        properties: MutableList<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> = mutableListOf()
+) : Iterable<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> {
     override fun iterator() = _allProperties.iterator()
 
-    private val _allProperties = mutableListOf<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
+    private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> = mutableListOf()
 
     private val indexToDefinition = mutableMapOf<Int, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
     private val nameToDefinition = mutableMapOf<String, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
@@ -34,8 +37,12 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
     /** Get a method to retrieve property from DataObject by [index] */
     fun getPropertyGetter(index: Int) = indexToDefinition[index]?.getter
 
+    init {
+        properties.forEach { add(it) }
+    }
+
     /** Add a single property definition wrapper */
-    internal fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DO>) {
+    private fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DO>) {
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>)
 
@@ -151,5 +158,30 @@ abstract class PropertyDefinitions<DO: Any> : Iterable<IsPropertyDefinitionWrapp
         }
 
         return propertyReference!!
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    object Model : DefinitionDataModel<PropertyDefinitions<*>>(
+            properties = object : PropertyDefinitions<PropertyDefinitions<*>>() {
+                init {
+                    add(0, "properties", ListDefinition(
+                            valueDefinition = MultiTypeDefinition(
+                                    definitionMap = mapOfPropertyDefWrapperDefinitions
+                            )
+                    )) { propertyDefinitions ->
+                        propertyDefinitions.map {
+                            val def = it.definition as IsTransportablePropertyDefinitionType
+                            TypedValue(def.propertyDefinitionType.index, it)
+                        }
+                    }
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = object : PropertyDefinitions<PropertyDefinitions<Any>>(
+                properties =
+                    (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>).map {
+                        it.value
+                    }.toMutableList()
+        ){}
     }
 }

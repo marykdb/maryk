@@ -7,6 +7,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.DateTime
@@ -64,22 +65,31 @@ internal class RootDataModelTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(TestMarykObject, RootDataModel.Model, DataModelContext(propertyDefinitions = TestMarykObject.properties),  ::compareDataModels)
+        checkProtoBufConversion(TestMarykObject, RootDataModel.Model, DataModelContext(), ::compareDataModels)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(TestMarykObject, RootDataModel.Model, DataModelContext(propertyDefinitions = TestMarykObject.properties), ::compareDataModels)
+        checkJsonConversion(TestMarykObject, RootDataModel.Model, DataModelContext(), ::compareDataModels)
     }
 
-    private fun compareDataModels(converted: RootDataModel<*, *>, original: RootDataModel<*, *>) {
+    private fun compareDataModels(converted: RootDataModel<out Any, out PropertyDefinitions<out Any>>, original: RootDataModel<out Any, out PropertyDefinitions<out Any>>) {
         converted.name shouldBe original.name
 
-        @Suppress("UNCHECKED_CAST")
-        (converted.properties as PropertyDefinitions<Any>)
-                .zip(original.properties as PropertyDefinitions<Any>)
+        (converted.properties)
+                .zip(original.properties)
                 .forEach { (convertedWrapper, originalWrapper) ->
                     comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
                 }
+
+        converted.key.keyDefinitions.zip(original.key.keyDefinitions).forEach { (converted, original) ->
+                    when(converted) {
+                        is IsPropertyDefinitionWrapper<*, *, *> -> {
+                            comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *>)
+                        }
+                        else -> converted shouldBe original
+                    }
+
+        }
     }
 }

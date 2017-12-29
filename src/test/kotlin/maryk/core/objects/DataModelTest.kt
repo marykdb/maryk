@@ -381,7 +381,7 @@ internal class DataModelTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(SubMarykObject, DataModel.Model, DataModelContext(),  ::compareDataModels)
+        checkProtoBufConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
     }
 
     @Test

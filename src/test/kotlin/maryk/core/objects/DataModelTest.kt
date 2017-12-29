@@ -399,6 +399,5 @@ internal class DataModelTest {
                     comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
                 }
     }
-
 }
 

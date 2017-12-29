@@ -70,5 +70,5 @@ internal val mapOfPropertyDefWrapperDefinitions = mapOf(
         PropertyDefinitionType.String.index to propertyDefinitionWrapper,
         PropertyDefinitionType.SubModel.index to SubModelDefinition(dataModel = { SubModelPropertyDefinitionWrapper }),
         PropertyDefinitionType.Time.index to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.ValueModel.index to propertyDefinitionWrapper
+        PropertyDefinitionType.ValueModel.index to fixedBytesPropertyDefinitionWrapper
 )

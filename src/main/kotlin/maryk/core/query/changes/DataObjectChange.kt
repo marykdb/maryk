@@ -39,7 +39,7 @@ data class DataObjectChange<out DO: Any>(
                                     definitionMap = mapOfChangeDefinitions
                             )
                     )) {
-                        it.changes.map { TypedValue(it.changeType.index, it) }
+                        it.changes.map { TypedValue(it.changeType, it) }
                     }
 
                     add(2, "lastVersion", NumberDefinition(
@@ -51,7 +51,7 @@ data class DataObjectChange<out DO: Any>(
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DataObjectChange(
                 key = map[0] as Key<Any>,
-                changes = (map[1] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList(),
+                changes = (map[1] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList(),
                 lastVersion = map[2] as UInt64?
         )
     }

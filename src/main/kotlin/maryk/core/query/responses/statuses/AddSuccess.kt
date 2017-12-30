@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.query.changes.ChangeType
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
 
@@ -32,7 +33,7 @@ data class AddSuccess<DO: Any>(
                             valueDefinition = MultiTypeDefinition(
                                     definitionMap = mapOfChangeDefinitions
                             )
-                    )) { it.changes.map { TypedValue(it.changeType.index, it) } }
+                    )) { it.changes.map { TypedValue(it.changeType, it) } }
                 }
             }
     ) {
@@ -40,7 +41,7 @@ data class AddSuccess<DO: Any>(
         override fun invoke(map: Map<Int, *>) = AddSuccess(
                 key = map[0] as Key<Any>,
                 version = map[1] as UInt64,
-                changes = (map[2] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList()
+                changes = (map[2] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList()
         )
     }
 }

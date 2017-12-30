@@ -79,7 +79,7 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
                     definitionMap = mapOfPropertyDefSubModelDefinitions
             )) {
                 val def = getter(it) as IsTransportablePropertyDefinitionType
-                TypedValue(def.propertyDefinitionType.index, def)
+                TypedValue(def.propertyDefinitionType, def)
             }
         }
     }

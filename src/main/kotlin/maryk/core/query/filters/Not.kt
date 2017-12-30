@@ -16,13 +16,13 @@ data class Not(
                 init {
                     add(0, "filter", MultiTypeDefinition(
                             definitionMap = mapOfFilterDefinitions
-                    )) { not: Not -> TypedValue(not.filter.filterType.index, not.filter)}
+                    )) { not: Not -> TypedValue(not.filter.filterType, not.filter)}
                 }
             }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Not(
-                filter = (map[0] as TypedValue<IsFilter>).value
+                filter = (map[0] as TypedValue<FilterType, IsFilter>).value
         )
     }
 }

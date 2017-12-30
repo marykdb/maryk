@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.key
 
+import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
@@ -19,13 +20,13 @@ import kotlin.test.Test
 
 internal class TypeIdTest {
     private data class MarykObject(
-            val multi: TypedValue<*>
+            val multi: TypedValue<Option, *>
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val multi = add(0, "multi", MultiTypeDefinition(
-                    definitionMap = mapOf<Int, IsSubDefinition<*, IsPropertyContext>>(
-                            0 to StringDefinition(),
-                            1 to BooleanDefinition()
+                    definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
+                            Option.V0 to StringDefinition(),
+                            Option.V1 to BooleanDefinition()
                     )
             ), MarykObject::multi)
         }
@@ -36,8 +37,9 @@ internal class TypeIdTest {
                 ),
                 properties = Properties
         ) {
+            @Suppress("UNCHECKED_CAST")
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                    map[0] as TypedValue<*>
+                    map[0] as TypedValue<Option, *>
             )
         }
     }
@@ -45,7 +47,7 @@ internal class TypeIdTest {
     @Test
     fun testKey(){
         val obj = MarykObject(
-                multi = TypedValue(1, true)
+                multi = TypedValue(Option.V1, true)
         )
 
         val key = MarykObject.key.getKey(obj)
@@ -53,8 +55,8 @@ internal class TypeIdTest {
 
         val keyDef = MarykObject.key.keyDefinitions[0]
 
-        (keyDef is TypeId) shouldBe true
-        val specificDef = keyDef as TypeId
+        (keyDef is TypeId<*>) shouldBe true
+        val specificDef = keyDef as TypeId<*>
         specificDef.multiTypeReference shouldBe MarykObject.Properties.multi.getRef()
 
         specificDef.getValue(MarykObject, obj) shouldBe 1

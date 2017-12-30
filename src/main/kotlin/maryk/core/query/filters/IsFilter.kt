@@ -8,17 +8,17 @@ interface IsFilter {
 }
 
 internal val mapOfFilterDefinitions = mapOf(
-        FilterType.AND.index to SubModelDefinition(dataModel = { And }),
-        FilterType.OR.index to SubModelDefinition(dataModel = { Or }),
-        FilterType.NOT.index to SubModelDefinition(dataModel = { Not }),
-        FilterType.EXISTS.index to SubModelDefinition(dataModel = { Exists }),
-        FilterType.EQUALS.index to SubModelDefinition(dataModel = { Equals }),
-        FilterType.LESS_THAN.index to SubModelDefinition(dataModel = { LessThan }),
-        FilterType.LESS_THAN_EQUALS.index to SubModelDefinition(dataModel = { LessThanEquals }),
-        FilterType.GREATER_THAN.index to SubModelDefinition(dataModel = { GreaterThan }),
-        FilterType.GREATER_THAN_EQUALS.index to SubModelDefinition(dataModel = { GreaterThanEquals }),
-        FilterType.PREFIX.index to SubModelDefinition(dataModel = { Prefix }),
-        FilterType.RANGE.index to SubModelDefinition(dataModel = { Range }),
-        FilterType.REGEX.index to SubModelDefinition(dataModel = { RegEx }),
-        FilterType.VALUE_IN.index to SubModelDefinition(dataModel = { ValueIn })
+        FilterType.AND to SubModelDefinition(dataModel = { And }),
+        FilterType.OR to SubModelDefinition(dataModel = { Or }),
+        FilterType.NOT to SubModelDefinition(dataModel = { Not }),
+        FilterType.EXISTS to SubModelDefinition(dataModel = { Exists }),
+        FilterType.EQUALS to SubModelDefinition(dataModel = { Equals }),
+        FilterType.LESS_THAN to SubModelDefinition(dataModel = { LessThan }),
+        FilterType.LESS_THAN_EQUALS to SubModelDefinition(dataModel = { LessThanEquals }),
+        FilterType.GREATER_THAN to SubModelDefinition(dataModel = { GreaterThan }),
+        FilterType.GREATER_THAN_EQUALS to SubModelDefinition(dataModel = { GreaterThanEquals }),
+        FilterType.PREFIX to SubModelDefinition(dataModel = { Prefix }),
+        FilterType.RANGE to SubModelDefinition(dataModel = { Range }),
+        FilterType.REGEX to SubModelDefinition(dataModel = { RegEx }),
+        FilterType.VALUE_IN to SubModelDefinition(dataModel = { ValueIn })
 )

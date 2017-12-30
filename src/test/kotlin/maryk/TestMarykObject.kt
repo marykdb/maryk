@@ -47,7 +47,7 @@ data class TestMarykObject(
         val map: Map<Time, String>? = null,
         val valueObject: TestValueObject? = null,
         val subModel: SubMarykObject? = null,
-        val multi: TypedValue<*>? = null,
+        val multi: TypedValue<Option, *>? = null,
         val reference: Key<TestMarykObject>? = null,
         val listOfString: List<String>? = null,
         val selfReference: Key<TestMarykObject>? = null
@@ -158,12 +158,12 @@ data class TestMarykObject(
 
         val multi = add(
                 index = 12, name = "multi",
-                definition = MultiTypeDefinition<IsPropertyContext>(
+                definition = MultiTypeDefinition<Option, IsPropertyContext>(
                         required = false,
                         definitionMap = mapOf(
-                                0 to StringDefinition(),
-                                1 to NumberDefinition(type = SInt32),
-                                2 to SubModelDefinition(
+                                Option.V0 to StringDefinition(),
+                                Option.V1 to NumberDefinition(type = SInt32),
+                                Option.V2 to SubModelDefinition(
                                         dataModel = { SubMarykObject }
                                 )
                         )
@@ -222,7 +222,7 @@ data class TestMarykObject(
                 map = map[9] as Map<Time, String>?,
                 valueObject = map[10] as TestValueObject?,
                 subModel = map[11] as SubMarykObject?,
-                multi = map[12] as TypedValue<*>?,
+                multi = map[12] as TypedValue<Option, *>?,
                 reference = map[13] as Key<TestMarykObject>?,
                 listOfString = map[14] as List<String>?
         )

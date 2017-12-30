@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
@@ -63,7 +64,7 @@ data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: A
         override fun invoke(map: Map<Int, *>) = ListPropertyDefinitionWrapper(
                 index = (map[0] as UInt32).toInt(),
                 name = map[1] as String,
-                definition = (map[2] as TypedValue<ListDefinition<Any, IsPropertyContext>>).value,
+                definition = (map[2] as TypedValue<PropertyDefinitionType, ListDefinition<Any, IsPropertyContext>>).value,
                 getter = { _: Any -> null }
         )
     }

@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.exceptions.DefNotFoundException
@@ -23,52 +24,52 @@ internal class MultiTypeDefinitionTest {
             regEx = "#.*"
     )
 
-    val def = MultiTypeDefinition<IsPropertyContext>(
+    val def = MultiTypeDefinition<Option, IsPropertyContext>(
             definitionMap = mapOf(
-                    0 to stringDef,
-                    1 to intDef
+                    Option.V0 to stringDef,
+                    Option.V1 to intDef
             )
     )
 
-    val defMaxDefined = MultiTypeDefinition<IsPropertyContext>(
+    val defMaxDefined = MultiTypeDefinition<Option, IsPropertyContext>(
             indexed = true,
             searchable = false,
             final = true,
             required = false,
             definitionMap = mapOf(
-                    0 to stringDef,
-                    1 to intDef
+                    Option.V0 to stringDef,
+                    Option.V1 to intDef
             )
     )
 
     private val multisToTest = arrayOf(
-            TypedValue(0, "#test"),
-            TypedValue(1, 400)
+            TypedValue(Option.V0, "#test"),
+            TypedValue(Option.V1, 400)
     )
 
     @Test
     fun `get properties`() {
-        def.definitionMap[0] shouldBe stringDef
-        def.definitionMap[1] shouldBe intDef
+        def.definitionMap[Option.V0] shouldBe stringDef
+        def.definitionMap[Option.V1] shouldBe intDef
     }
 
     @Test
     fun `validate content`() {
-        def.validateWithRef(newValue = TypedValue(0, "#test"))
-        def.validateWithRef(newValue = TypedValue(1, 400))
+        def.validateWithRef(newValue = TypedValue(Option.V0, "#test"))
+        def.validateWithRef(newValue = TypedValue(Option.V1, 400))
 
         shouldThrow<OutOfRangeException> {
-            def.validateWithRef(newValue = TypedValue(1, 3000))
+            def.validateWithRef(newValue = TypedValue(Option.V1, 3000))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(0, "WRONG"))
+            def.validateWithRef(newValue = TypedValue(Option.V0, "WRONG"))
         }
     }
 
     @Test
     fun `invalid field should throw exception`() {
         shouldThrow<DefNotFoundException> {
-            def.validateWithRef(newValue = TypedValue(2, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(Option.V2, "NonExistingField"))
         }
     }
 

@@ -5,6 +5,7 @@ import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.references.IsPropertyReference
@@ -63,7 +64,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
         override fun invoke(map: Map<Int, *>) = FixedBytesPropertyDefinitionWrapper(
                 index = (map[0] as UInt32).toInt(),
                 name = map[1] as String,
-                definition = (map[2] as TypedValue<IsSerializableFixedBytesEncodable<Any, IsPropertyContext>>).value,
+                definition = (map[2] as TypedValue<PropertyDefinitionType, IsSerializableFixedBytesEncodable<Any, IsPropertyContext>>).value,
                 getter = { _: Any -> null }
         )
     }

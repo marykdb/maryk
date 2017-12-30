@@ -56,7 +56,7 @@ private val testExtendedObject = TestMarykObject(
         ),
         valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
         subModel = SubMarykObject("test"),
-        multi = TypedValue(2, SubMarykObject("subInMulti!")),
+        multi = TypedValue(Option.V2, SubMarykObject("subInMulti!")),
         listOfString = listOf("test1", "another test", "🤗")
 )
 private val testMap = listOf(
@@ -79,11 +79,11 @@ private val testMap = listOf(
         ),
         10 to TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
         11 to SubMarykObject("test"),
-        12 to TypedValue(2, SubMarykObject("subInMulti!")),
+        12 to TypedValue(Option.V2, SubMarykObject("subInMulti!")),
         14 to listOf("test1", "another test", "🤗")
 ).toMap()
 
-private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[2,{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
+private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
 private const val PRETTY_JSON = """{
 	"string": "hay",
@@ -107,7 +107,7 @@ private const val PRETTY_JSON = """{
 	"subModel": {
 		"value": "test"
 	},
-	"multi": [2, {
+	"multi": ["V2", {
 		"value": "subInMulti!"
 	}],
 	"listOfString": ["test1", "another test", "🤗"]
@@ -137,7 +137,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"subModel": {
 		"value": "test"
 	},
-	"multi": [2, {
+	"multi": ["V2", {
 		"value": "subInMulti!"
 	}],
 	"listOfString": ["test1", "another test", "🤗"]

@@ -5,6 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -63,7 +64,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
         override fun invoke(map: Map<Int, *>) = SetPropertyDefinitionWrapper(
                 index = (map[0] as UInt32).toInt(),
                 name = map[1] as String,
-                definition = (map[2] as TypedValue<SetDefinition<Any, IsPropertyContext>>).value,
+                definition = (map[2] as TypedValue<PropertyDefinitionType, SetDefinition<Any, IsPropertyContext>>).value,
                 getter = { _: Any -> null }
         )
     }

@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
+import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.mapOfFilterDefinitions
 
@@ -20,7 +21,7 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsObjectReques
     val filterSoftDeleted: Boolean
 
     companion object {
-        fun <DM: Any> addFilter(definitions: PropertyDefinitions<DM>, getter: (DM) -> TypedValue<Any>?) {
+        fun <DM: Any> addFilter(definitions: PropertyDefinitions<DM>, getter: (DM) -> TypedValue<FilterType, Any>?) {
             definitions.add(2, "filter", MultiTypeDefinition(required = false, definitionMap = mapOfFilterDefinitions), getter)
         }
 

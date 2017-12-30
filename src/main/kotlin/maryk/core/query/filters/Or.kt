@@ -22,14 +22,14 @@ data class Or(
                                     definitionMap = mapOfFilterDefinitions
                             )
                     )) {
-                        it.filters.map { TypedValue(it.filterType.index, it) }
+                        it.filters.map { TypedValue(it.filterType, it) }
                     }
                 }
             }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Or(
-                filters = (map[0] as List<TypedValue<IsFilter>>).map { it.value }
+                filters = (map[0] as List<TypedValue<FilterType, IsFilter>>).map { it.value }
         )
     }
 }

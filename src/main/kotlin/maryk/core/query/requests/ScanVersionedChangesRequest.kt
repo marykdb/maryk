@@ -9,6 +9,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
+import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /** A Request to scan DataObjects by key for specific DataModel
@@ -35,7 +36,7 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
                     IsObjectRequest.addDataModel(this, ScanVersionedChangesRequest<*, *>::dataModel)
                     IsScanRequest.addStartKey(this, ScanVersionedChangesRequest<*, *>::startKey)
                     IsFetchRequest.addFilter(this) {
-                        it.filter?.let { TypedValue(it.filterType.index, it) }
+                        it.filter?.let { TypedValue(it.filterType, it) }
                     }
                     IsFetchRequest.addOrder(this, ScanVersionedChangesRequest<*, *>::order)
                     IsFetchRequest.addToVersion(this, ScanVersionedChangesRequest<*, *>::toVersion)
@@ -50,7 +51,7 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override fun invoke(map: Map<Int, *>) = ScanVersionedChangesRequest(
                 dataModel = map[0] as RootDataModel<Any, *>,
                 startKey = map[1] as Key<Any>,
-                filter = (map[2] as TypedValue<IsFilter>?)?.value,
+                filter = (map[2] as TypedValue<FilterType, IsFilter>?)?.value,
                 order = map[3] as Order?,
                 toVersion = map[4] as UInt64?,
                 filterSoftDeleted = map[5] as Boolean,

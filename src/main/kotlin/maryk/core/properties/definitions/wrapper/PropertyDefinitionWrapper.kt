@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
@@ -45,7 +46,7 @@ data class PropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, D: IsSeriali
         override fun invoke(map: Map<Int, *>) = PropertyDefinitionWrapper(
                 index = (map[0] as UInt32).toInt(),
                 name = map[1] as String,
-                definition = (map[2] as TypedValue<IsSerializableFlexBytesEncodable<Any, IsPropertyContext>>).value,
+                definition = (map[2] as TypedValue<PropertyDefinitionType, IsSerializableFlexBytesEncodable<Any, IsPropertyContext>>).value,
                 getter = { _: Any -> null }
         )
     }

@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
@@ -131,7 +132,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                                 is FixedBytesPropertyDefinitionWrapper<*, *, *, *> -> it.getRef()
                                 else -> it
                             }
-                            TypedValue(it.keyPartType.index, def)
+                            TypedValue(it.keyPartType, def)
                         }
                     }
                 }
@@ -140,7 +141,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
                 properties = map[0] as PropertyDefinitions<Any>,
                 name = map[1] as String,
-                keyDefinitions = (map[2] as List<TypedValue<*>>).map {
+                keyDefinitions = (map[2] as List<TypedValue<PropertyDefinitionType, *>>).map {
                     when(it.value) {
                         is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
                         else -> it.value as IsFixedBytesProperty<*>

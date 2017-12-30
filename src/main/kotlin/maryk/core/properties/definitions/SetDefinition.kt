@@ -58,7 +58,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                             definitionMap = mapOfPropertyDefSubModelDefinitions
                     )) {
                         val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
-                        TypedValue(defType.propertyDefinitionType.index, it.valueDefinition)
+                        TypedValue(defType.propertyDefinitionType, it.valueDefinition)
                     }
                 }
             }
@@ -71,7 +71,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                 final = map[3] as Boolean,
                 minSize = (map[4] as UInt32?)?.toInt(),
                 maxSize = (map[5] as UInt32?)?.toInt(),
-                valueDefinition = (map[6] as TypedValue<IsValueDefinition<*, *>>).value
+                valueDefinition = (map[6] as TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>).value
         )
     }
 }

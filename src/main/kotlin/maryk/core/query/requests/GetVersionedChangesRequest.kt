@@ -9,6 +9,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
+import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /** A Request to get DataObject of type [DO] its versioned changes by value [keys] for specific [dataModel] of type [DM]
@@ -42,7 +43,7 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
                     IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*, *>::dataModel)
                     IsGetRequest.addKeys(this, GetVersionedChangesRequest<*, *>::keys)
                     IsFetchRequest.addFilter(this) {
-                        it.filter?.let { TypedValue(it.filterType.index, it) }
+                        it.filter?.let { TypedValue(it.filterType, it) }
                     }
                     IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*, *>::order)
                     IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*, *>::toVersion)
@@ -56,7 +57,7 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
         override fun invoke(map: Map<Int, *>) = GetVersionedChangesRequest(
                 dataModel = map[0] as RootDataModel<Any, *>,
                 keys = map[1] as List<Key<Any>>,
-                filter = (map[2] as TypedValue<IsFilter>?)?.value,
+                filter = (map[2] as TypedValue<FilterType, IsFilter>?)?.value,
                 order = map[3] as Order?,
                 toVersion = map[4] as UInt64?,
                 filterSoftDeleted = map[5] as Boolean,

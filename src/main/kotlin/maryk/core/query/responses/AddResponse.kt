@@ -5,6 +5,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsAddResponseStatus
+import maryk.core.query.responses.statuses.StatusType
 
 /** Response to an Add request
  * @param dataModel to which objects were added
@@ -19,7 +20,7 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO, *>> constructor(
                 init {
                     IsDataModelResponse.addDataModel(this, AddResponse<*, *>::dataModel)
                     IsDataModelResponse.addStatuses(this) {
-                        it.statuses.map { TypedValue(it.statusType.index, it) }
+                        it.statuses.map { TypedValue(it.statusType, it) }
                     }
                 }
             }
@@ -27,7 +28,7 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO, *>> constructor(
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddResponse(
                 dataModel = map[0] as RootDataModel<Any, *>,
-                statuses = (map[1] as List<TypedValue<IsAddResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+                statuses = (map[1] as List<TypedValue<StatusType, IsAddResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
         )
     }
 }

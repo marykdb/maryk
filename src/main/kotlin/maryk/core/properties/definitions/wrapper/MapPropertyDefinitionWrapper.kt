@@ -5,6 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
@@ -78,7 +79,7 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
         override fun invoke(map: Map<Int, *>) = MapPropertyDefinitionWrapper(
                 index = (map[0] as UInt32).toInt(),
                 name = map[1] as String,
-                definition = (map[2] as TypedValue<MapDefinition<Any, Any, IsPropertyContext>>).value,
+                definition = (map[2] as TypedValue<PropertyDefinitionType, MapDefinition<Any, Any, IsPropertyContext>>).value,
                 getter = { _: Any -> null }
         )
     }

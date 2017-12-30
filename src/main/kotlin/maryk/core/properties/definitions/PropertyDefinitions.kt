@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.TypedValue
 
 /** A collection of Property Definitions which can be used to model a DataModel */
@@ -97,11 +98,11 @@ abstract class PropertyDefinitions<DO: Any>(
         add(this)
     }
 
-    protected fun <CX: IsPropertyContext> add(
+    protected fun <E: IndexedEnum<E>, CX: IsPropertyContext> add(
             index: Int,
             name: String,
-            definition: MultiTypeDefinition<CX>,
-            getter: (DO) -> TypedValue<*>? = { null }
+            definition: MultiTypeDefinition<E, CX>,
+            getter: (DO) -> TypedValue<E, *>? = { null }
     ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
         add(this)
     }
@@ -171,7 +172,7 @@ abstract class PropertyDefinitions<DO: Any>(
                     )) { propertyDefinitions ->
                         propertyDefinitions.map {
                             val def = it.definition as IsTransportablePropertyDefinitionType
-                            TypedValue(def.propertyDefinitionType.index, it)
+                            TypedValue(def.propertyDefinitionType, it)
                         }
                     }
                 }
@@ -180,7 +181,7 @@ abstract class PropertyDefinitions<DO: Any>(
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : PropertyDefinitions<PropertyDefinitions<Any>>(
                 properties =
-                    (map[0] as List<TypedValue<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>).map {
+                    (map[0] as List<TypedValue<*, IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>).map {
                         it.value
                     }.toMutableList()
         ){}

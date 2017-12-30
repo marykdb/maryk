@@ -12,6 +12,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
@@ -23,39 +24,42 @@ import maryk.core.protobuf.WriteCacheWriter
 /** Definition for objects which can be of multiple defined types. The type mapping is defined in the given
  * [definitionMap].
  */
-data class MultiTypeDefinition<in CX: IsPropertyContext>(
+data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         override val indexed: Boolean = false,
         override val searchable: Boolean = true,
         override val required: Boolean = true,
         override val final: Boolean = false,
-        val definitionMap: Map<Int, IsSubDefinition<out Any, CX>>
+        val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 ) :
-        IsValueDefinition<TypedValue<*>, CX>,
-        IsSerializableFlexBytesEncodable<TypedValue<*>, CX>,
+        IsValueDefinition<TypedValue<E, Any>, CX>,
+        IsSerializableFlexBytesEncodable<TypedValue<E, Any>, CX>,
         IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED
 
-    override fun asString(value: TypedValue<*>, context: CX?): String {
+    private val typeByName = definitionMap.map { Pair(it.key.name, it.key) }.toMap()
+    private val typeByIndex = definitionMap.map { Pair(it.key.index, it.key) }.toMap()
+
+    override fun asString(value: TypedValue<E, Any>, context: CX?): String {
         var string = ""
-        this.writeJsonValue(value, maryk.core.json.JsonWriter {
+        this.writeJsonValue(value, JsonWriter {
             string += it
         }, context)
         return string
     }
 
-    override fun fromString(string: String, context: CX?): TypedValue<*> {
+    override fun fromString(string: String, context: CX?): TypedValue<E, Any> {
         val stringIterator = string.iterator()
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun validateWithRef(previousValue: TypedValue<*>?, newValue: TypedValue<*>?, refGetter: () -> IsPropertyReference<TypedValue<*>, IsPropertyDefinition<TypedValue<*>>>?) {
+    override fun validateWithRef(previousValue: TypedValue<E, Any>?, newValue: TypedValue<E, Any>?, refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>>?) {
         super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             @Suppress("UNCHECKED_CAST")
-            val definition = this.definitionMap[newValue.typeIndex] as IsSubDefinition<Any, CX>?
-                    ?: throw DefNotFoundException("No def found for index ${newValue.typeIndex}")
+            val definition = this.definitionMap[newValue.type] as IsSubDefinition<Any, CX>?
+                    ?: throw DefNotFoundException("No def found for index ${newValue.type}")
 
             definition.validateWithRef(
                     previousValue?.value,
@@ -71,48 +75,46 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun writeJsonValue(value: TypedValue<*>, writer: JsonWriter, context: CX?) {
+    override fun writeJsonValue(value: TypedValue<E, Any>, writer: JsonWriter, context: CX?) {
         writer.writeStartArray()
-        writer.writeValue(value.typeIndex.toString())
+        writer.writeString(value.type.name)
         @Suppress("UNCHECKED_CAST")
-        val definition = this.definitionMap[value.typeIndex] as IsSubDefinition<Any, CX>?
-                ?: throw DefNotFoundException("No def found for index ${value.typeIndex}")
+        val definition = this.definitionMap[value.type] as IsSubDefinition<Any, CX>?
+                ?: throw DefNotFoundException("No def found for index ${value.type.name}")
 
         definition.writeJsonValue(value.value, writer, context)
         writer.writeEndArray()
     }
 
-    override fun readJson(reader: JsonReader, context: CX?): TypedValue<*> {
+    override fun readJson(reader: JsonReader, context: CX?): TypedValue<E, Any> {
         if(reader.nextToken() !is JsonToken.ArrayValue) {
             throw ParseException("Expected an array value at start")
         }
 
-        val index: Int
-        try {
-            index = reader.lastValue.toInt()
-        }catch (e: Throwable) {
-            throw ParseException("Invalid multi type index ${reader.lastValue}")
-        }
+        val type = this.typeByName[reader.lastValue] ?: throw ParseException("Invalid multi type name ${reader.lastValue}")
+
         reader.nextToken()
 
-        val definition: IsSubDefinition<*, CX>? = this.definitionMap[index]
+        val definition: IsSubDefinition<*, CX>? = this.definitionMap[type]
                 ?: throw ParseException("Unknown multi type index ${reader.lastValue}")
 
         val value = definition!!.readJson(reader, context)
 
         reader.nextToken() // skip end object
 
-        return TypedValue(index, value)
+        return TypedValue(type, value)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): TypedValue<*> {
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): TypedValue<E, Any> {
         // First the type value
         ProtoBuf.readKey(reader)
         val typeIndex = initIntByVar(reader)
 
+        val type = this.typeByIndex[typeIndex] ?: throw ParseException("Unknown multi type index $typeIndex")
+
         // Second the data itself
         val key = ProtoBuf.readKey(reader)
-        val def = this.definitionMap[typeIndex] ?: throw ParseException("Unknown multi type index $typeIndex")
+        val def = this.definitionMap[type] ?: throw ParseException("Unknown multi type  $typeIndex")
 
         val value = def.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, reader),
@@ -120,52 +122,82 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
                 context
         )
 
-        return TypedValue(
-                typeIndex,
-                value
-        )
+        return TypedValue(type, value)
     }
 
-    override fun calculateTransportByteLength(value: TypedValue<*>, cacher: WriteCacheWriter, context: CX?): Int {
+    override fun calculateTransportByteLength(value: TypedValue<E, Any>, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
         // Type index
         totalByteLength += ProtoBuf.calculateKeyLength(1)
-        totalByteLength += value.typeIndex.calculateVarByteLength()
+        totalByteLength += value.type.index.calculateVarByteLength()
 
         // value
         @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMap[value.typeIndex]!! as IsSubDefinition<Any, CX>
+        val def = this.definitionMap[value.type]!! as IsSubDefinition<Any, CX>
         totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, cacher, context)
 
         return totalByteLength
     }
 
-    override fun writeTransportBytes(value: TypedValue<*>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
+    override fun writeTransportBytes(value: TypedValue<E, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
-        value.typeIndex.writeVarBytes(writer)
+        value.type.index.writeVarBytes(writer)
 
         @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMap[value.typeIndex]!! as IsSubDefinition<Any, CX>
+        val def = this.definitionMap[value.type]!! as IsSubDefinition<Any, CX>
         def.writeTransportBytesWithKey(2, value.value, cacheGetter, writer, context)
     }
 
-    object Model : SimpleDataModel<MultiTypeDefinition<*>, PropertyDefinitions<MultiTypeDefinition<*>>>(
-            properties = object : PropertyDefinitions<MultiTypeDefinition<*>>() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MultiTypeDefinition<*, *>) return false
+
+        if (indexed != other.indexed) return false
+        if (searchable != other.searchable) return false
+        if (required != other.required) return false
+        if (final != other.final) return false
+        if (definitionMap != other.definitionMap) {
+            if(definitionMap.size != other.definitionMap.size) return false
+            definitionMap.entries.zip(other.definitionMap.entries).map {
+                if(it.first.key.index != it.second.key.index
+                    || it.first.key.name != it.second.key.name
+                    || it.first.value != it.second.value) {
+                    return false
+                }
+            }
+        }
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = indexed.hashCode()
+        result = 31 * result + searchable.hashCode()
+        result = 31 * result + required.hashCode()
+        result = 31 * result + final.hashCode()
+        result = 31 * result + definitionMap.hashCode()
+        return result
+    }
+
+    object Model : SimpleDataModel<MultiTypeDefinition<*, *>, PropertyDefinitions<MultiTypeDefinition<*, *>>>(
+            properties = object : PropertyDefinitions<MultiTypeDefinition<*, *>>() {
                 init {
-                    IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*>::indexed)
-                    IsPropertyDefinition.addSearchable(this, MultiTypeDefinition<*>::searchable)
-                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*>::required)
-                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*>::final)
-                    add(4, "definitionMap", MapDefinition(
-                            keyDefinition = NumberDefinition(type = UInt32),
-                            valueDefinition =  MultiTypeDefinition(
-                                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                    IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*, *>::indexed)
+                    IsPropertyDefinition.addSearchable(this, MultiTypeDefinition<*, *>::searchable)
+                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
+                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
+                    add(4, "definitionMap", ListDefinition(
+                            valueDefinition =  SubModelDefinition(
+                                    dataModel = { MultiTypeDescriptor.Model }
                             )
                     )) {
                         it.definitionMap.map {
-                            val defType = it.value as IsTransportablePropertyDefinitionType
-                            it.key.toUInt32() to TypedValue(defType.propertyDefinitionType.index, it.value)
-                        }.toMap()
+                            MultiTypeDescriptor(
+                                    index = it.key.index.toUInt32(),
+                                    name = it.key.name,
+                                    definition = it.value
+                            )
+                        }.toList()
                     }
                 }
             }
@@ -176,9 +208,40 @@ data class MultiTypeDefinition<in CX: IsPropertyContext>(
                 searchable = map[1] as Boolean,
                 required = map[2] as Boolean,
                 final = map[3] as Boolean,
-                definitionMap = (map[4] as Map<UInt32, TypedValue<IsValueDefinition<*, *>>>).map {
-                    it.key.toInt() to it.value.value
-                }.toMap()
+                definitionMap = (map[4] as List<MultiTypeDescriptor<IsPropertyContext>>).map {
+                    Pair(
+                        IndexedEnum(it.index.toInt(), it.name),
+                        it.definition
+                    )
+                }.toMap() as Map<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>
+        )
+    }
+}
+
+private data class MultiTypeDescriptor<in CX: IsPropertyContext>(
+    val index: UInt32,
+    val name: String,
+    val definition: IsSubDefinition<out Any, CX>
+) {
+    object Model : SimpleDataModel<MultiTypeDescriptor<*>, PropertyDefinitions<MultiTypeDescriptor<*>>>(
+            properties = object : PropertyDefinitions<MultiTypeDescriptor<*>>() {
+                init {
+                    add(0, "index", NumberDefinition(type = UInt32)) { it.index }
+                    add(1, "name", StringDefinition()) { it.name }
+                    add(2, "definition", MultiTypeDefinition(
+                        definitionMap = mapOfPropertyDefSubModelDefinitions
+                    )) {
+                        val defType = it.definition as IsTransportablePropertyDefinitionType
+                        TypedValue(defType.propertyDefinitionType, defType)
+                    }
+                }
+            }
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = MultiTypeDescriptor(
+                index = map[0] as UInt32,
+                name = map[1] as String,
+                definition = (map[2] as TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>).value
         )
     }
 }

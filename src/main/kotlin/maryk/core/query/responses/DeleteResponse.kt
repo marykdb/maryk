@@ -5,6 +5,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
+import maryk.core.query.responses.statuses.StatusType
 
 /** Response to an Delete request
  * @param dataModel to which objects were added
@@ -19,7 +20,7 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO, *>>(
                 init {
                     IsDataModelResponse.addDataModel(this, DeleteResponse<*, *>::dataModel)
                     IsDataModelResponse.addStatuses(this) {
-                        it.statuses.map { TypedValue(it.statusType.index, it) }
+                        it.statuses.map { TypedValue(it.statusType, it) }
                     }
                 }
             }
@@ -27,7 +28,7 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO, *>>(
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DeleteResponse(
                 dataModel = map[0] as RootDataModel<Any, *>,
-                statuses = (map[1] as List<TypedValue<IsDeleteResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+                statuses = (map[1] as List<TypedValue<StatusType, IsDeleteResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
         )
     }
 }

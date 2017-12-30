@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.mapOfValidationExceptionDefinitions
 import maryk.core.properties.types.TypedValue
@@ -27,14 +28,14 @@ data class ValidationFail<DO: Any>(
                                     definitionMap = mapOfValidationExceptionDefinitions
                             )
                     )) {
-                        it.exceptions.map { TypedValue(it.validationExceptionType.index, it) }
+                        it.exceptions.map { TypedValue(it.validationExceptionType, it) }
                     }
                 }
             }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValidationFail<Any>(
-                exceptions = (map[0] as List<TypedValue<ValidationException>>?)?.map { it.value } ?: emptyList()
+                exceptions = (map[0] as List<TypedValue<ValidationExceptionType, ValidationException>>?)?.map { it.value } ?: emptyList()
         )
     }
 }

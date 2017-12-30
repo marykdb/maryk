@@ -5,6 +5,7 @@ import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubModelDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -78,7 +79,7 @@ data class SubModelPropertyDefinitionWrapper<SDO: Any, out P: PropertyDefinition
         override fun invoke(map: Map<Int, *>) = SubModelPropertyDefinitionWrapper(
                 index = (map[0] as UInt32).toInt(),
                 name = map[1] as String,
-                definition = (map[2] as TypedValue<SubModelDefinition<Any, PropertyDefinitions<Any>, AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>>).value,
+                definition = (map[2] as TypedValue<PropertyDefinitionType, SubModelDefinition<Any, PropertyDefinitions<Any>, AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>>).value,
                 getter = { _: Any -> null }
         )
     }

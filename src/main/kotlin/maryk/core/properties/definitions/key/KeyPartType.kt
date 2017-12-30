@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.key
 
+import maryk.core.objects.DefinitionDataModel
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -16,13 +17,16 @@ enum class KeyPartType(
     Reversed(3)
 }
 
-internal val mapOfKeyPartDefinitions = mapOf<Int, IsSubDefinition<*, DataModelContext>>(
-        KeyPartType.UUID.index to SubModelDefinition(dataModel = { UUIDKey.Model }),
-        KeyPartType.Reference.index to ContextualPropertyReferenceDefinition(
+internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DataModelContext>>(
+        KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),
+        KeyPartType.Reference to ContextualPropertyReferenceDefinition(
                 contextualResolver = {
                     it!!.propertyDefinitions!!
                 }
         ),
-        KeyPartType.TypeId.index to SubModelDefinition(dataModel = { TypeId.Model }),
-        KeyPartType.Reversed.index to SubModelDefinition(dataModel = { Reversed.Model })
+        KeyPartType.TypeId to SubModelDefinition(dataModel = {
+            @Suppress("UNCHECKED_CAST")
+            TypeId.Model as DefinitionDataModel<TypeId<IndexedEnum<Any>>>
+        }),
+        KeyPartType.Reversed to SubModelDefinition(dataModel = { Reversed.Model })
 )

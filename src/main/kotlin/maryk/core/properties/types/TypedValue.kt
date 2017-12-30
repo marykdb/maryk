@@ -1,3 +1,3 @@
 package maryk.core.properties.types
 
-data class TypedValue<out T: Any>(val typeIndex: Int, val value: T)
+data class TypedValue<E: IndexedEnum<E>, out T: Any>(val type: E, val value: T)

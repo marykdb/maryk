@@ -26,7 +26,7 @@ data class ValidationUmbrellaException(
                                     definitionMap = mapOfValidationExceptionDefinitions
                             )
                     )) {
-                        it.exceptions.map { TypedValue(it.validationExceptionType.index, it) }
+                        it.exceptions.map { TypedValue(it.validationExceptionType, it) }
                     }
                 }
             }
@@ -34,7 +34,7 @@ data class ValidationUmbrellaException(
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
                 reference = map[0] as IsPropertyReference<*, *>?,
-                exceptions = (map[1] as List<TypedValue<ValidationException>>?)?.map { it.value } ?: emptyList()
+                exceptions = (map[1] as List<TypedValue<ValidationExceptionType, ValidationException>>?)?.map { it.value } ?: emptyList()
         )
     }
 }

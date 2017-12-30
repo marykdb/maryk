@@ -192,13 +192,13 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                             definitionMap = mapOfPropertyDefSubModelDefinitions
                     )) {
                         val defType = it.keyDefinition as IsTransportablePropertyDefinitionType
-                        TypedValue(defType.propertyDefinitionType.index, it.keyDefinition)
+                        TypedValue(defType.propertyDefinitionType, it.keyDefinition)
                     }
                     add(7, "valueDefinition", MultiTypeDefinition(
                             definitionMap = mapOfPropertyDefSubModelDefinitions
                     )) {
                         val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
-                        TypedValue(defType.propertyDefinitionType.index, it.valueDefinition)
+                        TypedValue(defType.propertyDefinitionType, it.valueDefinition)
                     }
                 }
             }
@@ -211,8 +211,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                 final = map[3] as Boolean,
                 minSize = (map[4] as UInt32?)?.toInt(),
                 maxSize = (map[5] as UInt32?)?.toInt(),
-                keyDefinition = (map[6] as TypedValue<IsSimpleValueDefinition<*, *>>).value,
-                valueDefinition = (map[7] as TypedValue<IsValueDefinition<*, *>>).value
+                keyDefinition = (map[6] as TypedValue<PropertyDefinitionType, IsSimpleValueDefinition<*, *>>).value,
+                valueDefinition = (map[7] as TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>).value
         )
     }
 }

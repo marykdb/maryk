@@ -20,7 +20,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext, out ST: IsValueDefinition<T, CX>>
-    : IsByteTransportableCollection<T, C, CX>, HasSizeDefinition {
+    : IsByteTransportableCollection<T, C, CX>, HasSizeDefinition, IsTransportablePropertyDefinitionType {
     val valueDefinition: ST
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null

@@ -17,10 +17,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         override val minSize: Int? = null,
         override val maxSize: Int? = null,
         override val valueDefinition: IsValueDefinition<T, CX>
-) :
-        IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>>,
-        IsTransportablePropertyDefinitionType
-{
+) : IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> {
     override val propertyDefinitionType = PropertyDefinitionType.Set
 
     init {

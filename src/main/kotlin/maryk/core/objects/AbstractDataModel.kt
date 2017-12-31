@@ -10,9 +10,9 @@ import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinition
+import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.SubModelDefinition
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.ValidationException
@@ -339,13 +339,16 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
     companion object {
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
-            definitions.add(0, "properties", ContextCaptureDefinition(
-                    SubModelDefinition(
-                        dataModel = { PropertyDefinitions.Model }
-                    )
-            ) { context, propDefs -> context!!.propertyDefinitions = propDefs }) { dataModel ->
-                dataModel.properties
-            }
+            definitions.addSingle(
+                    PropertyDefinitionsCollectionDefinitionWrapper(0, "properties", PropertyDefinitionsCollectionDefinition(
+                            capturer = { context, propDefs -> context!!.propertyDefinitions = propDefs }
+                        )
+                    ) {
+                        @Suppress("UNCHECKED_CAST")
+                        it.properties as PropertyDefinitions<Any>
+                    }
+            )
+
         }
 
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {

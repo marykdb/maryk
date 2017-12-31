@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.objects.AbstractDataModel
-import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
@@ -17,17 +16,26 @@ import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DataModelContext
 
 /** A collection of Property Definitions which can be used to model a DataModel */
 abstract class PropertyDefinitions<DO: Any>(
         properties: MutableList<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> = mutableListOf()
-) : Iterable<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> {
+) : Collection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> {
     override fun iterator() = _allProperties.iterator()
 
-    private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> = mutableListOf()
+    protected val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> = mutableListOf()
 
     private val indexToDefinition = mutableMapOf<Int, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
     private val nameToDefinition = mutableMapOf<String, IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>()
+
+    // Implementation of Collection
+    override val size = _allProperties.size
+    override fun contains(element: IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>)
+            = this._allProperties.contains(element)
+    override fun containsAll(elements: Collection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>)
+            = this._allProperties.containsAll(elements)
+    override fun isEmpty() = this._allProperties.isEmpty()
 
     /** Get the definition with a property [name] */
     fun getDefinition(name: String) = nameToDefinition[name]
@@ -40,11 +48,11 @@ abstract class PropertyDefinitions<DO: Any>(
     fun getPropertyGetter(index: Int) = indexToDefinition[index]?.getter
 
     init {
-        properties.forEach { add(it) }
+        properties.forEach { addSingle(it) }
     }
 
     /** Add a single property definition wrapper */
-    private fun add(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<out Any, *, DO>) {
+    fun addSingle(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<out Any, *, DO>) {
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>)
 
@@ -60,7 +68,7 @@ abstract class PropertyDefinitions<DO: Any>(
             definition: D,
             getter: (DO) -> T? = { null }
     ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
-        add(this)
+        addSingle(this)
     }
 
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFixedBytesEncodable<T, CX>> add(
@@ -69,7 +77,7 @@ abstract class PropertyDefinitions<DO: Any>(
             definition: D,
             getter: (DO) -> T? = { null }
     ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        add(this)
+        addSingle(this)
     }
 
     fun <T: Any> add(
@@ -78,7 +86,7 @@ abstract class PropertyDefinitions<DO: Any>(
             definition: ListDefinition<T, *>,
             getter: (DO) -> List<T>? = { null }
     ) = ListPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        add(this)
+        addSingle(this)
     }
 
     fun <T: Any, CX: IsPropertyContext> add(
@@ -87,7 +95,7 @@ abstract class PropertyDefinitions<DO: Any>(
             definition: SetDefinition<T, CX>,
             getter: (DO) -> Set<T>? = { null }
     ) = SetPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        add(this)
+        addSingle(this)
     }
 
     protected fun <K: Any, V: Any, CX: IsPropertyContext> add(
@@ -96,7 +104,7 @@ abstract class PropertyDefinitions<DO: Any>(
             definition: MapDefinition<K, V, CX>,
             getter: (DO) -> Map<K, V>? = { null }
     ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        add(this)
+        addSingle(this)
     }
 
     protected fun <E: IndexedEnum<E>, CX: IsPropertyContext> add(
@@ -105,7 +113,7 @@ abstract class PropertyDefinitions<DO: Any>(
             definition: MultiTypeDefinition<E, CX>,
             getter: (DO) -> TypedValue<E, *>? = { null }
     ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
-        add(this)
+        addSingle(this)
     }
 
     fun <SDO: Any, P: PropertyDefinitions<SDO>, D: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
@@ -114,7 +122,7 @@ abstract class PropertyDefinitions<DO: Any>(
             definition: SubModelDefinition<SDO, P, D, CXI, CX>,
             getter: (DO) -> SDO? = { null }
     ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        add(this)
+        addSingle(this)
     }
 
     /** Get PropertyReference by name
@@ -161,32 +169,83 @@ abstract class PropertyDefinitions<DO: Any>(
 
         return propertyReference!!
     }
+}
 
-    object Model : DefinitionDataModel<PropertyDefinitions<out Any>>(
-            properties = object : PropertyDefinitions<PropertyDefinitions<out Any>>() {
-                init {
-                    add(0, "properties", ListDefinition(
-                            valueDefinition = SubModelDefinition(
-                                    dataModel = {
-                                        @Suppress("UNCHECKED_CAST")
-                                        IsPropertyDefinitionWrapper.Model as SimpleDataModel<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>
-                                    }
-                            )
-                    )) { propertyDefinitions ->
-                        propertyDefinitions.map {
-                            @Suppress("UNCHECKED_CAST")
-                            it as IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>
-                        }.toList()
-                    }
-                }
-            }
-    ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = object : PropertyDefinitions<PropertyDefinitions<Any>>(
-                properties =
-                    (map[0] as List<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>).map {
-                        it
-                    }.toMutableList()
-        ){}
+/** Mutable variant of PropertyDefinitions for a IsCollectionDefinition implementation */
+private class MutablePropertyDefinitions<DO: Any> : PropertyDefinitions<DO>(), MutableCollection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>> {
+    override fun add(element: IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>): Boolean {
+        this.addSingle(propertyDefinitionWrapper = element)
+        return true
     }
+
+    override fun addAll(elements: Collection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>): Boolean {
+        elements.forEach {
+            this.addSingle(it)
+        }
+        return true
+    }
+
+    override fun clear() {}
+    override fun remove(element: IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>) = false
+    override fun removeAll(elements: Collection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>) = false
+    override fun retainAll(elements: Collection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>>) = false
+}
+
+/** Definition for a collection of Property Definitions for in a PropertyDefinitions */
+internal data class PropertyDefinitionsCollectionDefinition(
+    private val capturer: (DataModelContext?, PropertyDefinitions<Any>) -> Unit
+) : IsCollectionDefinition<
+        IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>,
+        PropertyDefinitions<Any>,
+        DataModelContext,
+        SubModelDefinition<
+                IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>,
+                PropertyDefinitions<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>,
+                SimpleDataModel<
+                        IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>,
+                        PropertyDefinitions<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>
+                >,
+                IsPropertyContext,
+                IsPropertyContext
+        >
+> {
+    override val indexed = false
+    override val searchable = false
+    override val required = true
+    override val final = true
+    override val minSize: Int? = null
+    override val maxSize: Int? = null
+    override val propertyDefinitionType = PropertyDefinitionType.List
+
+    override val valueDefinition = SubModelDefinition(
+        dataModel = {
+            @Suppress("UNCHECKED_CAST")
+            IsPropertyDefinitionWrapper.Model as SimpleDataModel<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>
+        }
+    )
+
+    override fun validateCollectionForExceptions(
+        refGetter: () -> IsPropertyReference<PropertyDefinitions<Any>, IsPropertyDefinition<PropertyDefinitions<Any>>>?,
+        newValue: PropertyDefinitions<Any>,
+        validator: (item: IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, itemRefFactory: () -> IsPropertyReference<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, IsPropertyDefinition<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>?) -> Any
+    ) {}
+
+    override fun newMutableCollection(context: DataModelContext?): MutableCollection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>> {
+        return MutablePropertyDefinitions<Any>().apply {
+            capturer(context, this)
+        }
+    }
+}
+
+/** Wrapper specifically to wrap a PropertyDefinitionsCollectionDefinition */
+internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
+    override val index: Int,
+    override val name: String,
+    override val definition: PropertyDefinitionsCollectionDefinition,
+    override val getter: (DO) -> PropertyDefinitions<Any>?
+) :
+    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, PropertyDefinitions<Any>, DataModelContext, SubModelDefinition<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsPropertyDefinitionWrapper<PropertyDefinitions<Any>, DataModelContext, DO>
+{
+    override fun getRef(parentRef: IsPropertyReference<*, *>?) = throw Throwable("Not implemented")
 }

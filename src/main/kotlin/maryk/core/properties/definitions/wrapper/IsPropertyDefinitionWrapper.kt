@@ -1,13 +1,18 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.exceptions.DefNotFoundException
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefSubModelDefinitions
+import maryk.core.properties.definitions.mapOfPropertyDefWrappers
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -64,23 +69,46 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
             = this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
 
     companion object {
-        internal fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) {
+        private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) {
             definitions.add(0, "index", NumberDefinition(type = UInt32)) {
                 getter(it).toUInt32()
             }
         }
 
-        internal fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
+        private fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
             definitions.add(1, "name", StringDefinition(), getter)
         }
 
-        internal fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) {
+        private fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) {
             definitions.add(2, "definition", MultiTypeDefinition(
-                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                definitionMap = mapOfPropertyDefSubModelDefinitions
             )) {
                 val def = getter(it) as IsTransportablePropertyDefinitionType
                 TypedValue(def.propertyDefinitionType, def)
             }
+        }
+    }
+
+    object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>>>(
+        properties = object : PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>>() {
+            init {
+                IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *>::index)
+                IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *>::name)
+                IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *>::definition)
+            }
+        }
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>): IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any> {
+            val typedDefinition = map[2] as TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>
+            val type = typedDefinition.type
+
+            return mapOfPropertyDefWrappers[type]?.invoke(
+                (map[0] as UInt32).toInt(),
+                map[1] as String,
+                typedDefinition.value,
+                { _: Any -> null }
+            ) ?: throw DefNotFoundException("Property type $type not found")
         }
     }
 }

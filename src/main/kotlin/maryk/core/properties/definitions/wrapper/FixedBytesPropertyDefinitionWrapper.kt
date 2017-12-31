@@ -1,17 +1,12 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.objects.IsDataModel
-import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
-import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
-import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
 
 /** Contains a Fixed Bytes property definition which can be used for keys.
  * @param index: of definition to encode into ProtoBuf
@@ -49,23 +44,5 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
         return dataModel.properties.getPropertyGetter(
                 this.index
         )?.invoke(dataObject) as T
-    }
-
-    companion object : SimpleDataModel<FixedBytesPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<FixedBytesPropertyDefinitionWrapper<*, *, *, *>>>(
-            properties = object : PropertyDefinitions<FixedBytesPropertyDefinitionWrapper<*, *, *, *>>() {
-                init {
-                    IsPropertyDefinitionWrapper.addIndex(this, FixedBytesPropertyDefinitionWrapper<*, *, *, *>::index)
-                    IsPropertyDefinitionWrapper.addName(this, FixedBytesPropertyDefinitionWrapper<*, *, *, *>::name)
-                    IsPropertyDefinitionWrapper.addDefinition(this, FixedBytesPropertyDefinitionWrapper<*, *, *, *>::definition)
-                }
-            }
-    ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = FixedBytesPropertyDefinitionWrapper(
-                index = (map[0] as UInt32).toInt(),
-                name = map[1] as String,
-                definition = (map[2] as TypedValue<PropertyDefinitionType, IsSerializableFixedBytesEncodable<Any, IsPropertyContext>>).value,
-                getter = { _: Any -> null }
-        )
     }
 }

@@ -4,7 +4,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt32
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class FixedBytesPropertyDefinitionWrapperTest {
@@ -17,17 +16,11 @@ class FixedBytesPropertyDefinitionWrapperTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, FixedBytesPropertyDefinitionWrapper, null, ::compare)
+        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, FixedBytesPropertyDefinitionWrapper, null, ::compare)
-    }
-
-    private fun compare(converted: FixedBytesPropertyDefinitionWrapper<*, *, *, *>, original: FixedBytesPropertyDefinitionWrapper<*, *, *, *>) {
-        converted.index shouldBe original.index
-        converted.name shouldBe original.name
-        converted.definition shouldBe original.definition
+        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

@@ -1,18 +1,14 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.objects.AbstractDataModel
-import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubModelDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SubModelPropertyRef
-import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
 
 /** Wrapper for a sub model definition to contain the context on how it relates to DataObject
  * @param index: of definition to encode into ProtoBuf
@@ -64,23 +60,5 @@ data class SubModelPropertyDefinitionWrapper<SDO: Any, out P: PropertyDefinition
             IsPropertyReference<T, W>
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W> {
         return { this.definition.dataModel(this.getRef(it), referenceGetter) }
-    }
-
-    companion object : SimpleDataModel<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>, PropertyDefinitions<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>>>(
-            properties = object : PropertyDefinitions<SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>>() {
-                init {
-                    IsPropertyDefinitionWrapper.addIndex(this, SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>::index)
-                    IsPropertyDefinitionWrapper.addName(this, SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>::name)
-                    IsPropertyDefinitionWrapper.addDefinition(this, SubModelPropertyDefinitionWrapper<*, *, *, *, *, *>::definition)
-                }
-            }
-    ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = SubModelPropertyDefinitionWrapper(
-                index = (map[0] as UInt32).toInt(),
-                name = map[1] as String,
-                definition = (map[2] as TypedValue<PropertyDefinitionType, SubModelDefinition<Any, PropertyDefinitions<Any>, AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>>).value,
-                getter = { _: Any -> null }
-        )
     }
 }

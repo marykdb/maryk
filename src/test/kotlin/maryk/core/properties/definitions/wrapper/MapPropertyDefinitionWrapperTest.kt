@@ -6,7 +6,6 @@ import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.numeric.Float32
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class MapPropertyDefinitionWrapperTest {
@@ -22,17 +21,11 @@ class MapPropertyDefinitionWrapperTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, MapPropertyDefinitionWrapper, null, ::compare)
+        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, MapPropertyDefinitionWrapper, null, ::compare)
-    }
-
-    private fun compare(converted: MapPropertyDefinitionWrapper<*, *, *, *>, original: MapPropertyDefinitionWrapper<*, *, *, *>) {
-        converted.index shouldBe original.index
-        converted.name shouldBe original.name
-        converted.definition shouldBe original.definition
+        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

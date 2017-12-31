@@ -4,6 +4,7 @@ import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
@@ -55,24 +56,45 @@ internal val mapOfPropertyDefSubModelDefinitions = mapOf(
         PropertyDefinitionType.ValueModel to SubModelDefinition(dataModel = { ValueModelDefinition.Model })
 )
 
-val propertyDefinitionWrapper = SubModelDefinition(dataModel = { PropertyDefinitionWrapper })
-val fixedBytesPropertyDefinitionWrapper = SubModelDefinition(dataModel = { FixedBytesPropertyDefinitionWrapper })
+typealias WrapperCreator = (index: Int, name: String, definition: IsPropertyDefinition<Any>, getter: (Any) -> Any?) -> IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>
 
-internal val mapOfPropertyDefWrapperDefinitions = mapOf(
-        PropertyDefinitionType.Boolean to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.Date to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.DateTime to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.Enum to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.FixedBytes to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.FlexBytes to propertyDefinitionWrapper,
-        PropertyDefinitionType.List to SubModelDefinition(dataModel = { ListPropertyDefinitionWrapper }),
-        PropertyDefinitionType.Map to SubModelDefinition(dataModel = { MapPropertyDefinitionWrapper }),
-        PropertyDefinitionType.MultiType to propertyDefinitionWrapper,
-        PropertyDefinitionType.Number to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.Reference to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.Set to SubModelDefinition(dataModel = { SetPropertyDefinitionWrapper }),
-        PropertyDefinitionType.String to propertyDefinitionWrapper,
-        PropertyDefinitionType.SubModel to SubModelDefinition(dataModel = { SubModelPropertyDefinitionWrapper }),
-        PropertyDefinitionType.Time to fixedBytesPropertyDefinitionWrapper,
-        PropertyDefinitionType.ValueModel to fixedBytesPropertyDefinitionWrapper
+@Suppress("UNCHECKED_CAST")
+val createFixedBytesWrapper: WrapperCreator = { index, name, definition, getter ->
+    FixedBytesPropertyDefinitionWrapper(index, name, definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>, getter)
+}
+
+@Suppress("UNCHECKED_CAST")
+val createFlexBytesWrapper: WrapperCreator = { index, name, definition, getter ->
+    PropertyDefinitionWrapper(index, name, definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>, getter)
+}
+
+internal val mapOfPropertyDefWrappers = mapOf(
+    PropertyDefinitionType.Boolean to createFixedBytesWrapper,
+    PropertyDefinitionType.Date to createFixedBytesWrapper,
+    PropertyDefinitionType.DateTime to createFixedBytesWrapper,
+    PropertyDefinitionType.Enum to createFixedBytesWrapper,
+    PropertyDefinitionType.FixedBytes to createFixedBytesWrapper,
+    PropertyDefinitionType.FlexBytes to createFlexBytesWrapper,
+    PropertyDefinitionType.List to { index, name, definition, getter ->
+        @Suppress("UNCHECKED_CAST")
+        ListPropertyDefinitionWrapper(index, name, definition as ListDefinition<Any, IsPropertyContext>, getter as (Any) -> List<Any>?)
+    },
+    PropertyDefinitionType.Map to { index, name, definition, getter ->
+        @Suppress("UNCHECKED_CAST")
+        MapPropertyDefinitionWrapper(index, name, definition as MapDefinition<Any, Any, IsPropertyContext>, getter as (Any) -> Map<Any, Any>?)
+    },
+    PropertyDefinitionType.MultiType to createFlexBytesWrapper,
+    PropertyDefinitionType.Number to createFixedBytesWrapper,
+    PropertyDefinitionType.Reference to createFixedBytesWrapper,
+    PropertyDefinitionType.Set to { index, name, definition, getter ->
+        @Suppress("UNCHECKED_CAST")
+        SetPropertyDefinitionWrapper(index, name, definition as SetDefinition<Any, IsPropertyContext>, getter as (Any) -> Set<Any>?)
+    },
+    PropertyDefinitionType.String to createFlexBytesWrapper,
+    PropertyDefinitionType.SubModel to { index, name, definition, getter ->
+        @Suppress("UNCHECKED_CAST")
+        SubModelPropertyDefinitionWrapper(index, name, definition as SubModelDefinition<Any, PropertyDefinitions<Any>, AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>, getter as (Any) -> Set<Any>?)
+    },
+    PropertyDefinitionType.Time to createFixedBytesWrapper,
+    PropertyDefinitionType.ValueModel to createFixedBytesWrapper
 )

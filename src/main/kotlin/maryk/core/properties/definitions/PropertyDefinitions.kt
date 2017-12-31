@@ -4,6 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.DefinitionDataModel
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -161,19 +162,21 @@ abstract class PropertyDefinitions<DO: Any>(
         return propertyReference!!
     }
 
-
     object Model : DefinitionDataModel<PropertyDefinitions<out Any>>(
             properties = object : PropertyDefinitions<PropertyDefinitions<out Any>>() {
                 init {
                     add(0, "properties", ListDefinition(
-                            valueDefinition = MultiTypeDefinition(
-                                    definitionMap = mapOfPropertyDefWrapperDefinitions
+                            valueDefinition = SubModelDefinition(
+                                    dataModel = {
+                                        @Suppress("UNCHECKED_CAST")
+                                        IsPropertyDefinitionWrapper.Model as SimpleDataModel<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>
+                                    }
                             )
                     )) { propertyDefinitions ->
                         propertyDefinitions.map {
-                            val def = it.definition as IsTransportablePropertyDefinitionType
-                            TypedValue(def.propertyDefinitionType, it)
-                        }
+                            @Suppress("UNCHECKED_CAST")
+                            it as IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>
+                        }.toList()
                     }
                 }
             }
@@ -181,8 +184,8 @@ abstract class PropertyDefinitions<DO: Any>(
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : PropertyDefinitions<PropertyDefinitions<Any>>(
                 properties =
-                    (map[0] as List<TypedValue<*, IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>>).map {
-                        it.value
+                    (map[0] as List<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>>).map {
+                        it
                     }.toMutableList()
         ){}
     }

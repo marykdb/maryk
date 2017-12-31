@@ -22,11 +22,11 @@ class PropertyDefinitionWrapperTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, PropertyDefinitionWrapper, null, ::comparePropertyDefinitionWrapper)
+        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, PropertyDefinitionWrapper, null, ::comparePropertyDefinitionWrapper)
+        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

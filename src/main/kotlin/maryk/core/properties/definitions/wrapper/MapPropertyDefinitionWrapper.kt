@@ -1,19 +1,14 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
-import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
 
 /** Wraps a map definition to contain the context on how it relates to DataObject
  * @param index: of definition to encode into ProtoBuf
@@ -64,23 +59,5 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
      */
     infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> MapValueReference<K, V, *> {
         return { this.getValueRef(key, it) }
-    }
-
-    companion object : SimpleDataModel<MapPropertyDefinitionWrapper<*, *, *, *>, PropertyDefinitions<MapPropertyDefinitionWrapper<*, *, *, *>>>(
-            properties = object : PropertyDefinitions<MapPropertyDefinitionWrapper<*, *, *, *>>() {
-                init {
-                    IsPropertyDefinitionWrapper.addIndex(this, MapPropertyDefinitionWrapper<*, *, *, *>::index)
-                    IsPropertyDefinitionWrapper.addName(this, MapPropertyDefinitionWrapper<*, *, *, *>::name)
-                    IsPropertyDefinitionWrapper.addDefinition(this, MapPropertyDefinitionWrapper<*, *, *, *>::definition)
-                }
-            }
-    ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = MapPropertyDefinitionWrapper(
-                index = (map[0] as UInt32).toInt(),
-                name = map[1] as String,
-                definition = (map[2] as TypedValue<PropertyDefinitionType, MapDefinition<Any, Any, IsPropertyContext>>).value,
-                getter = { _: Any -> null }
-        )
     }
 }

@@ -4,7 +4,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.test.shouldBe
 import kotlin.test.Test
 
 class SetPropertyDefinitionWrapperTest {
@@ -19,17 +18,11 @@ class SetPropertyDefinitionWrapperTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, SetPropertyDefinitionWrapper, null, ::compare)
+        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, SetPropertyDefinitionWrapper, null, ::compare)
-    }
-
-    private fun compare(converted: SetPropertyDefinitionWrapper<*, *, *>, original: SetPropertyDefinitionWrapper<*, *, *>) {
-        converted.index shouldBe original.index
-        converted.name shouldBe original.name
-        converted.definition shouldBe original.definition
+        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

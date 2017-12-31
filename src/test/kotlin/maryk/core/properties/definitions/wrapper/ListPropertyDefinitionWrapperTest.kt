@@ -4,8 +4,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.test.shouldBe
-
 import kotlin.test.Test
 
 class ListPropertyDefinitionWrapperTest {
@@ -20,17 +18,11 @@ class ListPropertyDefinitionWrapperTest {
 
     @Test
     fun `convert definition to ProtoBuf and back`() {
-        checkProtoBufConversion(this.def, ListPropertyDefinitionWrapper, null, ::compare)
+        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun `convert definition to JSON and back`() {
-        checkJsonConversion(this.def, ListPropertyDefinitionWrapper, null, ::compare)
-    }
-
-    private fun compare(converted: ListPropertyDefinitionWrapper<*, *, *>, original: ListPropertyDefinitionWrapper<*, *, *>) {
-        converted.index shouldBe original.index
-        converted.name shouldBe original.name
-        converted.definition shouldBe original.definition
+        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
     }
 }

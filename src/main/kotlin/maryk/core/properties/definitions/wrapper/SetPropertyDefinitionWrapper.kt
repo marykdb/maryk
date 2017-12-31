@@ -1,19 +1,14 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
-import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
 
 /** Wrapper for a set definition to contain the context on how it relates to DataObject
  * @param index: of definition to encode into ProtoBuf
@@ -49,23 +44,5 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
      */
     infix fun at(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> SetItemReference<T, *> {
         return { this.getItemRef(item, it) }
-    }
-
-    companion object : SimpleDataModel<SetPropertyDefinitionWrapper<*, *, *>, PropertyDefinitions<SetPropertyDefinitionWrapper<*, *, *>>>(
-            properties = object : PropertyDefinitions<SetPropertyDefinitionWrapper<*, *, *>>() {
-                init {
-                    IsPropertyDefinitionWrapper.addIndex(this, SetPropertyDefinitionWrapper<*, *, *>::index)
-                    IsPropertyDefinitionWrapper.addName(this, SetPropertyDefinitionWrapper<*, *, *>::name)
-                    IsPropertyDefinitionWrapper.addDefinition(this, SetPropertyDefinitionWrapper<*, *, *>::definition)
-                }
-            }
-    ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = SetPropertyDefinitionWrapper(
-                index = (map[0] as UInt32).toInt(),
-                name = map[1] as String,
-                definition = (map[2] as TypedValue<PropertyDefinitionType, SetDefinition<Any, IsPropertyContext>>).value,
-                getter = { _: Any -> null }
-        )
     }
 }

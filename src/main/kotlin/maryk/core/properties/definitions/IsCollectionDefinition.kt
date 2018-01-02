@@ -2,9 +2,9 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.json.JsonReader
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonToken
-import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
@@ -57,7 +57,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
     /** Creates a new mutable instance of the collection */
     override fun newMutableCollection(context: CX?): MutableCollection<T>
 
-    override fun writeJsonValue(value: C, writer: JsonWriter, context: CX?) {
+    override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeStartArray()
         value.forEach {
             valueDefinition.writeJsonValue(it, writer, context)
@@ -65,7 +65,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         writer.writeEndArray()
     }
 
-    override fun readJson(reader: JsonReader, context: CX?): C {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): C {
         if (reader.currentToken !is JsonToken.StartArray) {
             throw ParseException("JSON value should be an Array")
         }

@@ -4,6 +4,8 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
@@ -75,7 +77,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun writeJsonValue(value: TypedValue<E, Any>, writer: JsonWriter, context: CX?) {
+    override fun writeJsonValue(value: TypedValue<E, Any>, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeStartArray()
         writer.writeString(value.type.name)
         @Suppress("UNCHECKED_CAST")
@@ -86,7 +88,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         writer.writeEndArray()
     }
 
-    override fun readJson(reader: JsonReader, context: CX?): TypedValue<E, Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, Any> {
         if(reader.nextToken() !is JsonToken.ArrayValue) {
             throw ParseException("Expected an array value at start")
         }

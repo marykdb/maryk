@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.json.JsonReader
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonToken
-import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WriteCacheReader
@@ -68,13 +68,13 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
 
     override fun fromString(string: String, context: CX?) = this.fromString(string)
 
-    override fun writeJsonValue(value: T, writer: JsonWriter, context: CX?) {
+    override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeString(
                 this.asString(value, context)
         )
     }
 
-    override fun readJson(reader: JsonReader, context: CX?): T {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): T {
         if (reader.currentToken !is JsonToken.ObjectValue && reader.currentToken !is JsonToken.ArrayValue) {
             throw ParseException("JSON value should be a simple value")
         }

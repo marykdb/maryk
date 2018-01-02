@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WriteCacheReader
@@ -17,14 +17,14 @@ interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : I
      * @param writer to write json to
      * @param value value to write
      */
-    fun writeJsonValue(value: T, writer: JsonWriter, context: CX? = null)
+    fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX? = null)
 
     /** Reads JSON and returns values
      * @param context with possible context values for Dynamic Json readers
      * @param reader to read JSON from
      * @throws ParseException when encountering unparsable content
      */
-    fun readJson(reader: JsonReader, context: CX? = null): T
+    fun readJson(reader: IsJsonLikeReader, context: CX? = null): T
 
     /** Calculates the needed bytes to transport the value
      * @param index to write this value for

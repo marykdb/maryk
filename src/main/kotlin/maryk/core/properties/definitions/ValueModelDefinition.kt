@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
@@ -69,10 +69,9 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
      * @param value: value to write
      * @param writer: to write json to
      */
-    override fun writeJsonValue(value: DO, writer: JsonWriter, context: IsPropertyContext?) = dataModel.writeJson(value, writer, context)
+    override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: IsPropertyContext?) = dataModel.writeJson(value, writer, context)
 
-    override fun readJson(reader: JsonReader, context: IsPropertyContext?): DO = dataModel.readJsonToObject(reader, context)
-
+    override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DO = dataModel.readJsonToObject(reader, context)
 
     object Model : DefinitionDataModel<ValueModelDefinition<*, *>>(
             properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {

@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -26,10 +26,10 @@ class ContextualReferenceDefinition<in CX: IsPropertyContext>(
 
     override fun asString(value: Key<*>, context: CX?): String = value.toString()
 
-    override fun writeJsonValue(value: Key<*>, writer: JsonWriter, context: CX?)
+    override fun writeJsonValue(value: Key<*>, writer: IsJsonLikeWriter, context: CX?)
             = writer.writeString(value.toString())
 
-    override fun readJson(reader: JsonReader, context: CX?)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)
             = contextualResolver(context).get(reader.lastValue)
 
     override fun calculateTransportByteLength(value: Key<*>, cacher: WriteCacheWriter, context: CX?)

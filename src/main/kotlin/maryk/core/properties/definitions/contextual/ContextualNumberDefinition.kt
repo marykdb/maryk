@@ -1,17 +1,17 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.SInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -42,11 +42,11 @@ class ContextualNumberDefinition<in CX: IsPropertyContext>(
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)
             = contextualResolver(context).readTransportBytes(reader)
 
-    override fun readJson(reader: JsonReader, context: CX?)= try {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)= try {
         contextualResolver(context).ofString(reader.lastValue)
     } catch (e: Throwable) { throw ParseException(reader.lastValue, e) }
 
-    override fun writeJsonValue(value: Comparable<Any>, writer: JsonWriter, context: CX?) = when {
+    override fun writeJsonValue(value: Comparable<Any>, writer: IsJsonLikeWriter, context: CX?) = when {
         contextualResolver(context) !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
             writer.writeValue(
                     value.toString()

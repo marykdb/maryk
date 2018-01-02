@@ -3,8 +3,8 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.bytes.initString
 import maryk.core.bytes.writeUTF8Bytes
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -29,10 +29,10 @@ data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
     override fun fromString(string: String, context: CX?)
             = contextualResolver(context, string)
 
-    override fun writeJsonValue(value: DataModel<*, *>, writer: JsonWriter, context: CX?)
+    override fun writeJsonValue(value: DataModel<*, *>, writer: IsJsonLikeWriter, context: CX?)
             = writer.writeString(this.asString(value, context))
 
-    override fun readJson(reader: JsonReader, context: CX?)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)
             = this.fromString(reader.lastValue, context)
 
     override fun calculateTransportByteLength(value: DataModel<*, *>, cacher: WriteCacheWriter, context: CX?)

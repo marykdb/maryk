@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -22,10 +22,10 @@ class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    override fun writeJsonValue(value: Map<K, V>, writer: JsonWriter, context: CX?)
+    override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?)
             = contextualResolver(context).writeJsonValue(value, writer, context)
 
-    override fun readJson(reader: JsonReader, context: CX?)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)
             = contextualResolver(context).readJson(reader, context)
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: Map<K, V>, cacher: WriteCacheWriter, context: CX?)

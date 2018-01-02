@@ -1,7 +1,8 @@
 package maryk.core.properties.definitions
 
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.DataModel
@@ -67,13 +68,13 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         }
     }
 
-    override fun writeJsonValue(value: DO, writer: JsonWriter, context: CXI?) = this.dataModel.writeJson(
+    override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.writeJson(
             value,
             writer,
             this.dataModel.transformContext(context)
     )
 
-    override fun readJson(reader: JsonReader, context: CXI?): DO {
+    override fun readJson(reader: IsJsonLikeReader, context: CXI?): DO {
         return this.dataModel.readJsonToObject(reader, this.dataModel.transformContext(context))
     }
 

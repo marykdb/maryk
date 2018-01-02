@@ -2,9 +2,9 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.json.JsonReader
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonToken
-import maryk.core.json.JsonWriter
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -101,7 +101,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         }
     }
 
-    override fun writeJsonValue(value: Map<K, V>, writer: JsonWriter, context: CX?) {
+    override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeStartObject()
         value.forEach { (k, v) ->
             writer.writeFieldName(
@@ -112,7 +112,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         writer.writeEndObject()
     }
 
-    override fun readJson(reader: JsonReader, context: CX?): Map<K, V> {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): Map<K, V> {
         if (reader.currentToken !is JsonToken.StartObject) {
             throw ParseException("JSON value should be an Object")
         }

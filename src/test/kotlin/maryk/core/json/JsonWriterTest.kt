@@ -140,7 +140,7 @@ internal class JsonWriterTest {
         }
     }
 
-    private fun generateJson(writer: JsonWriter) {
+    private fun generateJson(writer: IsJsonLikeWriter) {
         writer.writeStartArray()
         writer.writeValue("1")
         writer.writeString("Test")

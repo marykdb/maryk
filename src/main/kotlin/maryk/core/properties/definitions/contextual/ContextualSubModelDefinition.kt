@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
@@ -28,16 +30,16 @@ internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(
 
     override fun asString(value: Any, context: CX?): String {
         var string = ""
-        this.writeJsonValue(value, maryk.core.json.JsonWriter {
+        this.writeJsonValue(value, JsonWriter {
             string += it
         }, context)
         return string
     }
 
-    override fun writeJsonValue(value: Any, writer: JsonWriter, context: CX?)
+    override fun writeJsonValue(value: Any, writer: IsJsonLikeWriter, context: CX?)
             = contextualResolver(context).writeJson(value, writer, context)
 
-    override fun readJson(reader: JsonReader, context: CX?)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)
             = contextualResolver(context).readJsonToObject(reader, context)
 
     override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?)

@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.JsonReader
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -33,10 +34,10 @@ data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
     override fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?)
             = this.definition.writeTransportBytes(value.also { capturer(context, it) }, cacheGetter, writer, context)
 
-    override fun writeJsonValue(value: T, writer: JsonWriter, context: CX?)
+    override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?)
             = this.definition.writeJsonValue(value.also {capturer(context, it)}, writer, context)
 
-    override fun readJson(reader: JsonReader, context: CX?)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)
             = this.definition.readJson(reader, context).also {capturer(context, it)}
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)

@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonWriter
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
@@ -37,7 +38,7 @@ data class BooleanDefinition(
         else -> throw ParseException(string)
     }
 
-    override fun writeJsonValue(value: Boolean, writer: JsonWriter, context: IsPropertyContext?) {
+    override fun writeJsonValue(value: Boolean, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
         writer.writeValue(
                 this.asString(value)
         )

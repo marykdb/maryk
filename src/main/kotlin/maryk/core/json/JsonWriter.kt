@@ -9,11 +9,11 @@ private enum class JsonType {
 class JsonWriter(
         val pretty: Boolean = false,
         private val writer: (String) -> Unit
-) {
+) : IsJsonLikeWriter {
     private var lastType: JsonType = JsonType.START
     private var typeStack: MutableList<JsonObjectType> = mutableListOf()
 
-    fun writeStartObject() {
+    override fun writeStartObject() {
         if(lastType != JsonType.START_ARRAY
                 && !typeStack.isEmpty()
                 && typeStack.last() == JsonObjectType.ARRAY
@@ -27,7 +27,7 @@ class JsonWriter(
         makePretty()
     }
 
-    fun writeEndObject() {
+    override fun writeEndObject() {
         if(typeStack.isEmpty() || typeStack.last() != JsonObjectType.OBJECT) {
             throw IllegalJsonOperation("Json: There is no object to close")
         }
@@ -36,7 +36,7 @@ class JsonWriter(
         write(JsonType.END_OBJ, "}", JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_OBJ, JsonType.END_ARRAY)
     }
 
-    fun writeStartArray() {
+    override fun writeStartArray() {
         if(lastType != JsonType.START_ARRAY
                 && !typeStack.isEmpty()
                 && typeStack.last() == JsonObjectType.ARRAY
@@ -48,7 +48,7 @@ class JsonWriter(
         write(JsonType.START_ARRAY, "[", JsonType.START, JsonType.FIELD_NAME, JsonType.START_ARRAY, JsonType.END_ARRAY)
     }
 
-    fun writeEndArray() {
+    override fun writeEndArray() {
         if(typeStack.isEmpty() || typeStack.last() != JsonObjectType.ARRAY) {
             throw IllegalJsonOperation("Json: There is no array to close")
         }
@@ -57,7 +57,7 @@ class JsonWriter(
     }
 
     /** Writes the field name for an object */
-    fun writeFieldName(name: String) {
+    override fun writeFieldName(name: String) {
         if(lastType != JsonType.START_OBJ) {
             writer(",")
             makePretty()
@@ -67,10 +67,10 @@ class JsonWriter(
     }
 
     /** Writes a string value including quotes */
-    fun writeString(value: String) = writeValue("\"$value\"")
+    override fun writeString(value: String) = writeValue("\"$value\"")
 
     /** Writes a value excluding quotes */
-    fun writeValue(value: String) = if (!typeStack.isEmpty()) {
+    override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
         when(typeStack.last()) {
             JsonObjectType.OBJECT -> {
                 write(JsonType.OBJ_VALUE, value, JsonType.FIELD_NAME)
@@ -105,8 +105,3 @@ class JsonWriter(
         lastType = type
     }
 }
-
-/** Exception for invalid JSON */
-class IllegalJsonOperation(
-        description: String
-): Throwable(description)

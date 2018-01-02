@@ -1,7 +1,8 @@
 package maryk.core.objects
 
 import maryk.core.json.IllegalJsonOperation
-import maryk.core.json.JsonReader
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonToken
 import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
@@ -96,7 +97,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param obj to write to JSON
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeJson(obj: DO, writer: JsonWriter, context: CX? = null) {
+    fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (def in this.properties) {
             val name = def.name
@@ -114,7 +115,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param map with values to write to JSON
      * @param context (optional)  with context parameters for conversion (for dynamically dependent properties)
      */
-    fun writeJson(map: Map<Int, Any>, writer: JsonWriter, context: CX? = null) {
+    fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
             val def = properties.getDefinition(key) ?: continue
@@ -131,7 +132,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      * @return map with all the values
      */
-    fun readJson(reader: JsonReader, context: CX? = null): Map<Int, Any> {
+    fun readJson(reader: IsJsonLikeReader, context: CX? = null): Map<Int, Any> {
         if (reader.currentToken == JsonToken.StartJSON){
             reader.nextToken()
         }
@@ -169,7 +170,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
      * @return DataObject represented by the JSON
      */
-    fun readJsonToObject(reader: JsonReader, context: CX? = null) = this(this.readJson(reader, context))
+    fun readJsonToObject(reader: IsJsonLikeReader, context: CX? = null) = this(this.readJson(reader, context))
 
     /** Calculates the byte length for the DataObject contained in map
      * @param map with values to calculate byte length for

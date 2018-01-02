@@ -24,14 +24,14 @@ private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySepara
 /** Reads JSON from the supplied [reader] */
 class JsonReader(
         private val reader: () -> Char
-) {
-    var currentToken: JsonToken = JsonToken.StartJSON
-    var lastValue: String = ""
+) : IsJsonLikeReader {
+    override var currentToken: JsonToken = JsonToken.StartJSON
+    override var lastValue: String = ""
     private val typeStack: MutableList<JsonObjectType> = mutableListOf()
     private var lastChar: Char = ' '
 
     /** Find the next token */
-    fun nextToken(): JsonToken {
+    override fun nextToken(): JsonToken {
         lastValue = ""
         try {
             when (currentToken) {
@@ -107,7 +107,7 @@ class JsonReader(
     }
 
     /** Skips all JSON values until a next value at same level is discovered */
-    fun skipUntilNextField() {
+    override fun skipUntilNextField() {
         val currentDepth = typeStack.count()
         do {
             nextToken()
@@ -321,10 +321,3 @@ class JsonReader(
         throw InvalidJsonContent("Invalid character '$lastChar' after $currentToken")
     }
 }
-
-class ExceptionWhileReadingJson : Throwable()
-
-/** Exception for invalid JSON */
-class InvalidJsonContent(
-        description: String
-): Throwable(description)

@@ -4,7 +4,6 @@ import maryk.core.json.IllegalJsonOperation
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonToken
-import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
@@ -339,9 +338,13 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     open fun transformContext(context: CXI?): CX?  = context as CX?
 
     companion object {
+        internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
+            definitions.add(0, "name", StringDefinition(), getter)
+        }
+
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
             definitions.addSingle(
-                    PropertyDefinitionsCollectionDefinitionWrapper(0, "properties", PropertyDefinitionsCollectionDefinition(
+                    PropertyDefinitionsCollectionDefinitionWrapper(1, "properties", PropertyDefinitionsCollectionDefinition(
                             capturer = { context, propDefs -> context!!.propertyDefinitions = propDefs }
                         )
                     ) {
@@ -350,10 +353,6 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                     }
             )
 
-        }
-
-        internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
-            definitions.add(1, "name", StringDefinition(), getter)
         }
     }
 }

@@ -118,10 +118,10 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
             properties = object : PropertyDefinitions<RootDataModel<*, *>>() {
                 init {
-                    AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
                     AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
                         it.name
                     }
+                    AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
                     add(2, "key", ListDefinition(
                             valueDefinition = MultiTypeDefinition(
                                     definitionMap = mapOfKeyPartDefinitions
@@ -139,8 +139,8 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             }
     ) {
         override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
-                properties = map[0] as PropertyDefinitions<Any>,
-                name = map[1] as String,
+                name = map[0] as String,
+                properties = map[1] as PropertyDefinitions<Any>,
                 keyDefinitions = (map[2] as List<TypedValue<PropertyDefinitionType, *>>).map {
                     when(it.value) {
                         is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition

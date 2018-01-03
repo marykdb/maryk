@@ -77,17 +77,17 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
     object Model : DefinitionDataModel<ValueDataModel<*, *>>(
             properties = object : PropertyDefinitions<ValueDataModel<*, *>>() {
                 init {
-                    AbstractDataModel.addProperties(this)
                     AbstractDataModel.addName(this) {
                         it.name
                     }
+                    AbstractDataModel.addProperties(this)
                 }
             }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
-                properties = map[0] as PropertyDefinitions<ValueDataObject>,
-                name = map[1] as String
+                name = map[0] as String,
+                properties = map[1] as PropertyDefinitions<ValueDataObject>
         ){
             override fun invoke(map: Map<Int, *>): ValueDataObject {
                 return object : ValueDataObject(ByteArray(0)){}

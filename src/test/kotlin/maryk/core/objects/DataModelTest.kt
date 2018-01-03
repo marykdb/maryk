@@ -10,6 +10,7 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
+import maryk.core.json.yaml.YamlWriter
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
@@ -113,6 +114,40 @@ private const val PRETTY_JSON = """{
 	"listOfString": ["test1", "another test", "🤗"]
 }"""
 
+private const val YAML = """string: hay
+int: 4
+uint: 32
+double: 3.555
+dateTime: "2017-12-04T12:13"
+bool: true
+enum: V0
+list:
+- 34
+- 2352
+- 3423
+- 766
+set:
+- 2017-12-05
+- 2016-03-02
+- 1981-12-05
+map:
+  12:55: yes
+  10:03: ahum
+valueObject:
+  int: 6
+  dateTime: "2017-04-01T12:55"
+  bool: true
+subModel:
+  value: test
+multi:
+- V2
+- value: subInMulti!
+listOfString:
+- test1
+- another test
+- 🤗
+"""
+
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
 	"string": "hay",
@@ -145,7 +180,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 
 internal class DataModelTest {
     @Test
-    fun testIndexConstruction() {
+    fun `construct by map`() {
         TestMarykObject(mapOf(
                 0 to testObject.string,
                 1 to testObject.int,
@@ -158,24 +193,24 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testValidationWithDataObject() {
+    fun `validate by DataObject`() {
         TestMarykObject.validate(testObject)
     }
 
     @Test
-    fun testValidationWithMap() {
+    fun `validate by Map`() {
         TestMarykObject.validate(testMap)
     }
 
     @Test
-    fun testValidationFail() {
+    fun `fail validation with incorrect values in DataObject`() {
         shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(testObject.copy(int = 9))
         }
     }
 
     @Test
-    fun testValidationWithMapFail() {
+    fun `fail validation with incorrect values in map`() {
         val e = shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(mapOf(
                 0 to "wrong",
@@ -190,7 +225,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testDefinitionByName() {
+    fun `get property definition by name`() {
         TestMarykObject.properties.getDefinition("string") shouldBe TestMarykObject.Properties.string
         TestMarykObject.properties.getDefinition("int") shouldBe TestMarykObject.Properties.int
         TestMarykObject.properties.getDefinition("dateTime") shouldBe TestMarykObject.Properties.dateTime
@@ -198,7 +233,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testDefinitionByIndex() {
+    fun `get property definition by index`() {
         TestMarykObject.properties.getDefinition(0) shouldBe TestMarykObject.Properties.string
         TestMarykObject.properties.getDefinition(1) shouldBe TestMarykObject.Properties.int
         TestMarykObject.properties.getDefinition(2) shouldBe TestMarykObject.Properties.uint
@@ -208,7 +243,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testPropertyGetterByName() {
+    fun `get properties by name`() {
         TestMarykObject.properties.getPropertyGetter("string") shouldBe TestMarykObject::string
         TestMarykObject.properties.getPropertyGetter("int") shouldBe TestMarykObject::int
         TestMarykObject.properties.getPropertyGetter("dateTime") shouldBe TestMarykObject::dateTime
@@ -216,7 +251,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testPropertyGetterByIndex() {
+    fun `get properties by index`() {
         TestMarykObject.properties.getPropertyGetter(0) shouldBe TestMarykObject::string
         TestMarykObject.properties.getPropertyGetter(1) shouldBe TestMarykObject::int
         TestMarykObject.properties.getPropertyGetter(2) shouldBe TestMarykObject::uint
@@ -226,13 +261,14 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testWriteJsonConversion() {
+    fun `write into a JSON object`() {
         var output = ""
         val writer = { string: String -> output += string }
 
         mapOf(
                 JSON to JsonWriter(writer = writer),
-                PRETTY_JSON to JsonWriter(pretty = true, writer = writer)
+                PRETTY_JSON to JsonWriter(pretty = true, writer = writer),
+                YAML to YamlWriter(writer = writer)
         ).forEach { (result, generator) ->
             TestMarykObject.writeJson(testExtendedObject, generator)
 
@@ -242,7 +278,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testWriteProtoBufConversionWithMap() {
+    fun `write map to ProtoBuf bytes`() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -267,7 +303,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testFromProtoBufConversionWithMap() {
+    fun `convert ProtoBuf bytes to map`() {
         val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
@@ -287,7 +323,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testProtoBufConversionWithMap() {
+    fun `convert map to ProtoBuf and back`() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -301,7 +337,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testProtoBufConversion() {
+    fun `convert DataObject to ProtoBuf and back`() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -315,7 +351,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testSkipProtoBufConversion() {
+    fun `skip reading unknown fields`() {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
@@ -327,7 +363,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testFromJsonToObjectConversion() {
+    fun `convert JSON to DataObject`() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -344,7 +380,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testFromJsonToMapConversion() {
+    fun `convert JSON to map`() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -361,7 +397,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun testMapToJsonAndBackConversion() {
+    fun `convert map to JSON and back to map`() {
         var output = ""
         val writer = { string: String -> output += string }
 

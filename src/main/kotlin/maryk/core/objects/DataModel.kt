@@ -15,17 +15,17 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
     object Model : DefinitionDataModel<DataModel<*, *>>(
             properties = object : PropertyDefinitions<DataModel<out Any, PropertyDefinitions<out Any>>>() {
                 init {
-                    AbstractDataModel.addProperties(this)
                     AbstractDataModel.addName(this) {
                         it.name
                     }
+                    AbstractDataModel.addProperties(this)
                 }
             }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : DataModel<Any, PropertyDefinitions<Any>>(
-                properties = map[0] as PropertyDefinitions<Any>,
-                name = map[1] as String
+            name = map[0] as String,
+            properties = map[1] as PropertyDefinitions<Any>
         ){
             override fun invoke(map: Map<Int, *>): Any {
                 return object : Any(){}

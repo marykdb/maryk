@@ -75,7 +75,7 @@ class YamlWriter(
     }
 
     private fun sanitizeValue(value: String) = if(value.matches(toSanitizeRegex)) {
-        "\"$value\""
+        "'$value'"
     } else {
         value
     }

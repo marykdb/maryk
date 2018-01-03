@@ -1,22 +1,5 @@
 package maryk.core.json
 
-sealed class JsonToken(val name: String) {
-    object StartJSON : JsonToken("StartJSON")
-    object StartObject : JsonToken("StartObject")
-    object FieldName : JsonToken("FieldName")
-    object ObjectSeparator : JsonToken("ObjectSeparator")
-    object ObjectValue : JsonToken("ObjectValue")
-    object EndObject : JsonToken("EndObject")
-    object StartArray : JsonToken("StartArray")
-    object ArrayValue : JsonToken("ArrayValue")
-    object ArraySeparator : JsonToken("ArraySeparator")
-    object EndArray : JsonToken("EndArray")
-    abstract class Stopped(name: String): JsonToken(name)
-    object EndJSON : Stopped("EndJSON")
-    class Suspended(val lastToken: JsonToken): Stopped("Stopped reader")
-    class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
-}
-
 private val whiteSpaceChars = charArrayOf(' ', '\t', '\n', '\r')
 private val numberChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartJSON)

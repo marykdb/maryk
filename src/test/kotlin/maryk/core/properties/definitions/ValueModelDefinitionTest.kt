@@ -49,7 +49,7 @@ internal class ValueModelDefinitionTest {
     )
 
     @Test
-    fun `convert values to storage bytes and back`() {
+    fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         bc.reserve(
                 def.calculateStorageByteLength(value)
@@ -61,14 +61,14 @@ internal class ValueModelDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
 
         checkProtoBufConversion(bc, value, this.def)
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         def.fromString(
                 def.asString(value)
         ) shouldBe value
@@ -97,13 +97,13 @@ internal class ValueModelDefinitionTest {
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, ValueModelDefinition.Model, DataModelContext())
         checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext())
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, ValueModelDefinition.Model, DataModelContext())
         checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext())
     }

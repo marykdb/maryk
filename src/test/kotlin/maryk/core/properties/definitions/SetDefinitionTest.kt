@@ -41,7 +41,7 @@ internal class SetDefinitionTest {
     )
 
     @Test
-    fun `validate required`() {
+    fun validate_required() {
         defMaxDefined.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
@@ -50,7 +50,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun `validate set size`() {
+    fun validate_set_size() {
         def.validateWithRef(newValue = setOf("T", "T2"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4"))
@@ -65,7 +65,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun `validate set content`() {
+    fun validate_set_content() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = setOf("T", "WRONG", "WRONG2"))
         }
@@ -76,7 +76,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -109,7 +109,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun `convert values values to JSON String and back`() {
+    fun convert_values_values_to_JSON_String_and_back() {
         val value = setOf("T", "T2", "T3", "T4")
 
         var totalString = ""
@@ -126,13 +126,13 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, SetDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, SetDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, SetDefinition.Model)
         checkJsonConversion(this.defMaxDefined, SetDefinition.Model)
     }

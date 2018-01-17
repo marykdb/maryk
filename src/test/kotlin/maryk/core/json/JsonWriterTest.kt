@@ -7,7 +7,7 @@ internal class JsonWriterTest : AbstractJsonWriterTest() {
     override fun createJsonWriter(writer: (String) -> Unit) = JsonWriter(writer = writer)
 
     @Test
-    fun `write expected JSON`() {
+    fun write_expected_JSON() {
         var output = ""
         val writer = { string: String -> output += string }
 
@@ -19,7 +19,7 @@ internal class JsonWriterTest : AbstractJsonWriterTest() {
     }
 
     @Test
-    fun `write expected pretty JSON`() {
+    fun write_expected_pretty_JSON() {
         var output = ""
         val writer = { string: String -> output += string }
 

@@ -17,7 +17,7 @@ internal class YamlWriterTest : AbstractJsonWriterTest() {
     override fun createJsonWriter(writer: (String) -> Unit) = YamlWriter(writer = writer)
 
     @Test
-    fun `write expected YAML`() {
+    fun write_expected_YAML() {
         var output = ""
         val writer = { string: String -> output += string }
 

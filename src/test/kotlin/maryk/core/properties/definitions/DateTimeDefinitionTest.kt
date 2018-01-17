@@ -40,7 +40,7 @@ internal class DateTimeDefinitionTest {
     )
 
     @Test
-    fun `create now date time`() {
+    fun create_now_date_time() {
         val now = def.createNow().toEpochMilli()
         val expected = Instant.getCurrentEpochTimeInMillis()
 
@@ -50,7 +50,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun `convert values with milliseconds precision to storage bytes and back`() {
+    fun convert_values_with_milliseconds_precision_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(
@@ -63,7 +63,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun `convert values with seconds precision to storage bytes and back`() {
+    fun convert_values_with_seconds_precision_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(
@@ -76,7 +76,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun `convert values with seconds precision to transport bytes and back`() {
+    fun convert_values_with_seconds_precision_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -89,7 +89,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun `convert values with millisecond precision to transport bytes and back`() {
+    fun convert_values_with_millisecond_precision_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -102,7 +102,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         dateTimesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -110,20 +110,20 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun `invalid String value should throw exception`() {
+    fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, DateTimeDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, DateTimeDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, DateTimeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, DateTimeDefinition.Model)
     }

@@ -68,7 +68,7 @@ internal class ReversedTest {
     )
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(
                 value = Reversed(MarykObject.Properties.boolean.getRef()),
                 dataModel = Reversed.Model,
@@ -77,7 +77,7 @@ internal class ReversedTest {
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(
                 value = Reversed(MarykObject.Properties.boolean.getRef()),
                 dataModel = Reversed.Model,

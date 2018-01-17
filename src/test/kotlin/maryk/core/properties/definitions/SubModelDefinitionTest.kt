@@ -60,7 +60,7 @@ internal class SubModelDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -86,13 +86,13 @@ internal class SubModelDefinitionTest {
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, SubModelDefinition.Model, DataModelContext())
         checkProtoBufConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, SubModelDefinition.Model, DataModelContext())
         checkJsonConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
     }

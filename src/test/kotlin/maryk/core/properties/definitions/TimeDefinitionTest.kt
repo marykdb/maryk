@@ -43,7 +43,7 @@ internal class TimeDefinitionTest {
     )
 
     @Test
-    fun `create now time`() {
+    fun create_now_time() {
         val expected = Instant.getCurrentEpochTimeInMillis()% (24 * 60 * 60 * 1000) / 1000
         val now = def.createNow().toSecondsOfDay()
 
@@ -53,7 +53,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun `convert millisecond precision values to storage bytes and back`() {
+    fun convert_millisecond_precision_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
             bc.reserve(
@@ -66,7 +66,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun `convert seconds precision values to storage bytes and back`() {
+    fun convert_seconds_precision_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         timesToTestSeconds.forEach {
             bc.reserve(
@@ -79,7 +79,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun `convert seconds precision values to transport bytes and back`() {
+    fun convert_seconds_precision_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -92,7 +92,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun `convert millis precision values to transport bytes and back`() {
+    fun convert_millis_precision_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -105,7 +105,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         timesToTestMillis.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -113,20 +113,20 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun `invalid String value should throw exception`() {
+    fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, TimeDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, TimeDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, TimeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, TimeDefinition.Model)
     }

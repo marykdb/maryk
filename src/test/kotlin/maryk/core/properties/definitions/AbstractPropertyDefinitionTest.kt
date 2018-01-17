@@ -10,13 +10,13 @@ internal class AbstractPropertyDefinitionTest {
     private val def = StringDefinition(final = true)
 
     @Test
-    fun `has values`() {
+    fun has_values() {
         def.required shouldBe true
         def.final shouldBe true
     }
 
     @Test
-    fun `validate final property`() {
+    fun validate_final_property() {
         def.validateWithRef(newValue = "test")
 
         shouldThrow<AlreadySetException> {
@@ -28,7 +28,7 @@ internal class AbstractPropertyDefinitionTest {
     }
 
     @Test
-    fun `validate required property`() {
+    fun validate_required_property() {
         def.validateWithRef(newValue = "test")
 
         shouldThrow<RequiredException> {

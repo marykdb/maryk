@@ -35,7 +35,7 @@ internal class FlexBytesDefinitionTest {
     )
 
     @Test
-    fun `validate values`() {
+    fun validate_values() {
         // Should both succeed without errors
         def.validateWithRef(newValue = Bytes(ByteArray(4, { 0x00.toByte() } )))
         def.validateWithRef(newValue = Bytes(ByteArray(5, { 0x00.toByte() } )))
@@ -50,7 +50,7 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun `convert values to storage bytes and back`() {
+    fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         flexBytesToTest.forEach {
             bc.reserve(
@@ -63,13 +63,13 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         flexBytesToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         flexBytesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -77,20 +77,20 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun `invalid String value should throw exception`() {
+    fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, FlexBytesDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, FlexBytesDefinition.Model)
         checkJsonConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }

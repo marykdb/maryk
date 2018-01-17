@@ -48,13 +48,13 @@ internal class MultiTypeDefinitionTest {
     )
 
     @Test
-    fun `get properties`() {
+    fun get_properties() {
         def.definitionMap[Option.V0] shouldBe stringDef
         def.definitionMap[Option.V1] shouldBe intDef
     }
 
     @Test
-    fun `validate content`() {
+    fun validate_content() {
         def.validateWithRef(newValue = TypedValue(Option.V0, "#test"))
         def.validateWithRef(newValue = TypedValue(Option.V1, 400))
 
@@ -67,26 +67,26 @@ internal class MultiTypeDefinitionTest {
     }
 
     @Test
-    fun `invalid field should throw exception`() {
+    fun invalid_field_should_throw_exception() {
         shouldThrow<DefNotFoundException> {
             def.validateWithRef(newValue = TypedValue(Option.V2, "NonExistingField"))
         }
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, MultiTypeDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, MultiTypeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model)
     }

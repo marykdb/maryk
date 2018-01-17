@@ -15,14 +15,14 @@ internal class IsComparableDefinitionTest {
     )
 
     @Test
-    fun `has defined values`() {
+    fun has_defined_values() {
         def.unique shouldBe true
         def.minValue shouldBe "bbb"
         def.maxValue shouldBe "ddd"
     }
 
     @Test
-    fun `validate with value range`() {
+    fun validate_with_value_range() {
         def.validateWithRef(newValue = "ccc")
         shouldThrow<OutOfRangeException> {
             def.validateWithRef(newValue = "b")

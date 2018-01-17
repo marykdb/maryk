@@ -180,7 +180,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 
 internal class DataModelTest {
     @Test
-    fun `construct by map`() {
+    fun construct_by_map() {
         TestMarykObject(mapOf(
                 0 to testObject.string,
                 1 to testObject.int,
@@ -193,24 +193,24 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `validate by DataObject`() {
+    fun validate_by_DataObject() {
         TestMarykObject.validate(testObject)
     }
 
     @Test
-    fun `validate by Map`() {
+    fun validate_by_Map() {
         TestMarykObject.validate(testMap)
     }
 
     @Test
-    fun `fail validation with incorrect values in DataObject`() {
+    fun fail_validation_with_incorrect_values_in_DataObject() {
         shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(testObject.copy(int = 9))
         }
     }
 
     @Test
-    fun `fail validation with incorrect values in map`() {
+    fun fail_validation_with_incorrect_values_in_map() {
         val e = shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(mapOf(
                 0 to "wrong",
@@ -225,7 +225,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `get property definition by name`() {
+    fun get_property_definition_by_name() {
         TestMarykObject.properties.getDefinition("string") shouldBe TestMarykObject.Properties.string
         TestMarykObject.properties.getDefinition("int") shouldBe TestMarykObject.Properties.int
         TestMarykObject.properties.getDefinition("dateTime") shouldBe TestMarykObject.Properties.dateTime
@@ -233,7 +233,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `get property definition by index`() {
+    fun get_property_definition_by_index() {
         TestMarykObject.properties.getDefinition(0) shouldBe TestMarykObject.Properties.string
         TestMarykObject.properties.getDefinition(1) shouldBe TestMarykObject.Properties.int
         TestMarykObject.properties.getDefinition(2) shouldBe TestMarykObject.Properties.uint
@@ -243,7 +243,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `get properties by name`() {
+    fun get_properties_by_name() {
         TestMarykObject.properties.getPropertyGetter("string") shouldBe TestMarykObject::string
         TestMarykObject.properties.getPropertyGetter("int") shouldBe TestMarykObject::int
         TestMarykObject.properties.getPropertyGetter("dateTime") shouldBe TestMarykObject::dateTime
@@ -251,7 +251,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `get properties by index`() {
+    fun get_properties_by_index() {
         TestMarykObject.properties.getPropertyGetter(0) shouldBe TestMarykObject::string
         TestMarykObject.properties.getPropertyGetter(1) shouldBe TestMarykObject::int
         TestMarykObject.properties.getPropertyGetter(2) shouldBe TestMarykObject::uint
@@ -261,7 +261,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `write into a JSON object`() {
+    fun write_into_a_JSON_object() {
         var output = ""
         val writer = { string: String -> output += string }
 
@@ -278,7 +278,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `write map to ProtoBuf bytes`() {
+    fun write_map_to_ProtoBuf_bytes() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -303,7 +303,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `convert ProtoBuf bytes to map`() {
+    fun convert_ProtoBuf_bytes_to_map() {
         val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
@@ -323,7 +323,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `convert map to ProtoBuf and back`() {
+    fun convert_map_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -337,7 +337,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `convert DataObject to ProtoBuf and back`() {
+    fun convert_DataObject_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -351,7 +351,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `skip reading unknown fields`() {
+    fun skip_reading_unknown_fields() {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
@@ -363,7 +363,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `convert JSON to DataObject`() {
+    fun convert_JSON_to_DataObject() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -380,7 +380,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `convert JSON to map`() {
+    fun convert_JSON_to_map() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -397,7 +397,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `convert map to JSON and back to map`() {
+    fun convert_map_to_JSON_and_back_to_map() {
         var output = ""
         val writer = { string: String -> output += string }
 
@@ -416,12 +416,12 @@ internal class DataModelTest {
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
     }
 

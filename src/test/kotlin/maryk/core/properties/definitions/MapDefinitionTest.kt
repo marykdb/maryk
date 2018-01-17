@@ -55,7 +55,7 @@ internal class MapDefinitionTest {
     )
 
     @Test
-    fun `validate map size`() {
+    fun validate_map_size() {
         def.validateWithRef(newValue = mapOf(
                 12 to "#twelve",
                 30 to "#thirty"
@@ -85,7 +85,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun `validate map content`() {
+    fun validate_map_content() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = mapOf(
                     12 to "#twelve",
@@ -110,7 +110,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -141,7 +141,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun `convert values values to JSON String and back`() {
+    fun convert_values_values_to_JSON_String_and_back() {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })
 
@@ -156,13 +156,13 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, MapDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, MapDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, MapDefinition.Model)
         checkJsonConversion(this.defMaxDefined, MapDefinition.Model)
     }

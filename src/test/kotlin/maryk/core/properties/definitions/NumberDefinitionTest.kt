@@ -49,17 +49,17 @@ internal class NumberDefinitionTest {
     )
 
     @Test
-    fun `has values set`() {
+    fun has_values_set() {
         def.type shouldBe UInt32
     }
 
     @Test
-    fun `create random number`() {
+    fun create_random_number() {
         def.createRandom()
     }
 
     @Test
-    fun `convert values to storage bytes and back`() {
+    fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         intArray.forEach {
             bc.reserve(
@@ -72,7 +72,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -93,7 +93,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun `convert Float values to transport bytes and back`() {
+    fun convert_Float_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -114,7 +114,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         intArray.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -122,20 +122,20 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun `invalid String value should throw exception`() {
+    fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, NumberDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, NumberDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, NumberDefinition.Model)
         checkJsonConversion(this.defMaxDefined, NumberDefinition.Model)
     }

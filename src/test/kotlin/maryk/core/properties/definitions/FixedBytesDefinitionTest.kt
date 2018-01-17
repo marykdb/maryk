@@ -33,12 +33,12 @@ internal class FixedBytesDefinitionTest {
     )
 
     @Test
-    fun `create random value`() {
+    fun create_random_value() {
         def.createRandom()
     }
 
     @Test
-    fun `convert values to storage bytes and back`() {
+    fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         fixedBytesToTest.forEach {
             bc.reserve(
@@ -51,13 +51,13 @@ internal class FixedBytesDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         fixedBytesToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         fixedBytesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -65,20 +65,20 @@ internal class FixedBytesDefinitionTest {
     }
 
     @Test
-    fun `invalid String value should throw exception`() {
+    fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, FixedBytesDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, FixedBytesDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, FixedBytesDefinition.Model)
         checkJsonConversion(this.defMaxDefined, FixedBytesDefinition.Model)
     }

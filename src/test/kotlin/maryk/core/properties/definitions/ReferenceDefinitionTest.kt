@@ -40,21 +40,21 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         refToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
     }
     @Test
-    fun `invalid String value should throw exception`() {
+    fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun `convert values to storage bytes and back`() {
+    fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         refToTest.forEach {
             bc.reserve(
@@ -67,19 +67,19 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         refToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, ReferenceDefinition.Model, DataModelContext())
         checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, ReferenceDefinition.Model, DataModelContext())
         checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
     }

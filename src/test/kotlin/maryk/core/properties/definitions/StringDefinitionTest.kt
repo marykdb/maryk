@@ -51,7 +51,7 @@ internal class StringDefinitionTest {
     )
 
     @Test
-    fun `validate values`() {
+    fun validate_values() {
         // Should both succeed without errors
         def.validateWithRef(newValue = "abc")
         def.validateWithRef(newValue = "abcdef")
@@ -65,7 +65,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun `validate values with regular expression`() {
+    fun validate_values_with_regular_expression() {
         // Should succeed
         defRegEx.validateWithRef(newValue = "abc")
 
@@ -75,7 +75,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun `convert values to storage bytes and back`() {
+    fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
@@ -89,7 +89,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
         stringsToTest.forEach { (value, asHex) ->
@@ -111,7 +111,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         stringsToTest.keys.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -119,13 +119,13 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, StringDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, StringDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, StringDefinition.Model)
         checkJsonConversion(this.defMaxDefined, StringDefinition.Model)
     }

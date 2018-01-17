@@ -31,13 +31,13 @@ internal class DateDefinitionTest {
     )
 
     @Test
-    fun `create now date`() {
+    fun create_now_date() {
         val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
         def.createNow().epochDay shouldBe currentEpochDay
     }
 
     @Test
-    fun `convert values to storage bytes and back`() {
+    fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         datesToTest.forEach {
             bc.reserve(
@@ -50,7 +50,7 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun `convert values to transport bytes and back`() {
+    fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -65,7 +65,7 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun `convert values to String and back`() {
+    fun convert_values_to_String_and_back() {
         datesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -73,20 +73,20 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun `invalid String value should throw exception`() {
+    fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun `convert definition to ProtoBuf and back`() {
+    fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.def, DateDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, DateDefinition.Model)
     }
 
     @Test
-    fun `convert definition to JSON and back`() {
+    fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, DateDefinition.Model)
         checkJsonConversion(this.defMaxDefined, DateDefinition.Model)
     }

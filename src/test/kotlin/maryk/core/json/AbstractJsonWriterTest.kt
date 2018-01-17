@@ -26,7 +26,7 @@ internal abstract class AbstractJsonWriterTest {
     }
 
     @Test
-    fun `not start with unallowed JSON types`() {
+    fun not_start_with_unallowed_JSON_types() {
         var output = ""
 
         val jsonWriter = createJsonWriter {
@@ -60,7 +60,7 @@ internal abstract class AbstractJsonWriterTest {
     }
 
     @Test
-    fun `not allow illegal operations inside an Array`() {
+    fun not_allow_illegal_operations_inside_an_Array() {
         var output = ""
         val jsonWriter = createJsonWriter {
             output += it
@@ -81,7 +81,7 @@ internal abstract class AbstractJsonWriterTest {
 
 
     @Test
-    fun `not allow illegal operations within an Object`() {
+    fun not_allow_illegal_operations_within_an_Object() {
         var output = ""
         val jsonWriter = createJsonWriter {
             output += it
@@ -106,7 +106,7 @@ internal abstract class AbstractJsonWriterTest {
     }
 
     @Test
-    fun `not allow illegal operations after an object field name`() {
+    fun not_allow_illegal_operations_after_an_object_field_name() {
         var output = ""
         val jsonWriter = createJsonWriter {
             output += it

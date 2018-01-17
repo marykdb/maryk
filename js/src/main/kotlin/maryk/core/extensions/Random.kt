@@ -1,13 +1,17 @@
+@file:Suppress("DEPRECATION")
+
 package maryk.core.extensions
 
-actual fun Byte.Companion.random(): Byte = TODO("implement")
-actual fun Short.Companion.random(): Short = TODO("implement")
-actual fun Int.Companion.random(): Int = TODO("implement")
-actual fun Long.Companion.random(): Long = TODO("implement")
+import kotlin.js.Math
 
-actual fun Float.Companion.random(): Float = TODO("implement")
-actual fun Double.Companion.random(): Double = TODO("implement")
+actual fun Byte.Companion.random() = Double.random().toByte()
+actual fun Short.Companion.random() = Double.random().toShort()
+actual fun Int.Companion.random() = Double.random().toInt()
+actual fun Long.Companion.random() = Double.random().toLong()
 
-actual fun randomBytes(size: Int): ByteArray {
-    TODO("implement")
+actual fun Float.Companion.random() = Double.random().toFloat()
+actual fun Double.Companion.random() = Math.random()
+
+actual fun randomBytes(size: Int) = ByteArray(size) {
+    Byte.random()
 }

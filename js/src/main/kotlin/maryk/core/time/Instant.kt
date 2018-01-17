@@ -1,7 +1,7 @@
 package maryk.core.time
 
+import kotlin.js.Date
+
 actual object Instant {
-    actual fun getCurrentEpochTimeInMillis(): Long {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    actual fun getCurrentEpochTimeInMillis() = Date().getTime().toLong()
 }

@@ -1,21 +1,39 @@
 package maryk.core.properties.definitions
 
 import maryk.TestValueObject
+import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class ValueModelDefinitionTest {
-    val def = ValueModelDefinition(
-            name = "test",
+    private val def = ValueModelDefinition(
+            dataModel = TestValueObject
+    )
+    private val defMaxDefined = ValueModelDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = TestValueObject(
+                    int = 0,
+                    dateTime = DateTime(2007,12,5),
+                    bool = true
+            ),
+            maxValue = TestValueObject(
+                    int = 999,
+                    dateTime = DateTime(2017,12,5),
+                    bool = true
+            ),
             dataModel = TestValueObject
     )
 
@@ -31,7 +49,7 @@ internal class ValueModelDefinitionTest {
     )
 
     @Test
-    fun testConvertStorageBytes() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         bc.reserve(
                 def.calculateStorageByteLength(value)
@@ -43,14 +61,14 @@ internal class ValueModelDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
 
         checkProtoBufConversion(bc, value, this.def)
     }
 
     @Test
-    fun testConvertString() {
+    fun `convert values to String and back`() {
         def.fromString(
                 def.asString(value)
         ) shouldBe value
@@ -58,13 +76,13 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun validate() {
-        def.validate(newValue = TestValueObject(
+        def.validateWithRef(newValue = TestValueObject(
                 int = 4,
                 dateTime = DateTime.nowUTC(),
                 bool = true
         ))
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validate(newValue = TestValueObject(
+            def.validateWithRef(newValue = TestValueObject(
                     int = 1000,
                     dateTime = DateTime.nowUTC(),
                     bool = true
@@ -74,7 +92,19 @@ internal class ValueModelDefinitionTest {
         e.exceptions.size shouldBe 1
 
         with (e.exceptions[0] as OutOfRangeException) {
-            this.reference.completeName shouldBe "test.int"
+            this.reference!!.completeName shouldBe "int"
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, ValueModelDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext())
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, ValueModelDefinition.Model, DataModelContext())
+        checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext())
     }
 }

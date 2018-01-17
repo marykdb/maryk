@@ -1,10 +1,11 @@
 package maryk.core.properties.definitions
 
-import maryk.TestMarykObject
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooLittleItemsException
@@ -13,6 +14,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -20,24 +22,25 @@ import kotlin.test.Test
 internal class MapDefinitionTest {
     private val intDef = NumberDefinition(
             type = SInt32,
-            required = true,
             maxValue = 1000
     )
 
     private val stringDef = StringDefinition(
-            required = true,
             regEx = "#.*"
     )
 
-    private val subModelDef = SubModelDefinition(
-            name = "marykRef",
-            dataModel = TestMarykObject,
-            required = true
+    private val def = MapDefinition(
+            minSize = 2,
+            maxSize = 4,
+            keyDefinition = intDef,
+            valueDefinition = stringDef
     )
 
-    private val def = MapDefinition(
-            name = "intStringMap",
-            index = 4,
+    private val defMaxDefined = MapDefinition(
+            indexed = true,
+            searchable = false,
+            final = true,
+            required = false,
             minSize = 2,
             maxSize = 4,
             keyDefinition = intDef,
@@ -52,12 +55,12 @@ internal class MapDefinitionTest {
     )
 
     @Test
-    fun testValidateSize() {
-        def.validate(newValue = mapOf(
+    fun `validate map size`() {
+        def.validateWithRef(newValue = mapOf(
                 12 to "#twelve",
                 30 to "#thirty"
         ))
-        def.validate(newValue = mapOf(
+        def.validateWithRef(newValue = mapOf(
                 12 to "#twelve",
                 30 to "#thirty",
                 100 to "#hundred",
@@ -65,13 +68,13 @@ internal class MapDefinitionTest {
         ))
 
         shouldThrow<TooLittleItemsException> {
-            def.validate(newValue = mapOf(
+            def.validateWithRef(newValue = mapOf(
                     1 to "#one"
             ))
         }
 
         shouldThrow<TooMuchItemsException> {
-            def.validate(newValue = mapOf(
+            def.validateWithRef(newValue = mapOf(
                     12 to "#twelve",
                     30 to "#thirty",
                     100 to "#hundred",
@@ -82,9 +85,9 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun testValidateContent() {
+    fun `validate map content`() {
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validate(newValue = mapOf(
+            def.validateWithRef(newValue = mapOf(
                     12 to "#twelve",
                     30 to "WRONG",
                     1001 to "#thousandone",
@@ -94,26 +97,27 @@ internal class MapDefinitionTest {
         e.exceptions.size shouldBe 3
 
         with(e.exceptions[0] as InvalidValueException) {
-            this.reference.completeName shouldBe "intStringMap.@30"
+            this.reference!!.completeName shouldBe "@30"
         }
 
         with(e.exceptions[1] as OutOfRangeException) {
-            this.reference.completeName shouldBe "intStringMap.$1001"
+            this.reference!!.completeName shouldBe "$1001"
         }
 
         with(e.exceptions[2] as OutOfRangeException) {
-            this.reference.completeName shouldBe "intStringMap.$3000"
+            this.reference!!.completeName shouldBe "$3000"
         }
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(4, value, cache)
         )
-        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "220c08181207237477656c7665220c083c120723746869727479220e08c80112082368756e64726564220f08d00f12092374686f7573616e64"
 
@@ -137,7 +141,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun testJsonConversion() {
+    fun `convert values values to JSON String and back`() {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })
 
@@ -149,5 +153,17 @@ internal class MapDefinitionTest {
         val converted = def.readJson(reader)
 
         converted shouldBe this.value
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, MapDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, MapDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, MapDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, MapDefinition.Model)
     }
 }

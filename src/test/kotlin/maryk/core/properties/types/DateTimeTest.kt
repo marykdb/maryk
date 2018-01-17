@@ -18,14 +18,14 @@ internal class DateTimeTest {
             milli = 2344
     )
 
-    val dateTimesWithSecondsToTest = arrayOf(
+    private val dateTimesWithSecondsToTest = arrayOf(
             cleanToSeconds(DateTime.nowUTC()),
             cleanToSeconds(DateTime.MAX_IN_SECONDS),
             cleanToSeconds(dateTime),
             DateTime.MIN
     )
 
-    val dateTimesWithMillisToTest = arrayOf(
+    private val dateTimesWithMillisToTest = arrayOf(
             DateTime.nowUTC(),
             DateTime.MAX_IN_MILLIS,
             DateTime.MIN

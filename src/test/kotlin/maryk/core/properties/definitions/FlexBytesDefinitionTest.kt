@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -18,28 +18,39 @@ internal class FlexBytesDefinitionTest {
     )
 
     val def = FlexBytesDefinition(
-            name = "test",
+            minSize = 4,
+            maxSize = 10
+    )
+
+    val defMaxDefined = FlexBytesDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = Bytes.ofHex("0000000000"),
+            maxValue = Bytes.ofHex("AAAAAAAAAA"),
             minSize = 4,
             maxSize = 10
     )
 
     @Test
-    fun validate() {
+    fun `validate values`() {
         // Should both succeed without errors
-        def.validate(newValue = Bytes(ByteArray(4, { 0x00.toByte() } )))
-        def.validate(newValue = Bytes(ByteArray(5, { 0x00.toByte() } )))
-        def.validate(newValue = Bytes(ByteArray(10, { 0x00.toByte() } )))
+        def.validateWithRef(newValue = Bytes(ByteArray(4, { 0x00.toByte() } )))
+        def.validateWithRef(newValue = Bytes(ByteArray(5, { 0x00.toByte() } )))
+        def.validateWithRef(newValue = Bytes(ByteArray(10, { 0x00.toByte() } )))
 
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = Bytes(ByteArray(1, { 0x00.toByte() } )))
+            def.validateWithRef(newValue = Bytes(ByteArray(1, { 0x00.toByte() } )))
         }
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = Bytes(ByteArray(20, { 0x00.toByte() } )))
+            def.validateWithRef(newValue = Bytes(ByteArray(20, { 0x00.toByte() } )))
         }
     }
 
     @Test
-    fun testStorageConversion() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         flexBytesToTest.forEach {
             bc.reserve(
@@ -52,13 +63,13 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
         flexBytesToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test
-    fun convertToString() {
+    fun `convert values to String and back`() {
         flexBytesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -66,9 +77,21 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, FlexBytesDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, FlexBytesDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }
 }

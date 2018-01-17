@@ -1,13 +1,15 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Date
 import maryk.core.time.Instant
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
-import kotlin.test.fail
 
 internal class DateDefinitionTest {
     private val datesToTest = arrayOf(
@@ -16,18 +18,26 @@ internal class DateDefinitionTest {
             Date.MIN
     )
 
-    val def = DateDefinition(
-            name = "dateTime"
+    private val def = DateDefinition()
+    private val defMaxDefined = DateDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            fillWithNow = true,
+            maxValue = Date.MAX,
+            minValue = Date.MIN
     )
 
     @Test
-    fun createNow() {
+    fun `create now date`() {
         val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
         def.createNow().epochDay shouldBe currentEpochDay
     }
 
     @Test
-    fun testStorageBytesConversion() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         datesToTest.forEach {
             bc.reserve(
@@ -40,20 +50,22 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun testTransportBytesConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         datesToTest.forEach {
             bc.reserve(
-                def.calculateTransportByteLength(it, { fail("Should not call") })
+                    def.calculateTransportByteLength(it, cacheFailer)
             )
-            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         datesToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -61,9 +73,21 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, DateDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, DateDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, DateDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, DateDefinition.Model)
     }
 }

@@ -5,7 +5,7 @@ package maryk.core.extensions.bytes
  */
 internal fun Boolean.writeBytes(writer: (byte: Byte) -> Unit) {
     writer(
-            if (this) ONEBYTE else ZEROBYTE
+            if (this) ONE_BYTE else ZERO_BYTE
     )
 }
 
@@ -13,4 +13,4 @@ internal fun Boolean.writeBytes(writer: (byte: Byte) -> Unit) {
  * @param reader to read bytes from
  * @return Boolean represented by bytes
  */
-internal fun initBoolean(reader: () -> Byte) = reader() != ZEROBYTE
+internal fun initBoolean(reader: () -> Byte) = reader() != ZERO_BYTE

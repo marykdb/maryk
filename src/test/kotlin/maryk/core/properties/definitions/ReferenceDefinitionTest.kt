@@ -1,28 +1,37 @@
 package maryk.core.properties.definitions
 
 import maryk.TestMarykObject
+import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.bytes.MAXBYTE
-import maryk.core.extensions.bytes.ZEROBYTE
+import maryk.core.extensions.bytes.MAX_BYTE
+import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class ReferenceDefinitionTest {
     private val refToTest = arrayOf<Key<TestMarykObject>>(
-            Key(ByteArray(9, { ZEROBYTE })),
-            Key(ByteArray(9, { MAXBYTE })),
-            Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAXBYTE }))
+            Key(ByteArray(9, { ZERO_BYTE })),
+            Key(ByteArray(9, { MAX_BYTE })),
+            Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE }))
     )
 
     val def = ReferenceDefinition(
-            name = "test",
-            index = 8,
-            dataModel = TestMarykObject
+            dataModel = { TestMarykObject }
+    )
+    val defMaxDefined = ReferenceDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = refToTest[0],
+            maxValue = refToTest[1],
+            dataModel = { TestMarykObject }
     )
 
     @Test
@@ -31,21 +40,21 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         refToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
     }
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun testStorageConversion() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         refToTest.forEach {
             bc.reserve(
@@ -58,8 +67,20 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
         refToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, ReferenceDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, ReferenceDefinition.Model, DataModelContext())
+        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
     }
 }

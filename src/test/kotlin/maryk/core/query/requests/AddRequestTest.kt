@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.query.DataModelPropertyContext
@@ -8,13 +8,13 @@ import kotlin.test.Test
 
 class AddRequestTest {
     private val addRequest = AddRequest(
-            SubMarykObject,
-            SubMarykObject(value = "haha1"),
-            SubMarykObject(value = "haha2")
+            SimpleMarykObject,
+            SimpleMarykObject(value = "haha1"),
+            SimpleMarykObject(value = "haha2")
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

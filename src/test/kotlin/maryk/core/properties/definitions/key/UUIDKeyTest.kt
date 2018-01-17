@@ -1,8 +1,10 @@
 package maryk.core.properties.definitions.key
 
-import maryk.core.objects.Def
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -11,17 +13,14 @@ internal class UUIDKeyTest {
     private data class MarykObject(
             val value: String
     ){
-        object Properties {
-            val value = StringDefinition(
-                    name = "value",
-                    index = 0
-            )
+        object Properties : PropertyDefinitions<MarykObject>() {
+            init {
+                add(0, "value", StringDefinition(), MarykObject::value)
+            }
         }
-        companion object: RootDataModel<MarykObject>(
+        companion object: RootDataModel<MarykObject, Properties>(
                 name = "MarykObject",
-                definitions = listOf(
-                        Def(Properties.value, MarykObject::value)
-                )
+                properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
                     map[0] as String
@@ -51,5 +50,15 @@ internal class UUIDKeyTest {
         specificDef.writeStorageBytes(uuid, bc::write)
 
         bc.bytes!! contentEquals key.bytes shouldBe true
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(UUIDKey, UUIDKey.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(UUIDKey, UUIDKey.Model)
     }
 }

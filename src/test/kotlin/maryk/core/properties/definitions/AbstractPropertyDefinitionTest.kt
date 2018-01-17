@@ -7,20 +7,20 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class AbstractPropertyDefinitionTest {
-    val def = StringDefinition(name = "test", required = true, final = true)
+    private val def = StringDefinition(final = true)
 
     @Test
-    fun hasValues() {
+    fun `has values`() {
         def.required shouldBe true
         def.final shouldBe true
     }
 
     @Test
-    fun validateFinal() {
-        def.validate(newValue = "test")
+    fun `validate final property`() {
+        def.validateWithRef(newValue = "test")
 
         shouldThrow<AlreadySetException> {
-            def.validate(
+            def.validateWithRef(
                     previousValue = "old",
                     newValue = "new"
             )
@@ -28,11 +28,11 @@ internal class AbstractPropertyDefinitionTest {
     }
 
     @Test
-    fun validateRequired() {
-        def.validate(newValue = "test")
+    fun `validate required property`() {
+        def.validateWithRef(newValue = "test")
 
         shouldThrow<RequiredException> {
-            def.validate(newValue = null)
+            def.validateWithRef(newValue = null)
         }
     }
 }

@@ -1,8 +1,12 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
@@ -10,23 +14,32 @@ import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
-import kotlin.test.fail
 
 internal class NumberDefinitionTest {
     private val def = NumberDefinition(
-            name = "test",
             type = UInt32
+    )
+
+    private val defMaxDefined = NumberDefinition(
+            type = SInt32,
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = 3254765,
+            maxValue = 92763478,
+            random = true
+    )
+
+    private val defFloat32 = NumberDefinition(
+            type = Float32
     )
 
     private val intArray = arrayOf(
             UInt32.MIN_VALUE,
             UInt32.MAX_VALUE,
             32373957.toUInt32()
-    )
-
-    private val defFloat32 = NumberDefinition(
-            name = "test",
-            type = Float32
     )
 
     private val floatArray = arrayOf(
@@ -36,17 +49,17 @@ internal class NumberDefinitionTest {
     )
 
     @Test
-    fun hasValues() {
+    fun `has values set`() {
         def.type shouldBe UInt32
     }
 
     @Test
-    fun createRandom() {
+    fun `create random number`() {
         def.createRandom()
     }
 
     @Test
-    fun convertStorageBytes() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         intArray.forEach {
             bc.reserve(
@@ -59,16 +72,18 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         intArray.forEach { value ->
             bc.reserve(
-                def.calculateTransportByteLengthWithKey(value, { fail("Should not call") })
+                    def.calculateTransportByteLengthWithKey(1, value, cacheFailer)
             )
-            def.writeTransportBytesWithKey(value, { fail("Should not call") }, bc::write)
+            def.writeTransportBytesWithKey(1, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.VAR_INT
-            key.tag shouldBe -1
+            key.tag shouldBe 1
             def.readTransportBytes(
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
@@ -78,16 +93,18 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun testFloatTransportConversion() {
+    fun `convert Float values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         floatArray.forEach { value ->
             bc.reserve(
-                    defFloat32.calculateTransportByteLengthWithKey(value, { fail("Should not call") })
+                    defFloat32.calculateTransportByteLengthWithKey(2, value, cacheFailer)
             )
-            defFloat32.writeTransportBytesWithKey(value, { fail("Should not call") }, bc::write)
+            defFloat32.writeTransportBytesWithKey(2, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.BIT_32
-            key.tag shouldBe -1
+            key.tag shouldBe 2
             defFloat32.readTransportBytes(
                     ProtoBuf.getLength(key.wireType, bc::read),
                     bc::read
@@ -97,7 +114,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         intArray.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -105,9 +122,21 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, NumberDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, NumberDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, NumberDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, NumberDefinition.Model)
     }
 }

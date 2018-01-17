@@ -4,7 +4,8 @@ import maryk.core.protobuf.WireType
 
 abstract class NumberDescriptor<T: Comparable<T>>(
         val size: Int,
-        val wireType: WireType
+        val wireType: WireType,
+        val type: NumberType
 ) {
     abstract fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
     abstract fun fromStorageByteReader(length: Int, reader: () -> Byte): T

@@ -17,5 +17,5 @@ actual object Base64 {
      * @param bytes to encode
      * @return Base64 String
      */
-    actual fun encode(bytes: ByteArray) = base64Encoder.encodeToString(bytes)
+    actual fun encode(bytes: ByteArray): String = base64Encoder.encodeToString(bytes)
 }

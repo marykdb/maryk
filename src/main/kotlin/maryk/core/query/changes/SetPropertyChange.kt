@@ -1,11 +1,11 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -29,45 +29,41 @@ data class SetPropertyChange<T: Any>(
 ) : IsPropertyOperation<Set<T>> {
     override val changeType = ChangeType.SET_CHANGE
 
-    object Properties {
-        @Suppress("UNCHECKED_CAST")
-        private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-            (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition.valueDefinition
-        })
-        @Suppress("UNCHECKED_CAST")
-        val valueToCompare = ContextualCollectionDefinition(
-                name = "valueToCompare",
-                index = 1,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
-                }
-        )
-        val addValues = SetDefinition(
-                name = "addValues",
-                index = 2,
-                valueDefinition = valueDefinition
-        )
-        val deleteValues = SetDefinition(
-                name = "deleteValues",
-                index = 3,
-                valueDefinition = valueDefinition
-        )
-    }
+    companion object: QueryDataModel<SetPropertyChange<out Any>>(
+            properties = object : PropertyDefinitions<SetPropertyChange<*>>() {
+                init {
+                    IsPropertyOperation.addReference(this, SetPropertyChange<*>::reference)
+                    add(1, "valueToCompare", ContextualCollectionDefinition(
+                            required = false,
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                @Suppress("UNCHECKED_CAST")
+                                context!!.reference!!.propertyDefinition.definition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
+                            }
+                    ), SetPropertyChange<*>::valueToCompare)
 
-    companion object: QueryDataModel<SetPropertyChange<*>>(
-            definitions = listOf(
-                    Def(IsPropertyOperation.Properties.reference, SetPropertyChange<*>::reference),
-                    Def(Properties.valueToCompare, SetPropertyChange<*>::valueToCompare),
-                    Def(Properties.addValues, SetPropertyChange<*>::addValues),
-                    Def(Properties.deleteValues, SetPropertyChange<*>::deleteValues)
-            )
+                    add(2, "addValues", SetDefinition(
+                            required = false,
+                            valueDefinition = valueDefinition
+                    ), SetPropertyChange<*>::addValues)
+
+                    add(3, "deleteValues", SetDefinition(
+                            required = false,
+                            valueDefinition = valueDefinition
+                    ), SetPropertyChange<*>::deleteValues)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = SetPropertyChange(
-                reference = map[0] as IsPropertyReference<Set<Any>, AbstractValueDefinition<Set<Any>, IsPropertyContext>>,
+                reference = map[0] as IsPropertyReference<Set<Any>, IsValueDefinition<Set<Any>, IsPropertyContext>>,
                 valueToCompare = map[1] as Set<Any>?,
                 addValues = map[2] as Set<Any>?,
                 deleteValues = map[3] as Set<Any>?
         )
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
+    (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition.definition.valueDefinition
+})

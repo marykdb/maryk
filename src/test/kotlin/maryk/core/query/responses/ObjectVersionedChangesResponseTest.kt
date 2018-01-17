@@ -5,7 +5,8 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
-import maryk.core.properties.types.toUInt64
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ListPropertyChange
@@ -19,13 +20,11 @@ import maryk.core.query.changes.VersionedChanges
 import kotlin.test.Test
 
 class ObjectVersionedChangesResponseTest {
-    private val value = SubMarykObject(value = "haha1")
-
     private val key = TestMarykObject.key.get(
             byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
-    private val subModel = { TestMarykObject.Properties.subModel.getRef() }
+    private val subModel = TestMarykObject.ref { subModel }
 
     private val objectVersionedChangesResponse = ObjectVersionedChangesResponse(
             TestMarykObject,
@@ -37,17 +36,17 @@ class ObjectVersionedChangesResponseTest {
                                             219674127L.toUInt64(),
                                             listOf(
                                                     ObjectSoftDeleteChange(true),
-                                                    ListPropertyChange(TestMarykObject.Properties.list.getRef()),
-                                                    SetPropertyChange(TestMarykObject.Properties.set.getRef()),
-                                                    MapPropertyChange(TestMarykObject.Properties.map.getRef())
+                                                    ListPropertyChange(TestMarykObject.ref { list }),
+                                                    SetPropertyChange(TestMarykObject.ref { set }),
+                                                    MapPropertyChange(TestMarykObject.ref { map })
                                             )
                                     ),
                                     VersionedChanges(
                                             319674127L.toUInt64(),
                                             listOf(
-                                                    PropertyChange(SubMarykObject.Properties.value.getRef(subModel), "new"),
-                                                    PropertyDelete(SubMarykObject.Properties.value.getRef(subModel)),
-                                                    PropertyCheck(SubMarykObject.Properties.value.getRef(subModel))
+                                                    PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
+                                                    PropertyDelete(SubMarykObject.ref(subModel) { value }),
+                                                    PropertyCheck(SubMarykObject.ref(subModel) { value })
                                             )
                                     )
                             )
@@ -61,7 +60,7 @@ class ObjectVersionedChangesResponseTest {
                     SubMarykObject.name to SubMarykObject,
                     TestMarykObject.name to TestMarykObject
             ),
-            dataModel = TestMarykObject as RootDataModel<Any>
+            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

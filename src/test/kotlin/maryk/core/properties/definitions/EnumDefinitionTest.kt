@@ -1,15 +1,17 @@
 package maryk.core.properties.definitions
 
 import maryk.Option
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
-import kotlin.test.fail
 
 internal class EnumDefinitionTest {
     private val enumsToTest = arrayOf(
@@ -18,13 +20,22 @@ internal class EnumDefinitionTest {
     )
 
     val def = EnumDefinition(
-            name = "enum",
-            index = 14,
+            values = Option.values()
+    )
+
+    val defMaxDefined = EnumDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = Option.V0,
+            maxValue = Option.V2,
             values = Option.values()
     )
 
     @Test
-    fun convertStorageBytes() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         enumsToTest.forEach {
             bc.reserve(
@@ -37,8 +48,9 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
+    fun `convert values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
 
         val expected = arrayOf(
                 "7000",
@@ -47,9 +59,9 @@ internal class EnumDefinitionTest {
 
         enumsToTest.zip(expected).forEach { (enum, expected) ->
             bc.reserve(
-                    def.calculateTransportByteLengthWithKey(enum, { fail("Should not call") }, null)
+                    def.calculateTransportByteLengthWithKey(14, enum, cacheFailer, null)
             )
-            def.writeTransportBytesWithKey(enum, { fail("Should not call") }, bc::write, null)
+            def.writeTransportBytesWithKey(14, enum, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
             key.tag shouldBe 14
             key.wireType shouldBe WireType.VAR_INT
@@ -65,7 +77,7 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         enumsToTest.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -73,9 +85,26 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkProtoBufConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkJsonConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
+    }
+}
+
+private fun compare(converted: EnumDefinition<*>, original: EnumDefinition<*>) {
+    converted shouldBe original
+    converted.hashCode() shouldBe original.hashCode()
 }

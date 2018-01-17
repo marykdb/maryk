@@ -2,53 +2,53 @@ package maryk.core.properties.references
 
 import maryk.TestMarykObject
 import maryk.core.extensions.toHex
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldNotBe
 import kotlin.test.Test
 
+private object Properties : PropertyDefinitions<Any>()
+
+private val modelDefinition = Properties.add(2, "subModel", SubModelDefinition(
+        dataModel = { TestMarykObject }
+))
+
+private val definition = Properties.add(1, "test", StringDefinition())
+
+private val ref = definition.getRef()
+private val subRef = definition.getRef(modelDefinition.getRef())
+
 internal class PropertyReferenceTest {
-    private val modelDefinition = SubModelDefinition(
-            index = 2,
-            name = "subModel",
-            dataModel = TestMarykObject
-    )
-
-    private val definition = StringDefinition(
-            index = 1,
-            name = "test"
-    )
-
-    private val ref = this.definition.getRef()
-    private val subRef = this.definition.getRef({ modelDefinition.getRef() })
-
     @Test
     fun getCompleteName() {
-        this.ref.completeName shouldBe "test"
-        this.subRef.completeName shouldBe "subModel.test"
+        ref.completeName shouldBe "test"
+        subRef.completeName shouldBe "subModel.test"
     }
 
     @Test
     fun testHashCode() {
-        this.ref.hashCode() shouldBe 3556498
+        ref.hashCode() shouldBe 3556498
     }
 
     @Test
     fun testCompareTo() {
-        this.ref shouldBe  definition.getRef()
-        this.ref shouldNotBe modelDefinition.getRef()
+        ref shouldBe  definition.getRef()
+        ref shouldNotBe modelDefinition.getRef()
     }
 
     @Test
     fun testProtoBufWrite() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         bc.reserve(
-            this.subRef.calculateTransportByteLength(bc::addToCache)
+            subRef.calculateTransportByteLength(cache)
         )
-        this.subRef.writeTransportBytes(bc::nextLengthFromCache, bc::write)
+        subRef.writeTransportBytes(cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "0201"
     }

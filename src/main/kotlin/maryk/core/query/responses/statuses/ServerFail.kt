@@ -1,7 +1,8 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.StringDefinition
 
 /** Something went wrong with the server
  * @param reason of failure
@@ -12,9 +13,11 @@ data class ServerFail<DO: Any>(
     override val statusType = StatusType.SERVER_FAIL
 
     companion object: QueryDataModel<ServerFail<*>>(
-            definitions = listOf(
-                    Def(reasonDefinition, ServerFail<*>::reason)
-            )
+            properties = object: PropertyDefinitions<ServerFail<*>>() {
+                init {
+                    add(0, "reason", StringDefinition(), ServerFail<*>::reason)
+                }
+            }
     ) {
         override fun invoke(map: Map<Int, *>) = ServerFail<Any>(map[0] as String)
     }

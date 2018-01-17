@@ -1,32 +1,32 @@
 package maryk.core.query.requests
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.types.numeric.toUInt32
-import maryk.core.properties.types.toUInt64
+import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.Order
 import maryk.core.query.filters.Exists
 import kotlin.test.Test
 
 class GetVersionedChangesRequestTest {
-    private val key1 = SubMarykObject.key.getKey(SubMarykObject("test1"))
-    private val key2 = SubMarykObject.key.getKey(SubMarykObject("test2"))
+    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
+    private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
 
     private val getVersionedChangesRequest = GetVersionedChangesRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             key1,
             key2,
             fromVersion = 1234L.toUInt64()
     )
 
     private val getVersionedChangesMaxRequest = GetVersionedChangesRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             key1,
             key2,
-            filter = Exists(SubMarykObject.Properties.value.getRef()),
-            order = Order(SubMarykObject.Properties.value.getRef()),
+            filter = Exists(SimpleMarykObject.ref { value }),
+            order = Order(SimpleMarykObject.ref { value }),
             fromVersion = 1234L.toUInt64(),
             toVersion = 12345L.toUInt64(),
             maxVersions = 5.toUInt32(),
@@ -34,7 +34,7 @@ class GetVersionedChangesRequestTest {
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

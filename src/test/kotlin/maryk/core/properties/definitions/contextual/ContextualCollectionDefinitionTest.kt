@@ -4,13 +4,13 @@ import maryk.TestMarykObject
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.IsByteTransportableCollection
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -22,35 +22,34 @@ class ContextualCollectionDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualCollectionDefinition<DataModelPropertyContext>(
-            index = 9,
-            name = "test",
             contextualResolver = { it!!.reference!!.propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(),
-            reference = TestMarykObject.Properties.listOfString.getRef() as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
+            reference = TestMarykObject.ref { listOfString } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test
     fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         val value = listOf("T", "T2", "T3", "T4")
-        val asHex = "4a01544a0254324a0254334a025434"
+        val asHex = "ea020154ea02025432ea02025433ea02025434"
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(value, bc::addToCache, this.context)
+                def.calculateTransportByteLengthWithKey(45, value, cache, this.context)
         )
-        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write, this.context)
+        def.writeTransportBytesWithKey(45, value, cache, bc::write, this.context)
 
         bc.bytes!!.toHex() shouldBe asHex
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
-            key.tag shouldBe 9
+            key.tag shouldBe 45
         }
 
         fun readValue() = def.readCollectionTransportBytes(

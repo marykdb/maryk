@@ -2,22 +2,23 @@ package maryk.core.objects
 
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
 /** DataModel for objects that can be encoded in fixed length width
- * @param definitions: All definitions for properties contained in this model
+ * @param properties: All definitions for properties contained in this model
  * @param DO: Type of DataObject contained
  */
-abstract class ValueDataModel<DO: ValueDataObject>(
-        definitions: List<Def<*, DO, IsPropertyContext>>
-) : DataModel<DO, IsPropertyContext>(definitions) {
+abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO>>(
+        name: String,
+        properties: P
+) : DataModel<DO, P>(name, properties) {
     val byteSize: Int by lazy {
-        var size = this.definitions.size - 1
-        this.definitions.forEach {
-            val def = it.propertyDefinition as IsFixedBytesEncodable<*>
-            size += def.byteSize
+        var size = - 1
+        this.properties.forEach {
+            val def = it.definition as IsFixedBytesEncodable<*>
+            size += def.byteSize + 1
         }
         size
     }
@@ -29,14 +30,11 @@ abstract class ValueDataModel<DO: ValueDataObject>(
      */
     fun readFromBytes(reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
-        this.definitions.forEachIndexed { index, it ->
+        this.properties.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
 
-            val def = it.propertyDefinition as IsFixedBytesEncodable<*>
-            values.put(
-                    key = def.index,
-                    value = def.readStorageBytes(def.byteSize, reader)
-            )
+            val def = it as IsFixedBytesEncodable<*>
+            values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
         return this(values)
     }
@@ -48,9 +46,9 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         val bytes =  ByteArray(this.byteSize)
         var offset = 0
 
-        this.definitions.forEachIndexed { index, it ->
+        this.properties.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
-            val def = it.propertyDefinition as IsFixedBytesEncodable<in Any>
+            val def = it as IsFixedBytesEncodable<in Any>
             def.writeStorageBytes(inputs[index], {
                 bytes[offset++] = it
             })
@@ -74,5 +72,26 @@ abstract class ValueDataModel<DO: ValueDataObject>(
         return this.readFromBytes({
             b[index++]
         })
+    }
+
+    object Model : DefinitionDataModel<ValueDataModel<*, *>>(
+            properties = object : PropertyDefinitions<ValueDataModel<*, *>>() {
+                init {
+                    AbstractDataModel.addName(this) {
+                        it.name
+                    }
+                    AbstractDataModel.addProperties(this)
+                }
+            }
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
+                name = map[0] as String,
+                properties = map[1] as PropertyDefinitions<ValueDataObject>
+        ){
+            override fun invoke(map: Map<Int, *>): ValueDataObject {
+                return object : ValueDataObject(ByteArray(0)){}
+            }
+        }
     }
 }

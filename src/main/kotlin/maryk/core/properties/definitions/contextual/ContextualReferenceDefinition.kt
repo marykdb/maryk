@@ -1,42 +1,41 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
+import maryk.core.json.IsJsonLikeReader
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.types.Key
-import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 
 /** Definition for a reference to another DataObject*/
 class ContextualReferenceDefinition<in CX: IsPropertyContext>(
-        name: String? = null,
-        index: Int = -1,
-        val contextualResolver: (context: CX?) -> RootDataModel<*>.KeyDefinition
-): AbstractValueDefinition<Key<*>, CX>(
-        name, index,
-        indexed = false,
-        searchable = false,
-        required = true,
-        final = true,
-        wireType = WireType.LENGTH_DELIMITED
-) {
+        val contextualResolver: (context: CX?) -> RootDataModel<*, *>.KeyDefinition
+): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
+    override val indexed = false
+    override val searchable = false
+    override val required = true
+    override val final = true
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun fromString(string: String, context: CX?)
             = contextualResolver(context).get(string)
 
     override fun asString(value: Key<*>, context: CX?): String = value.toString()
 
-    override fun writeJsonValue(value: Key<*>, writer: JsonWriter, context: CX?)
+    override fun writeJsonValue(value: Key<*>, writer: IsJsonLikeWriter, context: CX?)
             = writer.writeString(value.toString())
 
-    override fun readJson(reader: JsonReader, context: CX?)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)
             = contextualResolver(context).get(reader.lastValue)
 
-    override fun calculateTransportByteLength(value: Key<*>, lengthCacher: (length: ByteLengthContainer) -> Unit, context: CX?)
+    override fun calculateTransportByteLength(value: Key<*>, cacher: WriteCacheWriter, context: CX?)
             = value.size
 
-    override fun writeTransportBytes(value: Key<*>, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: CX?)
+    override fun writeTransportBytes(value: Key<*>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?)
             = value.writeBytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)

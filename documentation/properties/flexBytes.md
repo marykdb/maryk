@@ -25,7 +25,7 @@ Defines a property of a flexible bytes length.
 val def = FlexBytesDefinition(
     name = "encodedValue",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     unique = true,
     random = true

@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
@@ -9,7 +12,6 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(
@@ -22,17 +24,26 @@ internal class TimeDefinitionTest {
 
     private val timesToTestSeconds = arrayOf(Time.MAX_IN_SECONDS, Time.MIN, Time(13, 55, 44))
 
-    val def = TimeDefinition(
-            name = "seconds"
-    )
+    private val def = TimeDefinition()
 
     private val defMilli = TimeDefinition(
-            name = "milli",
+            precision = TimePrecision.MILLIS
+    )
+
+    private val defMaxDefined = TimeDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
+            minValue = Time.MIN,
+            maxValue = Time.MAX_IN_MILLIS,
+            fillWithNow = true,
             precision = TimePrecision.MILLIS
     )
 
     @Test
-    fun createNow() {
+    fun `create now time`() {
         val expected = Instant.getCurrentEpochTimeInMillis()% (24 * 60 * 60 * 1000) / 1000
         val now = def.createNow().toSecondsOfDay()
 
@@ -42,7 +53,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytesMillis() {
+    fun `convert millisecond precision values to storage bytes and back`() {
         val bc = ByteCollector()
         arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
             bc.reserve(
@@ -55,7 +66,7 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertStorageBytesSeconds() {
+    fun `convert seconds precision values to storage bytes and back`() {
         val bc = ByteCollector()
         timesToTestSeconds.forEach {
             bc.reserve(
@@ -68,38 +79,55 @@ internal class TimeDefinitionTest {
     }
 
     @Test
-    fun convertTransportBytesSeconds() {
+    fun `convert seconds precision values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         timesToTestSeconds.forEach {
-            bc.reserve(def.calculateTransportByteLength(it, { fail("Should not call") }))
-            def.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            bc.reserve(def.calculateTransportByteLength(it, cacheFailer))
+            def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
 
     @Test
-    fun convertTransportBytesMillis() {
+    fun `convert millis precision values to transport bytes and back`() {
         val bc = ByteCollector()
+        val cacheFailer = WriteCacheFailer()
+
         timesToTestMillis.forEach {
-            bc.reserve(defMilli.calculateTransportByteLength(it, { fail("Should not call") }))
-            defMilli.writeTransportBytes(it, { fail("Should not call") }, bc::write)
+            bc.reserve(defMilli.calculateTransportByteLength(it, cacheFailer))
+            defMilli.writeTransportBytes(it, cacheFailer, bc::write)
             defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
             bc.reset()
         }
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         timesToTestMillis.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
     }
+
     @Test
-    fun convertWrongString() {
+    fun `invalid String value should throw exception`() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, TimeDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, TimeDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, TimeDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, TimeDefinition.Model)
     }
 }

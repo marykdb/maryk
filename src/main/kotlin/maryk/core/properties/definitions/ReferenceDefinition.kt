@@ -1,27 +1,37 @@
 package maryk.core.properties.definitions
 
+import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.exceptions.ParseException
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
+import maryk.core.query.DataModelContext
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(
-        name: String? = null,
-        index: Int = -1,
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = false,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: Key<DO>? = null,
-        maxValue: Key<DO>? = null,
-        val dataModel: RootDataModel<DO>
-): AbstractSimpleDefinition<Key<DO>, IsPropertyContext>(
-        name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue
-), IsFixedBytesEncodable<Key<DO>> {
-    override val byteSize = dataModel.key.size
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: Key<DO>? = null,
+        override val maxValue: Key<DO>? = null,
+        dataModel: () -> RootDataModel<DO, *>
+):
+        IsComparableDefinition<Key<DO>, IsPropertyContext>,
+        IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Reference
+    override val wireType = WireType.LENGTH_DELIMITED
+    override val byteSize get() = dataModel.key.size
+
+    private val internalDataModel = lazy(dataModel)
+    val dataModel: RootDataModel<DO, *> get() = internalDataModel.value
 
     override fun calculateStorageByteLength(value: Key<DO>) = this.byteSize
 
@@ -34,4 +44,74 @@ class ReferenceDefinition<DO: Any>(
     override fun fromString(string: String) = try {
         dataModel.key.get(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ReferenceDefinition<*>) return false
+
+        if (indexed != other.indexed) return false
+        if (searchable != other.searchable) return false
+        if (required != other.required) return false
+        if (final != other.final) return false
+        if (unique != other.unique) return false
+        if (minValue != other.minValue) return false
+        if (maxValue != other.maxValue) return false
+        if (dataModel.name != other.dataModel.name) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = indexed.hashCode()
+        result = 31 * result + searchable.hashCode()
+        result = 31 * result + required.hashCode()
+        result = 31 * result + final.hashCode()
+        result = 31 * result + unique.hashCode()
+        result = 31 * result + (minValue?.hashCode() ?: 0)
+        result = 31 * result + (maxValue?.hashCode() ?: 0)
+        result = 31 * result + dataModel.name.hashCode()
+        return result
+    }
+
+    object Model : DefinitionDataModel<ReferenceDefinition<*>>(
+            properties = object : PropertyDefinitions<ReferenceDefinition<*>>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, ReferenceDefinition<*>::indexed)
+                    IsPropertyDefinition.addSearchable(this, ReferenceDefinition<*>::searchable)
+                    IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)
+                    IsPropertyDefinition.addFinal(this, ReferenceDefinition<*>::final)
+                    IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
+                    add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
+                    add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
+                    add(7, "dataModel", ContextCaptureDefinition(
+                            definition = ContextualModelReferenceDefinition<DataModelContext>(
+                                    contextualResolver = { context, name ->
+                                        context!!.dataModels[name]!!
+                                    }
+                            ),
+                            capturer = { context, dataModel ->
+                                if (!context!!.dataModels.containsKey(dataModel.name)) {
+                                    context.dataModels[dataModel.name] = dataModel
+                                }
+                            }
+                    )) {
+                        it.dataModel
+                    }
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = ReferenceDefinition(
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            unique = map[4] as Boolean,
+            minValue = (map[5] as Bytes?)?.let { Key<Any>(it.bytes) },
+            maxValue = (map[6] as Bytes?)?.let { Key<Any>(it.bytes) },
+            dataModel = {
+                @Suppress("UNCHECKED_CAST")
+                map[7] as RootDataModel<Any, PropertyDefinitions<Any>>
+            }
+        )
+    }
 }

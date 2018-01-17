@@ -1,14 +1,14 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.UInt64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.DataModelPropertyContext
 
 /** Contains changes for a specific DataObject by key
@@ -27,39 +27,31 @@ data class DataObjectChange<out DO: Any>(
             lastVersion: UInt64? = null
     ) : this(key, change.toList(), lastVersion)
 
-    object Properties {
-        val key = ContextualReferenceDefinition<DataModelPropertyContext>(
-                name = "key",
-                index = 0,
-                contextualResolver = { it!!.dataModel!!.key }
-        )
-        val changes = ListDefinition(
-                name = "changes",
-                index = 1,
-                required = true,
-                valueDefinition = MultiTypeDefinition(
-                        required = true,
-                        getDefinition = mapOfChangeDefinitions::get
-                )
-        )
-        val lastVersion = NumberDefinition(
-                name = "lastVersion",
-                index = 2,
-                type = UInt64
-        )
-    }
-
     companion object: QueryDataModel<DataObjectChange<*>>(
-            definitions = listOf(
-                    Def(Properties.key, DataObjectChange<*>::key),
-                    Def(Properties.changes, { it.changes.map { TypedValue(it.changeType.index, it) } }),
-                    Def(Properties.lastVersion, DataObjectChange<*>::lastVersion)
-            )
+            properties = object : PropertyDefinitions<DataObjectChange<*>>() {
+                init {
+                    add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+                            contextualResolver = { it!!.dataModel!!.key }
+                    ), DataObjectChange<*>::key)
+
+                    add(1, "changes", ListDefinition(
+                            valueDefinition = MultiTypeDefinition(
+                                    definitionMap = mapOfChangeDefinitions
+                            )
+                    )) {
+                        it.changes.map { TypedValue(it.changeType, it) }
+                    }
+
+                    add(2, "lastVersion", NumberDefinition(
+                            type = UInt64
+                    ), DataObjectChange<*>::lastVersion)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DataObjectChange(
                 key = map[0] as Key<Any>,
-                changes = (map[1] as List<TypedValue<IsChange>>?)?.map { it.value } ?: emptyList(),
+                changes = (map[1] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList(),
                 lastVersion = map[2] as UInt64?
         )
     }

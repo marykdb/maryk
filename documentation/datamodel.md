@@ -1,15 +1,15 @@
 # What is a DataModel?
 DataModels describe the structure of the data. They contain 
-[Property definitions](properties/properties.md) which describe what type of data the 
+[property definitions](properties/properties.md) which describe what type of data the 
 property contains, how it is validated and other properties that are relevant to the 
 storage. DataObjects are created from DataModels which can also validate or serialize
 them.  
 
-## Properties by index
+## Properties are identified by an index
 To keep data transport and storage optimal all properties are required to
-have an index. This index should stay the same over the entire lifetime 
-of the application. This index also obviated the need of reflection in 
-the code implementations.
+have an index integer besides a name to identify the people property. This index
+must stay the same over the entire lifetime of the application. This index also
+obviated the need of reflection in the code implementations.
 
 ### Example of a DataModel representing a Person in name and date of birth
 The DataModel is contained within the companion object. It contains 3 references to the
@@ -92,13 +92,13 @@ properties
 ## RootDataModel
 All DataModel structures have a RootDataModel at the root to enable them to be stored.
 The RootDataModel contains extra methods to create a key based on the data of the
- object. Read further about keys on the [key page](key.md).
+object. Read further about keys on the [key page](key.md).
  
 Above is an example of a RootDataModel
 
 ## ValueDataModel
 Objects of ValueDataModels are stored in a different way compared to objects of the
- normal DataModels. They are more like values and this gives them some unique 
+normal DataModels. They are more like values and this gives them some unique 
  advantages.
  
  In contrary to normal DataModels they can be used as:
@@ -107,9 +107,9 @@ Objects of ValueDataModels are stored in a different way compared to objects of 
  - Be indexed with multiple values at the same time
  
 ValueDataModels are constructed by properties which can be represented by a fixed number
- of bytes. This means that any simple property can be used except Strings and
- FlexibleBytes. They cannot contain more complex properties like Sets, Lists and Maps as
- this would make them lose their fixed amount of bytes.
+of bytes. This means that any simple property can be used except Strings and
+FlexibleBytes. They cannot contain more complex properties like Sets, Lists and Maps as
+this would make them lose their fixed amount of bytes.
  
 ###Example:
  
@@ -226,4 +226,3 @@ data class TimelineItem(
     )
 }
 ```
- 

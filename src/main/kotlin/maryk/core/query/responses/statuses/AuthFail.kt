@@ -1,6 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 
 /** Authorization fail for this action */
 class AuthFail<DO: Any> : IsAddResponseStatus<DO>, IsChangeResponseStatus<DO>, IsDeleteResponseStatus<DO> {
@@ -11,7 +12,7 @@ class AuthFail<DO: Any> : IsAddResponseStatus<DO>, IsChangeResponseStatus<DO>, I
     override fun toString() = "AuthFail"
 
     companion object: QueryDataModel<AuthFail<*>>(
-            definitions = listOf()
+            properties = object : PropertyDefinitions<AuthFail<*>>() {}
     ) {
         override fun invoke(map: Map<Int, *>) = AuthFail<Any>()
     }

@@ -1,8 +1,8 @@
 package maryk.core.query
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
@@ -20,25 +20,18 @@ data class Order(
         val propertyReference: IsPropertyReference<*, *>,
         val direction: Direction = Direction.ASC
 ) {
-    object Properties {
-        val propertyReference = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                name = "propertyReference",
-                index = 0,
-                contextualResolver = { it!!.dataModel!! }
-        )
-        val direction = EnumDefinition(
-                name = "direction",
-                index = 1,
-                required = true,
-                values = Direction.values()
-        )
-    }
-
     companion object: QueryDataModel<Order>(
-            definitions = listOf(
-                    Def(Properties.propertyReference, Order::propertyReference),
-                    Def(Properties.direction, Order::direction)
-            )
+            properties = object : PropertyDefinitions<Order>() {
+                init {
+                    add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                            contextualResolver = { it!!.dataModel!!.properties }
+                    ), Order::propertyReference)
+
+                    add(1, "direction", EnumDefinition(
+                            values = Direction.values()
+                    ), Order::direction)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Order(

@@ -4,13 +4,14 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Date
 import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class SetPropertyChangeTest {
     private val setPropertyChange = SetPropertyChange(
-            reference = TestMarykObject.Properties.set.getRef(),
+            reference = TestMarykObject.ref { set },
             addValues = setOf(
                     Date(2014, 4, 14),
                     Date(2013, 3, 13)
@@ -28,7 +29,7 @@ class SetPropertyChangeTest {
             mapOf(
                     TestMarykObject.name to TestMarykObject
             ),
-            dataModel = TestMarykObject as RootDataModel<Any>
+            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

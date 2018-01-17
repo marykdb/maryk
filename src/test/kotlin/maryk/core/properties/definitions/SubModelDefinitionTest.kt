@@ -1,14 +1,15 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.initByteArrayByHex
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.objects.DataModel
-import maryk.core.objects.Def
-import maryk.core.properties.ByteCollectorWithLengthCacher
-import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -17,17 +18,17 @@ internal class SubModelDefinitionTest {
     private data class MarykObject(
             val string: String = "jur"
     ){
-        object Properties {
-            val string = StringDefinition(
-                    name = "string",
-                    index = 0,
-                    regEx = "jur"
-            )
+        object Properties : PropertyDefinitions<MarykObject>() {
+            init {
+                add(0, "string", StringDefinition(
+                        regEx = "jur"
+                ), MarykObject::string)
+            }
         }
-        companion object: DataModel<MarykObject, IsPropertyContext>(
-                definitions = listOf(
-                Def(Properties.string, MarykObject::string)
-        )) {
+        companion object: DataModel<MarykObject, Properties>(
+                name = "MarykObject",
+                properties = Properties
+        ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
                     map[0] as String
             )
@@ -35,9 +36,14 @@ internal class SubModelDefinitionTest {
     }
 
     private val def = SubModelDefinition(
-            name = "test",
-            index = 1,
-            dataModel = MarykObject
+            dataModel = { MarykObject }
+    )
+    private val defMaxDefined = SubModelDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            dataModel = { MarykObject }
     )
 
     @Test
@@ -47,24 +53,25 @@ internal class SubModelDefinitionTest {
 
     @Test
     fun validate() {
-        def.validate(newValue = MarykObject())
+        def.validateWithRef(newValue = MarykObject())
         shouldThrow<ValidationUmbrellaException> {
-            def.validate(newValue = MarykObject("wrong"))
+            def.validateWithRef(newValue = MarykObject("wrong"))
         }
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         val value = MarykObject()
         val asHex = "2a0502036a7572"
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(value, bc::addToCache)
+                def.calculateTransportByteLengthWithKey(5, value, cache)
         )
         bc.bytes!!.size shouldBe 7
-        def.writeTransportBytesWithIndexKey(5, value, bc::nextLengthFromCache, bc::write, null)
+        def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
 
         bc.bytes!!.toHex() shouldBe asHex
 
@@ -79,19 +86,14 @@ internal class SubModelDefinitionTest {
     }
 
     @Test
-    fun testTransportWithLengthConversion() {
-        val value = MarykObject()
-        val bytes = initByteArrayByHex("0a0502036a7572")
-        var index = 0
-        val reader = { bytes[index++] }
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, SubModelDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
+    }
 
-        val key = ProtoBuf.readKey(reader)
-        key.wireType shouldBe WireType.LENGTH_DELIMITED
-        key.tag shouldBe 1
-
-        def.readTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, reader),
-                reader
-        ) shouldBe value
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, SubModelDefinition.Model, DataModelContext())
+        checkJsonConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
     }
 }

@@ -30,7 +30,7 @@ interface IsByteTransportableCollection<T: Any, C: Collection<T>, in CX: IsPrope
     /** True if encoded bytes are packed
      * Packed is true when encoded as LENGTH_DELIMITED while value should be VAR_INT/BIT_64/BIT_32
      * @param context with possible context values for Dynamic property writers
-     * @param encodedWireType wiretype of encoded bytes
+     * @param encodedWireType wire type of encoded bytes
      */
     fun isPacked(context: CX?, encodedWireType: WireType): Boolean
 }

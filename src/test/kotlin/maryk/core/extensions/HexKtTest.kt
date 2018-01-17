@@ -27,7 +27,7 @@ internal class HexKtTest {
     @Test
     fun testFromInvalidHexConversion(){
         shouldThrow<ParseException> {
-            bytes contentEquals initByteArrayByHex("wrongg")
+            bytes contentEquals initByteArrayByHex("wrong")
         }
     }
 }

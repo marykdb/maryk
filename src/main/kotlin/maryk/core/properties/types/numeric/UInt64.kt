@@ -1,4 +1,4 @@
-package maryk.core.properties.types
+package maryk.core.properties.types.numeric
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLong
@@ -9,8 +9,6 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.random
 import maryk.core.extensions.toHex
 import maryk.core.properties.exceptions.ParseException
-import maryk.core.properties.types.numeric.UInt
-import maryk.core.properties.types.numeric.UnsignedNumberDescriptor
 
 /** Base class for 64 bit/8 byte unsigned integers */
 class UInt64 internal constructor(number: Long): UInt<Long>(number) {
@@ -24,7 +22,8 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
     companion object : UnsignedNumberDescriptor<UInt64>(
             size = 8,
             MIN_VALUE = UInt64(Long.MIN_VALUE),
-            MAX_VALUE = UInt64(Long.MAX_VALUE)
+            MAX_VALUE = UInt64(Long.MAX_VALUE),
+            type = NumberType.UINT64
     ) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt64(initLong(reader))
         override fun writeStorageBytes(value: UInt64, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)

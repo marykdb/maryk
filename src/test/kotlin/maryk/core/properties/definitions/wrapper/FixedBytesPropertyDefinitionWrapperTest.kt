@@ -1,0 +1,26 @@
+package maryk.core.properties.definitions.wrapper
+
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.types.numeric.UInt32
+import kotlin.test.Test
+
+class FixedBytesPropertyDefinitionWrapperTest {
+    private val def = FixedBytesPropertyDefinitionWrapper(
+            index = 1,
+            name = "wrapper",
+            definition = NumberDefinition(type = UInt32),
+            getter = { _: Any -> null }
+    )
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, null, ::comparePropertyDefinitionWrapper)
+    }
+}

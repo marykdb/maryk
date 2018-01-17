@@ -4,18 +4,18 @@ import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 
-const val SIGNBYTE: Byte = 0b1000_0000.toByte()
-const val ZEROBYTE: Byte = 0b0.toByte()
-const val ONEBYTE: Byte = 0b1.toByte()
-const val MAXBYTE: Byte = 0b1111_1111.toByte()
-const val SEVENBYTES: Byte = 0b0111_1111.toByte()
+const val SIGN_BYTE: Byte = 0b1000_0000.toByte()
+const val ZERO_BYTE: Byte = 0b0.toByte()
+const val ONE_BYTE: Byte = 0b1.toByte()
+const val MAX_BYTE: Byte = 0b1111_1111.toByte()
+const val SEVEN_BYTES: Byte = 0b0111_1111.toByte()
 
 /** Write the bytes of this Byte to a writer
  * @param writer to write this Byte to
  */
 internal fun Byte.writeBytes(writer: (byte: Byte) -> Unit) {
         writer(
-                this and MAXBYTE xor SIGNBYTE
+                this and MAX_BYTE xor SIGN_BYTE
         )
 }
 
@@ -23,7 +23,7 @@ internal fun Byte.writeBytes(writer: (byte: Byte) -> Unit) {
  * @param reader to read bytes from
  * @return Byte represented by bytes
  */
-internal fun initByte(reader: () -> Byte) = reader() xor SIGNBYTE and MAXBYTE
+internal fun initByte(reader: () -> Byte) = reader() xor SIGN_BYTE and MAX_BYTE
 
 /** Encodes the Byte in zigzag pattern so negative values are
  * able to encode much more efficiently into varInt
@@ -38,7 +38,7 @@ internal fun Byte.decodeZigZag() = (this.toInt() and 0xFF).decodeZigZag().toByte
  */
 internal fun Byte.writeVarBytes(writer: (byte: Byte) -> Unit) {
     if (this < 0) {
-        writer(this and SEVENBYTES xor SIGNBYTE)
+        writer(this and SEVEN_BYTES xor SIGN_BYTE)
         writer(1)
     } else {
         writer(this)

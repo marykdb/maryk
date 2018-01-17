@@ -1,25 +1,31 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.randomBytes
+import maryk.core.objects.SimpleDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
-class FixedBytesDefinition(
-        name: String? = null,
-        index: Int = -1,
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = false,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: Bytes? = null,
-        maxValue: Bytes? = null,
-        random: Boolean = false,
+data class FixedBytesDefinition(
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: Bytes? = null,
+        override val maxValue: Bytes? = null,
+        override val random: Boolean = false,
         override val byteSize: Int
-): AbstractNumericDefinition<Bytes>(
-    name, index, indexed, searchable, required, final, WireType.LENGTH_DELIMITED, unique, minValue, maxValue, random
-), IsFixedBytesEncodable<Bytes> {
+):
+        IsNumericDefinition<Bytes>,
+        IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.FixedBytes
+    override val wireType = WireType.LENGTH_DELIMITED
+
     override fun createRandom() = Bytes(randomBytes(this.byteSize))
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(byteSize, reader)
@@ -31,4 +37,32 @@ class FixedBytesDefinition(
     override fun calculateTransportByteLength(value: Bytes) = this.byteSize
 
     override fun fromString(string: String) = Bytes.ofBase64String(string)
+
+    object Model : SimpleDataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
+            properties = object : PropertyDefinitions<FixedBytesDefinition>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, FixedBytesDefinition::indexed)
+                    IsPropertyDefinition.addSearchable(this, FixedBytesDefinition::searchable)
+                    IsPropertyDefinition.addRequired(this, FixedBytesDefinition::required)
+                    IsPropertyDefinition.addFinal(this, FixedBytesDefinition::final)
+                    IsComparableDefinition.addUnique(this, FixedBytesDefinition::unique)
+                    add(5, "minValue", FlexBytesDefinition(), FixedBytesDefinition::minValue)
+                    add(6, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
+                    IsNumericDefinition.addRandom(7, this, FixedBytesDefinition::random)
+                    IsFixedBytesEncodable.addByteSize(8, this, FixedBytesDefinition::byteSize)
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = FixedBytesDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean,
+                unique = map[4] as Boolean,
+                minValue = map[5] as Bytes?,
+                maxValue = map[6] as Bytes?,
+                random = map[7] as Boolean,
+                byteSize = (map[8] as UInt32).toInt()
+        )
+    }
 }

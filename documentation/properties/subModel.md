@@ -25,7 +25,7 @@ A property which contains another DataModel as embedded object. See
 val def = SubModelDefinition(
     name = "address",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     dataModel = Address
 )

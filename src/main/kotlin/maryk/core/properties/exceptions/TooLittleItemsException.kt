@@ -1,8 +1,8 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
@@ -13,7 +13,7 @@ import maryk.core.properties.types.numeric.SInt32
  * @param minSize   minimum of range
  */
 data class TooLittleItemsException(
-        val reference: IsPropertyReference<*, *>,
+        val reference: IsPropertyReference<*, *>?,
         val size: Int,
         val minSize: Int
 ) : ValidationException(
@@ -22,17 +22,14 @@ data class TooLittleItemsException(
 ) {
     override val validationExceptionType = ValidationExceptionType.TOO_LITTLE_ITEMS
 
-    internal object Properties {
-        val size = NumberDefinition("size", 1, type = SInt32)
-        val minSize = NumberDefinition("minSize", 2, type = SInt32)
-    }
-
     companion object: QueryDataModel<TooLittleItemsException>(
-            definitions = listOf(
-                    Def(ValidationException.Properties.reference, TooLittleItemsException::reference),
-                    Def(Properties.size, TooLittleItemsException::size),
-                    Def(Properties.minSize, TooLittleItemsException::minSize)
-            )
+            properties = object : PropertyDefinitions<TooLittleItemsException>() {
+                init {
+                    ValidationException.addReference(this, TooLittleItemsException::reference)
+                    add(1, "size", NumberDefinition(type = SInt32), TooLittleItemsException::size)
+                    add(2, "minSize", NumberDefinition(type = SInt32), TooLittleItemsException::minSize)
+                }
+            }
     ) {
         override fun invoke(map: Map<Int, *>) = TooLittleItemsException(
                 reference = map[0] as IsPropertyReference<*, *>,

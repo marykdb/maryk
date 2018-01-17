@@ -5,32 +5,31 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-internal class AbstractSimpleDefinitionTest {
+internal class IsComparableDefinitionTest {
     val test: String = "test"
 
     val def = StringDefinition(
-            name = "test",
             unique = true,
             minValue = "bbb",
             maxValue = "ddd"
     )
 
     @Test
-    fun hasValues() {
+    fun `has defined values`() {
         def.unique shouldBe true
         def.minValue shouldBe "bbb"
         def.maxValue shouldBe "ddd"
     }
 
     @Test
-    fun validateValueSize() {
-        def.validate(newValue = "ccc")
+    fun `validate with value range`() {
+        def.validateWithRef(newValue = "ccc")
         shouldThrow<OutOfRangeException> {
-            def.validate(newValue = "b")
+            def.validateWithRef(newValue = "b")
         }
 
         shouldThrow<OutOfRangeException> {
-            def.validate(newValue = "z")
+            def.validateWithRef(newValue = "z")
         }
     }
 }

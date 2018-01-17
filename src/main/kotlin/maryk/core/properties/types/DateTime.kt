@@ -62,7 +62,7 @@ data class DateTime(
                 Instant.getCurrentEpochTimeInMillis()
         )
 
-        /** Create a DateTime by the amount of milliseconds sinds 01-01-1970 */
+        /** Create a DateTime by the amount of milliseconds since 01-01-1970 */
         fun ofEpochMilli(epochInMillis: Long): DateTime {
             val epochDay = floor((epochInMillis / MILLIS_PER_DAY).toDouble()).toLong()
             val millisOfDay = floor((epochInMillis % MILLIS_PER_DAY).toDouble()).toInt()
@@ -72,7 +72,7 @@ data class DateTime(
             )
         }
 
-        /** Create a DateTime by the amount of seconds sinds 01-01-1970 */
+        /** Create a DateTime by the amount of seconds since 01-01-1970 */
         fun ofEpochSecond(epochInSeconds: Long, milli: Short = 0): DateTime {
             val epochDay = floor(epochInSeconds.toDouble() / SECONDS_PER_DAY).toLong()
             val secondOfDay = floor(epochInSeconds.toDouble() % SECONDS_PER_DAY).toInt()

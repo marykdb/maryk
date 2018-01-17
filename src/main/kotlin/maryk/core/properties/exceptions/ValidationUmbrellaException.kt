@@ -1,19 +1,14 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
-import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelPropertyContext
 
 /** Umbrella for Validation Exception for properties
- * Contains a list of exceptions which where catched. */
+ * Contains a list of exceptions which where caught. */
 data class ValidationUmbrellaException(
         val reference: IsPropertyReference<*,*>?,
         val exceptions: List<ValidationException>
@@ -22,40 +17,24 @@ data class ValidationUmbrellaException(
 ) {
     override val validationExceptionType = ValidationExceptionType.UMBRELLA
 
-    internal object Properties {
-        val reference = ContextCaptureDefinition(
-                ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                        name = "reference",
-                        index = 0,
-                        required = false,
-                        contextualResolver = { it!!.dataModel!! }
-                )
-        ) { context, value ->
-            @Suppress("UNCHECKED_CAST")
-            context!!.reference = value as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>
-        }
-
-        val exceptions = ListDefinition(
-                name = "exceptions",
-                index = 1,
-                required = true,
-                valueDefinition = MultiTypeDefinition(
-                        required = true,
-                        getDefinition = { mapOfValidationExceptionDefinitions.get(it) }
-                )
-        )
-    }
-
     companion object: QueryDataModel<ValidationUmbrellaException>(
-            definitions = listOf(
-                    Def(Properties.reference, ValidationUmbrellaException::reference),
-                    Def(Properties.exceptions, { it.exceptions.map { TypedValue(it.validationExceptionType.index, it) } })
-            )
+            properties = object : PropertyDefinitions<ValidationUmbrellaException>() {
+                init {
+                    ValidationException.addReference(this, ValidationUmbrellaException::reference)
+                    add(1, "exceptions", ListDefinition(
+                            valueDefinition = MultiTypeDefinition(
+                                    definitionMap = mapOfValidationExceptionDefinitions
+                            )
+                    )) {
+                        it.exceptions.map { TypedValue(it.validationExceptionType, it) }
+                    }
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
                 reference = map[0] as IsPropertyReference<*, *>?,
-                exceptions = (map[1] as List<TypedValue<ValidationException>>?)?.map { it.value } ?: emptyList()
+                exceptions = (map[1] as List<TypedValue<ValidationExceptionType, ValidationException>>?)?.map { it.value } ?: emptyList()
         )
     }
 }
@@ -71,7 +50,7 @@ private fun createReason(reference: IsPropertyReference<*, *>?, exceptions: List
 }
 
 /** Convenience method to create a new ValidationUmbrellaException */
-fun createValidationUmbrellaException(parentRefFactory: () -> IsPropertyReference<*, *>?, exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit){
+fun createValidationUmbrellaException(refGetter: () -> IsPropertyReference<*, *>?, exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit){
     var hasExceptions = false
     val exceptions by lazy {
         hasExceptions = true
@@ -83,6 +62,6 @@ fun createValidationUmbrellaException(parentRefFactory: () -> IsPropertyReferenc
     }
 
     if (hasExceptions) {
-        throw ValidationUmbrellaException(parentRefFactory(), exceptions)
+        throw ValidationUmbrellaException(refGetter(), exceptions)
     }
 }

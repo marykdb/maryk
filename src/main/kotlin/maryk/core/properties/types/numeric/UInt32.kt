@@ -12,10 +12,12 @@ import maryk.core.properties.exceptions.ParseException
 class UInt32 internal constructor(number: Int): UInt<Int>(number) {
     override fun compareTo(other: UInt<Int>) = number.compareTo(other.number)
     override fun toString() = (number.toLong() - Int.MIN_VALUE).toString()
+    fun toInt() = this.number - Int.MIN_VALUE
     companion object : UnsignedNumberDescriptor<UInt32>(
             size = 4,
             MIN_VALUE = UInt32(Int.MIN_VALUE),
-            MAX_VALUE = UInt32(Int.MAX_VALUE)
+            MAX_VALUE = UInt32(Int.MAX_VALUE),
+            type = NumberType.UINT32
     ) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt32(initInt(reader))
         override fun writeStorageBytes(value: UInt32, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)
@@ -30,10 +32,10 @@ class UInt32 internal constructor(number: Int): UInt<Int>(number) {
     }
 }
 
-fun Int.toUInt32() = if (this > 0) {
+fun Int.toUInt32() = if (this >= 0) {
     UInt32(this + Int.MIN_VALUE)
 } else { throw ParseException("Negative Int not allowed $this") }
 
-fun Long.toUInt32() = if (this > 0) {
+fun Long.toUInt32() = if (this >= 0) {
     UInt32((this + Int.MIN_VALUE).toInt())
 } else { throw ParseException("Negative Long not allowed $this") }

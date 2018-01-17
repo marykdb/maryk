@@ -36,7 +36,7 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
     }
 }
 
-abstract class BytesDescriptor<T>{
+abstract class BytesDescriptor<out T>{
     fun ofBase64String(base64: String) = try {
         this.construct(
                 Base64.decode(base64)

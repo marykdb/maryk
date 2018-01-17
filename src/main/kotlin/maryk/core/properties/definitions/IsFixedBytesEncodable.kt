@@ -1,15 +1,13 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.IsDataModel
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.toUInt32
 
 /** Interface to define something can be en/decoded to fixed byte array */
 interface IsFixedBytesEncodable<T: Any> {
     /** The byte size */
     val byteSize: Int
-
-    /** Index of property on model. -1 if not on property */
-    val index: Int
 
     /** Convert to value from a byte reader
      * @param length of bytes to read
@@ -20,18 +18,17 @@ interface IsFixedBytesEncodable<T: Any> {
     fun readStorageBytes(length: Int, reader: () -> Byte): T
 
     /** Calculates the byte size of the storage bytes */
-    fun calculateStorageByteLength(value: Boolean) = byteSize
+    fun calculateStorageByteLength(value: T) = byteSize
 
     /** Convert a value to bytes
-     * @param context for contextual parameters in dynamic properties
      * @param value to convert
      * @param writer to write bytes to
      */
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
-    /** Get the value to be used in a key
-     * @param dataModel to use to fetch property if relevant
-     * @param dataObject to get property from
-     */
-    fun <DO: Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO): T
+    companion object {
+        internal fun <DO:Any> addByteSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) {
+            definitions.add(index, "byteSize", NumberDefinition(type = UInt32)) { getter(it).toUInt32() }
+        }
+    }
 }

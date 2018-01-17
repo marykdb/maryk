@@ -1,13 +1,15 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.bytes.calculateUTF8ByteLength
 import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ByteCollectorWithLengthCacher
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -27,44 +29,53 @@ internal class StringDefinitionTest {
             "👩‍💻" to "f09f91a9e2808df09f92bb"
     )
 
-    val def = StringDefinition(
-            index = 14,
+    private val def = StringDefinition(
+            minSize = 3,
+            maxSize = 6
+    )
+    private val defMaxDefined = StringDefinition(
+            indexed = true,
+            required = false,
+            final = true,
+            searchable = false,
+            unique = true,
             minSize = 3,
             maxSize = 6,
-            name = "test"
+            regEx = "^[abcd]{3,4}$",
+            minValue = "aaa",
+            maxValue = "zzzzz"
     )
 
-    val defRegEx = StringDefinition(
-            name = "test",
+    private val defRegEx = StringDefinition(
             regEx = "^[abcd]{3,4}$"
     )
 
     @Test
-    fun validate() {
+    fun `validate values`() {
         // Should both succeed without errors
-        def.validate(newValue = "abc")
-        def.validate(newValue = "abcdef")
+        def.validateWithRef(newValue = "abc")
+        def.validateWithRef(newValue = "abcdef")
 
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = "ab")
+            def.validateWithRef(newValue = "ab")
         }
         shouldThrow<InvalidSizeException> {
-            def.validate(newValue = "abcdefg")
+            def.validateWithRef(newValue = "abcdefg")
         }
     }
 
     @Test
-    fun validateRegex() {
+    fun `validate values with regular expression`() {
         // Should succeed
-        defRegEx.validate(newValue = "abc")
+        defRegEx.validateWithRef(newValue = "abc")
 
         shouldThrow<InvalidValueException> {
-            defRegEx.validate(newValue = "efgh")
+            defRegEx.validateWithRef(newValue = "efgh")
         }
     }
 
     @Test
-    fun convertStorageBytes() {
+    fun `convert values to storage bytes and back`() {
         val bc = ByteCollector()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
@@ -78,14 +89,15 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
+        val cache = WriteCache()
         stringsToTest.forEach { (value, asHex) ->
             bc.reserve(
-                    def.calculateTransportByteLengthWithKey(value, bc::addToCache)
+                    def.calculateTransportByteLengthWithKey(14, value, cache)
             )
             bc.bytes!!.size shouldBe value.calculateUTF8ByteLength() + 2
-            def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
+            def.writeTransportBytesWithKey(14, value, cache, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.LENGTH_DELIMITED
             key.tag shouldBe 14
@@ -99,11 +111,23 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convertString() {
+    fun `convert values to String and back`() {
         stringsToTest.keys.forEach {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, StringDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, StringDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, StringDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, StringDefinition.Model)
     }
 }
 

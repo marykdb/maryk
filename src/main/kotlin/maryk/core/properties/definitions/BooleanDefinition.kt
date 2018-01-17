@@ -2,23 +2,26 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonWriter
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
 
 /** Definition for Boolean properties */
-class BooleanDefinition(
-        name: String? = null,
-        index: Int = -1,
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = false,
-        final: Boolean = false,
-        unique: Boolean = false
-): AbstractSimpleDefinition<Boolean, IsPropertyContext>(
-    name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue = false, maxValue = true
-), IsFixedBytesEncodable<Boolean> {
+data class BooleanDefinition(
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false
+):
+        IsSimpleValueDefinition<Boolean, IsPropertyContext>,
+        IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.Boolean
+    override val wireType = WireType.VAR_INT
     override val byteSize = 1
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = initBoolean(reader)
@@ -35,9 +38,27 @@ class BooleanDefinition(
         else -> throw ParseException(string)
     }
 
-    override fun writeJsonValue(value: Boolean, writer: JsonWriter, context: IsPropertyContext?) {
+    override fun writeJsonValue(value: Boolean, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
         writer.writeValue(
                 this.asString(value)
+        )
+    }
+
+    object Model : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
+            properties = object : PropertyDefinitions<BooleanDefinition>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)
+                    IsPropertyDefinition.addSearchable(this, BooleanDefinition::searchable)
+                    IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
+                    IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = BooleanDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean
         )
     }
 }

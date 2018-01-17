@@ -31,7 +31,7 @@ year is unsigned so it can contain negative dates
 val def = DateDefinition(
     name = "dateOfBirth",
     index = 0,
-    required = true,
+    required = false,
     final = true,
     unique = true,
     minValue = false,

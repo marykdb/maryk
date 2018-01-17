@@ -15,7 +15,8 @@ class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
     companion object : UnsignedNumberDescriptor<UInt8>(
             size = 1,
             MIN_VALUE = UInt8(Byte.MIN_VALUE),
-            MAX_VALUE = UInt8(Byte.MAX_VALUE)
+            MAX_VALUE = UInt8(Byte.MAX_VALUE),
+            type = NumberType.UINT8
     ) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte): UInt8 = UInt8(initByte(reader))
         override fun writeStorageBytes(value: UInt8, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)
@@ -30,7 +31,7 @@ class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
     }
 }
 
-fun Byte.toUInt8() = if (this > 0) {
+fun Byte.toUInt8() = if (this >= 0) {
     UInt8((this + Byte.MIN_VALUE).toByte())
 } else { throw ParseException("Negative Byte not allowed $this") }
 

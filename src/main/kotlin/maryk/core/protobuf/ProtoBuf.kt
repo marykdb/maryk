@@ -1,8 +1,8 @@
 package maryk.core.protobuf
 
-import maryk.core.extensions.bytes.SEVENBYTES
-import maryk.core.extensions.bytes.SIGNBYTE
-import maryk.core.extensions.bytes.ZEROBYTE
+import maryk.core.extensions.bytes.SEVEN_BYTES
+import maryk.core.extensions.bytes.SIGN_BYTE
+import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
@@ -18,14 +18,14 @@ object ProtoBuf {
                 (
                         ((tag shl 3).toByte() and 0b0111_1000) // Add first part of tag to byte
                                 xor wireType.type // Add Type to byte
-                        ) xor if (byteSize > 1) SIGNBYTE else ZEROBYTE // Add Sign byte if total is longer than 5 bytes
+                        ) xor if (byteSize > 1) SIGN_BYTE else ZERO_BYTE // Add Sign byte if total is longer than 5 bytes
         )
         // Write any needed extra byte for the tag as a VarInt
         if (byteSize > 1) {
             (1 until byteSize).forEach {
                 val isLast = it == byteSize - 1
                 writer(
-                        (tag shr (7*it-3)).toByte() and SEVENBYTES xor if(isLast) ZEROBYTE else SIGNBYTE
+                        (tag shr (7*it-3)).toByte() and SEVEN_BYTES xor if(isLast) ZERO_BYTE else SIGN_BYTE
                 )
             }
         }
@@ -40,7 +40,7 @@ object ProtoBuf {
         val wireType = wireTypeOf(byte and 0b111)
 
         var result = (byte and 0b0111_1000).toInt() shr 3
-        if (byte and SIGNBYTE == ZEROBYTE) {
+        if (byte and SIGN_BYTE == ZERO_BYTE) {
             return ProtoBufKey(result, wireType)
         }
 
@@ -48,7 +48,7 @@ object ProtoBuf {
         while (shift < 35) {
             byte = reader()
             result = result or ((byte and 0b0111_1111).toInt() shl shift)
-            if (byte and SIGNBYTE == ZEROBYTE) {
+            if (byte and SIGN_BYTE == ZERO_BYTE) {
                 return ProtoBufKey(result, wireType)
             }
             shift += 7
@@ -66,7 +66,7 @@ object ProtoBuf {
                 var currentByte: Byte
                 do {
                     currentByte = reader()
-                } while (currentByte and SIGNBYTE != ZEROBYTE)
+                } while (currentByte and SIGN_BYTE != ZERO_BYTE)
             }
             WireType.BIT_64 -> (0 until 8).forEach { reader() }
             WireType.LENGTH_DELIMITED -> (0 until initIntByVar(reader)).forEach { reader() }

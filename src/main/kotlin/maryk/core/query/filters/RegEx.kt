@@ -1,39 +1,31 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
-/** Compares given regular expression against referenced property
- * @param reference to property to compare against
- * @param value the regex which the compared property should start with
- */
+/** Compares given regular expression [regEx] against referenced property [reference] */
 data class RegEx(
-        override val reference: IsPropertyReference<String, AbstractValueDefinition<String, IsPropertyContext>>,
+        override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
         val regEx: String
 ) : IsPropertyCheck<String> {
     override val filterType = FilterType.REGEX
 
-    object Properties {
-        val regEx = StringDefinition(
-                name = "regEx",
-                index = 1,
-                required = true
-        )
-    }
-
     companion object: QueryDataModel<RegEx>(
-            definitions = listOf(
-                    Def(IsPropertyCheck.Properties.reference, RegEx::reference),
-                    Def(Properties.regEx, RegEx::regEx)
-            )
+            properties = object : PropertyDefinitions<RegEx>() {
+                init {
+                    IsPropertyCheck.addReference(this, RegEx::reference)
+
+                    add(1, "regEx", StringDefinition(), RegEx::regEx)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = RegEx(
-                reference = map[0] as IsPropertyReference<String, StringDefinition>,
+                reference = map[0] as IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
                 regEx = map[1] as String
         )
     }

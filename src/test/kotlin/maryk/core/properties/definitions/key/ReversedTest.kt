@@ -1,12 +1,15 @@
 package maryk.core.properties.definitions.key
 
-import maryk.core.objects.Def
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.DateTime
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -15,29 +18,21 @@ internal class ReversedTest {
             val boolean: Boolean,
             val dateTime: DateTime
     ){
-        object Properties {
-            val boolean = BooleanDefinition(
-                    index = 0,
-                    name = "boolean",
-                    required = true,
+        object Properties : PropertyDefinitions<MarykObject>() {
+            val boolean = add(0, "bool", BooleanDefinition(
                     final = true
-            )
-            val dateTime = DateTimeDefinition(
-                    name = "dateTime",
-                    index = 1,
-                    required = true,
+            ), MarykObject::boolean)
+            val dateTime = add(1, "dateTime", DateTimeDefinition(
                     final = true
-            )
+            ), MarykObject::dateTime)
         }
-        companion object: RootDataModel<MarykObject>(
+        companion object: RootDataModel<MarykObject, Properties>(
                 name = "MarykObject",
                 keyDefinitions = definitions(
                         Reversed(Properties.boolean),
                         Reversed(Properties.dateTime)
-                ), definitions = listOf(
-                        Def(Properties.boolean, MarykObject::boolean),
-                        Def(Properties.dateTime, MarykObject::dateTime)
-                )
+                ),
+                properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
                     map[0] as Boolean,
@@ -66,5 +61,27 @@ internal class ReversedTest {
         }
 
         key.toHex() shouldBe "fe017fffffa6540703"
+    }
+
+    private val context = DataModelContext(
+            propertyDefinitions = MarykObject.Properties
+    )
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(
+                value = Reversed(MarykObject.Properties.boolean.getRef()),
+                dataModel = Reversed.Model,
+                context = context
+        )
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(
+                value = Reversed(MarykObject.Properties.boolean.getRef()),
+                dataModel = Reversed.Model,
+                context = context
+        )
     }
 }

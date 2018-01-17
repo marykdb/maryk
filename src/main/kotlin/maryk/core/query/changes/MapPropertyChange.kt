@@ -1,13 +1,14 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.IsByteTransportableMap
+import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.query.DataModelPropertyContext
@@ -22,52 +23,53 @@ import maryk.core.query.DataModelPropertyContext
  * @param V: type of value to be operated on
  */
 data class MapPropertyChange<K: Any, V: Any>(
-        override val reference: IsPropertyReference<Map<K, V>, MapDefinition<K, V, *>>,
+        override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *>>,
         val valuesToAdd: Map<K, V>? = null,
         val keysToDelete: Set<K>? = null,
         override val valueToCompare: Map<K, V>? = null
 ) : IsPropertyOperation<Map<K, V>> {
     override val changeType = ChangeType.MAP_CHANGE
 
-    object Properties {
+    internal object Properties : PropertyDefinitions<MapPropertyChange<out Any, out Any>>() {
         @Suppress("UNCHECKED_CAST")
-        private val keyDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-            (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.keyDefinition
-        })
+        private val keyDefinition = ContextualValueDefinition(
+                contextualResolver = { context: DataModelPropertyContext? ->
+                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.keyDefinition
+                }
+        )
         @Suppress("UNCHECKED_CAST")
         val valueToCompare = ContextualMapDefinition(
-                name = "valueToCompare",
-                index = 1,
+                required = false,
                 contextualResolver = { context: DataModelPropertyContext? ->
-                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition
+                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
-        ) as IsSerializablePropertyDefinition<Map<*, *>, DataModelPropertyContext>
+        ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>
         @Suppress("UNCHECKED_CAST")
         val valuesToAdd = ContextualMapDefinition(
-                name = "valuesToAdd",
-                index = 2,
+                required = false,
                 contextualResolver = { context: DataModelPropertyContext? ->
-                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition
+                    (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
                 }
-        ) as IsSerializablePropertyDefinition<Map<*, *>, DataModelPropertyContext>
+        ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>
         val keysToDelete = SetDefinition(
-                name = "keysToDelete",
-                index = 3,
+                required = false,
                 valueDefinition = keyDefinition
         )
     }
 
     companion object: QueryDataModel<MapPropertyChange<*, *>>(
-            definitions = listOf(
-                    Def(IsPropertyOperation.Properties.reference, MapPropertyChange<*, *>::reference),
-                    Def(Properties.valueToCompare, MapPropertyChange<*, *>::valueToCompare),
-                    Def(Properties.valuesToAdd, MapPropertyChange<*, *>::valuesToAdd),
-                    Def(Properties.keysToDelete, MapPropertyChange<*, *>::keysToDelete)
-            )
+            properties = object : PropertyDefinitions<MapPropertyChange<*, *>>() {
+                init {
+                    IsPropertyOperation.addReference(this, MapPropertyChange<*, *>::reference)
+                    add(1, "valueToCompare", Properties.valueToCompare, MapPropertyChange<*, *>::valueToCompare)
+                    add(2, "valuesToAdd", Properties.valuesToAdd, MapPropertyChange<*, *>::valuesToAdd)
+                    add(3, "keysToDelete", Properties.keysToDelete, MapPropertyChange<*, *>::keysToDelete)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MapPropertyChange(
-                reference = map[0] as IsPropertyReference<Map<Any, Any>, MapDefinition<Any, Any, *>>,
+                reference = map[0] as IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *>>,
                 valueToCompare = map[1] as Map<Any, Any>?,
                 valuesToAdd = map[2] as Map<Any, Any>?,
                 keysToDelete = map[3] as Set<Any>?

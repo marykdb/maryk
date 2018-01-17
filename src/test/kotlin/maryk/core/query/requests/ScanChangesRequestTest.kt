@@ -1,29 +1,29 @@
 package maryk.core.query.requests
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.types.numeric.toUInt32
-import maryk.core.properties.types.toUInt64
+import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.Order
 import maryk.core.query.filters.Exists
 import kotlin.test.Test
 
 class ScanChangesRequestTest {
-    private val key1 = SubMarykObject.key.getKey(SubMarykObject("test1"))
+    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
 
     private val scanChangesRequest = ScanChangesRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             startKey = key1,
             fromVersion = 1234L.toUInt64()
     )
 
     private val scanChangeMaxRequest = ScanChangesRequest(
-            SubMarykObject,
+            SimpleMarykObject,
             startKey = key1,
-            filter = Exists(SubMarykObject.Properties.value.getRef()),
-            order = Order(SubMarykObject.Properties.value.getRef()),
+            filter = Exists(SimpleMarykObject.ref { value }),
+            order = Order(SimpleMarykObject.ref { value }),
             limit = 100.toUInt32(),
             filterSoftDeleted = true,
             toVersion = 2345L.toUInt64(),
@@ -31,7 +31,7 @@ class ScanChangesRequestTest {
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SubMarykObject.name to SubMarykObject
+            SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

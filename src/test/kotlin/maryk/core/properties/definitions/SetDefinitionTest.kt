@@ -1,9 +1,11 @@
 package maryk.core.properties.definitions
 
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.TooLittleItemsException
@@ -11,6 +13,7 @@ import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -18,53 +21,53 @@ import kotlin.test.assertTrue
 
 internal class SetDefinitionTest {
     private val subDef = StringDefinition(
-            name = "string",
-            regEx = "T.*",
-            required = true
+            regEx = "T.*"
     )
 
     private val def = SetDefinition(
-            name = "stringSet",
-            index = 4,
             minSize = 2,
             maxSize = 4,
-            required = true,
             valueDefinition = subDef
     )
 
-    private val def2 = SetDefinition(
-            name = "stringSet",
+    private val defMaxDefined = SetDefinition(
+            indexed = true,
+            searchable = false,
+            final = true,
+            required = false,
+            minSize = 2,
+            maxSize = 4,
             valueDefinition = subDef
     )
 
     @Test
-    fun testValidateRequired() {
-        def2.validate(newValue = null)
+    fun `validate required`() {
+        defMaxDefined.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
-            def.validate(newValue = null)
+            def.validateWithRef(newValue = null)
         }
     }
 
     @Test
-    fun testValidateSize() {
-        def.validate(newValue = setOf("T", "T2"))
-        def.validate(newValue = setOf("T", "T2", "T3"))
-        def.validate(newValue = setOf("T", "T2", "T3", "T4"))
+    fun `validate set size`() {
+        def.validateWithRef(newValue = setOf("T", "T2"))
+        def.validateWithRef(newValue = setOf("T", "T2", "T3"))
+        def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4"))
 
         shouldThrow<TooLittleItemsException> {
-            def.validate(newValue = setOf("T"))
+            def.validateWithRef(newValue = setOf("T"))
         }
 
         shouldThrow<TooMuchItemsException> {
-            def.validate(newValue = setOf("T", "T2", "T3", "T4", "T5"))
+            def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4", "T5"))
         }
     }
 
     @Test
-    fun testValidateContent() {
+    fun `validate set content`() {
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validate(newValue = setOf("T", "WRONG", "WRONG2"))
+            def.validateWithRef(newValue = setOf("T", "WRONG", "WRONG2"))
         }
         e.exceptions.size shouldBe 2
 
@@ -73,16 +76,17 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         val value = setOf("T", "T2", "T3", "T4")
         val asHex = "220154220254322202543322025434"
 
         bc.reserve(
-            def.calculateTransportByteLengthWithKey(value, bc::addToCache)
+            def.calculateTransportByteLengthWithKey(4, value, cache)
         )
-        def.writeTransportBytesWithKey(value, bc::nextLengthFromCache, bc::write)
+        def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe asHex
 
@@ -105,7 +109,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun testJsonConversion() {
+    fun `convert values values to JSON String and back`() {
         val value = setOf("T", "T2", "T3", "T4")
 
         var totalString = ""
@@ -119,5 +123,17 @@ internal class SetDefinitionTest {
         val converted = def.readJson(reader)
 
         converted shouldBe value
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, SetDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, SetDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, SetDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, SetDefinition.Model)
     }
 }

@@ -11,7 +11,7 @@ enum class WireType(val type: Byte) {
     BIT_32(5)
 }
 
-/** Retrieve wiretype value by id
+/** Retrieve wire type value by id
  * @param byte to retrieve value of
  */
 internal fun wireTypeOf(byte: Byte): WireType {

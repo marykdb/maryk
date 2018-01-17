@@ -1,14 +1,15 @@
 package maryk.core.properties.exceptions
 
-import maryk.SubMarykObject
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class ValidationExceptionTest {
-    private val ref = SubMarykObject.Properties.value.getRef()
+    private val ref = SimpleMarykObject.ref { value }
 
     private val validationUmbrellaException = ValidationUmbrellaException(null, listOf(
             AlreadySetException(ref),
@@ -28,9 +29,9 @@ class ValidationExceptionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
             mapOf(
-                    SubMarykObject.name to SubMarykObject
+                    SimpleMarykObject.name to SimpleMarykObject
             ),
-            dataModel = SubMarykObject as RootDataModel<Any>
+            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

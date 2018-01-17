@@ -1,8 +1,11 @@
 package maryk.core.properties.definitions
 
+import maryk.Option
+import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.core.properties.ByteCollector
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.types.TypedValue
@@ -12,61 +15,79 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class MultiTypeDefinitionTest {
-    val intDef = NumberDefinition<Int>(
-            name = "int",
+    private val intDef = NumberDefinition(
             type = SInt32,
             maxValue = 1000
     )
 
-    val stringDef = StringDefinition(
-            name = "string",
+    private val stringDef = StringDefinition(
             regEx = "#.*"
     )
 
-    val def = MultiTypeDefinition(
-            name = "multitype",
-            index = 1,
-            getDefinition = { when(it) {
-                    0 -> stringDef
-                    1 -> intDef
-                    else -> null
-            }}
+    val def = MultiTypeDefinition<Option, IsPropertyContext>(
+            definitionMap = mapOf(
+                    Option.V0 to stringDef,
+                    Option.V1 to intDef
+            )
     )
 
-    val multisToTest = arrayOf(
-            TypedValue(0, "#test"),
-            TypedValue(1, 400)
+    val defMaxDefined = MultiTypeDefinition<Option, IsPropertyContext>(
+            indexed = true,
+            searchable = false,
+            final = true,
+            required = false,
+            definitionMap = mapOf(
+                    Option.V0 to stringDef,
+                    Option.V1 to intDef
+            )
+    )
+
+    private val multisToTest = arrayOf(
+            TypedValue(Option.V0, "#test"),
+            TypedValue(Option.V1, 400)
     )
 
     @Test
-    fun testGet() {
-        def.getDefinition(0) shouldBe stringDef
-        def.getDefinition(1) shouldBe intDef
+    fun `get properties`() {
+        def.definitionMap[Option.V0] shouldBe stringDef
+        def.definitionMap[Option.V1] shouldBe intDef
     }
 
     @Test
-    fun testValidation() {
-        def.validate(newValue = TypedValue(0, "#test"))
-        def.validate(newValue = TypedValue(1, 400))
+    fun `validate content`() {
+        def.validateWithRef(newValue = TypedValue(Option.V0, "#test"))
+        def.validateWithRef(newValue = TypedValue(Option.V1, 400))
 
         shouldThrow<OutOfRangeException> {
-            def.validate(newValue = TypedValue(1, 3000))
+            def.validateWithRef(newValue = TypedValue(Option.V1, 3000))
         }
         shouldThrow<InvalidValueException> {
-            def.validate(newValue = TypedValue(0, "WRONG"))
+            def.validateWithRef(newValue = TypedValue(Option.V0, "WRONG"))
         }
     }
 
     @Test
-    fun testValidationInvalidField() {
+    fun `invalid field should throw exception`() {
         shouldThrow<DefNotFoundException> {
-            def.validate(newValue = TypedValue(2, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(Option.V2, "NonExistingField"))
         }
     }
 
     @Test
-    fun testTransportConversion() {
-        val bc = ByteCollectorWithLengthCacher()
+    fun `convert values to transport bytes and back`() {
+        val bc = ByteCollector()
         multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(this.def, MultiTypeDefinition.Model)
+        checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(this.def, MultiTypeDefinition.Model)
+        checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model)
     }
 }

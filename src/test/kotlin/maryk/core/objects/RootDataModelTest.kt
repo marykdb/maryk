@@ -3,11 +3,18 @@ package maryk.core.objects
 import maryk.Option
 import maryk.SubMarykObject
 import maryk.TestMarykObject
-import maryk.core.properties.ByteCollectorWithLengthCacher
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
+import maryk.core.properties.ByteCollector
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.Time
 import maryk.core.properties.types.numeric.toUInt32
+import maryk.core.protobuf.WriteCache
+import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -29,9 +36,9 @@ internal class RootDataModelTest {
             )
     }
 
-    private val subModelRef = SubMarykObject.Properties.value.getRef { TestMarykObject.Properties.subModel.getRef() }
-    private val mapRef = TestMarykObject.Properties.map.getRef()
-    private val mapKeyRef = TestMarykObject.Properties.map.getKeyRef(Time(12, 33, 44))
+    private val subModelRef = SubMarykObject.Properties.value.getRef(TestMarykObject.Properties.subModel.getRef())
+    private val mapRef = TestMarykObject.ref { map }
+    private val mapKeyRef = TestMarykObject { map key Time(12, 33, 44) }
 
     @Test
     fun testPropertyReferenceByName() {
@@ -41,17 +48,48 @@ internal class RootDataModelTest {
 
     @Test
     fun testPropertyReferenceByWriter() {
-        val bc = ByteCollectorWithLengthCacher()
+        val bc = ByteCollector()
+        val cache = WriteCache()
 
         arrayOf(subModelRef, mapRef, mapKeyRef).forEach {
             bc.reserve(
-                    it.calculateTransportByteLength(bc::addToCache)
+                    it.calculateTransportByteLength(cache)
             )
-            it.writeTransportBytes(bc::nextLengthFromCache, bc::write)
+            it.writeTransportBytes(cache, bc::write)
 
             TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe it
 
             bc.reset()
+        }
+    }
+
+    @Test
+    fun `convert definition to ProtoBuf and back`() {
+        checkProtoBufConversion(TestMarykObject, RootDataModel.Model, DataModelContext(), ::compareDataModels)
+    }
+
+    @Test
+    fun `convert definition to JSON and back`() {
+        checkJsonConversion(TestMarykObject, RootDataModel.Model, DataModelContext(), ::compareDataModels)
+    }
+
+    private fun compareDataModels(converted: RootDataModel<out Any, out PropertyDefinitions<out Any>>, original: RootDataModel<out Any, out PropertyDefinitions<out Any>>) {
+        converted.name shouldBe original.name
+
+        (converted.properties)
+                .zip(original.properties)
+                .forEach { (convertedWrapper, originalWrapper) ->
+                    comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
+                }
+
+        converted.key.keyDefinitions.zip(original.key.keyDefinitions).forEach { (converted, original) ->
+                    when(converted) {
+                        is IsPropertyDefinitionWrapper<*, *, *> -> {
+                            comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *>)
+                        }
+                        else -> converted shouldBe original
+                    }
+
         }
     }
 }

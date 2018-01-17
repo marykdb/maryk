@@ -1,8 +1,8 @@
 package maryk.core.query.responses
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.IndexedEnum
 
@@ -24,25 +24,13 @@ data class FailedActionResponse(
         val message: String,
         val failType: FailType
 ) : IsResponse {
-    object Properties {
-        val message = StringDefinition(
-                name = "message",
-                index = 0,
-                required = true
-        )
-        val failType = EnumDefinition(
-                name = "failType",
-                index = 1,
-                required = true,
-                values = FailType.values()
-        )
-    }
-
     companion object: QueryDataModel<FailedActionResponse>(
-            definitions = listOf(
-                    Def(Properties.message, FailedActionResponse::message),
-                    Def(Properties.failType, FailedActionResponse::failType)
-            )
+            properties = object : PropertyDefinitions<FailedActionResponse>() {
+                init {
+                    add(0, "message", StringDefinition(), FailedActionResponse::message)
+                    add(1, "failType", EnumDefinition(values = FailType.values()), FailedActionResponse::failType)
+                }
+            }
     ) {
         override fun invoke(map: Map<Int, *>) = FailedActionResponse(
                 message = map[0] as String,

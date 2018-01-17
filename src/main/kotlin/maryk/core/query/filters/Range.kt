@@ -1,24 +1,20 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.Def
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.AbstractValueDefinition
 import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
-/** Checks if reference is within given range
- * @param reference to property to compare against
- * @param from which value the range should start
- * @param to which value the range should reach
- * @param inclusiveFrom if true (default) the from value will be included in the range
- * @param inclusiveTo if true (default) the to value will be included in the range.
- * @param T: type of value to be operated on
+/** Checks if [reference] is within given range of [from] until [to] of type [T].
+ * With [inclusiveFrom] and [inclusiveTo] set to true (default) it will search the range including [from] or [to]
  */
 data class Range<T: Any>(
-        override val reference: IsPropertyReference<T, AbstractValueDefinition<T, IsPropertyContext>>,
+        override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
         val from: T,
         val to: T,
         val inclusiveFrom: Boolean = true,
@@ -26,45 +22,32 @@ data class Range<T: Any>(
 ) : IsPropertyCheck<T> {
     override val filterType = FilterType.RANGE
 
-    object Properties {
-        val from = ContextualValueDefinition(
-                name = "from",
-                index = 1,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    context!!.reference!!.propertyDefinition
-                }
-        )
-        val to = ContextualValueDefinition(
-                name = "to",
-                index = 2,
-                contextualResolver = { context: DataModelPropertyContext? ->
-                    context!!.reference!!.propertyDefinition
-                }
-        )
-        val inclusiveStart = BooleanDefinition(
-                name = "inclusiveStart",
-                index = 3,
-                required = true
-        )
-        val inclusiveEnd = BooleanDefinition(
-                name = "inclusiveEnd",
-                index = 4,
-                required = true
-        )
-    }
-
     companion object: QueryDataModel<Range<*>>(
-            definitions = listOf(
-                    Def(IsPropertyCheck.Properties.reference, Range<*>::reference),
-                    Def(Properties.from, Range<*>::from),
-                    Def(Properties.to, Range<*>::to),
-                    Def(Properties.inclusiveStart, Range<*>::inclusiveFrom),
-                    Def(Properties.inclusiveEnd, Range<*>::inclusiveTo)
-            )
+            properties = object : PropertyDefinitions<Range<*>>() {
+                init {
+                    IsPropertyCheck.addReference(this, Range<*>::reference)
+                    add(1, "from", ContextualValueDefinition(
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                @Suppress("UNCHECKED_CAST")
+                                context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                            }
+                    ), Range<*>::from)
+
+                    add(2, "to", ContextualValueDefinition(
+                            contextualResolver = { context: DataModelPropertyContext? ->
+                                @Suppress("UNCHECKED_CAST")
+                                context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                            }
+                    ), Range<*>::to)
+
+                    add(3, "inclusiveFrom", BooleanDefinition(), Range<*>::inclusiveFrom)
+                    add(4, "inclusiveTo", BooleanDefinition(), Range<*>::inclusiveTo)
+                }
+            }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Range(
-                reference = map[0] as IsPropertyReference<Any, AbstractValueDefinition<Any, IsPropertyContext>>,
+                reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
                 from = map[1] as Any,
                 to = map[2] as Any,
                 inclusiveFrom = map[3] as Boolean,

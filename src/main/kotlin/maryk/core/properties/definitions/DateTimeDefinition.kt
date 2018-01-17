@@ -3,29 +3,33 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WriteCacheReader
 
 /**
  * Definition for DateTime properties
  */
-class DateTimeDefinition(
-        name: String? = null,
-        index: Int = -1,
-        indexed: Boolean = false,
-        searchable: Boolean = true,
-        required: Boolean = false,
-        final: Boolean = false,
-        unique: Boolean = false,
-        minValue: DateTime? = null,
-        maxValue: DateTime? = null,
-        fillWithNow: Boolean = false,
-        precision: TimePrecision = TimePrecision.SECONDS
-) : AbstractTimeDefinition<DateTime>(
-        name, index, indexed, searchable, required, final, WireType.VAR_INT, unique, minValue, maxValue, fillWithNow, precision
-), IsFixedBytesEncodable<DateTime> {
+data class DateTimeDefinition(
+        override val indexed: Boolean = false,
+        override val searchable: Boolean = true,
+        override val required: Boolean = true,
+        override val final: Boolean = false,
+        override val unique: Boolean = false,
+        override val minValue: DateTime? = null,
+        override val maxValue: DateTime? = null,
+        override val fillWithNow: Boolean = false,
+        override val precision: TimePrecision = TimePrecision.SECONDS
+) :
+        IsTimeDefinition<DateTime>,
+        IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
+        IsTransportablePropertyDefinitionType
+{
+    override val propertyDefinitionType = PropertyDefinitionType.DateTime
+    override val wireType = WireType.VAR_INT
     override val byteSize = DateTime.byteSize(precision)
 
     override fun createNow() = DateTime.nowUTC()
@@ -42,7 +46,7 @@ class DateTimeDefinition(
         TimePrecision.MILLIS -> value.toEpochMilli().calculateVarByteLength()
     }
 
-    override fun writeTransportBytes(value: DateTime, lengthCacheGetter: () -> Int, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
+    override fun writeTransportBytes(value: DateTime, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         val epochUnit = when(this.precision) {
             TimePrecision.SECONDS -> value.toEpochSecond()
             TimePrecision.MILLIS -> value.toEpochMilli()
@@ -51,4 +55,32 @@ class DateTimeDefinition(
     }
 
     override fun fromString(string: String) = DateTime.parse(string)
+
+    object Model : SimpleDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>>(
+            properties = object : PropertyDefinitions<DateTimeDefinition>() {
+                init {
+                    IsPropertyDefinition.addIndexed(this, DateTimeDefinition::indexed)
+                    IsPropertyDefinition.addSearchable(this, DateTimeDefinition::searchable)
+                    IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
+                    IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
+                    IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
+                    add(5, "minValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::minValue)
+                    add(6, "maxValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::maxValue)
+                    IsMomentDefinition.addFillWithNow(this, DateTimeDefinition::fillWithNow)
+                    IsTimeDefinition.addPrecision(this, DateTimeDefinition::precision)
+                }
+            }
+    ) {
+        override fun invoke(map: Map<Int, *>) = DateTimeDefinition(
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean,
+                unique = map[4] as Boolean,
+                minValue = map[5] as DateTime?,
+                maxValue = map[6] as DateTime?,
+                fillWithNow = map[7] as Boolean,
+                precision = map[8] as TimePrecision
+        )
+    }
 }

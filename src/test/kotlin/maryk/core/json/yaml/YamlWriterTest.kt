@@ -5,7 +5,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 private const val YAML_OUTPUT = """- 1
-- "#Test"
+- '#Test'
 - 3.5
 - true
 - test: false

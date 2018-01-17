@@ -118,7 +118,7 @@ private const val YAML = """string: hay
 int: 4
 uint: 32
 double: 3.555
-dateTime: "2017-12-04T12:13"
+dateTime: '2017-12-04T12:13'
 bool: true
 enum: V0
 list:
@@ -135,7 +135,7 @@ map:
   10:03: ahum
 valueObject:
   int: 6
-  dateTime: "2017-04-01T12:55"
+  dateTime: '2017-04-01T12:55'
   bool: true
 subModel:
   value: test

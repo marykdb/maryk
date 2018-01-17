@@ -2,7 +2,6 @@ package maryk.core.properties.types
 
 import maryk.core.bytes.Base64
 import maryk.core.extensions.compare.compareTo
-import java.util.*
 
 /** Value Data Objects which can be used to represent as fixed length bytes */
 open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDataObject> {
@@ -14,12 +13,12 @@ open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDat
         if (this === other) return true
         if (other !is ValueDataObject) return false
 
-        if (!Arrays.equals(_bytes, other._bytes)) return false
+        if (!_bytes.contentEquals(other._bytes)) return false
 
         return true
     }
 
     final override fun hashCode(): Int {
-        return Arrays.hashCode(_bytes)
+        return _bytes.hashCode()
     }
 }

@@ -21,7 +21,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     override val propertyDefinitionType = PropertyDefinitionType.List
 
     init {
-        assert(valueDefinition.required, { "Definition for value should have required=true on List" })
+        require(valueDefinition.required, { "Definition for value should have required=true on List" })
     }
 
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()

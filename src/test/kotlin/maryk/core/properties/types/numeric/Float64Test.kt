@@ -24,9 +24,6 @@ internal class Float64Test {
 
     @Test
     fun testStringConversion() {
-        Double.MIN_VALUE.toString() shouldBe "4.9E-324"
-        Double.MAX_VALUE.toString() shouldBe "1.7976931348623157E308"
-
         float64values.forEach {
             Float64.ofString(it.toString()) shouldBe  it
         }

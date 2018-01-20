@@ -24,9 +24,6 @@ internal class Float32Test {
 
     @Test
     fun testStringConversion() {
-        Float.MIN_VALUE.toString() shouldBe "1.4E-45"
-        Float.MAX_VALUE.toString() shouldBe "3.4028235E38"
-
         float32values.forEach {
             Float32.ofString(it.toString()) shouldBe it
         }

@@ -3,7 +3,7 @@ package maryk.core.bytes
 actual fun initString(length: Int, reader: () -> Byte): String {
     var value = ""
     (0 until length).forEach {
-        value += reader()
+        value += reader().toChar()
     }
     return value
 }

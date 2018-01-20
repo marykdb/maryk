@@ -8,4 +8,4 @@ actual fun initString(length: Int, reader: () -> Byte): String {
     return value
 }
 
-actual fun String.charPointAt(index: Int) = js("this.charCodeAt(index)") as Int
+actual fun String.charPointAt(index: Int) = js("String.prototype.charCodeAt(this, index)") as Int

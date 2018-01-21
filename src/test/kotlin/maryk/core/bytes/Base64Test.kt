@@ -12,7 +12,6 @@ class Base64Test {
         Base64.encode(byteArrayOf(2)) shouldBe "Ag"
     }
 
-
     @Test
     fun toBase64() {
         Base64.decode("AA").toHex() shouldBe "00"

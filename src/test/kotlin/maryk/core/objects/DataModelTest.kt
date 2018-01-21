@@ -244,20 +244,20 @@ internal class DataModelTest {
 
     @Test
     fun get_properties_by_name() {
-        TestMarykObject.properties.getPropertyGetter("string") shouldBe TestMarykObject::string
-        TestMarykObject.properties.getPropertyGetter("int") shouldBe TestMarykObject::int
-        TestMarykObject.properties.getPropertyGetter("dateTime") shouldBe TestMarykObject::dateTime
-        TestMarykObject.properties.getPropertyGetter("bool") shouldBe TestMarykObject::bool
+        TestMarykObject.properties.getPropertyGetter("string").toString() shouldBe TestMarykObject::string.toString()
+        TestMarykObject.properties.getPropertyGetter("int").toString() shouldBe TestMarykObject::int.toString()
+        TestMarykObject.properties.getPropertyGetter("dateTime").toString() shouldBe TestMarykObject::dateTime.toString()
+        TestMarykObject.properties.getPropertyGetter("bool").toString() shouldBe TestMarykObject::bool.toString()
     }
 
     @Test
     fun get_properties_by_index() {
-        TestMarykObject.properties.getPropertyGetter(0) shouldBe TestMarykObject::string
-        TestMarykObject.properties.getPropertyGetter(1) shouldBe TestMarykObject::int
-        TestMarykObject.properties.getPropertyGetter(2) shouldBe TestMarykObject::uint
-        TestMarykObject.properties.getPropertyGetter(3) shouldBe TestMarykObject::double
-        TestMarykObject.properties.getPropertyGetter(4) shouldBe TestMarykObject::dateTime
-        TestMarykObject.properties.getPropertyGetter(5) shouldBe TestMarykObject::bool
+        TestMarykObject.properties.getPropertyGetter(0).toString() shouldBe TestMarykObject::string.toString()
+        TestMarykObject.properties.getPropertyGetter(1).toString() shouldBe TestMarykObject::int.toString()
+        TestMarykObject.properties.getPropertyGetter(2).toString() shouldBe TestMarykObject::uint.toString()
+        TestMarykObject.properties.getPropertyGetter(3).toString() shouldBe TestMarykObject::double.toString()
+        TestMarykObject.properties.getPropertyGetter(4).toString() shouldBe TestMarykObject::dateTime.toString()
+        TestMarykObject.properties.getPropertyGetter(5).toString() shouldBe TestMarykObject::bool.toString()
     }
 
     @Test

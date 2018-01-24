@@ -86,28 +86,28 @@ internal class JsonReaderTest {
         var index = 0
 
         val reader = JsonReader { input[index++] }
-        (reader.nextToken() is JsonToken.StartObject) shouldBe true
+        (reader.nextToken() == JsonToken.StartObject) shouldBe true
 
-        (reader.nextToken() is JsonToken.FieldName) shouldBe true
+        (reader.nextToken() == JsonToken.FieldName) shouldBe true
         reader.lastValue shouldBe "1"
         reader.skipUntilNextField()
 
-        (reader.currentToken is JsonToken.FieldName) shouldBe true
+        (reader.currentToken == JsonToken.FieldName) shouldBe true
         reader.lastValue shouldBe "2"
         reader.skipUntilNextField()
 
-        (reader.currentToken is JsonToken.FieldName) shouldBe true
+        (reader.currentToken == JsonToken.FieldName) shouldBe true
         reader.lastValue shouldBe "3"
         reader.skipUntilNextField()
 
-        (reader.currentToken is JsonToken.FieldName) shouldBe true
+        (reader.currentToken == JsonToken.FieldName) shouldBe true
         reader.lastValue shouldBe "4"
 
-        (reader.nextToken() is JsonToken.ObjectValue) shouldBe true
+        (reader.nextToken() == JsonToken.ObjectValue) shouldBe true
         reader.lastValue shouldBe "true"
 
-        (reader.nextToken() is JsonToken.EndObject) shouldBe true
-        (reader.nextToken() is JsonToken.EndJSON) shouldBe true
+        (reader.nextToken() == JsonToken.EndObject) shouldBe true
+        (reader.nextToken() == JsonToken.EndJSON) shouldBe true
     }
 
     @Test

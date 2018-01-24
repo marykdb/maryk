@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.2.20'
+    ext.kotlin_version = '1.2.21'
 
     repositories {
         mavenCentral()
@@ -26,6 +26,7 @@ dependencies {
 
 [compileKotlin2Js, compileTestKotlin2Js]*.configure {
     kotlinOptions.moduleKind = "commonjs"
+    kotlinOptions.sourceMap = true
 }
 
 task populateNodeModules(type: Copy, dependsOn: compileKotlin2Js) {

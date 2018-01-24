@@ -108,11 +108,10 @@ internal class NumberDefinitionTest {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.BIT_32
             key.tag shouldBe 2
-            val new  = defFloat32.readTransportBytes(
+            defFloat32.readTransportBytes(
                 ProtoBuf.getLength(key.wireType, bc::read),
                 bc::read
-            )
-            new shouldBe value
+            ) shouldBe value
             bc.reset()
         }
     }

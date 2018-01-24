@@ -5,4 +5,4 @@ actual fun initString(length: Int, reader: () -> Byte) = String(
         reader()
     }
 )
-actual fun String.charPointAt(index: Int) = Character.codePointAt(this, index)
+actual fun codePointAt(string: String, index: Int) = Character.codePointAt(string, index)

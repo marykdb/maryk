@@ -1,18 +1,9 @@
 package maryk.core.bytes
 
-private const val MIN_LOW_SURROGATE = '\uDC00'
-private const val MIN_HIGH_SURROGATE = '\uD800'
-private const val MAX_LOW_SURROGATE = '\uDFFF'
-private const val MAX_HIGH_SURROGATE = '\uDBFF'
-
-private const val MIN_SURROGATE = MIN_HIGH_SURROGATE
-private const val MAX_SURROGATE = MAX_LOW_SURROGATE
-
 private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
 
 expect fun initString(length: Int, reader: () -> Byte): String
-
-expect fun String.charPointAt(index: Int) : Int
+expect fun codePointAt(string: String, index: Int) : Int
 
 fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) = this.toUTF8Bytes(writer)
 
@@ -68,7 +59,7 @@ private fun calculateGenericUTF8Length(string: String, startPosition: Int): Int 
                 utf8Length += 2
                 // Check if char is a correct surrogate pair
                 if (isSurrogate(char)) {
-                    val cp = string.charPointAt(i)
+                    val cp = codePointAt(string, i)
                     if (cp < MIN_SUPPLEMENTARY_CODE_POINT) {
                         throw IllegalArgumentException("Unpaired surrogate at index $i")
                     }
@@ -98,7 +89,7 @@ private fun String.toUTF8Bytes(writer: (byte: Byte) -> Unit) {
                 writer((0xF shl 6 or (charInt ushr 6)).toByte())
                 writer((0x80 or (0x3F and charInt)).toByte())
             }
-            char < MIN_SURROGATE || MAX_SURROGATE < char -> {
+            char < Char.MIN_SURROGATE || Char.MAX_SURROGATE < char -> {
                 // Max possible character is 0xFFFF. This is encoded in 3 UTF-8 bytes.
                 writer((0xF shl 5 or (charInt ushr 12)).toByte())
                 writer((0x80 or (0x3F and (charInt ushr 6))).toByte())
@@ -122,17 +113,17 @@ private fun String.toUTF8Bytes(writer: (byte: Byte) -> Unit) {
 
 private fun toCodePoint(high: Char, low: Char)
         = (high.toInt() shl 10) + low.toInt() + (MIN_SUPPLEMENTARY_CODE_POINT
-            - (MIN_HIGH_SURROGATE.toInt() shl 10)
-            - MIN_LOW_SURROGATE.toInt())
+            - (Char.MIN_HIGH_SURROGATE.toInt() shl 10)
+            - Char.MIN_LOW_SURROGATE.toInt())
 
 private fun isSurrogatePair(high: Char, low: Char)
         = isHighSurrogate(high) && isLowSurrogate(low)
 
 private fun isHighSurrogate(ch: Char)
-        = ch >= MIN_HIGH_SURROGATE && ch.toInt() < MAX_HIGH_SURROGATE.toInt() + 1
+        = ch >= Char.MIN_HIGH_SURROGATE && ch.toInt() < Char.MAX_HIGH_SURROGATE.toInt() + 1
 
 private fun isLowSurrogate(ch: Char)
-        = ch >= MIN_LOW_SURROGATE && ch.toInt() < MAX_LOW_SURROGATE.toInt() + 1
+        = ch >= Char.MIN_LOW_SURROGATE && ch.toInt() < Char.MAX_LOW_SURROGATE.toInt() + 1
 
 private fun isSurrogate(ch: Char)
-        = ch >= MIN_SURROGATE && ch.toInt() < MAX_SURROGATE.toInt() + 1
+        = ch >= Char.MIN_SURROGATE && ch.toInt() < Char.MAX_SURROGATE.toInt() + 1

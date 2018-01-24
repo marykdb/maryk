@@ -1,5 +1,7 @@
 package maryk.core.bytes
 
+import maryk.core.properties.exceptions.ParseException
+
 external class Buffer(value:String, encoding:String) {
     val length: Int
 
@@ -22,10 +24,16 @@ external class Buffer(value:String, encoding:String) {
 /** Util to convert base 64 */
 actual object Base64 {
     /** Get String encoded key as bytes
+     *
+     * TODO: Currently only runnable in Node
      * @param base64 to decode
      * @return byte representation
      */
     actual fun decode(base64: String): ByteArray {
+        // Only needed for node
+        if(!base64.matches("^[a-zA-Z0-9/+]+[=]{0,2}\$")) {
+            throw ParseException("Not allowed characters found in base64 string: $base64")
+        }
         val buffer = Buffer.from(base64, "base64")
         val iterable = buffer.values()
 
@@ -35,6 +43,8 @@ actual object Base64 {
     }
 
     /** Get Bytes as base64 string
+     *
+     * TODO: Currently only runnable in Node
      * @param bytes to encode
      * @return Base64 String
      */

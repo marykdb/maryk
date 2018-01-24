@@ -79,7 +79,7 @@ internal class FlexBytesDefinitionTest {
     @Test
     fun invalid_String_value_should_throw_exception() {
         shouldThrow<ParseException> {
-            def.fromString("wrong")
+            def.fromString("wrong§")
         }
     }
 

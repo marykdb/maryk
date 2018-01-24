@@ -17,6 +17,6 @@ class Base64Test {
         Base64.decode("AA").toHex() shouldBe "00"
         Base64.decode("7g").toHex() shouldBe "ee"
         Base64.decode("0w").toHex() shouldBe "d3"
-        Base64.decode("__").toHex() shouldBe "ff"
+        Base64.decode("//").toHex() shouldBe "ff"
     }
 }

@@ -143,12 +143,12 @@ internal class ListDefinitionTest {
 
     @Test
     fun convert_32_bit_values_to_packed_transport_bytes_and_back() {
-        val value = listOf(
+        val value = floatArrayOf(
                 3.566F,
                 58253.87652F,
                 0.000222F,
                 236453165416F
-        )
+        ).asList()
         val asHex = "22104064395947638de13968c8ad525c36d5"
 
         this.testPackedTransportConversion(def32Int, value, asHex, 4)

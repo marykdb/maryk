@@ -1,20 +1,19 @@
 package maryk.core.extensions.bytes
 
-/** Write the bytes of this Double to a writer
- * @param writer to write this Double to
- */
+/** Write the bytes of this Float to a [writer] */
 internal fun Float.writeBytes(writer: (byte: Byte) -> Unit) {
     var f = this.toRawBits()
+    // To make order correct
     f = (f xor (f shr 32 - 1 or Int.MIN_VALUE)) + 1
     return f.writeBytes(writer)
 }
 
-/** Converts reader with bytes to Double
- * @param reader to read bytes from
- * @return Double represented by bytes
+/** Reads [reader] with bytes to Float
+ * @return Float represented by bytes
  */
 internal fun initFloat(reader: () -> Byte): Float {
     var f = initInt(reader) - 1
+    // To make order correct
     f = f xor (f.inv() shr 32 - 1 or Int.MIN_VALUE)
     return Float.fromBits(f)
 }

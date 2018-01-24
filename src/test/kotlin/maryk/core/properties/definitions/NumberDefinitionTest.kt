@@ -42,9 +42,12 @@ internal class NumberDefinitionTest {
             32373957.toUInt32()
     )
 
-    private val floatArray = arrayOf(
+    private val floatArray = floatArrayOf(
+            323.73957F,
             Float.MIN_VALUE,
             Float.MAX_VALUE,
+            1.4E-45F,
+            3.4028235E38F,
             323.73957F
     )
 
@@ -105,10 +108,11 @@ internal class NumberDefinitionTest {
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.BIT_32
             key.tag shouldBe 2
-            defFloat32.readTransportBytes(
-                    ProtoBuf.getLength(key.wireType, bc::read),
-                    bc::read
-            ) shouldBe value
+            val new  = defFloat32.readTransportBytes(
+                ProtoBuf.getLength(key.wireType, bc::read),
+                bc::read
+            )
+            new shouldBe value
             bc.reset()
         }
     }

@@ -8,9 +8,7 @@ internal fun Float.writeBytes(writer: (byte: Byte) -> Unit) {
     return f.writeBytes(writer)
 }
 
-/** Reads [reader] with bytes to Float
- * @return Float represented by bytes
- */
+/** Reads [reader] with bytes to Float */
 internal fun initFloat(reader: () -> Byte): Float {
     var f = initInt(reader) - 1
     // To make order correct

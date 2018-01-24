@@ -8,33 +8,32 @@ import maryk.core.properties.definitions.contextual.ContextualReferenceDefinitio
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
 
-/** Contains versioned changes for a specific DataObject by key
- * @param key of DataObject to change
- * @param changes List of Versioned Changes
+/**
+ * Contains versioned [changes] for a specific DataObject by [key]
  */
 data class DataObjectVersionedChange<out DO: Any>(
-        val key: Key<DO>,
-        val changes: List<VersionedChanges>
+    val key: Key<DO>,
+    val changes: List<VersionedChanges>
 ) {
-    companion object: QueryDataModel<DataObjectVersionedChange<*>>(
-            properties = object : PropertyDefinitions<DataObjectVersionedChange<*>>() {
-                init {
-                    add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
-                            contextualResolver = { it!!.dataModel!!.key }
-                    ), DataObjectVersionedChange<*>::key)
+    internal companion object: QueryDataModel<DataObjectVersionedChange<*>>(
+        properties = object : PropertyDefinitions<DataObjectVersionedChange<*>>() {
+            init {
+                add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+                    contextualResolver = { it!!.dataModel!!.key }
+                ), DataObjectVersionedChange<*>::key)
 
-                    add(1, "changes", ListDefinition(
-                            valueDefinition = SubModelDefinition(
-                                    dataModel = { VersionedChanges }
-                            )
-                    ), DataObjectVersionedChange<*>::changes)
-                }
+                add(1, "changes", ListDefinition(
+                    valueDefinition = SubModelDefinition(
+                        dataModel = { VersionedChanges }
+                    )
+                ), DataObjectVersionedChange<*>::changes)
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DataObjectVersionedChange(
-                key = map[0] as Key<Any>,
-                changes = (map[1] as List<VersionedChanges>?) ?: emptyList()
+            key = map[0] as Key<Any>,
+            changes = (map[1] as List<VersionedChanges>?) ?: emptyList()
         )
     }
 }

@@ -9,16 +9,14 @@ interface IsDataModel<DO: Any> {
     /** Object which contains all property definitions. Can also be used to get property references. */
     val properties: PropertyDefinitions<DO>
 
-    /** Validate a DataObject
-     * @param dataObject to validate
-     * @param refGetter reference factory to the model
+    /**
+     * Validate a [dataObject] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
     fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
 
-    /** Validate a map of values
-     * @param map with values to validate
-     * @param refGetter reference factory to the model
+    /**
+     * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
     fun validate(map: Map<Int, Any>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })

@@ -8,17 +8,16 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Reference to a Set Item by value
- * @param value           index of property reference
- * @param parentReference reference to parent
- * @param <V> value type
+/**
+ * Reference to a Set Item by [value] of [T] and context [CX] on set referred to [parentReference] and
+ * defined by [setDefinition]
  */
 class SetItemReference<T: Any, CX: IsPropertyContext>(
-        val value: T,
-        setDefinition: SetDefinition<T, CX>,
-        parentReference: SetReference<T, CX>?
+    val value: T,
+    setDefinition: SetDefinition<T, CX>,
+    parentReference: SetReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>>(
-        setDefinition.valueDefinition, parentReference
+    setDefinition.valueDefinition, parentReference
 ) {
     override val completeName: String get() = this.parentReference?.let {
         "${it.completeName}.$$value"

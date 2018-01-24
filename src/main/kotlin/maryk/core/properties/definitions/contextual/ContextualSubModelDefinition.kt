@@ -13,9 +13,9 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Definition for a reference to another DataObject*/
+/** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(
-        val contextualResolver: (context: CX?) -> RootDataModel<Any, PropertyDefinitions<Any>>
+    val contextualResolver: (context: CX?) -> RootDataModel<Any, PropertyDefinitions<Any>>
 ): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
     override val indexed = false
     override val searchable = false
@@ -36,18 +36,18 @@ internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(
         return string
     }
 
-    override fun writeJsonValue(value: Any, writer: IsJsonLikeWriter, context: CX?)
-            = contextualResolver(context).writeJson(value, writer, context)
+    override fun writeJsonValue(value: Any, writer: IsJsonLikeWriter, context: CX?) =
+        contextualResolver(context).writeJson(value, writer, context)
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?)
-            = contextualResolver(context).readJsonToObject(reader, context)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?) =
+        contextualResolver(context).readJsonToObject(reader, context)
 
-    override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?)
-            = contextualResolver(context).calculateProtoBufLength(value, cacher, context)
+    override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?) =
+        contextualResolver(context).calculateProtoBufLength(value, cacher, context)
 
-    override fun writeTransportBytes(value: Any, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?)
-            = contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
+    override fun writeTransportBytes(value: Any, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+        contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)
-            = contextualResolver(context).readProtoBufToObject(length, reader, context)
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+        contextualResolver(context).readProtoBufToObject(length, reader, context)
 }

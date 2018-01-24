@@ -1,12 +1,10 @@
 package maryk.core.properties.exceptions
 
-/**
- * Exception for when parsing to native value fails.
- */
+/** Exception with [cause] for when parsing to [value] fails. */
 class ParseException(
-        value: String,
-        cause: Throwable? = null
+    value: String,
+    cause: Throwable? = null
 ) : Throwable(
-        "Property value could not be parsed: $value",
-        cause
+    "Property value could not be parsed: $value",
+    cause
 )

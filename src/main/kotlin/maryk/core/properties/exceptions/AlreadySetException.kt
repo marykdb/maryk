@@ -5,28 +5,26 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /**
- * Exception for when a property is final and already has a value but was tried
+ * Exception for when a property referred by [reference] is final and already has a value but was tried
  * to set to another value.
- *
- * @param reference of property
  */
 data class AlreadySetException(
-        val reference: IsPropertyReference<*, *>?
+    val reference: IsPropertyReference<*, *>?
 ) : ValidationException(
-        reference = reference,
-        reason = "is already set before and cannot be set again"
+    reference = reference,
+    reason = "is already set before and cannot be set again"
 ) {
     override val validationExceptionType = ValidationExceptionType.ALREADY_SET
 
-    companion object: QueryDataModel<AlreadySetException>(
-            properties = object : PropertyDefinitions<AlreadySetException>() {
-                init {
-                    ValidationException.addReference(this, AlreadySetException::reference)
-                }
+    internal companion object: QueryDataModel<AlreadySetException>(
+        properties = object : PropertyDefinitions<AlreadySetException>() {
+            init {
+                ValidationException.addReference(this, AlreadySetException::reference)
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = AlreadySetException(
-                reference = map[0] as IsPropertyReference<*, *>
+            reference = map[0] as IsPropertyReference<*, *>
         )
     }
 }

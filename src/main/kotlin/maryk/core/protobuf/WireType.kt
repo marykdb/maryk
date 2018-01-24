@@ -11,8 +11,8 @@ enum class WireType(val type: Byte) {
     BIT_32(5)
 }
 
-/** Retrieve wire type value by id
- * @param byte to retrieve value of
+/**
+ * Retrieve wire type from the [byte]
  */
 internal fun wireTypeOf(byte: Byte): WireType {
     return WireType.values().getOrNull(byte.toInt())

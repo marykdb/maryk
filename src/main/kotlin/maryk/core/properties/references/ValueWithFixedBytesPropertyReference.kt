@@ -6,12 +6,14 @@ import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWra
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Reference to a value property containing values of type [T] which are of fixed byte length. This can be used inside
+/**
+ * Reference to a value property containing values of type [T] which are of fixed byte length. This can be used inside
  * keys. The property is defined by Property Definition Wrapper [propertyDefinition] of type [D]
- * and referred by PropertyReference of type [P]. */
+ * and referred by PropertyReference of type [P].
+ */
 open class ValueWithFixedBytesPropertyReference<T: Any, out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *>, out P: IsPropertyReference<*, *>> (
-        propertyDefinition: D,
-        parentReference: P?
+    propertyDefinition: D,
+    parentReference: P?
 ): PropertyReference<T, D, P>(propertyDefinition, parentReference) {
     open val name = this.propertyDefinition.name
 
@@ -20,17 +22,13 @@ open class ValueWithFixedBytesPropertyReference<T: Any, out D : FixedBytesProper
         "${it.completeName}.$name"
     } ?: name
 
-    /** Calculate the transport length of encoding this reference
-     * @param cacher to cache length with
-     */
+    /** Calculate the transport length of encoding this reference and cache length with [cacher] */
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
         return this.propertyDefinition.index.calculateVarByteLength() + parentLength
     }
 
-    /** Write transport bytes of property reference
-     * @param writer: To write bytes to
-     */
+    /** Write transport bytes of property reference to [writer] */
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)

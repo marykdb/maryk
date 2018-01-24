@@ -10,17 +10,13 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Reference to a List Item by index
- * @param index           index of property reference
- * @param parentReference reference to parent
- * @param T value type
- */
+/** Reference to a List Item on [parentReference] with [T] by [index] */
 class ListItemReference<T: Any, CX: IsPropertyContext> (
-        val index: Int,
-        listDefinition: ListDefinition<T, CX>,
-        parentReference: ListReference<T, CX>?
+    val index: Int,
+    listDefinition: ListDefinition<T, CX>,
+    parentReference: ListReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>>(
-        listDefinition.valueDefinition, parentReference
+    listDefinition.valueDefinition, parentReference
 ) {
     override val completeName: String get() = this.parentReference?.let {
         "${it.completeName}.@$index"

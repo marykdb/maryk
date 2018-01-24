@@ -8,11 +8,11 @@ import maryk.core.properties.exceptions.ParseException
 
 /** Reference to a List property of type [T] and context [CX] */
 open class ListReference<T: Any, CX: IsPropertyContext> (
-        propertyDefinition: ListPropertyDefinitionWrapper<T, CX, *>,
-        parentReference: CanHaveComplexChildReference<*, *, *>?
+    propertyDefinition: ListPropertyDefinitionWrapper<T, CX, *>,
+    parentReference: CanHaveComplexChildReference<*, *, *>?
 ) : ValuePropertyReference<List<T>, ListPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *>>(
-        propertyDefinition,
-        parentReference
+    propertyDefinition,
+    parentReference
 ), HasEmbeddedPropertyReference<T> {
     override fun getEmbedded(name: String) = when(name[0]) {
         '@' -> ListItemReference(name.substring(1).toInt(), propertyDefinition.definition, this)

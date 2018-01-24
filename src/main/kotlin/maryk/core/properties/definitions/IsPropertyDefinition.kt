@@ -17,10 +17,7 @@ interface IsPropertyDefinition<T: Any> {
     val final: Boolean
 
     /**
-     * Validates the values on propertyDefinition
-     * @param previousValue previous value for validation
-     * @param newValue      new value for validation
-     * @param refGetter      create a ref for the current level
+     * Validates [newValue] against [previousValue] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationException when encountering invalid new value
      */
     fun validateWithRef(previousValue: T? = null, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>>? = { null }) = when {
@@ -29,14 +26,10 @@ interface IsPropertyDefinition<T: Any> {
         else -> {}
     }
 
-    /** To get embedded properties by name
-     * @param name to fetch property of
-     */
+    /** To get embedded properties by [name] */
     fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>?
 
-    /** To get embedded properties by index
-     * @param index to fetch property of
-     */
+    /** To get embedded properties by [index] */
     fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>?
 
     companion object {

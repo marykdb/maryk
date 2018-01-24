@@ -30,30 +30,27 @@ import maryk.core.protobuf.WriteCacheWriter
  * its own context by transforming the given context.
  */
 abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
-        override val properties: P
+    override val properties: P
 ) : IsDataModel<DO> {
-    /** Creates a Data Object by map
-     * @param map with index mapped to value
-     * @return newly created Data Object from map
-     */
+    /** Creates a Data Object by [map] */
     abstract operator fun invoke(map: Map<Int, *>): DO
 
-    /** For quick notation to fetch property references below sub models
-     * @param referenceGetter The sub getter to fetch a reference
-     * @return a reference to property
+    /**
+     * Get property reference fetcher of this DataModel with [referenceGetter]
+     * Optionally pass an already resolved [parent]
+     * For Strongly typed reference notation
      */
     operator fun <T: Any, W: IsPropertyDefinition<T>> invoke(
-            parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
-            referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) ->
-            IsPropertyReference<T, W>
+        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
+        referenceGetter: P.() ->
+            (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W>
     ): IsPropertyReference<T, W> {
         return referenceGetter(this.properties)(parent)
     }
 
-    /** To get a top level reference on a model
-     * @param propertyDefinitionGetter The fetcher for the property definition to get reference of
-     * @return a reference to property
+    /**
+     * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
+     * Optionally pass an already resolved [parent]
      */
     fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *>> ref(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, propertyDefinitionGetter: P.()-> W): IsPropertyReference<T, W> {
         @Suppress("UNCHECKED_CAST")
@@ -62,11 +59,11 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
     override fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         createValidationUmbrellaException(refGetter) { addException ->
-            this.properties.forEach {
+            for (it in this.properties) {
                 try {
                     it.validate(
-                            newValue = it.getter(dataObject),
-                            parentRefFactory = refGetter
+                        newValue = it.getter(dataObject),
+                        parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
                     addException(e)
@@ -77,12 +74,12 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
     override fun validate(map: Map<Int, Any>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         createValidationUmbrellaException(refGetter) { addException ->
-            map.forEach { (key, value) ->
-                val definition = properties.getDefinition(key) ?: return@forEach
+            for ((key, value) in map) {
+                val definition = properties.getDefinition(key) ?: continue
                 try {
                     definition.validate(
-                            newValue = value,
-                            parentRefFactory = refGetter
+                        newValue = value,
+                        parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
                     addException(e)
@@ -91,10 +88,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         }
     }
 
-    /** Convert an object to JSON
-     * @param writer to write JSON with
-     * @param obj to write to JSON
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
+    /**
+     * Write an [obj] of this DataModel to JSON with [writer]
+     * Optionally pass a [context] when needed for more complex property types
      */
     fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
@@ -109,10 +105,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         writer.writeEndObject()
     }
 
-    /** Convert a map with values to JSON
-     * @param writer to generate JSON with
-     * @param map with values to write to JSON
-     * @param context (optional)  with context parameters for conversion (for dynamically dependent properties)
+    /**
+     * Write an [map] with values for this DataModel to JSON with [writer]
+     * Optionally pass a [context] when needed for more complex property types
      */
     fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
@@ -126,10 +121,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         writer.writeEndObject()
     }
 
-    /** Convert to a DataModel from JSON
-     * @param reader to read JSON with
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
-     * @return map with all the values
+    /**
+     * Read JSON from [reader] to a Map with values
+     * Optionally pass a [context] when needed to read more complex property types
      */
     fun readJson(reader: IsJsonLikeReader, context: CX? = null): Map<Int, Any> {
         if (reader.currentToken == JsonToken.StartJSON){
@@ -164,18 +158,16 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         return valueMap
     }
 
-    /** Convert to a DataModel from JSON
-     * @param reader to read JSON with
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
-     * @return DataObject represented by the JSON
+    /**
+     * Read JSON from [reader] to an object of this DataModel
+     * Optionally pass a [context] when needed to read more complex property types
      */
     fun readJsonToObject(reader: IsJsonLikeReader, context: CX? = null) = this(this.readJson(reader, context))
 
-    /** Calculates the byte length for the DataObject contained in map
-     * @param map with values to calculate byte length for
-     * @param cacher to cache lengths and contexts
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
-     * @return total byte size of object
+    /**
+     * Calculates the byte length for the DataObject contained in [map]
+     * The [cacher] caches any values needed to write later.
+     * Optionally pass a [context] to write more complex properties which depend on other properties
      */
     fun calculateProtoBufLength(map: Map<Int, Any>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
@@ -186,26 +178,24 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         return totalByteLength
     }
 
-    /** Calculates the byte length for the DataObject
-     * @param obj to calculate byte length for
-     * @param cacher to cache lengths and contexts
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
-     * @return total byte size of object
+    /**
+     * Calculates the byte length for [dataObject]
+     * The [cacher] caches any values needed to write later.
+     * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun calculateProtoBufLength(obj: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (def in this.properties) {
-            val value = def.getter(obj) ?: continue
+            val value = def.getter(dataObject) ?: continue
             totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
         }
         return totalByteLength
     }
 
-    /** Write a ProtoBuf from a map with values
-     * @param map to write
-     * @param cacheGetter to get next cached length or context
-     * @param writer to write bytes with
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
+    /**
+     * Write a ProtoBuf from a [map] with values to [writer] and get
+     * possible cached values from [cacheGetter]
+     * Optionally pass a [context] to write more complex properties which depend on other properties
      */
     fun writeProtoBuf(map: Map<Int, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
@@ -214,24 +204,21 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         }
     }
 
-    /** Write a ProtoBuf from a DataObject
-     * @param obj DataObject to write
-     * @param cacheGetter to get next length or context
-     * @param writer to write bytes with
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
+    /**
+     * Write a ProtoBuf from a [dataObject] to [writer] and get
+     * possible cached values from [cacheGetter]
+     * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeProtoBuf(obj: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (def in this.properties) {
-            val value = def.getter(obj) ?: continue
+            val value = def.getter(dataObject) ?: continue
             def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
         }
     }
 
-    /** Convert to a Map of values from ProtoBuf
-     * @param length of bytes to read.
-     * @param reader to read ProtoBuf bytes from
-     * @param context for contextual parameters in dynamic properties
-     * @return DataObject represented by the ProtoBuf
+    /**
+     * Read ProtoBuf bytes from [reader] until [length] to a Map of values
+     * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
@@ -244,30 +231,25 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
         while (byteCounter < length) {
             readProtoBufField(
-                    valueMap,
-                    ProtoBuf.readKey(byteReader),
-                    byteReader,
-                    context
+                valueMap,
+                ProtoBuf.readKey(byteReader),
+                byteReader,
+                context
             )
         }
 
         return valueMap
     }
 
-    /** Convert to a DataModel from ProtoBuf
-     * @param context for contextual parameters in dynamic properties
-     * @param length of bytes which contains object
-     * @param reader to read ProtoBuf bytes from
-     * @param context with context parameters for conversion (for dynamically dependent properties)
-     * @return DataObject represented by the ProtoBuf
+    /**
+     * Read ProtoBuf bytes from [reader] until [length] to a DataObject
+     * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     fun readProtoBufToObject(length: Int, reader: () -> Byte, context: CX? = null) = this(this.readProtoBuf(length, reader, context))
 
-    /** Read a single field
-     * @param valueMap to write the read values to
-     * @param key to read for
-     * @param byteReader to read bytes for values from
-     * @param context with context parameters for conversion (for dynamically dependent properties)
+    /**
+     * Read a single field of [key] from [byteReader] into [valueMap]
+     * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
         val dataObjectPropertyDefinition = properties.getDefinition(key.tag)
@@ -278,18 +260,18 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         } else {
             when (propertyDefinition) {
                 is IsByteTransportableValue<*, CX> -> valueMap[key.tag] = propertyDefinition.readTransportBytes(
-                        ProtoBuf.getLength(key.wireType, byteReader),
-                        byteReader,
-                        context
+                    ProtoBuf.getLength(key.wireType, byteReader),
+                    byteReader,
+                    context
                 )
                 is IsByteTransportableCollection<out Any, *, CX> -> {
                     when {
                         propertyDefinition.isPacked(context, key.wireType) -> {
                             @Suppress("UNCHECKED_CAST")
                             val collection = propertyDefinition.readPackedCollectionTransportBytes(
-                                    ProtoBuf.getLength(key.wireType, byteReader),
-                                    byteReader,
-                                    context
+                                ProtoBuf.getLength(key.wireType, byteReader),
+                                byteReader,
+                                context
                             ) as MutableCollection<Any>
                             @Suppress("UNCHECKED_CAST")
                             when {
@@ -299,9 +281,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                         }
                         else -> {
                             val value = propertyDefinition.readCollectionTransportBytes(
-                                    ProtoBuf.getLength(key.wireType, byteReader),
-                                    byteReader,
-                                    context
+                                ProtoBuf.getLength(key.wireType, byteReader),
+                                byteReader,
+                                context
                             )
                             @Suppress("UNCHECKED_CAST")
                             val collection = when {
@@ -317,8 +299,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                 is IsByteTransportableMap<out Any, out Any, CX> -> {
                     ProtoBuf.getLength(key.wireType, byteReader)
                     val value = propertyDefinition.readMapTransportBytes(
-                            byteReader,
-                            context
+                        byteReader,
+                        context
                     )
                     if (valueMap.contains(key.tag)) {
                         @Suppress("UNCHECKED_CAST")
@@ -333,24 +315,24 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         }
     }
 
-    /** Transform context into context specific to DataModel. Override for specific implementation */
+    /** Transform [context] into context specific to DataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")
     open fun transformContext(context: CXI?): CX?  = context as CX?
 
-    companion object {
+    internal companion object {
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
             definitions.add(0, "name", StringDefinition(), getter)
         }
 
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
             definitions.addSingle(
-                    PropertyDefinitionsCollectionDefinitionWrapper(1, "properties", PropertyDefinitionsCollectionDefinition(
-                            capturer = { context, propDefs -> context!!.propertyDefinitions = propDefs }
-                        )
-                    ) {
-                        @Suppress("UNCHECKED_CAST")
-                        it.properties as PropertyDefinitions<Any>
-                    }
+                PropertyDefinitionsCollectionDefinitionWrapper(1, "properties", PropertyDefinitionsCollectionDefinition(
+                    capturer = { context, propDefs -> context!!.propertyDefinitions = propDefs }
+                )
+                ) {
+                    @Suppress("UNCHECKED_CAST")
+                    it.properties as PropertyDefinitions<Any>
+                }
             )
 
         }

@@ -34,27 +34,27 @@ interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
 }
 
 private val dataModel = ContextCaptureDefinition(
-        ContextualModelReferenceDefinition<DataModelPropertyContext>(
-                contextualResolver = { context, name ->
-                    context!!.dataModels[name]!!
-                }
-        )
+    ContextualModelReferenceDefinition<DataModelPropertyContext>(
+        contextualResolver = { context, name ->
+            context!!.dataModels[name]!!
+        }
+    )
 ){ context, value ->
     @Suppress("UNCHECKED_CAST")
     context!!.dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
 }
 
 private val listOfStatuses = ListDefinition(
-        valueDefinition = MultiTypeDefinition(
-                definitionMap = mapOf(
-                        StatusType.SUCCESS to SubModelDefinition(dataModel = {  Success } ),
-                        StatusType.ADD_SUCCESS to SubModelDefinition(dataModel = {  AddSuccess } ),
-                        StatusType.AUTH_FAIL to SubModelDefinition(dataModel = {  AuthFail } ),
-                        StatusType.REQUEST_FAIL to SubModelDefinition(dataModel = {  RequestFail } ),
-                        StatusType.SERVER_FAIL to SubModelDefinition(dataModel = {  ServerFail } ),
-                        StatusType.VALIDATION_FAIL to SubModelDefinition(dataModel = {  ValidationFail } ),
-                        StatusType.ALREADY_EXISTS to SubModelDefinition(dataModel = {  AlreadyExists } ),
-                        StatusType.DOES_NOT_EXIST to SubModelDefinition(dataModel = {  DoesNotExist } )
-                )
+    valueDefinition = MultiTypeDefinition(
+        definitionMap = mapOf(
+            StatusType.SUCCESS to SubModelDefinition(dataModel = {  Success } ),
+            StatusType.ADD_SUCCESS to SubModelDefinition(dataModel = {  AddSuccess } ),
+            StatusType.AUTH_FAIL to SubModelDefinition(dataModel = {  AuthFail } ),
+            StatusType.REQUEST_FAIL to SubModelDefinition(dataModel = {  RequestFail } ),
+            StatusType.SERVER_FAIL to SubModelDefinition(dataModel = {  ServerFail } ),
+            StatusType.VALIDATION_FAIL to SubModelDefinition(dataModel = {  ValidationFail } ),
+            StatusType.ALREADY_EXISTS to SubModelDefinition(dataModel = {  AlreadyExists } ),
+            StatusType.DOES_NOT_EXIST to SubModelDefinition(dataModel = {  DoesNotExist } )
         )
+    )
 )

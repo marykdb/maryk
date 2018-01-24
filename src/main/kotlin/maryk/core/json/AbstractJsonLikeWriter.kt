@@ -8,10 +8,10 @@ internal enum class JsonType {
 /** Class to implement code which is generic among JSON like writers */
 abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     internal var lastType: JsonType = JsonType.START
-    internal var typeStack: MutableList<JsonObjectType> = mutableListOf()
+    internal var typeStack: MutableList<JsonComplexType> = mutableListOf()
 
     override fun writeStartObject() {
-        typeStack.add(JsonObjectType.OBJECT)
+        typeStack.add(JsonComplexType.OBJECT)
         checkTypeIsAllowed(
             JsonType.START_OBJ,
             arrayOf(JsonType.START, JsonType.FIELD_NAME, JsonType.ARRAY_VALUE, JsonType.START_ARRAY, JsonType.END_OBJ)
@@ -19,7 +19,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     }
 
     override fun writeEndObject() {
-        if(typeStack.isEmpty() || typeStack.last() != JsonObjectType.OBJECT) {
+        if(typeStack.isEmpty() || typeStack.last() != JsonComplexType.OBJECT) {
             throw IllegalJsonOperation("There is no object to close")
         }
         typeStack.removeAt(typeStack.lastIndex)
@@ -30,7 +30,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     }
 
     override fun writeStartArray() {
-        typeStack.add(JsonObjectType.ARRAY)
+        typeStack.add(JsonComplexType.ARRAY)
         checkTypeIsAllowed(
             JsonType.START_ARRAY,
             arrayOf(JsonType.START, JsonType.FIELD_NAME, JsonType.START_ARRAY, JsonType.END_ARRAY)
@@ -38,7 +38,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     }
 
     override fun writeEndArray() {
-        if(typeStack.isEmpty() || typeStack.last() != JsonObjectType.ARRAY) {
+        if(typeStack.isEmpty() || typeStack.last() != JsonComplexType.ARRAY) {
             throw IllegalJsonOperation("Json: There is no array to close")
         }
         typeStack.removeAt(typeStack.lastIndex)
@@ -69,7 +69,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         )
     }
 
-    fun checkArrayOperation() {
+    internal fun checkArrayOperation() {
         checkTypeIsAllowed(
             JsonType.ARRAY_VALUE,
             arrayOf(JsonType.START_ARRAY, JsonType.ARRAY_VALUE)

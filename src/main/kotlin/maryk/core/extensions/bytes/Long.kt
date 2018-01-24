@@ -4,27 +4,22 @@ import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 
-const val MAX_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L-1
-const val MIN_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L*-1
+internal const val MAX_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L-1
+internal const val MIN_SEVEN_VALUE = 256L*256L*256L*256L*256L*256L*128L*-1
 
-/** Write the bytes of this Long to a writer
- * @param writer to write this Long to
- */
-fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
+/** Write the bytes of this Long to a [writer] */
+internal fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
     if (length !in 5..8) { throw IllegalArgumentException("Length should be within range of 5 to 8") }
 
-    (0 until length).forEach {
+    for (it in 0 until length) {
         val b = (this shr (length-1-it) * 8 and 0xFF).toByte()
         writer(
-                if(it == 0) b xor SIGN_BYTE else b
+            if(it == 0) b xor SIGN_BYTE else b
         )
     }
 }
 
-/** Converts reader with bytes to Long
- * @param reader to read bytes from
- * @return Long represented by bytes
- */
+/** Reads Long from [reader] with bytes until [length] */
 internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
     var long = 0L
     val firstByte = reader()
@@ -39,7 +34,7 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
         }
     }
     long = long xor ((firstByte xor SIGN_BYTE).toLong() and 0xFF)
-    (1 until length).forEach {
+    for (it in 1 until length) {
         long = long shl 8
         long = long xor (reader().toLong() and 0xFF)
     }
@@ -47,9 +42,7 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
 }
 
 
-/** Write the bytes of this Long as a variable int to a writer
- * @param writer to write this Int to
- */
+/** Write the bytes of this Long as a variable int to a [writer] */
 internal fun Long.writeVarBytes(writer: (byte: Byte) -> Unit) {
     var value = this
     while (true) {
@@ -63,7 +56,8 @@ internal fun Long.writeVarBytes(writer: (byte: Byte) -> Unit) {
     }
 }
 
-/** Encodes the Long in zigzag pattern so negative values are
+/**
+ * Encodes the Long in zigzag pattern so negative values are
  * able to encode much more efficiently into varInt
  */
 internal fun Long.encodeZigZag() = this shl 1 xor (this shr 63)
@@ -71,10 +65,7 @@ internal fun Long.encodeZigZag() = this shl 1 xor (this shr 63)
 /** Decodes the Long out of zigzag pattern so bytes have the normal native order again */
 internal fun Long.decodeZigZag() = this ushr 1 xor -(this and 1)
 
-/** Converts reader with var bytes to Long
- * @param reader to read bytes from
- * @return Int represented by bytes
- */
+/** Reads Long represented by Variable Length from [reader] */
 internal fun initLongByVar(reader: () -> Byte): Long {
     var shift = 0
     var result = 0L

@@ -1,3 +1,5 @@
 package maryk.core.protobuf
 
-class ByteLengthContainer(var length: Int = -1)
+class ByteLengthContainer(
+    var length: Int = -1
+)

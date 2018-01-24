@@ -9,24 +9,24 @@ import maryk.core.properties.references.IsPropertyReference
 
 /** Compares given regular expression [regEx] against referenced property [reference] */
 data class RegEx(
-        override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
-        val regEx: String
+    override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
+    val regEx: String
 ) : IsPropertyCheck<String> {
     override val filterType = FilterType.REGEX
 
-    companion object: QueryDataModel<RegEx>(
-            properties = object : PropertyDefinitions<RegEx>() {
-                init {
-                    IsPropertyCheck.addReference(this, RegEx::reference)
+    internal companion object: QueryDataModel<RegEx>(
+        properties = object : PropertyDefinitions<RegEx>() {
+            init {
+                IsPropertyCheck.addReference(this, RegEx::reference)
 
-                    add(1, "regEx", StringDefinition(), RegEx::regEx)
-                }
+                add(1, "regEx", StringDefinition(), RegEx::regEx)
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = RegEx(
-                reference = map[0] as IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
-                regEx = map[1] as String
+            reference = map[0] as IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
+            regEx = map[1] as String
         )
     }
 }

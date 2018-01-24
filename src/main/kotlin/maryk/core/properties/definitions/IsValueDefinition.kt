@@ -12,10 +12,8 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /**
- * Abstract Property Definition to define properties.
- *
+ * Property Definition to define properties containing single values of [T].
  * This is used for simple single value properties and not for lists and maps.
- * @param <T> Type of objects contained in property
  */
 interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<T, CX> {
     val wireType: WireType
@@ -45,11 +43,9 @@ interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<
         return totalByteLength
     }
 
-    /** Calculates the needed bytes to transport the value
-     * @param value to get length of
-     * @param cacher to cache calculated lengths or contexts. Ordered so it can be read back in the same order
-     * @param context with possible context values for Dynamic property writers
-     * @return the total length
+    /**
+     * Calculates the needed bytes to transport [value] with [context]
+     * Caches any calculated lengths in [cacher]
      */
     fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX? = null): Int
 
@@ -61,29 +57,22 @@ interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<
         this.writeTransportBytes(value, cacheGetter, writer, context)
     }
 
-    /** Convert a value to bytes for transportation
-     * @param value to write
-     * @param writer to write bytes to
-     * @param context with possible context values for Dynamic writers
-     */
+    /** Writes value to bytes with [writer] and [context] for transportation */
     fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    /** Get the value from a string
-     * @param string to convert
-     * @return the value
-     * @param context with possible context values for Dynamic writers
+    /**
+     * Get value from a [string]
+     * Optionally pass a [context] to read more complex properties which depend on other properties
      * @throws ParseException if conversion fails
      */
     fun fromString(string: String, context: CX? = null): T
 
-    /** Convert value to String
-     * @param value to convert
-     * @param context with possible context values for Dynamic writers
-     * @return value as String
+    /** Convert [value] to String
+     * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     fun asString(value: T, context: CX? = null) = value.toString()
 }

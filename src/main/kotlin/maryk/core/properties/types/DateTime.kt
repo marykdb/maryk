@@ -9,15 +9,15 @@ import kotlin.math.floor
 
 /** Date and Time object. */
 data class DateTime(
-        val date: Date,
-        val time: Time
+    val date: Date,
+    val time: Time
 ):
-        TimeInterface by time,
-        DateInterface by date,
-        IsTime<DateTime>()
+    TimeInterface by time,
+    DateInterface by date,
+    IsTime<DateTime>()
 {
     constructor(year: Int, month: Byte, day: Byte, hour: Byte = 0, minute: Byte = 0, second: Byte = 0, milli: Short = 0): this(
-            Date(year, month, day), Time(hour, minute, second, milli)
+        Date(year, month, day), Time(hour, minute, second, milli)
     )
 
     override fun compareTo(other: DateTime): Int {
@@ -59,7 +59,7 @@ data class DateTime(
 
         /** Get a new DateTime with the date and time at UTC timezone */
         override fun nowUTC() = DateTime.ofEpochMilli(
-                Instant.getCurrentEpochTimeInMillis()
+            Instant.getCurrentEpochTimeInMillis()
         )
 
         /** Create a DateTime by the amount of milliseconds since 01-01-1970 */
@@ -67,8 +67,8 @@ data class DateTime(
             val epochDay = floor((epochInMillis / MILLIS_PER_DAY).toDouble()).toLong()
             val millisOfDay = floor((epochInMillis % MILLIS_PER_DAY).toDouble()).toInt()
             return DateTime(
-                    Date.ofEpochDay(epochDay),
-                    Time.ofMilliOfDay(millisOfDay)
+                Date.ofEpochDay(epochDay),
+                Time.ofMilliOfDay(millisOfDay)
             )
         }
 
@@ -77,10 +77,10 @@ data class DateTime(
             val epochDay = floor(epochInSeconds.toDouble() / SECONDS_PER_DAY).toLong()
             val secondOfDay = floor(epochInSeconds.toDouble() % SECONDS_PER_DAY).toInt()
             return DateTime(
-                    Date.ofEpochDay(epochDay),
-                    Time.ofMilliOfDay(
-                            secondOfDay * 1000 + milli
-                    )
+                Date.ofEpochDay(epochDay),
+                Time.ofMilliOfDay(
+                    secondOfDay * 1000 + milli
+                )
             )
         }
 
@@ -91,11 +91,11 @@ data class DateTime(
 
         override fun fromByteReader(length: Int, reader: () -> Byte) = when (length) {
             7 -> DateTime.ofEpochSecond(
-                    initLong(reader, 7)
+                initLong(reader, 7)
             )
             9 -> DateTime.ofEpochSecond(
-                    initLong(reader, 7),
-                    initShort(reader)
+                initLong(reader, 7),
+                initShort(reader)
             )
             else -> throw IllegalArgumentException("Invalid length for bytes for DateTime conversion: " + length)
         }
@@ -103,8 +103,8 @@ data class DateTime(
         override fun parse(value: String) = try {
             val (date, time) = value.split('T', limit = 2)
             DateTime(
-                    Date.parse(date),
-                    Time.parse(time)
+                Date.parse(date),
+                Time.parse(time)
             )
         } catch (e: Throwable) { throw ParseException(value, e) }
     }

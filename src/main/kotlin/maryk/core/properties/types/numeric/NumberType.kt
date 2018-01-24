@@ -3,8 +3,8 @@ package maryk.core.properties.types.numeric
 import maryk.core.properties.types.IndexedEnum
 
 enum class NumberType(
-        override val index: Int,
-        val descriptor: ()-> NumberDescriptor<*>
+    override val index: Int,
+    val descriptor: ()-> NumberDescriptor<*>
 ) : IndexedEnum<NumberType> {
     SINT8(0, { SInt8 }),
     SINT16(1, { SInt16 }),

@@ -22,16 +22,17 @@ import maryk.core.properties.types.TypedValue
 
 fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
 
-/** DataModel defining data objects of type [DO] which is on root level so it can be stored and thus can have a [key].
+/**
+ * DataModel defining data objects of type [DO] which is on root level so it can be stored and thus can have a [key].
  * The key is defined by passing an ordered array of key definitions.
  * If no key is defined the data model will get a UUID.
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
 abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
-        name: String,
-        keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
-        properties: P
+    name: String,
+    keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
+    properties: P
 ) : DataModel<DO, P>(name, properties){
     val key = KeyDefinition(*keyDefinitions)
 
@@ -42,7 +43,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         init {
             var totalBytes = keyDefinitions.size - 1 // Start with adding size of separators
 
-            keyDefinitions.forEach {
+            for (it in keyDefinitions) {
                 when {
                     it is FixedBytesPropertyDefinitionWrapper<*, *, *, *>
                             && it.definition is IsValueDefinition<*, *>-> {
@@ -66,7 +67,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         /** Get Key by [bytes] array */
         fun get(bytes: ByteArray): Key<DO> {
             if (bytes.size != this.size) {
-               throw ParseException("Invalid byte length for key")
+                throw ParseException("Invalid byte length for key")
             }
             return Key(bytes)
         }
@@ -76,14 +77,14 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
 
         /** Get Key by byte [reader] */
         fun get(reader: () -> Byte): Key<DO> = Key(
-                initByteArray(size, reader)
+            initByteArray(size, reader)
         )
 
         /** Get Key based on [dataObject] */
         fun getKey(dataObject: DO): Key<DO> {
             val bytes = ByteArray(this.size)
             var index = 0
-            keyDefinitions.forEach {
+            for (it in keyDefinitions) {
                 val value = it.getValue(this@RootDataModel, dataObject)
 
                 @Suppress("UNCHECKED_CAST")
@@ -116,37 +117,37 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
 
     @Suppress("UNCHECKED_CAST")
     object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
-            properties = object : PropertyDefinitions<RootDataModel<*, *>>() {
-                init {
-                    AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
-                        it.name
-                    }
-                    AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
-                    add(2, "key", ListDefinition(
-                            valueDefinition = MultiTypeDefinition(
-                                    definitionMap = mapOfKeyPartDefinitions
-                            )
-                    )) {
-                        it.key.keyDefinitions.map {
-                            val def: Any = when(it) {
-                                is FixedBytesPropertyDefinitionWrapper<*, *, *, *> -> it.getRef()
-                                else -> it
-                            }
-                            TypedValue(it.keyPartType, def)
+        properties = object : PropertyDefinitions<RootDataModel<*, *>>() {
+            init {
+                AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
+                    it.name
+                }
+                AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
+                add(2, "key", ListDefinition(
+                    valueDefinition = MultiTypeDefinition(
+                        definitionMap = mapOfKeyPartDefinitions
+                    )
+                )) {
+                    it.key.keyDefinitions.map {
+                        val def: Any = when(it) {
+                            is FixedBytesPropertyDefinitionWrapper<*, *, *, *> -> it.getRef()
+                            else -> it
                         }
+                        TypedValue(it.keyPartType, def)
                     }
                 }
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
-                name = map[0] as String,
-                properties = map[1] as PropertyDefinitions<Any>,
-                keyDefinitions = (map[2] as List<TypedValue<PropertyDefinitionType, *>>).map {
-                    when(it.value) {
-                        is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
-                        else -> it.value as IsFixedBytesProperty<*>
-                    }
-                }.toTypedArray()
+            name = map[0] as String,
+            properties = map[1] as PropertyDefinitions<Any>,
+            keyDefinitions = (map[2] as List<TypedValue<PropertyDefinitionType, *>>).map {
+                when(it.value) {
+                    is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
+                    else -> it.value as IsFixedBytesProperty<*>
+                }
+            }.toTypedArray()
         ){
             override fun invoke(map: Map<Int, *>): Any {
                 return object : Any(){}

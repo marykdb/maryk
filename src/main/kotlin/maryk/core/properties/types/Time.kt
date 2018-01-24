@@ -18,8 +18,8 @@ data class Time(
     override val second: Byte = 0,
     override val milli: Short = 0
 ): IsTime<Time>(),
-        TimeInterface,
-        Comparable<Time>
+    TimeInterface,
+    Comparable<Time>
 {
 
     /** Get the seconds since midnight */
@@ -92,9 +92,9 @@ data class Time(
             val minutes = (substractedSeconds / SECONDS_PER_MINUTE).toInt()
             substractedSeconds -= (minutes * SECONDS_PER_MINUTE).toLong()
             return Time(
-                    hour = hours.toByte(),
-                    minute = minutes.toByte(),
-                    second = substractedSeconds.toByte()
+                hour = hours.toByte(),
+                minute = minutes.toByte(),
+                second = substractedSeconds.toByte()
             )
         }
 
@@ -110,10 +110,10 @@ data class Time(
             val seconds = substractedMilliOfDay / MILLIS_PER_SECOND
             substractedMilliOfDay -= seconds * MILLIS_PER_SECOND
             return Time(
-                    hour = hours.toByte(),
-                    minute = minutes.toByte(),
-                    second = seconds.toByte(),
-                    milli = substractedMilliOfDay.toShort()
+                hour = hours.toByte(),
+                minute = minutes.toByte(),
+                second = seconds.toByte(),
+                milli = substractedMilliOfDay.toShort()
             )
         }
 

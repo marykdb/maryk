@@ -11,18 +11,18 @@ import maryk.core.protobuf.WriteCacheReader
 
 /** Definition for Date properties */
 data class DateDefinition(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val unique: Boolean = false,
-        override val minValue: Date? = null,
-        override val maxValue: Date? = null,
-        override val fillWithNow: Boolean = false
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val unique: Boolean = false,
+    override val minValue: Date? = null,
+    override val maxValue: Date? = null,
+    override val fillWithNow: Boolean = false
 ) :
-        IsMomentDefinition<Date>,
-        IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
-        IsTransportablePropertyDefinitionType
+    IsMomentDefinition<Date>,
+    IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = WireType.VAR_INT
@@ -47,29 +47,29 @@ data class DateDefinition(
 
     override fun fromString(string: String) = Date.parse(string)
 
-    object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
-            properties = object : PropertyDefinitions<DateDefinition>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)
-                    IsPropertyDefinition.addSearchable(this, DateDefinition::searchable)
-                    IsPropertyDefinition.addRequired(this, DateDefinition::required)
-                    IsPropertyDefinition.addFinal(this, DateDefinition::final)
-                    IsComparableDefinition.addUnique(this, DateDefinition::unique)
-                    add(5, "minValue", DateDefinition(), DateDefinition::minValue)
-                    add(6, "maxValue", DateDefinition(), DateDefinition::maxValue)
-                    IsMomentDefinition.addFillWithNow(this, DateDefinition::fillWithNow)
-                }
+    internal object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
+        properties = object : PropertyDefinitions<DateDefinition>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)
+                IsPropertyDefinition.addSearchable(this, DateDefinition::searchable)
+                IsPropertyDefinition.addRequired(this, DateDefinition::required)
+                IsPropertyDefinition.addFinal(this, DateDefinition::final)
+                IsComparableDefinition.addUnique(this, DateDefinition::unique)
+                add(5, "minValue", DateDefinition(), DateDefinition::minValue)
+                add(6, "maxValue", DateDefinition(), DateDefinition::maxValue)
+                IsMomentDefinition.addFillWithNow(this, DateDefinition::fillWithNow)
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = DateDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                unique = map[4] as Boolean,
-                minValue = map[5] as Date?,
-                maxValue = map[6] as Date?,
-                fillWithNow = map[7] as Boolean
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            unique = map[4] as Boolean,
+            minValue = map[5] as Date?,
+            maxValue = map[6] as Date?,
+            fillWithNow = map[7] as Boolean
         )
     }
 }

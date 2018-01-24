@@ -8,18 +8,13 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Reference to a specific Map key
- * @param key             key of property reference
- * @param parentReference reference to parent
- * @param <K> key
- * @param <V> value
- */
+/** Reference to a specific Map [key] of [K] to value [V] contained in map referred by [parentReference] */
 class MapKeyReference<K: Any, V: Any, CX: IsPropertyContext>(
-        val key: K,
-        mapDefinition: MapDefinition<K, V, CX>,
-        parentReference: MapReference<K, V, CX>?
+    val key: K,
+    mapDefinition: MapDefinition<K, V, CX>,
+    parentReference: MapReference<K, V, CX>?
 ) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V, CX>>(
-        mapDefinition.keyDefinition, parentReference
+    mapDefinition.keyDefinition, parentReference
 ) {
     override val completeName get() = this.parentReference?.let {
         "${it.completeName}.$$key"

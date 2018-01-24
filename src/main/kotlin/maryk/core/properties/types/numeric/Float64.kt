@@ -6,9 +6,9 @@ import maryk.core.extensions.random
 import maryk.core.protobuf.WireType
 
 object Float64 : NumberDescriptor<Double>(
-        size = 8,
-        wireType = WireType.BIT_64,
-        type = NumberType.FLOAT64
+    size = 8,
+    wireType = WireType.BIT_64,
+    type = NumberType.FLOAT64
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Double = initDouble(reader)
     override fun writeStorageBytes(value: Double, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

@@ -6,14 +6,13 @@ private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySepara
 
 /** Reads JSON from the supplied [reader] */
 class JsonReader(
-        private val reader: () -> Char
+    private val reader: () -> Char
 ) : IsJsonLikeReader {
     override var currentToken: JsonToken = JsonToken.StartJSON
     override var lastValue: String = ""
-    private val typeStack: MutableList<JsonObjectType> = mutableListOf()
+    private val typeStack: MutableList<JsonComplexType> = mutableListOf()
     private var lastChar: Char = ' '
 
-    /** Find the next token */
     override fun nextToken(): JsonToken {
         lastValue = ""
         try {
@@ -27,7 +26,7 @@ class JsonReader(
                     }
                 }
                 JsonToken.StartObject -> {
-                    typeStack.add(JsonObjectType.OBJECT)
+                    typeStack.add(JsonComplexType.OBJECT)
                     when(lastChar) {
                         '}' -> endObject()
                         '"' -> readFieldName()
@@ -38,7 +37,7 @@ class JsonReader(
                     continueComplexRead()
                 }
                 JsonToken.StartArray -> {
-                    typeStack.add(JsonObjectType.ARRAY)
+                    typeStack.add(JsonComplexType.ARRAY)
                     if (lastChar == ']') {
                         endArray()
                     } else {
@@ -89,7 +88,6 @@ class JsonReader(
         return currentToken
     }
 
-    /** Skips all JSON values until a next value at same level is discovered */
     override fun skipUntilNextField() {
         val currentDepth = typeStack.count()
         do {
@@ -119,8 +117,8 @@ class JsonReader(
         when {
             typeStack.isEmpty() -> currentToken = JsonToken.EndJSON
             else -> when (typeStack.last()) {
-                JsonObjectType.OBJECT -> readObject()
-                JsonObjectType.ARRAY -> readArray()
+                JsonComplexType.OBJECT -> readObject()
+                JsonComplexType.ARRAY -> readArray()
             }
         }
     }
@@ -222,7 +220,7 @@ class JsonReader(
     }
 
     private fun readFalse() {
-        ("alse").forEach {
+        for (it in "alse") {
             read()
             if(lastChar != it) {
                 throwJsonException()
@@ -244,7 +242,7 @@ class JsonReader(
     }
 
     private fun readNullValue() {
-        ("ull").forEach {
+        for (it in "ull") {
             read()
             if(lastChar != it) {
                 throwJsonException()

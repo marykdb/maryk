@@ -8,12 +8,12 @@ import maryk.core.time.Instant
 
 /** Date by year, month and day. */
 data class Date(
-        override val year: Int,
-        override val month: Byte,
-        override val day: Byte
+    override val year: Int,
+    override val month: Byte,
+    override val day: Byte
 ):
-        DateInterface,
-        IsTemporal<Date>()
+    DateInterface,
+    IsTemporal<Date>()
 {
     val epochDay: Long get() {
         val y = year.toLong()

@@ -23,11 +23,8 @@ external class Buffer(value:String, encoding:String) {
 
 /** Util to convert base 64 */
 actual object Base64 {
-    /** Get String encoded key as bytes
-     *
+    /** Decode [base64] string into bytes array
      * TODO: Currently only runnable in Node
-     * @param base64 to decode
-     * @return byte representation
      */
     actual fun decode(base64: String): ByteArray {
         // Only needed for node
@@ -42,11 +39,8 @@ actual object Base64 {
         }
     }
 
-    /** Get Bytes as base64 string
-     *
+    /** Encode [bytes] array into a base64 String
      * TODO: Currently only runnable in Node
-     * @param bytes to encode
-     * @return Base64 String
      */
     actual fun encode(bytes: ByteArray): String {
         return Buffer.from(bytes).toString("base64").removeSuffix("=").removeSuffix("=")

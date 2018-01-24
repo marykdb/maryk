@@ -12,30 +12,30 @@ import maryk.core.query.DataModelPropertyContext
 
 /** Checks if [reference] exists in set with [values] of type [T] */
 data class ValueIn<T: Any>(
-        override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
-        val values: Set<T>
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
+    val values: Set<T>
 ) : IsPropertyCheck<T> {
     override val filterType = FilterType.VALUE_IN
 
-    companion object: QueryDataModel<ValueIn<*>>(
-            properties = object : PropertyDefinitions<ValueIn<*>>() {
-                init {
-                    IsPropertyCheck.addReference(this, ValueIn<*>::reference)
-                    add(1, "values", SetDefinition(
-                            valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
-                                    contextualResolver = {
-                                        @Suppress("UNCHECKED_CAST")
-                                        it!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
-                                    }
-                            )
-                    ), ValueIn<*>::values)
-                }
+    internal companion object: QueryDataModel<ValueIn<*>>(
+        properties = object : PropertyDefinitions<ValueIn<*>>() {
+            init {
+                IsPropertyCheck.addReference(this, ValueIn<*>::reference)
+                add(1, "values", SetDefinition(
+                    valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
+                        contextualResolver = {
+                            @Suppress("UNCHECKED_CAST")
+                            it!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                        }
+                    )
+                ), ValueIn<*>::values)
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValueIn(
-                reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
-                values = map[1] as Set<Any>
+            reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
+            values = map[1] as Set<Any>
         )
     }
 }

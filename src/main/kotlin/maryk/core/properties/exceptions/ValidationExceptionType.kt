@@ -4,7 +4,7 @@ import maryk.core.properties.types.IndexedEnum
 
 /** Indexed type of changes */
 enum class ValidationExceptionType(
-        override val index: Int
+    override val index: Int
 ): IndexedEnum<ValidationExceptionType> {
     ALREADY_SET(0),
     INVALID_VALUE(1),

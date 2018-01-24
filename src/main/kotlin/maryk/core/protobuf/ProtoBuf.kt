@@ -15,26 +15,23 @@ object ProtoBuf {
 
         // Write Tag + Wiretype + potential sign byte (STTT TWWW)
         writer(
-                (
-                        ((tag shl 3).toByte() and 0b0111_1000) // Add first part of tag to byte
-                                xor wireType.type // Add Type to byte
-                        ) xor if (byteSize > 1) SIGN_BYTE else ZERO_BYTE // Add Sign byte if total is longer than 5 bytes
+            (
+                    ((tag shl 3).toByte() and 0b0111_1000) // Add first part of tag to byte
+                            xor wireType.type // Add Type to byte
+                    ) xor if (byteSize > 1) SIGN_BYTE else ZERO_BYTE // Add Sign byte if total is longer than 5 bytes
         )
         // Write any needed extra byte for the tag as a VarInt
         if (byteSize > 1) {
-            (1 until byteSize).forEach {
+            for (it in 1 until byteSize) {
                 val isLast = it == byteSize - 1
                 writer(
-                        (tag shr (7*it-3)).toByte() and SEVEN_BYTES xor if(isLast) ZERO_BYTE else SIGN_BYTE
+                    (tag shr (7*it-3)).toByte() and SEVEN_BYTES xor if(isLast) ZERO_BYTE else SIGN_BYTE
                 )
             }
         }
     }
 
-    /** Reads the key of a protobuf based field
-     * @param reader to read bytes with
-     * @return ProtoBufKey with Found tag and WireType
-     */
+    /** Reads the key of a ProtoBuf based field from [reader] into a ProtoBufKey */
     fun readKey(reader: () -> Byte) : ProtoBufKey {
         var byte = reader()
         val wireType = wireTypeOf(byte and 0b111)
@@ -56,10 +53,7 @@ object ProtoBuf {
         throw ParseException("Too big tag")
     }
 
-    /** Skips a field by wire type
-     * @param wireType: of field to skip
-     * @param reader: to continue reading for
-     */
+    /** Skips a field in [reader] by [wireType] */
     fun skipField(wireType: Any, reader: () -> Byte) {
         when (wireType) {
             WireType.VAR_INT -> {
@@ -68,26 +62,29 @@ object ProtoBuf {
                     currentByte = reader()
                 } while (currentByte and SIGN_BYTE != ZERO_BYTE)
             }
-            WireType.BIT_64 -> (0 until 8).forEach { reader() }
+            WireType.BIT_64 -> for (it in 0 until 8) {
+                reader()
+            }
             WireType.LENGTH_DELIMITED -> (0 until initIntByVar(reader)).forEach { reader() }
             WireType.START_GROUP -> {
                 while (true) {
                     val key = ProtoBuf.readKey(reader)
                     if (key.wireType == WireType.END_GROUP) {
-                       break
+                        break
                     }
                     skipField(key.wireType, reader)
                 }
             }
             WireType.END_GROUP -> return
-            WireType.BIT_32 -> (0 until 4).forEach { reader() }
+            WireType.BIT_32 -> for (it in 0 until 4) {
+                reader()
+            }
         }
     }
 
-    /** Get length of next value
-     * @param wireType: to use for length retrieval
-     * @param reader: to continue reading for
-     * @return length of bytes of next value. -1 for varInt or start/end group
+    /**
+     * Get length of next value by [wireType] and reading from [reader]
+     * It is -1 for varInt or start/end group
      */
     fun getLength(wireType: WireType, reader: () -> Byte) = when(wireType) {
         WireType.VAR_INT -> -1
@@ -98,15 +95,11 @@ object ProtoBuf {
         WireType.BIT_32 -> 4
     }
 
-    /** Calculate the length of the key
-     * @tag to calculate length of
-     * @return calculated key length
-     */
+    /** Calculate the length of the key [tag] */
     fun calculateKeyLength(tag: Int): Int {
         return tag.calculateTagByteSize()
     }
 }
-
 
 /** Calculates the byte length of the variable int */
 private fun Int.calculateTagByteSize(): Int = when {

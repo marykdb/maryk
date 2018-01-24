@@ -14,21 +14,21 @@ import maryk.core.protobuf.WireType
 
 /** Definition for String properties */
 data class StringDefinition(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val unique: Boolean = false,
-        override val minValue: String? = null,
-        override val maxValue: String? = null,
-        override val minSize: Int? = null,
-        override val maxSize: Int? = null,
-        val regEx: String? = null
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val unique: Boolean = false,
+    override val minValue: String? = null,
+    override val maxValue: String? = null,
+    override val minSize: Int? = null,
+    override val maxSize: Int? = null,
+    val regEx: String? = null
 ) :
-        IsComparableDefinition<String, IsPropertyContext>,
-        HasSizeDefinition,
-        IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
-        IsTransportablePropertyDefinitionType
+    IsComparableDefinition<String, IsPropertyContext>,
+    HasSizeDefinition,
+    IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.String
     override val wireType = WireType.LENGTH_DELIMITED
@@ -60,44 +60,44 @@ data class StringDefinition(
                 when {
                     isSizeToSmall(newValue.length) || isSizeToBig(newValue.length)
                     -> throw InvalidSizeException(
-                            refGetter(), newValue, this.minSize, this.maxSize
+                        refGetter(), newValue, this.minSize, this.maxSize
                     )
                     this._regEx != null && !(this._regEx!! matches newValue)
                     -> throw InvalidValueException(
-                            refGetter(), newValue
+                        refGetter(), newValue
                     )
                 }
             }
         }
     }
 
-    object Model : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
-            properties = object : PropertyDefinitions<StringDefinition>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)
-                    IsPropertyDefinition.addSearchable(this, StringDefinition::searchable)
-                    IsPropertyDefinition.addRequired(this, StringDefinition::required)
-                    IsPropertyDefinition.addFinal(this, StringDefinition::final)
-                    IsComparableDefinition.addUnique(this, StringDefinition::unique)
-                    add(5, "minValue", StringDefinition(), StringDefinition::minValue)
-                    add(6, "maxValue", StringDefinition(), StringDefinition::maxValue)
-                    HasSizeDefinition.addMinSize(7, this) { it.minSize?.toUInt32() }
-                    HasSizeDefinition.addMaxSize(8, this) { it.maxSize?.toUInt32() }
-                    add(9, "regEx", StringDefinition(), StringDefinition::regEx)
-                }
+    internal object Model : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
+        properties = object : PropertyDefinitions<StringDefinition>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)
+                IsPropertyDefinition.addSearchable(this, StringDefinition::searchable)
+                IsPropertyDefinition.addRequired(this, StringDefinition::required)
+                IsPropertyDefinition.addFinal(this, StringDefinition::final)
+                IsComparableDefinition.addUnique(this, StringDefinition::unique)
+                add(5, "minValue", StringDefinition(), StringDefinition::minValue)
+                add(6, "maxValue", StringDefinition(), StringDefinition::maxValue)
+                HasSizeDefinition.addMinSize(7, this) { it.minSize?.toUInt32() }
+                HasSizeDefinition.addMaxSize(8, this) { it.maxSize?.toUInt32() }
+                add(9, "regEx", StringDefinition(), StringDefinition::regEx)
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = StringDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                unique = map[4] as Boolean,
-                minValue = map[5] as String?,
-                maxValue = map[6] as String?,
-                minSize = (map[7] as UInt32?)?.toInt(),
-                maxSize = (map[8] as UInt32?)?.toInt(),
-                regEx = map[9] as String?
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            unique = map[4] as Boolean,
+            minValue = map[5] as String?,
+            maxValue = map[6] as String?,
+            minSize = (map[7] as UInt32?)?.toInt(),
+            maxSize = (map[8] as UInt32?)?.toInt(),
+            regEx = map[9] as String?
         )
     }
 }

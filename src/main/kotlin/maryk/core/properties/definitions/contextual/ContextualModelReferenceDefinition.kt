@@ -13,9 +13,9 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Definition for a reference to another DataObject. */
-data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
-        val contextualResolver: (context: CX?, name: String) -> DataModel<*, *>
+/** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
+internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
+    val contextualResolver: (context: CX?, name: String) -> DataModel<*, *>
 ): IsValueDefinition<DataModel<*, *>, CX>, IsSerializableFlexBytesEncodable<DataModel<*, *>, CX> {
     override val indexed = false
     override val searchable = false
@@ -23,24 +23,24 @@ data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 
-    override fun asString(value: DataModel<*, *>, context: CX?)
-            = value.name
+    override fun asString(value: DataModel<*, *>, context: CX?) =
+        value.name
 
-    override fun fromString(string: String, context: CX?)
-            = contextualResolver(context, string)
+    override fun fromString(string: String, context: CX?) =
+        contextualResolver(context, string)
 
-    override fun writeJsonValue(value: DataModel<*, *>, writer: IsJsonLikeWriter, context: CX?)
-            = writer.writeString(this.asString(value, context))
+    override fun writeJsonValue(value: DataModel<*, *>, writer: IsJsonLikeWriter, context: CX?) =
+        writer.writeString(this.asString(value, context))
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?)
-            = this.fromString(reader.lastValue, context)
+    override fun readJson(reader: IsJsonLikeReader, context: CX?) =
+        this.fromString(reader.lastValue, context)
 
-    override fun calculateTransportByteLength(value: DataModel<*, *>, cacher: WriteCacheWriter, context: CX?)
-            = value.name.calculateUTF8ByteLength()
+    override fun calculateTransportByteLength(value: DataModel<*, *>, cacher: WriteCacheWriter, context: CX?) =
+        value.name.calculateUTF8ByteLength()
 
-    override fun writeTransportBytes(value: DataModel<*, *>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?)
-            = value.name.writeUTF8Bytes(writer)
+    override fun writeTransportBytes(value: DataModel<*, *>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+        value.name.writeUTF8Bytes(writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?)
-            = contextualResolver(context, initString(length, reader))
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+        contextualResolver(context, initString(length, reader))
 }

@@ -21,27 +21,22 @@ import maryk.core.properties.references.ListReference
  * @param DO: Type of DataObject which contains this property
  */
 data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any>(
-        override val index: Int,
-        override val name: String,
-        override val definition: ListDefinition<T, CX>,
-        override val getter: (DO) -> List<T>?
+    override val index: Int,
+    override val name: String,
+    override val definition: ListDefinition<T, CX>,
+    override val getter: (DO) -> List<T>?
 ) :
-        IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> by definition,
-        IsPropertyDefinitionWrapper<List<T>, CX, DO>
+    IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> by definition,
+    IsPropertyDefinitionWrapper<List<T>, CX, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
-            ListReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
+        ListReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
-    /** Get a reference to a specific list item by index
-     * @param index to get list item reference for
-     * @param parentRef (optional) parent reference
-     */
+    /** Get a reference to a specific list item by [index] with optional [parentRef] */
     fun getItemRef(index: Int, parentRef: IsPropertyReference<*, *>? = null)
             = this.definition.getItemRef(index, this.getRef(parentRef))
 
-    /** For quick notation to get a list item reference
-     * @param index to get reference at index
-     */
+    /** For quick notation to get a list item reference by [index] */
     infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> ListItemReference<T, CX> {
         return { this.getItemRef(index, it) }
     }

@@ -7,28 +7,25 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.StatusType
 
-/** Response to an Change request
- * @param dataModel to which objects were changed
- * @param statuses of all specific change object actions
- */
+/** Response with [statuses] to a Change request to [dataModel] */
 data class ChangeResponse<DO: Any, out DM: RootDataModel<DO, *>>(
-        override val dataModel: DM,
-        val statuses: List<IsChangeResponseStatus<DO>>
+    override val dataModel: DM,
+    val statuses: List<IsChangeResponseStatus<DO>>
 ) : IsDataModelResponse<DO, DM> {
-    companion object: QueryDataModel<ChangeResponse<*, *>>(
-            properties = object : PropertyDefinitions<ChangeResponse<*, *>>() {
-                init {
-                    IsDataModelResponse.addDataModel(this, ChangeResponse<*, *>::dataModel)
-                    IsDataModelResponse.addStatuses(this) {
-                        it.statuses.map { TypedValue(it.statusType, it) }
-                    }
+    internal companion object: QueryDataModel<ChangeResponse<*, *>>(
+        properties = object : PropertyDefinitions<ChangeResponse<*, *>>() {
+            init {
+                IsDataModelResponse.addDataModel(this, ChangeResponse<*, *>::dataModel)
+                IsDataModelResponse.addStatuses(this) {
+                    it.statuses.map { TypedValue(it.statusType, it) }
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ChangeResponse(
-                dataModel = map[0] as RootDataModel<Any, *>,
-                statuses = (map[1] as List<TypedValue<StatusType, IsChangeResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+            dataModel = map[0] as RootDataModel<Any, *>,
+            statuses = (map[1] as List<TypedValue<StatusType, IsChangeResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
         )
     }
 }

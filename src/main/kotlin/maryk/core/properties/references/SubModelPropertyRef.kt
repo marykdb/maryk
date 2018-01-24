@@ -10,13 +10,15 @@ import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapp
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Reference to a SubModel property containing type [DO] DataObjects, [P] PropertyDefinitions. Which is defined by
- * DataModel of type [DM] and expects context of type [CX] which is transformed into context [CXI] for properties. */
+/**
+ * Reference to a SubModel property containing type [DO] DataObjects, [P] PropertyDefinitions. Which is defined by
+ * DataModel of type [DM] and expects context of type [CX] which is transformed into context [CXI] for properties.
+ */
 class SubModelPropertyRef<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
-        propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>,
-        parentReference: CanHaveComplexChildReference<*, *, *>?
+    propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>,
+    parentReference: CanHaveComplexChildReference<*, *, *>?
 ): CanHaveComplexChildReference<DO, SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *>>(
-        propertyDefinition, parentReference
+    propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name
 
@@ -25,25 +27,21 @@ class SubModelPropertyRef<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abs
         "${it.completeName}.$name"
     } ?: name
 
-    override fun getEmbedded(name: String)
-            = this.propertyDefinition.definition.dataModel.properties.getDefinition(name)!!.getRef(this)
+    override fun getEmbedded(name: String) =
+        this.propertyDefinition.definition.dataModel.properties.getDefinition(name)!!.getRef(this)
 
     override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
         val index = initIntByVar(reader)
         return this.propertyDefinition.definition.dataModel.properties.getDefinition(index)!!.getRef(this)
     }
 
-    /** Calculate the transport length of encoding this reference
-     * @param cacher to cache length with
-     */
+    /** Calculate the transport length of encoding this reference and cache length with [cacher] */
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
         return this.propertyDefinition.index.calculateVarByteLength() + parentLength
     }
 
-    /** Write transport bytes of property reference
-     * @param writer: To write bytes to
-     */
+    /** Write transport bytes of property reference to [writer] */
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)

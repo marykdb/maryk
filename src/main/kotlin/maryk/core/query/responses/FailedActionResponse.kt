@@ -8,7 +8,7 @@ import maryk.core.properties.types.IndexedEnum
 
 /** Types of failures */
 enum class FailType(
-        override val index: Int
+    override val index: Int
 ) : IndexedEnum<FailType> {
     CONNECTION(0), // Problems with Connection at the server
     STORE_STATE(1), // Problems with the state of the store
@@ -16,25 +16,22 @@ enum class FailType(
     AUTH(3) // Problems with the Authentication
 }
 
-/** Response for failed actions.
- * @param message describing what went wrong
- * @param failType Type of failure that occurred
- */
+/** Response with [message] and [failType] for failed actions. */
 data class FailedActionResponse(
-        val message: String,
-        val failType: FailType
+    val message: String,
+    val failType: FailType
 ) : IsResponse {
-    companion object: QueryDataModel<FailedActionResponse>(
-            properties = object : PropertyDefinitions<FailedActionResponse>() {
-                init {
-                    add(0, "message", StringDefinition(), FailedActionResponse::message)
-                    add(1, "failType", EnumDefinition(values = FailType.values()), FailedActionResponse::failType)
-                }
+    internal companion object: QueryDataModel<FailedActionResponse>(
+        properties = object : PropertyDefinitions<FailedActionResponse>() {
+            init {
+                add(0, "message", StringDefinition(), FailedActionResponse::message)
+                add(1, "failType", EnumDefinition(values = FailType.values()), FailedActionResponse::failType)
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = FailedActionResponse(
-                message = map[0] as String,
-                failType = map[1] as FailType
+            message = map[0] as String,
+            failType = map[1] as FailType
         )
     }
 }

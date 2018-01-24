@@ -9,14 +9,15 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 
+/** Definition for List property */
 data class ListDefinition<T: Any, CX: IsPropertyContext>(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val minSize: Int? = null,
-        override val maxSize: Int? = null,
-        override val valueDefinition: IsValueDefinition<T, CX>
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val minSize: Int? = null,
+    override val maxSize: Int? = null,
+    override val valueDefinition: IsValueDefinition<T, CX>
 ) : IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> {
     override val propertyDefinitionType = PropertyDefinitionType.List
 
@@ -26,10 +27,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
 
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()
 
-    /** Get a reference to a specific list item by index
-     * @param index to get list item reference for
-     * @param parentList (optional) factory to create parent ref
-     */
+    /** Get a reference to a specific list item on [parentList] by [index]. */
     fun getItemRef(index: Int, parentList: ListReference<T, CX>?)
             = ListItemReference(index, this, parentList)
 
@@ -42,33 +40,33 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : SimpleDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>>(
-            properties = object : PropertyDefinitions<ListDefinition<*, *>>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
-                    IsPropertyDefinition.addSearchable(this, ListDefinition<*, *>::searchable)
-                    IsPropertyDefinition.addRequired(this, ListDefinition<*, *>::required)
-                    IsPropertyDefinition.addFinal(this, ListDefinition<*, *>::final)
-                    HasSizeDefinition.addMinSize(4, this) { it.minSize?.toUInt32() }
-                    HasSizeDefinition.addMaxSize(5, this) { it.maxSize?.toUInt32() }
-                    add(6, "valueDefinition", MultiTypeDefinition(
-                            definitionMap = mapOfPropertyDefSubModelDefinitions
-                    )) {
-                        val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
-                        TypedValue(defType.propertyDefinitionType, it.valueDefinition)
-                    }
+    internal object Model : SimpleDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>>(
+        properties = object : PropertyDefinitions<ListDefinition<*, *>>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
+                IsPropertyDefinition.addSearchable(this, ListDefinition<*, *>::searchable)
+                IsPropertyDefinition.addRequired(this, ListDefinition<*, *>::required)
+                IsPropertyDefinition.addFinal(this, ListDefinition<*, *>::final)
+                HasSizeDefinition.addMinSize(4, this) { it.minSize?.toUInt32() }
+                HasSizeDefinition.addMaxSize(5, this) { it.maxSize?.toUInt32() }
+                add(6, "valueDefinition", MultiTypeDefinition(
+                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                )) {
+                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
+                    TypedValue(defType.propertyDefinitionType, it.valueDefinition)
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ListDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                minSize = (map[4] as UInt32?)?.toInt(),
-                maxSize = (map[5] as UInt32?)?.toInt(),
-                valueDefinition = (map[6] as TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>).value
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            minSize = (map[4] as UInt32?)?.toInt(),
+            maxSize = (map[5] as UInt32?)?.toInt(),
+            valueDefinition = (map[6] as TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>).value
         )
     }
 }

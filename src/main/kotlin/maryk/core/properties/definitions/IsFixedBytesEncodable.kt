@@ -9,21 +9,16 @@ interface IsFixedBytesEncodable<T: Any> {
     /** The byte size */
     val byteSize: Int
 
-    /** Convert to value from a byte reader
-     * @param length of bytes to read
-     * @param reader to read bytes from
-     * @return stored value
+    /**
+     * Read stored value from [reader] until [length]
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     fun readStorageBytes(length: Int, reader: () -> Byte): T
 
-    /** Calculates the byte size of the storage bytes */
+    /** Calculates the byte size of the storage bytes for [value] */
     fun calculateStorageByteLength(value: T) = byteSize
 
-    /** Convert a value to bytes
-     * @param value to convert
-     * @param writer to write bytes to
-     */
+    /** Write a [value] to bytes with [writer] */
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     companion object {

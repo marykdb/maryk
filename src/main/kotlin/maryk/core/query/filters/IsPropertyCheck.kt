@@ -14,7 +14,7 @@ interface IsPropertyCheck<T: Any> : IsFilter {
     val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>
 
     companion object {
-        fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
+        internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
                     index = 0, name = "reference",
                     definition = ContextCaptureDefinition(

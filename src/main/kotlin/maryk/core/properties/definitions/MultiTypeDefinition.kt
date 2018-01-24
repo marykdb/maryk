@@ -23,19 +23,21 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Definition for objects which can be of multiple defined types. The type mapping is defined in the given
- * [definitionMap].
+/**
+ * Definition for objects which can be of multiple defined types.
+ * The type mapping is defined in the given [definitionMap] mapped by enum [E].
+ * Receives context of [CX]
  */
 data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 ) :
-        IsValueDefinition<TypedValue<E, Any>, CX>,
-        IsSerializableFlexBytesEncodable<TypedValue<E, Any>, CX>,
-        IsTransportablePropertyDefinitionType
+    IsValueDefinition<TypedValue<E, Any>, CX>,
+    IsSerializableFlexBytesEncodable<TypedValue<E, Any>, CX>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED
@@ -64,8 +66,8 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                     ?: throw DefNotFoundException("No def found for index ${newValue.type}")
 
             definition.validateWithRef(
-                    previousValue?.value,
-                    newValue.value
+                previousValue?.value,
+                newValue.value
             ) {
                 @Suppress("UNCHECKED_CAST")
                 refGetter() as IsPropertyReference<Any, IsPropertyDefinition<Any>>?
@@ -119,9 +121,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         val def = this.definitionMap[type] ?: throw ParseException("Unknown multi type  $typeIndex")
 
         val value = def.readTransportBytes(
-                ProtoBuf.getLength(key.wireType, reader),
-                reader,
-                context
+            ProtoBuf.getLength(key.wireType, reader),
+            reader,
+            context
         )
 
         return TypedValue(type, value)
@@ -181,41 +183,41 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         return result
     }
 
-    object Model : SimpleDataModel<MultiTypeDefinition<*, *>, PropertyDefinitions<MultiTypeDefinition<*, *>>>(
-            properties = object : PropertyDefinitions<MultiTypeDefinition<*, *>>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*, *>::indexed)
-                    IsPropertyDefinition.addSearchable(this, MultiTypeDefinition<*, *>::searchable)
-                    IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
-                    IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
-                    add(4, "definitionMap", ListDefinition(
-                            valueDefinition =  SubModelDefinition(
-                                    dataModel = { MultiTypeDescriptor.Model }
-                            )
-                    )) {
-                        it.definitionMap.map {
-                            MultiTypeDescriptor(
-                                    index = it.key.index.toUInt32(),
-                                    name = it.key.name,
-                                    definition = it.value
-                            )
-                        }.toList()
-                    }
+    internal object Model : SimpleDataModel<MultiTypeDefinition<*, *>, PropertyDefinitions<MultiTypeDefinition<*, *>>>(
+        properties = object : PropertyDefinitions<MultiTypeDefinition<*, *>>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*, *>::indexed)
+                IsPropertyDefinition.addSearchable(this, MultiTypeDefinition<*, *>::searchable)
+                IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
+                IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
+                add(4, "definitionMap", ListDefinition(
+                    valueDefinition =  SubModelDefinition(
+                        dataModel = { MultiTypeDescriptor.Model }
+                    )
+                )) {
+                    it.definitionMap.map {
+                        MultiTypeDescriptor(
+                            index = it.key.index.toUInt32(),
+                            name = it.key.name,
+                            definition = it.value
+                        )
+                    }.toList()
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MultiTypeDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                definitionMap = (map[4] as List<MultiTypeDescriptor<IsPropertyContext>>).map {
-                    Pair(
-                        IndexedEnum(it.index.toInt(), it.name),
-                        it.definition
-                    )
-                }.toMap() as Map<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            definitionMap = (map[4] as List<MultiTypeDescriptor<IsPropertyContext>>).map {
+                Pair(
+                    IndexedEnum(it.index.toInt(), it.name),
+                    it.definition
+                )
+            }.toMap() as Map<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>
         )
     }
 }
@@ -225,25 +227,25 @@ private data class MultiTypeDescriptor<in CX: IsPropertyContext>(
     val name: String,
     val definition: IsSubDefinition<out Any, CX>
 ) {
-    object Model : SimpleDataModel<MultiTypeDescriptor<*>, PropertyDefinitions<MultiTypeDescriptor<*>>>(
-            properties = object : PropertyDefinitions<MultiTypeDescriptor<*>>() {
-                init {
-                    add(0, "index", NumberDefinition(type = UInt32)) { it.index }
-                    add(1, "name", StringDefinition()) { it.name }
-                    add(2, "definition", MultiTypeDefinition(
-                        definitionMap = mapOfPropertyDefSubModelDefinitions
-                    )) {
-                        val defType = it.definition as IsTransportablePropertyDefinitionType
-                        TypedValue(defType.propertyDefinitionType, defType)
-                    }
+    internal object Model : SimpleDataModel<MultiTypeDescriptor<*>, PropertyDefinitions<MultiTypeDescriptor<*>>>(
+        properties = object : PropertyDefinitions<MultiTypeDescriptor<*>>() {
+            init {
+                add(0, "index", NumberDefinition(type = UInt32)) { it.index }
+                add(1, "name", StringDefinition()) { it.name }
+                add(2, "definition", MultiTypeDefinition(
+                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                )) {
+                    val defType = it.definition as IsTransportablePropertyDefinitionType
+                    TypedValue(defType.propertyDefinitionType, defType)
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MultiTypeDescriptor(
-                index = map[0] as UInt32,
-                name = map[1] as String,
-                definition = (map[2] as TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>).value
+            index = map[0] as UInt32,
+            name = map[1] as String,
+            definition = (map[2] as TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>).value
         )
     }
 }

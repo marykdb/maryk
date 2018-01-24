@@ -6,18 +6,17 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 
 /**
- * Property Definition to define comparable properties.
+ * Property Definition to define comparable properties of type [T] with context [CX].
  *
  * This is used for simple single value properties and not for lists and maps.
- * @param <T> Type of objects contained in property
  */
 interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : IsSimpleValueDefinition<T, CX> {
     val unique: Boolean
     val minValue: T?
     val maxValue: T?
 
-    /** Validate the contents of the native type
-     * @param newValue to validate
+    /**
+     * Validate [newValue] against [previousValue] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationException thrown if property is invalid
      */
     override fun validateWithRef(previousValue: T?, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) {
@@ -26,13 +25,13 @@ interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : I
             newValue != null -> {
                 when {
                     this.minValue != null && newValue < this.minValue!!
-                            -> throw OutOfRangeException(
-                                    refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
-                            )
+                    -> throw OutOfRangeException(
+                        refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
+                    )
                     this.maxValue != null && newValue > this.maxValue!!
-                            -> throw OutOfRangeException(
-                                    refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
-                            )
+                    -> throw OutOfRangeException(
+                        refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
+                    )
                 }
             }
         }

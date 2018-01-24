@@ -17,14 +17,14 @@ import maryk.core.properties.references.ValuePropertyReference
  * @param DO: Type of DataObject which contains this property
  */
 data class PropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DO: Any>(
-        override val index: Int,
-        override val name: String,
-        override val definition: D,
-        override val getter: (DO) -> T?
+    override val index: Int,
+    override val name: String,
+    override val definition: D,
+    override val getter: (DO) -> T?
 ) :
-        IsSerializableFlexBytesEncodable<T, CX> by definition,
-        IsValuePropertyDefinitionWrapper<T, CX, DO>
+    IsSerializableFlexBytesEncodable<T, CX> by definition,
+    IsValuePropertyDefinitionWrapper<T, CX, DO>
 {
-    override fun getRef(parentRef: IsPropertyReference<*, *>?)
-            = ValuePropertyReference(this, parentRef)
+    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+        ValuePropertyReference(this, parentRef)
 }

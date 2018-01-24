@@ -26,20 +26,21 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
+/** Definition for Map property */
 data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val minSize: Int? = null,
-        override val maxSize: Int? = null,
-        override val keyDefinition: IsSimpleValueDefinition<K, CX>,
-        override val valueDefinition: IsSubDefinition<V, CX>
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val minSize: Int? = null,
+    override val maxSize: Int? = null,
+    override val keyDefinition: IsSimpleValueDefinition<K, CX>,
+    override val valueDefinition: IsSubDefinition<V, CX>
 ) :
-        HasSizeDefinition,
-        IsByteTransportableMap<K, V, CX>,
-        IsMapDefinition<K, V, CX>,
-        IsTransportablePropertyDefinitionType
+    HasSizeDefinition,
+    IsByteTransportableMap<K, V, CX>,
+    IsMapDefinition<K, V, CX>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.Map
 
@@ -52,19 +53,13 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
-    /** Get a reference to a specific map key
-     * @param key to get reference for
-     * @param parentMap (optional) reference to parent map
-     */
-    fun getKeyRef(key: K, parentMap: MapReference<K, V, CX>?)
-            = MapKeyReference(key, this, parentMap)
+    /** Get a reference to a specific map [key] on [parentMap] */
+    fun getKeyRef(key: K, parentMap: MapReference<K, V, CX>?) =
+        MapKeyReference(key, this, parentMap)
 
-    /** Get a reference to a specific map value by key
-     * @param key to get reference to value for
-     * @param parentMap (optional) reference to parent map
-     */
-    fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?)
-            = MapValueReference(key, this, parentMap)
+    /** Get a reference to a specific map value on [parentMap] by [key] */
+    fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?) =
+        MapValueReference(key, this, parentMap)
 
     override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>>?) {
         super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
@@ -79,7 +74,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             }
 
             createValidationUmbrellaException(refGetter) { addException ->
-                newValue.forEach { (key, value) ->
+                for ((key, value) in newValue) {
                     try {
                         this.keyDefinition.validateWithRef(null, key, {
                             @Suppress("UNCHECKED_CAST")
@@ -105,7 +100,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         writer.writeStartObject()
         value.forEach { (k, v) ->
             writer.writeFieldName(
-                    keyDefinition.asString(k)
+                keyDefinition.asString(k)
             )
             valueDefinition.writeJsonValue(v, writer, context)
         }
@@ -129,7 +124,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 
     override fun calculateTransportByteLengthWithKey(index: Int, value: Map<K, V>, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
-        value.forEach { (key, item) ->
+        for ((key, item) in value) {
             totalByteLength += ProtoBuf.calculateKeyLength(index)
 
             // Cache length for length delimiter
@@ -156,63 +151,59 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         }
     }
 
-    /** Read the transport bytes as a map
-     * @param reader to read bytes with for map
-     * @param context for contextual parameters in reading dynamic properties
-     * @return Pair of key value
-     */
+    /** Read the transport bytes on [reader] with [context] into a map key/value pair */
     override fun readMapTransportBytes(reader: () -> Byte, context: CX?): Pair<K, V> {
         val keyOfMapKey = ProtoBuf.readKey(reader)
         val key = keyDefinition.readTransportBytes(
-                ProtoBuf.getLength(keyOfMapKey.wireType, reader),
-                reader,
-                context
+            ProtoBuf.getLength(keyOfMapKey.wireType, reader),
+            reader,
+            context
         )
 
         val keyOfMapValue = ProtoBuf.readKey(reader)
         val value = valueDefinition.readTransportBytes(
-                ProtoBuf.getLength(keyOfMapValue.wireType, reader),
-                reader,
-                context
+            ProtoBuf.getLength(keyOfMapValue.wireType, reader),
+            reader,
+            context
         )
 
         return Pair(key, value)
     }
 
-    object Model : SimpleDataModel<MapDefinition<*, *, *>, PropertyDefinitions<MapDefinition<*, *, *>>>(
-            properties = object : PropertyDefinitions<MapDefinition<*, *, *>>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)
-                    IsPropertyDefinition.addSearchable(this, MapDefinition<*, *, *>::searchable)
-                    IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
-                    IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
-                    HasSizeDefinition.addMinSize(4, this) { it.minSize?.toUInt32() }
-                    HasSizeDefinition.addMaxSize(5, this) { it.maxSize?.toUInt32() }
-                    add(6, "keyDefinition", MultiTypeDefinition(
-                            definitionMap = mapOfPropertyDefSubModelDefinitions
-                    )) {
-                        val defType = it.keyDefinition as IsTransportablePropertyDefinitionType
-                        TypedValue(defType.propertyDefinitionType, it.keyDefinition)
-                    }
-                    add(7, "valueDefinition", MultiTypeDefinition(
-                            definitionMap = mapOfPropertyDefSubModelDefinitions
-                    )) {
-                        val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
-                        TypedValue(defType.propertyDefinitionType, it.valueDefinition)
-                    }
+    internal object Model : SimpleDataModel<MapDefinition<*, *, *>, PropertyDefinitions<MapDefinition<*, *, *>>>(
+        properties = object : PropertyDefinitions<MapDefinition<*, *, *>>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)
+                IsPropertyDefinition.addSearchable(this, MapDefinition<*, *, *>::searchable)
+                IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
+                IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
+                HasSizeDefinition.addMinSize(4, this) { it.minSize?.toUInt32() }
+                HasSizeDefinition.addMaxSize(5, this) { it.maxSize?.toUInt32() }
+                add(6, "keyDefinition", MultiTypeDefinition(
+                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                )) {
+                    val defType = it.keyDefinition as IsTransportablePropertyDefinitionType
+                    TypedValue(defType.propertyDefinitionType, it.keyDefinition)
+                }
+                add(7, "valueDefinition", MultiTypeDefinition(
+                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                )) {
+                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
+                    TypedValue(defType.propertyDefinitionType, it.valueDefinition)
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MapDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                minSize = (map[4] as UInt32?)?.toInt(),
-                maxSize = (map[5] as UInt32?)?.toInt(),
-                keyDefinition = (map[6] as TypedValue<PropertyDefinitionType, IsSimpleValueDefinition<*, *>>).value,
-                valueDefinition = (map[7] as TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>).value
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            minSize = (map[4] as UInt32?)?.toInt(),
+            maxSize = (map[5] as UInt32?)?.toInt(),
+            keyDefinition = (map[6] as TypedValue<PropertyDefinitionType, IsSimpleValueDefinition<*, *>>).value,
+            valueDefinition = (map[7] as TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>).value
         )
     }
 }

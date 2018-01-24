@@ -4,7 +4,7 @@ import maryk.core.properties.types.IndexedEnum
 
 /** Indexed type of changes */
 enum class FilterType(
-        override val index: Int
+    override val index: Int
 ): IndexedEnum<FilterType> {
     AND(0),
     OR(1),

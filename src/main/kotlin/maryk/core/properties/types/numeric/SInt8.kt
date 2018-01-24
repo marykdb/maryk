@@ -11,9 +11,9 @@ import maryk.core.extensions.random
 import maryk.core.protobuf.WireType
 
 object SInt8 : NumberDescriptor<Byte>(
-        size = 1,
-        wireType = WireType.VAR_INT,
-        type = NumberType.SINT8
+    size = 1,
+    wireType = WireType.VAR_INT,
+    type = NumberType.SINT8
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Byte = initByte(reader)
     override fun writeStorageBytes(value: Byte, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

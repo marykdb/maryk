@@ -2,7 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.json.AbstractJsonLikeWriter
 import maryk.core.json.IllegalJsonOperation
-import maryk.core.json.JsonObjectType
+import maryk.core.json.JsonComplexType
 import maryk.core.json.JsonType
 
 /** A Yaml writer which writes to [writer] */
@@ -36,13 +36,13 @@ class YamlWriter(
         super.writeStartArray()
     }
 
-    /** Writes the field name for an object */
+    /** Writes the field [name] for an object */
     override fun writeFieldName(name: String) {
         val lastType = this.lastType
         super.writeFieldName(name)
         if (lastType == JsonType.START_OBJ
             && typeStack.size > 1
-            && typeStack[typeStack.size - 2] == JsonObjectType.ARRAY
+            && typeStack[typeStack.size - 2] == JsonComplexType.ARRAY
         ) {
             writer("${prefix.removeSuffix(spacing)}$arraySpacing$name:")
         } else {
@@ -50,22 +50,22 @@ class YamlWriter(
         }
     }
 
-    /** Writes a string value including quotes */
+    /** Writes a string [value] including quotes */
     override fun writeString(value: String) = writeValue(value)
 
-    /** Writes a value excluding quotes */
+    /** Writes a [value] excluding quotes */
     override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
         val valueToWrite = this.sanitizeValue(value)
 
         when(typeStack.last()) {
-            JsonObjectType.OBJECT -> {
+            JsonComplexType.OBJECT -> {
                 if (lastType == JsonType.FIELD_NAME) {
                     writer(" ")
                 }
                 super.checkObjectOperation()
                 writer("$valueToWrite\n")
             }
-            JsonObjectType.ARRAY -> {
+            JsonComplexType.ARRAY -> {
                 super.checkArrayOperation()
                 writer("$prefix$arraySpacing$valueToWrite\n")
             }

@@ -15,24 +15,20 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType
 import maryk.core.query.DataModelContext
 
-/** Definition for value model properties
- * @param dataModel definition of the DataObject
- * @param <DM>  Type of model for this definition
- * @param <DO> DataModel which is contained within SubModel
- */
+/** Definition for value model properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
 data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO, PropertyDefinitions<DO>>>(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val unique: Boolean = false,
-        override val minValue: DO? = null,
-        override val maxValue: DO? = null,
-        val dataModel: DM
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val unique: Boolean = false,
+    override val minValue: DO? = null,
+    override val maxValue: DO? = null,
+    val dataModel: DM
 ) :
-        IsComparableDefinition<DO, IsPropertyContext>,
-        IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
-        IsTransportablePropertyDefinitionType
+    IsComparableDefinition<DO, IsPropertyContext>,
+    IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.ValueModel
     override val wireType = WireType.LENGTH_DELIMITED
@@ -42,8 +38,8 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
 
     override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) = value._bytes.writeBytes(writer)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte)
-            = this.dataModel.readFromBytes(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) =
+        this.dataModel.readFromBytes(reader)
 
     override fun calculateTransportByteLength(value: DO) = this.dataModel.byteSize
 
@@ -59,62 +55,58 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
-                    refGetter = refGetter,
-                    dataObject = newValue
+                refGetter = refGetter,
+                dataObject = newValue
             )
         }
     }
 
-    /** Writes a value to Json
-     * @param value: value to write
-     * @param writer: to write json to
-     */
+    /** Writes a [value] to JSON with [writer] */
     override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: IsPropertyContext?) = dataModel.writeJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DO = dataModel.readJsonToObject(reader, context)
 
-    object Model : DefinitionDataModel<ValueModelDefinition<*, *>>(
-            properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *>::indexed)
-                    IsPropertyDefinition.addSearchable(this, ValueModelDefinition<*, *>::searchable)
-                    IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *>::required)
-                    IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *>::final)
-                    IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *>::unique)
-                    add(5, "minValue", FlexBytesDefinition()) {
-                        it.minValue?._bytes?.let { Bytes(it) }
+    internal object Model : DefinitionDataModel<ValueModelDefinition<*, *>>(
+        properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *>::indexed)
+                IsPropertyDefinition.addSearchable(this, ValueModelDefinition<*, *>::searchable)
+                IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *>::required)
+                IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *>::final)
+                IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *>::unique)
+                add(5, "minValue", FlexBytesDefinition()) {
+                    it.minValue?._bytes?.let { Bytes(it) }
+                }
+                add(6, "maxValue", FlexBytesDefinition()) {
+                    it.maxValue?._bytes?.let { Bytes(it) }
+                }
+                add(7, "dataModel", ContextCaptureDefinition(
+                    definition = ContextualModelReferenceDefinition<DataModelContext>(
+                        contextualResolver = { context, name ->
+                            context!!.dataModels[name]!!
+                        }
+                    ),
+                    capturer = { context, dataModel ->
+                        if (!context!!.dataModels.containsKey(dataModel.name)) {
+                            context.dataModels[dataModel.name] = dataModel
+                        }
                     }
-                    add(6, "maxValue", FlexBytesDefinition()) {
-                        it.maxValue?._bytes?.let { Bytes(it) }
-                    }
-                    add(7, "dataModel", ContextCaptureDefinition(
-                            definition = ContextualModelReferenceDefinition<DataModelContext>(
-                                    contextualResolver = { context, name ->
-                                        context!!.dataModels[name]!!
-                                    }
-                            ),
-                            capturer = { context, dataModel ->
-                                if (!context!!.dataModels.containsKey(dataModel.name)) {
-                                    context.dataModels[dataModel.name] = dataModel
-                                }
-                            }
-                    )) {
-                        it.dataModel
-                    }
+                )) {
+                    it.dataModel
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValueModelDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                unique = map[4] as Boolean,
-                minValue = (map[5] as Bytes?)?.let { ValueDataObject(it.bytes) },
-                maxValue = (map[6] as Bytes?)?.let { ValueDataObject(it.bytes) },
-                dataModel = map[7] as ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>
-
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            unique = map[4] as Boolean,
+            minValue = (map[5] as Bytes?)?.let { ValueDataObject(it.bytes) },
+            maxValue = (map[6] as Bytes?)?.let { ValueDataObject(it.bytes) },
+            dataModel = map[7] as ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>
         )
     }
 }

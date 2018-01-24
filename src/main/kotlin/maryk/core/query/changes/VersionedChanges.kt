@@ -8,35 +8,32 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 
-/** Contains a list of changes that belongs to a version
- * @param version of which changes belong to
- * @param changes which are changed at this version
- */
+/** Contains a list of [changes] that belongs to a [version] */
 data class VersionedChanges(
-        val version: UInt64,
-        val changes: List<IsChange>
+    val version: UInt64,
+    val changes: List<IsChange>
 ) {
-    companion object: QueryDataModel<VersionedChanges>(
-            properties = object : PropertyDefinitions<VersionedChanges>() {
-                init {
-                    add(0, "version", NumberDefinition(
-                            type = UInt64
-                    ), VersionedChanges::version)
+    internal companion object: QueryDataModel<VersionedChanges>(
+        properties = object : PropertyDefinitions<VersionedChanges>() {
+            init {
+                add(0, "version", NumberDefinition(
+                    type = UInt64
+                ), VersionedChanges::version)
 
-                    add(1, "changes", ListDefinition(
-                            valueDefinition = MultiTypeDefinition(
-                                    definitionMap = mapOfChangeDefinitions
-                            )
-                    )) {
-                        it.changes.map { TypedValue(it.changeType, it) }
-                    }
+                add(1, "changes", ListDefinition(
+                    valueDefinition = MultiTypeDefinition(
+                        definitionMap = mapOfChangeDefinitions
+                    )
+                )) {
+                    it.changes.map { TypedValue(it.changeType, it) }
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = VersionedChanges(
-                version = map[0] as UInt64,
-                changes = (map[1] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList()
+            version = map[0] as UInt64,
+            changes = (map[1] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList()
         )
     }
 }

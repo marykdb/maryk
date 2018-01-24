@@ -10,23 +10,21 @@ import maryk.core.properties.types.TimePrecision
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 
-/**
- * Definition for Time properties
- */
+/** Definition for Time properties */
 data class TimeDefinition(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val unique: Boolean = false,
-        override val minValue: Time? = null,
-        override val maxValue: Time? = null,
-        override val fillWithNow: Boolean = false,
-        override val precision: TimePrecision = TimePrecision.SECONDS
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val unique: Boolean = false,
+    override val minValue: Time? = null,
+    override val maxValue: Time? = null,
+    override val fillWithNow: Boolean = false,
+    override val precision: TimePrecision = TimePrecision.SECONDS
 ) :
-        IsTimeDefinition<Time>,
-        IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
-        IsTransportablePropertyDefinitionType
+    IsTimeDefinition<Time>,
+    IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = WireType.VAR_INT
@@ -34,8 +32,8 @@ data class TimeDefinition(
 
     override fun createNow() = Time.nowUTC()
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte)
-            = Time.fromByteReader(length, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) =
+        Time.fromByteReader(length, reader)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = when(this.precision) {
         TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
@@ -57,31 +55,31 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = Time.parse(string)
 
-    object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
-            properties = object : PropertyDefinitions<TimeDefinition>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)
-                    IsPropertyDefinition.addSearchable(this, TimeDefinition::searchable)
-                    IsPropertyDefinition.addRequired(this, TimeDefinition::required)
-                    IsPropertyDefinition.addFinal(this, TimeDefinition::final)
-                    IsComparableDefinition.addUnique(this, TimeDefinition::unique)
-                    add(5, "minValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::minValue)
-                    add(6, "maxValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::maxValue)
-                    IsMomentDefinition.addFillWithNow(this, TimeDefinition::fillWithNow)
-                    IsTimeDefinition.addPrecision(this, TimeDefinition::precision)
-                }
+    internal object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
+        properties = object : PropertyDefinitions<TimeDefinition>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)
+                IsPropertyDefinition.addSearchable(this, TimeDefinition::searchable)
+                IsPropertyDefinition.addRequired(this, TimeDefinition::required)
+                IsPropertyDefinition.addFinal(this, TimeDefinition::final)
+                IsComparableDefinition.addUnique(this, TimeDefinition::unique)
+                add(5, "minValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::minValue)
+                add(6, "maxValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::maxValue)
+                IsMomentDefinition.addFillWithNow(this, TimeDefinition::fillWithNow)
+                IsTimeDefinition.addPrecision(this, TimeDefinition::precision)
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = TimeDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                unique = map[4] as Boolean,
-                minValue = map[5] as Time?,
-                maxValue = map[6] as Time?,
-                fillWithNow = map[7] as Boolean,
-                precision = map[8] as TimePrecision
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            unique = map[4] as Boolean,
+            minValue = map[5] as Time?,
+            maxValue = map[6] as Time?,
+            fillWithNow = map[7] as Boolean,
+            precision = map[8] as TimePrecision
         )
     }
 }

@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.generateUUID
 
+/** A key with a Universally Unique ID */
 object UUIDKey: IsFixedBytesProperty<Pair<Long, Long>> {
     override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
@@ -24,8 +25,8 @@ object UUIDKey: IsFixedBytesProperty<Pair<Long, Long>> {
         value.second.writeBytes(writer)
     }
 
-    object Model : DefinitionDataModel<UUIDKey>(
-            properties = object : PropertyDefinitions<UUIDKey>() {}
+    internal object Model : DefinitionDataModel<UUIDKey>(
+        properties = object : PropertyDefinitions<UUIDKey>() {}
     ) {
         override fun invoke(map: Map<Int, *>) = UUIDKey
     }

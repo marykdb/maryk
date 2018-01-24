@@ -8,9 +8,7 @@ internal fun Double.writeBytes(writer: (byte: Byte) -> Unit) {
     return l.writeBytes(writer)
 }
 
-/** Converts [reader] with bytes to Double
- * @return Double represented by bytes
- */
+/** Converts [reader] with bytes to Double */
 internal fun initDouble(reader: () -> Byte): Double {
     var l = initLong(reader) - 1
     // To make order correct

@@ -10,7 +10,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 
-/** Wrapper for a set definition to contain the context on how it relates to DataObject
+/**
+ * Wrapper for a set definition to contain the context on how it relates to DataObject
  * @param index: of definition to encode into ProtoBuf
  * @param name: of definition to display in human readable format
  * @param definition: to be wrapped for DataObject
@@ -21,27 +22,22 @@ import maryk.core.properties.references.SetReference
  * @param DO: Type of DataObject which contains this property
  */
 data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any>(
-        override val index: Int,
-        override val name: String,
-        override val definition: SetDefinition<T, CX>,
-        override val getter: (DO) -> Set<T>?
+    override val index: Int,
+    override val name: String,
+    override val definition: SetDefinition<T, CX>,
+    override val getter: (DO) -> Set<T>?
 ) :
-        IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,
-        IsPropertyDefinitionWrapper<Set<T>, CX, DO>
+    IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,
+    IsPropertyDefinitionWrapper<Set<T>, CX, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
-            SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
+        SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
-    /** Get a reference to a specific set item
-     * @param value to get reference for
-     * @param parentRef (optional) reference to parent reference
-     */
-    fun getItemRef(value: T, parentRef: IsPropertyReference<*, *>? = null)
-            = this.definition.getItemRef(value, this.getRef(parentRef))
+    /** Get a reference to a specific set item by [value] with optional [parentRef] */
+    fun getItemRef(value: T, parentRef: IsPropertyReference<*, *>? = null) =
+        this.definition.getItemRef(value, this.getRef(parentRef))
 
-    /** For quick notation to get a set item reference
-     * @param item to get reference at index
-     */
+    /** For quick notation to get a set [item] reference */
     infix fun at(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> SetItemReference<T, *> {
         return { this.getItemRef(item, it) }
     }

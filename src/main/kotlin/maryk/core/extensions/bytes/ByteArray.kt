@@ -1,18 +1,13 @@
 package maryk.core.extensions.bytes
 
-/** Write the bytes of this ByteArray to a writer
- * @param writer to write this ByteArray to
- */
+/** Write the bytes of this ByteArray to a [writer] */
 internal fun ByteArray.writeBytes(writer: (byte: Byte) -> Unit) {
-    this.forEach {
+    for (it in this) {
         writer(it)
     }
 }
 
-/** Converts reader with bytes to ByteArray
- * @param reader to read bytes from
- * @return ByteArray represented by bytes
- */
+/** Creates ByteArray by reading bytes from [reader] */
 internal fun initByteArray(length: Int, reader: () -> Byte) = ByteArray(length) {
     reader()
 }

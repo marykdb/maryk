@@ -4,7 +4,7 @@ import maryk.core.properties.types.IndexedEnum
 
 /** Indexed type of changes */
 enum class ChangeType(
-        override val index: Int
+    override val index: Int
 ): IndexedEnum<ChangeType> {
     PROP_CHECK(0),
     PROP_CHANGE(1),

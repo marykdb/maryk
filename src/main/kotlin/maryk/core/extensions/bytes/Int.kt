@@ -4,24 +4,19 @@ import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 
-/** Write the bytes of this Int to a writer
- * @param writer to write this Int to
- */
+/** Write the bytes of this Int to a [writer] */
 internal fun Int.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
     if (length !in 3..4) { throw IllegalArgumentException("Length should be within range of 3 to 4") }
 
-    (0 until length).forEach {
+    for (it in 0 until length) {
         val b = (this shr (length-1-it) * 8 and 0xFF).toByte()
         writer(
-                if(it == 0) b xor SIGN_BYTE else b
+            if(it == 0) b xor SIGN_BYTE else b
         )
     }
 }
 
-/** Converts reader with bytes to Int
- * @param reader to read bytes from
- * @return Int represented by bytes
- */
+/** Creates Integer by reading bytes from [reader] */
 internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
     var int = 0
     val firstByte = reader()
@@ -36,14 +31,15 @@ internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
         }
     }
     int = int xor ((firstByte xor SIGN_BYTE).toInt() and 0xFF)
-    (1 until length).forEach {
+    for (it in 1 until length) {
         int = int shl 8
         int = int xor (reader().toInt() and 0xFF)
     }
     return int
 }
 
-/** Encodes the Int in zigzag pattern so negative values are
+/**
+ * Encodes the Int in zigzag pattern so negative values are
  * able to encode much more efficiently into varInt
  */
 internal fun Int.encodeZigZag() = this shl 1 xor (this shr 31)
@@ -51,9 +47,7 @@ internal fun Int.encodeZigZag() = this shl 1 xor (this shr 31)
 /** Decodes the Int out of zigzag pattern so bytes have the normal native order again */
 internal fun Int.decodeZigZag() = this ushr 1 xor -(this and 1)
 
-/** Write the bytes of this Int as a variable int to a writer
- * @param writer to write this Int to
- */
+/** Write the bytes of this Int as a variable int to a [writer] */
 internal fun Int.writeVarBytes(writer: (byte: Byte) -> Unit) {
     var value = this
     while (true) {
@@ -67,10 +61,7 @@ internal fun Int.writeVarBytes(writer: (byte: Byte) -> Unit) {
     }
 }
 
-/** Converts reader with var bytes to Int
- * @param reader to read bytes from
- * @return Int represented by bytes
- */
+/** Creates Integer by reading bytes encoded with variable length from [reader] */
 internal fun initIntByVar(reader: () -> Byte): Int {
     var shift = 0
     var result = 0

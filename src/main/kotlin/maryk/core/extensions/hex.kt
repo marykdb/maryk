@@ -4,25 +4,27 @@ import maryk.core.properties.exceptions.ParseException
 
 private val hexChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
 
-fun ByteArray.toHex(): String {
+/** Converts ByteArray into a String Hex value */
+internal fun ByteArray.toHex(): String {
     val numChars = size * 2
     val ch = CharArray(numChars)
 
-    (0 until numChars step 2).forEach {
-        val d = this[it / 2].toInt()
-        ch[it] = hexChars[d shr 4 and 0x0F]
-        ch[it + 1] = hexChars[d and 0x0F]
+    for (i in 0 until numChars step 2) {
+        val d = this[i / 2].toInt()
+        ch[i] = hexChars[d shr 4 and 0x0F]
+        ch[i + 1] = hexChars[d and 0x0F]
     }
     return ch.joinToString("")
 }
 
-fun initByteArrayByHex(hex: String) : ByteArray {
+/** Converts [hex] String into a ByteArray */
+internal fun initByteArrayByHex(hex: String) : ByteArray {
     if (hex.length % 2 != 0) { throw ParseException("length is not a multiple of 2") }
     val b = ByteArray(hex.length / 2)
-    (0 until hex.length step 2).forEach {
-        b[it / 2] = (
-                hexCharToInt(hex[it]) shl 4 or hexCharToInt(hex[it + 1])
-                ).toByte()
+    for (i in 0 until hex.length step 2) {
+        b[i / 2] = (
+                hexCharToInt(hex[i]) shl 4 or hexCharToInt(hex[i + 1])
+        ).toByte()
     }
     return b
 }

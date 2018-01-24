@@ -9,7 +9,7 @@ import maryk.core.query.DataModelContext
 
 /** Indexed type of property definitions */
 enum class KeyPartType(
-        override val index: Int
+    override val index: Int
 ): IndexedEnum<KeyPartType> {
     UUID(0),
     Reference(1),
@@ -18,15 +18,15 @@ enum class KeyPartType(
 }
 
 internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DataModelContext>>(
-        KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),
-        KeyPartType.Reference to ContextualPropertyReferenceDefinition(
-                contextualResolver = {
-                    it!!.propertyDefinitions!!
-                }
-        ),
-        KeyPartType.TypeId to SubModelDefinition(dataModel = {
-            @Suppress("UNCHECKED_CAST")
-            TypeId.Model as DefinitionDataModel<TypeId<IndexedEnum<Any>>>
-        }),
-        KeyPartType.Reversed to SubModelDefinition(dataModel = { Reversed.Model })
+    KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),
+    KeyPartType.Reference to ContextualPropertyReferenceDefinition(
+        contextualResolver = {
+            it!!.propertyDefinitions!!
+        }
+    ),
+    KeyPartType.TypeId to SubModelDefinition(dataModel = {
+        @Suppress("UNCHECKED_CAST")
+        TypeId.Model as DefinitionDataModel<TypeId<IndexedEnum<Any>>>
+    }),
+    KeyPartType.Reversed to SubModelDefinition(dataModel = { Reversed.Model })
 )

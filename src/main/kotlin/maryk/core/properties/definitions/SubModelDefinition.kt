@@ -17,23 +17,18 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.DataModelContext
 
-/**
- * Definition for sub model properties
- * @param dataModel definition of the DataObject
- * @param <DM>  Type of model for this definition
- * @param <DO> Type of DataObject which is contained within SubModel
- */
+/** Definition for sub model properties to [dataModel] of type [DM] returning dataObject of [DO] */
 class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        dataModel: () -> DM
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    dataModel: () -> DM
 ) :
-        IsValueDefinition<DO, CXI>,
-        IsSerializableFlexBytesEncodable<DO, CXI>,
-        IsSubModelDefinition<DO, CXI>,
-        IsTransportablePropertyDefinitionType
+    IsValueDefinition<DO, CXI>,
+    IsSerializableFlexBytesEncodable<DO, CXI>,
+    IsSubModelDefinition<DO, CXI>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.SubModel
     override val wireType = WireType.LENGTH_DELIMITED
@@ -62,16 +57,16 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         super<IsValueDefinition>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
-                    refGetter = refGetter,
-                    dataObject = newValue
+                refGetter = refGetter,
+                dataObject = newValue
             )
         }
     }
 
     override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.writeJson(
-            value,
-            writer,
-            this.dataModel.transformContext(context)
+        value,
+        writer,
+        this.dataModel.transformContext(context)
     )
 
     override fun readJson(reader: IsJsonLikeReader, context: CXI?): DO {
@@ -103,8 +98,8 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         this.dataModel.writeProtoBuf(value, cacheGetter, writer, newContext)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?)
-            = this.dataModel.readProtoBufToObject(length, reader, this.dataModel.transformContext(context))
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?) =
+        this.dataModel.readProtoBufToObject(length, reader, this.dataModel.transformContext(context))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -128,39 +123,39 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         return result
     }
 
-    object Model : DefinitionDataModel<SubModelDefinition<*, *, *, *, *>>(
-            properties = object : PropertyDefinitions<SubModelDefinition<*, *, *, *, *>>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, SubModelDefinition<*, *, *, *, *>::indexed)
-                    IsPropertyDefinition.addSearchable(this, SubModelDefinition<*, *, *, *, *>::searchable)
-                    IsPropertyDefinition.addRequired(this, SubModelDefinition<*, *, *, *, *>::required)
-                    IsPropertyDefinition.addFinal(this, SubModelDefinition<*, *, *, *, *>::final)
-                    add(4, "dataModel", ContextCaptureDefinition(
-                            definition = ContextualModelReferenceDefinition<DataModelContext>(
-                                    contextualResolver = { context, name ->
-                                        context!!.dataModels[name]!!
-                                    }
-                            ),
-                            capturer = { context, dataModel ->
-                                if (!context!!.dataModels.containsKey(dataModel.name)) {
-                                    context.dataModels[dataModel.name] = dataModel
-                                }
-                            }
-                    )) {
-                        it.dataModel as DataModel<*, *>
+    internal object Model : DefinitionDataModel<SubModelDefinition<*, *, *, *, *>>(
+        properties = object : PropertyDefinitions<SubModelDefinition<*, *, *, *, *>>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, SubModelDefinition<*, *, *, *, *>::indexed)
+                IsPropertyDefinition.addSearchable(this, SubModelDefinition<*, *, *, *, *>::searchable)
+                IsPropertyDefinition.addRequired(this, SubModelDefinition<*, *, *, *, *>::required)
+                IsPropertyDefinition.addFinal(this, SubModelDefinition<*, *, *, *, *>::final)
+                add(4, "dataModel", ContextCaptureDefinition(
+                    definition = ContextualModelReferenceDefinition<DataModelContext>(
+                        contextualResolver = { context, name ->
+                            context!!.dataModels[name]!!
+                        }
+                    ),
+                    capturer = { context, dataModel ->
+                        if (!context!!.dataModels.containsKey(dataModel.name)) {
+                            context.dataModels[dataModel.name] = dataModel
+                        }
                     }
+                )) {
+                    it.dataModel as DataModel<*, *>
                 }
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = SubModelDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                dataModel = {
-                    @Suppress("UNCHECKED_CAST")
-                    map[4] as DataModel<Any, PropertyDefinitions<Any>>
-                }
+            indexed = map[0] as Boolean,
+            searchable = map[1] as Boolean,
+            required = map[2] as Boolean,
+            final = map[3] as Boolean,
+            dataModel = {
+                @Suppress("UNCHECKED_CAST")
+                map[4] as DataModel<Any, PropertyDefinitions<Any>>
+            }
         )
     }
 }

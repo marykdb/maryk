@@ -8,39 +8,29 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /**
- * Interface to define this is a serializable property definition
- * @param <T> Type of Property contained in the definition
- * @param <CX> Context for dynamic property conversion
+ * Interface to define this is a serializable property definition of [T]
+ * with context [CX]
  */
 interface IsSerializablePropertyDefinition<T: Any, in CX: IsPropertyContext> : IsPropertyDefinition<T> {
-    /** Writes a value to Json
-     * @param writer to write json to
-     * @param value value to write
-     */
+    /** Writes a value to Json with [writer] */
     fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX? = null)
 
-    /** Reads JSON and returns values
-     * @param context with possible context values for Dynamic Json readers
-     * @param reader to read JSON from
+    /**
+     * Reads JSON values from [reader] with [context]
      * @throws ParseException when encountering unparsable content
      */
     fun readJson(reader: IsJsonLikeReader, context: CX? = null): T
 
-    /** Calculates the needed bytes to transport the value
-     * @param index to write this value for
-     * @param value to get length of
-     * @param cacher to cache calculated values. Ordered so it can be read back in the same order
-     * @param context with possible context values for Dynamic property writers
-     * @return the total length
+    /**
+     * Calculate length of bytes for [value] with key [index] to transport within optional [context]
+     * Caches any calculated lengths to [cacher]
      */
     fun calculateTransportByteLengthWithKey(index: Int, value: T, cacher: WriteCacheWriter, context: CX? = null) : Int
 
-    /** Convert a value to bytes for transportation and adds the key with tag and wire type
-     * @param index to write this value for
-     * @param value to write
-     * @param cacheGetter to fetch next cached item
-     * @param writer to write bytes to
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
+    /**
+     * Writes [value] and tag [index] and WireType with [writer] to bytes for transportation.
+     * Get any cached sizes from [cacheGetter]
+     * Optionally pass a [context] to write more complex properties which depend on other properties
      */
     fun writeTransportBytesWithKey(index: Int, value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
 }

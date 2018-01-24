@@ -14,7 +14,7 @@ import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
-        val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *>, *>
+    val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *>, *>
 ) : IsFixedBytesProperty<T> {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
@@ -36,16 +36,16 @@ data class Reversed<T: Any>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : DefinitionDataModel<Reversed<out Any>>(
-            properties = object : PropertyDefinitions<Reversed<out Any>>() {
-                init {
-                    add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
-                            contextualResolver = { it!!.propertyDefinitions!! }
-                    )) {
-                        it.reference as IsPropertyReference<Any, *>
-                    }
+    internal object Model : DefinitionDataModel<Reversed<out Any>>(
+        properties = object : PropertyDefinitions<Reversed<out Any>>() {
+            init {
+                add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
+                    contextualResolver = { it!!.propertyDefinitions!! }
+                )) {
+                    it.reference as IsPropertyReference<Any, *>
                 }
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = Reversed(
             reference = map[0] as ValueWithFixedBytesPropertyReference<Any, FixedBytesPropertyDefinitionWrapper<Any, *, *, *>, *>

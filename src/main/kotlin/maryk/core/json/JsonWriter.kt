@@ -2,13 +2,13 @@ package maryk.core.json
 
 /** A JSON writer which writes to [writer] */
 class JsonWriter(
-        val pretty: Boolean = false,
-        private val writer: (String) -> Unit
+    val pretty: Boolean = false,
+    private val writer: (String) -> Unit
 ) : AbstractJsonLikeWriter() {
     override fun writeStartObject() {
         if(lastType != JsonType.START_ARRAY
-                && !typeStack.isEmpty()
-                && typeStack.last() == JsonObjectType.ARRAY
+            && !typeStack.isEmpty()
+            && typeStack.last() == JsonComplexType.ARRAY
         ) {
             writer(",")
             if (pretty) { writer(" ") }
@@ -26,9 +26,9 @@ class JsonWriter(
 
     override fun writeStartArray() {
         if(lastType != JsonType.START_ARRAY
-                && !typeStack.isEmpty()
-                && typeStack.last() == JsonObjectType.ARRAY
-                ) {
+            && !typeStack.isEmpty()
+            && typeStack.last() == JsonComplexType.ARRAY
+        ) {
             writer(",")
             if (pretty) { writer(" ") }
         }
@@ -58,11 +58,11 @@ class JsonWriter(
     /** Writes a value excluding quotes */
     override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
         when(typeStack.last()) {
-            JsonObjectType.OBJECT -> {
+            JsonComplexType.OBJECT -> {
                 super.checkObjectOperation()
                 writer(value)
             }
-            JsonObjectType.ARRAY -> {
+            JsonComplexType.ARRAY -> {
                 if(lastType != JsonType.START_ARRAY) {
                     writer(",")
                     if (pretty) { writer(" ") }
@@ -78,8 +78,8 @@ class JsonWriter(
     private fun makePretty() {
         if (pretty) {
             writer("\n")
-            typeStack.forEach{
-                if(it == JsonObjectType.OBJECT) { writer("\t") }
+            for (it in typeStack) {
+                if(it == JsonComplexType.OBJECT) { writer("\t") }
             }
         }
     }

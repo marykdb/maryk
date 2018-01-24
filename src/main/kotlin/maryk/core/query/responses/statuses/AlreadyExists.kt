@@ -6,19 +6,19 @@ import maryk.core.properties.types.Key
 
 /** Given object with [key] already exists */
 data class AlreadyExists<DO: Any>(
-        val key: Key<DO>
+    val key: Key<DO>
 ) : IsAddResponseStatus<DO> {
     override val statusType = StatusType.ALREADY_EXISTS
 
-    companion object: QueryDataModel<AlreadyExists<*>>(
-            properties = object : PropertyDefinitions<AlreadyExists<*>>() {
-                init {
-                    IsResponseStatus.addKey(this, AlreadyExists<*>::key)
-                }
+    internal companion object: QueryDataModel<AlreadyExists<*>>(
+        properties = object : PropertyDefinitions<AlreadyExists<*>>() {
+            init {
+                IsResponseStatus.addKey(this, AlreadyExists<*>::key)
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = AlreadyExists(
-                key = map[0] as Key<Any>
+            key = map[0] as Key<Any>
         )
     }
 }

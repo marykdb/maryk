@@ -7,34 +7,36 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 
-/** Umbrella for Validation Exception for properties
- * Contains a list of exceptions which where caught. */
+/**
+ * Umbrella for Validation Exception for properties
+ * Contains a list of [exceptions] which where caught on property referred by [reference].
+ */
 data class ValidationUmbrellaException(
-        val reference: IsPropertyReference<*,*>?,
-        val exceptions: List<ValidationException>
+    val reference: IsPropertyReference<*,*>?,
+    val exceptions: List<ValidationException>
 ) : ValidationException(
-        newMessage = createReason(reference, exceptions)
+    newMessage = createReason(reference, exceptions)
 ) {
     override val validationExceptionType = ValidationExceptionType.UMBRELLA
 
-    companion object: QueryDataModel<ValidationUmbrellaException>(
-            properties = object : PropertyDefinitions<ValidationUmbrellaException>() {
-                init {
-                    ValidationException.addReference(this, ValidationUmbrellaException::reference)
-                    add(1, "exceptions", ListDefinition(
-                            valueDefinition = MultiTypeDefinition(
-                                    definitionMap = mapOfValidationExceptionDefinitions
-                            )
-                    )) {
-                        it.exceptions.map { TypedValue(it.validationExceptionType, it) }
-                    }
+    internal companion object: QueryDataModel<ValidationUmbrellaException>(
+        properties = object : PropertyDefinitions<ValidationUmbrellaException>() {
+            init {
+                ValidationException.addReference(this, ValidationUmbrellaException::reference)
+                add(1, "exceptions", ListDefinition(
+                    valueDefinition = MultiTypeDefinition(
+                        definitionMap = mapOfValidationExceptionDefinitions
+                    )
+                )) {
+                    it.exceptions.map { TypedValue(it.validationExceptionType, it) }
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
-                reference = map[0] as IsPropertyReference<*, *>?,
-                exceptions = (map[1] as List<TypedValue<ValidationExceptionType, ValidationException>>?)?.map { it.value } ?: emptyList()
+            reference = map[0] as IsPropertyReference<*, *>?,
+            exceptions = (map[1] as List<TypedValue<ValidationExceptionType, ValidationException>>?)?.map { it.value } ?: emptyList()
         )
     }
 }
@@ -43,7 +45,7 @@ private fun createReason(reference: IsPropertyReference<*, *>?, exceptions: List
     val property = if (reference != null) " in property «${reference.completeName}»" else ""
 
     var messages = "Umbrella exception$property: [\n"
-    exceptions.forEach {
+    for (it in exceptions) {
         messages += "\t${it.message?.replace("\n", "\n\t")}\n"
     }
     return messages + "]"

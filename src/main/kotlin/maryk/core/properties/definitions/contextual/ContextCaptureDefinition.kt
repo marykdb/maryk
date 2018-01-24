@@ -2,16 +2,16 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
-        val definition: IsValueDefinition<T, CX>,
-        private val capturer: (CX?, T) -> Unit
+/** Definition wrapper to capture values of [T] defined by [definition] with [capturer] into [context] */
+internal data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
+    val definition: IsValueDefinition<T, CX>,
+    private val capturer: (CX?, T) -> Unit
 ) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
     override val wireType = definition.wireType
     override val indexed = definition.indexed

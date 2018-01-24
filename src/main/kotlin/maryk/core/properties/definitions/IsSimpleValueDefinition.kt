@@ -16,23 +16,16 @@ import maryk.core.protobuf.WriteCacheWriter
  * @param <T> Type of objects contained in property
  */
 interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDefinition<T, CX> {
-    /** Convert to value from a byte reader
-     * @param length of bytes to read
-     * @param reader to read bytes from
-     * @return stored value
+    /**
+     * Read stored bytes with [reader] until [length] and return value
      * @throws DefNotFoundException if definition is not found to translate bytes
      */
     fun readStorageBytes(length: Int, reader: () -> Byte): T
 
-    /** Calculate byte length of a value
-     * @param value to calculate length of
-     */
+    /** Calculate byte length of a [value] */
     fun calculateStorageByteLength(value: T): Int
 
-    /** Convert a value to bytes
-     * @param value to convert
-     * @param writer to write bytes to
-     */
+    /** Write a [value] to bytes with [writer] */
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) = readStorageBytes(length, reader)
@@ -41,8 +34,8 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
         writeStorageBytes(value, writer)
     }
 
-    override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?)
-            = this.calculateTransportByteLength(value)
+    override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
+        this.calculateTransportByteLength(value)
 
     /** Calculates the needed bytes to transport the value
      * @param value to get length of
@@ -59,9 +52,7 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
     override fun asString(value: T, context: CX?) = this.asString(value)
 
     /**
-     * Get the value from a string
-     * @param string to convert
-     * @return the value
+     * Get a value from [string]
      * @throws ParseException when encountering unparsable content
      */
     fun fromString(string: String): T
@@ -70,7 +61,7 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeString(
-                this.asString(value, context)
+            this.asString(value, context)
         )
     }
 

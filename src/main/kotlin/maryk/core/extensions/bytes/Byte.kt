@@ -4,28 +4,24 @@ import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 
-const val SIGN_BYTE: Byte = 0b1000_0000.toByte()
-const val ZERO_BYTE: Byte = 0b0.toByte()
-const val ONE_BYTE: Byte = 0b1.toByte()
-const val MAX_BYTE: Byte = 0b1111_1111.toByte()
-const val SEVEN_BYTES: Byte = 0b0111_1111.toByte()
+internal const val SIGN_BYTE: Byte = 0b1000_0000.toByte()
+internal const val ZERO_BYTE: Byte = 0b0.toByte()
+internal const val ONE_BYTE: Byte = 0b1.toByte()
+internal const val MAX_BYTE: Byte = 0b1111_1111.toByte()
+internal const val SEVEN_BYTES: Byte = 0b0111_1111.toByte()
 
-/** Write the bytes of this Byte to a writer
- * @param writer to write this Byte to
- */
+/** Write the bytes of this Byte to a [writer] */
 internal fun Byte.writeBytes(writer: (byte: Byte) -> Unit) {
-        writer(
-                this and MAX_BYTE xor SIGN_BYTE
-        )
+    writer(
+        this and MAX_BYTE xor SIGN_BYTE
+    )
 }
 
-/** Converts reader with bytes to Byte
- * @param reader to read bytes from
- * @return Byte represented by bytes
- */
+/** Creates a Byte by reading byte from [reader] */
 internal fun initByte(reader: () -> Byte) = reader() xor SIGN_BYTE and MAX_BYTE
 
-/** Encodes the Byte in zigzag pattern so negative values are
+/**
+ * Encodes the Byte in zigzag pattern so negative values are
  * able to encode much more efficiently into varInt
  */
 internal fun Byte.encodeZigZag() = this.toInt().encodeZigZag().toByte()
@@ -33,9 +29,7 @@ internal fun Byte.encodeZigZag() = this.toInt().encodeZigZag().toByte()
 /** Decodes the Short out of zigzag pattern so bytes have the normal native order again */
 internal fun Byte.decodeZigZag() = (this.toInt() and 0xFF).decodeZigZag().toByte()
 
-/** Write the bytes of this Int as a variable int to a writer
- * @param writer to write this Int to
- */
+/** Write the bytes of this Int as a variable int to a [writer] */
 internal fun Byte.writeVarBytes(writer: (byte: Byte) -> Unit) {
     if (this < 0) {
         writer(this and SEVEN_BYTES xor SIGN_BYTE)
@@ -45,10 +39,7 @@ internal fun Byte.writeVarBytes(writer: (byte: Byte) -> Unit) {
     }
 }
 
-/** Converts reader with var bytes to Byte
- * @param reader to read bytes from
- * @return Byte represented by bytes
- */
+/** Creates Byte by reading variable length encoded value from [reader] */
 internal fun initByteByVar(reader: () -> Byte): Byte {
     var shift = 0
     var result = 0

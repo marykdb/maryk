@@ -29,6 +29,7 @@ interface IsJsonLikeReader {
     fun skipUntilNextField()
 }
 
+/** Exception during reading of JSON */
 class ExceptionWhileReadingJson : Throwable()
 
 /** Exception for invalid JSON */

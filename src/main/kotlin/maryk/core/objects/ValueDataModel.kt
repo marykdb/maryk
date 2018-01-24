@@ -6,26 +6,24 @@ import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
-/** DataModel for objects that can be encoded in fixed length width
- * @param properties: All definitions for properties contained in this model
- * @param DO: Type of DataObject contained
+/**
+ * DataModel of type [DO] for objects that can be encoded in fixed length width.
+ * Contains [properties] definitions.
  */
 abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO>>(
-        name: String,
-        properties: P
+    name: String,
+    properties: P
 ) : DataModel<DO, P>(name, properties) {
     val byteSize: Int by lazy {
         var size = - 1
-        this.properties.forEach {
+        for (it in this.properties) {
             val def = it.definition as IsFixedBytesEncodable<*>
             size += def.byteSize + 1
         }
         size
     }
 
-    /** Read bytes from reader to DataObject
-     * @param reader  to read from
-     * @return converted DataObject
+    /** Read bytes from [reader] to DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     fun readFromBytes(reader: () -> Byte): DO {
@@ -39,9 +37,7 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
         return this(values)
     }
 
-    /** Creates bytes for given inputs
-     * @param inputs to convert to values
-     */
+    /** Creates bytes for given [inputs] */
     fun toBytes(vararg inputs: Any): ByteArray {
         val bytes =  ByteArray(this.byteSize)
         var offset = 0
@@ -61,9 +57,7 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
         return bytes
     }
 
-    /** Converts String to DataObject
-     * @param value to convert
-     * @return converted DataObject
+    /** Converts String [value] to DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     fun fromString(value: String): DO {
@@ -74,20 +68,20 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
         })
     }
 
-    object Model : DefinitionDataModel<ValueDataModel<*, *>>(
-            properties = object : PropertyDefinitions<ValueDataModel<*, *>>() {
-                init {
-                    AbstractDataModel.addName(this) {
-                        it.name
-                    }
-                    AbstractDataModel.addProperties(this)
+    internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(
+        properties = object : PropertyDefinitions<ValueDataModel<*, *>>() {
+            init {
+                AbstractDataModel.addName(this) {
+                    it.name
                 }
+                AbstractDataModel.addProperties(this)
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
-                name = map[0] as String,
-                properties = map[1] as PropertyDefinitions<ValueDataObject>
+            name = map[0] as String,
+            properties = map[1] as PropertyDefinitions<ValueDataObject>
         ){
             override fun invoke(map: Map<Int, *>): ValueDataObject {
                 return object : ValueDataObject(ByteArray(0)){}

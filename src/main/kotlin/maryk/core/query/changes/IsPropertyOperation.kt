@@ -17,31 +17,31 @@ interface IsPropertyOperation<T: Any> : IsChange {
     val valueToCompare: T?
 
     companion object {
-        fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
+        internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
-                    0, "reference", ContextCaptureDefinition(
-                            ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                                    contextualResolver = { it!!.dataModel!!.properties }
-                            )
-                    ) { context, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
-                    },
-                    getter
+                0, "reference", ContextCaptureDefinition(
+                    ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                        contextualResolver = { it!!.dataModel!!.properties }
+                    )
+                ) { context, value ->
+                    @Suppress("UNCHECKED_CAST")
+                    context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                },
+                getter
             )
         }
 
-        fun <DO: Any> addValueToCompare(definitions: PropertyDefinitions<DO>, getter: (DO) -> Any?) {
+        internal fun <DO: Any> addValueToCompare(definitions: PropertyDefinitions<DO>, getter: (DO) -> Any?) {
             definitions.add(
-                    1, "valueToCompare",
-                    ContextualValueDefinition(
-                            required = false,
-                            contextualResolver = { context: DataModelPropertyContext? ->
-                                @Suppress("UNCHECKED_CAST")
-                                context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
-                            }
-                    ),
-                    getter
+                1, "valueToCompare",
+                ContextualValueDefinition(
+                    required = false,
+                    contextualResolver = { context: DataModelPropertyContext? ->
+                        @Suppress("UNCHECKED_CAST")
+                        context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                    }
+                ),
+                getter
             )
         }
     }

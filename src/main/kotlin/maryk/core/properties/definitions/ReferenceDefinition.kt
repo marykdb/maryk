@@ -13,18 +13,18 @@ import maryk.core.query.DataModelContext
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val unique: Boolean = false,
-        override val minValue: Key<DO>? = null,
-        override val maxValue: Key<DO>? = null,
-        dataModel: () -> RootDataModel<DO, *>
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val unique: Boolean = false,
+    override val minValue: Key<DO>? = null,
+    override val maxValue: Key<DO>? = null,
+    dataModel: () -> RootDataModel<DO, *>
 ):
-        IsComparableDefinition<Key<DO>, IsPropertyContext>,
-        IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
-        IsTransportablePropertyDefinitionType
+    IsComparableDefinition<Key<DO>, IsPropertyContext>,
+    IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = WireType.LENGTH_DELIMITED
@@ -73,32 +73,32 @@ class ReferenceDefinition<DO: Any>(
         return result
     }
 
-    object Model : DefinitionDataModel<ReferenceDefinition<*>>(
-            properties = object : PropertyDefinitions<ReferenceDefinition<*>>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, ReferenceDefinition<*>::indexed)
-                    IsPropertyDefinition.addSearchable(this, ReferenceDefinition<*>::searchable)
-                    IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)
-                    IsPropertyDefinition.addFinal(this, ReferenceDefinition<*>::final)
-                    IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
-                    add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
-                    add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
-                    add(7, "dataModel", ContextCaptureDefinition(
-                            definition = ContextualModelReferenceDefinition<DataModelContext>(
-                                    contextualResolver = { context, name ->
-                                        context!!.dataModels[name]!!
-                                    }
-                            ),
-                            capturer = { context, dataModel ->
-                                if (!context!!.dataModels.containsKey(dataModel.name)) {
-                                    context.dataModels[dataModel.name] = dataModel
-                                }
-                            }
-                    )) {
-                        it.dataModel
+    internal object Model : DefinitionDataModel<ReferenceDefinition<*>>(
+        properties = object : PropertyDefinitions<ReferenceDefinition<*>>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, ReferenceDefinition<*>::indexed)
+                IsPropertyDefinition.addSearchable(this, ReferenceDefinition<*>::searchable)
+                IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)
+                IsPropertyDefinition.addFinal(this, ReferenceDefinition<*>::final)
+                IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
+                add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
+                add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
+                add(7, "dataModel", ContextCaptureDefinition(
+                    definition = ContextualModelReferenceDefinition<DataModelContext>(
+                        contextualResolver = { context, name ->
+                            context!!.dataModels[name]!!
+                        }
+                    ),
+                    capturer = { context, dataModel ->
+                        if (!context!!.dataModels.containsKey(dataModel.name)) {
+                            context.dataModels[dataModel.name] = dataModel
+                        }
                     }
+                )) {
+                    it.dataModel
                 }
             }
+        }
     ) {
         override fun invoke(map: Map<Int, *>) = ReferenceDefinition(
             indexed = map[0] as Boolean,

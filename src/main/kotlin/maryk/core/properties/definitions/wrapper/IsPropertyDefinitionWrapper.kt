@@ -21,10 +21,9 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Wraps a Property Definition to give it more context about DataObject which contains this Definition.
- * @param T: value type of property
- * @param CX: Context type for property
- * @param DO: Type of DataObject which contains this property
+/**
+ * Wraps a Property Definition of type [T] to give it more context [CX] about
+ * DataObject [DO] which contains this Definition.
  */
 interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : IsSerializablePropertyDefinition<T, CX> {
     val index: Int
@@ -32,41 +31,29 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> T?
 
-    /**
-     * Get a reference to this definition
-     * @param parentRef reference to parent property if present
-     * @return Complete property reference
-     */
+    /** Get a reference to this definition inside [parentRef] */
     fun getRef(parentRef: IsPropertyReference<*, *>? = null): IsPropertyReference<T, *>
 
     /**
-     * Validates the values on propertyDefinition
-     * @param previousValue previous value for validation
-     * @param newValue      new value for validation
-     * @param parentRefFactory     for creating property reference to parent
+     * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates
+     * refernce with [parentRefFactory]
      * @throws ValidationException when encountering invalid new value
      */
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>? = { null }) {
         this.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory()) })
     }
 
-    /** Calculates the needed bytes to transport the value
-     * @param value to get length of
-     * @param cacher to cache calculated lengths. Ordered so it can be read back in the same order
-     * @param context with possible context values for Dynamic property writers
-     * @return the total length
-     */
-    fun calculateTransportByteLengthWithKey(value: T, cacher: WriteCacheWriter, context: CX? = null)
-            = this.calculateTransportByteLengthWithKey(this.index, value, cacher, context)
+    /** Calculates the needed byte size to transport [value] within optional [context] and caches it with [cacher] */
+    fun calculateTransportByteLengthWithKey(value: T, cacher: WriteCacheWriter, context: CX? = null) =
+        this.calculateTransportByteLengthWithKey(this.index, value, cacher, context)
 
-    /** Convert a value to bytes for transportation and adds the key with tag and wire type
-     * @param value to write
-     * @param cacheGetter to fetch next cached length
-     * @param writer to write bytes to
-     * @param context (optional) with context parameters for conversion (for dynamically dependent properties)
+    /**
+     * Writes [value] to bytes with [writer] for transportation and adds the key with tag and wire type.
+     * Uses the [cacheGetter] to get length.
+     * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeTransportBytesWithKey(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
-            = this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
+    fun writeTransportBytesWithKey(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) =
+        this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
 
     companion object {
         private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) {

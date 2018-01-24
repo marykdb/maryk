@@ -15,10 +15,12 @@ import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
 
-/** Defines a key part which refers to a multi type definition with [multiTypeReference].
- * With this key part it is possible to query all objects which contain a property of a certain type */
+/**
+ * Defines a key part which refers to a multi type definition with [multiTypeReference].
+ * With this key part it is possible to query all objects which contain a property of a certain type
+ */
 data class TypeId<E: IndexedEnum<E>>(
-        val multiTypeReference: ValuePropertyReference<TypedValue<E, *>, IsPropertyDefinitionWrapper<TypedValue<E, *>, IsPropertyContext, *>, *>
+    val multiTypeReference: ValuePropertyReference<TypedValue<E, *>, IsPropertyDefinitionWrapper<TypedValue<E, *>, IsPropertyContext, *>, *>
 ) : IsFixedBytesProperty<Int> {
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
@@ -27,7 +29,7 @@ data class TypeId<E: IndexedEnum<E>>(
 
     override fun <T : Any> getValue(dataModel: IsDataModel<T>, dataObject: T): Int {
         val multiType = dataModel.properties.getPropertyGetter(
-                multiTypeReference.propertyDefinition.index
+            multiTypeReference.propertyDefinition.index
         )?.invoke(dataObject) as TypedValue<*, *>
         return multiType.type.index
     }
@@ -39,20 +41,20 @@ data class TypeId<E: IndexedEnum<E>>(
     override fun readStorageBytes(length: Int, reader: () -> Byte)
             = initShort(reader).toInt() - Short.MIN_VALUE
 
-    object Model : DefinitionDataModel<TypeId<*>>(
-            properties = object : PropertyDefinitions<TypeId<*>>() {
-                init {
-                    add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
-                        contextualResolver = { it!!.propertyDefinitions!! }
-                    )) {
-                        it.multiTypeReference
-                    }
+    internal object Model : DefinitionDataModel<TypeId<*>>(
+        properties = object : PropertyDefinitions<TypeId<*>>() {
+            init {
+                add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
+                    contextualResolver = { it!!.propertyDefinitions!! }
+                )) {
+                    it.multiTypeReference
                 }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = TypeId(
-                multiTypeReference = map[0] as ValuePropertyReference<TypedValue<IndexedEnum<Any>, *>, IsPropertyDefinitionWrapper<TypedValue<IndexedEnum<Any>, *>, IsPropertyContext, *>, *>
+            multiTypeReference = map[0] as ValuePropertyReference<TypedValue<IndexedEnum<Any>, *>, IsPropertyDefinitionWrapper<TypedValue<IndexedEnum<Any>, *>, IsPropertyContext, *>, *>
         )
     }
 }

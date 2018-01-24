@@ -19,6 +19,9 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
+/**
+ * Interface to define a Collection [C] containing [T] with context [CX]
+ */
 interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext, out ST: IsValueDefinition<T, CX>>
     : IsByteTransportableCollection<T, C, CX>, HasSizeDefinition, IsTransportablePropertyDefinitionType {
     val valueDefinition: ST
@@ -51,20 +54,26 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         }
     }
 
-    /** Validates the collection content */
-    fun validateCollectionForExceptions(refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?, newValue: C, validator: (item: T, itemRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) -> Any)
+    /** Validates the collection [newValue] with [validator] or get reference from [refGetter] for exception */
+    fun validateCollectionForExceptions(
+        refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?,
+        newValue: C,
+        validator: (item: T, itemRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) -> Any
+    )
 
-    /** Creates a new mutable instance of the collection */
+    /** Creates a new mutable instance of the collection within optional [context] */
     override fun newMutableCollection(context: CX?): MutableCollection<T>
 
+    /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeStartArray()
-        value.forEach {
+        for (it in value) {
             valueDefinition.writeJsonValue(it, writer, context)
         }
         writer.writeEndArray()
     }
 
+    /** Read Collection from JSON [reader] within optional [context] */
     override fun readJson(reader: IsJsonLikeReader, context: CX?): C {
         if (reader.currentToken !is JsonToken.StartArray) {
             throw ParseException("JSON value should be an Array")
@@ -73,7 +82,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
         while (reader.nextToken() !is JsonToken.EndArray) {
             collection.add(
-                    valueDefinition.readJson(reader, context)
+                valueDefinition.readJson(reader, context)
             )
         }
         @Suppress("UNCHECKED_CAST")
@@ -96,7 +105,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
                 totalByteSize += ProtoBuf.calculateKeyLength(index)
                 totalByteSize += container.length.calculateVarByteLength()
             }
-            else -> value.forEach { item ->
+            else -> for (item in value) {
                 totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(index, item, cacher, context)
             }
         }
@@ -113,7 +122,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
                     valueDefinition.writeTransportBytes(item, cacheGetter, writer, context)
                 }
             }
-            else -> value.forEach { item ->
+            else -> for (item in value) {
                 valueDefinition.writeTransportBytesWithKey(index, item, cacheGetter, writer, context)
             }
         }

@@ -16,18 +16,18 @@ import maryk.core.protobuf.WriteCacheReader
 
 /** Definition for Enum properties */
 class EnumDefinition<E : IndexedEnum<E>>(
-        override val indexed: Boolean = false,
-        override val searchable: Boolean = true,
-        override val required: Boolean = true,
-        override val final: Boolean = false,
-        override val unique: Boolean = false,
-        override val minValue: E? = null,
-        override val maxValue: E? = null,
-        val values: Array<E>
+    override val indexed: Boolean = false,
+    override val searchable: Boolean = true,
+    override val required: Boolean = true,
+    override val final: Boolean = false,
+    override val unique: Boolean = false,
+    override val minValue: E? = null,
+    override val maxValue: E? = null,
+    val values: Array<E>
 ) :
-        IsComparableDefinition<E, IsPropertyContext>,
-        IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
-        IsTransportablePropertyDefinitionType
+    IsComparableDefinition<E, IsPropertyContext>,
+    IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType
 {
     override val propertyDefinitionType = PropertyDefinitionType.Enum
     override val wireType = WireType.VAR_INT
@@ -44,7 +44,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
-            getEnumByIndex(initShort(reader).toInt() - Short.MIN_VALUE)
+        getEnumByIndex(initShort(reader).toInt() - Short.MIN_VALUE)
 
     override fun calculateStorageByteLength(value: E) = this.byteSize
 
@@ -52,13 +52,14 @@ class EnumDefinition<E : IndexedEnum<E>>(
         value.indexAsShortToStore.writeBytes(writer)
     }
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?)
-            = getEnumByIndex(initShortByVar(reader).toInt())
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+        getEnumByIndex(initShortByVar(reader).toInt())
 
-    override fun calculateTransportByteLength(value: E) = value.index.calculateVarByteLength()
+    override fun calculateTransportByteLength(value: E) =
+        value.index.calculateVarByteLength()
 
-    override fun writeTransportBytes(value: E, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?)
-            = value.index.writeVarBytes(writer)
+    override fun writeTransportBytes(value: E, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) =
+        value.index.writeVarBytes(writer)
 
     override fun asString(value: E) = value.name
 
@@ -99,26 +100,26 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    object Model : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
-            properties = object : PropertyDefinitions<EnumDefinition<*>>() {
-                init {
-                    IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)
-                    IsPropertyDefinition.addSearchable(this, EnumDefinition<*>::searchable)
-                    IsPropertyDefinition.addRequired(this, EnumDefinition<*>::required)
-                    IsPropertyDefinition.addFinal(this, EnumDefinition<*>::final)
-                    IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
-                    add(5, "minValue", NumberDefinition(type = UInt32)) {
-                        it.minValue?.index?.toUInt32()
-                    }
-                    add(6, "maxValue", NumberDefinition(type = UInt32)) {
-                        it.maxValue?.index?.toUInt32()
-                    }
-                    add(7, "values", MapDefinition(
-                            keyDefinition = NumberDefinition(type = UInt32),
-                            valueDefinition = StringDefinition()
-                    )) { it.values.map { Pair(it.index.toUInt32(), it.name) }.toMap() }
+    internal object Model : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
+        properties = object : PropertyDefinitions<EnumDefinition<*>>() {
+            init {
+                IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)
+                IsPropertyDefinition.addSearchable(this, EnumDefinition<*>::searchable)
+                IsPropertyDefinition.addRequired(this, EnumDefinition<*>::required)
+                IsPropertyDefinition.addFinal(this, EnumDefinition<*>::final)
+                IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
+                add(5, "minValue", NumberDefinition(type = UInt32)) {
+                    it.minValue?.index?.toUInt32()
                 }
+                add(6, "maxValue", NumberDefinition(type = UInt32)) {
+                    it.maxValue?.index?.toUInt32()
+                }
+                add(7, "values", MapDefinition(
+                    keyDefinition = NumberDefinition(type = UInt32),
+                    valueDefinition = StringDefinition()
+                )) { it.values.map { Pair(it.index.toUInt32(), it.name) }.toMap() }
             }
+        }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>): EnumDefinition<IndexedEnum<Any>> {
@@ -127,18 +128,18 @@ class EnumDefinition<E : IndexedEnum<E>>(
             }.toMap()
 
             return EnumDefinition(
-                    indexed = map[0] as Boolean,
-                    searchable = map[1] as Boolean,
-                    required = map[2] as Boolean,
-                    final = map[3] as Boolean,
-                    unique = map[4] as Boolean,
-                    minValue = map[5]?.let{
-                        valueMap[map[5] as UInt32] as IndexedEnum<Any>
-                    },
-                    maxValue = map[6]?.let{
-                        valueMap[map[6] as UInt32] as IndexedEnum<Any>
-                    },
-                    values = valueMap.values.toTypedArray() as Array<IndexedEnum<Any>>
+                indexed = map[0] as Boolean,
+                searchable = map[1] as Boolean,
+                required = map[2] as Boolean,
+                final = map[3] as Boolean,
+                unique = map[4] as Boolean,
+                minValue = map[5]?.let{
+                    valueMap[map[5] as UInt32] as IndexedEnum<Any>
+                },
+                maxValue = map[6]?.let{
+                    valueMap[map[6] as UInt32] as IndexedEnum<Any>
+                },
+                values = valueMap.values.toTypedArray() as Array<IndexedEnum<Any>>
             )
         }
     }
@@ -160,6 +161,8 @@ private fun areEnumsEqual(enumValues: Array<out IndexedEnum<*>>, otherValues: Ar
 
 private fun enumsHashCode(enumValues: Array<out IndexedEnum<*>>): Int {
     var result = 1
-    enumValues.forEach { result = 31 * result + it.index.hashCode() }
+    for (it in enumValues) {
+        result = 31 * result + it.index.hashCode()
+    }
     return result
 }

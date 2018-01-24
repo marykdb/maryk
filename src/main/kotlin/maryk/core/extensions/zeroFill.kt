@@ -1,12 +1,9 @@
 package maryk.core.extensions
 
-/**
- * Converts number to string and prefixes zeros until count is reached
- * @param totalDigits: total digits
- */
-fun Number.zeroFill(totalDigits: Int): String {
+/** Converts number to String and prefixes zeros until [totalDigits] count is reached */
+internal fun Number.zeroFill(totalDigits: Int): String {
     var string = this.toString()
-    (string.length until totalDigits).forEach {
+    for (it in string.length until totalDigits) {
         string = '0' + string
     }
     return string

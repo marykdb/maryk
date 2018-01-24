@@ -12,18 +12,20 @@ interface HasSizeDefinition {
     /** The max allowed size for defined property */
     val maxSize: Int?
 
+    /** Checks if given [newSize] is too small compared to defined minSize */
     fun isSizeToSmall(newSize: Int): Boolean =
-            this.minSize != null && newSize < this.minSize!!
+        this.minSize != null && newSize < this.minSize!!
 
+    /** Checks if given [newSize] is too big compared to defined maxSize */
     fun isSizeToBig(newSize: Int): Boolean =
-            this.maxSize != null && newSize > this.maxSize!!
+        this.maxSize != null && newSize > this.maxSize!!
 
     companion object {
-        fun <DO: Any> addMinSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
+        internal fun <DO: Any> addMinSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
             definitions.add(index, "minSize", NumberDefinition(type = UInt32), getter)
         }
 
-        fun <DO: Any> addMaxSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
+        internal fun <DO: Any> addMaxSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
             definitions.add(index, "maxSize", NumberDefinition(type = UInt32), getter)
         }
     }

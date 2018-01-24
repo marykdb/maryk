@@ -33,8 +33,8 @@ data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: A
         ListReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
-    fun getItemRef(index: Int, parentRef: IsPropertyReference<*, *>? = null)
-            = this.definition.getItemRef(index, this.getRef(parentRef))
+    fun getItemRef(index: Int, parentRef: IsPropertyReference<*, *>? = null) =
+        this.definition.getItemRef(index, this.getRef(parentRef))
 
     /** For quick notation to get a list item reference by [index] */
     infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> ListItemReference<T, CX> {

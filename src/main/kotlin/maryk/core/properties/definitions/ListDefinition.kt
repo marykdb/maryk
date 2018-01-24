@@ -28,8 +28,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()
 
     /** Get a reference to a specific list item on [parentList] by [index]. */
-    fun getItemRef(index: Int, parentList: ListReference<T, CX>?)
-            = ListItemReference(index, this, parentList)
+    fun getItemRef(index: Int, parentList: ListReference<T, CX>?) =
+        ListItemReference(index, this, parentList)
 
     override fun validateCollectionForExceptions(refGetter: () -> IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>?, newValue: List<T>, validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) -> Any) {
         newValue.forEachIndexed { index, item ->

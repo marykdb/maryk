@@ -38,8 +38,8 @@ data class TypeId<E: IndexedEnum<E>>(
         (value + Short.MIN_VALUE).toShort().writeBytes(writer)
     }
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte)
-            = initShort(reader).toInt() - Short.MIN_VALUE
+    override fun readStorageBytes(length: Int, reader: () -> Byte) =
+        initShort(reader).toInt() - Short.MIN_VALUE
 
     internal object Model : DefinitionDataModel<TypeId<*>>(
         properties = object : PropertyDefinitions<TypeId<*>>() {

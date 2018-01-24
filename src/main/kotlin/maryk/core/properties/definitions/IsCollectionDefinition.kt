@@ -133,8 +133,8 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         else -> false
     }
 
-    override fun readCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?)
-            = valueDefinition.readTransportBytes(length, reader, context)
+    override fun readCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
+        valueDefinition.readTransportBytes(length, reader, context)
 
     override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?): C {
         var byteCounter = 0

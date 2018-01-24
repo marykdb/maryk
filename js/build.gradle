@@ -47,6 +47,8 @@ task installMocha(type: NpmTask) {
     args = ['install', 'mocha']
 }
 
+task prepareForMocha(dependsOn: [compileTestKotlin2Js, populateNodeModules])
+
 task runMocha(type: NodeTask, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
     script = file('node_modules/.bin/mocha')
     args = [compileTestKotlin2Js.outputFile]

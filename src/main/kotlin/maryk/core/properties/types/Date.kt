@@ -47,11 +47,12 @@ data class Date(
         return cmp
     }
 
-    fun writeBytes(writer: (byte: Byte) -> Unit) {
+    internal fun writeBytes(writer: (byte: Byte) -> Unit) {
         this.epochDay.writeBytes(writer)
     }
 
-    /** Get value as ISO8601 string
+    /**
+     * Get value as ISO8601 string
      * (Overwrites data class toString)
      */
     override fun toString() = "$year-${month.zeroFill(2)}-${day.zeroFill(2)}"
@@ -76,7 +77,7 @@ data class Date(
          * @param year  the year to check
          * @return true if the year is leap, false otherwise
          */
-        fun isLeapYear(year: Int) = year and 3 == 0 && (year % 100 != 0 || year % 400 == 0)
+        internal fun isLeapYear(year: Int) = year and 3 == 0 && (year % 100 != 0 || year % 400 == 0)
 
         /** Get a date by the amount of days since 01-01-1970 */
         fun ofEpochDay(epochDay: Long): Date {
@@ -109,10 +110,8 @@ data class Date(
             return Date(yearEst.toInt(), month.toByte(), dom.toByte())
         }
 
-        /** Creates a date by reading a byte reader
-         * @param reader to read from
-         */
-        fun fromByteReader(reader: () -> Byte) = Date.ofEpochDay(
+        /** Reads a date from bytes [reader] */
+        internal fun fromByteReader(reader: () -> Byte) = Date.ofEpochDay(
             initLong(reader)
         )
 

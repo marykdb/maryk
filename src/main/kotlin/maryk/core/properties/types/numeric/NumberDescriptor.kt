@@ -3,15 +3,15 @@ package maryk.core.properties.types.numeric
 import maryk.core.protobuf.WireType
 
 abstract class NumberDescriptor<T: Comparable<T>>(
-    val size: Int,
-    val wireType: WireType,
-    val type: NumberType
+    internal val size: Int,
+    internal val wireType: WireType,
+    internal val type: NumberType
 ) {
-    abstract fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
-    abstract fun fromStorageByteReader(length: Int, reader: () -> Byte): T
-    abstract fun ofString(value: String): T
-    abstract fun createRandom(): T
-    abstract fun calculateTransportByteLength(value: T): Int
-    abstract fun readTransportBytes(reader: () -> Byte): T
-    abstract fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
+    internal abstract fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
+    internal abstract fun fromStorageByteReader(length: Int, reader: () -> Byte): T
+    internal abstract fun ofString(value: String): T
+    internal abstract fun createRandom(): T
+    internal abstract fun calculateTransportByteLength(value: T): Int
+    internal abstract fun readTransportBytes(reader: () -> Byte): T
+    internal abstract fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
 }

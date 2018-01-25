@@ -14,7 +14,7 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
     name: String,
     properties: P
 ) : DataModel<DO, P>(name, properties) {
-    val byteSize: Int by lazy {
+    internal val byteSize: Int by lazy {
         var size = - 1
         for (it in this.properties) {
             val def = it.definition as IsFixedBytesEncodable<*>
@@ -26,7 +26,7 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
     /** Read bytes from [reader] to DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
-    fun readFromBytes(reader: () -> Byte): DO {
+    internal fun readFromBytes(reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
         this.properties.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
@@ -38,7 +38,7 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
     }
 
     /** Creates bytes for given [inputs] */
-    fun toBytes(vararg inputs: Any): ByteArray {
+    internal fun toBytes(vararg inputs: Any): ByteArray {
         val bytes =  ByteArray(this.byteSize)
         var offset = 0
 
@@ -60,7 +60,7 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
     /** Converts String [value] to DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
-    fun fromString(value: String): DO {
+    internal fun fromString(value: String): DO {
         val b = Base64.decode(value)
         var index = 0
         return this.readFromBytes({

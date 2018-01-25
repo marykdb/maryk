@@ -21,19 +21,19 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsObjectReques
     val filterSoftDeleted: Boolean
 
     companion object {
-        fun <DM: Any> addFilter(definitions: PropertyDefinitions<DM>, getter: (DM) -> TypedValue<FilterType, Any>?) {
+        internal fun <DM: Any> addFilter(definitions: PropertyDefinitions<DM>, getter: (DM) -> TypedValue<FilterType, Any>?) {
             definitions.add(2, "filter", MultiTypeDefinition(required = false, definitionMap = mapOfFilterDefinitions), getter)
         }
 
-        fun <DM: Any> addOrder(definitions: PropertyDefinitions<DM>, getter: (DM) -> Order?) {
+        internal fun <DM: Any> addOrder(definitions: PropertyDefinitions<DM>, getter: (DM) -> Order?) {
             definitions.add(3, "order", SubModelDefinition(required = false, dataModel = { Order }), getter)
         }
 
-        fun <DM: Any> addToVersion(definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
+        internal fun <DM: Any> addToVersion(definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
             definitions.add(4, "toVersion", NumberDefinition(required = false, type = UInt64), getter)
         }
 
-        fun <DM: Any> addFilterSoftDeleted(definitions: PropertyDefinitions<DM>, getter: (DM) -> Boolean?) {
+        internal fun <DM: Any> addFilterSoftDeleted(definitions: PropertyDefinitions<DM>, getter: (DM) -> Boolean?) {
             definitions.add(5, "filterSoftDeleted", BooleanDefinition(), getter)
         }
     }

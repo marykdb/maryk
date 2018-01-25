@@ -8,6 +8,9 @@ import maryk.core.extensions.initByteArrayByHex
 import maryk.core.extensions.toHex
 import maryk.core.properties.exceptions.ParseException
 
+/**
+ * Represents a ByteArray which is comparable
+ */
 open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
     val size = bytes.size
 
@@ -27,7 +30,7 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
         else -> this.bytes contentEquals other.bytes
     }
 
-    fun writeBytes(writer: (byte: Byte) -> Unit) = bytes.writeBytes(writer)
+    internal fun writeBytes(writer: (byte: Byte) -> Unit) = bytes.writeBytes(writer)
 
     fun toHex() = this.bytes.toHex()
 
@@ -36,6 +39,9 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
     }
 }
 
+/**
+ * Generic bytes class to help constructing bytes from different sources
+ */
 abstract class BytesDescriptor<out T>{
     fun ofBase64String(base64: String) = try {
         this.construct(
@@ -43,7 +49,7 @@ abstract class BytesDescriptor<out T>{
         )
     } catch (e: Throwable) { throw ParseException(base64) }
 
-    fun fromByteReader(length: Int, reader: () -> Byte): T = this.construct(
+    internal fun fromByteReader(length: Int, reader: () -> Byte): T = this.construct(
         initByteArray(length, reader)
     )
 

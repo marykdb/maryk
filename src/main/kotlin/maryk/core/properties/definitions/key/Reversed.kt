@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
-import maryk.core.properties.definitions.IsFixedBytesProperty
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
@@ -15,7 +15,7 @@ import kotlin.experimental.xor
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
     val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *>, *>
-) : IsFixedBytesProperty<T> {
+) : FixedBytesProperty<T>() {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
     override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO) = this.reference.propertyDefinition.getValue(dataModel, dataObject)

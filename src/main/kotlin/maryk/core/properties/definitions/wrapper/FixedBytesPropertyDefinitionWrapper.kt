@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesProperty
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.references.IsPropertyReference
@@ -27,7 +27,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
     IsSerializableFixedBytesEncodable<T, CX> by definition,
     IsPropertyDefinitionWrapper<T, CX, DO>,
     IsValuePropertyDefinitionWrapper<T, CX, DO>,
-    IsFixedBytesProperty<T>
+    FixedBytesProperty<T>()
 {
     override val keyPartType = KeyPartType.Reference
 

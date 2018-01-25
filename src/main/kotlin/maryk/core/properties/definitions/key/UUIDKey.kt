@@ -4,12 +4,12 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
-import maryk.core.properties.definitions.IsFixedBytesProperty
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.generateUUID
 
 /** A key with a Universally Unique ID */
-object UUIDKey: IsFixedBytesProperty<Pair<Long, Long>> {
+object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
     override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
 

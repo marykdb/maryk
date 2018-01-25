@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
  * Contains [properties] definitions of type [P]
  */
 abstract class SimpleDataModel<DO: Any, out P: PropertyDefinitions<DO>>(
-        properties: P
+    properties: P
 ) : AbstractDataModel<DO, P, IsPropertyContext, IsPropertyContext>(
-        properties
+    properties
 )

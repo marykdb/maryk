@@ -3,8 +3,8 @@ package maryk.core.objects
 import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsFixedBytesEncodable
-import maryk.core.properties.definitions.IsFixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -20,7 +20,7 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 
-fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
+fun definitions(vararg keys: FixedBytesProperty<*>) = arrayOf(*keys)
 
 /**
  * DataModel defining data objects of type [DO] which is on root level so it can be stored and thus can have a [key].
@@ -31,13 +31,13 @@ fun definitions(vararg keys: IsFixedBytesProperty<*>) = arrayOf(*keys)
  */
 abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     name: String,
-    keyDefinitions: Array<IsFixedBytesProperty<out Any>> = arrayOf(UUIDKey),
+    keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
 ) : DataModel<DO, P>(name, properties){
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key by passing [keyDefinitions] */
-    inner class KeyDefinition(vararg val keyDefinitions: IsFixedBytesProperty<out Any>) {
+    inner class KeyDefinition(vararg val keyDefinitions: FixedBytesProperty<out Any>) {
         val size: Int
 
         init {
@@ -73,10 +73,10 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         }
 
         /** Get Key by [base64] bytes as string representation */
-        fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
+        internal fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
 
         /** Get Key by byte [reader] */
-        fun get(reader: () -> Byte): Key<DO> = Key(
+        internal fun get(reader: () -> Byte): Key<DO> = Key(
             initByteArray(size, reader)
         )
 
@@ -102,14 +102,14 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     }
 
     /** Get PropertyReference by [referenceName] */
-    fun getPropertyReferenceByName(referenceName: String) = try {
+    internal fun getPropertyReferenceByName(referenceName: String) = try {
         this.properties.getPropertyReferenceByName(referenceName)
     } catch (e: DefNotFoundException) {
         throw DefNotFoundException("Model ${this.name}: ${e.message}")
     }
 
     /** Get PropertyReference by bytes by reading the [reader] until [length] is reached. */
-    fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte) = try {
+    internal fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte) = try {
         this.properties.getPropertyReferenceByBytes(length, reader)
     } catch (e: DefNotFoundException) {
         throw DefNotFoundException("Model ${this.name}: ${e.message}")
@@ -145,7 +145,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             keyDefinitions = (map[2] as List<TypedValue<PropertyDefinitionType, *>>).map {
                 when(it.value) {
                     is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
-                    else -> it.value as IsFixedBytesProperty<*>
+                    else -> it.value as FixedBytesProperty<*>
                 }
             }.toTypedArray()
         ){

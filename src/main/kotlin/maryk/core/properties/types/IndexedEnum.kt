@@ -7,7 +7,7 @@ interface IndexedEnum<in E>: Comparable<E>{
     val name: String
 
     companion object {
-        operator fun invoke(index: Int, name: String) = object : IndexedEnum<IndexedEnum<Any>>{
+        internal operator fun invoke(index: Int, name: String) = object : IndexedEnum<IndexedEnum<Any>>{
             override val index = index
             override val name = name
 

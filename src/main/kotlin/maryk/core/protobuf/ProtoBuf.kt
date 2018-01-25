@@ -8,9 +8,9 @@ import maryk.core.properties.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 
-object ProtoBuf {
+internal object ProtoBuf {
     /** Write the key for protobuf field */
-    fun writeKey(tag: Int, wireType: WireType, writer: (byte: Byte) -> Unit) {
+    internal fun writeKey(tag: Int, wireType: WireType, writer: (byte: Byte) -> Unit) {
         val byteSize = tag.calculateTagByteSize()
 
         // Write Tag + Wiretype + potential sign byte (STTT TWWW)
@@ -32,7 +32,7 @@ object ProtoBuf {
     }
 
     /** Reads the key of a ProtoBuf based field from [reader] into a ProtoBufKey */
-    fun readKey(reader: () -> Byte) : ProtoBufKey {
+    internal fun readKey(reader: () -> Byte) : ProtoBufKey {
         var byte = reader()
         val wireType = wireTypeOf(byte and 0b111)
 
@@ -54,7 +54,7 @@ object ProtoBuf {
     }
 
     /** Skips a field in [reader] by [wireType] */
-    fun skipField(wireType: Any, reader: () -> Byte) {
+    internal fun skipField(wireType: Any, reader: () -> Byte) {
         when (wireType) {
             WireType.VAR_INT -> {
                 var currentByte: Byte
@@ -86,7 +86,7 @@ object ProtoBuf {
      * Get length of next value by [wireType] and reading from [reader]
      * It is -1 for varInt or start/end group
      */
-    fun getLength(wireType: WireType, reader: () -> Byte) = when(wireType) {
+    internal fun getLength(wireType: WireType, reader: () -> Byte) = when(wireType) {
         WireType.VAR_INT -> -1
         WireType.BIT_64 -> 8
         WireType.LENGTH_DELIMITED -> initIntByVar(reader)
@@ -96,7 +96,7 @@ object ProtoBuf {
     }
 
     /** Calculate the length of the key [tag] */
-    fun calculateKeyLength(tag: Int): Int {
+    internal fun calculateKeyLength(tag: Int): Int {
         return tag.calculateTagByteSize()
     }
 }
@@ -111,4 +111,4 @@ private fun Int.calculateTagByteSize(): Int = when {
 }
 
 /** Contains the tag and wiretype of the Protobuf key */
-class ProtoBufKey(val tag: Int, val wireType: WireType)
+internal class ProtoBufKey(val tag: Int, val wireType: WireType)

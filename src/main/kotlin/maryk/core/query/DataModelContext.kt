@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
  * Saves the context while writing and parsing Definitions
  * Context does not need to be cached since it is present in all phases.
  */
-open class DataModelContext(
-    val dataModels: MutableMap<String, DataModel<*, *>> = mutableMapOf(),
-    var propertyDefinitions: PropertyDefinitions<*>? = null
+internal open class DataModelContext(
+    internal val dataModels: MutableMap<String, DataModel<*, *>> = mutableMapOf(),
+    internal var propertyDefinitions: PropertyDefinitions<*>? = null
 ) : IsPropertyContext

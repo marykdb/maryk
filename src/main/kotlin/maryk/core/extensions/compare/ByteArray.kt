@@ -9,7 +9,7 @@ import kotlin.experimental.and
  * a negative number if it's less than [other],
  * or a positive number if it's greater than [other].
  */
-internal fun ByteArray.compareTo(other: ByteArray): Int  {
+internal fun ByteArray.compareTo(other: ByteArray): Int {
     for (it in 0 until minOf(this.size, other.size)) {
         val a = this[it] and MAX_BYTE
         val b = other[it] and MAX_BYTE

@@ -169,7 +169,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun calculateProtoBufLength(map: Map<Int, Any>, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    internal fun calculateProtoBufLength(map: Map<Int, Any>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for ((key, value) in map) {
             val def = properties.getDefinition(key) ?: continue
@@ -183,7 +183,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (def in this.properties) {
             val value = def.getter(dataObject) ?: continue
@@ -197,7 +197,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeProtoBuf(map: Map<Int, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    internal fun writeProtoBuf(map: Map<Int, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
             val def = properties.getDefinition(key) ?: continue
             def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
@@ -209,7 +209,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (def in this.properties) {
             val value = def.getter(dataObject) ?: continue
             def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
@@ -220,7 +220,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
+    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
         var byteCounter = 1
 
@@ -245,7 +245,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Read ProtoBuf bytes from [reader] until [length] to a DataObject
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    fun readProtoBufToObject(length: Int, reader: () -> Byte, context: CX? = null) = this(this.readProtoBuf(length, reader, context))
+    internal fun readProtoBufToObject(length: Int, reader: () -> Byte, context: CX? = null) = this(this.readProtoBuf(length, reader, context))
 
     /**
      * Read a single field of [key] from [byteReader] into [valueMap]
@@ -317,7 +317,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
     /** Transform [context] into context specific to DataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")
-    open fun transformContext(context: CXI?): CX?  = context as CX?
+    internal open fun transformContext(context: CXI?): CX?  = context as CX?
 
     internal companion object {
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {

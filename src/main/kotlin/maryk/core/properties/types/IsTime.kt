@@ -21,13 +21,13 @@ internal const val MILLIS_PER_DAY = MILLIS_PER_HOUR * HOURS_PER_DAY
 
 abstract class IsTime<T>: IsTemporal<T>() {
     /** Writes Value into bytes to [writer] with [precision] */
-    abstract fun writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit)
+    internal abstract fun writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit)
 }
 
 abstract class IsTimeObject<T>: IsTemporalObject<T>() {
     /** Get the length of the byte representation */
-    abstract fun byteSize(precision: TimePrecision): Int
+    internal abstract fun byteSize(precision: TimePrecision): Int
 
     /** Creates a Time object by reading a byte [reader] until [length] */
-    abstract fun fromByteReader(length: Int, reader: () -> Byte): T
+    internal abstract fun fromByteReader(length: Int, reader: () -> Byte): T
 }

@@ -22,7 +22,7 @@ abstract class ValidationException(
         newMessage = "Property «${reference?.completeName}» $reason"
     )
 
-    abstract val validationExceptionType: ValidationExceptionType
+    internal abstract val validationExceptionType: ValidationExceptionType
 
     companion object {
         fun <DO: ValidationException> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {

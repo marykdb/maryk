@@ -10,7 +10,7 @@ interface IsVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsC
     val maxVersions: UInt32
 
     companion object {
-        fun <DM: Any> addMaxVersions(index: Int, definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt32?) {
+        internal fun <DM: Any> addMaxVersions(index: Int, definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt32?) {
             definitions.add(index, "maxVersions", NumberDefinition(type = UInt32), getter)
         }
     }

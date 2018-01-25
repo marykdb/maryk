@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesProperty
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -21,7 +21,7 @@ import maryk.core.query.DataModelContext
  */
 data class TypeId<E: IndexedEnum<E>>(
     val multiTypeReference: ValuePropertyReference<TypedValue<E, *>, IsPropertyDefinitionWrapper<TypedValue<E, *>, IsPropertyContext, *>, *>
-) : IsFixedBytesProperty<Int> {
+) : FixedBytesProperty<Int>() {
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
 

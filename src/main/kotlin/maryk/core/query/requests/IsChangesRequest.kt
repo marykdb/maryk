@@ -10,7 +10,7 @@ interface IsChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsFetchReque
     val fromVersion: UInt64
 
     companion object {
-        fun <DM: Any> addFromVersion(index: Int, definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
+        internal fun <DM: Any> addFromVersion(index: Int, definitions: PropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
             definitions.add(index, "fromVersion", NumberDefinition(type = UInt64), getter)
         }
     }

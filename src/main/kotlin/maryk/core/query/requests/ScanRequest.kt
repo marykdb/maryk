@@ -15,6 +15,8 @@ import maryk.core.query.filters.IsFilter
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]
  * for specific [dataModel]
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
  */
 data class ScanRequest<DO: Any, out DM: RootDataModel<DO, *>>(
     override val dataModel: DM,

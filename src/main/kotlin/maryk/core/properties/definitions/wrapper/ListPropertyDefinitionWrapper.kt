@@ -10,15 +10,10 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 
-/** Wrapper for a list definition
- * @param index: of definition to encode into ProtoBuf
- * @param name: of definition to display in human readable format
- * @param definition: to be wrapped for DataObject
- * @param getter: to get property value on a DataObject
- *
- * @param T: value type of property for list
- * @param CX: Context type for property
- * @param DO: Type of DataObject which contains this property
+/**
+ * Contains a List property [definition] which contains items of type [T]
+ * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any>(
     override val index: Int,

@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
+/** A DataModel which holds properties and can be validated */
 interface IsDataModel<DO: Any> {
     /** Object which contains all property definitions. Can also be used to get property references. */
     val properties: PropertyDefinitions<DO>

@@ -10,12 +10,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
 /**
- * Value change for a property
- * @param reference to property affected by the change
- * @param newValue the value in which property is/was changed
- * @param valueToCompare (optional) if set the current value is checked against this value.
- * Operation will only complete if they both are equal
- * @param T: type of value to be operated on
+ * Change value to [newValue] for property of type [T] referred by [reference]
+ * Optionally compares against [valueToCompare] and will only change value if values match
  */
 data class PropertyChange<T: Any>(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,

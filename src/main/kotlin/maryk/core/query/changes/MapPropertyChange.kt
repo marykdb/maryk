@@ -14,14 +14,9 @@ import maryk.core.properties.references.MapReference
 import maryk.core.query.DataModelPropertyContext
 
 /**
- * Changes for a map property
- * @param reference to property affected by the change
- * @param valuesToAdd map with values to add to stored map
- * @param keysToDelete set with all keys of items to delete
- * @param valueToCompare (optional) if set the current value is checked against this value.
- * Operation will only complete if they both are equal
- * @param K: type of key to be operated on
- * @param V: type of value to be operated on
+ * Changes for a map property containing keys [K] and values [V] referred by [reference]
+ * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
+ * Optionally compares against [valueToCompare] and will only succeed if values match
  */
 data class MapPropertyChange<K: Any, V: Any>(
     override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *>>,

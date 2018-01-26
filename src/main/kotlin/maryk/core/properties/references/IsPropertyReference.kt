@@ -11,15 +11,15 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>> {
     val completeName: String?
     val propertyDefinition: D
 
-    /** Calculate the transport length of encoding this reference
-     * @param cacher to cache length with
-     * @return size of this reference part
+    /**
+     * Calculate the transport length of encoding this reference
+     * and stores result in [cacher] if relevant
      */
     fun calculateTransportByteLength(cacher: WriteCacheWriter): Int
 
-    /** Write transport bytes of property reference
-     * @param cacheGetter to get next cached length or context
-     * @param writer: To write bytes to
+    /**
+     * Write transport bytes of property reference to [writer] and gets any needed
+     * cached values from [cacheGetter]
      */
     fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit)
 }

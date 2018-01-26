@@ -72,10 +72,9 @@ data class Date(
         private val dateRegex = Regex("^([-]?[1-9]\\d{0,8})-((?:0[1-9]|1[0-2]))-([0-3]\\d)$")
 
         /**
-         * Checks if the year is a leap year, according to the ISO proleptic
+         * Checks if the [year] is a leap year, according to the ISO proleptic
          * calendar system rules.
-         * @param year  the year to check
-         * @return true if the year is leap, false otherwise
+         * Returns true if the year is leap, false otherwise
          */
         internal fun isLeapYear(year: Int) = year and 3 == 0 && (year % 100 != 0 || year % 400 == 0)
 

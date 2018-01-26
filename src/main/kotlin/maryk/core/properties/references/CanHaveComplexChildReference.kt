@@ -3,11 +3,8 @@ package maryk.core.properties.references
 import maryk.core.properties.definitions.IsPropertyDefinition
 
 /**
- * Reference to properties which can have children
- * @param definition definition of property
- * @param parentReference parent to reference to
- * @param T Type contained within Property
- * @param D Type of property definition
+ * Reference to properties of type [T] defined by [D] which can have simple children
+ * Has an optional [parentReference]
  */
 abstract class CanHaveComplexChildReference<T: Any, out D : IsPropertyDefinition<T>, out P: IsPropertyReference<*, *>>(
     definition: D,

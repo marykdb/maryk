@@ -10,7 +10,12 @@ import maryk.core.query.Order
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
-/** A Request to get changes on [dataModel] by [keys]. It will only get changes after [fromVersion] */
+/**
+ * A Request to get changes on [dataModel] by [keys]
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
 data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
     override val dataModel: DM,
     override val keys: List<Key<DO>>,

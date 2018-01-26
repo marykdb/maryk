@@ -10,13 +10,8 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 
 /**
  * Contains a Fixed Bytes property [definition] of [D] which can be used for keys.
- * @param index: of definition to encode into ProtoBuf
- * @param name: of definition to display in human readable format
- * @param getter: to get property value on a DataObject
- *
- * @param T: value type of property
- * @param CX: Context type for property
- * @param DO: Type of DataObject which contains this property
+ * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DO: Any>(
     override val index: Int,

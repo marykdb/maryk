@@ -11,15 +11,9 @@ import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 
 /**
- * Wrapper for a set definition to contain the context on how it relates to DataObject
- * @param index: of definition to encode into ProtoBuf
- * @param name: of definition to display in human readable format
- * @param definition: to be wrapped for DataObject
- * @param getter: to get property value on a DataObject
- *
- * @param T: value type of property for list
- * @param CX: Context type for property
- * @param DO: Type of DataObject which contains this property
+ * Contains a Set property [definition] containing type [T]
+ * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any>(
     override val index: Int,

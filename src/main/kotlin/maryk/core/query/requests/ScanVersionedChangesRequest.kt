@@ -13,8 +13,10 @@ import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
- * A Request to scan DataObjects by key from [startKey] [fromVersion] until [limit] for specific [dataModel]
- * returning [maxVersions]
+ * A Request to scan DataObjects by key from [startKey] until [limit] for specific [dataModel]
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
  */
 data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
     override val dataModel: DM,

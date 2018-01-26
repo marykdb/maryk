@@ -73,7 +73,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         }
 
         /** Get Key by [base64] bytes as string representation */
-        internal fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
+        fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
 
         /** Get Key by byte [reader] */
         internal fun get(reader: () -> Byte): Key<DO> = Key(

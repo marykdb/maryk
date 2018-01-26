@@ -10,18 +10,13 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SubModelPropertyRef
 
-/** Wrapper for a sub model definition to contain the context on how it relates to DataObject
- * @param index: of definition to encode into ProtoBuf
- * @param name: of definition to display in human readable format
- * @param definition: to be wrapped for DataObject
- * @param getter: to get property value on a DataObject
- *
- * @param SDO: DataObject value type of property for sub object
- * @param P: Properties object for DataModel
- * @param DM: type of DataModel which describes the DataObject
- * @param CXI: Input Context type for property
- * @param CX: Context type for property
- * @param DO: Type of DataObject which contains this property
+/**
+ * Contains a Sub Model property [definition] containing DataObjects of [SDO] and Properties described by [P]
+ * in a DataModel of [DM]
+ * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * function to retrieve value on dataObject of [DO]
+ * It has an input context of [CXI] and the functions take context of [CX] so contexts can be transformed
+ * to be relevant to the Sub DataModel
  */
 data class SubModelPropertyDefinitionWrapper<SDO: Any, out P: PropertyDefinitions<SDO>, out DM: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext, in DO: Any>(
     override val index: Int,

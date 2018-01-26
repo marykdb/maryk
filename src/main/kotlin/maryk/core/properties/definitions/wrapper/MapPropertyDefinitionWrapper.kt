@@ -11,16 +11,9 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 
 /**
- * Wraps a map definition to contain the context on how it relates to DataObject
- * @param index: of definition to encode into ProtoBuf
- * @param name: of definition to display in human readable format
- * @param definition: to be wrapped for DataObject
- * @param getter: to get property value on a DataObject
- *
- * @param K: type of key property for map
- * @param V: type of value property for map
- * @param CX: Context type for property
- * @param DO: Type of DataObject which contains this property
+ * Contains a Map property [definition] which contains keys [K] and values [V]
+ * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, in DO: Any>(
     override val index: Int,

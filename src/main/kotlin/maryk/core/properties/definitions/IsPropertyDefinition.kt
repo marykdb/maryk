@@ -7,8 +7,7 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 
 /**
- * Interface to define this is a property definition
- * @param <T> Type of Property contained in the definition
+ * Interface to define this is a property definition containing [T]
  */
 interface IsPropertyDefinition<T: Any> {
     val indexed: Boolean

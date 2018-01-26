@@ -8,11 +8,8 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /**
- * Value check for a property
- * @param reference to property affected by the change
- * @param valueToCompare (optional) if set the current value is checked against this value.
- * Operation will only complete if they both are equal
- * @param T: type of value to be operated on
+ * Value check for a property of type [T]
+ * Optionally compares against [valueToCompare] and will only succeed if values match
  */
 data class PropertyCheck<T: Any>(
     override val reference: IsPropertyReference<T, IsPropertyDefinition<T>>,

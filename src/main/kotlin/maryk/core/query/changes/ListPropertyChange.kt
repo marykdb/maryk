@@ -16,15 +16,9 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.DataModelPropertyContext
 
 /**
- * Changes for a list property
- * @param reference to property affected by the change
- * @param addValuesToEnd values to add at the end of the list
- * @param addValuesAtIndex values to add at the index positions
- * @param deleteValues values to delete from list (Will delete all occurrences)
- * @param deleteAtIndex indexes to delete values at
- * @param valueToCompare (optional) if List the current value is checked against this value.
- * Operation will only complete if they both are equal
- * @param T: type of value to be operated on
+ * Changes for a list property containing values of type [T] referred by [reference]
+ * Options are to [addValuesToEnd], [addValuesAtIndex], [deleteValues] and/or [deleteAtIndex]
+ * Optionally compares against [valueToCompare] and will only change value if values match
  */
 data class ListPropertyChange<T: Any>(
     override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>,

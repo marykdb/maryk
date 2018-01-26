@@ -14,8 +14,9 @@ import maryk.core.query.filters.IsFilter
 
 /**
  * A Request to get DataObject of type [DO] its versioned changes by value [keys] for specific [dataModel] of type [DM]
- * @param fromVersion the version to start getting objects of (Inclusive)
- * @param maxVersions Max amount of versions to fetch (Default=1000)
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
  */
 data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
     override val dataModel: DM,

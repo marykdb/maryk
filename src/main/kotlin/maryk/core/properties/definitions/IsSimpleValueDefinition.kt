@@ -10,10 +10,9 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /**
- * Abstract Property Definition to define properties.
+ * Abstract Property Definition to define properties of type [T].
  *
  * This is used for simple single value properties and not for lists and maps.
- * @param <T> Type of objects contained in property
  */
 interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDefinition<T, CX> {
     /**
@@ -37,16 +36,10 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
     override fun calculateTransportByteLength(value: T, cacher: WriteCacheWriter, context: CX?) =
         this.calculateTransportByteLength(value)
 
-    /** Calculates the needed bytes to transport the value
-     * @param value to get length of
-     * @return the total length
-     */
+    /** Calculates the needed bytes to transport the [value] */
     fun calculateTransportByteLength(value: T): Int
 
-    /** Convert value to String
-     * @param value to convert
-     * @return value as String
-     */
+    /** Convert [value] to String */
     fun asString(value: T) = value.toString()
 
     override fun asString(value: T, context: CX?) = this.asString(value)

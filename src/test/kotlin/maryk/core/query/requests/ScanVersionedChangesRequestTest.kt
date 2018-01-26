@@ -14,24 +14,24 @@ class ScanVersionedChangesRequestTest {
     private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
 
     private val scanVersionedChangesRequest = ScanVersionedChangesRequest(
-            SimpleMarykObject,
-            startKey = key1,
-            fromVersion = 1234L.toUInt64()
+        SimpleMarykObject,
+        startKey = key1,
+        fromVersion = 1234L.toUInt64()
     )
 
     private val scanVersionedChangesMaxRequest = ScanVersionedChangesRequest(
-            SimpleMarykObject,
-            startKey = key1,
-            filter = Exists(SimpleMarykObject.ref { value }),
-            order = Order(SimpleMarykObject.ref { value }),
-            limit = 300.toUInt32(),
-            toVersion = 2345L.toUInt64(),
-            fromVersion = 1234L.toUInt64(),
-            maxVersions = 10.toUInt32()
+        SimpleMarykObject,
+        startKey = key1,
+        filter = Exists(SimpleMarykObject.ref { value }),
+        order = Order(SimpleMarykObject.ref { value }),
+        limit = 300.toUInt32(),
+        toVersion = 2345L.toUInt64(),
+        fromVersion = 1234L.toUInt64(),
+        maxVersions = 10.toUInt32()
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

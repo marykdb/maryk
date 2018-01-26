@@ -17,18 +17,18 @@ import kotlin.test.Test
 
 class ContextualCollectionDefinitionTest {
     private val listToTest = listOf(
-            "T1", "T2", "T3"
+        "T1", "T2", "T3"
     )
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualCollectionDefinition<DataModelPropertyContext>(
-            contextualResolver = { it!!.reference!!.propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext> }
+        contextualResolver = { it!!.reference!!.propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(),
-            reference = TestMarykObject.ref { listOfString } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+        mapOf(),
+        reference = TestMarykObject.ref { listOfString } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test
@@ -40,7 +40,7 @@ class ContextualCollectionDefinitionTest {
         val asHex = "ea020154ea02025432ea02025433ea02025434"
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(45, value, cache, this.context)
+            def.calculateTransportByteLengthWithKey(45, value, cache, this.context)
         )
         def.writeTransportBytesWithKey(45, value, cache, bc::write, this.context)
 
@@ -53,9 +53,9 @@ class ContextualCollectionDefinitionTest {
         }
 
         fun readValue() = def.readCollectionTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read,
-                this.context
+            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            bc::read,
+            this.context
         )
 
         value.forEach {

@@ -21,21 +21,21 @@ class ChangeResponseTest {
     private val key = SimpleMarykObject.key.getKey(this.value)
 
     private val changeResponse = ChangeResponse(
-            SimpleMarykObject,
-            listOf(
-                    Success(32352L.toUInt64()),
-                    DoesNotExist(key),
-                    ValidationFail(ValidationUmbrellaException(null, listOf(
-                            InvalidValueException(SimpleMarykObject.ref{ value }, "wrong")
-                    ))),
-                    RequestFail("Request was wrong"),
-                    AuthFail(),
-                    ServerFail("Something went wrong")
-            )
+        SimpleMarykObject,
+        listOf(
+            Success(32352L.toUInt64()),
+            DoesNotExist(key),
+            ValidationFail(ValidationUmbrellaException(null, listOf(
+                InvalidValueException(SimpleMarykObject.ref{ value }, "wrong")
+            ))),
+            RequestFail("Request was wrong"),
+            AuthFail(),
+            ServerFail("Something went wrong")
+        )
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

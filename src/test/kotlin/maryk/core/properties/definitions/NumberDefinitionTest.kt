@@ -17,38 +17,38 @@ import kotlin.test.Test
 
 internal class NumberDefinitionTest {
     private val def = NumberDefinition(
-            type = UInt32
+        type = UInt32
     )
 
     private val defMaxDefined = NumberDefinition(
-            type = SInt32,
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            minValue = 3254765,
-            maxValue = 92763478,
-            random = true
+        type = SInt32,
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        minValue = 3254765,
+        maxValue = 92763478,
+        random = true
     )
 
     private val defFloat32 = NumberDefinition(
-            type = Float32
+        type = Float32
     )
 
     private val intArray = arrayOf(
-            UInt32.MIN_VALUE,
-            UInt32.MAX_VALUE,
-            32373957.toUInt32()
+        UInt32.MIN_VALUE,
+        UInt32.MAX_VALUE,
+        32373957.toUInt32()
     )
 
     private val floatArray = floatArrayOf(
-            323.73957F,
-            Float.MIN_VALUE,
-            Float.MAX_VALUE,
-            1.4E-45F,
-            3.4028235E38F,
-            323.73957F
+        323.73957F,
+        Float.MIN_VALUE,
+        Float.MAX_VALUE,
+        1.4E-45F,
+        3.4028235E38F,
+        323.73957F
     )
 
     @Test
@@ -64,9 +64,9 @@ internal class NumberDefinitionTest {
     @Test
     fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
-        intArray.forEach {
+        for (it in intArray) {
             bc.reserve(
-                    def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
             def.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -79,17 +79,17 @@ internal class NumberDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        intArray.forEach { value ->
+        for (value in intArray) {
             bc.reserve(
-                    def.calculateTransportByteLengthWithKey(1, value, cacheFailer)
+                def.calculateTransportByteLengthWithKey(1, value, cacheFailer)
             )
             def.writeTransportBytesWithKey(1, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
             key.wireType shouldBe WireType.VAR_INT
             key.tag shouldBe 1
             def.readTransportBytes(
-                    ProtoBuf.getLength(key.wireType, bc::read),
-                    bc::read
+                ProtoBuf.getLength(key.wireType, bc::read),
+                bc::read
             ) shouldBe value
             bc.reset()
         }
@@ -100,9 +100,9 @@ internal class NumberDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        floatArray.forEach { value ->
+        for (value in floatArray) {
             bc.reserve(
-                    defFloat32.calculateTransportByteLengthWithKey(2, value, cacheFailer)
+                defFloat32.calculateTransportByteLengthWithKey(2, value, cacheFailer)
             )
             defFloat32.writeTransportBytesWithKey(2, value, cacheFailer, bc::write)
             val key = ProtoBuf.readKey(bc::read)
@@ -118,7 +118,7 @@ internal class NumberDefinitionTest {
 
     @Test
     fun convert_values_to_String_and_back() {
-        intArray.forEach {
+        for (it in intArray) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }

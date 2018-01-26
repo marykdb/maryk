@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class GreaterThanEqualsTest {
     private val greaterThanEquals = GreaterThanEquals(
-            reference = SimpleMarykObject.ref { value },
-            value = "test"
+        reference = SimpleMarykObject.ref { value },
+        value = "test"
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

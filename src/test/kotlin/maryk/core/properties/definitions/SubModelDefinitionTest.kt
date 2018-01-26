@@ -16,34 +16,34 @@ import kotlin.test.Test
 
 internal class SubModelDefinitionTest {
     private data class MarykObject(
-            val string: String = "jur"
+        val string: String = "jur"
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             init {
                 add(0, "string", StringDefinition(
-                        regEx = "jur"
+                    regEx = "jur"
                 ), MarykObject::string)
             }
         }
         companion object: DataModel<MarykObject, Properties>(
-                name = "MarykObject",
-                properties = Properties
+            name = "MarykObject",
+            properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                    map[0] as String
+                map[0] as String
             )
         }
     }
 
     private val def = SubModelDefinition(
-            dataModel = { MarykObject }
+        dataModel = { MarykObject }
     )
     private val defMaxDefined = SubModelDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            dataModel = { MarykObject }
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        dataModel = { MarykObject }
     )
 
     @Test
@@ -68,7 +68,7 @@ internal class SubModelDefinitionTest {
         val asHex = "2a0502036a7572"
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(5, value, cache)
+            def.calculateTransportByteLengthWithKey(5, value, cache)
         )
         bc.bytes!!.size shouldBe 7
         def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
@@ -80,8 +80,8 @@ internal class SubModelDefinitionTest {
         key.tag shouldBe 5
 
         def.readTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read
+            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            bc::read
         ) shouldBe value
     }
 

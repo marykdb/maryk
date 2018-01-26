@@ -29,7 +29,7 @@ internal class UInt16Test {
         UInt16.MIN_VALUE.toString() shouldBe "0"
         UInt16.MAX_VALUE.toString() shouldBe "65535"
 
-        uInt16values.forEach {
+        for (it in uInt16values) {
             UInt16.ofString(it.toString()) shouldBe it
         }
     }
@@ -37,7 +37,7 @@ internal class UInt16Test {
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        uInt16values.forEach {
+        for (it in uInt16values) {
             bc.reserve(UInt16.size)
             UInt16.writeStorageBytes(it, bc::write)
             UInt16.fromStorageByteReader(bc.size, bc::read) shouldBe it
@@ -48,7 +48,7 @@ internal class UInt16Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        uInt16values.forEach {
+        for (it in uInt16values) {
             bc.reserve(UInt16.calculateTransportByteLength(it))
             UInt16.writeTransportBytes(it, bc::write)
             UInt16.readTransportBytes(bc::read) shouldBe it

@@ -8,12 +8,12 @@ import kotlin.test.Test
 
 class FailedActionResponseTest {
     private val failedActionResponse = FailedActionResponse(
-            "Something went wrong",
-            FailType.CONNECTION
+        "Something went wrong",
+        FailType.CONNECTION
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

@@ -9,15 +9,15 @@ import kotlin.test.Test
 
 internal class IntKtTest {
     private val intsToTest = intArrayOf(
-            Int.MIN_VALUE,
-            -1933587636,
-            -2222,
-            -1,
-            0,
-            1,
-            2222,
-            923587636,
-            Int.MAX_VALUE
+        Int.MIN_VALUE,
+        -1933587636,
+        -2222,
+        -1,
+        0,
+        1,
+        2222,
+        923587636,
+        Int.MAX_VALUE
     )
 
     @Test
@@ -36,12 +36,12 @@ internal class IntKtTest {
     fun testStreaming3Conversion() {
         val bc = ByteCollector()
         intArrayOf(
-                -0x7FFFFF
-                -1,
-                0,
-                1,
-                2222,
-                0x7FFFFF
+            -0x7FFFFF,
+            -1,
+            0,
+            1,
+            2222,
+            0x7FFFFF
         ).forEach {
             bc.reserve(3)
             it.writeBytes(bc::write, 3)
@@ -96,7 +96,7 @@ internal class IntKtTest {
     }
 
     private fun testZigZagByteContent(bc: ByteCollector, it: Int, hexValue: String) {
-       this.testByteContent(bc, it.encodeZigZag(), hexValue)
+        this.testByteContent(bc, it.encodeZigZag(), hexValue)
     }
 
     private fun testByteContent(bc: ByteCollector, it: Int, hexValue: String) {

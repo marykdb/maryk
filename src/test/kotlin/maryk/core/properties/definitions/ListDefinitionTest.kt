@@ -24,35 +24,35 @@ import kotlin.test.Test
 
 internal class ListDefinitionTest {
     private val subDef = StringDefinition(
-            regEx = "T.*"
+        regEx = "T.*"
     )
 
     private val def = ListDefinition(
-            minSize = 2,
-            maxSize = 4,
-            valueDefinition = subDef
+        minSize = 2,
+        maxSize = 4,
+        valueDefinition = subDef
     )
 
     private val defMaxDefined = ListDefinition(
-            indexed = true,
-            searchable = false,
-            final = true,
-            required = false,
-            minSize = 2,
-            maxSize = 4,
-            valueDefinition = subDef
+        indexed = true,
+        searchable = false,
+        final = true,
+        required = false,
+        minSize = 2,
+        maxSize = 4,
+        valueDefinition = subDef
     )
 
     private val defVarInt = ListDefinition(
-            valueDefinition = NumberDefinition(type = UInt32)
+        valueDefinition = NumberDefinition(type = UInt32)
     )
 
     private val def64Int = ListDefinition(
-            valueDefinition = NumberDefinition(type = Float64)
+        valueDefinition = NumberDefinition(type = Float64)
     )
 
     private val def32Int = ListDefinition(
-            valueDefinition = NumberDefinition(type = Float32)
+        valueDefinition = NumberDefinition(type = Float32)
     )
 
     @Test
@@ -104,7 +104,7 @@ internal class ListDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(1, value, cache)
+            def.calculateTransportByteLengthWithKey(1, value, cache)
         )
         def.writeTransportBytesWithKey(1, value, cache, bc::write)
 
@@ -117,12 +117,12 @@ internal class ListDefinitionTest {
         }
 
         fun readValue() = def.readCollectionTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read,
-                null
+            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            bc::read,
+            null
         )
 
-        value.forEach {
+        for (it in value) {
             readKey()
             readValue() shouldBe it
         }
@@ -131,10 +131,10 @@ internal class ListDefinitionTest {
     @Test
     fun convert_varInt_values_to_packed_transport_bytes_and_back() {
         val value = listOf(
-                76523.toUInt32(),
-                2423.toUInt32(),
-                25423.toUInt32(),
-                42.toUInt32()
+            76523.toUInt32(),
+            2423.toUInt32(),
+            25423.toUInt32(),
+            42.toUInt32()
         )
         val asHex = "1209ebd504f712cfc6012a"
 
@@ -144,10 +144,10 @@ internal class ListDefinitionTest {
     @Test
     fun convert_32_bit_values_to_packed_transport_bytes_and_back() {
         val value = floatArrayOf(
-                3.566F,
-                58253.87652F,
-                0.000222F,
-                236453165416F
+            3.566F,
+            58253.87652F,
+            0.000222F,
+            236453165416F
         ).asList()
         val asHex = "22104064395947638de13968c8ad525c36d5"
 
@@ -157,10 +157,10 @@ internal class ListDefinitionTest {
     @Test
     fun convert_64_bit_values_to_packed_transport_bytes_and_back() {
         val value = listOf(
-                3.523874666,
-                5825394671387643.87652,
-                0.0002222222222,
-                2364531654162343428.0
+            3.523874666,
+            5825394671387643.87652,
+            0.0002222222222,
+            2364531654162343428.0
         )
         val asHex = "1a20400c30e5336d62274334b22a641083fd3f2d208a5a84aba343c06840817d41b4"
 
@@ -172,7 +172,7 @@ internal class ListDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(index, list, cache)
+            def.calculateTransportByteLengthWithKey(index, list, cache)
         )
         def.writeTransportBytesWithKey(index, list, cache, bc::write)
 
@@ -183,9 +183,9 @@ internal class ListDefinitionTest {
         key.tag shouldBe index
 
         val readList = def.readPackedCollectionTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read,
-                null
+            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            bc::read,
+            null
         )
 
         readList shouldBe list

@@ -18,19 +18,19 @@ import kotlin.test.Test
 class ContextualMapDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val mapToTest = mapOf(
-                Time(1, 55,33) to "hello",
-                Time(14, 22,23) to "goodBye"
+        Time(1, 55,33) to "hello",
+        Time(14, 22,23) to "goodBye"
     ) as Map<Any, Any>
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualMapDefinition<Any, Any, DataModelPropertyContext>(
-            contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
+        contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(),
-            reference = TestMarykObject.ref { map } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+        mapOf(),
+        reference = TestMarykObject.ref { map } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test
@@ -41,7 +41,7 @@ class ContextualMapDefinitionTest {
         val value = mapToTest
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(8, value, cache, this.context)
+            def.calculateTransportByteLengthWithKey(8, value, cache, this.context)
         )
         def.writeTransportBytesWithKey(8, value, cache, bc::write, this.context)
 

@@ -15,28 +15,28 @@ import kotlin.test.Test
 
 internal class ReversedTest {
     private data class MarykObject(
-            val boolean: Boolean,
-            val dateTime: DateTime
+        val boolean: Boolean,
+        val dateTime: DateTime
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val boolean = add(0, "bool", BooleanDefinition(
-                    final = true
+                final = true
             ), MarykObject::boolean)
             val dateTime = add(1, "dateTime", DateTimeDefinition(
-                    final = true
+                final = true
             ), MarykObject::dateTime)
         }
         companion object: RootDataModel<MarykObject, Properties>(
-                name = "MarykObject",
-                keyDefinitions = definitions(
-                        Reversed(Properties.boolean),
-                        Reversed(Properties.dateTime)
-                ),
-                properties = Properties
+            name = "MarykObject",
+            keyDefinitions = definitions(
+                Reversed(Properties.boolean),
+                Reversed(Properties.dateTime)
+            ),
+            properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                    map[0] as Boolean,
-                    map[1] as DateTime
+                map[0] as Boolean,
+                map[1] as DateTime
             )
         }
     }
@@ -46,14 +46,14 @@ internal class ReversedTest {
         val dt = DateTime(year = 2017, month = 9, day = 3, hour = 12, minute = 43, second = 40)
 
         val obj = MarykObject(
-                boolean = true,
-                dateTime = dt
+            boolean = true,
+            dateTime = dt
         )
 
         val key = MarykObject.key.getKey(obj)
 
         @Suppress("UNCHECKED_CAST")
-        with(MarykObject.key.keyDefinitions[1] as Reversed<DateTime>){
+        with(MarykObject.key.keyDefinitions[1] as Reversed<DateTime>) {
             val bc = ByteCollector()
             bc.reserve(8)
             this.writeStorageBytes(dt, bc::write)
@@ -64,24 +64,24 @@ internal class ReversedTest {
     }
 
     private val context = DataModelContext(
-            propertyDefinitions = MarykObject.Properties
+        propertyDefinitions = MarykObject.Properties
     )
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(
-                value = Reversed(MarykObject.Properties.boolean.getRef()),
-                dataModel = Reversed.Model,
-                context = context
+            value = Reversed(MarykObject.Properties.boolean.getRef()),
+            dataModel = Reversed.Model,
+            context = context
         )
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(
-                value = Reversed(MarykObject.Properties.boolean.getRef()),
-                dataModel = Reversed.Model,
-                context = context
+            value = Reversed(MarykObject.Properties.boolean.getRef()),
+            dataModel = Reversed.Model,
+            context = context
         )
     }
 }

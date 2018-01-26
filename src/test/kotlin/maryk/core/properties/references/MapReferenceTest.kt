@@ -17,9 +17,9 @@ class MapReferenceTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        arrayOf(mapReference, keyReference, valReference).forEach {
+        for (it in arrayOf(mapReference, keyReference, valReference)) {
             bc.reserve(
-                    it.calculateTransportByteLength(cache)
+                it.calculateTransportByteLength(cache)
             )
             it.writeTransportBytes(cache, bc::write)
 
@@ -35,7 +35,7 @@ class MapReferenceTest {
         keyReference.completeName shouldBe "map.\$12:00:01"
         valReference.completeName shouldBe "map.@15:22:55"
 
-        arrayOf(mapReference, keyReference, valReference).forEach {
+        for (it in arrayOf(mapReference, keyReference, valReference)) {
             val converted = TestMarykObject.getPropertyReferenceByName(it.completeName!!)
             converted shouldBe it
         }

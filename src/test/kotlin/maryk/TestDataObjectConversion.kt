@@ -10,10 +10,10 @@ import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 
 fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
-        value: T,
-        dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
-        context: CXI? = null,
-        checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
+    value: T,
+    dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+    context: CXI? = null,
+    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     val newContext = dataModel.transformContext(context)
 
@@ -30,10 +30,10 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConvers
 }
 
 fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
-        value: T,
-        dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
-        context: CXI? = null,
-        checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
+    value: T,
+    dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+    context: CXI? = null,
+    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     var output = ""
 

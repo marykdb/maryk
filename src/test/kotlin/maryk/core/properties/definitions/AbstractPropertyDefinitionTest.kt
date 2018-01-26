@@ -21,8 +21,8 @@ internal class AbstractPropertyDefinitionTest {
 
         shouldThrow<AlreadySetException> {
             def.validateWithRef(
-                    previousValue = "old",
-                    newValue = "new"
+                previousValue = "old",
+                newValue = "new"
             )
         }
     }

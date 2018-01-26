@@ -5,13 +5,12 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class SInt64Test {
-
     private val int64values = arrayOf(
-            Long.MIN_VALUE,
-            -6267862343234742349L,
-            0,
-            6267862343234742349L,
-            Long.MAX_VALUE
+        Long.MIN_VALUE,
+        -6267862343234742349L,
+        0,
+        6267862343234742349L,
+        Long.MAX_VALUE
     )
 
     @Test
@@ -24,7 +23,7 @@ internal class SInt64Test {
         Long.MIN_VALUE.toString() shouldBe "-9223372036854775808"
         Long.MAX_VALUE.toString() shouldBe "9223372036854775807"
 
-        int64values.forEach {
+        for (it in int64values) {
             SInt64.ofString(it.toString()) shouldBe it
         }
     }
@@ -32,7 +31,7 @@ internal class SInt64Test {
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        int64values.forEach {
+        for (it in int64values) {
             bc.reserve(SInt64.size)
             SInt64.writeStorageBytes(it, bc::write)
             SInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it

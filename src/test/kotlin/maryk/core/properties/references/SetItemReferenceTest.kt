@@ -16,7 +16,7 @@ class SetItemReferenceTest {
         val cache = WriteCache()
 
         bc.reserve(
-                this.reference.calculateTransportByteLength(cache)
+            this.reference.calculateTransportByteLength(cache)
         )
         this.reference.writeTransportBytes(cache, bc::write)
 

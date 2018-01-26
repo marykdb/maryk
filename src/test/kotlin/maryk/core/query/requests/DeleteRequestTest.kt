@@ -11,14 +11,14 @@ class DeleteRequestTest {
     private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
 
     private val deleteRequest = DeleteRequest(
-            SimpleMarykObject,
-            key1,
-            key2,
-            hardDelete = true
+        SimpleMarykObject,
+        key1,
+        key2,
+        hardDelete = true
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

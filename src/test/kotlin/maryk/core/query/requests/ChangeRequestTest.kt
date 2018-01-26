@@ -13,13 +13,13 @@ class ChangeRequestTest {
     private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
 
     private val changeRequest = ChangeRequest(
-            SimpleMarykObject,
-            DataObjectChange(key1),
-            DataObjectChange(key2)
+        SimpleMarykObject,
+        DataObjectChange(key1),
+        DataObjectChange(key2)
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

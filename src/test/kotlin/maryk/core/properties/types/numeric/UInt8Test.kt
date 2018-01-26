@@ -29,7 +29,7 @@ internal class UInt8Test {
         UInt8.MIN_VALUE.toString() shouldBe "0"
         UInt8.MAX_VALUE.toString() shouldBe "255"
 
-        uInt8values.forEach {
+        for (it in uInt8values) {
             UInt8.ofString(it.toString()) shouldBe it
         }
     }
@@ -37,7 +37,7 @@ internal class UInt8Test {
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        uInt8values.forEach {
+        for (it in uInt8values) {
             bc.reserve(UInt8.size)
             UInt8.writeStorageBytes(it, bc::write)
             UInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
@@ -48,7 +48,7 @@ internal class UInt8Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        uInt8values.forEach {
+        for (it in uInt8values) {
             bc.reserve(UInt8.calculateTransportByteLength(it))
             UInt8.writeTransportBytes(it, bc::write)
             UInt8.readTransportBytes(bc::read) shouldBe it

@@ -15,22 +15,22 @@ class ScanRequestTest {
     private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
 
     private val scanRequest = ScanRequest(
-            SimpleMarykObject,
-            startKey = key1
+        SimpleMarykObject,
+        startKey = key1
     )
 
     private val scanMaxRequest = ScanRequest(
-            SimpleMarykObject,
-            startKey = key1,
-            filter = Exists(SubMarykObject.ref { value }),
-            order = Order(SubMarykObject.ref { value }),
-            limit = 200.toUInt32(),
-            filterSoftDeleted = true,
-            toVersion = 2345L.toUInt64()
+        SimpleMarykObject,
+        startKey = key1,
+        filter = Exists(SubMarykObject.ref { value }),
+        order = Order(SubMarykObject.ref { value }),
+        limit = 200.toUInt32(),
+        filterSoftDeleted = true,
+        toVersion = 2345L.toUInt64()
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

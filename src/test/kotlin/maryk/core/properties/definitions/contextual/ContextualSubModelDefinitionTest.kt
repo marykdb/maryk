@@ -11,33 +11,33 @@ import kotlin.test.Test
 
 class ContextualSubModelDefinitionTest {
     private val subModelsToTest = listOf(
-            SimpleMarykObject("test1"),
-            SimpleMarykObject("test2")
+        SimpleMarykObject("test1"),
+        SimpleMarykObject("test2")
     )
 
     private val def = ContextualSubModelDefinition<DataModelPropertyContext>(
-            contextualResolver = { it!!.dataModel!! }
+        contextualResolver = { it!!.dataModel!! }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
     fun testTransportConversion() {
         val bc = ByteCollector()
-        subModelsToTest.forEach { value ->
+        for (value in subModelsToTest) {
             checkProtoBufConversion(bc, value, this.def, this.context)
         }
     }
 
     @Test
     fun convertString() {
-        subModelsToTest.forEach {
+        for (it in subModelsToTest) {
             val b = def.asString(it, this.context)
             def.fromString(b, this.context) shouldBe it
         }

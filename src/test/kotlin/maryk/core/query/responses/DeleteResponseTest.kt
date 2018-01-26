@@ -17,17 +17,17 @@ class DeleteResponseTest {
     private val key = SimpleMarykObject.key.getKey(this.value)
 
     private val deleteResponse = DeleteResponse(
-            SimpleMarykObject,
-            listOf(
-                    Success(32352L.toUInt64()),
-                    DoesNotExist(key),
-                    AuthFail(),
-                    ServerFail("Something went wrong")
-            )
+        SimpleMarykObject,
+        listOf(
+            Success(32352L.toUInt64()),
+            DoesNotExist(key),
+            AuthFail(),
+            ServerFail("Something went wrong")
+        )
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

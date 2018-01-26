@@ -16,36 +16,36 @@ import kotlin.test.Test
 
 class ContextualValueDefinitionTest {
     private val valuesToTest = listOf(
-            "test1",
-            "test2"
+        "test1",
+        "test2"
     )
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualValueDefinition<DataModelPropertyContext>(
-            contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext> }
+        contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext> }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    TestMarykObject.name to TestMarykObject,
-                    SubMarykObject.name to SubMarykObject
-            ),
-            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>,
-            reference = TestMarykObject.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+        mapOf(
+            TestMarykObject.name to TestMarykObject,
+            SubMarykObject.name to SubMarykObject
+        ),
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>,
+        reference = TestMarykObject.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
     )
 
     @Test
     fun testTransportConversion() {
         val bc = ByteCollector()
-        valuesToTest.forEach { value ->
+        for (value in valuesToTest) {
             checkProtoBufConversion(bc, value, this.def, this.context)
         }
     }
 
     @Test
     fun convertString() {
-        valuesToTest.forEach {
+        for (it in valuesToTest) {
             val b = def.asString(it, this.context)
             def.fromString(b, this.context) shouldBe it
         }

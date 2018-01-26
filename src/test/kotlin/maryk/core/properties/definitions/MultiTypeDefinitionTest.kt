@@ -16,35 +16,35 @@ import kotlin.test.Test
 
 internal class MultiTypeDefinitionTest {
     private val intDef = NumberDefinition(
-            type = SInt32,
-            maxValue = 1000
+        type = SInt32,
+        maxValue = 1000
     )
 
     private val stringDef = StringDefinition(
-            regEx = "#.*"
+        regEx = "#.*"
     )
 
     val def = MultiTypeDefinition<Option, IsPropertyContext>(
-            definitionMap = mapOf(
-                    Option.V0 to stringDef,
-                    Option.V1 to intDef
-            )
+        definitionMap = mapOf(
+            Option.V0 to stringDef,
+            Option.V1 to intDef
+        )
     )
 
     val defMaxDefined = MultiTypeDefinition<Option, IsPropertyContext>(
-            indexed = true,
-            searchable = false,
-            final = true,
-            required = false,
-            definitionMap = mapOf(
-                    Option.V0 to stringDef,
-                    Option.V1 to intDef
-            )
+        indexed = true,
+        searchable = false,
+        final = true,
+        required = false,
+        definitionMap = mapOf(
+            Option.V0 to stringDef,
+            Option.V1 to intDef
+        )
     )
 
     private val multisToTest = arrayOf(
-            TypedValue(Option.V0, "#test"),
-            TypedValue(Option.V1, 400)
+        TypedValue(Option.V0, "#test"),
+        TypedValue(Option.V1, 400)
     )
 
     @Test

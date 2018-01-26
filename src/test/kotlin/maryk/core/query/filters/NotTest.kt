@@ -10,15 +10,15 @@ import kotlin.test.Test
 
 class NotTest {
     private val not = Not(
-            Exists(SimpleMarykObject.ref { value })
+        Exists(SimpleMarykObject.ref { value })
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

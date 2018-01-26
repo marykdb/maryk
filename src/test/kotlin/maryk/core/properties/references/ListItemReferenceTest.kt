@@ -15,7 +15,7 @@ class ListItemReferenceTest {
         val bc = ByteCollector()
 
         bc.reserve(
-                this.reference.calculateTransportByteLength(cache)
+            this.reference.calculateTransportByteLength(cache)
         )
         this.reference.writeTransportBytes(cache, bc::write)
 

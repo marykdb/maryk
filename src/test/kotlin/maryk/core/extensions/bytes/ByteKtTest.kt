@@ -9,12 +9,12 @@ import kotlin.test.Test
 
 internal class ByteKtTest {
     private val bytesToTest = byteArrayOf(
-            -1,
-            22,
-            -22,
-            0,
-            Byte.MAX_VALUE,
-            Byte.MIN_VALUE
+        -1,
+        22,
+        -22,
+        0,
+        Byte.MAX_VALUE,
+        Byte.MIN_VALUE
     )
 
     @Test
@@ -51,8 +51,8 @@ internal class ByteKtTest {
 
     @Test
     fun testStreamingVarIntZigZagConversion() {
-        fun testZigZagByteContent(bc: ByteCollector, it: Byte, hexValue: String)
-                = this.testByteContent(bc, it.encodeZigZag(), hexValue)
+        fun testZigZagByteContent(bc: ByteCollector, it: Byte, hexValue: String) =
+            this.testByteContent(bc, it.encodeZigZag(), hexValue)
 
         val bc = ByteCollector()
 

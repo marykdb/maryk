@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class ValueInTest {
     private val valueIn = ValueIn(
-            reference = SimpleMarykObject.ref { value },
-            values = setOf("t1", "t2", "t3")
+        reference = SimpleMarykObject.ref { value },
+        values = setOf("t1", "t2", "t3")
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

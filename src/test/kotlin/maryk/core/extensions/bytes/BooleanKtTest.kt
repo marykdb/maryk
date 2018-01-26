@@ -6,8 +6,8 @@ import kotlin.test.Test
 
 internal class BooleanKtTest {
     private val booleansToTest = booleanArrayOf(
-            true,
-            false
+        true,
+        false
     )
 
     @Test

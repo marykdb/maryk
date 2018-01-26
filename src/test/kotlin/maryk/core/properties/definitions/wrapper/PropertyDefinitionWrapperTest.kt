@@ -14,10 +14,10 @@ fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *
 
 class PropertyDefinitionWrapperTest {
     private val def = PropertyDefinitionWrapper(
-            index = 1,
-            name = "wrapper",
-            definition = StringDefinition(),
-            getter = { _: Any -> null }
+        index = 1,
+        name = "wrapper",
+        definition = StringDefinition(),
+        getter = { _: Any -> null }
     )
 
     @Test

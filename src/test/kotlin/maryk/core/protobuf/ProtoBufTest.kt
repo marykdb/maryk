@@ -12,17 +12,17 @@ class ProtoBufTest {
     private class PBKey(val tag: Int, val wireType: WireType, val hexBytes: String)
 
     private val testValues = arrayOf(
-            PBKey(4, WireType.VAR_INT, "20"),
-            PBKey(8, WireType.LENGTH_DELIMITED, "42"),
-            PBKey(15, WireType.BIT_32, "7d"),
-            PBKey(16, WireType.START_GROUP, "8301"),
-            PBKey(2047, WireType.END_GROUP, "fc7f"),
-            PBKey(2048, WireType.BIT_64, "818001"),
-            PBKey(262143, WireType.BIT_32, "fdff7f"),
-            PBKey(262144, WireType.VAR_INT, "80808001"),
-            PBKey(33554431, WireType.START_GROUP, "fbffff7f"),
-            PBKey(33554432, WireType.LENGTH_DELIMITED, "8280808001"),
-            PBKey(Int.MAX_VALUE, WireType.VAR_INT, "f8ffffff3f")
+        PBKey(4, WireType.VAR_INT, "20"),
+        PBKey(8, WireType.LENGTH_DELIMITED, "42"),
+        PBKey(15, WireType.BIT_32, "7d"),
+        PBKey(16, WireType.START_GROUP, "8301"),
+        PBKey(2047, WireType.END_GROUP, "fc7f"),
+        PBKey(2048, WireType.BIT_64, "818001"),
+        PBKey(262143, WireType.BIT_32, "fdff7f"),
+        PBKey(262144, WireType.VAR_INT, "80808001"),
+        PBKey(33554431, WireType.START_GROUP, "fbffff7f"),
+        PBKey(33554432, WireType.LENGTH_DELIMITED, "8280808001"),
+        PBKey(Int.MAX_VALUE, WireType.VAR_INT, "f8ffffff3f")
     )
 
     @Test
@@ -36,7 +36,7 @@ class ProtoBufTest {
 
         val bc = ByteCollector()
 
-        testValues.forEach {
+        for (it in testValues) {
             testGenerateKey(bc, it)
         }
     }
@@ -51,7 +51,7 @@ class ProtoBufTest {
             result.wireType shouldBe value.wireType
         }
 
-        testValues.forEach {
+        for (it in testValues) {
             testParseKey(it)
         }
     }

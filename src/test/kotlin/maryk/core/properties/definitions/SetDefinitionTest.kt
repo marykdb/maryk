@@ -21,23 +21,23 @@ import kotlin.test.assertTrue
 
 internal class SetDefinitionTest {
     private val subDef = StringDefinition(
-            regEx = "T.*"
+        regEx = "T.*"
     )
 
     private val def = SetDefinition(
-            minSize = 2,
-            maxSize = 4,
-            valueDefinition = subDef
+        minSize = 2,
+        maxSize = 4,
+        valueDefinition = subDef
     )
 
     private val defMaxDefined = SetDefinition(
-            indexed = true,
-            searchable = false,
-            final = true,
-            required = false,
-            minSize = 2,
-            maxSize = 4,
-            valueDefinition = subDef
+        indexed = true,
+        searchable = false,
+        final = true,
+        required = false,
+        minSize = 2,
+        maxSize = 4,
+        valueDefinition = subDef
     )
 
     @Test
@@ -97,9 +97,9 @@ internal class SetDefinitionTest {
         }
 
         fun readValue() = def.readCollectionTransportBytes(
-                ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
-                bc::read,
-                null
+            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            bc::read,
+            null
         )
 
         value.forEach {

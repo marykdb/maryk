@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class PrefixTest {
     private val prefix = Prefix(
-            reference = SimpleMarykObject.ref { value },
-            prefix = "te"
+        reference = SimpleMarykObject.ref { value },
+        prefix = "te"
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

@@ -23,7 +23,7 @@ internal class DateTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        datesToTest.forEach {
+        for (it in datesToTest) {
             bc.reserve(8)
             it.writeBytes(bc::write)
             Date.fromByteReader(bc::read) shouldBe it
@@ -33,23 +33,23 @@ internal class DateTest {
 
     @Test
     fun testStringConversion() {
-        datesToTest.forEach {
+        for (it in datesToTest) {
             Date.parse(
-                    it.toString()
+                it.toString()
             ) shouldBe it
         }
     }
 
     @Test
     fun testStringConversionExceptions() {
-        arrayOf(
-                "2017-03-32",
-                "2017-02-29",
-                "2017-02-30",
-                "2017-04-31",
-                "2017-08-40",
-                "2017-13-99"
-        ).forEach {
+        for (it in arrayOf(
+            "2017-03-32",
+            "2017-02-29",
+            "2017-02-30",
+            "2017-04-31",
+            "2017-08-40",
+            "2017-13-99"
+        )) {
             shouldThrow<ParseException> {
                 Date.parse(it)
             }

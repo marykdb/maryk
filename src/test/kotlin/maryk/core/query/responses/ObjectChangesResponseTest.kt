@@ -16,19 +16,19 @@ class ObjectChangesResponseTest {
     private val key = SimpleMarykObject.key.getKey(this.value)
 
     private val objectChangesResponse = ObjectChangesResponse(
-            SimpleMarykObject,
-            listOf(
-                    DataObjectChange(
-                            key,
-                            PropertyChange(SimpleMarykObject.ref { value }, "hoho"),
-                            PropertyDelete(SimpleMarykObject.ref { value }),
-                            lastVersion = 14141L.toUInt64()
-                    )
+        SimpleMarykObject,
+        listOf(
+            DataObjectChange(
+                key,
+                PropertyChange(SimpleMarykObject.ref { value }, "hoho"),
+                PropertyDelete(SimpleMarykObject.ref { value }),
+                lastVersion = 14141L.toUInt64()
             )
+        )
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

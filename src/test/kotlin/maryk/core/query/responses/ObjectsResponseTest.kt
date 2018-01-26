@@ -14,20 +14,20 @@ class ObjectsResponseTest {
     private val key = SimpleMarykObject.key.getKey(this.value)
 
     private val objectsResponse = ObjectsResponse(
-            SimpleMarykObject,
-            listOf(
-                    DataObjectWithMetaData(
-                            key = key,
-                            dataObject = value,
-                            firstVersion = 0L.toUInt64(),
-                            lastVersion = 14141L.toUInt64(),
-                            isDeleted = false
-                    )
+        SimpleMarykObject,
+        listOf(
+            DataObjectWithMetaData(
+                key = key,
+                dataObject = value,
+                firstVersion = 0L.toUInt64(),
+                lastVersion = 14141L.toUInt64(),
+                isDeleted = false
             )
+        )
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

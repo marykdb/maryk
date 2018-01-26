@@ -16,25 +16,25 @@ import kotlin.test.Test
 
 internal class ValueModelDefinitionTest {
     private val def = ValueModelDefinition(
-            dataModel = TestValueObject
+        dataModel = TestValueObject
     )
     private val defMaxDefined = ValueModelDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            minValue = TestValueObject(
-                    int = 0,
-                    dateTime = DateTime(2007,12,5),
-                    bool = true
-            ),
-            maxValue = TestValueObject(
-                    int = 999,
-                    dateTime = DateTime(2017,12,5),
-                    bool = true
-            ),
-            dataModel = TestValueObject
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        minValue = TestValueObject(
+            int = 0,
+            dateTime = DateTime(2007,12,5),
+            bool = true
+        ),
+        maxValue = TestValueObject(
+            int = 999,
+            dateTime = DateTime(2017,12,5),
+            bool = true
+        ),
+        dataModel = TestValueObject
     )
 
     @Test
@@ -43,16 +43,16 @@ internal class ValueModelDefinitionTest {
     }
 
     val value = TestValueObject(
-            int = 4,
-            dateTime = DateTime(date = Date.nowUTC(), time = Time.nowUTC().copy(milli = 0)),
-            bool = true
+        int = 4,
+        dateTime = DateTime(date = Date.nowUTC(), time = Time.nowUTC().copy(milli = 0)),
+        bool = true
     )
 
     @Test
     fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
         bc.reserve(
-                def.calculateStorageByteLength(value)
+            def.calculateStorageByteLength(value)
         )
         def.writeStorageBytes(value, bc::write)
         val new = def.readStorageBytes(bc.size, bc::read)
@@ -70,22 +70,22 @@ internal class ValueModelDefinitionTest {
     @Test
     fun convert_values_to_String_and_back() {
         def.fromString(
-                def.asString(value)
+            def.asString(value)
         ) shouldBe value
     }
 
     @Test
     fun validate() {
         def.validateWithRef(newValue = TestValueObject(
-                int = 4,
-                dateTime = DateTime.nowUTC(),
-                bool = true
+            int = 4,
+            dateTime = DateTime.nowUTC(),
+            bool = true
         ))
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = TestValueObject(
-                    int = 1000,
-                    dateTime = DateTime.nowUTC(),
-                    bool = true
+                int = 1000,
+                dateTime = DateTime.nowUTC(),
+                bool = true
             ))
         }
 

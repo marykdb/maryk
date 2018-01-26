@@ -13,21 +13,21 @@ import kotlin.test.Test
 
 internal class DateDefinitionTest {
     private val datesToTest = arrayOf(
-            Date.nowUTC(),
-            Date.MAX,
-            Date.MIN
+        Date.nowUTC(),
+        Date.MAX,
+        Date.MIN
     )
 
     private val def = DateDefinition()
     private val defMaxDefined = DateDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            fillWithNow = true,
-            maxValue = Date.MAX,
-            minValue = Date.MIN
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        fillWithNow = true,
+        maxValue = Date.MAX,
+        minValue = Date.MIN
     )
 
     @Test
@@ -39,9 +39,9 @@ internal class DateDefinitionTest {
     @Test
     fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
-        datesToTest.forEach {
+        for (it in datesToTest) {
             bc.reserve(
-                    def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
             def.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -54,9 +54,9 @@ internal class DateDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        datesToTest.forEach {
+        for (it in datesToTest) {
             bc.reserve(
-                    def.calculateTransportByteLength(it, cacheFailer)
+                def.calculateTransportByteLength(it, cacheFailer)
             )
             def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it
@@ -66,7 +66,7 @@ internal class DateDefinitionTest {
 
     @Test
     fun convert_values_to_String_and_back() {
-        datesToTest.forEach {
+        for (it in datesToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }

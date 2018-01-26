@@ -24,10 +24,10 @@ internal class ValueDataModelTest {
         converted.name shouldBe original.name
 
         (converted.properties)
-                .zip(original.properties)
-                .forEach { (convertedWrapper, originalWrapper) ->
-                    comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
-                }
+            .zip(original.properties)
+            .forEach { (convertedWrapper, originalWrapper) ->
+                comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
+            }
     }
 }
 

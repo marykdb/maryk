@@ -12,29 +12,29 @@ import kotlin.test.Test
 
 class DataObjectChangeTest {
     private val key1 = TestMarykObject.key.get(
-            byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
+        byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
     private val subModel = TestMarykObject.ref { subModel }
 
     private val dataObjectChange = DataObjectChange(
-            key1,
-            PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
-            PropertyDelete(SubMarykObject.ref(subModel) { value }),
-            PropertyCheck(SubMarykObject.ref(subModel) { value }),
-            ObjectSoftDeleteChange(true),
-            ListPropertyChange(TestMarykObject.ref { list }),
-            SetPropertyChange(TestMarykObject.ref { set }),
-            MapPropertyChange(TestMarykObject.ref { map }),
-            lastVersion = 12345L.toUInt64()
+        key1,
+        PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
+        PropertyDelete(SubMarykObject.ref(subModel) { value }),
+        PropertyCheck(SubMarykObject.ref(subModel) { value }),
+        ObjectSoftDeleteChange(true),
+        ListPropertyChange(TestMarykObject.ref { list }),
+        SetPropertyChange(TestMarykObject.ref { set }),
+        MapPropertyChange(TestMarykObject.ref { map }),
+        lastVersion = 12345L.toUInt64()
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    TestMarykObject.name to TestMarykObject
-            ),
-            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            TestMarykObject.name to TestMarykObject
+        ),
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

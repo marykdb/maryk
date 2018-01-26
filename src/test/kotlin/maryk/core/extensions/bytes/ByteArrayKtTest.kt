@@ -8,10 +8,10 @@ import kotlin.test.Test
 
 internal class ByteArrayKtTest {
     private val bytesToTest = arrayOf(
-            Base64.decode("////////"),
-            Base64.decode("AAAAAAA"),
-            Base64.decode("iIiIiIiI"),
-            Base64.decode("iIiIiIiIAAAA//")
+        Base64.decode("////////"),
+        Base64.decode("AAAAAAA"),
+        Base64.decode("iIiIiIiI"),
+        Base64.decode("iIiIiIiIAAAA//")
     )
 
     @Test

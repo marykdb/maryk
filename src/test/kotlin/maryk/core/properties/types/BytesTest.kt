@@ -8,19 +8,19 @@ import kotlin.test.Test
 
 internal class BytesTest {
     private val bytesToTest = arrayOf(
-            Bytes.ofBase64String("////////"),
-            Bytes.ofBase64String("AAAAAAA"),
-            Bytes.ofBase64String("iIiIiIiI")
+        Bytes.ofBase64String("////////"),
+        Bytes.ofBase64String("AAAAAAA"),
+        Bytes.ofBase64String("iIiIiIiI")
     )
 
     @Test
     fun testCompare() {
         Bytes.ofBase64String("//").compareTo(
-                Bytes.ofBase64String("//")
+            Bytes.ofBase64String("//")
         ) shouldBe 0
 
         Bytes.ofBase64String("AAAA").compareTo(
-                Bytes.ofBase64String("BBBBBB")
+            Bytes.ofBase64String("BBBBBB")
         ) shouldBe -4
     }
 
@@ -39,7 +39,7 @@ internal class BytesTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        bytesToTest.forEach {
+        for (it in bytesToTest) {
             bc.reserve(it.size)
             it.writeBytes(bc::write)
             Bytes.fromByteReader(bc.size, bc::read) shouldBe it
@@ -49,18 +49,18 @@ internal class BytesTest {
 
     @Test
     fun testStringConversion() {
-        bytesToTest.forEach {
+        for (it in bytesToTest) {
             Bytes.ofBase64String(
-                    it.toString()
+                it.toString()
             ) shouldBe it
         }
     }
 
     @Test
     fun testHexConversion() {
-        bytesToTest.forEach {
+        for (it in bytesToTest) {
             Bytes.ofHex(
-                    it.toHex()
+                it.toHex()
             ) shouldBe it
         }
     }

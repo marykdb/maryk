@@ -11,17 +11,17 @@ import kotlin.test.Test
 
 class PropertyChangeTest {
     private val valueChange = PropertyChange(
-            reference = SimpleMarykObject.ref { value },
-            newValue = "test",
-            valueToCompare = "old"
+        reference = SimpleMarykObject.ref { value },
+        newValue = "test",
+        valueToCompare = "old"
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

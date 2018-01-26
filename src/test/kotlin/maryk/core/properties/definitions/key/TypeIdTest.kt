@@ -20,26 +20,26 @@ import kotlin.test.Test
 
 internal class TypeIdTest {
     private data class MarykObject(
-            val multi: TypedValue<Option, *>
+        val multi: TypedValue<Option, *>
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val multi = add(0, "multi", MultiTypeDefinition(
-                    definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
-                            Option.V0 to StringDefinition(),
-                            Option.V1 to BooleanDefinition()
-                    )
+                definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
+                    Option.V0 to StringDefinition(),
+                    Option.V1 to BooleanDefinition()
+                )
             ), MarykObject::multi)
         }
         companion object: RootDataModel<MarykObject, Properties>(
-                name = "MarykObject",
-                keyDefinitions = definitions(
-                        TypeId(Properties.multi)
-                ),
-                properties = Properties
+            name = "MarykObject",
+            keyDefinitions = definitions(
+                TypeId(Properties.multi)
+            ),
+            properties = Properties
         ) {
             @Suppress("UNCHECKED_CAST")
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                    map[0] as TypedValue<Option, *>
+                map[0] as TypedValue<Option, *>
             )
         }
     }
@@ -47,7 +47,7 @@ internal class TypeIdTest {
     @Test
     fun testKey(){
         val obj = MarykObject(
-                multi = TypedValue(Option.V1, true)
+            multi = TypedValue(Option.V1, true)
         )
 
         val key = MarykObject.key.getKey(obj)
@@ -68,24 +68,24 @@ internal class TypeIdTest {
     }
 
     private val context = DataModelContext(
-            propertyDefinitions = MarykObject.Properties
+        propertyDefinitions = MarykObject.Properties
     )
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
         checkProtoBufConversion(
-                value = TypeId(MarykObject.Properties.multi.getRef()),
-                dataModel = TypeId.Model,
-                context = context
+            value = TypeId(MarykObject.Properties.multi.getRef()),
+            dataModel = TypeId.Model,
+            context = context
         )
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(
-                value = TypeId(MarykObject.Properties.multi.getRef()),
-                dataModel = TypeId.Model,
-                context = context
+            value = TypeId(MarykObject.Properties.multi.getRef()),
+            dataModel = TypeId.Model,
+            context = context
         )
     }
 }

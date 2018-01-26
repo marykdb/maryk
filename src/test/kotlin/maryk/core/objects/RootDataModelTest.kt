@@ -21,19 +21,19 @@ import kotlin.test.Test
 internal class RootDataModelTest {
     @Test
     fun testKey() {
-            TestMarykObject.key.getKey(
-                    TestMarykObject(
-                            string = "name",
-                            int = 5123123,
-                            uint = 555.toUInt32(),
-                            double = 6.33,
-                            bool = true,
-                            enum = Option.V2,
-                            dateTime = DateTime.nowUTC()
-                    )
-            ) shouldBe Bytes(
-                    byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
+        TestMarykObject.key.getKey(
+            TestMarykObject(
+                string = "name",
+                int = 5123123,
+                uint = 555.toUInt32(),
+                double = 6.33,
+                bool = true,
+                enum = Option.V2,
+                dateTime = DateTime.nowUTC()
             )
+        ) shouldBe Bytes(
+            byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
+        )
     }
 
     private val subModelRef = SubMarykObject.Properties.value.getRef(TestMarykObject.Properties.subModel.getRef())
@@ -53,7 +53,7 @@ internal class RootDataModelTest {
 
         arrayOf(subModelRef, mapRef, mapKeyRef).forEach {
             bc.reserve(
-                    it.calculateTransportByteLength(cache)
+                it.calculateTransportByteLength(cache)
             )
             it.writeTransportBytes(cache, bc::write)
 
@@ -77,19 +77,18 @@ internal class RootDataModelTest {
         converted.name shouldBe original.name
 
         (converted.properties)
-                .zip(original.properties)
-                .forEach { (convertedWrapper, originalWrapper) ->
-                    comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
-                }
+            .zip(original.properties)
+            .forEach { (convertedWrapper, originalWrapper) ->
+                comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
+            }
 
         converted.key.keyDefinitions.zip(original.key.keyDefinitions).forEach { (converted, original) ->
-                    when(converted) {
-                        is IsPropertyDefinitionWrapper<*, *, *> -> {
-                            comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *>)
-                        }
-                        else -> converted shouldBe original
-                    }
-
+            when(converted) {
+                is IsPropertyDefinitionWrapper<*, *, *> -> {
+                    comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *>)
+                }
+                else -> converted shouldBe original
+            }
         }
     }
 }

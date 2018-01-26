@@ -14,23 +14,23 @@ class GetRequestTest {
     private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
 
     private val getRequest = GetRequest(
-            SimpleMarykObject,
-            key1,
-            key2
+        SimpleMarykObject,
+        key1,
+        key2
     )
 
     private val getMaxRequest = GetRequest(
-            SimpleMarykObject,
-            key1,
-            key2,
-            filter = Exists(SimpleMarykObject.ref { value }),
-            order = Order(SimpleMarykObject.ref { value }),
-            toVersion = 333L.toUInt64(),
-            filterSoftDeleted = true
+        SimpleMarykObject,
+        key1,
+        key2,
+        filter = Exists(SimpleMarykObject.ref { value }),
+        order = Order(SimpleMarykObject.ref { value }),
+        toVersion = 333L.toUInt64(),
+        filterSoftDeleted = true
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

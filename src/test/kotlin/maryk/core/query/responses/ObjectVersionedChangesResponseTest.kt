@@ -21,46 +21,46 @@ import kotlin.test.Test
 
 class ObjectVersionedChangesResponseTest {
     private val key = TestMarykObject.key.get(
-            byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
+        byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
     private val subModel = TestMarykObject.ref { subModel }
 
     private val objectVersionedChangesResponse = ObjectVersionedChangesResponse(
-            TestMarykObject,
-            listOf(
-                    DataObjectVersionedChange(
-                            key = key,
-                            changes = listOf(
-                                    VersionedChanges(
-                                            219674127L.toUInt64(),
-                                            listOf(
-                                                    ObjectSoftDeleteChange(true),
-                                                    ListPropertyChange(TestMarykObject.ref { list }),
-                                                    SetPropertyChange(TestMarykObject.ref { set }),
-                                                    MapPropertyChange(TestMarykObject.ref { map })
-                                            )
-                                    ),
-                                    VersionedChanges(
-                                            319674127L.toUInt64(),
-                                            listOf(
-                                                    PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
-                                                    PropertyDelete(SubMarykObject.ref(subModel) { value }),
-                                                    PropertyCheck(SubMarykObject.ref(subModel) { value })
-                                            )
-                                    )
-                            )
+        TestMarykObject,
+        listOf(
+            DataObjectVersionedChange(
+                key = key,
+                changes = listOf(
+                    VersionedChanges(
+                        219674127L.toUInt64(),
+                        listOf(
+                            ObjectSoftDeleteChange(true),
+                            ListPropertyChange(TestMarykObject.ref { list }),
+                            SetPropertyChange(TestMarykObject.ref { set }),
+                            MapPropertyChange(TestMarykObject.ref { map })
+                        )
+                    ),
+                    VersionedChanges(
+                        319674127L.toUInt64(),
+                        listOf(
+                            PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
+                            PropertyDelete(SubMarykObject.ref(subModel) { value }),
+                            PropertyCheck(SubMarykObject.ref(subModel) { value })
+                        )
                     )
+                )
             )
+        )
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            dataModels = mapOf(
-                    SubMarykObject.name to SubMarykObject,
-                    TestMarykObject.name to TestMarykObject
-            ),
-            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModels = mapOf(
+            SubMarykObject.name to SubMarykObject,
+            TestMarykObject.name to TestMarykObject
+        ),
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

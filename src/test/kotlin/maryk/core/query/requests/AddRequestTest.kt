@@ -8,13 +8,13 @@ import kotlin.test.Test
 
 class AddRequestTest {
     private val addRequest = AddRequest(
-            SimpleMarykObject,
-            SimpleMarykObject(value = "haha1"),
-            SimpleMarykObject(value = "haha2")
+        SimpleMarykObject,
+        SimpleMarykObject(value = "haha1"),
+        SimpleMarykObject(value = "haha2")
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

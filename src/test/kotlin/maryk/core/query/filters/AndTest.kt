@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class AndTest {
     private val and = And(
-            Exists(SimpleMarykObject.ref{ value }),
-            Equals(SimpleMarykObject.ref{ value }, "hoi")
+        Exists(SimpleMarykObject.ref{ value }),
+        Equals(SimpleMarykObject.ref{ value }, "hoi")
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

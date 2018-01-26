@@ -30,7 +30,7 @@ internal class UInt32Test {
         UInt32.MIN_VALUE.toString() shouldBe "0"
         UInt32.MAX_VALUE.toString() shouldBe "4294967295"
 
-        uInt32values.forEach {
+        for (it in uInt32values) {
             UInt32.ofString(it.toString()) shouldBe it
         }
     }
@@ -38,7 +38,7 @@ internal class UInt32Test {
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        uInt32values.forEach {
+        for (it in uInt32values) {
             bc.reserve(UInt32.size)
             UInt32.writeStorageBytes(it, bc::write)
             UInt32.fromStorageByteReader(bc.size, bc::read) shouldBe it
@@ -49,7 +49,7 @@ internal class UInt32Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        uInt32values.forEach {
+        for (it in uInt32values) {
             bc.reserve(UInt32.calculateTransportByteLength(it))
             UInt32.writeTransportBytes(it, bc::write)
             UInt32.readTransportBytes(bc::read) shouldBe it

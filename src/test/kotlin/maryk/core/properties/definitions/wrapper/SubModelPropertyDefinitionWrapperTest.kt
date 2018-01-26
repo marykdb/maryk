@@ -9,12 +9,12 @@ import kotlin.test.Test
 
 class SubModelPropertyDefinitionWrapperTest {
     private val def = SubModelPropertyDefinitionWrapper(
-            index = 1,
-            name = "wrapper",
-            definition = SubModelDefinition(
-                    dataModel = { SubMarykObject }
-            ),
-            getter = { _: Any -> null }
+        index = 1,
+        name = "wrapper",
+        definition = SubModelDefinition(
+            dataModel = { SubMarykObject }
+        ),
+        getter = { _: Any -> null }
     )
 
     @Test

@@ -8,15 +8,15 @@ import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 
 fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
-        bc: ByteCollector = ByteCollector(),
-        value: T,
-        def: IsValueDefinition<T, CX>,
-        context: CX? = null
+    bc: ByteCollector = ByteCollector(),
+    value: T,
+    def: IsValueDefinition<T, CX>,
+    context: CX? = null
 ) {
     val cache = WriteCache()
 
     bc.reserve(
-            def.calculateTransportByteLengthWithKey(22, value, cache, context)
+        def.calculateTransportByteLengthWithKey(22, value, cache, context)
     )
     def.writeTransportBytesWithKey(22, value, cache, bc::write, context)
     val key = ProtoBuf.readKey(bc::read)
@@ -24,9 +24,9 @@ fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
     key.wireType shouldBe def.wireType
 
     def.readTransportBytes(
-            ProtoBuf.getLength(key.wireType, bc::read),
-            bc::read,
-            context
+        ProtoBuf.getLength(key.wireType, bc::read),
+        bc::read,
+        context
     ) shouldBe value
     bc.reset()
 }

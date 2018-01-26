@@ -6,16 +6,16 @@ import kotlin.test.Test
 
 internal class FloatKtTest {
     private val floatsToTest = floatArrayOf(
-            Float.NEGATIVE_INFINITY,
-            -2222.22F,
-            -1F
-            -0F,
-            0F,
-            Float.MIN_VALUE,
-            1F,
-            2222.22F,
-            Float.MAX_VALUE,
-            Float.POSITIVE_INFINITY
+        Float.NEGATIVE_INFINITY,
+        -2222.22F,
+        -1F,
+        -0F,
+        0F,
+        Float.MIN_VALUE,
+        1F,
+        2222.22F,
+        Float.MAX_VALUE,
+        Float.POSITIVE_INFINITY
     )
 
     @Test

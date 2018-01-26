@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class OrderTest {
     private val order = Order(
-            SimpleMarykObject.ref { value },
-            Direction.ASC
+        SimpleMarykObject.ref { value },
+        Direction.ASC
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

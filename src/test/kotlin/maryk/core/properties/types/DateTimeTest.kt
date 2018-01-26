@@ -9,28 +9,28 @@ internal class DateTimeTest {
     private fun cleanToSeconds(it: DateTime) = DateTime(it.date, Time(it.hour, it.minute, it.day))
 
     private val dateTime = DateTime(
-            year = 2017,
-            month = 8,
-            day = 16,
-            hour = 11,
-            minute = 28,
-            second = 22,
-            milli = 2344
+        year = 2017,
+        month = 8,
+        day = 16,
+        hour = 11,
+        minute = 28,
+        second = 22,
+        milli = 2344
     )
 
     private val dateTimesWithSecondsToTest = arrayOf(
-            cleanToSeconds(DateTime.nowUTC()),
-            cleanToSeconds(DateTime.MAX_IN_SECONDS),
-            cleanToSeconds(dateTime),
-            DateTime.MIN
+        cleanToSeconds(DateTime.nowUTC()),
+        cleanToSeconds(DateTime.MAX_IN_SECONDS),
+        cleanToSeconds(dateTime),
+        DateTime.MIN
     )
 
     private val dateTimesWithMillisToTest = arrayOf(
-            DateTime.nowUTC(),
-            DateTime.MAX_IN_MILLIS,
-            DateTime.MIN
+        DateTime.nowUTC(),
+        DateTime.MAX_IN_MILLIS,
+        DateTime.MIN
     )
-    
+
     @Test
     fun compare() {
         DateTime.MIN.compareTo(DateTime.MAX_IN_SECONDS) shouldBe -199999998
@@ -46,20 +46,20 @@ internal class DateTimeTest {
 
     @Test
     fun epochSecondConversion() {
-        dateTimesWithSecondsToTest.forEach {
+        for (it in dateTimesWithSecondsToTest) {
             DateTime.ofEpochSecond(
-                    it.toEpochSecond()
+                it.toEpochSecond()
             ) shouldBe it
         }
     }
 
     @Test
     fun epochMilliConversion() {
-        arrayOf(
-                DateTime.nowUTC()
-        ).forEach {
+        for (it in arrayOf(
+            DateTime.nowUTC()
+        )) {
             DateTime.ofEpochMilli(
-                    it.toEpochMilli()
+                it.toEpochMilli()
             ) shouldBe it
         }
     }
@@ -67,7 +67,7 @@ internal class DateTimeTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        dateTimesWithSecondsToTest.forEach {
+        for (it in dateTimesWithSecondsToTest) {
             bc.reserve(7)
             it.writeBytes(TimePrecision.SECONDS, bc::write)
             DateTime.fromByteReader(bc.size, bc::read) shouldBe it
@@ -78,7 +78,7 @@ internal class DateTimeTest {
     @Test
     fun testStreamingMillisConversion() {
         val bc = ByteCollector()
-        dateTimesWithMillisToTest.forEach {
+        for (it in dateTimesWithMillisToTest) {
             bc.reserve(9)
             it.writeBytes(TimePrecision.MILLIS, bc::write)
             DateTime.fromByteReader(bc.size, bc::read) shouldBe it
@@ -97,9 +97,9 @@ internal class DateTimeTest {
 
     @Test
     fun testStringConversion() {
-        dateTimesWithMillisToTest.forEach {
+        for (it in dateTimesWithMillisToTest) {
             DateTime.parse(
-                    it.toString()
+                it.toString()
             ) shouldBe it
         }
     }

@@ -10,15 +10,15 @@ import kotlin.test.Test
 
 class ExistsTest {
     private val exists = Exists(
-            reference = SimpleMarykObject.ref { value }
+        reference = SimpleMarykObject.ref { value }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

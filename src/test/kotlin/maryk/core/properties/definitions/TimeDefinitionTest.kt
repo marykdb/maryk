@@ -15,11 +15,11 @@ import kotlin.test.assertTrue
 
 internal class TimeDefinitionTest {
     private val timesToTestMillis = arrayOf(
-            Time(12, 3, 5, 50),
-            Time.nowUTC(),
-            Time.MAX_IN_SECONDS,
-            Time.MAX_IN_MILLIS,
-            Time.MIN
+        Time(12, 3, 5, 50),
+        Time.nowUTC(),
+        Time.MAX_IN_SECONDS,
+        Time.MAX_IN_MILLIS,
+        Time.MIN
     )
 
     private val timesToTestSeconds = arrayOf(Time.MAX_IN_SECONDS, Time.MIN, Time(13, 55, 44))
@@ -27,19 +27,19 @@ internal class TimeDefinitionTest {
     private val def = TimeDefinition()
 
     private val defMilli = TimeDefinition(
-            precision = TimePrecision.MILLIS
+        precision = TimePrecision.MILLIS
     )
 
     private val defMaxDefined = TimeDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            minValue = Time.MIN,
-            maxValue = Time.MAX_IN_MILLIS,
-            fillWithNow = true,
-            precision = TimePrecision.MILLIS
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        minValue = Time.MIN,
+        maxValue = Time.MAX_IN_MILLIS,
+        fillWithNow = true,
+        precision = TimePrecision.MILLIS
     )
 
     @Test
@@ -55,9 +55,9 @@ internal class TimeDefinitionTest {
     @Test
     fun convert_millisecond_precision_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
-        arrayOf(Time.MAX_IN_MILLIS, Time.MIN).forEach {
+        for (it in arrayOf(Time.MAX_IN_MILLIS, Time.MIN)) {
             bc.reserve(
-                    defMilli.calculateStorageByteLength(it)
+                defMilli.calculateStorageByteLength(it)
             )
             defMilli.writeStorageBytes(it, bc::write)
             defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -68,9 +68,9 @@ internal class TimeDefinitionTest {
     @Test
     fun convert_seconds_precision_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
-        timesToTestSeconds.forEach {
+        for (it in timesToTestSeconds) {
             bc.reserve(
-                    def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
             def.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -83,7 +83,7 @@ internal class TimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        timesToTestSeconds.forEach {
+        for (it in timesToTestSeconds) {
             bc.reserve(def.calculateTransportByteLength(it, cacheFailer))
             def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it
@@ -96,7 +96,7 @@ internal class TimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        timesToTestMillis.forEach {
+        for (it in timesToTestMillis) {
             bc.reserve(defMilli.calculateTransportByteLength(it, cacheFailer))
             defMilli.writeTransportBytes(it, cacheFailer, bc::write)
             defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
@@ -106,7 +106,7 @@ internal class TimeDefinitionTest {
 
     @Test
     fun convert_values_to_String_and_back() {
-        timesToTestMillis.forEach {
+        for (it in timesToTestMillis) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }

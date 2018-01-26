@@ -10,15 +10,15 @@ internal class TimeTest {
     private fun cleanToSeconds(time: Time) = Time(time.hour, time.minute, time.second)
 
     private val timesWithSecondsToTest = arrayOf(
-            cleanToSeconds(Time.nowUTC()),
-            Time.MAX_IN_SECONDS,
-            Time.MIN
+        cleanToSeconds(Time.nowUTC()),
+        Time.MAX_IN_SECONDS,
+        Time.MIN
     )
 
     private val timesWithMillisToTest = arrayOf(
-            Time.nowUTC(),
-            Time.MAX_IN_MILLIS,
-            Time.MIN
+        Time.nowUTC(),
+        Time.MAX_IN_MILLIS,
+        Time.MIN
     )
 
     @Test
@@ -38,7 +38,7 @@ internal class TimeTest {
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        timesWithSecondsToTest.forEach {
+        for (it in timesWithSecondsToTest) {
             bc.reserve(3)
             it.writeBytes(TimePrecision.SECONDS, bc::write)
             Time.fromByteReader(bc.size, bc::read) shouldBe it
@@ -49,7 +49,7 @@ internal class TimeTest {
     @Test
     fun testStreamingMillisConversion() {
         val bc = ByteCollector()
-        timesWithMillisToTest.forEach {
+        for (it in timesWithMillisToTest) {
             bc.reserve(4)
             it.writeBytes(TimePrecision.MILLIS, bc::write)
             Time.fromByteReader(bc.size, bc::read) shouldBe it
@@ -66,9 +66,9 @@ internal class TimeTest {
 
     @Test
     fun testStringConversion() {
-        timesWithMillisToTest.forEach {
+        for (it in timesWithMillisToTest) {
             Time.parse(
-                    it.toString()
+                it.toString()
             ) shouldBe it
         }
     }
@@ -77,13 +77,13 @@ internal class TimeTest {
     fun testWrongSizeError() {
         shouldThrow<ParseException> {
             Time.ofMilliOfDay(
-                    Int.MAX_VALUE
+                Int.MAX_VALUE
             )
         }
 
         shouldThrow<ParseException> {
             Time.ofSecondOfDay(
-                    Int.MAX_VALUE
+                Int.MAX_VALUE
             )
         }
     }

@@ -15,35 +15,35 @@ import kotlin.test.Test
 
 class ContextualReferenceDefinitionTest {
     private val refsToTest = arrayOf<Key<TestMarykObject>>(
-            Key(ByteArray(9, { ZERO_BYTE })),
-            Key(ByteArray(9, { MAX_BYTE })),
-            Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE }))
+        Key(ByteArray(9, { ZERO_BYTE })),
+        Key(ByteArray(9, { MAX_BYTE })),
+        Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE }))
     )
 
     private val def = ContextualReferenceDefinition<DataModelPropertyContext>(
-            contextualResolver = { it!!.dataModel!!.key }
+        contextualResolver = { it!!.dataModel!!.key }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    TestMarykObject.name to TestMarykObject,
-                    SubMarykObject.name to SubMarykObject
-            ),
-            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            TestMarykObject.name to TestMarykObject,
+            SubMarykObject.name to SubMarykObject
+        ),
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
     fun testTransportConversion() {
         val bc = ByteCollector()
-        refsToTest.forEach { value ->
+        for (value in refsToTest) {
             checkProtoBufConversion(bc, value, this.def, this.context)
         }
     }
 
     @Test
     fun convertString() {
-        refsToTest.forEach {
+        for (it in refsToTest) {
             val b = def.asString(it, this.context)
             def.fromString(b, this.context) shouldBe it
         }

@@ -9,9 +9,9 @@ internal class IsComparableDefinitionTest {
     val test: String = "test"
 
     val def = StringDefinition(
-            unique = true,
-            minValue = "bbb",
-            maxValue = "ddd"
+        unique = true,
+        minValue = "bbb",
+        maxValue = "ddd"
     )
 
     @Test

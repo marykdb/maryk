@@ -10,19 +10,19 @@ import kotlin.test.Test
 
 class RangeTest {
     private val range = Range(
-            reference = SimpleMarykObject.ref { value },
-            from = "test",
-            to = "test999",
-            inclusiveFrom = true,
-            inclusiveTo = false
+        reference = SimpleMarykObject.ref { value },
+        from = "test",
+        to = "test999",
+        inclusiveFrom = true,
+        inclusiveTo = false
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

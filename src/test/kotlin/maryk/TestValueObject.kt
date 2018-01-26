@@ -10,14 +10,14 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
 
 data class TestValueObject(
-        val int: Int,
-        val dateTime: DateTime,
-        val bool: Boolean
+    val int: Int,
+    val dateTime: DateTime,
+    val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
     object Properties : PropertyDefinitions<TestValueObject>() {
         val int = add(0, "int", NumberDefinition(
-                type = SInt32,
-                maxValue = 6
+            type = SInt32,
+            maxValue = 6
         ), TestValueObject::int)
 
         val dateTime = add(1, "dateTime", DateTimeDefinition(), TestValueObject::dateTime)
@@ -26,13 +26,13 @@ data class TestValueObject(
     }
 
     companion object: ValueDataModel<TestValueObject, Properties>(
-            name = "TestValueObject",
-            properties = Properties
+        name = "TestValueObject",
+        properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = TestValueObject(
-                int = map[0] as Int,
-                dateTime = map[1] as DateTime,
-                bool = map[2] as Boolean
+            int = map[0] as Int,
+            dateTime = map[1] as DateTime,
+            bool = map[2] as Boolean
         )
     }
 }

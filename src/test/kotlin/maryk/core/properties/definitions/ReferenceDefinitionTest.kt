@@ -15,23 +15,23 @@ import kotlin.test.Test
 
 internal class ReferenceDefinitionTest {
     private val refToTest = arrayOf<Key<TestMarykObject>>(
-            Key(ByteArray(9, { ZERO_BYTE })),
-            Key(ByteArray(9, { MAX_BYTE })),
-            Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE }))
+        Key(ByteArray(9, { ZERO_BYTE })),
+        Key(ByteArray(9, { MAX_BYTE })),
+        Key(ByteArray(9, { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE }))
     )
 
     val def = ReferenceDefinition(
-            dataModel = { TestMarykObject }
+        dataModel = { TestMarykObject }
     )
     val defMaxDefined = ReferenceDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            minValue = refToTest[0],
-            maxValue = refToTest[1],
-            dataModel = { TestMarykObject }
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        minValue = refToTest[0],
+        maxValue = refToTest[1],
+        dataModel = { TestMarykObject }
     )
 
     @Test
@@ -41,7 +41,7 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun convert_values_to_String_and_back() {
-        refToTest.forEach {
+        for (it in refToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
@@ -56,9 +56,9 @@ internal class ReferenceDefinitionTest {
     @Test
     fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
-        refToTest.forEach {
+        for (it in refToTest) {
             bc.reserve(
-                    def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
             def.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -69,7 +69,9 @@ internal class ReferenceDefinitionTest {
     @Test
     fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
-        refToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
+        for (it in refToTest) {
+            checkProtoBufConversion(bc, it, this.def)
+        }
     }
 
     @Test

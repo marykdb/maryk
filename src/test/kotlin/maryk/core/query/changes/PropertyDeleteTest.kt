@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class PropertyDeleteTest {
     private val propertyDelete = PropertyDelete(
-            reference = SimpleMarykObject.ref { value },
-            valueToCompare = "test"
+        reference = SimpleMarykObject.ref { value },
+        valueToCompare = "test"
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

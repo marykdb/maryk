@@ -12,26 +12,26 @@ class ValidationExceptionTest {
     private val ref = SimpleMarykObject.ref { value }
 
     private val validationUmbrellaException = ValidationUmbrellaException(null, listOf(
-            AlreadySetException(ref),
-            InvalidSizeException(ref, "wrong", 1, 3),
-            InvalidValueException(ref, "wrong"),
-            OutOfRangeException(ref, "wrong", "a", "g"),
-            RequiredException(ref),
-            ValidationUmbrellaException(
-                    ref,
-                    listOf(
-                            TooLittleItemsException(ref, 2, 3),
-                            TooMuchItemsException(ref, 10, 3)
-                    )
+        AlreadySetException(ref),
+        InvalidSizeException(ref, "wrong", 1, 3),
+        InvalidValueException(ref, "wrong"),
+        OutOfRangeException(ref, "wrong", "a", "g"),
+        RequiredException(ref),
+        ValidationUmbrellaException(
+            ref,
+            listOf(
+                TooLittleItemsException(ref, 2, 3),
+                TooMuchItemsException(ref, 10, 3)
             )
+        )
     ))
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

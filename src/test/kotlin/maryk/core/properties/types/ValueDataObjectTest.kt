@@ -6,15 +6,15 @@ import kotlin.test.Test
 
 internal class ValueDataObjectTest {
     private val value = TestValueObject(
-            int = 4,
-            dateTime = DateTime(date = Date.nowUTC(), time = Time.nowUTC().copy(milli = 0)),
-            bool = true
+        int = 4,
+        dateTime = DateTime(date = Date.nowUTC(), time = Time.nowUTC().copy(milli = 0)),
+        bool = true
     )
 
     private val value2 = TestValueObject(
-            int = 5,
-            dateTime = DateTime(date = Date.nowUTC(), time = Time.nowUTC().copy(milli = 0)),
-            bool = false
+        int = 5,
+        dateTime = DateTime(date = Date.nowUTC(), time = Time.nowUTC().copy(milli = 0)),
+        bool = false
     )
 
 

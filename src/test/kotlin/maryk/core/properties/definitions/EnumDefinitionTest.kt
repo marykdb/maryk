@@ -15,31 +15,31 @@ import kotlin.test.Test
 
 internal class EnumDefinitionTest {
     private val enumsToTest = arrayOf(
-            Option.V0,
-            Option.V1
+        Option.V0,
+        Option.V1
     )
 
     val def = EnumDefinition(
-            values = Option.values()
+        values = Option.values()
     )
 
     val defMaxDefined = EnumDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            minValue = Option.V0,
-            maxValue = Option.V2,
-            values = Option.values()
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        minValue = Option.V0,
+        maxValue = Option.V2,
+        values = Option.values()
     )
 
     @Test
     fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
-        enumsToTest.forEach {
+        for (it in enumsToTest) {
             bc.reserve(
-                    def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
             def.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -52,14 +52,14 @@ internal class EnumDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        val expected = arrayOf(
-                "7000",
-                "7001"
+        val expectedEnums = arrayOf(
+            "7000",
+            "7001"
         )
 
-        enumsToTest.zip(expected).forEach { (enum, expected) ->
+        for ((enum, expected) in enumsToTest.zip(expectedEnums)) {
             bc.reserve(
-                    def.calculateTransportByteLengthWithKey(14, enum, cacheFailer, null)
+                def.calculateTransportByteLengthWithKey(14, enum, cacheFailer, null)
             )
             def.writeTransportBytesWithKey(14, enum, cacheFailer, bc::write, null)
             val key = ProtoBuf.readKey(bc::read)
@@ -69,8 +69,8 @@ internal class EnumDefinitionTest {
             bc.bytes!!.toHex() shouldBe expected
 
             def.readTransportBytes(
-                    ProtoBuf.getLength(WireType.VAR_INT, bc::read),
-                    bc::read
+                ProtoBuf.getLength(WireType.VAR_INT, bc::read),
+                bc::read
             ) shouldBe enum
             bc.reset()
         }
@@ -78,7 +78,7 @@ internal class EnumDefinitionTest {
 
     @Test
     fun convert_values_to_String_and_back() {
-        enumsToTest.forEach {
+        for (it in enumsToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }

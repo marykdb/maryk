@@ -10,16 +10,16 @@ import kotlin.test.Test
 
 class RegExTest {
     private val regEx = RegEx(
-            reference = SimpleMarykObject.ref { value },
-            regEx = ".*"
+        reference = SimpleMarykObject.ref { value },
+        regEx = ".*"
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    SimpleMarykObject.name to SimpleMarykObject
-            ),
-            dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        ),
+        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

@@ -6,12 +6,12 @@ import kotlin.test.Test
 
 internal class SInt8Test {
     private val int8values = byteArrayOf(
-            Byte.MIN_VALUE,
-            -100,
-            0,
-            89,
-            127,
-            Byte.MAX_VALUE
+        Byte.MIN_VALUE,
+        -100,
+        0,
+        89,
+        127,
+        Byte.MAX_VALUE
     )
 
     @Test
@@ -24,7 +24,7 @@ internal class SInt8Test {
         Byte.MIN_VALUE.toString() shouldBe "-128"
         Byte.MAX_VALUE.toString() shouldBe "127"
 
-        int8values.forEach {
+        for (it in int8values) {
             SInt8.ofString(it.toString()) shouldBe it
         }
     }
@@ -32,7 +32,7 @@ internal class SInt8Test {
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        int8values.forEach {
+        for (it in int8values) {
             bc.reserve(SInt8.size)
             SInt8.writeStorageBytes(it, bc::write)
             SInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
@@ -43,7 +43,7 @@ internal class SInt8Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        int8values.forEach {
+        for (it in int8values) {
             bc.reserve(SInt8.calculateTransportByteLength(it))
             SInt8.writeTransportBytes(it, bc::write)
             SInt8.readTransportBytes(bc::read) shouldBe it

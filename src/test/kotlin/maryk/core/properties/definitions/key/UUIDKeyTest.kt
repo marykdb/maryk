@@ -11,7 +11,7 @@ import kotlin.test.Test
 
 internal class UUIDKeyTest {
     private data class MarykObject(
-            val value: String
+        val value: String
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             init {
@@ -19,11 +19,11 @@ internal class UUIDKeyTest {
             }
         }
         companion object: RootDataModel<MarykObject, Properties>(
-                name = "MarykObject",
-                properties = Properties
+            name = "MarykObject",
+            properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                    map[0] as String
+                map[0] as String
             )
         }
     }

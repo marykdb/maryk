@@ -5,7 +5,6 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UInt64Test {
-
     private val uInt64values = arrayOf(UInt64.MIN_VALUE, UInt64.MAX_VALUE, 6267862346434742349L.toUInt64())
 
     @Test
@@ -30,7 +29,7 @@ internal class UInt64Test {
         UInt64.MIN_VALUE.toString() shouldBe "0x0000000000000000"
         UInt64.MAX_VALUE.toString() shouldBe "0xffffffffffffffff"
 
-        uInt64values.forEach {
+        for (it in uInt64values) {
             UInt64.ofString(it.toString()) shouldBe it
         }
     }
@@ -38,7 +37,7 @@ internal class UInt64Test {
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        uInt64values.forEach {
+        for (it in uInt64values) {
             bc.reserve(UInt64.size)
             UInt64.writeStorageBytes(it, bc::write)
             UInt64.fromStorageByteReader(bc.size, bc::read) shouldBe it
@@ -49,7 +48,7 @@ internal class UInt64Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        uInt64values.forEach {
+        for (it in uInt64values) {
             bc.reserve(UInt64.calculateTransportByteLength(it))
             UInt64.writeTransportBytes(it, bc::write)
             UInt64.readTransportBytes(bc::read) shouldBe it

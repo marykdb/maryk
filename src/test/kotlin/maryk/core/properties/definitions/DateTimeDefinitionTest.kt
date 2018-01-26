@@ -15,28 +15,28 @@ import kotlin.test.assertTrue
 
 internal class DateTimeDefinitionTest {
     private val dateTimesToTest = arrayOf(
-            DateTime.nowUTC(),
-            DateTime.MAX_IN_SECONDS,
-            DateTime.MAX_IN_MILLIS,
-            DateTime.MIN
+        DateTime.nowUTC(),
+        DateTime.MAX_IN_SECONDS,
+        DateTime.MAX_IN_MILLIS,
+        DateTime.MIN
     )
 
     private val def = DateTimeDefinition()
 
     private val defMilli = DateTimeDefinition(
-            precision = TimePrecision.MILLIS
+        precision = TimePrecision.MILLIS
     )
 
     private val defMaxDefined = DateTimeDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            fillWithNow = true,
-            precision = TimePrecision.MILLIS,
-            minValue = DateTime.MIN,
-            maxValue = DateTime.MAX_IN_MILLIS
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        fillWithNow = true,
+        precision = TimePrecision.MILLIS,
+        minValue = DateTime.MIN,
+        maxValue = DateTime.MAX_IN_MILLIS
     )
 
     @Test
@@ -54,7 +54,7 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(
-                    defMilli.calculateStorageByteLength(it)
+                defMilli.calculateStorageByteLength(it)
             )
             defMilli.writeStorageBytes(it, bc::write)
             defMilli.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -67,7 +67,7 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(
-                    def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
             def.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -103,7 +103,7 @@ internal class DateTimeDefinitionTest {
 
     @Test
     fun convert_values_to_String_and_back() {
-        dateTimesToTest.forEach {
+        for (it in dateTimesToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }

@@ -11,25 +11,25 @@ import kotlin.test.Test
 
 internal class FixedBytesDefinitionTest {
     private val fixedBytesToTest = arrayOf(
-            Bytes(ByteArray(5, { 0x00.toByte() } )),
-            Bytes(ByteArray(5, { 0xFF.toByte() } )),
-            Bytes(ByteArray(5, { if (it % 2 == 1) 0x88.toByte() else 0xFF.toByte() } ))
+        Bytes(ByteArray(5, { 0x00.toByte() } )),
+        Bytes(ByteArray(5, { 0xFF.toByte() } )),
+        Bytes(ByteArray(5, { if (it % 2 == 1) 0x88.toByte() else 0xFF.toByte() } ))
     )
 
     val def = FixedBytesDefinition(
-            byteSize = 5
+        byteSize = 5
     )
 
     val defMaxDefined = FixedBytesDefinition(
-            indexed = true,
-            required = false,
-            final = true,
-            searchable = false,
-            unique = true,
-            minValue = Bytes.ofHex("0000000000"),
-            maxValue = Bytes.ofHex("AAAAAAAAAA"),
-            random = true,
-            byteSize = 5
+        indexed = true,
+        required = false,
+        final = true,
+        searchable = false,
+        unique = true,
+        minValue = Bytes.ofHex("0000000000"),
+        maxValue = Bytes.ofHex("AAAAAAAAAA"),
+        random = true,
+        byteSize = 5
     )
 
     @Test
@@ -40,9 +40,9 @@ internal class FixedBytesDefinitionTest {
     @Test
     fun convert_values_to_storage_bytes_and_back() {
         val bc = ByteCollector()
-        fixedBytesToTest.forEach {
+        for (it in fixedBytesToTest) {
             bc.reserve(
-                    def.calculateStorageByteLength(it)
+                def.calculateStorageByteLength(it)
             )
             def.writeStorageBytes(it, bc::write)
             def.readStorageBytes(bc.size, bc::read) shouldBe it
@@ -53,12 +53,14 @@ internal class FixedBytesDefinitionTest {
     @Test
     fun convert_values_to_transport_bytes_and_back() {
         val bc = ByteCollector()
-        fixedBytesToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
+        for (it in fixedBytesToTest) {
+            checkProtoBufConversion(bc, it, this.def)
+        }
     }
 
     @Test
     fun convert_values_to_String_and_back() {
-        fixedBytesToTest.forEach {
+        for (it in fixedBytesToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }

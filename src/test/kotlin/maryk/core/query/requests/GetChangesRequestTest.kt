@@ -14,26 +14,26 @@ class GetChangesRequestTest {
     private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
 
     private val getChangesRequest = GetChangesRequest(
-            SimpleMarykObject,
-            key1,
-            key2,
-            fromVersion = 1234L.toUInt64(),
-            toVersion = 3456L.toUInt64()
+        SimpleMarykObject,
+        key1,
+        key2,
+        fromVersion = 1234L.toUInt64(),
+        toVersion = 3456L.toUInt64()
     )
 
     private val getChangesMaxRequest = GetChangesRequest(
-            SimpleMarykObject,
-            key1,
-            key2,
-            filter = Exists(SimpleMarykObject.ref { value }),
-            order = Order(SimpleMarykObject.ref { value }),
-            fromVersion = 1234L.toUInt64(),
-            toVersion = 3456L.toUInt64(),
-            filterSoftDeleted = true
+        SimpleMarykObject,
+        key1,
+        key2,
+        filter = Exists(SimpleMarykObject.ref { value }),
+        order = Order(SimpleMarykObject.ref { value }),
+        fromVersion = 1234L.toUInt64(),
+        toVersion = 3456L.toUInt64(),
+        filterSoftDeleted = true
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

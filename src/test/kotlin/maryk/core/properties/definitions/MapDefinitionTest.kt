@@ -21,65 +21,65 @@ import kotlin.test.Test
 
 internal class MapDefinitionTest {
     private val intDef = NumberDefinition(
-            type = SInt32,
-            maxValue = 1000
+        type = SInt32,
+        maxValue = 1000
     )
 
     private val stringDef = StringDefinition(
-            regEx = "#.*"
+        regEx = "#.*"
     )
 
     private val def = MapDefinition(
-            minSize = 2,
-            maxSize = 4,
-            keyDefinition = intDef,
-            valueDefinition = stringDef
+        minSize = 2,
+        maxSize = 4,
+        keyDefinition = intDef,
+        valueDefinition = stringDef
     )
 
     private val defMaxDefined = MapDefinition(
-            indexed = true,
-            searchable = false,
-            final = true,
-            required = false,
-            minSize = 2,
-            maxSize = 4,
-            keyDefinition = intDef,
-            valueDefinition = stringDef
+        indexed = true,
+        searchable = false,
+        final = true,
+        required = false,
+        minSize = 2,
+        maxSize = 4,
+        keyDefinition = intDef,
+        valueDefinition = stringDef
     )
 
     private val value = mapOf(
-            12 to "#twelve",
-            30 to "#thirty",
-            100 to "#hundred",
-            1000 to "#thousand"
+        12 to "#twelve",
+        30 to "#thirty",
+        100 to "#hundred",
+        1000 to "#thousand"
     )
 
     @Test
     fun validate_map_size() {
         def.validateWithRef(newValue = mapOf(
-                12 to "#twelve",
-                30 to "#thirty"
+            12 to "#twelve",
+            30 to "#thirty"
         ))
         def.validateWithRef(newValue = mapOf(
-                12 to "#twelve",
-                30 to "#thirty",
-                100 to "#hundred",
-                1000 to "#thousand"
+            12 to "#twelve",
+            30 to "#thirty",
+            100 to "#hundred",
+            1000 to "#thousand"
         ))
 
         shouldThrow<TooLittleItemsException> {
             def.validateWithRef(newValue = mapOf(
-                    1 to "#one"
+                1 to "#one"
             ))
         }
 
         shouldThrow<TooMuchItemsException> {
             def.validateWithRef(newValue = mapOf(
-                    12 to "#twelve",
-                    30 to "#thirty",
-                    100 to "#hundred",
-                    1000 to "#thousand",
-                    0 to "#zero"
+                12 to "#twelve",
+                30 to "#thirty",
+                100 to "#hundred",
+                1000 to "#thousand",
+                0 to "#zero"
             ))
         }
     }
@@ -88,10 +88,10 @@ internal class MapDefinitionTest {
     fun validate_map_content() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = mapOf(
-                    12 to "#twelve",
-                    30 to "WRONG",
-                    1001 to "#thousandone",
-                    3000 to "#threethousand"
+                12 to "#twelve",
+                30 to "WRONG",
+                1001 to "#thousandone",
+                3000 to "#threethousand"
             ))
         }
         e.exceptions.size shouldBe 3
@@ -115,7 +115,7 @@ internal class MapDefinitionTest {
         val cache = WriteCache()
 
         bc.reserve(
-                def.calculateTransportByteLengthWithKey(4, value, cache)
+            def.calculateTransportByteLengthWithKey(4, value, cache)
         )
         def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
@@ -132,7 +132,7 @@ internal class MapDefinitionTest {
             return def.readMapTransportBytes(bc::read)
         }
 
-        this.value.forEach {
+        for (it in this.value) {
             readKey()
             val mapValue = readValue()
             mapValue.first shouldBe it.key

@@ -12,25 +12,25 @@ import kotlin.test.Test
 
 class VersionedChangesTest {
     private val versionedChanges = VersionedChanges(
-            219674127L.toUInt64(),
-            listOf(
-                    PropertyChange(TestMarykObject { subModel ref { value } }, "new"),
-                    PropertyDelete(TestMarykObject { subModel ref { value } }),
-                    PropertyCheck(TestMarykObject { subModel ref { value } }),
-                    ObjectSoftDeleteChange(true),
-                    ListPropertyChange(TestMarykObject.ref { list }),
-                    SetPropertyChange(TestMarykObject.ref { set }),
-                    MapPropertyChange(TestMarykObject.ref { map })
-            )
+        219674127L.toUInt64(),
+        listOf(
+            PropertyChange(TestMarykObject { subModel ref { value } }, "new"),
+            PropertyDelete(TestMarykObject { subModel ref { value } }),
+            PropertyCheck(TestMarykObject { subModel ref { value } }),
+            ObjectSoftDeleteChange(true),
+            ListPropertyChange(TestMarykObject.ref { list }),
+            SetPropertyChange(TestMarykObject.ref { set }),
+            MapPropertyChange(TestMarykObject.ref { map })
+        )
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            dataModels = mapOf(
-                SubMarykObject.name to SubMarykObject,
-                TestMarykObject.name to TestMarykObject
-            ),
-            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModels = mapOf(
+            SubMarykObject.name to SubMarykObject,
+            TestMarykObject.name to TestMarykObject
+        ),
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

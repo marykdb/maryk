@@ -9,11 +9,11 @@ import kotlin.test.Test
 
 internal class ShortKtTest {
     private val shortsToTest = shortArrayOf(
-            Short.MIN_VALUE,
-            -2222,
-            2222,
-            0,
-            Short.MAX_VALUE
+        Short.MIN_VALUE,
+        -2222,
+        2222,
+        0,
+        Short.MAX_VALUE
     )
 
     @Test

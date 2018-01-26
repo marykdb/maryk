@@ -21,24 +21,24 @@ class AddResponseTest {
     private val key = SimpleMarykObject.key.getKey(this.value)
 
     private val addResponse = AddResponse(
-            SimpleMarykObject,
-            listOf(
-                    AddSuccess(
-                            key, 32352L.toUInt64(), listOf(
-                                    PropertyChange(SimpleMarykObject.ref{ value }, "new")
-                            )
-                    ),
-                    AlreadyExists(key),
-                    ValidationFail(ValidationUmbrellaException(null, listOf(
-                            InvalidValueException(SimpleMarykObject.ref{ value }, "wrong")
-                    ))),
-                    AuthFail(),
-                    ServerFail("Something went wrong")
-            )
+        SimpleMarykObject,
+        listOf(
+            AddSuccess(
+                key, 32352L.toUInt64(), listOf(
+                    PropertyChange(SimpleMarykObject.ref{ value }, "new")
+                )
+            ),
+            AlreadyExists(key),
+            ValidationFail(ValidationUmbrellaException(null, listOf(
+                InvalidValueException(SimpleMarykObject.ref{ value }, "wrong")
+            ))),
+            AuthFail(),
+            ServerFail("Something went wrong")
+        )
     )
 
     private val context = DataModelPropertyContext(mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test

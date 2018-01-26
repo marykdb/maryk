@@ -10,20 +10,20 @@ import kotlin.test.Test
 
 class ListPropertyChangeTest {
     private val listPropertyChange = ListPropertyChange(
-            reference = TestMarykObject.ref { listOfString },
-            addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
-            addValuesToEnd = listOf("four", "five"),
-            deleteAtIndex = listOf(0, 1),
-            deleteValues = listOf("three"),
-            valueToCompare = listOf("one", "two", "three")
+        reference = TestMarykObject.ref { listOfString },
+        addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
+        addValuesToEnd = listOf("four", "five"),
+        deleteAtIndex = listOf(0, 1),
+        deleteValues = listOf("three"),
+        valueToCompare = listOf("one", "two", "three")
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-            mapOf(
-                    TestMarykObject.name to TestMarykObject
-            ),
-            dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        mapOf(
+            TestMarykObject.name to TestMarykObject
+        ),
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test

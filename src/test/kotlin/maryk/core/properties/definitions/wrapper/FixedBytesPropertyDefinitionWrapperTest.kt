@@ -8,10 +8,10 @@ import kotlin.test.Test
 
 class FixedBytesPropertyDefinitionWrapperTest {
     private val def = FixedBytesPropertyDefinitionWrapper(
-            index = 1,
-            name = "wrapper",
-            definition = NumberDefinition(type = UInt32),
-            getter = { _: Any -> null }
+        index = 1,
+        name = "wrapper",
+        definition = NumberDefinition(type = UInt32),
+        getter = { _: Any -> null }
     )
 
     @Test

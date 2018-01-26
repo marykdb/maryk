@@ -9,7 +9,7 @@ import maryk.core.protobuf.ProtoBuf
 /**
  * Reference to a map with key [K] and value [V] and context [CX]
  */
-open class MapReference<K: Any, V: Any, CX: IsPropertyContext> (
+open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition: MapPropertyDefinitionWrapper<K, V, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
 ) : ValuePropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, CX, *>, CanHaveComplexChildReference<*, *, *>>(

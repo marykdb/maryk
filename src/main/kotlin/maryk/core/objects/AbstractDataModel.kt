@@ -29,7 +29,7 @@ import maryk.core.protobuf.WriteCacheWriter
  * to read and write. [CXI] is the input Context for properties. This can be different because the DataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
+abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     override val properties: P
 ) : IsDataModel<DO> {
     /** Creates a Data Object by [map] */

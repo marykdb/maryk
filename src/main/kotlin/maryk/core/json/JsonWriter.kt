@@ -2,7 +2,7 @@ package maryk.core.json
 
 /** A JSON writer which writes to [writer] */
 class JsonWriter(
-    val pretty: Boolean = false,
+    private val pretty: Boolean = false,
     private val writer: (String) -> Unit
 ) : AbstractJsonLikeWriter() {
     override fun writeStartObject() {

@@ -10,7 +10,7 @@ import maryk.core.properties.types.numeric.SInt32
  * Exception for property with [value] referred by [reference]
  * which got a wrong new size outside [min] and [max].
  */
-data class InvalidSizeException(
+data class InvalidSizeException internal constructor(
     val reference: IsPropertyReference<*, *>?,
     val value: String,
     val min: Int?,

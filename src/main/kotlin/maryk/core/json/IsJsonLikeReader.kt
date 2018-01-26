@@ -30,9 +30,9 @@ interface IsJsonLikeReader {
 }
 
 /** Exception during reading of JSON */
-class ExceptionWhileReadingJson : Throwable()
+class ExceptionWhileReadingJson internal constructor(): Throwable()
 
 /** Exception for invalid JSON */
-class InvalidJsonContent(
+class InvalidJsonContent internal constructor(
     description: String
 ): Throwable(description)

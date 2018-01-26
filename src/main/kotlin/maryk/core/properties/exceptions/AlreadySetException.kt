@@ -8,7 +8,7 @@ import maryk.core.properties.references.IsPropertyReference
  * Exception for when a property referred by [reference] is final and already has a value but was tried
  * to set to another value.
  */
-data class AlreadySetException(
+data class AlreadySetException internal constructor(
     val reference: IsPropertyReference<*, *>?
 ) : ValidationException(
     reference = reference,

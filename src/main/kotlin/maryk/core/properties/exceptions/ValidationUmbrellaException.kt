@@ -11,7 +11,7 @@ import maryk.core.properties.types.TypedValue
  * Umbrella for Validation Exception for properties
  * Contains a list of [exceptions] which where caught on property referred by [reference].
  */
-data class ValidationUmbrellaException(
+data class ValidationUmbrellaException internal constructor(
     val reference: IsPropertyReference<*,*>?,
     val exceptions: List<ValidationException>
 ) : ValidationException(

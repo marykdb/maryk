@@ -10,7 +10,7 @@ import maryk.core.properties.types.numeric.SInt32
  * Exception for when a map or collection property referred by [reference] of [size] has
  * too little items compared to [minSize]
  */
-data class TooLittleItemsException(
+data class TooLittleItemsException internal constructor(
     val reference: IsPropertyReference<*, *>?,
     val size: Int,
     val minSize: Int

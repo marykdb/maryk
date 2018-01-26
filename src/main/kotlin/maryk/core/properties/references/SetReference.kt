@@ -9,7 +9,7 @@ import maryk.core.protobuf.ProtoBuf
  * Reference to a Set property of type [T] defined by [propertyDefinition] and context [CX]
  * under parent referred by [parentReference]
  */
-open class SetReference<T: Any, CX: IsPropertyContext> (
+open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition: SetPropertyDefinitionWrapper<T, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
 ) : ValuePropertyReference<Set<T>, SetPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *>>(

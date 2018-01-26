@@ -23,6 +23,6 @@ interface IsJsonLikeWriter {
 }
 
 /** Exception for invalid JSON */
-class IllegalJsonOperation(
+class IllegalJsonOperation internal constructor(
     description: String
 ): Throwable(description)

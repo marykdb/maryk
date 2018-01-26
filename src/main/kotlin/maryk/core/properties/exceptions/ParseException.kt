@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
 /** Exception with [cause] for when parsing to [value] fails. */
-class ParseException(
+class ParseException internal constructor(
     value: String,
     cause: Throwable? = null
 ) : Throwable(

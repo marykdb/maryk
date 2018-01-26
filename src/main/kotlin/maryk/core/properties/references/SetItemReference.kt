@@ -12,7 +12,7 @@ import maryk.core.protobuf.WriteCacheWriter
  * Reference to a Set Item by [value] of [T] and context [CX] on set referred to [parentReference] and
  * defined by [setDefinition]
  */
-class SetItemReference<T: Any, CX: IsPropertyContext>(
+class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     val value: T,
     setDefinition: SetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?

@@ -15,7 +15,7 @@ import maryk.core.properties.references.MapValueReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, in DO: Any>(
+data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, in DO: Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: MapDefinition<K, V, CX>,

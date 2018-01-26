@@ -10,12 +10,12 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
 /** Validation Exception with [newMessage] for properties */
-abstract class ValidationException(
+abstract class ValidationException internal constructor(
     newMessage: String
 ) : Throwable(
     newMessage
 ) {
-    constructor(
+    internal constructor(
         reason: String?,
         reference: IsPropertyReference<*,*>?
     ) : this(
@@ -24,8 +24,8 @@ abstract class ValidationException(
 
     internal abstract val validationExceptionType: ValidationExceptionType
 
-    companion object {
-        fun <DO: ValidationException> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
+    internal companion object {
+        internal fun <DO: ValidationException> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
                 index = 0, name = "reference",
                 definition = ContextCaptureDefinition(
@@ -40,7 +40,7 @@ abstract class ValidationException(
                 getter = getter
             )
         }
-        fun <DO: ValidationException> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> String?) {
+        internal fun <DO: ValidationException> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> String?) {
             definitions.add(
                 1, "value",
                 StringDefinition(),

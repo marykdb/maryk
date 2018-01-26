@@ -9,7 +9,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /** Reference to map value [V] by [key] of [K] contained in map referred by [parentReference] */
-class MapValueReference<K: Any, V: Any, CX: IsPropertyContext>(
+class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     val key: K,
     mapDefinition: MapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?

@@ -11,7 +11,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /** Reference to a List Item on [parentReference] with [T] by [index] */
-class ListItemReference<T: Any, CX: IsPropertyContext> (
+class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
     val index: Int,
     listDefinition: ListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?

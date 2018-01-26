@@ -34,7 +34,7 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
 
     fun toHex() = this.bytes.toHex()
 
-    companion object: BytesDescriptor<Bytes>() {
+    internal companion object: BytesDescriptor<Bytes>() {
         override fun construct(bytes: ByteArray) = Bytes(bytes)
     }
 }

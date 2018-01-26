@@ -10,7 +10,11 @@ import maryk.core.protobuf.WriteCacheWriter
  * Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper
  * [D] and referred by PropertyReference of type [P].
  */
-open class ValuePropertyReference<T: Any, out D : IsPropertyDefinitionWrapper<T, *, *>, out P: IsPropertyReference<*, *>> (
+open class ValuePropertyReference<
+        T: Any,
+        out D : IsPropertyDefinitionWrapper<T, *, *>,
+        out P: IsPropertyReference<*, *>
+> internal constructor(
         propertyDefinition: D,
         parentReference: P?
 ): PropertyReference<T, D, P>(propertyDefinition, parentReference) {

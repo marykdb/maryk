@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Exception for when properties referred by [reference] are set with invalid [value]. */
-data class InvalidValueException(
+data class InvalidValueException internal constructor(
     val reference: IsPropertyReference<*, *>?,
     val value: String
 ) : ValidationException(

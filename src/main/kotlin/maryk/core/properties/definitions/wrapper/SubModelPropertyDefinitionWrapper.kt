@@ -18,7 +18,12 @@ import maryk.core.properties.references.SubModelPropertyRef
  * It has an input context of [CXI] and the functions take context of [CX] so contexts can be transformed
  * to be relevant to the Sub DataModel
  */
-data class SubModelPropertyDefinitionWrapper<SDO: Any, out P: PropertyDefinitions<SDO>, out DM: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext, in DO: Any>(
+data class SubModelPropertyDefinitionWrapper<
+        SDO: Any,
+        out P: PropertyDefinitions<SDO>,
+        out DM: AbstractDataModel<SDO, P, CXI, CX>,
+        CXI: IsPropertyContext, CX: IsPropertyContext, in DO: Any
+> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: SubModelDefinition<SDO, P, DM, CXI, CX>,

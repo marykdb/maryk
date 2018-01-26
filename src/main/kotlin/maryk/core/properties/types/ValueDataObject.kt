@@ -7,7 +7,7 @@ import maryk.core.extensions.compare.compareTo
 open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDataObject> {
     override fun compareTo(other: ValueDataObject) = _bytes.compareTo(other._bytes)
 
-    fun toBase64(): String = Base64.encode(this._bytes)
+    internal fun toBase64(): String = Base64.encode(this._bytes)
 
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true

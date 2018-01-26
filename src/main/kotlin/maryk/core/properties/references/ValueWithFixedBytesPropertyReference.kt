@@ -11,7 +11,11 @@ import maryk.core.protobuf.WriteCacheWriter
  * keys. The property is defined by Property Definition Wrapper [propertyDefinition] of type [D]
  * and referred by PropertyReference of type [P].
  */
-open class ValueWithFixedBytesPropertyReference<T: Any, out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *>, out P: IsPropertyReference<*, *>> (
+open class ValueWithFixedBytesPropertyReference<
+        T: Any,
+        out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *>,
+        out P: IsPropertyReference<*, *>
+> internal constructor(
     propertyDefinition: D,
     parentReference: P?
 ): PropertyReference<T, D, P>(propertyDefinition, parentReference) {

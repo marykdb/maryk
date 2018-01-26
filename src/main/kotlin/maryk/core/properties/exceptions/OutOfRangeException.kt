@@ -12,7 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
  * This can be both of value or for the size of value containers like List or
  * Map
  */
-data class OutOfRangeException(
+data class OutOfRangeException internal constructor(
     val reference: IsPropertyReference<*, *>?,
     val value: String,
     val min: String?,

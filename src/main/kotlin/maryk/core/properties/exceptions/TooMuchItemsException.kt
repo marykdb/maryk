@@ -10,7 +10,7 @@ import maryk.core.properties.types.numeric.SInt32
  * Exception for when a map or collection property referred by [reference] of [size] has
  * too much items compared to [maxSize]
  */
-data class TooMuchItemsException(
+data class TooMuchItemsException internal constructor(
     val reference: IsPropertyReference<*, *>?,
     val size: Int,
     val maxSize: Int

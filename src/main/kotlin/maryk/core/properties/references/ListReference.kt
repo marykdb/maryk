@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 
 /** Reference to a List property of type [T] and context [CX] */
-open class ListReference<T: Any, CX: IsPropertyContext> (
+open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition: ListPropertyDefinitionWrapper<T, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
 ) : ValuePropertyReference<List<T>, ListPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *>>(

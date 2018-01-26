@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Exception if a required property referred by [reference] was not set or is being unset. */
-data class RequiredException(
+data class RequiredException internal constructor(
     val reference: IsPropertyReference<*, *>?
 ) : ValidationException(
     reference = reference,

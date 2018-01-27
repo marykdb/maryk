@@ -20,7 +20,7 @@ sealed class JsonToken(val name: String) {
 /** For JSON like readers to read String based structures. */
 interface IsJsonLikeReader {
     var currentToken: JsonToken
-    var lastValue: String
+    var lastValue: String?
 
     /** Find the next token */
     fun nextToken(): JsonToken

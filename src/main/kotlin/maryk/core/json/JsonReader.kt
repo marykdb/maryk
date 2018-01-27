@@ -9,7 +9,7 @@ class JsonReader(
     private val reader: () -> Char
 ) : IsJsonLikeReader {
     override var currentToken: JsonToken = JsonToken.StartJSON
-    override var lastValue: String = ""
+    override var lastValue: String? = ""
     private val typeStack: MutableList<JsonComplexType> = mutableListOf()
     private var lastChar: Char = ' '
 
@@ -189,10 +189,12 @@ class JsonReader(
         } while (lastChar in numberChars)
 
         // Check if value starts with illegal 0
-        if (startedWithMinus && lastValue.length > 2 && lastValue[1] == '0') {
-            throwJsonException()
-        } else if (lastValue.length > 1 && lastValue[0] == '0') {
-            throwJsonException()
+        lastValue?.let {
+            if (startedWithMinus && it.length > 2 && it[1] == '0') {
+                throwJsonException()
+            } else if (it.length > 1 && it[0] == '0') {
+                throwJsonException()
+            }
         }
 
         // Read fraction
@@ -248,7 +250,7 @@ class JsonReader(
                 throwJsonException()
             }
         }
-        lastValue = "null"
+        lastValue = null
         readSkipWhitespace()
     }
 

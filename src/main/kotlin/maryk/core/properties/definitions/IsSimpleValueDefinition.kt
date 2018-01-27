@@ -62,6 +62,8 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
         if (reader.currentToken !is JsonToken.ObjectValue && reader.currentToken !is JsonToken.ArrayValue) {
             throw ParseException("JSON value should be a simple value")
         }
-        return this.fromString(reader.lastValue, context)
+        return reader.lastValue?.let {
+            this.fromString(it, context)
+        } ?: throw ParseException("JSON value cannot be null")
     }
 }

@@ -37,7 +37,7 @@ internal class JsonReaderTest {
             JsonToken.ArrayValue to "3423",
             JsonToken.ArrayValue to "true",
             JsonToken.ArrayValue to "false",
-            JsonToken.ArrayValue to "null",
+            JsonToken.ArrayValue to null,
             JsonToken.EndArray to "",
             JsonToken.FieldName to "emptyArray",
             JsonToken.StartArray to "",

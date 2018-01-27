@@ -43,9 +43,11 @@ internal class ContextualNumberDefinition<in CX: IsPropertyContext>(
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
         contextualResolver(context).readTransportBytes(reader)
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?)= try {
-        contextualResolver(context).ofString(reader.lastValue)
-    } catch (e: Throwable) { throw ParseException(reader.lastValue, e) }
+    override fun readJson(reader: IsJsonLikeReader, context: CX?)= reader.lastValue?.let {
+        try {
+            contextualResolver(context).ofString(it)
+        } catch (e: Throwable) { throw ParseException(reader.lastValue!!, e) }
+    } ?: throw ParseException("Contextual number cannot be null in JSON")
 
     override fun writeJsonValue(value: Comparable<Any>, writer: IsJsonLikeWriter, context: CX?) = when {
         contextualResolver(context) !in arrayOf(UInt64, SInt64, Float64, Float32) -> {

@@ -141,7 +141,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             val token = reader.currentToken
             when (token) {
                 JsonToken.FieldName -> {
-                    val definition = properties.getDefinition(reader.lastValue)
+                    if (reader.lastValue == null) { throw ParseException("Empty field name not allowed in JSON") }
+
+                    val definition = properties.getDefinition(reader.lastValue!!)
                     if (definition == null) {
                         reader.skipUntilNextField()
                         continue@walker

@@ -114,7 +114,10 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         val map: MutableMap<K, V> = mutableMapOf()
 
         while (reader.nextToken() !is JsonToken.EndObject) {
-            val key = keyDefinition.fromString(reader.lastValue)
+            val key = reader.lastValue?.let {
+                keyDefinition.fromString(it)
+            } ?: throw ParseException("Map key cannot be null")
+
             reader.nextToken()
 
             map[key] = valueDefinition.readJson(reader, context)

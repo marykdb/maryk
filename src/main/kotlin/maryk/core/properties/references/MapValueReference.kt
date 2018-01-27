@@ -11,7 +11,7 @@ import maryk.core.protobuf.WriteCacheWriter
 /** Reference to map value [V] by [key] of [K] contained in map referred by [parentReference] */
 class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     val key: K,
-    mapDefinition: MapDefinition<K, V, CX>,
+    private val mapDefinition: MapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>>(
     mapDefinition.valueDefinition, parentReference
@@ -21,14 +21,14 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
     } ?: "@$key"
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
-        val parentLength = this.parentReference!!.calculateTransportByteLength(cacher)
-        val valueLength = this.parentReference.propertyDefinition.keyDefinition.calculateTransportByteLength(key, cacher)
+        val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
+        val valueLength = mapDefinition.keyDefinition.calculateTransportByteLength(key, cacher)
         return parentLength + 1 + valueLength
     }
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
-        this.parentReference!!.propertyDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
+        mapDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
     }
 }

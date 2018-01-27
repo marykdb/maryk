@@ -147,7 +147,7 @@ abstract class PropertyDefinitions<DO: Any>(
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
         }
 
-        return propertyReference!!
+        return propertyReference ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
     }
 
     /** Get PropertyReference by bytes from [reader] with [length] */
@@ -171,7 +171,7 @@ abstract class PropertyDefinitions<DO: Any>(
             } ?: throw DefNotFoundException("Property reference does not exist")
         }
 
-        return propertyReference!!
+        return propertyReference ?: throw DefNotFoundException("Property reference does not exist")
     }
 }
 

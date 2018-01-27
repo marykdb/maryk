@@ -14,7 +14,7 @@ import maryk.core.protobuf.WriteCacheWriter
  */
 class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     val value: T,
-    setDefinition: SetDefinition<T, CX>,
+    private val setDefinition: SetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>>(
     setDefinition.valueDefinition, parentReference
@@ -24,14 +24,14 @@ class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     } ?: "$$value"
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
-        val parentLength = this.parentReference!!.calculateTransportByteLength(cacher)
-        val valueLength = this.parentReference.propertyDefinition.definition.valueDefinition.calculateTransportByteLength(value, cacher)
+        val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
+        val valueLength = setDefinition.valueDefinition.calculateTransportByteLength(value, cacher)
         return parentLength + 1 + valueLength
     }
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
-        this.parentReference!!.propertyDefinition.definition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
+        setDefinition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
     }
 }

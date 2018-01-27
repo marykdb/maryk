@@ -42,8 +42,8 @@ internal class RootDataModelTest {
 
     @Test
     fun testPropertyReferenceByName() {
-        TestMarykObject.getPropertyReferenceByName(mapRef.completeName!!) shouldBe mapRef
-        TestMarykObject.getPropertyReferenceByName(subModelRef.completeName!!) shouldBe subModelRef
+        TestMarykObject.getPropertyReferenceByName(mapRef.completeName) shouldBe mapRef
+        TestMarykObject.getPropertyReferenceByName(subModelRef.completeName) shouldBe subModelRef
     }
 
     @Test

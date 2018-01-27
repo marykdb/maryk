@@ -22,13 +22,13 @@ internal data class ContextualPropertyReferenceDefinition<in CX: IsPropertyConte
     override val wireType = WireType.LENGTH_DELIMITED
 
     override fun asString(value: IsPropertyReference<*, *>, context: CX?) =
-        value.completeName!!
+        value.completeName
 
     override fun fromString(string: String, context: CX?) =
         contextualResolver(context).getPropertyReferenceByName(string)
 
     override fun writeJsonValue(value: IsPropertyReference<*, *>, writer: IsJsonLikeWriter, context: CX?) {
-        writer.writeString(value.completeName!!)
+        writer.writeString(value.completeName)
     }
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =

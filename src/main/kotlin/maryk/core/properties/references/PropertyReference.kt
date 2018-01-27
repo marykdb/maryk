@@ -14,13 +14,13 @@ abstract class PropertyReference<
     final override val propertyDefinition: D,
     val parentReference: P?
 ): IsPropertyReference<T, D> {
-    override fun toString() = this.completeName ?: "null"
+    override fun toString() = this.completeName
 
     override fun equals(other: Any?) = when {
         this === other -> true
         other == null || other !is IsPropertyReference<*, *> -> false
-        else -> other.completeName!! == this.completeName!!
+        else -> other.completeName == this.completeName
     }
 
-    override fun hashCode() = this.completeName?.hashCode() ?: 0
+    override fun hashCode() = this.completeName.hashCode()
 }

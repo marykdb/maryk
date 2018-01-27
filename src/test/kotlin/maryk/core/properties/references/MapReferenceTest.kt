@@ -36,7 +36,7 @@ class MapReferenceTest {
         valReference.completeName shouldBe "map.@15:22:55"
 
         for (it in arrayOf(mapReference, keyReference, valReference)) {
-            val converted = TestMarykObject.getPropertyReferenceByName(it.completeName!!)
+            val converted = TestMarykObject.getPropertyReferenceByName(it.completeName)
             converted shouldBe it
         }
     }

@@ -21,7 +21,7 @@ open class ValuePropertyReference<
     open val name = this.propertyDefinition.name
 
     /** The name of property which is referenced */
-    override val completeName: String? get() = this.parentReference?.let {
+    override val completeName: String get() = this.parentReference?.let {
         "${it.completeName}.$name"
     } ?: name
 

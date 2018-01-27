@@ -8,7 +8,7 @@ import maryk.core.protobuf.WriteCacheWriter
  * Abstract for reference to a property of type [T] defined by [D]
  */
 interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>> {
-    val completeName: String?
+    val completeName: String
     val propertyDefinition: D
 
     /**

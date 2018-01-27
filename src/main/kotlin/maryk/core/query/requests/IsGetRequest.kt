@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -14,9 +15,11 @@ interface IsGetRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsFetchRequest<D
     companion object {
         internal fun <DM: Any> addKeys(definitions: PropertyDefinitions<DM>, getter: (DM) -> List<Key<Any>>?) {
             definitions.add(1, "keys", ListDefinition(
-                    valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
-                            contextualResolver = { it!!.dataModel!!.key }
-                    )
+                valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
+                    contextualResolver = {
+                        it?.dataModel?.key ?: throw ContextNotFoundException()
+                    }
+                )
             ), getter)
         }
     }

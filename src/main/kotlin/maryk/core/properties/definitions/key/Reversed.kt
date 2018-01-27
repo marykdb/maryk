@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.key
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
@@ -40,7 +41,7 @@ data class Reversed<T: Any>(
         properties = object : PropertyDefinitions<Reversed<out Any>>() {
             init {
                 add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
-                    contextualResolver = { it!!.propertyDefinitions!! }
+                    contextualResolver = { it?.propertyDefinitions ?: throw ContextNotFoundException() }
                 )) {
                     it.reference as IsPropertyReference<Any, *>
                 }

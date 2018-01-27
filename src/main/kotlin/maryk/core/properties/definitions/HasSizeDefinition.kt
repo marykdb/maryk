@@ -13,12 +13,14 @@ interface HasSizeDefinition {
     val maxSize: Int?
 
     /** Checks if given [newSize] is too small compared to defined minSize */
-    fun isSizeToSmall(newSize: Int): Boolean =
-        this.minSize != null && newSize < this.minSize!!
+    fun isSizeToSmall(newSize: Int): Boolean = this.minSize?.let {
+        newSize < it
+    } ?: false
 
     /** Checks if given [newSize] is too big compared to defined maxSize */
-    fun isSizeToBig(newSize: Int): Boolean =
-        this.maxSize != null && newSize > this.maxSize!!
+    fun isSizeToBig(newSize: Int): Boolean = this.maxSize?.let {
+        newSize > it
+    } ?: false
 
     companion object {
         internal fun <DO: Any> addMinSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {

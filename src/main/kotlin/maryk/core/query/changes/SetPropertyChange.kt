@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -33,7 +34,8 @@ data class SetPropertyChange<T: Any>(
                     required = false,
                     contextualResolver = { context: DataModelPropertyContext? ->
                         @Suppress("UNCHECKED_CAST")
-                        context!!.reference!!.propertyDefinition.definition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>
+                        context?.reference?.propertyDefinition?.definition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext>?
+                                ?: throw ContextNotFoundException()
                     }
                 ), SetPropertyChange<*>::valueToCompare)
 
@@ -61,5 +63,6 @@ data class SetPropertyChange<T: Any>(
 
 @Suppress("UNCHECKED_CAST")
 private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-    (context!!.reference!! as SetReference<Any, IsPropertyContext>).propertyDefinition.definition.valueDefinition
+    (context?.reference as SetReference<Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
+            ?: throw ContextNotFoundException()
 })

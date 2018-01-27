@@ -1,5 +1,7 @@
 package maryk.core.query.requests
 
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
@@ -13,18 +15,22 @@ interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO, *>>{
     companion object {
         internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
             definitions.add(
-                    0, "dataModel",
-                    ContextCaptureDefinition(
-                            ContextualModelReferenceDefinition<DataModelPropertyContext>(
-                                    contextualResolver = { context, name ->
-                                        context!!.dataModels[name]!!
-                                    }
-                            )
-                    ) { context, value ->
-                            @Suppress("UNCHECKED_CAST")
-                            context!!.dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
-                    },
-                    getter
+                0, "dataModel",
+                ContextCaptureDefinition(
+                    ContextualModelReferenceDefinition<DataModelPropertyContext>(
+                        contextualResolver = { context, name ->
+                            context?.let {
+                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            } ?: throw ContextNotFoundException()
+                        }
+                    )
+                ) { context, value ->
+                    context?.apply{
+                        @Suppress("UNCHECKED_CAST")
+                        dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
+                    } ?: ContextNotFoundException()
+                },
+                getter
             )
         }
     }

@@ -1,5 +1,6 @@
 package maryk.core.query.responses.statuses
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
@@ -12,7 +13,9 @@ interface IsResponseStatus {
     companion object {
         internal fun <DO: Any> addKey(definitions: PropertyDefinitions<DO>, getter: (DO) -> Key<*>?) {
             definitions.add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = { it!!.dataModel!!.key }
+                    contextualResolver = {
+                        it?.dataModel?.key ?: throw ContextNotFoundException()
+                    }
             ), getter)
         }
     }

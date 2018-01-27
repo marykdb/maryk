@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.json.IllegalJsonOperation
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
@@ -327,9 +328,12 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
             definitions.addSingle(
                 PropertyDefinitionsCollectionDefinitionWrapper(1, "properties", PropertyDefinitionsCollectionDefinition(
-                    capturer = { context, propDefs -> context!!.propertyDefinitions = propDefs }
-                )
-                ) {
+                    capturer = { context, propDefs ->
+                        context?.apply {
+                            this.propertyDefinitions = propDefs
+                        } ?: ContextNotFoundException()
+                    }
+                )) {
                     @Suppress("UNCHECKED_CAST")
                     it.properties as PropertyDefinitions<Any>
                 }

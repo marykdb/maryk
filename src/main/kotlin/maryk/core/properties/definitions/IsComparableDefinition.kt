@@ -24,11 +24,15 @@ interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : I
         when {
             newValue != null -> {
                 when {
-                    this.minValue != null && newValue < this.minValue!!
+                    this.minValue?.let {
+                        newValue < it
+                    } ?: false
                     -> throw OutOfRangeException(
                         refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
                     )
-                    this.maxValue != null && newValue > this.maxValue!!
+                    this.maxValue?.let {
+                        newValue > it
+                    } ?: false
                     -> throw OutOfRangeException(
                         refGetter(), newValue.toString(), this.minValue.toString(), this.maxValue.toString()
                     )

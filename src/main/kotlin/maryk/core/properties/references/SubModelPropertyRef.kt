@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
@@ -34,11 +35,13 @@ class SubModelPropertyRef<
     } ?: name
 
     override fun getEmbedded(name: String) =
-        this.propertyDefinition.definition.dataModel.properties.getDefinition(name)!!.getRef(this)
+        this.propertyDefinition.definition.dataModel.properties.getDefinition(name)?.getRef(this)
+            ?: throw DefNotFoundException("Embedded Definition with $name not found")
 
     override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
         val index = initIntByVar(reader)
-        return this.propertyDefinition.definition.dataModel.properties.getDefinition(index)!!.getRef(this)
+        return this.propertyDefinition.definition.dataModel.properties.getDefinition(index)?.getRef(this)
+                ?: throw DefNotFoundException("Embedded Definition with $name not found")
     }
 
     /** Calculate the transport length of encoding this reference and cache length with [cacher] */

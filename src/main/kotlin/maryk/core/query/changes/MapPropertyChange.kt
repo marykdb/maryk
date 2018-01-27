@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableMap
@@ -30,21 +31,27 @@ data class MapPropertyChange<K: Any, V: Any>(
         @Suppress("UNCHECKED_CAST")
         private val keyDefinition = ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
-                (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.keyDefinition
+                (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
+                    ?.propertyDefinition?.keyDefinition
+                        ?: throw ContextNotFoundException()
             }
         )
         @Suppress("UNCHECKED_CAST")
         val valueToCompare = ContextualMapDefinition(
             required = false,
             contextualResolver = { context: DataModelPropertyContext? ->
-                (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
+                (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
+                    ?.propertyDefinition?.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>?
+                        ?: throw ContextNotFoundException()
             }
         ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>
         @Suppress("UNCHECKED_CAST")
         val valuesToAdd = ContextualMapDefinition(
             required = false,
             contextualResolver = { context: DataModelPropertyContext? ->
-                (context!!.reference!! as MapReference<Any, Any, IsPropertyContext>).propertyDefinition.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>
+                (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
+                    ?.propertyDefinition?.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>?
+                        ?: throw ContextNotFoundException()
             }
         ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>
         val keysToDelete = SetDefinition(

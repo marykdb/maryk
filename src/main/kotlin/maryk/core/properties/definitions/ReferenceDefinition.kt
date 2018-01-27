@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
@@ -86,13 +88,17 @@ class ReferenceDefinition<DO: Any>(
                 add(7, "dataModel", ContextCaptureDefinition(
                     definition = ContextualModelReferenceDefinition<DataModelContext>(
                         contextualResolver = { context, name ->
-                            context!!.dataModels[name]!!
+                            context?.let {
+                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            } ?: throw ContextNotFoundException()
                         }
                     ),
                     capturer = { context, dataModel ->
-                        if (!context!!.dataModels.containsKey(dataModel.name)) {
-                            context.dataModels[dataModel.name] = dataModel
-                        }
+                        context?.apply {
+                            if (!this.dataModels.containsKey(dataModel.name)) {
+                                this.dataModels[dataModel.name] = dataModel
+                            }
+                        } ?: ContextNotFoundException()
                     }
                 )) {
                     it.dataModel

@@ -62,7 +62,9 @@ data class StringDefinition(
                     -> throw InvalidSizeException(
                         refGetter(), newValue, this.minSize, this.maxSize
                     )
-                    this._regEx != null && !(this._regEx!! matches newValue)
+                    this._regEx?.let {
+                        !(it matches newValue)
+                    } ?: false
                     -> throw InvalidValueException(
                         refGetter(), newValue
                     )

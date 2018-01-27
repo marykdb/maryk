@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.json.IsJsonLikeWriter
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
@@ -77,17 +78,23 @@ data class NumberDefinition<T: Comparable<T>>(
                 add(5, "type", ContextCaptureDefinition(
                     definition = EnumDefinition(values = NumberType.values()),
                     capturer = { context: NumericContext?, value ->
-                        @Suppress("UNCHECKED_CAST")
-                        context!!.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
+                        context?.apply {
+                            @Suppress("UNCHECKED_CAST")
+                            numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
+                        } ?: throw ContextNotFoundException()
                     }
                 )) {
                     it.type.type
                 }
-                add(6, "minValue", ContextualNumberDefinition<NumericContext>(required = false) { it!!.numberType!! }) {
+                add(6, "minValue", ContextualNumberDefinition<NumericContext>(required = false) {
+                    it?.numberType ?: throw ContextNotFoundException()
+                }) {
                     @Suppress("UNCHECKED_CAST")
                     it.minValue as Comparable<Any>?
                 }
-                add(7, "maxValue", ContextualNumberDefinition<NumericContext>(required = false) { it!!.numberType!! }) {
+                add(7, "maxValue", ContextualNumberDefinition<NumericContext>(required = false) {
+                    it?.numberType ?: throw ContextNotFoundException()
+                }) {
                     @Suppress("UNCHECKED_CAST")
                     it.maxValue as Comparable<Any>?
                 }

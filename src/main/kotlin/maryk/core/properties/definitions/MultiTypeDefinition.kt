@@ -99,10 +99,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
         reader.nextToken()
 
-        val definition: IsSubDefinition<*, CX>? = this.definitionMap[type]
-                ?: throw ParseException("Unknown multi type index ${reader.lastValue}")
+        val definition = this.definitionMap[type]
+                ?: throw DefNotFoundException("Unknown multi type index ${reader.lastValue}")
 
-        val value = definition!!.readJson(reader, context)
+        val value = definition.readJson(reader, context)
 
         reader.nextToken() // skip end object
 
@@ -137,7 +137,8 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
         // value
         @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMap[value.type]!! as IsSubDefinition<Any, CX>
+        val def = this.definitionMap[value.type] as IsSubDefinition<Any, CX>?
+                ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, cacher, context)
 
         return totalByteLength
@@ -148,7 +149,8 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         value.type.index.writeVarBytes(writer)
 
         @Suppress("UNCHECKED_CAST")
-        val def = this.definitionMap[value.type]!! as IsSubDefinition<Any, CX>
+        val def = this.definitionMap[value.type] as IsSubDefinition<Any, CX>?
+                ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         def.writeTransportBytesWithKey(2, value.value, cacheGetter, writer, context)
     }
 

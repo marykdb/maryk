@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
@@ -21,11 +22,15 @@ interface IsPropertyOperation<T: Any> : IsChange {
             definitions.add(
                 0, "reference", ContextCaptureDefinition(
                     ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                        contextualResolver = { it!!.dataModel!!.properties }
+                        contextualResolver = {
+                            it?.dataModel?.properties ?: throw ContextNotFoundException()
+                        }
                     )
                 ) { context, value ->
-                    @Suppress("UNCHECKED_CAST")
-                    context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                    context?.apply {
+                        @Suppress("UNCHECKED_CAST")
+                        reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                    } ?: throw ContextNotFoundException()
                 },
                 getter
             )
@@ -37,8 +42,10 @@ interface IsPropertyOperation<T: Any> : IsChange {
                 ContextualValueDefinition(
                     required = false,
                     contextualResolver = { context: DataModelPropertyContext? ->
-                        @Suppress("UNCHECKED_CAST")
-                        context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                        context?.reference?.let {
+                            @Suppress("UNCHECKED_CAST")
+                            it.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                        }?: throw ContextNotFoundException()
                     }
                 ),
                 getter

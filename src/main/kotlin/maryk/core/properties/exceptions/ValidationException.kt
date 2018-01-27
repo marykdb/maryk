@@ -1,5 +1,6 @@
 package maryk.core.properties.exceptions
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
@@ -31,11 +32,15 @@ abstract class ValidationException internal constructor(
                 definition = ContextCaptureDefinition(
                     ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                         required = false,
-                        contextualResolver = { it!!.dataModel!!.properties }
+                        contextualResolver = {
+                            it?.dataModel?.properties ?: throw ContextNotFoundException()
+                        }
                     )
                 ) { context, value ->
-                    @Suppress("UNCHECKED_CAST")
-                    context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                    context?.apply {
+                        @Suppress("UNCHECKED_CAST")
+                        reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                    } ?: throw ContextNotFoundException()
                 },
                 getter = getter
             )

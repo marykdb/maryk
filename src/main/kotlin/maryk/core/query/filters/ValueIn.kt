@@ -1,5 +1,6 @@
 package maryk.core.query.filters
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
@@ -24,8 +25,10 @@ data class ValueIn<T: Any>(
                 add(1, "values", SetDefinition(
                     valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
                         contextualResolver = {
-                            @Suppress("UNCHECKED_CAST")
-                            it!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                            it?.reference?.let {
+                                @Suppress("UNCHECKED_CAST")
+                                it.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                            } ?: throw ContextNotFoundException()
                         }
                     )
                 ), ValueIn<*>::values)

@@ -1,5 +1,6 @@
 package maryk.core.query
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -23,7 +24,9 @@ data class Order(
         properties = object : PropertyDefinitions<Order>() {
             init {
                 add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = { it!!.dataModel!!.properties }
+                    contextualResolver = {
+                        it?.dataModel?.properties ?: throw ContextNotFoundException()
+                    }
                 ), Order::propertyReference)
 
                 add(1, "direction", EnumDefinition(

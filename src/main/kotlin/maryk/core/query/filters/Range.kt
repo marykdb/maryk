@@ -1,5 +1,6 @@
 package maryk.core.query.filters
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
@@ -30,14 +31,16 @@ data class Range<T: Any>(
                 add(1, "from", ContextualValueDefinition(
                     contextualResolver = { context: DataModelPropertyContext? ->
                         @Suppress("UNCHECKED_CAST")
-                        context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                        context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
+                            ?: throw ContextNotFoundException()
                     }
                 ), Range<*>::from)
 
                 add(2, "to", ContextualValueDefinition(
                     contextualResolver = { context: DataModelPropertyContext? ->
                         @Suppress("UNCHECKED_CAST")
-                        context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                        context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
+                                ?: throw ContextNotFoundException()
                     }
                 ), Range<*>::to)
 

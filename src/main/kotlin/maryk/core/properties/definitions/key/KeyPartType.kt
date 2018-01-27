@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.key
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.SubModelDefinition
@@ -21,7 +22,7 @@ internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, Dat
     KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),
     KeyPartType.Reference to ContextualPropertyReferenceDefinition(
         contextualResolver = {
-            it!!.propertyDefinitions!!
+            it?.propertyDefinitions ?: throw ContextNotFoundException()
         }
     ),
     KeyPartType.TypeId to SubModelDefinition(dataModel = {

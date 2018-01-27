@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.key
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.DefinitionDataModel
@@ -45,7 +46,9 @@ data class TypeId<E: IndexedEnum<E>>(
         properties = object : PropertyDefinitions<TypeId<*>>() {
             init {
                 add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
-                    contextualResolver = { it!!.propertyDefinitions!! }
+                    contextualResolver = {
+                        it?.propertyDefinitions ?: throw ContextNotFoundException()
+                    }
                 )) {
                     it.multiTypeReference
                 }

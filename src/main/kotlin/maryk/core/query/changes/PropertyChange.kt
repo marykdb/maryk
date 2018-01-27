@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
@@ -29,7 +30,8 @@ data class PropertyChange<T: Any>(
                 add(2, "newValue", ContextualValueDefinition(
                     contextualResolver = { context: DataModelPropertyContext? ->
                         @Suppress("UNCHECKED_CAST")
-                        context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+                        context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
+                            ?: throw ContextNotFoundException()
                     }
                 ), PropertyChange<*>::newValue)
             }

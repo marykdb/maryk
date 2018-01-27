@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
@@ -20,7 +21,9 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>>(
                 IsObjectRequest.addDataModel(this, AddRequest<*, *>::dataModel)
                 add(1, "objectsToAdd", ListDefinition(
                     valueDefinition = ContextualSubModelDefinition<DataModelPropertyContext>(
-                        contextualResolver = { it!!.dataModel!! }
+                        contextualResolver = {
+                            it?.dataModel ?: throw ContextNotFoundException()
+                        }
                     )
                 ), AddRequest<*, *>::objectsToAdd)
             }

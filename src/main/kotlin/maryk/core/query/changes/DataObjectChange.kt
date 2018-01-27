@@ -1,5 +1,6 @@
 package maryk.core.query.changes
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -29,7 +30,9 @@ data class DataObjectChange<out DO: Any>(
         properties = object : PropertyDefinitions<DataObjectChange<*>>() {
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = { it!!.dataModel!!.key }
+                    contextualResolver = {
+                        it?.dataModel?.key ?: throw ContextNotFoundException()
+                    }
                 ), DataObjectChange<*>::key)
 
                 add(1, "changes", ListDefinition(

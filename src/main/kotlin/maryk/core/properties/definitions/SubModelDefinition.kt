@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonReader
@@ -76,7 +78,7 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?): Int {
         var totalByteLength = 0
         val newContext = if (this.dataModel is ContextualDataModel<*, *, *, *>) {
-            this.dataModel.transformContext(context)!!.apply {
+            this.dataModel.transformContext(context)?.apply {
                 cacher.addContextToCache(this)
             }
         } else {
@@ -133,13 +135,17 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                 add(4, "dataModel", ContextCaptureDefinition(
                     definition = ContextualModelReferenceDefinition<DataModelContext>(
                         contextualResolver = { context, name ->
-                            context!!.dataModels[name]!!
+                            context?.let{
+                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            } ?: throw ContextNotFoundException()
                         }
                     ),
                     capturer = { context, dataModel ->
-                        if (!context!!.dataModels.containsKey(dataModel.name)) {
-                            context.dataModels[dataModel.name] = dataModel
-                        }
+                        context?.let {
+                            if (!it.dataModels.containsKey(dataModel.name)) {
+                                it.dataModels[dataModel.name] = dataModel
+                            }
+                        } ?: throw ContextNotFoundException()
                     }
                 )) {
                     it.dataModel as DataModel<*, *>

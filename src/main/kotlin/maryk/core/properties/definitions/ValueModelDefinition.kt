@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
@@ -83,13 +85,17 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 add(7, "dataModel", ContextCaptureDefinition(
                     definition = ContextualModelReferenceDefinition<DataModelContext>(
                         contextualResolver = { context, name ->
-                            context!!.dataModels[name]!!
+                            context?.let {
+                                it.dataModels[name] ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
+                            } ?: throw ContextNotFoundException()
                         }
                     ),
                     capturer = { context, dataModel ->
-                        if (!context!!.dataModels.containsKey(dataModel.name)) {
-                            context.dataModels[dataModel.name] = dataModel
-                        }
+                        context?.let {
+                            if (!it.dataModels.containsKey(dataModel.name)) {
+                                it.dataModels[dataModel.name] = dataModel
+                            }
+                        } ?: throw ContextNotFoundException()
                     }
                 )) {
                     it.dataModel

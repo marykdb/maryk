@@ -1,5 +1,6 @@
 package maryk.core.query
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -20,10 +21,14 @@ data class DataObjectWithMetaData<out DO: Any>(
         properties = object : PropertyDefinitions<DataObjectWithMetaData<*>>() {
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = { it!!.dataModel!!.key }
+                    contextualResolver = {
+                        it?.dataModel?.key ?: throw ContextNotFoundException()
+                    }
                 ), DataObjectWithMetaData<*>::key)
                 add(1, "dataObject", ContextualSubModelDefinition<DataModelPropertyContext>(
-                    contextualResolver = { it!!.dataModel!! }
+                    contextualResolver = {
+                        it?.dataModel ?: throw ContextNotFoundException()
+                    }
                 ), DataObjectWithMetaData<*>::dataObject)
                 add(2, "firstVersion", NumberDefinition(type = UInt64), DataObjectWithMetaData<*>::firstVersion)
                 add(3, "lastVersion", NumberDefinition(type = UInt64), DataObjectWithMetaData<*>::lastVersion)

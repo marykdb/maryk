@@ -1,5 +1,7 @@
 package maryk.core.query.responses
 
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -36,12 +38,16 @@ interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
 private val dataModel = ContextCaptureDefinition(
     ContextualModelReferenceDefinition<DataModelPropertyContext>(
         contextualResolver = { context, name ->
-            context!!.dataModels[name]!!
+            context?.let {
+                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+            } ?: throw ContextNotFoundException()
         }
     )
 ){ context, value ->
     @Suppress("UNCHECKED_CAST")
-    context!!.dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
+    context?.apply {
+        dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
+    } ?: throw ContextNotFoundException()
 }
 
 private val listOfStatuses = ListDefinition(

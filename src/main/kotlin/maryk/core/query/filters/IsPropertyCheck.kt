@@ -1,5 +1,6 @@
 package maryk.core.query.filters
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
@@ -16,16 +17,20 @@ interface IsPropertyCheck<T: Any> : IsFilter {
     companion object {
         internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
-                    index = 0, name = "reference",
-                    definition = ContextCaptureDefinition(
-                            ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                                    contextualResolver = { it!!.dataModel!!.properties }
-                            )
-                    ) { context, value ->
+                index = 0, name = "reference",
+                definition = ContextCaptureDefinition(
+                    ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                        contextualResolver = {
+                            it?.dataModel?.properties ?: throw ContextNotFoundException()
+                        }
+                    )
+                ) { context, value ->
+                    context?.apply {
                         @Suppress("UNCHECKED_CAST")
-                        context!!.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
-                    },
-                    getter = getter
+                        reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                    } ?: ContextNotFoundException()
+                },
+                getter = getter
             )
         }
     }

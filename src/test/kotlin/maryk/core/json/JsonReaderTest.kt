@@ -62,9 +62,7 @@ internal class JsonReaderTest {
             JsonToken.EndArray,
             JsonToken.EndObject
         ). forEach { token ->
-            reader.nextToken()
-
-            reader.currentToken.apply {
+            reader.nextToken().apply {
                 this.name shouldBe token.name
                 if (this is JsonTokenIsValue) {
                     this.value shouldBe (token as JsonTokenIsValue).value
@@ -153,9 +151,7 @@ internal class JsonReaderTest {
             JsonToken.ArrayValue("53.442e+234"),
             JsonToken.EndArray
         ). forEach { token ->
-            reader.nextToken()
-
-            reader.currentToken.apply {
+            reader.nextToken().apply {
                 this.name shouldBe token.name
                 if (this is JsonTokenIsValue) {
                     this.value shouldBe (token as JsonTokenIsValue).value

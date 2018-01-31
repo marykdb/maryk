@@ -2,7 +2,7 @@ package maryk.core.extensions
 
 import maryk.core.properties.exceptions.ParseException
 
-private val hexChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
+internal val HEX_CHARS = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
 
 /** Converts ByteArray into a String Hex value */
 internal fun ByteArray.toHex(): String {
@@ -11,8 +11,8 @@ internal fun ByteArray.toHex(): String {
 
     for (i in 0 until numChars step 2) {
         val d = this[i / 2].toInt()
-        ch[i] = hexChars[d shr 4 and 0x0F]
-        ch[i + 1] = hexChars[d and 0x0F]
+        ch[i] = HEX_CHARS[d shr 4 and 0x0F]
+        ch[i + 1] = HEX_CHARS[d and 0x0F]
     }
     return ch.joinToString("")
 }

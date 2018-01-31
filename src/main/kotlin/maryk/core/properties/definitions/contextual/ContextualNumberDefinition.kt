@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
+import maryk.core.json.JsonTokenIsValue
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsSubDefinition
@@ -43,11 +44,18 @@ internal class ContextualNumberDefinition<in CX: IsPropertyContext>(
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
         contextualResolver(context).readTransportBytes(reader)
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?)= reader.lastValue?.let {
-        try {
-            contextualResolver(context).ofString(it)
-        } catch (e: Throwable) { throw ParseException(reader.lastValue!!, e) }
-    } ?: throw ParseException("Contextual number cannot be null in JSON")
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): Comparable<Any> = reader.currentToken.let {
+        when (it) {
+            is JsonTokenIsValue -> {
+                it.value?.let {
+                    try {
+                        contextualResolver(context).ofString(it)
+                    } catch (e: Throwable) { throw ParseException(it, e) }
+                } ?: throw ParseException("Contextual number cannot be null in JSON")
+            }
+            else -> throw ParseException("Contextual number has to be a value")
+        }
+    }
 
     override fun writeJsonValue(value: Comparable<Any>, writer: IsJsonLikeWriter, context: CX?) = when {
         contextualResolver(context) !in arrayOf(UInt64, SInt64, Float64, Float32) -> {

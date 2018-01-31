@@ -1,26 +1,29 @@
 package maryk.core.json
 
+interface JsonTokenIsValue {
+    val value: String?
+}
+
 sealed class JsonToken(val name: String) {
     object StartJSON : JsonToken("StartJSON")
     object StartObject : JsonToken("StartObject")
-    object FieldName : JsonToken("FieldName")
+    class FieldName(val value: String?) : JsonToken("FieldName")
     object ObjectSeparator : JsonToken("ObjectSeparator")
-    object ObjectValue : JsonToken("ObjectValue")
+    class ObjectValue(override val value: String?) : JsonToken("ObjectValue"), JsonTokenIsValue
     object EndObject : JsonToken("EndObject")
     object StartArray : JsonToken("StartArray")
-    object ArrayValue : JsonToken("ArrayValue")
+    class ArrayValue(override val value: String?) : JsonToken("ArrayValue"), JsonTokenIsValue
     object ArraySeparator : JsonToken("ArraySeparator")
     object EndArray : JsonToken("EndArray")
     abstract class Stopped(name: String): JsonToken(name)
     object EndJSON : Stopped("EndJSON")
-    class Suspended(val lastToken: JsonToken): Stopped("Stopped reader")
+    class Suspended(val lastToken: JsonToken, val storedValue: String?): Stopped("Stopped reader")
     class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
 }
 
 /** For JSON like readers to read String based structures. */
 interface IsJsonLikeReader {
     var currentToken: JsonToken
-    var lastValue: String?
 
     /** Find the next token */
     fun nextToken(): JsonToken

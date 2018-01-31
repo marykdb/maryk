@@ -9,12 +9,13 @@ class JsonReader(
     private val reader: () -> Char
 ) : IsJsonLikeReader {
     override var currentToken: JsonToken = JsonToken.StartJSON
-    override var lastValue: String? = ""
+
+    private var storedValue: String? = ""
     private val typeStack: MutableList<JsonComplexType> = mutableListOf()
     private var lastChar: Char = ' '
 
     override fun nextToken(): JsonToken {
-        lastValue = ""
+        storedValue = ""
         try {
             when (currentToken) {
                 JsonToken.StartJSON -> {
@@ -41,16 +42,16 @@ class JsonReader(
                     if (lastChar == ']') {
                         endArray()
                     } else {
-                        readValue(JsonToken.ArrayValue)
+                        readValue({ JsonToken.ArrayValue(it) })
                     }
                 }
                 JsonToken.EndArray -> {
                     continueComplexRead()
                 }
-                JsonToken.FieldName -> {
-                    readValue(JsonToken.ObjectValue)
+                is JsonToken.FieldName -> {
+                    readValue({ JsonToken.ObjectValue(it) })
                 }
-                JsonToken.ObjectValue -> {
+                is JsonToken.ObjectValue -> {
                     readObject()
                 }
                 JsonToken.ObjectSeparator -> {
@@ -59,14 +60,17 @@ class JsonReader(
                         else -> throwJsonException()
                     }
                 }
-                JsonToken.ArrayValue -> {
+                is JsonToken.ArrayValue -> {
                     readArray()
                 }
                 JsonToken.ArraySeparator -> {
-                    readValue(JsonToken.ArrayValue)
+                    readValue({ JsonToken.ArrayValue(it) })
                 }
                 is JsonToken.Suspended -> {
-                    currentToken = (currentToken as JsonToken.Suspended).lastToken
+                    (currentToken as JsonToken.Suspended).let {
+                        currentToken = it.lastToken
+                        storedValue = it.storedValue
+                    }
                     readSkipWhitespace()
                     return nextToken()
                 }
@@ -75,7 +79,7 @@ class JsonReader(
                 }
             }
         } catch (e: ExceptionWhileReadingJson) {
-            currentToken = JsonToken.Suspended(currentToken)
+            currentToken = JsonToken.Suspended(currentToken, storedValue)
         } catch (e: InvalidJsonContent) {
             currentToken = JsonToken.JsonException(e)
             throw e
@@ -92,7 +96,7 @@ class JsonReader(
         val currentDepth = typeStack.count()
         do {
             nextToken()
-        } while (!(currentToken == JsonToken.FieldName && typeStack.count() <= currentDepth))
+        } while (!(currentToken is JsonToken.FieldName && typeStack.count() <= currentDepth))
     }
 
     private fun read() = try {
@@ -145,41 +149,23 @@ class JsonReader(
         }
     }
 
-    private fun readValue(currentValueToken: JsonToken) {
+    private fun readValue(currentTokenCreator: (value: String?) -> JsonToken) {
         when (lastChar) {
             '{' -> startObject()
             '[' -> startArray()
-            '"' -> {
-                currentToken = currentValueToken
-                readStringValue()
-            }
-            '-' -> {
-                currentToken = currentValueToken
-                readNumber(true)
-            }
-            in numberChars -> {
-                currentToken = currentValueToken
-                readNumber(false)
-            }
-            'n' -> {
-                currentToken = currentValueToken
-                readNullValue()
-            }
-            't' -> {
-                currentToken = currentValueToken
-                readTrue()
-            }
-            'f' -> {
-                currentToken = currentValueToken
-                readFalse()
-            }
+            '"' -> readStringValue(currentTokenCreator)
+            '-' -> readNumber(true, currentTokenCreator)
+            in numberChars -> readNumber(false, currentTokenCreator)
+            'n' -> readNullValue(currentTokenCreator)
+            't' -> readTrue(currentTokenCreator)
+            'f' -> readFalse(currentTokenCreator)
             else -> throwJsonException()
         }
     }
 
-    private fun readNumber(startedWithMinus: Boolean) {
+    private fun readNumber(startedWithMinus: Boolean, currentTokenCreator: (value: String?) -> JsonToken) {
         fun addAndAdvance() {
-            lastValue += lastChar
+            storedValue += lastChar
             read()
         }
 
@@ -189,7 +175,7 @@ class JsonReader(
         } while (lastChar in numberChars)
 
         // Check if value starts with illegal 0
-        lastValue?.let {
+        storedValue?.let {
             if (startedWithMinus && it.length > 2 && it[1] == '0') {
                 throwJsonException()
             } else if (it.length > 1 && it[0] == '0') {
@@ -218,59 +204,71 @@ class JsonReader(
             } while (lastChar in numberChars)
         }
 
+        currentToken = currentTokenCreator(storedValue)
+
         skipWhiteSpace()
     }
 
-    private fun readFalse() {
+    private fun readFalse(currentTokenCreator: (value: String?) -> JsonToken) {
         for (it in "alse") {
             read()
             if(lastChar != it) {
                 throwJsonException()
             }
         }
-        lastValue = "false"
+        storedValue = "false"
+
+        currentToken = currentTokenCreator(storedValue)
+
         readSkipWhitespace()
     }
 
-    private fun readTrue() {
+    private fun readTrue(currentTokenCreator: (value: String?) -> JsonToken) {
         ("rue").forEach {
             read()
             if(lastChar != it) {
                 throwJsonException()
             }
         }
-        lastValue = "true"
+        storedValue = "true"
+
+        currentToken = currentTokenCreator(storedValue)
+
         readSkipWhitespace()
     }
 
-    private fun readNullValue() {
+    private fun readNullValue(currentTokenCreator: (value: String?) -> JsonToken) {
         for (it in "ull") {
             read()
             if(lastChar != it) {
                 throwJsonException()
             }
         }
-        lastValue = null
+        storedValue = null
+
+        currentToken = currentTokenCreator(null)
+
         readSkipWhitespace()
     }
 
     private fun readFieldName() {
-        currentToken = JsonToken.FieldName
-        readStringValue()
+        readStringValue({ JsonToken.FieldName(this.storedValue) })
         if (lastChar != ':') {
             throwJsonException()
         }
         readSkipWhitespace()
     }
 
-    private fun readStringValue() {
+    private fun readStringValue(currentTokenCreator: (value: String?) -> JsonToken) {
         read()
         var skipChar = false
         while(lastChar != '"' || skipChar) {
-            lastValue += lastChar
+            storedValue += lastChar
             skipChar = if (lastChar == '\\') !skipChar else false
             read()
         }
+        currentToken = currentTokenCreator(storedValue)
+
         readSkipWhitespace()
     }
 

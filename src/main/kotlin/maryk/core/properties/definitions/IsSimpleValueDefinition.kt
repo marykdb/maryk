@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonToken
+import maryk.core.json.JsonTokenIsValue
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WriteCacheReader
@@ -58,12 +58,14 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
         )
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?): T {
-        if (reader.currentToken !is JsonToken.ObjectValue && reader.currentToken !is JsonToken.ArrayValue) {
-            throw ParseException("JSON value should be a simple value")
+    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
+        when (it) {
+            is JsonTokenIsValue -> {
+                it.value?.let {
+                    this.fromString(it, context)
+                } ?: throw ParseException("JSON value cannot be null")
+            }
+            else -> throw ParseException("JSON value should be a simple value")
         }
-        return reader.lastValue?.let {
-            this.fromString(it, context)
-        } ?: throw ParseException("JSON value cannot be null")
     }
 }

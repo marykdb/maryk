@@ -5,6 +5,7 @@ import maryk.core.bytes.initString
 import maryk.core.bytes.writeUTF8Bytes
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
+import maryk.core.json.JsonTokenIsValue
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -33,10 +34,16 @@ internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>
     override fun writeJsonValue(value: DataModel<*, *>, writer: IsJsonLikeWriter, context: CX?) =
         writer.writeString(this.asString(value, context))
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.lastValue?.let {
-        this.fromString(it, context)
-    } ?: throw ParseException("Model reference cannot be null in JSON")
-
+    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
+        when(it) {
+            is JsonTokenIsValue -> {
+                it.value?.let {
+                    this.fromString(it, context)
+                } ?: throw ParseException("Model reference cannot be null in JSON")
+            }
+            else -> throw ParseException("Model reference has to be a value")
+        }
+    }
 
     override fun calculateTransportByteLength(value: DataModel<*, *>, cacher: WriteCacheWriter, context: CX?) =
         value.name.calculateUTF8ByteLength()

@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
+import maryk.core.json.JsonTokenIsValue
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -30,9 +31,16 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     override fun writeJsonValue(value: Key<*>, writer: IsJsonLikeWriter, context: CX?) =
         writer.writeString(value.toString())
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.lastValue?.let {
-        contextualResolver(context).get(it)
-    } ?: throw ParseException("Reference cannot be null in JSON")
+    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
+        when(it) {
+            is JsonTokenIsValue -> {
+                (it as JsonTokenIsValue).value?.let {
+                    contextualResolver(context).get(it)
+                } ?: throw ParseException("Reference cannot be null in JSON")
+            }
+            else -> throw ParseException("Reference should be represented by a JSON value")
+        }
+    }
 
     override fun calculateTransportByteLength(value: Key<*>, cacher: WriteCacheWriter, context: CX?) =
         value.size

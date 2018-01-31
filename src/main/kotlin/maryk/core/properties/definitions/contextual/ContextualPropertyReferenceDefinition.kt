@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
+import maryk.core.json.JsonTokenIsValue
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
@@ -32,9 +33,16 @@ internal data class ContextualPropertyReferenceDefinition<in CX: IsPropertyConte
         writer.writeString(value.completeName)
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.lastValue?.let {
-        fromString(it, context)
-    } ?: throw ParseException("Property reference cannot be null in JSON")
+    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
+        when(it) {
+            is JsonTokenIsValue -> {
+                it.value?.let {
+                    fromString(it, context)
+                } ?: throw ParseException("Property reference cannot be null in JSON")
+            }
+            else -> throw ParseException("Property reference should be a value")
+        }
+    }
 
     override fun calculateTransportByteLength(value: IsPropertyReference<*, *>, cacher: WriteCacheWriter, context: CX?) =
         value.calculateTransportByteLength(cacher)

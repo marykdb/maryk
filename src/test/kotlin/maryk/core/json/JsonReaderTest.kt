@@ -227,4 +227,48 @@ internal class JsonReaderTest {
         reader.nextToken() shouldBe JsonToken.EndArray
         reader.nextToken() shouldBe JsonToken.EndJSON
     }
+
+    internal fun createJsonReader(yaml: String): JsonReader {
+        val input = yaml
+        var index = 0
+
+        val reader = JsonReader {
+            val b = input[index].also {
+                // JS platform returns a 0 control char when nothing can be read
+                if (it == '\u0000') {
+                    throw Throwable("0 char encountered")
+                }
+            }
+            index++
+            b
+        }
+        return reader
+    }
+
+    @Test
+    fun read_double_quote() {
+        val reader = createJsonReader("""["test"]""")
+        testForArrayStart(reader)
+        testForArrayValue(reader, "test")
+        testForArrayEnd(reader)
+        testForEndJson(reader)
+    }
+
+    @Test
+    fun read_double_quote_with_special_chars() {
+        val reader = createJsonReader("""["te\"\b\f\n\t\\\/\r'"]""")
+        testForArrayStart(reader)
+        testForArrayValue(reader, "te\"\b\u000C\n\t\\/\r'")
+        testForArrayEnd(reader)
+        testForEndJson(reader)
+    }
+
+    @Test
+    fun read_double_quote_with_utf_chars() {
+        val reader = createJsonReader("""["\uD83D\uDE0D\uwrong\u0w\u00w\u000w"]""")
+        testForArrayStart(reader)
+        testForArrayValue(reader, "😍\\uwrong\\u0w\\u00w\\u000w")
+        testForArrayEnd(reader)
+        testForEndJson(reader)
+    }
 }

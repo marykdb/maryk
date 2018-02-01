@@ -1,10 +1,9 @@
 package maryk.core.json
 
-import maryk.core.json.yaml.YamlReader
 import maryk.test.shouldBe
 import kotlin.test.fail
 
-internal fun testForObjectValue(reader: YamlReader, value: String) {
+internal fun testForObjectValue(reader: IsJsonLikeReader, value: String) {
     reader.nextToken().apply {
         if (this is JsonToken.ObjectValue) {
             this.value shouldBe value
@@ -12,7 +11,23 @@ internal fun testForObjectValue(reader: YamlReader, value: String) {
     }
 }
 
-internal fun testForArrayValue(reader: YamlReader, value: String) {
+internal fun testForArrayStart(reader: IsJsonLikeReader) {
+    reader.nextToken().apply {
+        if (this !is JsonToken.StartArray) {
+            fail("$this should be array start")
+        }
+    }
+}
+
+internal fun testForArrayEnd(reader: IsJsonLikeReader) {
+    reader.nextToken().apply {
+        if (this !is JsonToken.EndArray) {
+            fail("$this should be array end")
+        }
+    }
+}
+
+internal fun testForArrayValue(reader: IsJsonLikeReader, value: String) {
     reader.nextToken().apply {
         if (this is JsonToken.ArrayValue) {
             this.value shouldBe value
@@ -20,7 +35,7 @@ internal fun testForArrayValue(reader: YamlReader, value: String) {
     }
 }
 
-internal fun testForEndJson(reader: YamlReader) {
+internal fun testForEndJson(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !is JsonToken.EndJSON) {
             fail("$this should be End JSON")

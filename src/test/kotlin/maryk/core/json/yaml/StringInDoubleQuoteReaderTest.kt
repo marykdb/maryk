@@ -30,9 +30,23 @@ class StringInDoubleQuoteReaderTest {
     }
 
     @Test
-    fun read_double_quote_with_utf_chars() {
+    fun read_double_quote_with_utf16_chars() {
         val reader = createYamlReader(""""\uD83D\uDE0D\uwrong\u0w\u00w\u000w"""")
         testForObjectValue(reader, "😍\\uwrong\\u0w\\u00w\\u000w")
+        testForEndJson(reader)
+    }
+
+    @Test
+    fun read_double_quote_with_utf8_chars() {
+        val reader = createYamlReader(""""\x43\x52\xw0\x0w"""")
+        testForObjectValue(reader, "\u0043\u0052\\xw0\\x0w")
+        testForEndJson(reader)
+    }
+
+    @Test
+    fun read_double_quote_with_utf32_chars() {
+        val reader = createYamlReader(""""\U0001F603\U0001W603"""")
+        testForObjectValue(reader, "\uD83D\uDE03\\U0001W603")
         testForEndJson(reader)
     }
 }

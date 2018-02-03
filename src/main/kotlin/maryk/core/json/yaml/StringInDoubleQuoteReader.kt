@@ -6,9 +6,9 @@ import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
 private sealed class SkipCharType {
-    object NONE: SkipCharType()
-    object START_NEW: SkipCharType()
-    open class NEW_UTF_CHAR(val charType: Char, private val charCount: Int) : SkipCharType() {
+    object None : SkipCharType()
+    object StartNewEscaped : SkipCharType()
+    open class UtfChar(val charType: Char, private val charCount: Int) : SkipCharType() {
         protected var chars: CharArray = CharArray(charCount)
         private var index = 0
         fun addCharAndHasReachedEnd(char: Char): Boolean {
@@ -25,7 +25,7 @@ private sealed class SkipCharType {
             return chars.sliceArray(0 until index).joinToString(separator = "")
         }
     }
-    class NEW_UTF32_CHAR() : NEW_UTF_CHAR(charType = 'U', charCount = 8) {
+    class Utf32Char() : UtfChar(charType = 'U', charCount = 8) {
         override fun toCharString(): String {
             println(chars.joinToString(separator = "").toInt(16))
             return fromCodePoint(chars.joinToString(separator = "").toInt(16))
@@ -43,19 +43,19 @@ internal class StringInDoubleQuoteReader(
 
     private fun addCharAndResetSkipChar(value: String): SkipCharType {
         storedValue += value
-        return SkipCharType.NONE
+        return SkipCharType.None
     }
 
     override fun readUntilToken(): JsonToken {
         read()
-        var skipChar: SkipCharType = SkipCharType.NONE
-        loop@while(lastChar != '"' || skipChar == SkipCharType.START_NEW) {
+        var skipChar: SkipCharType = SkipCharType.None
+        loop@while(lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
             skipChar = when (skipChar) {
-                SkipCharType.NONE -> when(lastChar) {
-                    '\\' -> SkipCharType.START_NEW
+                SkipCharType.None -> when(lastChar) {
+                    '\\' -> SkipCharType.StartNewEscaped
                     else -> addCharAndResetSkipChar("$lastChar")
                 }
-                SkipCharType.START_NEW -> when(lastChar) {
+                SkipCharType.StartNewEscaped -> when(lastChar) {
                     '0' -> addCharAndResetSkipChar("\u0000")
                     'a' -> addCharAndResetSkipChar("\u0007")
                     'b' -> addCharAndResetSkipChar("\b")
@@ -73,12 +73,12 @@ internal class StringInDoubleQuoteReader(
                     '_' -> addCharAndResetSkipChar("\u00A0")
                     'L' -> addCharAndResetSkipChar("\u2028")
                     'P' -> addCharAndResetSkipChar("\u2029")
-                    'x' -> SkipCharType.NEW_UTF_CHAR('x', 2)
-                    'u' -> SkipCharType.NEW_UTF_CHAR('u', 4)
-                    'U' -> SkipCharType.NEW_UTF32_CHAR()
+                    'x' -> SkipCharType.UtfChar('x', 2)
+                    'u' -> SkipCharType.UtfChar('u', 4)
+                    'U' -> SkipCharType.Utf32Char()
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is SkipCharType.NEW_UTF_CHAR -> when(lastChar.toLowerCase()) {
+                is SkipCharType.UtfChar -> when(lastChar.toLowerCase()) {
                     in HEX_CHARS -> {
                         if (skipChar.addCharAndHasReachedEnd(lastChar)) {
                             addCharAndResetSkipChar(skipChar.toCharString())

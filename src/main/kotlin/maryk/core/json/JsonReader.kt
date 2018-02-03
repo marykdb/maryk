@@ -2,7 +2,6 @@ package maryk.core.json
 
 import maryk.core.extensions.HEX_CHARS
 
-private val whiteSpaceChars = charArrayOf(' ', '\t', '\n', '\r')
 private val numberChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartJSON)
 
@@ -114,7 +113,7 @@ class JsonReader(
     }
 
     private fun skipWhiteSpace() {
-        if (lastChar in whiteSpaceChars) {
+        if (lastChar.isWhitespace()) {
             readSkipWhitespace() // continue reading
         }
     }
@@ -262,29 +261,42 @@ class JsonReader(
     }
 
     private sealed class SkipCharType {
-        object NONE: SkipCharType()
-        object START_NEW: SkipCharType()
-        object NEW_UTF_CHAR: SkipCharType()
-        class Utf16Char1(val c1: Char): SkipCharType()
-        class Utf16Char2(val c1: Char, val c2: Char): SkipCharType()
-        class Utf16Char3(val c1: Char, val c2: Char, val c3: Char): SkipCharType()
+        object None : SkipCharType()
+        object StartNewEscaped : SkipCharType()
+        open class UtfChar(val charType: Char, private val charCount: Int) : SkipCharType() {
+            protected var chars: CharArray = CharArray(charCount)
+            private var index = 0
+            fun addCharAndHasReachedEnd(char: Char): Boolean {
+                chars[index++] = char
+                if(index == charCount) {
+                    return true
+                }
+                return false
+            }
+            open fun toCharString(): String {
+                return chars.joinToString(separator = "").toInt(16).toChar().toString()
+            }
+            fun toOriginalChars(): String {
+                return chars.sliceArray(0 until index).joinToString(separator = "")
+            }
+        }
     }
 
     private fun readStringValue(currentTokenCreator: (value: String?) -> JsonToken) {
         read()
-        var skipChar: SkipCharType = SkipCharType.NONE
-        loop@while(lastChar != '"' || skipChar == SkipCharType.START_NEW) {
+        var skipChar: SkipCharType = SkipCharType.None
+        loop@while(lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
             fun addCharAndResetSkipChar(value: String): SkipCharType {
                 storedValue += value
-                return SkipCharType.NONE
+                return SkipCharType.None
             }
 
             skipChar = when (skipChar) {
-                SkipCharType.NONE -> when(lastChar) {
-                    '\\' -> SkipCharType.START_NEW
+                SkipCharType.None -> when(lastChar) {
+                    '\\' -> SkipCharType.StartNewEscaped
                     else -> addCharAndResetSkipChar("$lastChar")
                 }
-                SkipCharType.START_NEW -> when(lastChar) {
+                SkipCharType.StartNewEscaped -> when(lastChar) {
                     'b' -> addCharAndResetSkipChar("\b")
                     '"' -> addCharAndResetSkipChar("\"")
                     '\\' -> addCharAndResetSkipChar("\\")
@@ -293,24 +305,18 @@ class JsonReader(
                     'n' -> addCharAndResetSkipChar("\n")
                     'r' -> addCharAndResetSkipChar("\r")
                     't' -> addCharAndResetSkipChar("\t")
-                    'u' -> SkipCharType.NEW_UTF_CHAR
+                    'u' -> SkipCharType.UtfChar('u', 4)
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                SkipCharType.NEW_UTF_CHAR -> when(lastChar.toLowerCase()) {
-                    in HEX_CHARS -> SkipCharType.Utf16Char1(lastChar)
-                    else -> addCharAndResetSkipChar("\\u$lastChar")
-                }
-                is SkipCharType.Utf16Char1 -> when(lastChar.toLowerCase()) {
-                    in HEX_CHARS -> SkipCharType.Utf16Char2(skipChar.c1, lastChar)
-                    else -> addCharAndResetSkipChar("\\u${skipChar.c1}$lastChar")
-                }
-                is SkipCharType.Utf16Char2 -> when(lastChar.toLowerCase()) {
-                    in HEX_CHARS -> SkipCharType.Utf16Char3(skipChar.c1, skipChar.c2, lastChar)
-                    else -> addCharAndResetSkipChar("\\u${skipChar.c1}${skipChar.c2}$lastChar")
-                }
-                is SkipCharType.Utf16Char3 -> when(lastChar.toLowerCase()) {
-                    in HEX_CHARS -> addCharAndResetSkipChar("${skipChar.c1}${skipChar.c2}${skipChar.c3}$lastChar".toInt(16).toChar().toString())
-                    else -> addCharAndResetSkipChar("\\u${skipChar.c1}${skipChar.c2}${skipChar.c3}$lastChar")
+                is SkipCharType.UtfChar -> when(lastChar.toLowerCase()) {
+                    in HEX_CHARS -> {
+                        if (skipChar.addCharAndHasReachedEnd(lastChar)) {
+                            addCharAndResetSkipChar(skipChar.toCharString())
+                        } else {
+                            skipChar
+                        }
+                    }
+                    else -> addCharAndResetSkipChar("\\${skipChar.charType}${skipChar.toOriginalChars()}$lastChar")
                 }
             }
             read()

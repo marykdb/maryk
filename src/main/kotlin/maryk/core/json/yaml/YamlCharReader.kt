@@ -4,7 +4,7 @@ import maryk.core.json.JsonToken
 
 internal abstract class YamlCharReader(
     internal val yamlReader: YamlReader,
-    internal val parentReader: YamlCharReader? = null
+    internal val parentReader: YamlCharWithChildrenReader? = null
 ) {
     val lastChar get() = this.yamlReader.lastChar
 

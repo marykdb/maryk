@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.bytes.fromCodePoint
 import maryk.core.extensions.HEX_CHARS
+import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
@@ -36,7 +37,7 @@ private sealed class SkipCharType {
 /** Reads Strings encoded with "double quotes" */
 internal class StringInDoubleQuoteReader(
     yamlReader: YamlReader,
-    parentReader: YamlCharReader,
+    parentReader: YamlCharWithChildrenReader,
     private val jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharReader(yamlReader, parentReader) {
     private var storedValue: String? = ""
@@ -47,7 +48,6 @@ internal class StringInDoubleQuoteReader(
     }
 
     override fun readUntilToken(): JsonToken {
-        read()
         var skipChar: SkipCharType = SkipCharType.None
         loop@while(lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
             skipChar = when (skipChar) {
@@ -93,6 +93,12 @@ internal class StringInDoubleQuoteReader(
         }
 
         currentReader = this.parentReader!!
+
+        try {
+            read()
+        } catch (e: ExceptionWhileReadingJson) {
+            this.parentReader.childIsDoneReading()
+        }
 
         return this.jsonTokenConstructor(storedValue)
     }

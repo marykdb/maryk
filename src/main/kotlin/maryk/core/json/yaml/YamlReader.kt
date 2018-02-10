@@ -10,7 +10,7 @@ class YamlReader(
 ) : IsJsonLikeReader {
     override var currentToken: JsonToken = JsonToken.StartJSON
 
-    internal var lastChar: Char = ' '
+    internal var lastChar: Char = '\u0000'
     internal var currentReader: YamlCharReader = DocumentStartReader(this)
 
     override fun nextToken(): JsonToken {

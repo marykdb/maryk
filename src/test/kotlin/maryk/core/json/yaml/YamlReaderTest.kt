@@ -1,10 +1,5 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.JsonToken
-import maryk.test.shouldBe
-import kotlin.test.Test
-import kotlin.test.fail
-
 internal fun createYamlReader(yaml: String): YamlReader {
     val input = yaml
     var index = 0
@@ -20,23 +15,4 @@ internal fun createYamlReader(yaml: String): YamlReader {
         b
     }
     return reader
-}
-
-class YamlReaderTest {
-    @Test
-    fun read_single_quote() {
-        val reader = createYamlReader("'te''st\"'")
-
-        reader.nextToken().apply {
-            if (this is JsonToken.ObjectValue) {
-                this.value shouldBe "te'st\""
-            } else { fail("$this should be object value") }
-        }
-
-        reader.nextToken().apply {
-            if (this !is JsonToken.EndJSON) {
-                fail("$this should be object value")
-            }
-        }
-    }
 }

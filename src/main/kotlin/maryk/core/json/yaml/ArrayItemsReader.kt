@@ -6,7 +6,8 @@ import maryk.core.json.JsonToken
 /** Reader for Array Items */
 internal class ArrayItemsReader(
     yamlReader: YamlReader,
-    parentReader: YamlCharWithChildrenReader
+    parentReader: YamlCharWithChildrenReader,
+    val indentToAdd: Int = 0
 ) : YamlCharWithChildrenReader(yamlReader, parentReader) {
     private var isStarted = false
 
@@ -38,10 +39,17 @@ internal class ArrayItemsReader(
         return createLineReader().readUntilToken()
     }
 
-    override fun indentCount() = this.parentReader!!.indentCount()
+    override fun indentCount() = this.parentReader!!.indentCount() + this.indentToAdd
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) =
-        this.parentReader!!.endIndentLevel(indentCount, JsonToken.EndArray)
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+        if (indentToAdd > 0) {
+            this.yamlReader.hasUnclaimedIndenting(indentCount)
+            this.parentReader!!.childIsDoneReading()
+            return JsonToken.EndArray
+        } else {
+            return this.parentReader!!.endIndentLevel(indentCount, JsonToken.EndArray)
+        }
+    }
 
     override fun childIsDoneReading() {
         this.currentReader = this

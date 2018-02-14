@@ -52,4 +52,21 @@ class ArrayItemsReaderTest {
         testForArrayEnd(reader)
         testForEndJson(reader)
     }
+
+    @Test
+    fun read_double_array_items() {
+        val reader = createYamlReader("""
+            |     -   - 'test'
+            |         - 'hey'
+            |     - "another one"
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForArrayStart(reader)
+        testForArrayValue(reader, "test")
+        testForArrayValue(reader, "hey")
+        testForArrayEnd(reader)
+        testForArrayValue(reader, "another one")
+        testForArrayEnd(reader)
+        testForEndJson(reader)
+    }
 }

@@ -11,55 +11,68 @@ internal class LineReader(
 ) : YamlCharWithChildrenReader(yamlReader, parentReader) {
     private var hasValue = false
 
-    override fun readUntilToken() = when(this.lastChar) {
-        '\n' -> {
+    override fun readUntilToken(): JsonToken {
+        var indents = 0
+
+        while(this.lastChar in arrayOf(' ', '\t')) {
+            indents++
             read()
-            if (!this.hasValue) {
-                IndentReader(this.yamlReader, this).let {
+        }
+
+        return when(this.lastChar) {
+            '\n' -> {
+                read()
+                if (!this.hasValue) {
+                    IndentReader(this.yamlReader, this).let {
+                        this.currentReader = it
+                        it.readUntilToken()
+                    }
+                } else {
+                    this.parentReader!!.childIsDoneReading()
+                    this.currentReader.readUntilToken()
+                }
+            }
+            '\'' -> {
+                read()
+                StringInSingleQuoteReader(this.yamlReader, this) {
+                    this.jsonTokenCreator(it)
+                }.let {
                     this.currentReader = it
                     it.readUntilToken()
                 }
-            } else {
-                this.parentReader!!.childIsDoneReading()
-                this.currentReader.readUntilToken()
             }
-        }
-        '\'' -> {
-            read()
-            StringInSingleQuoteReader(this.yamlReader, this) {
-                this.jsonTokenCreator(it)
-            }.let {
-                this.currentReader = it
-                it.readUntilToken()
+            '\"' -> {
+                read()
+                StringInDoubleQuoteReader(this.yamlReader, this) {
+                    this.jsonTokenCreator(it)
+                }.let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
             }
-        }
-        '\"' -> {
-            read()
-            StringInDoubleQuoteReader(this.yamlReader, this) {
-                this.jsonTokenCreator(it)
-            }.let {
-                this.currentReader = it
-                it.readUntilToken()
-            }
-        }
-        '-' -> {
-            read()
-            when (this.lastChar) {
-                ' ' -> {
+            '-' -> {
+                read()
+                if (this.lastChar.isWhitespace()) {
+                    read() // Skip whitespace char
+                    val indentToAdd = indents + if (parentReader !is IndentReader) {
+                        2
+                    } else { 0 }
+
                     ArrayItemsReader(
                         yamlReader = this.yamlReader,
-                        parentReader = this
+                        parentReader = this,
+                        indentToAdd = indentToAdd
                     ).let {
                         this.currentReader = it
-                        read() // Skip this char
                         it.readUntilToken()
                     }
+                } else {
+                    TODO("simple string reader or fail")
                 }
-                else -> TODO("simple string reader or fail")
             }
-        }
-        else -> {
-            throw InvalidJsonContent("Unknown character '$lastChar' found")
+            else -> {
+                throw InvalidJsonContent("Unknown character '$lastChar' found")
+            }
         }
     }
 

@@ -13,9 +13,22 @@ class YamlReader(
     internal var lastChar: Char = '\u0000'
     internal var currentReader: YamlCharReader = DocumentStartReader(this)
 
+    private var unclaimedIndenting: Int? = null
+
     override fun nextToken(): JsonToken {
         currentToken = try {
-            currentReader.readUntilToken()
+            this.currentReader.let {
+                if (this.unclaimedIndenting != null && it is YamlCharWithChildrenReader) {
+                    if (it.indentCount() > this.unclaimedIndenting!!) {
+                        it.endIndentLevel(this.unclaimedIndenting!!)
+                    } else {
+                        this.unclaimedIndenting = null
+                        it.continueIndentLevel()
+                    }
+                } else {
+                    it.readUntilToken()
+                }
+            }
         } catch (e: ExceptionWhileReadingJson) {
             currentReader.handleReaderInterrupt()
         }
@@ -30,6 +43,10 @@ class YamlReader(
         lastChar = reader()
     } catch (e: Throwable) { // Reached end or something bad happened
         throw ExceptionWhileReadingJson()
+    }
+
+    fun hasUnclaimedIndenting(indentCount: Int) {
+        this.unclaimedIndenting = indentCount
     }
 }
 

@@ -67,7 +67,7 @@ internal class DocumentStartReader(
         this.currentReader = this
     }
 
-    override fun endIndentLevel() = JsonToken.EndJSON
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) = JsonToken.EndJSON
 
     override fun handleReaderInterrupt() = EndReader(
         this.yamlReader

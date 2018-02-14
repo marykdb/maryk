@@ -6,11 +6,7 @@ import maryk.core.json.JsonToken
 internal class EndReader(
     yamlReader: YamlReader
 ) : YamlCharReader(yamlReader, null) {
-    override fun readUntilToken(): JsonToken {
-        return JsonToken.EndJSON
-    }
+    override fun readUntilToken() = JsonToken.EndJSON
 
-    override fun handleReaderInterrupt(): JsonToken {
-        return JsonToken.EndJSON
-    }
+    override fun handleReaderInterrupt() = JsonToken.EndJSON
 }

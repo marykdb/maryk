@@ -44,7 +44,7 @@ internal class LineReader(
         }
         '-' -> {
             read()
-            when(this.lastChar) {
+            when (this.lastChar) {
                 ' ' -> {
                     ArrayItemsReader(
                         yamlReader = this.yamlReader,
@@ -55,7 +55,7 @@ internal class LineReader(
                         it.readUntilToken()
                     }
                 }
-                else -> TODO("simple string reader")
+                else -> TODO("simple string reader or fail")
             }
         }
         else -> {
@@ -64,12 +64,11 @@ internal class LineReader(
     }
 
     override fun continueIndentLevel(): JsonToken {
-        TODO("not implemented")
+        return this.parentReader!!.continueIndentLevel()
     }
 
-    override fun endIndentLevel() : JsonToken {
-        TODO("OVERRIDE")
-    }
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) =
+        super.parentReader!!.endIndentLevel(indentCount, tokenToReturn)
 
     override fun indentCount() = this.parentReader!!.indentCount()
 

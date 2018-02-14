@@ -9,15 +9,17 @@ internal class IndentReader(
     yamlReader: YamlReader,
     parentReader: YamlCharWithChildrenReader
 ) : YamlCharWithChildrenReader(yamlReader, parentReader) {
+    var indentCounter = 0
+
     override fun continueIndentLevel(): JsonToken {
         TODO("not implemented")
     }
 
-    override fun endIndentLevel(): JsonToken {
-        TODO("not implemented")
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+        this.yamlReader.hasUnclaimedIndenting(indentCount)
+        this.parentReader!!.childIsDoneReading()
+        return tokenToReturn!!
     }
-
-    var indentCounter = 0
 
     override fun readUntilToken(): JsonToken {
         while(this.lastChar.isWhitespace()) {
@@ -31,7 +33,7 @@ internal class IndentReader(
 
         return when(this.indentCounter) {
             this.parentReader!!.indentCount() -> this.parentReader.continueIndentLevel()
-            in 0 until this.parentReader.indentCount() -> this.parentReader.endIndentLevel()
+            in 0 until this.parentReader.indentCount() -> this.parentReader.endIndentLevel(this.indentCounter)
             else -> {
                 this.yamlReader.currentReader = LineReader(
                     parentReader = this,

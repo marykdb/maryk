@@ -7,7 +7,7 @@ internal fun testForObjectValue(reader: IsJsonLikeReader, value: String) {
     reader.nextToken().apply {
         if (this is JsonToken.ObjectValue) {
             this.value shouldBe value
-        } else { fail("$this should be object value") }
+        } else { fail("$this should be object value '$value'") }
     }
 }
 
@@ -31,7 +31,7 @@ internal fun testForArrayValue(reader: IsJsonLikeReader, value: String) {
     reader.nextToken().apply {
         if (this is JsonToken.ArrayValue) {
             this.value shouldBe value
-        } else { fail("$this should be Array value $value") }
+        } else { fail("$this should be Array value '$value'") }
     }
 }
 

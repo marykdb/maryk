@@ -40,7 +40,8 @@ internal class ArrayItemsReader(
 
     override fun indentCount() = this.parentReader!!.indentCount()
 
-    override fun endIndentLevel() = JsonToken.EndArray
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) =
+        this.parentReader!!.endIndentLevel(indentCount, JsonToken.EndArray)
 
     override fun childIsDoneReading() {
         this.currentReader = this

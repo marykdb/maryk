@@ -9,5 +9,5 @@ internal abstract class YamlCharWithChildrenReader(
     abstract fun childIsDoneReading()
     abstract fun indentCount(): Int
     abstract fun continueIndentLevel(): JsonToken
-    abstract fun endIndentLevel(): JsonToken
+    abstract fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken? = null): JsonToken
 }

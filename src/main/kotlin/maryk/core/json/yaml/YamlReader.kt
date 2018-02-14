@@ -15,8 +15,13 @@ class YamlReader(
     internal var currentReader: YamlCharReader = DocumentStartReader(this)
 
     private var unclaimedIndenting: Int? = null
+    private var hasException: Boolean = false
 
     override fun nextToken(): JsonToken {
+        if (this.hasException) {
+            return this.currentReader.handleReaderInterrupt()
+        }
+
         currentToken = try {
             this.currentReader.let {
                 if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
@@ -35,6 +40,7 @@ class YamlReader(
                 }
             }
         } catch (e: ExceptionWhileReadingJson) {
+            this.hasException = true
             currentReader.handleReaderInterrupt()
         }
         return currentToken

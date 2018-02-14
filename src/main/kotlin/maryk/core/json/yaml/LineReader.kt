@@ -63,10 +63,21 @@ internal class LineReader<out P>(
                     it.readUntilToken()
                 }
             }
+            ',' -> {
+                throw InvalidYamlContent("Invalid char $lastChar at this position")
+            }
+            '!', '>', '|' -> {
+                TODO("Not supported yet")
+            }
+            '@', '`' -> {
+                throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
+            }
+            '%' -> {
+                throw InvalidYamlContent("Directive % indicator not allowed in this position")
+            }
             ']' -> {
-                read() // Only accept it at end of
-
-                throw InvalidJsonContent("Unknown char")
+                read() // Only accept it at end of document where it will fail to read because it failed in array content
+                throw InvalidYamlContent("Invalid char $lastChar at this position")
             }
             '-' -> {
                 read()
@@ -88,8 +99,19 @@ internal class LineReader<out P>(
                     TODO("simple string reader or fail")
                 }
             }
+            '?' -> {
+                TODO("Key reader")
+            }
+            '#' -> {
+                TODO("Comment reader")
+            }
             else -> {
-                throw InvalidJsonContent("Unknown character '$lastChar' found")
+                PlainStringReader(this.yamlReader, this) {
+                    this.jsonTokenCreator(it)
+                }.let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
             }
         }
     }

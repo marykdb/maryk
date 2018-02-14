@@ -26,7 +26,7 @@ private sealed class SkipCharType {
             return chars.sliceArray(0 until index).joinToString(separator = "")
         }
     }
-    class Utf32Char() : UtfChar(charType = 'U', charCount = 8) {
+    class Utf32Char : UtfChar(charType = 'U', charCount = 8) {
         override fun toCharString(): String {
             println(chars.joinToString(separator = "").toInt(16))
             return fromCodePoint(chars.joinToString(separator = "").toInt(16))
@@ -35,11 +35,14 @@ private sealed class SkipCharType {
 }
 
 /** Reads Strings encoded with "double quotes" */
-internal class StringInDoubleQuoteReader(
+internal class StringInDoubleQuoteReader<out P>(
     yamlReader: YamlReader,
-    parentReader: YamlCharWithChildrenReader,
+    parentReader: P,
     private val jsonTokenConstructor: (String?) -> JsonToken
-) : YamlCharReader(yamlReader, parentReader) {
+) : YamlCharWithParentReader<P>(yamlReader, parentReader)
+        where P : YamlCharReader,
+              P : IsYamlCharWithChildrenReader
+{
     private var storedValue: String? = ""
 
     private fun addCharAndResetSkipChar(value: String): SkipCharType {
@@ -92,7 +95,7 @@ internal class StringInDoubleQuoteReader(
             read()
         }
 
-        currentReader = this.parentReader!!
+        currentReader = this.parentReader
 
         try {
             read()

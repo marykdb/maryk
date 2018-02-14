@@ -4,7 +4,10 @@ import maryk.core.json.JsonToken
 
 internal class DocumentStartReader(
     yamlReader: YamlReader
-): YamlCharWithChildrenReader(yamlReader) {
+): YamlCharReader(yamlReader),
+    IsYamlCharWithChildrenReader,
+    IsYamlCharWithIndentsReader
+{
 
     override fun readUntilToken(): JsonToken {
         this.read()

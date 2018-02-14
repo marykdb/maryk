@@ -5,11 +5,17 @@ import maryk.core.json.JsonToken
 private val lineBreakChars = arrayOf('\n', '\r')
 
 /** Reads indents on a new line until a char is found */
-internal class IndentReader(
+internal class IndentReader<out P>(
     yamlReader: YamlReader,
-    parentReader: YamlCharWithChildrenReader
-) : YamlCharWithChildrenReader(yamlReader, parentReader) {
-    var indentCounter = 0
+    parentReader: P
+) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+    IsYamlCharWithIndentsReader,
+    IsYamlCharWithChildrenReader
+        where P : maryk.core.json.yaml.YamlCharReader,
+              P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
+              P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
+{
+    private var indentCounter = 0
 
     override fun continueIndentLevel(): JsonToken {
         TODO("not implemented")
@@ -17,7 +23,7 @@ internal class IndentReader(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
         this.yamlReader.hasUnclaimedIndenting(indentCount)
-        this.parentReader!!.childIsDoneReading()
+        this.parentReader.childIsDoneReading()
         return tokenToReturn!!
     }
 
@@ -32,7 +38,7 @@ internal class IndentReader(
         }
 
         return when(this.indentCounter) {
-            this.parentReader!!.indentCount() -> this.parentReader.continueIndentLevel()
+            this.parentReader.indentCount() -> this.parentReader.continueIndentLevel()
             in 0 until this.parentReader.indentCount() -> this.parentReader.endIndentLevel(this.indentCounter)
             else -> {
                 this.yamlReader.currentReader = LineReader(

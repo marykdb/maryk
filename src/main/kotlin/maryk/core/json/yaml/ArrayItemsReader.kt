@@ -4,11 +4,17 @@ import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
 /** Reader for Array Items */
-internal class ArrayItemsReader(
+internal class ArrayItemsReader<out P>(
     yamlReader: YamlReader,
-    parentReader: YamlCharWithChildrenReader,
+    parentReader: P,
     val indentToAdd: Int = 0
-) : YamlCharWithChildrenReader(yamlReader, parentReader) {
+) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+    IsYamlCharWithIndentsReader,
+    IsYamlCharWithChildrenReader
+        where P : YamlCharReader,
+              P : IsYamlCharWithChildrenReader,
+              P : IsYamlCharWithIndentsReader
+{
     private var isStarted = false
 
     override fun readUntilToken(): JsonToken {
@@ -39,15 +45,15 @@ internal class ArrayItemsReader(
         return createLineReader().readUntilToken()
     }
 
-    override fun indentCount() = this.parentReader!!.indentCount() + this.indentToAdd
+    override fun indentCount() = this.parentReader.indentCount() + this.indentToAdd
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
         if (indentToAdd > 0) {
             this.yamlReader.hasUnclaimedIndenting(indentCount)
-            this.parentReader!!.childIsDoneReading()
+            this.parentReader.childIsDoneReading()
             return JsonToken.EndArray
         } else {
-            return this.parentReader!!.endIndentLevel(indentCount, JsonToken.EndArray)
+            return this.parentReader.endIndentLevel(indentCount, JsonToken.EndArray)
         }
     }
 
@@ -56,7 +62,7 @@ internal class ArrayItemsReader(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        this.currentReader = this.parentReader!!
+        this.currentReader = this.parentReader
         return JsonToken.EndArray
     }
 

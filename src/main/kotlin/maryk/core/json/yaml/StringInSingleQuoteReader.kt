@@ -4,11 +4,14 @@ import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
 /** Last char is already at '. Read until next ' */
-internal class StringInSingleQuoteReader(
+internal class StringInSingleQuoteReader<out P>(
     yamlReader: YamlReader,
-    parentReader: YamlCharWithChildrenReader,
+    parentReader: P,
     private val jsonTokenConstructor: (String?) -> JsonToken
-) : YamlCharReader(yamlReader, parentReader) {
+) : YamlCharWithParentReader<P>(yamlReader, parentReader)
+        where P : YamlCharReader,
+              P : IsYamlCharWithChildrenReader
+{
     private var aQuoteFound = false
     private var storedValue: String? = ""
 
@@ -31,14 +34,14 @@ internal class StringInSingleQuoteReader(
             read()
         }
 
-        this.parentReader!!.childIsDoneReading()
+        this.parentReader.childIsDoneReading()
 
         return this.jsonTokenConstructor(storedValue)
     }
 
     override fun handleReaderInterrupt(): JsonToken {
         if (this.aQuoteFound) {
-            this.parentReader!!.childIsDoneReading()
+            this.parentReader.childIsDoneReading()
             return this.jsonTokenConstructor(storedValue)
         } else {
             throw InvalidJsonContent("Single quoted string was never closed")

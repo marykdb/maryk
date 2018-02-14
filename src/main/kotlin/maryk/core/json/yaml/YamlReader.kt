@@ -19,7 +19,7 @@ class YamlReader(
     override fun nextToken(): JsonToken {
         currentToken = try {
             this.currentReader.let {
-                if (this.unclaimedIndenting != null && it is YamlCharWithChildrenReader) {
+                if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
                     val remainder = it.indentCount() - this.unclaimedIndenting!!
                     if (remainder > 0) {
                         it.endIndentLevel(this.unclaimedIndenting!!)

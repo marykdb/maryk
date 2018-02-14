@@ -4,6 +4,7 @@ import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForArrayValue
 import maryk.core.json.testForEndJson
+import maryk.core.json.testForInvalidJson
 import kotlin.test.Test
 
 class ArrayItemsReaderTest {
@@ -68,5 +69,28 @@ class ArrayItemsReaderTest {
         testForArrayValue(reader, "another one")
         testForArrayEnd(reader)
         testForEndJson(reader)
+    }
+
+    @Test
+    fun read_wrong_array_items() {
+        val reader = createYamlReader("""
+            |     - 'test'
+            |     "wrong"
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForArrayValue(reader, "test")
+        testForInvalidJson(reader)
+    }
+
+    @Test
+    fun read_wrong_array_start_items() {
+        val reader = createYamlReader("""
+            |     - 'test'
+            |  - 'hey'
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForArrayValue(reader, "test")
+        testForArrayEnd(reader)
+        testForInvalidJson(reader)
     }
 }

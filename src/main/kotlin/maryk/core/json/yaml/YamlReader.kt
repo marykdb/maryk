@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.ExceptionWhileReadingJson
+import maryk.core.json.InvalidJsonContent
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.JsonToken
 
@@ -19,11 +20,15 @@ class YamlReader(
         currentToken = try {
             this.currentReader.let {
                 if (this.unclaimedIndenting != null && it is YamlCharWithChildrenReader) {
-                    if (it.indentCount() > this.unclaimedIndenting!!) {
+                    val remainder = it.indentCount() - this.unclaimedIndenting!!
+                    if (remainder > 0) {
                         it.endIndentLevel(this.unclaimedIndenting!!)
-                    } else {
+                    } else if (remainder == 0) {
                         this.unclaimedIndenting = null
                         it.continueIndentLevel()
+                    } else {
+                        // Indents are only left over on closing indents so should never be lower
+                        throw InvalidJsonContent("Lower indent found than previous started indents")
                     }
                 } else {
                     it.readUntilToken()

@@ -1,6 +1,7 @@
 package maryk.core.json
 
 import maryk.test.shouldBe
+import maryk.test.shouldThrow
 import kotlin.test.fail
 
 internal fun testForObjectValue(reader: IsJsonLikeReader, value: String) {
@@ -40,5 +41,11 @@ internal fun testForEndJson(reader: IsJsonLikeReader) {
         if (this !is JsonToken.EndJSON) {
             fail("$this should be End JSON")
         }
+    }
+}
+
+internal fun testForInvalidJson(reader: IsJsonLikeReader) {
+    shouldThrow<InvalidJsonContent> {
+        reader.nextToken()
     }
 }

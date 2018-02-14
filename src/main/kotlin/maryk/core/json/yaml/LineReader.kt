@@ -22,14 +22,12 @@ internal class LineReader(
         return when(this.lastChar) {
             '\n' -> {
                 read()
-                if (!this.hasValue) {
-                    IndentReader(this.yamlReader, this).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                } else {
+                if (this.hasValue) {
                     this.parentReader!!.childIsDoneReading()
-                    this.currentReader.readUntilToken()
+                }
+                IndentReader(this.yamlReader, this).let {
+                    this.currentReader = it
+                    it.readUntilToken()
                 }
             }
             '\'' -> {

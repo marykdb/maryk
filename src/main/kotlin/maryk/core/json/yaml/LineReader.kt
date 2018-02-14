@@ -1,10 +1,9 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
 /** Reads Lines with actual non whitespace chars */
-internal class LineReader<P>(
+internal class LineReader<out P>(
     yamlReader: YamlReader,
     parentReader: P,
     private val jsonTokenCreator: (String?) -> JsonToken

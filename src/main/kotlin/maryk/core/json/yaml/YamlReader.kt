@@ -28,7 +28,7 @@ class YamlReader(
                         it.continueIndentLevel()
                     } else {
                         // Indents are only left over on closing indents so should never be lower
-                        throw InvalidJsonContent("Lower indent found than previous started indents")
+                        throw InvalidYamlContent("Lower indent found than previous started indents")
                     }
                 } else {
                     it.readUntilToken()
@@ -55,4 +55,8 @@ class YamlReader(
     }
 }
 
+/** Exception for invalid Yaml */
+class InvalidYamlContent internal constructor(
+    description: String
+): InvalidJsonContent(description)
 

@@ -1,6 +1,5 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
 /** Last char is already at '. Read until next ' */
@@ -44,7 +43,7 @@ internal class StringInSingleQuoteReader<out P>(
             this.parentReader.childIsDoneReading()
             return this.jsonTokenConstructor(storedValue)
         } else {
-            throw InvalidJsonContent("Single quoted string was never closed")
+            throw InvalidYamlContent("Single quoted string was never closed")
         }
     }
 }

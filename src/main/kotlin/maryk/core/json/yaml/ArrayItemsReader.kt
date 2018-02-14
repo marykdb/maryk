@@ -1,6 +1,5 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
 /** Reader for Array Items */
@@ -67,7 +66,7 @@ internal class ArrayItemsReader<out P>(
     }
 
     private fun throwSequenceException() {
-        throw InvalidJsonContent("Sequence was started on this indentation level, this is not an Sequence entry")
+        throw InvalidYamlContent("Sequence was started on this indentation level, this is not an Sequence entry")
     }
 
     private fun createLineReader() = LineReader(

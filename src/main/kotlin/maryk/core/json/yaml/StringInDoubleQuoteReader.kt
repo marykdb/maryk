@@ -3,7 +3,6 @@ package maryk.core.json.yaml
 import maryk.core.bytes.fromCodePoint
 import maryk.core.extensions.HEX_CHARS
 import maryk.core.json.ExceptionWhileReadingJson
-import maryk.core.json.InvalidJsonContent
 import maryk.core.json.JsonToken
 
 private sealed class SkipCharType {
@@ -107,6 +106,6 @@ internal class StringInDoubleQuoteReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        throw InvalidJsonContent("Double quoted string was never closed")
+        throw InvalidYamlContent("Double quoted string was never closed")
     }
 }

@@ -23,7 +23,7 @@ internal class PlainStringReader<out P>(
     override fun readUntilToken(): JsonToken {
         loop@while(true) {
             if (lastChar == '\n') {
-                this.storedValue = this.storedValue.trimEnd() + ' '
+                this.storedValue = this.storedValue.trimEnd()
                 return IndentReader(this.yamlReader, this).let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -36,7 +36,10 @@ internal class PlainStringReader<out P>(
 
     override fun indentCount() = this.parentReader.indentCount() + 1
 
-    override fun continueIndentLevel() = this.readUntilToken()
+    override fun continueIndentLevel(): JsonToken {
+        this.storedValue += ' '
+        return this.readUntilToken()
+    }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
         return this.handleReaderInterrupt()

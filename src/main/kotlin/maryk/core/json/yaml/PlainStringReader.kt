@@ -10,13 +10,14 @@ internal enum class PlainStyleMode {
 internal class PlainStringReader<out P>(
     yamlReader: YamlReader,
     parentReader: P,
+    startWith: String = "",
 //    val mode: PlainStyleMode = PlainStyleMode.NORMAL,
     private val jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader
 {
-    private var storedValue: String? = ""
+    private var storedValue: String? = startWith
 
     override fun readUntilToken(): JsonToken {
         loop@while(lastChar != '\n') {

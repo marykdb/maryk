@@ -96,23 +96,42 @@ internal class LineReader<out P>(
                         it.readUntilToken()
                     }
                 } else {
-                    TODO("simple string reader or fail")
+                    plainStringReader("-")
                 }
             }
             '?' -> {
-                TODO("Key reader")
+                read()
+                if(this.lastChar == ' ') {
+                    TODO("Key reader")
+                } else {
+                    plainStringReader("?")
+                }
+            }
+            ':' -> {
+                read()
+                if(this.lastChar == ' ') {
+                    TODO("Value reader")
+                } else {
+                    plainStringReader(":")
+                }
             }
             '#' -> {
                 TODO("Comment reader")
             }
-            else -> {
-                PlainStringReader(this.yamlReader, this) {
-                    this.jsonTokenCreator(it)
-                }.let {
-                    this.currentReader = it
-                    it.readUntilToken()
-                }
-            }
+            else -> this.plainStringReader("")
+        }
+    }
+
+    private fun plainStringReader(startWith: String): JsonToken {
+        return PlainStringReader(
+            this.yamlReader,
+            this,
+            startWith
+        ) {
+            this.jsonTokenCreator(it)
+        }.let {
+            this.currentReader = it
+            it.readUntilToken()
         }
     }
 

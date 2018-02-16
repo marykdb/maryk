@@ -22,9 +22,7 @@ internal class DocumentStartReader(
                             '-' -> {
                                 TODO("document started")
                             }
-                            else -> {
-                                TODO("start string")
-                            }
+                            else -> plainStringReader("--")
                         }
                     }
                     ' ' -> {
@@ -36,9 +34,7 @@ internal class DocumentStartReader(
                             it.readUntilToken()
                         }
                     }
-                    else -> {
-                        TODO("start string")
-                    }
+                    else -> plainStringReader("-")
                 }
             }
             ' ' -> {
@@ -59,6 +55,19 @@ internal class DocumentStartReader(
                     it.readUntilToken()
                 }
             }
+        }
+    }
+
+    private fun plainStringReader(char: String): JsonToken {
+        return PlainStringReader(
+            this.yamlReader,
+            this,
+            char
+        ) {
+            JsonToken.ObjectValue(it)
+        }.let {
+            this.currentReader = it
+            it.readUntilToken()
         }
     }
 

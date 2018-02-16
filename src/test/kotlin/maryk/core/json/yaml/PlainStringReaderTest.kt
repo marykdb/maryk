@@ -16,6 +16,13 @@ class PlainStringReaderTest {
     }
 
     @Test
+    fun read_plain_string_with_line_breaks() {
+        val reader = createYamlReader("  test\n   test")
+        testForObjectValue(reader, "test test")
+        testForEndJson(reader)
+    }
+
+    @Test
     fun read_plain_string_with_question_mark() {
         val reader = createYamlReader("?test")
         testForObjectValue(reader, "?test")

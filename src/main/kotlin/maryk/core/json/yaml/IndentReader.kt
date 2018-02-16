@@ -57,7 +57,5 @@ internal class IndentReader<out P>(
         this.currentReader = this
     }
 
-    override fun handleReaderInterrupt(): JsonToken {
-        return JsonToken.EndJSON
-    }
+    override fun handleReaderInterrupt() = parentReader.handleReaderInterrupt()
 }

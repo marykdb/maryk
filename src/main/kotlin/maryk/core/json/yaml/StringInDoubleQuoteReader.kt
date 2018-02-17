@@ -27,7 +27,6 @@ private sealed class SkipCharType {
     }
     class Utf32Char : UtfChar(charType = 'U', charCount = 8) {
         override fun toCharString(): String {
-            println(chars.joinToString(separator = "").toInt(16))
             return fromCodePoint(chars.joinToString(separator = "").toInt(16))
         }
     }

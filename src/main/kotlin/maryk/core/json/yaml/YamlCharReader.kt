@@ -21,11 +21,13 @@ internal abstract class YamlCharReader(
     abstract fun handleReaderInterrupt(): JsonToken
 }
 
-internal abstract class
-
 internal interface IsYamlCharWithIndentsReader {
     fun indentCount(): Int
+    fun indentCountForChildren(): Int
     fun continueIndentLevel(): JsonToken
+    fun <P> newIndentLevel(parentReader: P): JsonToken where P : maryk.core.json.yaml.YamlCharReader,
+                                                         P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
+                                                         P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
     fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken? = null): JsonToken
 }
 

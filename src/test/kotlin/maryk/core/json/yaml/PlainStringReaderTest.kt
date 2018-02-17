@@ -4,6 +4,7 @@ import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForArrayValue
 import maryk.core.json.testForEndJson
+import maryk.core.json.testForInvalidJson
 import maryk.core.json.testForObjectValue
 import kotlin.test.Test
 
@@ -16,8 +17,31 @@ class PlainStringReaderTest {
     }
 
     @Test
+    fun read_plain_string_with_same_line_breaks() {
+        val reader = createYamlReader("""
+            |  test
+            |  test
+        """.trimMargin())
+        testForObjectValue(reader, "test test")
+        testForEndJson(reader)
+    }
+
+    @Test
+    fun read_plain_string_with_wrong_line_breaks() {
+        val reader = createYamlReader("""
+            |  test
+            | test
+        """.trimMargin())
+        testForObjectValue(reader, "test")
+        testForInvalidJson(reader)
+    }
+
+    @Test
     fun read_plain_string_with_line_breaks() {
-        val reader = createYamlReader("  test\n   test")
+        val reader = createYamlReader("""
+            |  test
+            |   test
+        """.trimMargin())
         testForObjectValue(reader, "test test")
         testForEndJson(reader)
     }

@@ -18,7 +18,7 @@ internal class ArrayItemsReader<out P>(
 
     override fun readUntilToken(): JsonToken {
         return if (!this.isStarted) {
-            createLineReader()
+            createLineReader(this)
 
             this.isStarted = true
             JsonToken.StartArray
@@ -32,6 +32,11 @@ internal class ArrayItemsReader<out P>(
         }
     }
 
+    override fun <P> newIndentLevel(parentReader: P): JsonToken where P : YamlCharReader, P : IsYamlCharWithChildrenReader, P : IsYamlCharWithIndentsReader {
+        this.createLineReader(parentReader)
+        return this.currentReader.readUntilToken()
+    }
+
     override fun continueIndentLevel(): JsonToken {
         if (this.lastChar != '-') {
             throwSequenceException()
@@ -41,18 +46,27 @@ internal class ArrayItemsReader<out P>(
             throwSequenceException()
         }
         read()
-        return createLineReader().readUntilToken()
+        return createLineReader(this).readUntilToken()
     }
 
-    override fun indentCount() = this.parentReader.indentCount() + this.indentToAdd
+    override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
+
+    override fun indentCountForChildren() = this.indentCount() + 1
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
-        if (indentToAdd > 0) {
+        if (indentCount == this.indentCount()) {
+            // this reader should handle the read
+            this.currentReader = this
+            this.yamlReader.hasUnclaimedIndenting(null)
+            return tokenToReturn ?: this.continueIndentLevel()
+        }
+
+        return if (indentToAdd > 0) {
             this.yamlReader.hasUnclaimedIndenting(indentCount)
             this.parentReader.childIsDoneReading()
-            return JsonToken.EndArray
+            JsonToken.EndArray
         } else {
-            return this.parentReader.endIndentLevel(indentCount, JsonToken.EndArray)
+            this.parentReader.endIndentLevel(indentCount, JsonToken.EndArray)
         }
     }
 
@@ -69,9 +83,12 @@ internal class ArrayItemsReader<out P>(
         throw InvalidYamlContent("Sequence was started on this indentation level, this is not an Sequence entry")
     }
 
-    private fun createLineReader() = LineReader(
+    private fun <P> createLineReader(parentReader: P)
+            where P : maryk.core.json.yaml.YamlCharReader,
+                  P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
+                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader = LineReader(
         yamlReader = yamlReader,
-        parentReader = this,
+        parentReader = parentReader,
         jsonTokenCreator = { JsonToken.ArrayValue(it) }
     ).apply {
         this.currentReader = this

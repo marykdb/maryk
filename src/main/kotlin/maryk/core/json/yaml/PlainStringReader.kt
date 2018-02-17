@@ -34,7 +34,14 @@ internal class PlainStringReader<out P>(
         }
     }
 
-    override fun indentCount() = this.parentReader.indentCount() + 1
+    override fun indentCount() = this.parentReader.indentCountForChildren()
+
+    override fun indentCountForChildren() = this.indentCount()
+
+    override fun <P> newIndentLevel(parentReader: P)
+            where P : YamlCharReader,
+                  P : IsYamlCharWithChildrenReader,
+                  P : IsYamlCharWithIndentsReader = this.continueIndentLevel()
 
     override fun continueIndentLevel(): JsonToken {
         this.storedValue += ' '
@@ -42,7 +49,12 @@ internal class PlainStringReader<out P>(
     }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
-        return this.handleReaderInterrupt()
+        val token = this.handleReaderInterrupt()
+        return if (indentCount == this.indentCount()) {
+            token
+        } else {
+            this.parentReader.endIndentLevel(indentCount, token)
+        }
     }
 
     override fun childIsDoneReading() {

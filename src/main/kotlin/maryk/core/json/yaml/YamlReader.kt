@@ -56,7 +56,7 @@ class YamlReader(
         throw ExceptionWhileReadingJson()
     }
 
-    fun hasUnclaimedIndenting(indentCount: Int) {
+    fun hasUnclaimedIndenting(indentCount: Int?) {
         this.unclaimedIndenting = indentCount
     }
 }

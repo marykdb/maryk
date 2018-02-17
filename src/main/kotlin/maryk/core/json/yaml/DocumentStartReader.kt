@@ -8,7 +8,6 @@ internal class DocumentStartReader(
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
 {
-
     override fun readUntilToken(): JsonToken {
         this.read()
         return when(this.lastChar) {
@@ -71,15 +70,29 @@ internal class DocumentStartReader(
         }
     }
 
+    override fun <P> newIndentLevel(parentReader: P)
+            where P : YamlCharReader,
+                  P : IsYamlCharWithChildrenReader,
+                  P : IsYamlCharWithIndentsReader = LineReader(
+        parentReader = parentReader,
+        yamlReader = this.yamlReader,
+        jsonTokenCreator = { JsonToken.ObjectValue(it) }
+    ).let {
+        this.currentReader = it
+        it.readUntilToken()
+    }
+
     override fun continueIndentLevel() = readUntilToken()
 
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) = JsonToken.EndJSON
+
     override fun indentCount() = 0
+
+    override fun indentCountForChildren() = this.indentCount()
 
     override fun childIsDoneReading() {
         this.currentReader = this
     }
-
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) = JsonToken.EndJSON
 
     override fun handleReaderInterrupt() = EndReader(
         this.yamlReader

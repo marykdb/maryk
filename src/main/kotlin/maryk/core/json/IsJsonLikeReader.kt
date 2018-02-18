@@ -19,6 +19,10 @@ sealed class JsonToken(val name: String) {
     object EndJSON : Stopped("EndJSON")
     class Suspended(val lastToken: JsonToken, val storedValue: String?): Stopped("Stopped reader")
     class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
+
+    override fun toString() = if(this is JsonTokenIsValue) {
+        "$name(\"${this.value}\")"
+    } else { name }
 }
 
 /** For JSON like readers to read String based structures. */

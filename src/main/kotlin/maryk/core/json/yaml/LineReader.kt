@@ -136,6 +136,8 @@ internal class LineReader<out P>(
         }
     }
 
+    override fun foundIndentType(type: IndentObjectType) = this.parentReader.foundIndentType(type)
+
     override fun <P> newIndentLevel(parentReader: P)
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,

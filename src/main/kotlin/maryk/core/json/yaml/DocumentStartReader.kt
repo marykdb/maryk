@@ -8,8 +8,13 @@ internal class DocumentStartReader(
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
 {
+    private var indentType: IndentObjectType = IndentObjectType.UNKNOWN
+
     override fun readUntilToken(): JsonToken {
-        this.read()
+        if(this.lastChar == '\u0000') {
+            this.read()
+        }
+
         return when(this.lastChar) {
             '-' -> {
                 this.read()
@@ -57,10 +62,22 @@ internal class DocumentStartReader(
         }
     }
 
+    override fun foundIndentType(type: IndentObjectType): JsonToken? =
+        if (this.indentType == IndentObjectType.UNKNOWN) {
+            this.indentType = IndentObjectType.OBJECT
+            JsonToken.StartObject
+        } else {
+            null
+        }
+
     private fun plainStringReader(char: String): JsonToken {
+        val lineReader = LineReader(this.yamlReader, this) {
+            JsonToken.ObjectValue(it)
+        }
+
         return PlainStringReader(
             this.yamlReader,
-            this,
+            lineReader,
             char
         ) {
             JsonToken.ObjectValue(it)
@@ -84,7 +101,8 @@ internal class DocumentStartReader(
 
     override fun continueIndentLevel() = readUntilToken()
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) = JsonToken.EndJSON
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) =
+        handleReaderInterrupt()
 
     override fun indentCount() = 0
 
@@ -94,9 +112,16 @@ internal class DocumentStartReader(
         this.currentReader = this
     }
 
-    override fun handleReaderInterrupt() = EndReader(
-        this.yamlReader
-    ).apply {
-        this.currentReader = this
-    }.readUntilToken()
+    override fun handleReaderInterrupt(): JsonToken {
+        if (this.indentType == IndentObjectType.OBJECT) {
+            this.indentType = IndentObjectType.UNKNOWN
+            return JsonToken.EndObject
+        }
+
+        return EndReader(
+            this.yamlReader
+        ).apply {
+            this.currentReader = this
+        }.readUntilToken()
+    }
 }

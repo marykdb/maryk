@@ -16,7 +16,7 @@ internal class IndentReader<out P>(
               P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
 {
     private var indentCounter = 0
-
+    private var indentType: IndentObjectType = IndentObjectType.UNKNOWN
 
     override fun <P> newIndentLevel(parentReader: P): JsonToken
             where P : YamlCharReader,
@@ -28,6 +28,14 @@ internal class IndentReader<out P>(
     override fun continueIndentLevel(): JsonToken {
         TODO("not implemented")
     }
+
+    override fun foundIndentType(type: IndentObjectType): JsonToken? =
+        if (this.indentType == IndentObjectType.UNKNOWN) {
+            this.indentType = IndentObjectType.OBJECT
+            JsonToken.StartObject
+        } else {
+            null
+        }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
         this.yamlReader.hasUnclaimedIndenting(indentCount)

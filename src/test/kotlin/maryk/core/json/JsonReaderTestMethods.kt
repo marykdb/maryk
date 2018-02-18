@@ -4,6 +4,30 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.fail
 
+internal fun testForObjectStart(reader: IsJsonLikeReader) {
+    reader.nextToken().apply {
+        if (this !is JsonToken.StartObject) {
+            fail("$this should be object start")
+        }
+    }
+}
+
+internal fun testForObjectEnd(reader: IsJsonLikeReader) {
+    reader.nextToken().apply {
+        if (this !is JsonToken.EndObject) {
+            fail("$this should be object end")
+        }
+    }
+}
+
+internal fun testForFieldName(reader: IsJsonLikeReader, value: String) {
+    reader.nextToken().apply {
+        if (this is JsonToken.FieldName) {
+            this.value shouldBe value
+        } else { fail("$this should be field name '$value'") }
+    }
+}
+
 internal fun testForObjectValue(reader: IsJsonLikeReader, value: String) {
     reader.nextToken().apply {
         if (this is JsonToken.ObjectValue) {

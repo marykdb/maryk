@@ -11,7 +11,7 @@ class MappingReaderTest {
     @Test
     fun read_simple_object() {
         val reader = createYamlReader("""
-        |key1: "value1"
+        |key1: value1
         |key2: "value2"
         |key3: 'value3'
         """.trimMargin())

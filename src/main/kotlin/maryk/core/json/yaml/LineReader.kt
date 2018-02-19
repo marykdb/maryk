@@ -6,7 +6,7 @@ import maryk.core.json.JsonToken
 internal class LineReader<out P>(
     yamlReader: YamlReader,
     parentReader: P,
-    private val indentToAdd: Int = 0,
+    private var indentToAdd: Int = 0,
     private val jsonTokenCreator: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
@@ -16,6 +16,7 @@ internal class LineReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var hasValue = false
+    private var mapItemFound = false
 
     override fun readUntilToken(): JsonToken {
         var indents = 0
@@ -136,7 +137,11 @@ internal class LineReader<out P>(
         }
     }
 
-    override fun foundIndentType(type: IndentObjectType) = this.parentReader.foundIndentType(type)
+    override fun foundIndentType(type: IndentObjectType): JsonToken? {
+        this.indentToAdd += 1
+        this.mapItemFound = true
+        return this.parentReader.foundIndentType(type)
+    }
 
     override fun <P> newIndentLevel(parentReader: P)
             where P : YamlCharReader,
@@ -147,8 +152,18 @@ internal class LineReader<out P>(
         return this.parentReader.continueIndentLevel()
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) =
-        this.parentReader.endIndentLevel(indentCount, tokenToReturn)
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+        if (mapItemFound) {
+            return if (tokenToReturn != null) {
+                this.parentReader.childIsDoneReading()
+                this.yamlReader.hasUnclaimedIndenting(indentCount)
+                tokenToReturn
+            } else {
+                this.parentReader.continueIndentLevel()
+            }
+        }
+        return this.parentReader.endIndentLevel(indentCount, tokenToReturn)
+    }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
 

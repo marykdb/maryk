@@ -91,7 +91,7 @@ internal class ArrayItemsReader<out P>(
                   P : maryk.core.json.yaml.IsYamlCharWithIndentsReader = LineReader(
         yamlReader = yamlReader,
         parentReader = parentReader,
-        jsonTokenCreator = { JsonToken.ArrayValue(it) }
+        isInsideArray = true
     ).apply {
         this.currentReader = this
     }

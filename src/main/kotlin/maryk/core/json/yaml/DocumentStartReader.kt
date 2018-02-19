@@ -52,8 +52,7 @@ internal class DocumentStartReader(
             } else -> {
                 LineReader(
                     parentReader = this,
-                    yamlReader = this.yamlReader,
-                    jsonTokenCreator = { JsonToken.ObjectValue(it) }
+                    yamlReader = this.yamlReader
                 ).let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -71,9 +70,7 @@ internal class DocumentStartReader(
         }
 
     private fun plainStringReader(char: String): JsonToken {
-        val lineReader = LineReader(this.yamlReader, this) {
-            JsonToken.ObjectValue(it)
-        }
+        val lineReader = LineReader(this.yamlReader, this)
 
         return PlainStringReader(
             this.yamlReader,
@@ -92,8 +89,7 @@ internal class DocumentStartReader(
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader = LineReader(
         parentReader = parentReader,
-        yamlReader = this.yamlReader,
-        jsonTokenCreator = { JsonToken.ObjectValue(it) }
+        yamlReader = this.yamlReader
     ).let {
         this.currentReader = it
         it.readUntilToken()

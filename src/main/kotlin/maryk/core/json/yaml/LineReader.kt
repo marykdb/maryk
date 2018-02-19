@@ -7,7 +7,7 @@ internal class LineReader<out P>(
     yamlReader: YamlReader,
     parentReader: P,
     private var indentToAdd: Int = 0,
-    private val jsonTokenCreator: (String?) -> JsonToken
+    private var isInsideArray: Boolean = false
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -19,12 +19,7 @@ internal class LineReader<out P>(
     private var mapItemFound = false
 
     override fun readUntilToken(): JsonToken {
-        var indents = 0
-
-        while(this.lastChar in arrayOf(' ', '\t')) {
-            indents++
-            read()
-        }
+        val indents = skipWhiteSpace()
 
         return when(this.lastChar) {
             '\n' -> {
@@ -122,6 +117,38 @@ internal class LineReader<out P>(
             }
             else -> this.plainStringReader("")
         }
+    }
+
+    private fun skipWhiteSpace(): Int {
+        var indents = 0
+        while (this.lastChar in arrayOf(' ', '\t')) {
+            indents++
+            read()
+        }
+        return indents
+    }
+
+    private fun jsonTokenCreator(value: String?): JsonToken {
+        if (this.mapItemFound) {
+            JsonToken.ObjectValue(value)
+        } else {
+            skipWhiteSpace()
+            if (this.lastChar == ':') {
+                read()
+                return if (this.lastChar == ' ') {
+                    JsonToken.FieldName(value)
+                } else {
+                    throw InvalidYamlContent("There should be a space after :")
+                }
+            }
+        }
+
+        return if (this.isInsideArray) {
+            JsonToken.ArrayValue(value)
+        } else {
+            JsonToken.ObjectValue(value)
+        }
+
     }
 
     private fun plainStringReader(startWith: String): JsonToken {

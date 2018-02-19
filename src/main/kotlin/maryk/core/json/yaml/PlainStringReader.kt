@@ -38,7 +38,7 @@ internal class PlainStringReader<out P>(
                 }
                 ':' -> {
                     read()
-                    if (lastChar == ' ') {
+                    if (lastChar.isWhitespace()) {
                         this.isDone = true
                         this.jsonTokenConstructor = { JsonToken.FieldName(it) }
 

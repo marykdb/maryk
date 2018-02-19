@@ -12,8 +12,9 @@ class MappingReaderTest {
     fun read_simple_object() {
         val reader = createYamlReader("""
         |key1: value1
-        |key2: "value2"
-        |key3: 'value3'
+        |'key2': "value2"
+        |"key3": 'value3'
+        |key4: "value4"
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
@@ -22,6 +23,8 @@ class MappingReaderTest {
         testForObjectValue(reader, "value2")
         testForFieldName(reader, "key3")
         testForObjectValue(reader, "value3")
+        testForFieldName(reader, "key4")
+        testForObjectValue(reader, "value4")
         testForObjectEnd(reader)
         testForEndJson(reader)
     }

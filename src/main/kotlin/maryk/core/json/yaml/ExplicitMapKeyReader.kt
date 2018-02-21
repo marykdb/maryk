@@ -85,7 +85,23 @@ internal class ExplicitMapKeyReader<out P>(
                 TODO("back to indent reader")
             }
         } else {
-            TODO("implement")
+            // Not a map value so assume new value
+            this.yamlReader.hasUnclaimedIndenting(this.indentCount())
+            this.currentReader = this
+            when (this.state) {
+                ExplicitMapKeyState.KEY -> {
+                    this.state = ExplicitMapKeyState.VALUE
+                    return JsonToken.FieldName(null)
+                }
+                ExplicitMapKeyState.VALUE -> {
+                    this.state = ExplicitMapKeyState.END
+                    return this.jsonTokenConstructor(null)
+                }
+                else -> {
+                    this.parentReader.childIsDoneReading()
+                    return (this.currentReader as IsYamlCharWithIndentsReader).continueIndentLevel()
+                }
+            }
         }
     }
 
@@ -97,7 +113,7 @@ internal class ExplicitMapKeyReader<out P>(
     override fun foundMapKey(isExplicitMap: Boolean) = null
 
     override fun childIsDoneReading() {
-        TODO("not implemented")
+        this.currentReader = this
     }
 
     override fun handleReaderInterrupt() = when (this.state) {

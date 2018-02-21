@@ -158,4 +158,19 @@ class MappingReaderTest {
         testForObjectEnd(reader)
         testForEndJson(reader)
     }
+
+    @Test
+    fun empty_key_indicator_with_no_value() {
+        val reader = createYamlReader("""
+        | ?
+        | key: value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForObjectValue(reader, null)
+        testForFieldName(reader, "key")
+        testForObjectValue(reader, "value")
+        testForObjectEnd(reader)
+        testForEndJson(reader)
+    }
 }

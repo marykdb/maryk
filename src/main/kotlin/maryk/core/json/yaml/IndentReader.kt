@@ -15,7 +15,7 @@ internal class IndentReader<out P>(
               P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
               P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
 {
-    private var indentCounter = 0
+    private var indentCounter = -1
     private var indentType: IndentObjectType = IndentObjectType.UNKNOWN
 
     override fun <P> newIndentLevel(parentReader: P): JsonToken
@@ -25,9 +25,11 @@ internal class IndentReader<out P>(
         TODO("not implemented")
     }
 
-    override fun continueIndentLevel(): JsonToken {
-        TODO("not implemented")
-    }
+    override fun continueIndentLevel() =
+        LineReader(this.yamlReader, this).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
 
     override fun foundIndentType(type: IndentObjectType): JsonToken? =
         if (this.indentType == IndentObjectType.UNKNOWN) {
@@ -39,29 +41,51 @@ internal class IndentReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
         this.yamlReader.hasUnclaimedIndenting(indentCount)
+
+        if (this.indentType == IndentObjectType.OBJECT) {
+            this.indentType = IndentObjectType.UNKNOWN
+            return JsonToken.EndObject
+        }
+
         this.parentReader.childIsDoneReading()
         return tokenToReturn ?: this.currentReader.readUntilToken()
     }
 
     override fun readUntilToken(): JsonToken {
+        var currentIndentCount = 0
         while(this.lastChar.isWhitespace()) {
             if (this.lastChar in lineBreakChars) {
-                indentCounter = 0
+                currentIndentCount = 0
             } else {
-                this.indentCounter++
+                currentIndentCount++
             }
             read()
         }
 
+        if (this.indentCounter == -1) {
+            this.indentCounter = currentIndentCount
+        }
+
         val parentIndentCount = this.parentReader.indentCount()
-        return when(this.indentCounter) {
+        return when(currentIndentCount) {
             parentIndentCount -> this.parentReader.continueIndentLevel()
-            in 0 until parentIndentCount -> this.parentReader.endIndentLevel(this.indentCounter)
+            in 0 until parentIndentCount -> {
+                if (this.indentType == IndentObjectType.OBJECT) {
+                    this.indentType = IndentObjectType.UNKNOWN
+                    this.parentReader.childIsDoneReading()
+                    return this.parentReader.endIndentLevel(
+                        currentIndentCount,
+                        tokenToReturn = JsonToken.EndObject
+                    )
+                }
+
+                this.parentReader.endIndentLevel(currentIndentCount)
+            }
             else -> this.parentReader.newIndentLevel(this)
         }
     }
 
-    override fun indentCount() = indentCounter
+    override fun indentCount() = this.indentCounter
 
     override fun indentCountForChildren() = this.indentCount()
 
@@ -69,5 +93,11 @@ internal class IndentReader<out P>(
         this.currentReader = this
     }
 
-    override fun handleReaderInterrupt() = parentReader.handleReaderInterrupt()
+    override fun handleReaderInterrupt(): JsonToken {
+        if (this.indentType == IndentObjectType.OBJECT) {
+            this.indentType = IndentObjectType.UNKNOWN
+            return JsonToken.EndObject
+        }
+        return parentReader.handleReaderInterrupt()
+    }
 }

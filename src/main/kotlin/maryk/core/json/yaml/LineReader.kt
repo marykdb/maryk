@@ -16,9 +16,18 @@ internal class LineReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var hasValue = false
-    private var mapItemFound = false
+    private var mapKeyFound = false
+    private var mapValueFound = false
+
+    private var hasFoundFieldName: JsonToken.FieldName? = null
 
     override fun readUntilToken(): JsonToken {
+        if (this.hasFoundFieldName != null) {
+            return this.hasFoundFieldName!!.also {
+                this.hasFoundFieldName = null
+            }
+        }
+
         val indents = skipWhiteSpace()
 
         return when(this.lastChar) {
@@ -27,7 +36,8 @@ internal class LineReader<out P>(
                 if (this.hasValue) {
                     this.parentReader.childIsDoneReading()
                 }
-                IndentReader(this.yamlReader, this).let {
+                @Suppress("UNCHECKED_CAST")
+                IndentReader(this.yamlReader, this.currentReader as P).let {
                     this.currentReader = it
                     it.readUntilToken()
                 }
@@ -129,16 +139,26 @@ internal class LineReader<out P>(
     }
 
     private fun jsonTokenCreator(value: String?): JsonToken {
-        if (this.mapItemFound) {
-            JsonToken.ObjectValue(value)
+        if (this.mapKeyFound) {
+            this.mapValueFound = true
+            return JsonToken.ObjectValue(value)
         } else {
             skipWhiteSpace()
             if (this.lastChar == ':') {
                 read()
-                return if (this.lastChar == ' ') {
-                    JsonToken.FieldName(value)
+                 if (this.lastChar.isWhitespace()) {
+                    if (this.lastChar in arrayOf('\n', '\r')) {
+                        IndentReader(this.yamlReader, this).let {
+                            this.currentReader = it
+                        }
+                    }
+
+                     return this.foundIndentType(IndentObjectType.OBJECT)?.let {
+                        this.hasFoundFieldName = JsonToken.FieldName(value)
+                        it
+                    } ?: JsonToken.FieldName(value)
                 } else {
-                    throw InvalidYamlContent("There should be a space after :")
+                    throw InvalidYamlContent("There should be whitespace after :")
                 }
             }
         }
@@ -148,7 +168,6 @@ internal class LineReader<out P>(
         } else {
             JsonToken.ObjectValue(value)
         }
-
     }
 
     private fun plainStringReader(startWith: String): JsonToken {
@@ -166,27 +185,37 @@ internal class LineReader<out P>(
 
     override fun foundIndentType(type: IndentObjectType): JsonToken? {
         this.indentToAdd += 1
-        this.mapItemFound = true
+        if (this.mapKeyFound) {
+            throw InvalidYamlContent("Already found mapping key. No other : allowed")
+        }
+        this.mapKeyFound = true
         return this.parentReader.foundIndentType(type)
     }
 
-    override fun <P> newIndentLevel(parentReader: P)
+    override fun <P> newIndentLevel(parentReader: P): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader = this.parentReader.newIndentLevel(parentReader)
+                  P : IsYamlCharWithIndentsReader {
+        if (mapKeyFound) {
+            mapValueFound = true
+        }
+        return this.parentReader.newIndentLevel(parentReader)
+    }
 
     override fun continueIndentLevel(): JsonToken {
         return this.parentReader.continueIndentLevel()
     }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
-        if (mapItemFound) {
-            return if (tokenToReturn != null) {
+        if (mapKeyFound) {
+             if (tokenToReturn != null) {
                 this.parentReader.childIsDoneReading()
                 this.yamlReader.hasUnclaimedIndenting(indentCount)
-                tokenToReturn
+                 return tokenToReturn
+            } else if (!mapValueFound) {
+                 return this.parentReader.continueIndentLevel()
             } else {
-                this.parentReader.continueIndentLevel()
+                this.parentReader.childIsDoneReading()
             }
         }
         return this.parentReader.endIndentLevel(indentCount, tokenToReturn)
@@ -204,7 +233,11 @@ internal class LineReader<out P>(
             else -> {}
         }
 
-        this.currentReader = this
+        if (this.mapValueFound) {
+            this.parentReader.childIsDoneReading()
+        } else {
+            this.currentReader = this
+        }
     }
 
     override fun handleReaderInterrupt(): JsonToken {

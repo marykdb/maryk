@@ -20,7 +20,9 @@ sealed class JsonToken(val name: String) {
     class Suspended(val lastToken: JsonToken, val storedValue: String?): Stopped("Stopped reader")
     class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
 
-    override fun toString() = if(this is JsonTokenIsValue) {
+    override fun toString() = if(this is JsonTokenIsValue ) {
+        "$name(\"${this.value}\")"
+    } else if(this is FieldName ) {
         "$name(\"${this.value}\")"
     } else { name }
 }

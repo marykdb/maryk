@@ -87,13 +87,14 @@ internal class DocumentStartReader(
     override fun <P> newIndentLevel(parentReader: P)
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader = LineReader(
-        parentReader = parentReader,
-        yamlReader = this.yamlReader
-    ).let {
-        this.currentReader = it
-        it.readUntilToken()
-    }
+                  P : IsYamlCharWithIndentsReader =
+        LineReader(
+            parentReader = parentReader,
+            yamlReader = this.yamlReader
+        ).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
 
     override fun continueIndentLevel() = readUntilToken()
 

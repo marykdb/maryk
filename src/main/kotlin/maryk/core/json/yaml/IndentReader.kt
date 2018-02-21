@@ -16,14 +16,14 @@ internal class IndentReader<out P>(
               P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
 {
     private var indentCounter = -1
-    private var indentType: IndentObjectType = IndentObjectType.UNKNOWN
+    private var mapKeyFound: Boolean = false
 
+    // Should not be called
     override fun <P> newIndentLevel(parentReader: P): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        TODO("not implemented")
-    }
+                  P : IsYamlCharWithIndentsReader =
+        this.parentReader.newIndentLevel(parentReader)
 
     override fun continueIndentLevel() =
         LineReader(this.yamlReader, this).let {
@@ -31,9 +31,9 @@ internal class IndentReader<out P>(
             it.readUntilToken()
         }
 
-    override fun foundIndentType(type: IndentObjectType): JsonToken? =
-        if (this.indentType == IndentObjectType.UNKNOWN) {
-            this.indentType = IndentObjectType.OBJECT
+    override fun foundMapKey(): JsonToken? =
+        if (!this.mapKeyFound) {
+            this.mapKeyFound = true
             JsonToken.StartObject
         } else {
             null
@@ -42,8 +42,8 @@ internal class IndentReader<out P>(
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
         this.yamlReader.hasUnclaimedIndenting(indentCount)
 
-        if (this.indentType == IndentObjectType.OBJECT) {
-            this.indentType = IndentObjectType.UNKNOWN
+        if (this.mapKeyFound) {
+            this.mapKeyFound = false
             return JsonToken.EndObject
         }
 
@@ -70,8 +70,8 @@ internal class IndentReader<out P>(
         return when(currentIndentCount) {
             parentIndentCount -> this.parentReader.continueIndentLevel()
             in 0 until parentIndentCount -> {
-                if (this.indentType == IndentObjectType.OBJECT) {
-                    this.indentType = IndentObjectType.UNKNOWN
+                if (this.mapKeyFound) {
+                    this.mapKeyFound = false
                     this.parentReader.childIsDoneReading()
                     return this.parentReader.endIndentLevel(
                         currentIndentCount,
@@ -94,8 +94,8 @@ internal class IndentReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        if (this.indentType == IndentObjectType.OBJECT) {
-            this.indentType = IndentObjectType.UNKNOWN
+        if (this.mapKeyFound) {
+            this.mapKeyFound = false
             return JsonToken.EndObject
         }
         return parentReader.handleReaderInterrupt()

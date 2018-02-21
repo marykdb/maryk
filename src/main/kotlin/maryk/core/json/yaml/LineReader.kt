@@ -153,7 +153,7 @@ internal class LineReader<out P>(
                         }
                     }
 
-                     return this.foundIndentType(IndentObjectType.OBJECT)?.let {
+                     return this.foundMapKey()?.let {
                         this.hasFoundFieldName = JsonToken.FieldName(value)
                         it
                     } ?: JsonToken.FieldName(value)
@@ -183,13 +183,13 @@ internal class LineReader<out P>(
         }
     }
 
-    override fun foundIndentType(type: IndentObjectType): JsonToken? {
+    override fun foundMapKey(): JsonToken? {
         this.indentToAdd += 1
         if (this.mapKeyFound) {
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
         this.mapKeyFound = true
-        return this.parentReader.foundIndentType(type)
+        return this.parentReader.foundMapKey()
     }
 
     override fun <P> newIndentLevel(parentReader: P): JsonToken

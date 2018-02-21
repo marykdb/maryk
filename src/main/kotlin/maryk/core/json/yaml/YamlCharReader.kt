@@ -2,41 +2,48 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 
-internal interface IsYamlCharReader {
-    val lastChar: Char
-    var currentReader: YamlCharReader
-    fun read()
-}
-
+/** Yaml Character reader which uses the state in YamlReader to read until next token */
 internal abstract class YamlCharReader(
     internal val yamlReader: YamlReaderImpl
-) : IsYamlCharReader by yamlReader {
+) : IsYamlReader by yamlReader {
+    /** Reads Yaml until next found Token */
     abstract fun readUntilToken(): JsonToken
+    /** Handles reader interuptions */
     abstract fun handleReaderInterrupt(): JsonToken
 }
 
-internal enum class IndentObjectType {
-    UNKNOWN, OBJECT
-}
-
-internal interface IsYamlCharWithIndentsReader {
-    fun indentCount(): Int
-    fun indentCountForChildren(): Int
-    fun continueIndentLevel(): JsonToken
-    fun <P> newIndentLevel(parentReader: P): JsonToken where P : maryk.core.json.yaml.YamlCharReader,
-                                                         P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-                                                         P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
-    fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken? = null): JsonToken
-    fun foundIndentType(type: IndentObjectType): JsonToken?
-}
-
-internal interface IsYamlCharWithChildrenReader {
-    fun childIsDoneReading()
-}
-
+/** Yaml Character reader which is a child to a parent reader */
 internal abstract class YamlCharWithParentReader<out P>(
     yamlReader: YamlReaderImpl,
     val parentReader: P
 ) : YamlCharReader(yamlReader)
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader
+
+/** Yaml char reader which is aware of indentation */
+internal interface IsYamlCharWithIndentsReader {
+    /** Indent count for this object */
+    fun indentCount(): Int
+
+    /** Indent count from perspective of children. Sometimes they need to indent a bit more */
+    fun indentCountForChildren(): Int
+
+    /** Continue on same indent level with this reader */
+    fun continueIndentLevel(): JsonToken
+
+    /** Continue on a deeper indent level below this reader with [parentReader] */
+    fun <P> newIndentLevel(parentReader: P): JsonToken where P : maryk.core.json.yaml.YamlCharReader,
+                                                             P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
+                                                             P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
+
+    /** Go back to a higher indent level of [indentCount] by closing this reader ans passing optionally a [tokenToReturn] */
+    fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken? = null): JsonToken
+
+    /** Signal reader a map key was found so this indent level expects maps */
+    fun foundMapKey(): JsonToken?
+}
+
+/** An interface for a Yaml char reader with children so children can call it when it is done*/
+internal interface IsYamlCharWithChildrenReader {
+    fun childIsDoneReading()
+}

@@ -9,10 +9,21 @@ import maryk.core.json.JsonToken
 fun YamlReader(reader: () -> Char) : IsJsonLikeReader =
     YamlReaderImpl(reader)
 
+/** Internal interface for the Yaml Reader functionality */
+internal interface IsYamlReader {
+    /** Is last character which was read */
+    val lastChar: Char
+    /** Holds the current char reader */
+    var currentReader: YamlCharReader
+
+    /** Reads next Char */
+    fun read()
+}
+
 /** Reads YAML from the supplied [reader] */
 internal class YamlReaderImpl(
     private val reader: () -> Char
-) : IsJsonLikeReader, IsYamlCharReader {
+) : IsJsonLikeReader, IsYamlReader {
     override var currentToken: JsonToken = JsonToken.StartJSON
 
     override var lastChar: Char = '\u0000'

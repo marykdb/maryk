@@ -8,7 +8,7 @@ internal class DocumentStartReader(
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
 {
-    private var indentType: IndentObjectType = IndentObjectType.UNKNOWN
+    private var mapKeyFound: Boolean = false
 
     override fun readUntilToken(): JsonToken {
         if(this.lastChar == '\u0000') {
@@ -61,28 +61,13 @@ internal class DocumentStartReader(
         }
     }
 
-    override fun foundIndentType(type: IndentObjectType): JsonToken? =
-        if (this.indentType == IndentObjectType.UNKNOWN) {
-            this.indentType = IndentObjectType.OBJECT
+    override fun foundMapKey(): JsonToken? =
+        if (!this.mapKeyFound) {
+            this.mapKeyFound = true
             JsonToken.StartObject
         } else {
             null
         }
-
-    private fun plainStringReader(char: String): JsonToken {
-        val lineReader = LineReader(this.yamlReader, this)
-
-        return PlainStringReader(
-            this.yamlReader,
-            lineReader,
-            char
-        ) {
-            JsonToken.ObjectValue(it)
-        }.let {
-            this.currentReader = it
-            it.readUntilToken()
-        }
-    }
 
     override fun <P> newIndentLevel(parentReader: P)
             where P : YamlCharReader,
@@ -110,15 +95,26 @@ internal class DocumentStartReader(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        if (this.indentType == IndentObjectType.OBJECT) {
-            this.indentType = IndentObjectType.UNKNOWN
+        if (this.mapKeyFound) {
+            this.mapKeyFound = false
             return JsonToken.EndObject
         }
 
-        return EndReader(
-            this.yamlReader
-        ).apply {
-            this.currentReader = this
-        }.readUntilToken()
+        return JsonToken.EndJSON
+    }
+
+    private fun plainStringReader(char: String): JsonToken {
+        val lineReader = LineReader(this.yamlReader, this)
+
+        return PlainStringReader(
+            this.yamlReader,
+            lineReader,
+            char
+        ) {
+            JsonToken.ObjectValue(it)
+        }.let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
     }
 }

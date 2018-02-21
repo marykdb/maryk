@@ -2,9 +2,9 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 
-internal enum class PlainStyleMode {
-    NORMAL, FLOW_COLLECTION
-}
+//internal enum class PlainStyleMode {
+//    NORMAL, FLOW_COLLECTION
+//}
 
 /** Plain style string reader */
 internal class PlainStringReader<out P>(
@@ -43,7 +43,7 @@ internal class PlainStringReader<out P>(
                         this.jsonTokenConstructor = { JsonToken.FieldName(it) }
 
                         // If new map return New Map
-                        this.parentReader.foundIndentType(IndentObjectType.OBJECT)?.let {
+                        this.parentReader.foundMapKey()?.let {
                             return it
                         }
 
@@ -62,7 +62,7 @@ internal class PlainStringReader<out P>(
         }
     }
 
-    override fun foundIndentType(type: IndentObjectType) = this.parentReader.foundIndentType(type)
+    override fun foundMapKey() = this.parentReader.foundMapKey()
 
     override fun indentCount() = this.parentReader.indentCountForChildren()
 

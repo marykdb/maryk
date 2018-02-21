@@ -32,7 +32,7 @@ internal class ArrayItemsReader<out P>(
         }
     }
 
-    override fun foundIndentType(type: IndentObjectType) = this.parentReader.foundIndentType(type)
+    override fun foundMapKey() = this.parentReader.foundMapKey()
 
     override fun <P> newIndentLevel(parentReader: P): JsonToken where P : YamlCharReader, P : IsYamlCharWithChildrenReader, P : IsYamlCharWithIndentsReader {
         this.createLineReader(parentReader)

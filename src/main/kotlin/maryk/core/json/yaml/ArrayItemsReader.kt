@@ -59,8 +59,13 @@ internal class ArrayItemsReader<out P>(
         if (indentCount == this.indentCount()) {
             // this reader should handle the read
             this.currentReader = this
-            this.yamlReader.hasUnclaimedIndenting(null)
-            return tokenToReturn ?: this.continueIndentLevel()
+            return if (tokenToReturn != null) {
+                this.yamlReader.hasUnclaimedIndenting(indentCount)
+                tokenToReturn
+            } else {
+                this.yamlReader.hasUnclaimedIndenting(null)
+                this.continueIndentLevel()
+            }
         }
 
         return if (indentToAdd > 0) {

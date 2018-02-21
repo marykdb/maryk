@@ -1,5 +1,8 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.testForArrayEnd
+import maryk.core.json.testForArrayStart
+import maryk.core.json.testForArrayValue
 import maryk.core.json.testForEndJson
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForObjectEnd
@@ -80,6 +83,29 @@ class MappingReaderTest {
         testForFieldName(reader, "key4")
         testForObjectValue(reader, "value4")
         testForObjectEnd(reader)
+        testForFieldName(reader, "key5")
+        testForObjectValue(reader, "value5")
+        testForObjectEnd(reader)
+        testForEndJson(reader)
+    }
+
+    @Test
+    fun read_mapping_with_array() {
+        val reader = createYamlReader("""
+        |key1: value1
+        |'key2':
+        |  - hey
+        |  - "hoi"
+        |key5: "value5"
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, "key1")
+        testForObjectValue(reader, "value1")
+        testForFieldName(reader, "key2")
+        testForArrayStart(reader)
+        testForArrayValue(reader, "hey")
+        testForArrayValue(reader, "hoi")
+        testForArrayEnd(reader)
         testForFieldName(reader, "key5")
         testForObjectValue(reader, "value5")
         testForObjectEnd(reader)

@@ -12,7 +12,7 @@ class ArrayItemsReaderTest {
     fun read_array_items() {
         val reader = createYamlReader("""
             |     - 'test'
-            |     - 'hey'
+            |     - hey
             |     - "another one"
         """.trimMargin())
         testForArrayStart(reader)

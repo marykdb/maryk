@@ -1,8 +1,7 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
-
-private val lineBreakChars = arrayOf('\n', '\r')
 
 /** Reads indents on a new line until a char is found */
 internal class IndentReader<out P>(
@@ -54,7 +53,7 @@ internal class IndentReader<out P>(
     override fun readUntilToken(): JsonToken {
         var currentIndentCount = 0
         while(this.lastChar.isWhitespace()) {
-            if (this.lastChar in lineBreakChars) {
+            if (this.lastChar.isLineBreak()) {
                 currentIndentCount = 0
             } else {
                 currentIndentCount++

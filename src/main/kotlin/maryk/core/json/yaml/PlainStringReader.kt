@@ -29,7 +29,7 @@ internal class PlainStringReader<out P>(
 
         loop@while(true) {
             when (lastChar) {
-                '\n' -> {
+                '\n', '\r' -> {
                     this.storedValue = this.storedValue.trimEnd()
                     return IndentReader(this.yamlReader, this).let {
                         this.currentReader = it

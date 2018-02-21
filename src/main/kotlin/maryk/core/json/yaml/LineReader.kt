@@ -1,5 +1,7 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.isLineBreak
+import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 
 /** Reads Lines with actual non whitespace chars */
@@ -31,7 +33,7 @@ internal class LineReader<out P>(
         val indents = skipWhiteSpace()
 
         return when(this.lastChar) {
-            '\n' -> {
+            '\n', '\r' -> {
                 read()
                 if (this.hasValue) {
                     this.parentReader.childIsDoneReading()
@@ -134,7 +136,7 @@ internal class LineReader<out P>(
 
     private fun skipWhiteSpace(): Int {
         var indents = 0
-        while (this.lastChar in arrayOf(' ', '\t')) {
+        while (this.lastChar.isSpacing()) {
             indents++
             read()
         }
@@ -151,7 +153,7 @@ internal class LineReader<out P>(
             if (this.lastChar == ':') {
                 read()
                  if (this.lastChar.isWhitespace()) {
-                    if (this.lastChar in arrayOf('\n', '\r')) {
+                    if (this.lastChar.isLineBreak()) {
                         IndentReader(this.yamlReader, this).let {
                             this.currentReader = it
                         }

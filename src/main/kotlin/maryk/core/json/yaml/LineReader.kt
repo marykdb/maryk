@@ -4,7 +4,7 @@ import maryk.core.json.JsonToken
 
 /** Reads Lines with actual non whitespace chars */
 internal class LineReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     parentReader: P,
     private var indentToAdd: Int = 0,
     private var isInsideArray: Boolean = false

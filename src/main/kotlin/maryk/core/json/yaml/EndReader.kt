@@ -4,7 +4,7 @@ import maryk.core.json.JsonToken
 
 /** Last char is already at '. Read until next ' */
 internal class EndReader(
-    yamlReader: YamlReader
+    yamlReader: YamlReaderImpl
 ) : YamlCharReader(yamlReader) {
     override fun readUntilToken() = JsonToken.EndJSON
 

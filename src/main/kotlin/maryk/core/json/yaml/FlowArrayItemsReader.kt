@@ -4,7 +4,7 @@ import maryk.core.json.JsonToken
 
 /** Reader for flow Array Items [item1, item2, item3] */
 internal class FlowArrayItemsReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     parentReader: P
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithChildrenReader

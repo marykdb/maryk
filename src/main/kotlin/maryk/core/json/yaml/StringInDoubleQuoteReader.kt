@@ -34,7 +34,7 @@ private sealed class SkipCharType {
 
 /** Reads Strings encoded with "double quotes" */
 internal class StringInDoubleQuoteReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     parentReader: P,
     private val jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader)

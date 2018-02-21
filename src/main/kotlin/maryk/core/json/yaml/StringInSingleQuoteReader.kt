@@ -4,7 +4,7 @@ import maryk.core.json.JsonToken
 
 /** Last char is already at '. Read until next ' */
 internal class StringInSingleQuoteReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     parentReader: P,
     private val jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader)

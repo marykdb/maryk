@@ -4,7 +4,7 @@ import maryk.core.json.JsonToken
 
 /** Reader for Array Items */
 internal class ArrayItemsReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     parentReader: P,
     val indentToAdd: Int = 0
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),

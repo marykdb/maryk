@@ -5,14 +5,18 @@ import maryk.core.json.InvalidJsonContent
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.JsonToken
 
+@Suppress("FunctionName")
+fun YamlReader(reader: () -> Char) : IsJsonLikeReader =
+    YamlReaderImpl(reader)
+
 /** Reads YAML from the supplied [reader] */
-class YamlReader(
+internal class YamlReaderImpl(
     private val reader: () -> Char
-) : IsJsonLikeReader {
+) : IsJsonLikeReader, IsYamlCharReader {
     override var currentToken: JsonToken = JsonToken.StartJSON
 
-    internal var lastChar: Char = '\u0000'
-    internal var currentReader: YamlCharReader = DocumentStartReader(this)
+    override var lastChar: Char = '\u0000'
+    override var currentReader: YamlCharReader = DocumentStartReader(this)
 
     private var unclaimedIndenting: Int? = null
     private var hasException: Boolean = false
@@ -50,7 +54,7 @@ class YamlReader(
         TODO("not implemented")
     }
 
-    internal fun read() = try {
+    override fun read() = try {
         lastChar = reader()
     } catch (e: Throwable) { // Reached end or something bad happened
         throw ExceptionWhileReadingJson()

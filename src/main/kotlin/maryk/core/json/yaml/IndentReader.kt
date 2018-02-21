@@ -6,7 +6,7 @@ private val lineBreakChars = arrayOf('\n', '\r')
 
 /** Reads indents on a new line until a char is found */
 internal class IndentReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     parentReader: P
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,

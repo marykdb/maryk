@@ -8,7 +8,7 @@ internal enum class PlainStyleMode {
 
 /** Plain style string reader */
 internal class PlainStringReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     parentReader: P,
     startWith: String = "",
 //    val mode: PlainStyleMode = PlainStyleMode.NORMAL,

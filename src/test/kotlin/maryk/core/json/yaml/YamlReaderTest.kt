@@ -1,12 +1,14 @@
 package maryk.core.json.yaml
 
-internal fun createYamlReader(yaml: String): YamlReader {
+import maryk.core.json.IsJsonLikeReader
+
+internal fun createYamlReader(yaml: String): IsJsonLikeReader {
     val input = yaml
     var index = 0
 
     var alreadyRead = ""
 
-    val reader = YamlReader {
+    return YamlReader {
         val b = input[index].also {
             // JS platform returns a 0 control char when nothing can be read
             if (it == '\u0000') {
@@ -17,5 +19,4 @@ internal fun createYamlReader(yaml: String): YamlReader {
         index++
         b
     }
-    return reader
 }

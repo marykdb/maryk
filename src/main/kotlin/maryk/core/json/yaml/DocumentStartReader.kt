@@ -3,7 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.json.JsonToken
 
 internal class DocumentStartReader(
-    yamlReader: YamlReader
+    yamlReader: YamlReaderImpl
 ): YamlCharReader(yamlReader),
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader

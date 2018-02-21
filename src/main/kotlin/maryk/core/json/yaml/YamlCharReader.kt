@@ -2,21 +2,15 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 
-internal abstract class YamlCharReader(
-    internal val yamlReader: YamlReader
-) {
-    val lastChar get() = this.yamlReader.lastChar
-
+internal interface IsYamlCharReader {
+    val lastChar: Char
     var currentReader: YamlCharReader
-        get() {
-            return this.yamlReader.currentReader
-        }
-        set(reader) {
-            this.yamlReader.currentReader = reader
-        }
+    fun read()
+}
 
-    fun read() = this.yamlReader.read()
-
+internal abstract class YamlCharReader(
+    internal val yamlReader: YamlReaderImpl
+) : IsYamlCharReader by yamlReader {
     abstract fun readUntilToken(): JsonToken
     abstract fun handleReaderInterrupt(): JsonToken
 }
@@ -41,7 +35,7 @@ internal interface IsYamlCharWithChildrenReader {
 }
 
 internal abstract class YamlCharWithParentReader<out P>(
-    yamlReader: YamlReader,
+    yamlReader: YamlReaderImpl,
     val parentReader: P
 ) : YamlCharReader(yamlReader)
         where P : IsYamlCharWithChildrenReader,

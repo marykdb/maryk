@@ -17,7 +17,8 @@ internal class LineReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var hasValue = false
+    private var hasCompletedValueReading = false
+    private var isExplicitMap = false
     private var mapKeyFound = false
     private var mapValueFound = false
 
@@ -35,7 +36,7 @@ internal class LineReader<out P>(
         return when(this.lastChar) {
             '\n', '\r' -> {
                 read()
-                if (this.hasValue) {
+                if (this.hasCompletedValueReading) {
                     this.parentReader.childIsDoneReading()
                 }
                 @Suppress("UNCHECKED_CAST")
@@ -109,11 +110,14 @@ internal class LineReader<out P>(
                 }
             }
             '?' -> {
-                read()
-                if(this.lastChar == ' ') {
-                    TODO("Key reader")
-                } else {
-                    plainStringReader("?")
+                ExplicitMapKeyReader(
+                    this.yamlReader,
+                    this
+                ) {
+                    this.jsonTokenCreator(it)
+                }.let {
+                    this.currentReader = it
+                    it.readUntilToken()
                 }
             }
             ':' -> {
@@ -146,7 +150,9 @@ internal class LineReader<out P>(
     private fun jsonTokenCreator(value: String?): JsonToken {
         if (this.mapKeyFound) {
             this.mapValueFound = true
-            this.indentToAdd -= 1
+            if (!this.isExplicitMap) {
+                this.indentToAdd -= 1
+            }
             return JsonToken.ObjectValue(value)
         } else {
             skipWhiteSpace()
@@ -159,7 +165,7 @@ internal class LineReader<out P>(
                         }
                     }
 
-                     return this.foundMapKey()?.let {
+                     return this.foundMapKey(this.isExplicitMap)?.let {
                         this.hasFoundFieldName = JsonToken.FieldName(value)
                         it
                     } ?: JsonToken.FieldName(value)
@@ -189,13 +195,16 @@ internal class LineReader<out P>(
         }
     }
 
-    override fun foundMapKey(): JsonToken? {
-        this.indentToAdd += 1
+    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? {
+        this.isExplicitMap = isExplicitMap
+        if (!this.isExplicitMap) {
+            this.indentToAdd += 1
+        }
         if (this.mapKeyFound) {
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
         this.mapKeyFound = true
-        return this.parentReader.foundMapKey()
+        return this.parentReader.foundMapKey(isExplicitMap)
     }
 
     override fun <P> newIndentLevel(parentReader: P): JsonToken
@@ -232,7 +241,7 @@ internal class LineReader<out P>(
     override fun childIsDoneReading() {
         when (this.currentReader) {
             is StringInSingleQuoteReader<*>, is StringInDoubleQuoteReader<*> -> {
-                this.hasValue = true
+                this.hasCompletedValueReading = true
             }
             else -> {}
         }

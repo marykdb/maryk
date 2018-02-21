@@ -61,7 +61,7 @@ internal class DocumentStartReader(
         }
     }
 
-    override fun foundMapKey(): JsonToken? =
+    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
             JsonToken.StartObject

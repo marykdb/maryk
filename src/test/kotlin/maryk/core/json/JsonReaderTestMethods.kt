@@ -20,7 +20,7 @@ internal fun testForObjectEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForFieldName(reader: IsJsonLikeReader, value: String) {
+internal fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
     reader.nextToken().apply {
         if (this is JsonToken.FieldName) {
             this.value shouldBe value
@@ -28,7 +28,7 @@ internal fun testForFieldName(reader: IsJsonLikeReader, value: String) {
     }
 }
 
-internal fun testForObjectValue(reader: IsJsonLikeReader, value: String) {
+internal fun testForObjectValue(reader: IsJsonLikeReader, value: String?) {
     reader.nextToken().apply {
         if (this is JsonToken.ObjectValue) {
             this.value shouldBe value

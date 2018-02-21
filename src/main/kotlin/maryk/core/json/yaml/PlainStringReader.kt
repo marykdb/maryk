@@ -43,7 +43,7 @@ internal class PlainStringReader<out P>(
                         this.jsonTokenConstructor = { JsonToken.FieldName(it) }
 
                         // If new map return New Map
-                        this.parentReader.foundMapKey()?.let {
+                        this.parentReader.foundMapKey(false)?.let {
                             return it
                         }
 
@@ -73,7 +73,7 @@ internal class PlainStringReader<out P>(
         }
     }
 
-    override fun foundMapKey() = this.parentReader.foundMapKey()
+    override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
 
     override fun indentCount() = this.parentReader.indentCountForChildren()
 

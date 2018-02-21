@@ -40,7 +40,7 @@ internal interface IsYamlCharWithIndentsReader {
     fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken? = null): JsonToken
 
     /** Signal reader a map key was found so this indent level expects maps */
-    fun foundMapKey(): JsonToken?
+    fun foundMapKey(isExplicitMap: Boolean): JsonToken?
 }
 
 /** An interface for a Yaml char reader with children so children can call it when it is done*/

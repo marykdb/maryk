@@ -17,6 +17,20 @@ class PlainStringReaderTest {
     }
 
     @Test
+    fun read_plain_string_with_hash() {
+        val reader = createYamlReader("test#")
+        testForObjectValue(reader, "test#")
+        testForEndJson(reader)
+    }
+
+    @Test
+    fun read_plain_string_with_comment() {
+        val reader = createYamlReader("test # ignore this")
+        testForObjectValue(reader, "test")
+        testForEndJson(reader)
+    }
+
+    @Test
     fun read_plain_string_with_same_line_breaks() {
         val reader = createYamlReader("""
             |  test

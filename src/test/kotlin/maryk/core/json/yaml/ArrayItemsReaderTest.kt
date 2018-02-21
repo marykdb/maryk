@@ -24,6 +24,22 @@ class ArrayItemsReaderTest {
     }
 
     @Test
+    fun read_array_with_comments() {
+        val reader = createYamlReader("""
+            |     - 'test' #ignore
+            |     - #ignore
+            |      hey
+            |     - "another one"
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForArrayValue(reader, "test")
+        testForArrayValue(reader, "hey")
+        testForArrayValue(reader, "another one")
+        testForArrayEnd(reader)
+        testForEndJson(reader)
+    }
+
+    @Test
     fun read_complex_array_items() {
         val reader = createYamlReader("""
             |     - 'test'

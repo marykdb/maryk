@@ -123,7 +123,10 @@ internal class LineReader<out P>(
                 }
             }
             '#' -> {
-                TODO("Comment reader")
+                CommentReader(this.yamlReader, this).let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
             }
             else -> this.plainStringReader("")
         }
@@ -141,6 +144,7 @@ internal class LineReader<out P>(
     private fun jsonTokenCreator(value: String?): JsonToken {
         if (this.mapKeyFound) {
             this.mapValueFound = true
+            this.indentToAdd -= 1
             return JsonToken.ObjectValue(value)
         } else {
             skipWhiteSpace()
@@ -202,9 +206,7 @@ internal class LineReader<out P>(
         return this.parentReader.newIndentLevel(parentReader)
     }
 
-    override fun continueIndentLevel(): JsonToken {
-        return this.parentReader.continueIndentLevel()
-    }
+    override fun continueIndentLevel() = this.readUntilToken()
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
         if (mapKeyFound) {

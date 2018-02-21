@@ -54,6 +54,17 @@ internal class PlainStringReader<out P>(
                     this.storedValue += ":$lastChar"
                     read()
                 }
+                '#' -> {
+                    if (this.storedValue.last() == ' ') {
+                        return CommentReader(this.yamlReader, this).let {
+                            this.currentReader = it
+                            it.readUntilToken()
+                        }
+                    } else {
+                        this.storedValue += lastChar
+                        read()
+                    }
+                }
                 else -> {
                     this.storedValue += lastChar
                     read()
@@ -79,8 +90,9 @@ internal class PlainStringReader<out P>(
     }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+        val readerIndentCount = this.indentCount()
         val token = this.closeReaderAndReturnValue()
-        return if (indentCount == this.indentCount()) {
+        return if (indentCount == readerIndentCount) {
             token
         } else {
             this.parentReader.endIndentLevel(indentCount, token)
@@ -100,6 +112,6 @@ internal class PlainStringReader<out P>(
                 this.currentReader = it.parentReader
             }
         }
-        return this.jsonTokenConstructor(storedValue)
+        return this.jsonTokenConstructor(storedValue.trim())
     }
 }

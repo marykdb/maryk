@@ -34,6 +34,30 @@ class MappingReaderTest {
     }
 
     @Test
+    fun read_mapping_with_comments_and_line_breaks() {
+        val reader = createYamlReader("""
+        |key1: "value1" #comment at end
+        |'key2': #comment after key
+        |
+        |  "value2"
+        |
+        |"key3": #comment after key
+        |   #another comment line
+        | #and another
+        |  'value3'
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, "key1")
+        testForObjectValue(reader, "value1")
+        testForFieldName(reader, "key2")
+        testForObjectValue(reader, "value2")
+        testForFieldName(reader, "key3")
+        testForObjectValue(reader, "value3")
+        testForObjectEnd(reader)
+        testForEndJson(reader)
+    }
+
+    @Test
     fun read_indented_mapping() {
         val reader = createYamlReader("""
         |  key1: value1

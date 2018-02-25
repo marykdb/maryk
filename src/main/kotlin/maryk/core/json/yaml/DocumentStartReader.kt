@@ -83,7 +83,7 @@ internal class DocumentStartReader(
 
     override fun continueIndentLevel() = readUntilToken()
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?) =
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
         handleReaderInterrupt()
 
     override fun indentCount() = 0

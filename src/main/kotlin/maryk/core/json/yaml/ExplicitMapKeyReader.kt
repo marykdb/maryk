@@ -55,7 +55,14 @@ internal class ExplicitMapKeyReader<out P>(
             }
         }
 
-        TODO("fill")
+        return LineReader(
+            this.yamlReader,
+            parentReader = this,
+            indentToAdd = 1
+        ).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren()
@@ -85,35 +92,57 @@ internal class ExplicitMapKeyReader<out P>(
                 TODO("back to indent reader")
             }
         } else {
-            // Not a map value so assume new value
-            this.yamlReader.hasUnclaimedIndenting(this.indentCount())
             this.currentReader = this
-            when (this.state) {
-                ExplicitMapKeyState.KEY -> {
-                    this.state = ExplicitMapKeyState.VALUE
-                    return JsonToken.FieldName(null)
-                }
-                ExplicitMapKeyState.VALUE -> {
-                    this.state = ExplicitMapKeyState.END
-                    return this.jsonTokenConstructor(null)
-                }
-                else -> {
-                    this.parentReader.childIsDoneReading()
-                    return (this.currentReader as IsYamlCharWithIndentsReader).continueIndentLevel()
-                }
-            }
+            // Not a map value so assume new value
+            return closeCurrentReader()
         }
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
-        TODO("not implemented")
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+        return if (this.indentCount() == indentCount) {
+            if (tokenToReturn != null) {
+                updateState()
+                tokenToReturn()
+            } else {
+                this.continueIndentLevel()
+            }
+        } else {
+            this.parentReader.endIndentLevel(indentCount, tokenToReturn)
+        }
+    }
+
+    private fun closeCurrentReader(): JsonToken {
+        this.yamlReader.hasUnclaimedIndenting(this.indentCount())
+        when (this.state) {
+            ExplicitMapKeyState.KEY -> {
+                this.state = ExplicitMapKeyState.VALUE
+                return JsonToken.FieldName(null)
+            }
+            ExplicitMapKeyState.VALUE -> {
+                this.state = ExplicitMapKeyState.END
+                return this.jsonTokenConstructor(null)
+            }
+            else -> {
+                this.parentReader.childIsDoneReading()
+                return (this.currentReader as IsYamlCharWithIndentsReader).continueIndentLevel()
+            }
+        }
     }
 
     // Return null because already set explicitly
     override fun foundMapKey(isExplicitMap: Boolean) = null
 
     override fun childIsDoneReading() {
+        updateState()
         this.currentReader = this
+    }
+
+    private fun updateState() {
+        if (this.state == ExplicitMapKeyState.KEY) {
+            this.state = ExplicitMapKeyState.VALUE
+        } else if (this.state == ExplicitMapKeyState.VALUE) {
+            this.state = ExplicitMapKeyState.DONE
+        }
     }
 
     override fun handleReaderInterrupt() = when (this.state) {

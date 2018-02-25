@@ -158,7 +158,7 @@ internal class LineReader<out P>(
             skipWhiteSpace()
             if (this.lastChar == ':') {
                 read()
-                 if (this.lastChar.isWhitespace()) {
+                if (this.lastChar.isWhitespace()) {
                     if (this.lastChar.isLineBreak()) {
                         IndentReader(this.yamlReader, this).let {
                             this.currentReader = it
@@ -219,18 +219,17 @@ internal class LineReader<out P>(
 
     override fun continueIndentLevel() = this.readUntilToken()
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         if (mapKeyFound) {
-             if (tokenToReturn != null) {
+            if (tokenToReturn != null) {
                 this.parentReader.childIsDoneReading()
                 this.yamlReader.hasUnclaimedIndenting(indentCount)
-                 return tokenToReturn
+                return tokenToReturn()
             } else if (!mapValueFound) {
-                 return this.parentReader.continueIndentLevel()
-            } else {
-                this.parentReader.childIsDoneReading()
+                return this.parentReader.continueIndentLevel()
             }
         }
+        this.parentReader.childIsDoneReading()
         return this.parentReader.endIndentLevel(indentCount, tokenToReturn)
     }
 

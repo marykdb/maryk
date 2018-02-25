@@ -37,7 +37,7 @@ internal interface IsYamlCharWithIndentsReader {
                                                              P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
 
     /** Go back to a higher indent level of [indentCount] by closing this reader ans passing optionally a [tokenToReturn] */
-    fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken? = null): JsonToken
+    fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)? = null): JsonToken
 
     /** Signal reader a map key was found so this indent level expects maps */
     fun foundMapKey(isExplicitMap: Boolean): JsonToken?

@@ -55,13 +55,13 @@ internal class ArrayItemsReader<out P>(
 
     override fun indentCountForChildren() = this.indentCount() + 1
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         if (indentCount == this.indentCount()) {
             // this reader should handle the read
             this.currentReader = this
             return if (tokenToReturn != null) {
                 this.yamlReader.hasUnclaimedIndenting(indentCount)
-                tokenToReturn
+                tokenToReturn()
             } else {
                 this.yamlReader.hasUnclaimedIndenting(null)
                 this.continueIndentLevel()
@@ -73,7 +73,7 @@ internal class ArrayItemsReader<out P>(
             this.parentReader.childIsDoneReading()
             JsonToken.EndArray
         } else {
-            this.parentReader.endIndentLevel(indentCount, JsonToken.EndArray)
+            this.parentReader.endIndentLevel(indentCount) { JsonToken.EndArray }
         }
     }
 

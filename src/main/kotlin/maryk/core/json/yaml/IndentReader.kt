@@ -38,7 +38,7 @@ internal class IndentReader<out P>(
             null
         }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         this.yamlReader.hasUnclaimedIndenting(indentCount)
 
         if (this.mapKeyFound) {
@@ -47,7 +47,11 @@ internal class IndentReader<out P>(
         }
 
         this.parentReader.childIsDoneReading()
-        return tokenToReturn ?: this.currentReader.readUntilToken()
+        return if(tokenToReturn != null) {
+            tokenToReturn()
+        } else {
+            this.currentReader.readUntilToken()
+        }
     }
 
     override fun readUntilToken(): JsonToken {
@@ -69,18 +73,23 @@ internal class IndentReader<out P>(
         return when(currentIndentCount) {
             parentIndentCount -> this.parentReader.continueIndentLevel()
             in 0 until parentIndentCount -> {
+                this.parentReader.childIsDoneReading()
+
                 if (this.mapKeyFound) {
                     this.mapKeyFound = false
-                    this.parentReader.childIsDoneReading()
                     return this.parentReader.endIndentLevel(
                         currentIndentCount,
-                        tokenToReturn = JsonToken.EndObject
+                        tokenToReturn = { JsonToken.EndObject }
                     )
                 }
 
                 this.parentReader.endIndentLevel(currentIndentCount)
             }
-            else -> this.parentReader.newIndentLevel(this)
+            else -> if (currentIndentCount == this.indentCounter){
+                this.parentReader.newIndentLevel(this)
+            } else {
+                throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
+            }
         }
     }
 

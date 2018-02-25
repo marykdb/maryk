@@ -89,13 +89,15 @@ internal class PlainStringReader<out P>(
         return this.readUntilToken()
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: JsonToken?): JsonToken {
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         val readerIndentCount = this.indentCount()
-        val token = this.closeReaderAndReturnValue()
+        this.setToParent()
         return if (indentCount == readerIndentCount) {
-            token
+            this.createJsonToken()
         } else {
-            this.parentReader.endIndentLevel(indentCount, token)
+            this.parentReader.endIndentLevel(indentCount) {
+                this.createJsonToken()
+            }
         }
     }
 
@@ -103,15 +105,19 @@ internal class PlainStringReader<out P>(
         this.currentReader = this
     }
 
-    override fun handleReaderInterrupt() = this.closeReaderAndReturnValue()
+    override fun handleReaderInterrupt(): JsonToken {
+        this.setToParent()
+        return this.createJsonToken()
+    }
 
-    private fun closeReaderAndReturnValue(): JsonToken {
+    private fun setToParent() {
         this.parentReader.childIsDoneReading()
         this.currentReader.let {
             if (it is LineReader<*>) {
-                this.currentReader = it.parentReader
+                (it.parentReader as IsYamlCharWithChildrenReader).childIsDoneReading()
             }
         }
-        return this.jsonTokenConstructor(storedValue.trim())
     }
+
+    private fun createJsonToken() = this.jsonTokenConstructor(storedValue.trim())
 }

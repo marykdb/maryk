@@ -70,6 +70,6 @@ internal fun testForEndJson(reader: IsJsonLikeReader) {
 
 internal fun testForInvalidJson(reader: IsJsonLikeReader) {
     shouldThrow<InvalidJsonContent> {
-        reader.nextToken()
+        println(reader.nextToken())
     }
 }

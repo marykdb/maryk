@@ -58,4 +58,18 @@ class ExplicitMapKeyReaderTest {
         testForObjectEnd(reader)
         testForEndJson(reader)
     }
+
+    @Test
+    fun plain_string_multiline_key_indicator_with_value() {
+        val reader = createYamlReader("""
+        | ? key
+        |   with more lines
+        | : value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, "key with more lines")
+        testForObjectValue(reader, "value")
+        testForObjectEnd(reader)
+        testForEndJson(reader)
+    }
 }

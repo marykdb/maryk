@@ -108,6 +108,8 @@ internal class PlainStringReader<out P>(
         this.setToParent()
         return if (indentCount == readerIndentCount) {
             this.createJsonToken()
+        } else if (this.mode == PlainStyleMode.FLOW_COLLECTION){
+            throw InvalidYamlContent("Missing a comma")
         } else {
             this.parentReader.endIndentLevel(indentCount) {
                 this.createJsonToken()

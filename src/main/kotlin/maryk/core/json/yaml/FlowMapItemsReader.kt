@@ -11,9 +11,10 @@ internal class FlowMapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
-    IsYamlCharWithChildrenReader
+    IsYamlCharWithChildrenReader, IsYamlCharWithIndentsReader
         where P : YamlCharReader,
-              P : IsYamlCharWithChildrenReader
+              P : IsYamlCharWithChildrenReader,
+              P : IsYamlCharWithIndentsReader
 {
     private var mode = FlowMapMode.START
 
@@ -126,4 +127,23 @@ internal class FlowMapItemsReader<out P>(
         this.parentReader.childIsDoneReading()
         return JsonToken.EndObject
     }
+
+    override fun indentCount() = this.parentReader.indentCountForChildren()
+
+    override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
+
+    override fun continueIndentLevel() = this.readUntilToken()
+
+    override fun <P> newIndentLevel(parentReader: P): JsonToken
+            where P : YamlCharReader,
+                  P : IsYamlCharWithChildrenReader,
+                  P : IsYamlCharWithIndentsReader {
+        return this.readUntilToken()
+    }
+
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
+        this.readUntilToken()
+
+    override fun foundMapKey(isExplicitMap: Boolean) =
+        this.parentReader.foundMapKey(isExplicitMap)
 }

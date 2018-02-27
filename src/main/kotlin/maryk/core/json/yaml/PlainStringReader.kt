@@ -2,16 +2,16 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 
-//internal enum class PlainStyleMode {
-//    NORMAL, FLOW_COLLECTION
-//}
+internal enum class PlainStyleMode {
+    NORMAL, FLOW_COLLECTION
+}
 
 /** Plain style string reader */
 internal class PlainStringReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     startWith: String = "",
-//    val mode: PlainStyleMode = PlainStyleMode.NORMAL,
+    val mode: PlainStyleMode = PlainStyleMode.NORMAL,
     private var jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader), IsYamlCharWithIndentsReader, IsYamlCharWithChildrenReader
         where P : YamlCharReader,
@@ -28,7 +28,7 @@ internal class PlainStringReader<out P>(
         }
 
         loop@while(true) {
-            when (lastChar) {
+            when (this.lastChar) {
                 '\n', '\r' -> {
                     this.storedValue = this.storedValue.trimEnd()
                     return IndentReader(this.yamlReader, this).let {
@@ -38,7 +38,7 @@ internal class PlainStringReader<out P>(
                 }
                 ':' -> {
                     read()
-                    if (lastChar.isWhitespace()) {
+                    if (this.lastChar.isWhitespace()) {
                         this.isDone = true
                         this.jsonTokenConstructor = { JsonToken.FieldName(it) }
 
@@ -61,16 +61,30 @@ internal class PlainStringReader<out P>(
                             it.readUntilToken()
                         }
                     } else {
-                        this.storedValue += lastChar
-                        read()
+                        this.storeCharAndProceed()
                     }
                 }
                 else -> {
-                    this.storedValue += lastChar
-                    read()
+                    if (mode == PlainStyleMode.FLOW_COLLECTION) {
+                        when (this.lastChar) {
+                            ',', ']' -> {
+                                this.isDone = true
+                                this.parentReader.childIsDoneReading()
+                                return this.jsonTokenConstructor(this.storedValue)
+                            }
+                            else -> {}
+                        }
+                    }
+
+                    this.storeCharAndProceed()
                 }
             }
         }
+    }
+
+    private fun storeCharAndProceed() {
+        this.storedValue += lastChar
+        read()
     }
 
     override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)

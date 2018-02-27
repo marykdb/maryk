@@ -73,6 +73,16 @@ internal class LineReader<out P>(
                     it.readUntilToken()
                 }
             }
+            '{' -> {
+                read()
+                FlowMapItemsReader(
+                    yamlReader = this.yamlReader,
+                    parentReader = this
+                ).let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
+            }
             ',' -> {
                 throw InvalidYamlContent("Invalid char $lastChar at this position")
             }

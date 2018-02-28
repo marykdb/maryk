@@ -27,6 +27,7 @@ class ArrayItemsReaderTest {
     fun read_array_with_comments() {
         val reader = createYamlReader("""
             |     - 'test' #ignore
+            |  # ignore too
             |     - #ignore
             |      hey
             |     - "another one"

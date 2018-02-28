@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.isLineBreak
 import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.InvalidJsonContent
 import maryk.core.json.IsJsonLikeReader
@@ -40,6 +41,11 @@ internal class YamlReaderImpl(
         currentToken = try {
             this.currentReader.let {
                 if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
+                    // Skip stray comments and read until first relevant character
+                    if (this.lastChar == '#') {
+                        skipComments()
+                    }
+
                     val remainder = it.indentCount() - this.unclaimedIndenting!!
                     if (remainder > 0) {
                         it.endIndentLevel(this.unclaimedIndenting!!)
@@ -59,6 +65,28 @@ internal class YamlReaderImpl(
             currentReader.handleReaderInterrupt()
         }
         return currentToken
+    }
+
+    private fun skipComments() {
+        while (!this.lastChar.isLineBreak()) {
+            read()
+        }
+        var currentIndentCount = 0
+        while (this.lastChar.isWhitespace()) {
+            if (this.lastChar.isLineBreak()) {
+                currentIndentCount = 0
+            } else {
+                currentIndentCount++
+            }
+            read()
+            // Skip comments since they can start early
+            if (this.lastChar == '#') {
+                while (!this.lastChar.isLineBreak()) {
+                    read()
+                }
+            }
+        }
+        this.unclaimedIndenting = currentIndentCount
     }
 
     override fun skipUntilNextField() {

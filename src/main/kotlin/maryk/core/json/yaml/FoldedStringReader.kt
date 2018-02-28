@@ -1,7 +1,6 @@
 package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
-import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 
 /** Literal style string reader */
@@ -15,36 +14,26 @@ internal class FoldedStringReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     override fun readUntilToken(): JsonToken {
-        // Previous reader left it just after >
-        while (this.lastChar.isSpacing()) {
-            read()
-        }
-        if (!this.lastChar.isLineBreak()) {
-            throw InvalidYamlContent("Folded > should always be followed by a linebreak")
-        }
-        read()
+        // Read options and end at first line break
+        readStartForOptionsAndReturnIndent("Folded >")
 
-        val parentIndentCount = this.parentReader.indentCountForChildren()
+        val startIndentCount = findAndSetStartingIndentation()
 
-        this.indentCount = findStartingIndentation(parentIndentCount)
-
-        var previousWasOnBaseIndent = true
+        var previousWasOnBaseIndent = this.indentCount?.let { it == startIndentCount } ?: true
 
         loop@while(true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
-                    if (!previousWasOnBaseIndent) {
-                        this.storedValue += this.lastChar
-                    }
+                    this.foundLineBreaks = 1
+                    val subtractLineBreak = previousWasOnBaseIndent || this.storedValue.isEmpty()
                     read()
 
+
                     var currentIndentCount = 0
-                    var hasExtraBreak = false
                     whitespace@while (this.lastChar.isWhitespace()) {
                         if (this.lastChar.isLineBreak()) {
                             currentIndentCount = 0
-                            hasExtraBreak = true
-                            this.storedValue += this.lastChar
+                            this.foundLineBreaks++
                         } else {
                             currentIndentCount++
                         }
@@ -54,9 +43,17 @@ internal class FoldedStringReader<out P>(
                         }
                     }
 
-                    if (currentIndentCount < parentIndentCount) {
-                        this.storedValue += '\n'
+                    if (currentIndentCount < this.indentCount!!) {
+                        this.yamlReader.hasUnclaimedIndenting(currentIndentCount)
                         break@loop
+                    }
+
+                    if (subtractLineBreak) {
+                        this.foundLineBreaks--
+                    }
+
+                    for (it in 0 until this.foundLineBreaks) {
+                        this.storedValue += '\n'
                     }
 
                     if(this.lastChar == ' ') {
@@ -65,7 +62,7 @@ internal class FoldedStringReader<out P>(
                         }
                         previousWasOnBaseIndent = false
                     } else {
-                        if (!hasExtraBreak) {
+                        if (this.foundLineBreaks == 0) {
                             this.storedValue += ' '
                         }
                         previousWasOnBaseIndent = true
@@ -77,7 +74,6 @@ internal class FoldedStringReader<out P>(
             }
         }
 
-        this.setToParent()
-        return this.createToken()
+        return this.createTokenAndClose()
     }
 }

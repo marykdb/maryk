@@ -1,5 +1,6 @@
 package maryk.core.json
 
+import maryk.core.json.yaml.InvalidYamlContent
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.fail
@@ -70,6 +71,12 @@ internal fun testForEndJson(reader: IsJsonLikeReader) {
 
 internal fun testForInvalidJson(reader: IsJsonLikeReader) {
     shouldThrow<InvalidJsonContent> {
+        println(reader.nextToken())
+    }
+}
+
+internal fun testForInvalidYaml(reader: IsJsonLikeReader) {
+    shouldThrow<InvalidYamlContent> {
         println(reader.nextToken())
     }
 }

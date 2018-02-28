@@ -63,6 +63,12 @@ internal class IndentReader<out P>(
                 currentIndentCount++
             }
             read()
+
+            if (this.lastChar == '#' && currentIndentCount != 0) {
+                while (!this.lastChar.isLineBreak()) {
+                    read()
+                }
+            }
         }
 
         if (this.indentCounter == -1) {

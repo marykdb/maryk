@@ -18,11 +18,11 @@ internal class IndentReader<out P>(
     private var mapKeyFound: Boolean = false
 
     // Should not be called
-    override fun <P> newIndentLevel(parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader =
-        this.parentReader.newIndentLevel(parentReader)
+        this.parentReader.newIndentLevel(indentCount, parentReader)
 
     override fun continueIndentLevel() =
         LineReader(this.yamlReader, this).let {
@@ -86,7 +86,7 @@ internal class IndentReader<out P>(
                 this.parentReader.endIndentLevel(currentIndentCount)
             }
             else -> if (currentIndentCount == this.indentCounter){
-                this.parentReader.newIndentLevel(this)
+                this.parentReader.newIndentLevel(currentIndentCount, this)
             } else {
                 throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
             }

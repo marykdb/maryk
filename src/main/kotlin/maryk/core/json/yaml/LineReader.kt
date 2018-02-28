@@ -217,14 +217,14 @@ internal class LineReader<out P>(
         return this.parentReader.foundMapKey(isExplicitMap)
     }
 
-    override fun <P> newIndentLevel(parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
         if (mapKeyFound) {
             mapValueFound = true
         }
-        return this.parentReader.newIndentLevel(parentReader)
+        return this.parentReader.newIndentLevel(indentCount, parentReader)
     }
 
     override fun continueIndentLevel() = this.readUntilToken()

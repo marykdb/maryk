@@ -69,7 +69,7 @@ internal class DocumentStartReader(
             null
         }
 
-    override fun <P> newIndentLevel(parentReader: P)
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P)
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader =

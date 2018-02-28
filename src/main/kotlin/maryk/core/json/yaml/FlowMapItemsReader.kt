@@ -144,7 +144,7 @@ internal class FlowMapItemsReader<out P>(
 
     override fun continueIndentLevel() = this.readUntilToken()
 
-    override fun <P> newIndentLevel(parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {

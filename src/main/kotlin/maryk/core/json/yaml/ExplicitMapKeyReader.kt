@@ -69,7 +69,7 @@ internal class ExplicitMapKeyReader<out P>(
 
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
 
-    override fun <P> newIndentLevel(parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {

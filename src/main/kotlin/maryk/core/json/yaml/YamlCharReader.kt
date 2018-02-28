@@ -32,9 +32,10 @@ internal interface IsYamlCharWithIndentsReader {
     fun continueIndentLevel(): JsonToken
 
     /** Continue on a deeper indent level below this reader with [parentReader] */
-    fun <P> newIndentLevel(parentReader: P): JsonToken where P : maryk.core.json.yaml.YamlCharReader,
-                                                             P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-                                                             P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
+    fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
+            where P : maryk.core.json.yaml.YamlCharReader,
+                  P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
+                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
 
     /** Go back to a higher indent level of [indentCount] by closing this reader ans passing optionally a [tokenToReturn] */
     fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)? = null): JsonToken

@@ -1,8 +1,9 @@
 package maryk.core.json
 
 import maryk.core.extensions.HEX_CHARS
+import maryk.core.extensions.digitChars
+import maryk.core.extensions.isDigit
 
-private val numberChars = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartJSON)
 
 /** Reads JSON from the supplied [reader] */
@@ -156,7 +157,7 @@ class JsonReader(
             '[' -> startArray()
             '"' -> readStringValue(currentTokenCreator)
             '-' -> readNumber(true, currentTokenCreator)
-            in numberChars -> readNumber(false, currentTokenCreator)
+            in digitChars -> readNumber(false, currentTokenCreator)
             'n' -> readNullValue(currentTokenCreator)
             't' -> readTrue(currentTokenCreator)
             'f' -> readFalse(currentTokenCreator)
@@ -173,7 +174,7 @@ class JsonReader(
         // Read number
         do {
             addAndAdvance()
-        } while (lastChar in numberChars)
+        } while (lastChar.isDigit())
 
         // Check if value starts with illegal 0
         storedValue?.let {
@@ -187,10 +188,10 @@ class JsonReader(
         // Read fraction
         if(lastChar == '.') {
             addAndAdvance()
-            if (lastChar !in numberChars) throwJsonException()
+            if (!lastChar.isDigit()) throwJsonException()
             do {
                 addAndAdvance()
-            } while (lastChar in numberChars)
+            } while (lastChar.isDigit())
         }
 
         // read exponent
@@ -199,10 +200,10 @@ class JsonReader(
             if(lastChar in arrayOf('+', '-')) {
                 addAndAdvance()
             }
-            if (lastChar !in numberChars) throwJsonException()
+            if (!lastChar.isDigit()) throwJsonException()
             do {
                 addAndAdvance()
-            } while (lastChar in numberChars)
+            } while (lastChar.isDigit())
         }
 
         currentToken = currentTokenCreator(storedValue)

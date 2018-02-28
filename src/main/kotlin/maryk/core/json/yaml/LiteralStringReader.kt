@@ -5,17 +5,17 @@ import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 
 /** Literal style string reader */
-internal class LiteralStringReader<out P>(
+internal open class LiteralStringReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    private var jsonTokenConstructor: (String?) -> JsonToken
+    protected var jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var storedValue: String = ""
-    private var indentCount: Int? = null
+    protected var storedValue: String = ""
+    protected var indentCount: Int? = null
 
     override fun readUntilToken(): JsonToken {
         // Previous reader left it just after |
@@ -64,7 +64,7 @@ internal class LiteralStringReader<out P>(
         return this.createToken()
     }
 
-    private fun findStartingIndentation(parentIndentCount: Int): Int {
+    protected fun findStartingIndentation(parentIndentCount: Int): Int {
         var currentIndentCount = 0
         while (this.lastChar.isWhitespace()) {
             if (this.lastChar.isLineBreak()) {
@@ -81,7 +81,7 @@ internal class LiteralStringReader<out P>(
         return currentIndentCount
     }
 
-    private fun storeCharAndProceed() {
+    protected fun storeCharAndProceed() {
         this.storedValue += lastChar
         read()
     }
@@ -92,7 +92,7 @@ internal class LiteralStringReader<out P>(
         return this.createToken()
     }
 
-    private fun setToParent() {
+    protected fun setToParent() {
         this.parentReader.childIsDoneReading()
         this.currentReader.let {
             if (it is LineReader<*>) {
@@ -101,5 +101,5 @@ internal class LiteralStringReader<out P>(
         }
     }
 
-    private fun createToken() = this.jsonTokenConstructor(this.storedValue)
+    protected fun createToken() = this.jsonTokenConstructor(this.storedValue)
 }

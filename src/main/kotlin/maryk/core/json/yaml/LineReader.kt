@@ -98,7 +98,19 @@ internal class LineReader<out P>(
                     it.readUntilToken()
                 }
             }
-            '!', '>' -> {
+            '>' -> {
+                read()
+                return FoldedStringReader(
+                    this.yamlReader,
+                    this
+                ) {
+                    this.jsonTokenCreator(it)
+                }.let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
+            }
+            '!' -> {
                 TODO("Not supported yet")
             }
             '@', '`' -> {

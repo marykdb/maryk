@@ -70,6 +70,7 @@ internal class FlowArrayItemsReader<out P>(
                     this.parentReader.childIsDoneReading()
                     JsonToken.EndArray
                 }
+                '|', '>' -> throw InvalidYamlContent("Unsupported character $lastChar in flow array")
                 else -> this.plainStringReader("")
             }
         }

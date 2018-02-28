@@ -89,6 +89,7 @@ internal class FlowMapItemsReader<out P>(
                     this.parentReader.childIsDoneReading()
                     JsonToken.EndObject
                 }
+                '|', '>' -> throw InvalidYamlContent("Unsupported character $lastChar in flow map")
                 else -> this.plainStringReader("")
             }
         }

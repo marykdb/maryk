@@ -69,8 +69,8 @@ internal class PlainStringReader<out P>(
                     }
                 }
                 else -> {
-                    if (this.mode == PlainStyleMode.FLOW_COLLECTION) {
-                        when (this.lastChar) {
+                    when(this.mode) {
+                        PlainStyleMode.FLOW_COLLECTION -> when (this.lastChar) {
                             ',', ']' -> {
                                 this.isDone = true
                                 this.parentReader.childIsDoneReading()
@@ -78,8 +78,7 @@ internal class PlainStringReader<out P>(
                             }
                             else -> {}
                         }
-                    } else if (this.mode == PlainStyleMode.FLOW_MAP) {
-                        when (this.lastChar) {
+                        PlainStyleMode.FLOW_MAP -> when (this.lastChar) {
                             ',', '}' -> {
                                 this.isDone = true
                                 this.parentReader.childIsDoneReading()
@@ -87,6 +86,7 @@ internal class PlainStringReader<out P>(
                             }
                             else -> {}
                         }
+                        else -> {}
                     }
 
                     this.storeCharAndProceed()

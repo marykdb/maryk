@@ -86,7 +86,19 @@ internal class LineReader<out P>(
             ',' -> {
                 throw InvalidYamlContent("Invalid char $lastChar at this position")
             }
-            '!', '>', '|' -> {
+            '|' -> {
+                read()
+                return LiteralStringReader(
+                    this.yamlReader,
+                    this
+                ) {
+                    this.jsonTokenCreator(it)
+                }.let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
+            }
+            '!', '>' -> {
                 TODO("Not supported yet")
             }
             '@', '`' -> {

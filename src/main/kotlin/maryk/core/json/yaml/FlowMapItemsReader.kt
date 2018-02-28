@@ -70,9 +70,7 @@ internal class FlowMapItemsReader<out P>(
                     read()
                     if (this.lastChar.isWhitespace()) {
                         throw InvalidYamlContent("Expected a comma")
-                    } else {
-                        TODO("simple string reader or fail")
-                    }
+                    } else this.plainStringReader("-")
                 }
                 ',' -> {
                     if(this.mode != FlowMapMode.SEPARATOR) {
@@ -91,9 +89,7 @@ internal class FlowMapItemsReader<out P>(
                     this.parentReader.childIsDoneReading()
                     JsonToken.EndObject
                 }
-                else -> {
-                    throw InvalidYamlContent("Unknown character '$lastChar' found")
-                }
+                else -> this.plainStringReader("")
             }
         }
     }
@@ -116,6 +112,20 @@ internal class FlowMapItemsReader<out P>(
         FlowMapMode.STOP -> {
             this.mode = FlowMapMode.STOP
             JsonToken.EndObject
+        }
+    }
+
+    private fun plainStringReader(startWith: String): JsonToken {
+        return PlainStringReader(
+            this.yamlReader,
+            this,
+            startWith,
+            PlainStyleMode.FLOW_MAP
+        ) {
+            this.constructToken(it)
+        }.let {
+            this.currentReader = it
+            it.readUntilToken()
         }
     }
 
@@ -144,6 +154,5 @@ internal class FlowMapItemsReader<out P>(
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
         this.readUntilToken()
 
-    override fun foundMapKey(isExplicitMap: Boolean) =
-        this.parentReader.foundMapKey(isExplicitMap)
+    override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
 }

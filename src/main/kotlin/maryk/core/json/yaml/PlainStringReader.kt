@@ -3,7 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.json.JsonToken
 
 internal enum class PlainStyleMode {
-    NORMAL, FLOW_COLLECTION
+    NORMAL, FLOW_COLLECTION, FLOW_MAP
 }
 
 /** Plain style string reader */
@@ -11,7 +11,7 @@ internal class PlainStringReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     startWith: String = "",
-    val mode: PlainStyleMode = PlainStyleMode.NORMAL,
+    private val mode: PlainStyleMode = PlainStyleMode.NORMAL,
     private var jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader), IsYamlCharWithIndentsReader, IsYamlCharWithChildrenReader
         where P : YamlCharReader,
@@ -24,7 +24,7 @@ internal class PlainStringReader<out P>(
     override fun readUntilToken(): JsonToken {
         if (this.isDone) {
             this.parentReader.childIsDoneReading()
-            return this.jsonTokenConstructor(storedValue)
+            return this.createToken()
         }
 
         loop@while(true) {
@@ -40,16 +40,20 @@ internal class PlainStringReader<out P>(
                     read()
                     if (this.lastChar.isWhitespace()) {
                         this.isDone = true
-                        this.jsonTokenConstructor = { JsonToken.FieldName(it) }
 
-                        // If new map return New Map
-                        this.parentReader.foundMapKey(false)?.let {
-                            return it
+                        // Only override token creators with non flow maps
+                        if (this.mode != PlainStyleMode.FLOW_MAP) {
+                            this.jsonTokenConstructor = { JsonToken.FieldName(it) }
+
+                            // If new map return New Map
+                            this.parentReader.foundMapKey(false)?.let {
+                                return it
+                            }
                         }
 
                         // Else return specific token
                         this.parentReader.childIsDoneReading()
-                        return this.jsonTokenConstructor(storedValue)
+                        return this.createToken()
                     }
                     this.storedValue += ":$lastChar"
                     read()
@@ -65,12 +69,21 @@ internal class PlainStringReader<out P>(
                     }
                 }
                 else -> {
-                    if (mode == PlainStyleMode.FLOW_COLLECTION) {
+                    if (this.mode == PlainStyleMode.FLOW_COLLECTION) {
                         when (this.lastChar) {
                             ',', ']' -> {
                                 this.isDone = true
                                 this.parentReader.childIsDoneReading()
-                                return this.jsonTokenConstructor(this.storedValue)
+                                return createToken()
+                            }
+                            else -> {}
+                        }
+                    } else if (this.mode == PlainStyleMode.FLOW_MAP) {
+                        when (this.lastChar) {
+                            ',', '}' -> {
+                                this.isDone = true
+                                this.parentReader.childIsDoneReading()
+                                return createToken()
                             }
                             else -> {}
                         }
@@ -106,13 +119,12 @@ internal class PlainStringReader<out P>(
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         val readerIndentCount = this.indentCount()
         this.setToParent()
-        return if (indentCount == readerIndentCount) {
-            this.createJsonToken()
-        } else if (this.mode == PlainStyleMode.FLOW_COLLECTION){
-            throw InvalidYamlContent("Missing a comma")
-        } else {
-            this.parentReader.endIndentLevel(indentCount) {
-                this.createJsonToken()
+        return when {
+            indentCount == readerIndentCount -> this.createToken()
+            this.mode == PlainStyleMode.FLOW_COLLECTION -> throw InvalidYamlContent("Missing a comma")
+            this.mode == PlainStyleMode.FLOW_MAP -> throw InvalidYamlContent("Did not close map")
+            else -> this.parentReader.endIndentLevel(indentCount) {
+                this.createToken()
             }
         }
     }
@@ -123,7 +135,7 @@ internal class PlainStringReader<out P>(
 
     override fun handleReaderInterrupt(): JsonToken {
         this.setToParent()
-        return this.createJsonToken()
+        return this.createToken()
     }
 
     private fun setToParent() {
@@ -135,5 +147,5 @@ internal class PlainStringReader<out P>(
         }
     }
 
-    private fun createJsonToken() = this.jsonTokenConstructor(storedValue.trim())
+    private fun createToken() = this.jsonTokenConstructor(this.storedValue.trim())
 }

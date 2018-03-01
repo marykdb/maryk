@@ -8,6 +8,7 @@ internal class DocumentStartReader(
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
 {
+    private var finishedWithDirectives: Boolean? = null
     private var mapKeyFound: Boolean = false
 
     override fun readUntilToken(): JsonToken {
@@ -16,6 +17,19 @@ internal class DocumentStartReader(
         }
 
         return when(this.lastChar) {
+            '%' -> {
+                if (this.finishedWithDirectives == true) {
+                    throw InvalidYamlContent("Cannot start another directives block")
+                }
+
+                this.finishedWithDirectives = false
+                this.read()
+
+                DirectiveReader(this.yamlReader, this).let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
+            }
             '-' -> {
                 this.read()
 
@@ -24,7 +38,9 @@ internal class DocumentStartReader(
                         this.read()
                         when(this.lastChar) {
                             '-' -> {
-                                TODO("document started")
+                                read()
+                                this.finishedWithDirectives = true
+                                this.readUntilToken()
                             }
                             else -> plainStringReader("--")
                         }
@@ -41,6 +57,16 @@ internal class DocumentStartReader(
                     else -> plainStringReader("-")
                 }
             }
+            '#' -> {
+                CommentReader(this.yamlReader, this).let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
+            }
+            '\n' -> {
+                read()
+                this.readUntilToken()
+            }
             ' ' -> {
                 IndentReader(
                     parentReader = this,
@@ -50,6 +76,9 @@ internal class DocumentStartReader(
                     it.readUntilToken()
                 }
             } else -> {
+                if (this.finishedWithDirectives == false) {
+                    throw InvalidYamlContent("Directives has to end with an start document --- separator")
+                }
                 LineReader(
                     parentReader = this,
                     yamlReader = this.yamlReader

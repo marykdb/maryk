@@ -25,6 +25,8 @@ internal interface IsYamlReader {
 internal class YamlReaderImpl(
     private val reader: () -> Char
 ) : IsJsonLikeReader, IsYamlReader {
+    var version: String? = null
+
     override var currentToken: JsonToken = JsonToken.StartJSON
 
     override var lastChar: Char = '\u0000'

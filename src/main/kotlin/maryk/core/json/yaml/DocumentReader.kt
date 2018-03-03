@@ -2,7 +2,8 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 
-internal class DocumentStartReader(
+/** Read a complete yaml document until end stream or "..." */
+internal class DocumentReader(
     yamlReader: YamlReaderImpl
 ): YamlCharReader(yamlReader),
     IsYamlCharWithChildrenReader,
@@ -10,6 +11,8 @@ internal class DocumentStartReader(
 {
     private var finishedWithDirectives: Boolean? = null
     private var mapKeyFound: Boolean = false
+
+    private var contentWasFound = false
 
     override fun readUntilToken(): JsonToken {
         if(this.lastChar == '\u0000') {
@@ -39,8 +42,13 @@ internal class DocumentStartReader(
                         when(this.lastChar) {
                             '-' -> {
                                 read()
-                                this.finishedWithDirectives = true
-                                this.readUntilToken()
+                                return if (this.contentWasFound) {
+                                    JsonToken.StartDocument
+                                } else {
+                                    // First found document open before content
+                                    this.finishedWithDirectives = true
+                                    this.readUntilToken()
+                                }
                             }
                             else -> plainStringReader("--")
                         }
@@ -55,6 +63,23 @@ internal class DocumentStartReader(
                         }
                     }
                     else -> plainStringReader("-")
+                }
+            }
+            '.' -> {
+                this.read()
+
+                when(this.lastChar) {
+                    '.' -> {
+                        this.read()
+                        when(this.lastChar) {
+                            '.' -> {
+                                read()
+                                JsonToken.EndDocument
+                            }
+                            else -> plainStringReader("..")
+                        }
+                    }
+                    else -> plainStringReader(".")
                 }
             }
             '#' -> {
@@ -87,6 +112,8 @@ internal class DocumentStartReader(
                     it.readUntilToken()
                 }
             }
+        }.also {
+            this.contentWasFound = true
         }
     }
 
@@ -129,7 +156,7 @@ internal class DocumentStartReader(
             return JsonToken.EndObject
         }
 
-        return JsonToken.EndJSON
+        return JsonToken.EndDocument
     }
 
     private fun plainStringReader(char: String): JsonToken {

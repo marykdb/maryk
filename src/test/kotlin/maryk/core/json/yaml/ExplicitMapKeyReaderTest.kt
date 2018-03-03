@@ -1,6 +1,6 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForEndJson
+import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
@@ -15,7 +15,7 @@ class ExplicitMapKeyReaderTest {
         testForFieldName(reader, null)
         testForObjectValue(reader, null)
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -28,7 +28,7 @@ class ExplicitMapKeyReaderTest {
         testForFieldName(reader, null)
         testForObjectValue(reader, "value")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -43,7 +43,7 @@ class ExplicitMapKeyReaderTest {
         testForFieldName(reader, "key")
         testForObjectValue(reader, "value")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -56,7 +56,7 @@ class ExplicitMapKeyReaderTest {
         testForFieldName(reader, "key")
         testForObjectValue(reader, "value")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -70,6 +70,6 @@ class ExplicitMapKeyReaderTest {
         testForFieldName(reader, "key with more lines")
         testForObjectValue(reader, "value")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 }

@@ -1,12 +1,29 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.testForDocumentEnd
+import maryk.core.json.testForDocumentStart
+import maryk.core.json.testForObjectValue
 import kotlin.test.Test
 
-class CommentReaderTest {
+class DocumentReaderTest {
     @Test
-    fun read_comment() {
-        val reader = createYamlReader("# Comment")
+    fun readDocument() {
+        val reader = createYamlReader("""
+        |%YAML 1.2
+        |# Comment
+        |---
+        |  Test
+        |---
+        | Test2
+        |---
+        |    Hoho
+        |...
+        """.trimMargin())
+        testForObjectValue(reader, "Test")
+        testForDocumentStart(reader)
+        testForObjectValue(reader, "Test2")
+        testForDocumentStart(reader)
+        testForObjectValue(reader, "Hoho")
         testForDocumentEnd(reader)
     }
 

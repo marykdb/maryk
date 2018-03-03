@@ -2,7 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
-import maryk.core.json.testForEndJson
+import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForInvalidJson
 import maryk.core.json.testForObjectEnd
@@ -26,7 +26,7 @@ class FlowMapItemsReaderTest {
         testForObjectValue(reader, "value2")
         testForObjectEnd(reader)
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -44,7 +44,7 @@ class FlowMapItemsReaderTest {
         testForObjectValue(reader, "value2")
         testForObjectEnd(reader)
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -71,7 +71,7 @@ class FlowMapItemsReaderTest {
         testForObjectValue(reader, "value2 and longer and longer")
         testForObjectEnd(reader)
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -101,6 +101,6 @@ class FlowMapItemsReaderTest {
         testForFieldName(reader, "key2")
         testForObjectValue(reader, "value2")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 }

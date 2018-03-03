@@ -3,7 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForArrayValue
-import maryk.core.json.testForEndJson
+import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
@@ -30,7 +30,7 @@ class MappingReaderTest {
         testForFieldName(reader, "key4")
         testForObjectValue(reader, "value4")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -54,7 +54,7 @@ class MappingReaderTest {
         testForFieldName(reader, "key3")
         testForObjectValue(reader, "value3")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -69,7 +69,7 @@ class MappingReaderTest {
         testForFieldName(reader, "key2")
         testForObjectValue(reader, "value2")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -110,7 +110,7 @@ class MappingReaderTest {
         testForFieldName(reader, "key5")
         testForObjectValue(reader, "value5")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -133,6 +133,6 @@ class MappingReaderTest {
         testForFieldName(reader, "key5")
         testForObjectValue(reader, "value5")
         testForObjectEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 }

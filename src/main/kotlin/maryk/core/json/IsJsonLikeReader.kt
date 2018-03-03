@@ -5,7 +5,7 @@ interface JsonTokenIsValue {
 }
 
 sealed class JsonToken(val name: String) {
-    object StartJSON : JsonToken("StartJSON")
+    object StartDocument : JsonToken("StartDocument")
     object StartObject : JsonToken("StartObject")
     class FieldName(val value: String?) : JsonToken("FieldName")
     object ObjectSeparator : JsonToken("ObjectSeparator")
@@ -16,7 +16,7 @@ sealed class JsonToken(val name: String) {
     object ArraySeparator : JsonToken("ArraySeparator")
     object EndArray : JsonToken("EndArray")
     abstract class Stopped(name: String): JsonToken(name)
-    object EndJSON : Stopped("EndJSON")
+    object EndDocument : Stopped("EndDocument")
     class Suspended(val lastToken: JsonToken, val storedValue: String?): Stopped("Stopped reader")
     class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
 

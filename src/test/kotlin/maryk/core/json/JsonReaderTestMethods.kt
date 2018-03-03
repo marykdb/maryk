@@ -5,6 +5,14 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.fail
 
+internal fun testForDocumentStart(reader: IsJsonLikeReader) {
+    reader.nextToken().apply {
+        if (this !is JsonToken.StartDocument) {
+            fail("$this should be document start")
+        }
+    }
+}
+
 internal fun testForObjectStart(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !is JsonToken.StartObject) {
@@ -61,10 +69,10 @@ internal fun testForArrayValue(reader: IsJsonLikeReader, value: String) {
     }
 }
 
-internal fun testForEndJson(reader: IsJsonLikeReader) {
+internal fun testForDocumentEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
-        if (this !is JsonToken.EndJSON) {
-            fail("$this should be End JSON")
+        if (this !is JsonToken.EndDocument) {
+            fail("$this should be End Document")
         }
     }
 }

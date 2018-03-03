@@ -3,7 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForArrayValue
-import maryk.core.json.testForEndJson
+import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForInvalidJson
 import kotlin.test.Test
 
@@ -20,7 +20,7 @@ class ArrayItemsReaderTest {
         testForArrayValue(reader, "hey")
         testForArrayValue(reader, "another one")
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -37,7 +37,7 @@ class ArrayItemsReaderTest {
         testForArrayValue(reader, "hey")
         testForArrayValue(reader, "another one")
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -68,7 +68,7 @@ class ArrayItemsReaderTest {
         testForArrayEnd(reader)
         testForArrayValue(reader, "and back again")
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -85,7 +85,7 @@ class ArrayItemsReaderTest {
         testForArrayEnd(reader)
         testForArrayValue(reader, "another one")
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test

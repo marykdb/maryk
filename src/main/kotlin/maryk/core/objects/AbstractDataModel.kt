@@ -127,7 +127,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Optionally pass a [context] when needed to read more complex property types
      */
     fun readJson(reader: IsJsonLikeReader, context: CX? = null): Map<Int, Any> {
-        if (reader.currentToken == JsonToken.StartJSON){
+        if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
 

@@ -70,7 +70,7 @@ internal class JsonReaderTest {
             }
         }
 
-        reader.nextToken() shouldBe JsonToken.EndJSON
+        reader.nextToken() shouldBe JsonToken.EndDocument
     }
 
     @Test
@@ -119,7 +119,7 @@ internal class JsonReaderTest {
         }
 
         (reader.nextToken() == JsonToken.EndObject) shouldBe true
-        (reader.nextToken() == JsonToken.EndJSON) shouldBe true
+        (reader.nextToken() == JsonToken.EndDocument) shouldBe true
     }
 
     @Test
@@ -159,7 +159,7 @@ internal class JsonReaderTest {
             }
         }
 
-        reader.nextToken() shouldBe JsonToken.EndJSON
+        reader.nextToken() shouldBe JsonToken.EndDocument
     }
 
     @Test
@@ -225,7 +225,7 @@ internal class JsonReaderTest {
         input += "]"
 
         reader.nextToken() shouldBe JsonToken.EndArray
-        reader.nextToken() shouldBe JsonToken.EndJSON
+        reader.nextToken() shouldBe JsonToken.EndDocument
     }
 
     internal fun createJsonReader(yaml: String): JsonReader {
@@ -251,7 +251,7 @@ internal class JsonReaderTest {
         testForArrayStart(reader)
         testForArrayValue(reader, "test")
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -260,7 +260,7 @@ internal class JsonReaderTest {
         testForArrayStart(reader)
         testForArrayValue(reader, "te\"\b\u000C\n\t\\/\r'")
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -269,6 +269,6 @@ internal class JsonReaderTest {
         testForArrayStart(reader)
         testForArrayValue(reader, "😍\\uwrong\\u0w\\u00w\\u000w")
         testForArrayEnd(reader)
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 }

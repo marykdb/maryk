@@ -27,10 +27,10 @@ internal class YamlReaderImpl(
 ) : IsJsonLikeReader, IsYamlReader {
     var version: String? = null
 
-    override var currentToken: JsonToken = JsonToken.StartJSON
+    override var currentToken: JsonToken = JsonToken.StartDocument
 
     override var lastChar: Char = '\u0000'
-    override var currentReader: YamlCharReader = DocumentStartReader(this)
+    override var currentReader: YamlCharReader = DocumentReader(this)
 
     private var unclaimedIndenting: Int? = null
     private var hasException: Boolean = false

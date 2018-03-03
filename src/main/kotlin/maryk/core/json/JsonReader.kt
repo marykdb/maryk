@@ -4,13 +4,13 @@ import maryk.core.extensions.HEX_CHARS
 import maryk.core.extensions.digitChars
 import maryk.core.extensions.isDigit
 
-private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartJSON)
+private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartDocument)
 
 /** Reads JSON from the supplied [reader] */
 class JsonReader(
     private val reader: () -> Char
 ) : IsJsonLikeReader {
-    override var currentToken: JsonToken = JsonToken.StartJSON
+    override var currentToken: JsonToken = JsonToken.StartDocument
 
     private var storedValue: String? = ""
     private val typeStack: MutableList<JsonComplexType> = mutableListOf()
@@ -20,7 +20,7 @@ class JsonReader(
         storedValue = ""
         try {
             when (currentToken) {
-                JsonToken.StartJSON -> {
+                JsonToken.StartDocument -> {
                     lastChar = readSkipWhitespace()
                     when(lastChar) {
                         '{' -> startObject()
@@ -121,7 +121,7 @@ class JsonReader(
 
     private fun continueComplexRead() {
         when {
-            typeStack.isEmpty() -> currentToken = JsonToken.EndJSON
+            typeStack.isEmpty() -> currentToken = JsonToken.EndDocument
             else -> when (typeStack.last()) {
                 JsonComplexType.OBJECT -> readObject()
                 JsonComplexType.ARRAY -> readArray()

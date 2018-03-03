@@ -1,6 +1,6 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForEndJson
+import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForObjectValue
 import kotlin.test.Test
 
@@ -11,6 +11,6 @@ class IndentReaderTest {
             |     'test'
         """.trimMargin())
         testForObjectValue(reader, "test")
-        testForEndJson(reader)
+        testForDocumentEnd(reader)
     }
 }

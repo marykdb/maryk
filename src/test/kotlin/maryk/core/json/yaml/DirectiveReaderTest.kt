@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForInvalidYaml
 import maryk.core.json.testForObjectValue
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DirectiveReaderTest {
@@ -32,5 +33,37 @@ class DirectiveReaderTest {
         |---
         """.trimMargin())
         testForInvalidYaml(reader)
+    }
+
+    @Test
+    fun ignore_unknown_directive() {
+        val reader = createYamlReader("""
+        |%UNKNOWN directive
+        |%UNKNOWN two
+        |---
+        |test
+        """.trimMargin())
+        testForObjectValue(reader, "test")
+    }
+
+    @Test
+    fun read_tags() {
+        val reader = createYamlReader("""
+        |%TAG ! tag:maryk.io,2018:
+        |%TAG !! tag:maryk.io,2016:
+        |%TAG !yaml! tag:yaml.org,2002
+        |%TAG !prefix! !my-
+        |%TAG !ignored!
+        |---
+        |test
+        """.trimMargin()) as YamlReaderImpl
+
+        testForObjectValue(reader, "test")
+
+        reader.tags["!"] shouldBe "tag:maryk.io,2018:"
+        reader.tags["!!"] shouldBe "tag:maryk.io,2016:"
+        reader.tags["!yaml!"] shouldBe "tag:yaml.org,2002"
+        reader.tags["!prefix!"] shouldBe "!my-"
+        reader.tags["ignored"] shouldBe null
     }
 }

@@ -34,6 +34,7 @@ internal class YamlReaderImpl(
 
     private var unclaimedIndenting: Int? = null
     private var hasException: Boolean = false
+    internal val tags: MutableMap<String, String> = mutableMapOf()
 
     override fun nextToken(): JsonToken {
         if (this.hasException) {

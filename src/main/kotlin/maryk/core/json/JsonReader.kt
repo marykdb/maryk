@@ -28,7 +28,7 @@ class JsonReader(
                         else -> throwJsonException()
                     }
                 }
-                JsonToken.StartObject -> {
+                is JsonToken.StartObject -> {
                     typeStack.add(JsonComplexType.OBJECT)
                     when(lastChar) {
                         '}' -> endObject()
@@ -39,7 +39,7 @@ class JsonReader(
                 JsonToken.EndObject -> {
                     continueComplexRead()
                 }
-                JsonToken.StartArray -> {
+                is JsonToken.StartArray -> {
                     typeStack.add(JsonComplexType.ARRAY)
                     if (lastChar == ']') {
                         endArray()
@@ -329,7 +329,7 @@ class JsonReader(
     }
 
     private fun startObject() {
-        currentToken = JsonToken.StartObject
+        currentToken = JsonToken.SimpleStartObject
         readSkipWhitespace()
     }
 
@@ -342,7 +342,7 @@ class JsonReader(
     }
 
     private fun startArray() {
-        currentToken = JsonToken.StartArray
+        currentToken = JsonToken.SimpleStartArray
         readSkipWhitespace()
     }
 

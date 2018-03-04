@@ -120,7 +120,7 @@ internal class DocumentReader(
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
-            JsonToken.StartObject
+            JsonToken.SimpleStartObject
         } else {
             null
         }

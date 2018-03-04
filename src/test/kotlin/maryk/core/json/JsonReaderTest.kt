@@ -25,13 +25,13 @@ internal class JsonReaderTest {
 
         val reader = JsonReader { input[index++] }
         listOf(
-            JsonToken.StartObject,
+            JsonToken.SimpleStartObject,
             JsonToken.FieldName("string"),
             JsonToken.Value("hey"),
             JsonToken.FieldName("int"),
             JsonToken.Value("4"),
             JsonToken.FieldName("array"),
-            JsonToken.StartArray,
+            JsonToken.SimpleStartArray,
             JsonToken.Value("34"),
             JsonToken.Value("2352"),
             JsonToken.Value("3423"),
@@ -40,22 +40,22 @@ internal class JsonReaderTest {
             JsonToken.Value(null),
             JsonToken.EndArray,
             JsonToken.FieldName("emptyArray"),
-            JsonToken.StartArray,
+            JsonToken.SimpleStartArray,
             JsonToken.EndArray,
             JsonToken.FieldName("map"),
-            JsonToken.StartObject,
+            JsonToken.SimpleStartObject,
             JsonToken.FieldName("12"),
             JsonToken.Value("yes"),
             JsonToken.FieldName("10"),
             JsonToken.Value("ahum"),
             JsonToken.EndObject,
             JsonToken.FieldName("emptyMap"),
-            JsonToken.StartObject,
+            JsonToken.SimpleStartObject,
             JsonToken.EndObject,
             JsonToken.FieldName("mixed"),
-            JsonToken.StartArray,
+            JsonToken.SimpleStartArray,
             JsonToken.Value("2"),
-            JsonToken.StartObject,
+            JsonToken.SimpleStartObject,
             JsonToken.FieldName("value"),
             JsonToken.Value("subInMulti!"),
             JsonToken.EndObject,
@@ -88,7 +88,7 @@ internal class JsonReaderTest {
         var index = 0
 
         val reader = JsonReader { input[index++] }
-        (reader.nextToken() == JsonToken.StartObject) shouldBe true
+        (reader.nextToken() == JsonToken.SimpleStartObject) shouldBe true
 
         reader.nextToken().apply {
             (this is JsonToken.FieldName) shouldBe true
@@ -139,7 +139,7 @@ internal class JsonReaderTest {
 
         val reader = JsonReader { input[index++] }
         listOf(
-            JsonToken.StartArray,
+            JsonToken.SimpleStartArray,
             JsonToken.Value("4"),
             JsonToken.Value("4.723"),
             JsonToken.Value("-0.123723"),

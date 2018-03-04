@@ -148,7 +148,7 @@ internal class ExplicitMapKeyReader<out P>(
     override fun handleReaderInterrupt() = when (this.state) {
         ExplicitMapKeyState.QUESTION -> {
             this.state = ExplicitMapKeyState.KEY
-            JsonToken.StartObject
+            JsonToken.SimpleStartObject
         }
         ExplicitMapKeyState.KEY -> {
             this.state = ExplicitMapKeyState.VALUE

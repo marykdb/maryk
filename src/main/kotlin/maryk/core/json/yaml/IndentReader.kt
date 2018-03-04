@@ -33,7 +33,7 @@ internal class IndentReader<out P>(
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
-            JsonToken.StartObject
+            JsonToken.SimpleStartObject
         } else {
             null
         }

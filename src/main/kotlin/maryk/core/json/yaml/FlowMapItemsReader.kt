@@ -21,7 +21,7 @@ internal class FlowMapItemsReader<out P>(
     override fun readUntilToken(): JsonToken {
         return if (this.mode == FlowMapMode.START) {
             this.mode = FlowMapMode.KEY
-            JsonToken.StartObject
+            JsonToken.SimpleStartObject
         } else {
             while(this.lastChar.isWhitespace()) {
                 read()

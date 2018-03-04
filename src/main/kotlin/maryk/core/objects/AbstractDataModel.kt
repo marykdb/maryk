@@ -131,7 +131,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             reader.nextToken()
         }
 
-        if (reader.currentToken != JsonToken.StartObject) {
+        if (reader.currentToken !is JsonToken.StartObject) {
             throw IllegalJsonOperation("Expected object at start of json")
         }
 

@@ -1,15 +1,37 @@
 package maryk.core.json
 
+sealed class ObjectType {
+    object Map: ObjectType()
+    object OrderedMap: ObjectType()
+    class Custom(val type: String): ObjectType()
+}
+
+sealed class ArrayType {
+    object Array: ArrayType()
+    object Set: ArrayType()
+    class Custom(val type: String): ArrayType()
+}
+
 sealed class JsonToken(val name: String) {
     object StartDocument : JsonToken("StartDocument")
-    object StartObject : JsonToken("StartObject")
+
+    open class StartObject : JsonToken("StartObject")
+    object SimpleStartObject : StartObject()
+    class StartObjectWithType(val type: ObjectType) : StartObject()
+
+    object EndObject : JsonToken("EndObject")
+
     class FieldName(val value: String?) : JsonToken("FieldName")
     object ObjectSeparator : JsonToken("ObjectSeparator")
     class Value<out T: Any>(val value: T?) : JsonToken("Value")
-    object EndObject : JsonToken("EndObject")
-    object StartArray : JsonToken("StartArray")
+
+    open class StartArray : JsonToken("StartArray")
+    object SimpleStartArray : StartArray()
+    class StartArrayWithType(val type: ArrayType) : StartArray()
+
     object ArraySeparator : JsonToken("ArraySeparator")
     object EndArray : JsonToken("EndArray")
+
     abstract class Stopped(name: String): JsonToken(name)
     object EndDocument : Stopped("EndDocument")
     class Suspended(val lastToken: JsonToken, val storedValue: String?): Stopped("Stopped reader")

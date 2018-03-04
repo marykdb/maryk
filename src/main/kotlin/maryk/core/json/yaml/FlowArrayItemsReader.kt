@@ -18,7 +18,7 @@ internal class FlowArrayItemsReader<out P>(
     override fun readUntilToken(): JsonToken {
         return if (!this.isStarted) {
             this.isStarted = true
-            JsonToken.StartArray
+            JsonToken.SimpleStartArray
         } else {
             while(this.lastChar.isWhitespace()) {
                 read()

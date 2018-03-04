@@ -21,7 +21,7 @@ internal class ArrayItemsReader<out P>(
             createLineReader(this)
 
             this.isStarted = true
-            JsonToken.StartArray
+            JsonToken.SimpleStartArray
         } else {
             IndentReader(
                 yamlReader, this

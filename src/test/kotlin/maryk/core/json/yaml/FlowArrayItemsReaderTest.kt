@@ -2,9 +2,9 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
-import maryk.core.json.testForArrayValue
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForInvalidJson
+import maryk.core.json.testForValue
 import kotlin.test.Test
 
 class FlowArrayItemsReaderTest {
@@ -15,9 +15,9 @@ class FlowArrayItemsReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
-        testForArrayValue(reader, "test1")
-        testForArrayValue(reader, "test2")
-        testForArrayValue(reader, "test3")
+        testForValue(reader, "test1")
+        testForValue(reader, "test2")
+        testForValue(reader, "test3")
         testForArrayEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
@@ -30,9 +30,9 @@ class FlowArrayItemsReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
-        testForArrayValue(reader, "test1")
-        testForArrayValue(reader, "test2")
-        testForArrayValue(reader, "test3")
+        testForValue(reader, "test1")
+        testForValue(reader, "test2")
+        testForValue(reader, "test3")
         testForArrayEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
@@ -49,9 +49,9 @@ class FlowArrayItemsReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
-        testForArrayValue(reader, "test1 longer and longer")
-        testForArrayValue(reader, "test2")
-        testForArrayValue(reader, "test3")
+        testForValue(reader, "test1 longer and longer")
+        testForValue(reader, "test2")
+        testForValue(reader, "test3")
         testForArrayEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
@@ -76,9 +76,9 @@ class FlowArrayItemsReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
-        testForArrayValue(reader, "test1")
-        testForArrayValue(reader, "test2")
-        testForArrayValue(reader, "test3")
+        testForValue(reader, "test1")
+        testForValue(reader, "test2")
+        testForValue(reader, "test3")
         testForArrayEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)

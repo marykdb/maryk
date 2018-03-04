@@ -37,14 +37,6 @@ internal fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
     }
 }
 
-internal fun testForObjectValue(reader: IsJsonLikeReader, value: String?) {
-    reader.nextToken().apply {
-        if (this is JsonToken.ObjectValue) {
-            this.value shouldBe value
-        } else { fail("$this should be object value '$value'") }
-    }
-}
-
 internal fun testForArrayStart(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !is JsonToken.StartArray) {
@@ -61,11 +53,11 @@ internal fun testForArrayEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForArrayValue(reader: IsJsonLikeReader, value: String) {
+internal fun testForValue(reader: IsJsonLikeReader, value: Any?) {
     reader.nextToken().apply {
-        if (this is JsonToken.ArrayValue) {
+        if (this is JsonToken.Value<*>) {
             this.value shouldBe value
-        } else { fail("$this should be Array value '$value'") }
+        } else { fail("$this should be value '$value'") }
     }
 }
 

@@ -103,7 +103,7 @@ internal class FlowMapItemsReader<out P>(
         }
         FlowMapMode.VALUE -> {
             this.mode = FlowMapMode.SEPARATOR
-            JsonToken.ObjectValue(value)
+            JsonToken.Value(value)
         }
         FlowMapMode.SEPARATOR -> {
             // If last mode was separator next one will be key

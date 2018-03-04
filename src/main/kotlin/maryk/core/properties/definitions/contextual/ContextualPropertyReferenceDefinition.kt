@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonTokenIsValue
+import maryk.core.json.JsonToken
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
@@ -35,9 +35,10 @@ internal data class ContextualPropertyReferenceDefinition<in CX: IsPropertyConte
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
         when(it) {
-            is JsonTokenIsValue -> {
+            is JsonToken.Value<*> -> {
                 it.value?.let {
-                    fromString(it, context)
+                    // TODO: Make specific for value
+                    fromString(it.toString(), context)
                 } ?: throw ParseException("Property reference cannot be null in JSON")
             }
             else -> throw ParseException("Property reference should be a value")

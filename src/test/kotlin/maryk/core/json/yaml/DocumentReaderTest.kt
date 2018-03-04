@@ -2,7 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForDocumentStart
-import maryk.core.json.testForObjectValue
+import maryk.core.json.testForValue
 import kotlin.test.Test
 
 class DocumentReaderTest {
@@ -19,11 +19,11 @@ class DocumentReaderTest {
         |    Hoho
         |...
         """.trimMargin())
-        testForObjectValue(reader, "Test")
+        testForValue(reader, "Test")
         testForDocumentStart(reader)
-        testForObjectValue(reader, "Test2")
+        testForValue(reader, "Test2")
         testForDocumentStart(reader)
-        testForObjectValue(reader, "Hoho")
+        testForValue(reader, "Hoho")
         testForDocumentEnd(reader)
     }
 

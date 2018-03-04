@@ -7,7 +7,7 @@ import maryk.core.json.testForFieldName
 import maryk.core.json.testForInvalidJson
 import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
-import maryk.core.json.testForObjectValue
+import maryk.core.json.testForValue
 import kotlin.test.Test
 
 class FlowMapItemsReaderTest {
@@ -19,11 +19,11 @@ class FlowMapItemsReaderTest {
         testForArrayStart(reader)
         testForObjectStart(reader)
         testForFieldName(reader, "key0")
-        testForObjectValue(reader, null)
+        testForValue(reader, null)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
-        testForObjectValue(reader, "value2")
+        testForValue(reader, "value2")
         testForObjectEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
@@ -37,11 +37,11 @@ class FlowMapItemsReaderTest {
         testForArrayStart(reader)
         testForObjectStart(reader)
         testForFieldName(reader, "key0")
-        testForObjectValue(reader, null)
+        testForValue(reader, null)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
-        testForObjectValue(reader, "value2")
+        testForValue(reader, "value2")
         testForObjectEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
@@ -64,11 +64,11 @@ class FlowMapItemsReaderTest {
         testForArrayStart(reader)
         testForObjectStart(reader)
         testForFieldName(reader, "key0")
-        testForObjectValue(reader, null)
+        testForValue(reader, null)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
-        testForObjectValue(reader, "value2 and longer and longer")
+        testForValue(reader, "value2 and longer and longer")
         testForObjectEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
@@ -95,11 +95,11 @@ class FlowMapItemsReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key0")
-        testForObjectValue(reader, null)
+        testForValue(reader, null)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
-        testForObjectValue(reader, "value2")
+        testForValue(reader, "value2")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }

@@ -1,27 +1,23 @@
 package maryk.core.json
 
-interface JsonTokenIsValue {
-    val value: String?
-}
-
 sealed class JsonToken(val name: String) {
     object StartDocument : JsonToken("StartDocument")
     object StartObject : JsonToken("StartObject")
     class FieldName(val value: String?) : JsonToken("FieldName")
     object ObjectSeparator : JsonToken("ObjectSeparator")
-    class ObjectValue(override val value: String?) : JsonToken("ObjectValue"), JsonTokenIsValue
+    class Value<out T: Any>(val value: T?) : JsonToken("Value")
     object EndObject : JsonToken("EndObject")
     object StartArray : JsonToken("StartArray")
-    class ArrayValue(override val value: String?) : JsonToken("ArrayValue"), JsonTokenIsValue
     object ArraySeparator : JsonToken("ArraySeparator")
     object EndArray : JsonToken("EndArray")
     abstract class Stopped(name: String): JsonToken(name)
     object EndDocument : Stopped("EndDocument")
     class Suspended(val lastToken: JsonToken, val storedValue: String?): Stopped("Stopped reader")
     class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
-
-    override fun toString() = if(this is JsonTokenIsValue ) {
-        "$name(\"${this.value}\")"
+    override fun toString() = if(this is Value<*>) {
+        this.value?.let {
+            "$name(\"${this.value}\")"
+        } ?: "$name(null)"
     } else if(this is FieldName ) {
         "$name(\"${this.value}\")"
     } else { name }

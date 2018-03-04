@@ -92,8 +92,8 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, Any> {
         reader.nextToken().let {
-            if(it !is JsonToken.ArrayValue) {
-                throw ParseException("Expected an array value at start")
+            if(it !is JsonToken.Value<*>) {
+                throw ParseException("Expected a value at start")
             }
 
             val type = this.typeByName[it.value] ?: throw ParseException("Invalid multi type name ${it.value}")

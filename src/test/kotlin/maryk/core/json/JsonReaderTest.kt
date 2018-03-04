@@ -27,17 +27,17 @@ internal class JsonReaderTest {
         listOf(
             JsonToken.StartObject,
             JsonToken.FieldName("string"),
-            JsonToken.ObjectValue("hey"),
+            JsonToken.Value("hey"),
             JsonToken.FieldName("int"),
-            JsonToken.ObjectValue("4"),
+            JsonToken.Value("4"),
             JsonToken.FieldName("array"),
             JsonToken.StartArray,
-            JsonToken.ArrayValue("34"),
-            JsonToken.ArrayValue("2352"),
-            JsonToken.ArrayValue("3423"),
-            JsonToken.ArrayValue("true"),
-            JsonToken.ArrayValue("false"),
-            JsonToken.ArrayValue(null),
+            JsonToken.Value("34"),
+            JsonToken.Value("2352"),
+            JsonToken.Value("3423"),
+            JsonToken.Value("true"),
+            JsonToken.Value("false"),
+            JsonToken.Value(null),
             JsonToken.EndArray,
             JsonToken.FieldName("emptyArray"),
             JsonToken.StartArray,
@@ -45,27 +45,27 @@ internal class JsonReaderTest {
             JsonToken.FieldName("map"),
             JsonToken.StartObject,
             JsonToken.FieldName("12"),
-            JsonToken.ObjectValue("yes"),
+            JsonToken.Value("yes"),
             JsonToken.FieldName("10"),
-            JsonToken.ObjectValue("ahum"),
+            JsonToken.Value("ahum"),
             JsonToken.EndObject,
             JsonToken.FieldName("emptyMap"),
             JsonToken.StartObject,
             JsonToken.EndObject,
             JsonToken.FieldName("mixed"),
             JsonToken.StartArray,
-            JsonToken.ArrayValue("2"),
+            JsonToken.Value("2"),
             JsonToken.StartObject,
             JsonToken.FieldName("value"),
-            JsonToken.ObjectValue("subInMulti!"),
+            JsonToken.Value("subInMulti!"),
             JsonToken.EndObject,
             JsonToken.EndArray,
             JsonToken.EndObject
         ). forEach { token ->
             reader.nextToken().apply {
                 this.name shouldBe token.name
-                if (this is JsonTokenIsValue) {
-                    this.value shouldBe (token as JsonTokenIsValue).value
+                if (this is JsonToken.Value<*>) {
+                    this.value shouldBe (token as JsonToken.Value<*>).value
                 }
             }
         }
@@ -114,8 +114,8 @@ internal class JsonReaderTest {
         }
 
         reader.nextToken().apply {
-            (this is JsonToken.ObjectValue) shouldBe true
-            (this as JsonToken.ObjectValue).value shouldBe "true"
+            (this is JsonToken.Value<*>) shouldBe true
+            (this as JsonToken.Value<*>).value shouldBe "true"
         }
 
         (reader.nextToken() == JsonToken.EndObject) shouldBe true
@@ -140,21 +140,21 @@ internal class JsonReaderTest {
         val reader = JsonReader { input[index++] }
         listOf(
             JsonToken.StartArray,
-            JsonToken.ArrayValue("4"),
-            JsonToken.ArrayValue("4.723"),
-            JsonToken.ArrayValue("-0.123723"),
-            JsonToken.ArrayValue("4.723E50"),
-            JsonToken.ArrayValue("1.453E-4"),
-            JsonToken.ArrayValue("1.453E+53"),
-            JsonToken.ArrayValue("13453.442e4234"),
-            JsonToken.ArrayValue("53.442e-234"),
-            JsonToken.ArrayValue("53.442e+234"),
+            JsonToken.Value("4"),
+            JsonToken.Value("4.723"),
+            JsonToken.Value("-0.123723"),
+            JsonToken.Value("4.723E50"),
+            JsonToken.Value("1.453E-4"),
+            JsonToken.Value("1.453E+53"),
+            JsonToken.Value("13453.442e4234"),
+            JsonToken.Value("53.442e-234"),
+            JsonToken.Value("53.442e+234"),
             JsonToken.EndArray
         ). forEach { token ->
             reader.nextToken().apply {
                 this.name shouldBe token.name
-                if (this is JsonTokenIsValue) {
-                    this.value shouldBe (token as JsonTokenIsValue).value
+                if (this is JsonToken.Value<*>) {
+                    this.value shouldBe (token as JsonToken.Value<*>).value
                 }
             }
         }
@@ -249,7 +249,7 @@ internal class JsonReaderTest {
     fun read_double_quote() {
         val reader = createJsonReader("""["test"]""")
         testForArrayStart(reader)
-        testForArrayValue(reader, "test")
+        testForValue(reader, "test")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -258,7 +258,7 @@ internal class JsonReaderTest {
     fun read_double_quote_with_special_chars() {
         val reader = createJsonReader("""["te\"\b\f\n\t\\\/\r'"]""")
         testForArrayStart(reader)
-        testForArrayValue(reader, "te\"\b\u000C\n\t\\/\r'")
+        testForValue(reader, "te\"\b\u000C\n\t\\/\r'")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -267,7 +267,7 @@ internal class JsonReaderTest {
     fun read_double_quote_with_utf_chars() {
         val reader = createJsonReader("""["\uD83D\uDE0D\uwrong\u0w\u00w\u000w"]""")
         testForArrayStart(reader)
-        testForArrayValue(reader, "😍\\uwrong\\u0w\\u00w\\u000w")
+        testForValue(reader, "😍\\uwrong\\u0w\\u00w\\u000w")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }

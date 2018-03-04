@@ -28,7 +28,7 @@ internal class FlowArrayItemsReader<out P>(
                 '\'' -> {
                     read()
                     StringInSingleQuoteReader(this.yamlReader, this) {
-                        JsonToken.ArrayValue(it)
+                        JsonToken.Value(it)
                     }.let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -37,7 +37,7 @@ internal class FlowArrayItemsReader<out P>(
                 '\"' -> {
                     read()
                     StringInDoubleQuoteReader(this.yamlReader, this) {
-                        JsonToken.ArrayValue(it)
+                        JsonToken.Value(it)
                     }.let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -83,7 +83,7 @@ internal class FlowArrayItemsReader<out P>(
             startWith,
             PlainStyleMode.FLOW_COLLECTION
         ) {
-            JsonToken.ArrayValue(it)
+            JsonToken.Value(it)
         }.let {
             this.currentReader = it
             it.readUntilToken()

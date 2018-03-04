@@ -167,7 +167,7 @@ internal class DocumentReader(
             lineReader,
             char
         ) {
-            JsonToken.ObjectValue(it)
+            JsonToken.Value(it)
         }.let {
             this.currentReader = it
             it.readUntilToken()

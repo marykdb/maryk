@@ -2,9 +2,8 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
-import maryk.core.json.testForArrayValue
 import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForObjectValue
+import maryk.core.json.testForValue
 import kotlin.test.Test
 
 class FoldedStringReaderTest {
@@ -38,7 +37,7 @@ class FoldedStringReaderTest {
             | >7
             |         test
         """.trimMargin())
-        testForObjectValue(reader, "  test\n")
+        testForValue(reader, "  test\n")
     }
 
     @Test
@@ -59,7 +58,7 @@ class FoldedStringReaderTest {
         | last
         | line
         """.trimMargin())
-        testForObjectValue(reader, "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n");
+        testForValue(reader, "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n")
     }
 
     @Test
@@ -71,8 +70,8 @@ class FoldedStringReaderTest {
             |  test2
         """.trimMargin())
         testForArrayStart(reader)
-        testForArrayValue(reader, "test\n")
-        testForArrayValue(reader, "test2\n")
+        testForValue(reader, "test\n")
+        testForValue(reader, "test2\n")
         testForArrayEnd(reader)
     }
 
@@ -103,7 +102,7 @@ class FoldedStringReaderTest {
             |
             |
         """.trimMargin())
-        testForObjectValue(reader, "test")
+        testForValue(reader, "test")
     }
 
     @Test
@@ -114,7 +113,7 @@ class FoldedStringReaderTest {
             |
             |
         """.trimMargin())
-        testForObjectValue(reader, "test\n\n")
+        testForValue(reader, "test\n\n")
     }
 
     @Test
@@ -125,7 +124,7 @@ class FoldedStringReaderTest {
             |
             |
         """.trimMargin())
-        testForObjectValue(reader, "test\n")
+        testForValue(reader, "test\n")
     }
 
     @Test
@@ -147,10 +146,10 @@ class FoldedStringReaderTest {
             |   test4
         """.trimMargin())
         testForArrayStart(reader)
-        testForArrayValue(reader, "test1\n")
-        testForArrayValue(reader, "test2\n\n\n")
-        testForArrayValue(reader, "test3")
-        testForArrayValue(reader, "test4")
+        testForValue(reader, "test1\n")
+        testForValue(reader, "test2\n\n\n")
+        testForValue(reader, "test3")
+        testForValue(reader, "test4")
         testForArrayEnd(reader)
     }
 }

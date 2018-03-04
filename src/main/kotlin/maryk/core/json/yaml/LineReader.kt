@@ -8,8 +8,7 @@ import maryk.core.json.JsonToken
 internal class LineReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    private var indentToAdd: Int = 0,
-    private var isInsideArray: Boolean = false
+    private var indentToAdd: Int = 0
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -187,7 +186,7 @@ internal class LineReader<out P>(
             if (!this.isExplicitMap) {
                 this.indentToAdd -= 1
             }
-            return JsonToken.ObjectValue(value)
+            return JsonToken.Value(value)
         } else {
             skipWhiteSpace()
             if (this.lastChar == ':') {
@@ -209,11 +208,7 @@ internal class LineReader<out P>(
             }
         }
 
-        return if (this.isInsideArray) {
-            JsonToken.ArrayValue(value)
-        } else {
-            JsonToken.ObjectValue(value)
-        }
+        return JsonToken.Value(value)
     }
 
     private fun plainStringReader(startWith: String): JsonToken {

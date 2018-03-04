@@ -2,12 +2,11 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
-import maryk.core.json.testForArrayValue
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
-import maryk.core.json.testForObjectValue
+import maryk.core.json.testForValue
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
@@ -22,13 +21,13 @@ class MappingReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
-        testForObjectValue(reader, "value2")
+        testForValue(reader, "value2")
         testForFieldName(reader, "key3")
-        testForObjectValue(reader, "value3")
+        testForValue(reader, "value3")
         testForFieldName(reader, "key4")
-        testForObjectValue(reader, "value4")
+        testForValue(reader, "value4")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -48,11 +47,11 @@ class MappingReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
-        testForObjectValue(reader, "value2")
+        testForValue(reader, "value2")
         testForFieldName(reader, "key3")
-        testForObjectValue(reader, "value3")
+        testForValue(reader, "value3")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -65,9 +64,9 @@ class MappingReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
-        testForObjectValue(reader, "value2")
+        testForValue(reader, "value2")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -81,7 +80,7 @@ class MappingReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
         shouldThrow<InvalidYamlContent> {
             reader.nextToken()
@@ -99,16 +98,16 @@ class MappingReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
         testForObjectStart(reader)
         testForFieldName(reader, "key3")
-        testForObjectValue(reader, "value3")
+        testForValue(reader, "value3")
         testForFieldName(reader, "key4")
-        testForObjectValue(reader, "value4")
+        testForValue(reader, "value4")
         testForObjectEnd(reader)
         testForFieldName(reader, "key5")
-        testForObjectValue(reader, "value5")
+        testForValue(reader, "value5")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -124,14 +123,14 @@ class MappingReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
-        testForObjectValue(reader, "value1")
+        testForValue(reader, "value1")
         testForFieldName(reader, "key2")
         testForArrayStart(reader)
-        testForArrayValue(reader, "hey")
-        testForArrayValue(reader, "hoi")
+        testForValue(reader, "hey")
+        testForValue(reader, "hoi")
         testForArrayEnd(reader)
         testForFieldName(reader, "key5")
-        testForObjectValue(reader, "value5")
+        testForValue(reader, "value5")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }

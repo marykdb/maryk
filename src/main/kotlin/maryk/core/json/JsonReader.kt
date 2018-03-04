@@ -44,17 +44,21 @@ class JsonReader(
                     if (lastChar == ']') {
                         endArray()
                     } else {
-                        readValue({ JsonToken.ArrayValue(it) })
+                        readValue({ JsonToken.Value(it) })
                     }
                 }
                 JsonToken.EndArray -> {
                     continueComplexRead()
                 }
                 is JsonToken.FieldName -> {
-                    readValue({ JsonToken.ObjectValue(it) })
+                    readValue({ JsonToken.Value(it) })
                 }
-                is JsonToken.ObjectValue -> {
-                    readObject()
+                is JsonToken.Value<*> -> {
+                    if (typeStack.last() == JsonComplexType.OBJECT) {
+                        readObject()
+                    } else {
+                        readArray()
+                    }
                 }
                 JsonToken.ObjectSeparator -> {
                     when(lastChar) {
@@ -62,11 +66,8 @@ class JsonReader(
                         else -> throwJsonException()
                     }
                 }
-                is JsonToken.ArrayValue -> {
-                    readArray()
-                }
                 JsonToken.ArraySeparator -> {
-                    readValue({ JsonToken.ArrayValue(it) })
+                    readValue({ JsonToken.Value(it) })
                 }
                 is JsonToken.Suspended -> {
                     (currentToken as JsonToken.Suspended).let {

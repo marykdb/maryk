@@ -4,7 +4,7 @@ import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
-import maryk.core.json.testForObjectValue
+import maryk.core.json.testForValue
 import kotlin.test.Test
 
 class ExplicitMapKeyReaderTest {
@@ -13,7 +13,7 @@ class ExplicitMapKeyReaderTest {
         val reader = createYamlReader("?")
         testForObjectStart(reader)
         testForFieldName(reader, null)
-        testForObjectValue(reader, null)
+        testForValue(reader, null)
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -26,7 +26,7 @@ class ExplicitMapKeyReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, null)
-        testForObjectValue(reader, "value")
+        testForValue(reader, "value")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -39,9 +39,9 @@ class ExplicitMapKeyReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, null)
-        testForObjectValue(reader, null)
+        testForValue(reader, null)
         testForFieldName(reader, "key")
-        testForObjectValue(reader, "value")
+        testForValue(reader, "value")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -54,7 +54,7 @@ class ExplicitMapKeyReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key")
-        testForObjectValue(reader, "value")
+        testForValue(reader, "value")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -68,7 +68,7 @@ class ExplicitMapKeyReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key with more lines")
-        testForObjectValue(reader, "value")
+        testForValue(reader, "value")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }

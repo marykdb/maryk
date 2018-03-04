@@ -1,7 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForObjectValue
+import maryk.core.json.testForValue
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -13,7 +13,7 @@ class DirectiveReaderTest {
         |---
         |test
         """.trimMargin())
-        testForObjectValue(reader, "test")
+        testForValue(reader, "test")
     }
 
     @Test
@@ -43,7 +43,7 @@ class DirectiveReaderTest {
         |---
         |test
         """.trimMargin())
-        testForObjectValue(reader, "test")
+        testForValue(reader, "test")
     }
 
     @Test
@@ -58,7 +58,7 @@ class DirectiveReaderTest {
         |test
         """.trimMargin()) as YamlReaderImpl
 
-        testForObjectValue(reader, "test")
+        testForValue(reader, "test")
 
         reader.tags["!"] shouldBe "tag:maryk.io,2018:"
         reader.tags["!!"] shouldBe "tag:maryk.io,2016:"

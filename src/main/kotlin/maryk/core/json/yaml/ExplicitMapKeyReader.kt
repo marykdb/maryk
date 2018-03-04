@@ -156,7 +156,7 @@ internal class ExplicitMapKeyReader<out P>(
         }
         ExplicitMapKeyState.VALUE -> {
             this.state = ExplicitMapKeyState.END
-            JsonToken.ObjectValue(null)
+            JsonToken.Value(null)
         }
         ExplicitMapKeyState.END -> {
             this.state = ExplicitMapKeyState.DONE

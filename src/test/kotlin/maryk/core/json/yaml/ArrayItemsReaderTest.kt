@@ -2,9 +2,9 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
-import maryk.core.json.testForArrayValue
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForInvalidJson
+import maryk.core.json.testForValue
 import kotlin.test.Test
 
 class ArrayItemsReaderTest {
@@ -16,9 +16,9 @@ class ArrayItemsReaderTest {
             |     - "another one"
         """.trimMargin())
         testForArrayStart(reader)
-        testForArrayValue(reader, "test")
-        testForArrayValue(reader, "hey")
-        testForArrayValue(reader, "another one")
+        testForValue(reader, "test")
+        testForValue(reader, "hey")
+        testForValue(reader, "another one")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -33,9 +33,9 @@ class ArrayItemsReaderTest {
             |     - "another one"
         """.trimMargin())
         testForArrayStart(reader)
-        testForArrayValue(reader, "test")
-        testForArrayValue(reader, "hey")
-        testForArrayValue(reader, "another one")
+        testForValue(reader, "test")
+        testForValue(reader, "hey")
+        testForValue(reader, "another one")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -53,20 +53,20 @@ class ArrayItemsReaderTest {
             |     - "and back again"
         """.trimMargin())
         testForArrayStart(reader)
-        testForArrayValue(reader, "test")
-        testForArrayValue(reader, "hey")
-        testForArrayValue(reader, "another one")
+        testForValue(reader, "test")
+        testForValue(reader, "hey")
+        testForValue(reader, "another one")
         testForArrayStart(reader)
-        testForArrayValue(reader, "deeper")
+        testForValue(reader, "deeper")
         testForArrayStart(reader)
-        testForArrayValue(reader, "hey")
+        testForValue(reader, "hey")
         testForArrayEnd(reader)
-        testForArrayValue(reader, "and deeper")
+        testForValue(reader, "and deeper")
         testForArrayStart(reader)
-        testForArrayValue(reader, "hey2")
+        testForValue(reader, "hey2")
         testForArrayEnd(reader)
         testForArrayEnd(reader)
-        testForArrayValue(reader, "and back again")
+        testForValue(reader, "and back again")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -80,10 +80,10 @@ class ArrayItemsReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
-        testForArrayValue(reader, "test")
-        testForArrayValue(reader, "hey")
+        testForValue(reader, "test")
+        testForValue(reader, "hey")
         testForArrayEnd(reader)
-        testForArrayValue(reader, "another one")
+        testForValue(reader, "another one")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -95,7 +95,7 @@ class ArrayItemsReaderTest {
             |     "wrong"
         """.trimMargin())
         testForArrayStart(reader)
-        testForArrayValue(reader, "test")
+        testForValue(reader, "test")
         testForInvalidJson(reader)
     }
 
@@ -106,7 +106,7 @@ class ArrayItemsReaderTest {
             |  - 'hey'
         """.trimMargin())
         testForArrayStart(reader)
-        testForArrayValue(reader, "test")
+        testForValue(reader, "test")
         testForArrayEnd(reader)
         testForInvalidJson(reader)
     }

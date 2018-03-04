@@ -1,7 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForObjectValue
+import maryk.core.json.testForValue
 import kotlin.test.Test
 
 class IndentReaderTest {
@@ -10,7 +10,7 @@ class IndentReaderTest {
         val reader = createYamlReader("""
             |     'test'
         """.trimMargin())
-        testForObjectValue(reader, "test")
+        testForValue(reader, "test")
         testForDocumentEnd(reader)
     }
 }

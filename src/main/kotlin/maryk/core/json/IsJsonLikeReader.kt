@@ -15,9 +15,8 @@ sealed class ArrayType {
 sealed class JsonToken(val name: String) {
     object StartDocument : JsonToken("StartDocument")
 
-    open class StartObject : JsonToken("StartObject")
-    object SimpleStartObject : StartObject()
-    class StartObjectWithType(val type: ObjectType) : StartObject()
+    open class StartObject(val type: ObjectType) : JsonToken("StartObject")
+    object SimpleStartObject : StartObject(ObjectType.Map)
 
     object EndObject : JsonToken("EndObject")
 
@@ -25,9 +24,8 @@ sealed class JsonToken(val name: String) {
     object ObjectSeparator : JsonToken("ObjectSeparator")
     class Value<out T: Any>(val value: T?) : JsonToken("Value")
 
-    open class StartArray : JsonToken("StartArray")
-    object SimpleStartArray : StartArray()
-    class StartArrayWithType(val type: ArrayType) : StartArray()
+    open class StartArray(val type: ArrayType) : JsonToken("StartArray")
+    object SimpleStartArray : StartArray(type = ArrayType.Array)
 
     object ArraySeparator : JsonToken("ArraySeparator")
     object EndArray : JsonToken("EndArray")

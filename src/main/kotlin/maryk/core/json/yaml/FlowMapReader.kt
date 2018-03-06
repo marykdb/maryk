@@ -48,7 +48,7 @@ internal class FlowMapItemsReader<out P>(
                 }
                 '[' -> {
                     read()
-                    FlowArrayItemsReader(
+                    FlowSequenceReader(
                         yamlReader = this.yamlReader,
                         parentReader = this
                     ).let {

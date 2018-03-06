@@ -7,7 +7,7 @@ import maryk.core.json.testForInvalidJson
 import maryk.core.json.testForValue
 import kotlin.test.Test
 
-class FlowArrayItemsReaderTest {
+class FlowSequenceReaderTest {
     @Test
     fun read_array_items() {
         val reader = createYamlReader("""

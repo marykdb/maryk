@@ -10,7 +10,7 @@ import maryk.core.json.testForObjectStart
 import maryk.core.json.testForValue
 import kotlin.test.Test
 
-class FlowMapItemsReaderTest {
+class FlowMapReaderTest {
     @Test
     fun read_map_items() {
         val reader = createYamlReader("""

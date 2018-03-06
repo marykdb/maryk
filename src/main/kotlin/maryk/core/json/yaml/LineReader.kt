@@ -64,7 +64,7 @@ internal class LineReader<out P>(
             }
             '[' -> {
                 read()
-                FlowArrayItemsReader(
+                FlowSequenceReader(
                     yamlReader = this.yamlReader,
                     parentReader = this
                 ).let {

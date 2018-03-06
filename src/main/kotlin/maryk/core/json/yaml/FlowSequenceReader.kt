@@ -2,8 +2,8 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 
-/** Reader for flow Array Items [item1, item2, item3] */
-internal class FlowArrayItemsReader<out P>(
+/** Reader for flow sequences [item1, item2, item3] */
+internal class FlowSequenceReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
@@ -45,7 +45,7 @@ internal class FlowArrayItemsReader<out P>(
                 }
                 '[' -> {
                     read()
-                    FlowArrayItemsReader(
+                    FlowSequenceReader(
                         yamlReader = this.yamlReader,
                         parentReader = this
                     ).let {

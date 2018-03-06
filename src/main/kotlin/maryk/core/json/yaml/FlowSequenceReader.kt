@@ -58,7 +58,7 @@ internal class FlowSequenceReader<out P>(
                     if (this.lastChar.isWhitespace()) {
                         throw InvalidYamlContent("Expected a comma")
                     } else {
-                        TODO("simple string reader or fail")
+                        this.plainStringReader("-")
                     }
                 }
                 ',' -> {

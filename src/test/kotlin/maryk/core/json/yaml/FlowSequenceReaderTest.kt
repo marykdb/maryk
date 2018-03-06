@@ -44,13 +44,13 @@ class FlowSequenceReaderTest {
             |     - [test1
             |      longer
             |      and longer,
-            |       test2,
+            |       -test2,
             |       test3]
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
         testForValue(reader, "test1 longer and longer")
-        testForValue(reader, "test2")
+        testForValue(reader, "-test2")
         testForValue(reader, "test3")
         testForArrayEnd(reader)
         testForArrayEnd(reader)

@@ -46,6 +46,12 @@ internal class FlowMapItemsReader<out P>(
                         it.readUntilToken()
                     }
                 }
+                '!' -> {
+                    TagReader(this.yamlReader, this).let {
+                        this.currentReader = it
+                        it.readUntilToken()
+                    }
+                }
                 '[' -> {
                     read()
                     FlowSequenceReader(

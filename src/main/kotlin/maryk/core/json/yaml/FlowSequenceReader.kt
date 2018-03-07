@@ -53,6 +53,12 @@ internal class FlowSequenceReader<out P>(
                         it.readUntilToken()
                     }
                 }
+                '!' -> {
+                    TagReader(this.yamlReader, this).let {
+                        this.currentReader = it
+                        it.readUntilToken()
+                    }
+                }
                 '-' -> {
                     read()
                     if (this.lastChar.isWhitespace()) {

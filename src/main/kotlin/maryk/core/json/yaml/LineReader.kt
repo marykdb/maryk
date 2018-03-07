@@ -110,7 +110,10 @@ internal class LineReader<out P>(
                 }
             }
             '!' -> {
-                TODO("Not supported yet")
+                TagReader(this.yamlReader, this).let {
+                    this.currentReader = it
+                    it.readUntilToken()
+                }
             }
             '@', '`' -> {
                 throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")

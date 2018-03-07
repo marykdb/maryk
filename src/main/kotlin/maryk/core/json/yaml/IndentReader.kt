@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Reads indents on a new line until a char is found */
 internal class IndentReader<out P>(
@@ -29,6 +30,8 @@ internal class IndentReader<out P>(
             this.currentReader = it
             it.readUntilToken()
         }
+
+    override fun setTag(tag: TokenType) = this.parentReader.setTag(tag)
 
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {

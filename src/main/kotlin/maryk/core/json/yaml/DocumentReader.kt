@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Read a complete yaml document until end stream or "..." */
 internal class DocumentReader(
@@ -13,6 +14,12 @@ internal class DocumentReader(
     private var mapKeyFound: Boolean = false
 
     private var contentWasFound = false
+
+    private var tag: TokenType? = null
+
+    override fun setTag(tag: TokenType) {
+        this.tag = tag
+    }
 
     override fun readUntilToken(): JsonToken {
         if(this.lastChar == '\u0000') {

@@ -5,10 +5,16 @@ import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.InvalidJsonContent
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
+import maryk.core.json.ValueType
 
 @Suppress("FunctionName")
-fun YamlReader(reader: () -> Char) : IsJsonLikeReader =
-    YamlReaderImpl(reader)
+fun YamlReader(
+    defaultTag: String? = null,
+    tagMap: Map<String, Map<String, TokenType>>? = null,
+    reader: () -> Char
+) : IsJsonLikeReader =
+    YamlReaderImpl(reader, defaultTag, tagMap)
 
 /** Internal interface for the Yaml Reader functionality */
 internal interface IsYamlReader {
@@ -21,9 +27,19 @@ internal interface IsYamlReader {
     fun read()
 }
 
+internal interface YamlValueType: ValueType {
+    object Binary: YamlValueType
+    object Merge: YamlValueType
+    object TimeStamp: YamlValueType
+    object Value: YamlValueType //Default value
+    object Yaml: YamlValueType
+}
+
 /** Reads YAML from the supplied [reader] */
 internal class YamlReaderImpl(
-    private val reader: () -> Char
+    private val reader: () -> Char,
+    private val defaultTag: String? = null,
+    tagMap: Map<String, Map<String, TokenType>>? = null
 ) : IsJsonLikeReader, IsYamlReader {
     var version: String? = null
 
@@ -35,6 +51,33 @@ internal class YamlReaderImpl(
     private var unclaimedIndenting: Int? = null
     private var hasException: Boolean = false
     internal val tags: MutableMap<String, String> = mutableMapOf()
+
+    private val tagMap: MutableMap<String, Map<String, TokenType>> = mutableMapOf(
+        "tag:yaml.org,2002:" to mapOf(
+            "str" to ValueType.String,
+            "bool" to ValueType.Bool,
+            "null" to ValueType.Null,
+            "float" to ValueType.Float,
+            "int" to ValueType.Int,
+            "yaml" to YamlValueType.Yaml,
+            "value" to YamlValueType.Value,
+            "merge" to YamlValueType.Merge,
+            "binary" to YamlValueType.Binary,
+            "timestamp" to YamlValueType.TimeStamp
+        )
+    )
+
+    init {
+        // Add all passed items to internal tag map
+        tagMap?.let {
+            if (!tagMap.contains(defaultTag)) {
+                throw Exception("Default tag should be defined in tag map")
+            }
+            tagMap.map {
+                this.tagMap[it.key] = it.value
+            }
+        }
+    }
 
     override fun nextToken(): JsonToken {
         if (this.hasException) {
@@ -104,6 +147,46 @@ internal class YamlReaderImpl(
 
     fun hasUnclaimedIndenting(indentCount: Int?) {
         this.unclaimedIndenting = indentCount
+    }
+
+    fun resolveTag(prefix: String, tag: String): TokenType {
+        return when {
+            prefix == "!" && tag.startsWith('<') && tag.endsWith('>') -> {
+                val realTag = tag.removeSurrounding("<", ">")
+                if (!realTag.contains(':')) {
+                    throw InvalidYamlContent("Invalid tag $tag")
+                }
+
+                val indexOfColon = realTag.lastIndexOf(':') + 1
+
+                this.tagMap[
+                        realTag.substring(0, indexOfColon)
+                ]?.get(realTag.substring(indexOfColon))
+                        ?: throw InvalidYamlContent("Unknown $tag")
+            }
+            this.tags.containsKey(prefix) -> {
+                val resolvedPrefix = this.tags[prefix]!!
+
+                if (resolvedPrefix.startsWith("!")) {
+                    return this.resolveTag(
+                        "!",
+                        resolvedPrefix.removePrefix("!") + tag
+                    )
+                }
+
+                this.tagMap[resolvedPrefix]?.get(tag)
+                        ?: throw InvalidYamlContent("Unknown tag $resolvedPrefix$tag")
+            }
+            prefix == "!" && !this.defaultTag.isNullOrEmpty() -> {
+                this.tagMap[this.defaultTag]?.get(tag)
+                        ?: throw InvalidYamlContent("Unknown tag $prefix$tag")
+            }
+            prefix == "!!" -> {
+                this.tagMap["tag:yaml.org,2002:"]?.get(tag)
+                        ?: throw InvalidYamlContent("Unknown tag $prefix$tag")
+            }
+            else -> throw InvalidYamlContent("Unknown tag prefix $prefix")
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 internal enum class PlainStyleMode {
     NORMAL, FLOW_COLLECTION, FLOW_MAP
@@ -94,6 +95,8 @@ internal class PlainStringReader<out P>(
             }
         }
     }
+
+    override fun setTag(tag: TokenType) = this.parentReader.setTag(tag)
 
     private fun storeCharAndProceed() {
         this.storedValue += lastChar

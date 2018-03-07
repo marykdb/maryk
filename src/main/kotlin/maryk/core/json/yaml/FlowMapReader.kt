@@ -1,6 +1,8 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
+import maryk.core.json.ValueType
 
 private enum class FlowMapMode {
     START, KEY, VALUE, SEPARATOR, STOP
@@ -16,8 +18,9 @@ internal class FlowMapItemsReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var mode = FlowMapMode.START
+    private var tag: TokenType? = null
 
+    private var mode = FlowMapMode.START
     override fun readUntilToken(): JsonToken {
         return if (this.mode == FlowMapMode.START) {
             this.mode = FlowMapMode.KEY
@@ -101,6 +104,10 @@ internal class FlowMapItemsReader<out P>(
         }
     }
 
+    override fun setTag(tag: TokenType) {
+        this.tag = tag
+    }
+
     private fun constructToken(value: String?) = when(mode) {
         FlowMapMode.START -> throw InvalidYamlContent("Map cannot be in start mode")
         FlowMapMode.KEY -> {
@@ -109,7 +116,7 @@ internal class FlowMapItemsReader<out P>(
         }
         FlowMapMode.VALUE -> {
             this.mode = FlowMapMode.SEPARATOR
-            JsonToken.Value(value)
+            this.createValueToken(value)
         }
         FlowMapMode.SEPARATOR -> {
             // If last mode was separator next one will be key
@@ -134,6 +141,15 @@ internal class FlowMapItemsReader<out P>(
             this.currentReader = it
             it.readUntilToken()
         }
+    }
+
+    private fun <T: Any> createValueToken(value: T?): JsonToken.Value<T> {
+        return this.tag?.let {
+            if (it !is ValueType) {
+                throw InvalidYamlContent("Cannot use non value tag with value $value")
+            }
+            JsonToken.Value(value, it)
+        } ?: JsonToken.Value(value)
     }
 
     override fun childIsDoneReading() {

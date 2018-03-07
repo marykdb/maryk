@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 private enum class ExplicitMapKeyState {
     QUESTION, KEY, VALUE, END, DONE
@@ -20,6 +21,7 @@ internal class ExplicitMapKeyReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var state: ExplicitMapKeyState = ExplicitMapKeyState.QUESTION
+    private var tag: TokenType? = null
 
     override fun readUntilToken(): JsonToken {
         if(this.state == ExplicitMapKeyState.QUESTION) {
@@ -63,6 +65,10 @@ internal class ExplicitMapKeyReader<out P>(
             this.currentReader = it
             it.readUntilToken()
         }
+    }
+
+    override fun setTag(tag: TokenType) {
+        this.tag = tag
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren()

@@ -1,15 +1,22 @@
 package maryk.core.json
 
-sealed class ObjectType {
-    object Map: ObjectType()
-    object OrderedMap: ObjectType()
-    class Custom(val type: String): ObjectType()
+interface TokenType
+interface ValueType : TokenType {
+    object String: ValueType
+    object Null: ValueType
+    object Bool: ValueType
+    object Int: ValueType
+    object Float: ValueType
 }
-
-sealed class ArrayType {
-    object Array: ArrayType()
-    object Set: ArrayType()
-    class Custom(val type: String): ArrayType()
+interface ArrayType : TokenType {
+    object Sequence: ArrayType
+    object Set: ArrayType
+}
+interface ObjectType : TokenType {
+    object Map: ObjectType
+    object OrderedMap: ObjectType
+    object Pairs: ObjectType
+    class Custom(val type: String): ObjectType
 }
 
 sealed class JsonToken(val name: String) {
@@ -22,10 +29,10 @@ sealed class JsonToken(val name: String) {
 
     class FieldName(val value: String?) : JsonToken("FieldName")
     object ObjectSeparator : JsonToken("ObjectSeparator")
-    class Value<out T: Any>(val value: T?) : JsonToken("Value")
+    class Value<out T: Any>(val value: T?, val type: ValueType = ValueType.String) : JsonToken("Value")
 
     open class StartArray(val type: ArrayType) : JsonToken("StartArray")
-    object SimpleStartArray : StartArray(type = ArrayType.Array)
+    object SimpleStartArray : StartArray(type = ArrayType.Sequence)
 
     object ArraySeparator : JsonToken("ArraySeparator")
     object EndArray : JsonToken("EndArray")

@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Yaml Character reader which uses the state in YamlReader to read until next token */
 internal abstract class YamlCharReader(
@@ -47,4 +48,5 @@ internal interface IsYamlCharWithIndentsReader {
 /** An interface for a Yaml char reader with children so children can call it when it is done*/
 internal interface IsYamlCharWithChildrenReader {
     fun childIsDoneReading()
+    fun setTag(tag: TokenType)
 }

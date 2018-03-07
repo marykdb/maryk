@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Reader for Array Items */
 internal class ArrayItemsReader<out P>(
@@ -14,6 +15,8 @@ internal class ArrayItemsReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
+    override fun setTag(tag: TokenType) = this.parentReader.setTag(tag)
+
     private var isStarted = false
 
     override fun readUntilToken(): JsonToken {

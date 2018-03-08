@@ -44,14 +44,14 @@ class JsonReader(
                     if (lastChar == ']') {
                         endArray()
                     } else {
-                        readValue({ JsonToken.Value(it) })
+                        readValue(this::constructJsonValueToken)
                     }
                 }
                 JsonToken.EndArray -> {
                     continueComplexRead()
                 }
                 is JsonToken.FieldName -> {
-                    readValue({ JsonToken.Value(it) })
+                    readValue(this::constructJsonValueToken)
                 }
                 is JsonToken.Value<*> -> {
                     if (typeStack.last() == JsonComplexType.OBJECT) {
@@ -67,7 +67,7 @@ class JsonReader(
                     }
                 }
                 JsonToken.ArraySeparator -> {
-                    readValue({ JsonToken.Value(it) })
+                    readValue(this::constructJsonValueToken)
                 }
                 is JsonToken.Suspended -> {
                     (currentToken as JsonToken.Suspended).let {
@@ -94,6 +94,11 @@ class JsonReader(
 
         return currentToken
     }
+
+    private fun constructJsonValueToken(it: String?) =
+        it?.let {
+            JsonToken.Value(it, ValueType.String)
+        } ?: JsonToken.Value(null, ValueType.Null)
 
     override fun skipUntilNextField() {
         val currentDepth = typeStack.count()

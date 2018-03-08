@@ -4,7 +4,6 @@ import maryk.core.extensions.isLineBreak
 import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
-import maryk.core.json.ValueType
 
 /** Reads Lines with actual non whitespace chars */
 internal class LineReader<out P>(
@@ -197,7 +196,7 @@ internal class LineReader<out P>(
             if (!this.isExplicitMap) {
                 this.indentToAdd -= 1
             }
-                return createValueToken(value)
+                return createYamlValueToken(value, this.tag)
         } else {
             skipWhiteSpace()
             if (this.lastChar == ':') {
@@ -219,16 +218,7 @@ internal class LineReader<out P>(
             }
         }
 
-        return createValueToken(value)
-    }
-
-    private fun createValueToken(value: String?): JsonToken.Value<String> {
-        return this.tag?.let {
-            if (it !is ValueType) {
-                throw InvalidYamlContent("Cannot use non value tag with value $value")
-            }
-            JsonToken.Value(value, it)
-        } ?: JsonToken.Value(value)
+        return createYamlValueToken(value, this.tag)
     }
 
     private fun plainStringReader(startWith: String): JsonToken {

@@ -3,6 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.core.json.ValueType
 
 private enum class ExplicitMapKeyState {
     QUESTION, KEY, VALUE, END, DONE
@@ -162,7 +163,7 @@ internal class ExplicitMapKeyReader<out P>(
         }
         ExplicitMapKeyState.VALUE -> {
             this.state = ExplicitMapKeyState.END
-            JsonToken.Value(null)
+            JsonToken.Value(null, ValueType.String)
         }
         ExplicitMapKeyState.END -> {
             this.state = ExplicitMapKeyState.DONE

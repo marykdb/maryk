@@ -7,7 +7,7 @@ import kotlin.test.fail
 
 internal fun testForDocumentStart(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
-        if (this !is JsonToken.StartDocument) {
+        if (this !== JsonToken.StartDocument) {
             fail("$this should be document start")
         }
     }
@@ -23,7 +23,7 @@ internal fun testForObjectStart(reader: IsJsonLikeReader) {
 
 internal fun testForObjectEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
-        if (this !is JsonToken.EndObject) {
+        if (this !== JsonToken.EndObject) {
             fail("$this should be object end")
         }
     }
@@ -47,13 +47,13 @@ internal fun testForArrayStart(reader: IsJsonLikeReader) {
 
 internal fun testForArrayEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
-        if (this !is JsonToken.EndArray) {
+        if (this !== JsonToken.EndArray) {
             fail("$this should be array end")
         }
     }
 }
 
-internal fun testForValue(reader: IsJsonLikeReader, value: Any?, type: ValueType? = null) {
+internal fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: T? = null) {
     reader.nextToken().apply {
         if (this is JsonToken.Value<*>) {
             this.value shouldBe value
@@ -67,7 +67,7 @@ internal fun testForValue(reader: IsJsonLikeReader, value: Any?, type: ValueType
 
 internal fun testForDocumentEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
-        if (this !is JsonToken.EndDocument) {
+        if (this !== JsonToken.EndDocument) {
             fail("$this should be End Document")
         }
     }

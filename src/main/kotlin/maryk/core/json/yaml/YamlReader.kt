@@ -7,6 +7,7 @@ import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
+import maryk.core.properties.types.DateTime
 
 @Suppress("FunctionName")
 fun YamlReader(
@@ -27,12 +28,25 @@ internal interface IsYamlReader {
     fun read()
 }
 
-internal interface YamlValueType: ValueType {
-    object Binary: YamlValueType
-    object Merge: YamlValueType
-    object TimeStamp: YamlValueType
-    object Value: YamlValueType //Default value
-    object Yaml: YamlValueType
+internal interface YamlValueType<out T: Any>: ValueType<T> {
+    object Binary: YamlValueType<ByteArray>
+    object Merge: YamlValueType<Nothing>
+    object TimeStamp: YamlValueType<DateTime>
+    object Value: YamlValueType<Nothing> //Default value
+    object Yaml: YamlValueType<Nothing>
+}
+
+internal fun createYamlValueToken(value: String?, tag: TokenType?): JsonToken.Value<Any?> {
+    return tag?.let {
+        if (it !is ValueType<*>) {
+            throw InvalidYamlContent("Cannot use non value tag with value $value")
+        }
+        JsonToken.Value(value, it)
+    } ?: if (value == null) {
+        JsonToken.Value(null, ValueType.Null)
+    } else {
+        JsonToken.Value(value.toString(), ValueType.String)
+    }
 }
 
 /** Reads YAML from the supplied [reader] */
@@ -93,14 +107,14 @@ internal class YamlReaderImpl(
                     }
 
                     val remainder = it.indentCount() - this.unclaimedIndenting!!
-                    if (remainder > 0) {
-                        it.endIndentLevel(this.unclaimedIndenting!!)
-                    } else if (remainder == 0) {
-                        this.unclaimedIndenting = null
-                        it.continueIndentLevel()
-                    } else {
-                        // Indents are only left over on closing indents so should never be lower
-                        throw InvalidYamlContent("Lower indent found than previous started indents")
+                    when {
+                        remainder > 0 -> it.endIndentLevel(this.unclaimedIndenting!!)
+                        remainder == 0 -> {
+                            this.unclaimedIndenting = null
+                            it.continueIndentLevel()
+                        }
+                        else -> // Indents are only left over on closing indents so should never be lower
+                            throw InvalidYamlContent("Lower indent found than previous started indents")
                     }
                 } else {
                     it.readUntilToken()

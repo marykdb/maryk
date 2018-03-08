@@ -2,7 +2,6 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
-import maryk.core.json.ValueType
 
 private enum class FlowMapMode {
     START, KEY, VALUE, SEPARATOR, STOP
@@ -116,7 +115,7 @@ internal class FlowMapItemsReader<out P>(
         }
         FlowMapMode.VALUE -> {
             this.mode = FlowMapMode.SEPARATOR
-            this.createValueToken(value)
+            createYamlValueToken(value, this.tag)
         }
         FlowMapMode.SEPARATOR -> {
             // If last mode was separator next one will be key
@@ -141,15 +140,6 @@ internal class FlowMapItemsReader<out P>(
             this.currentReader = it
             it.readUntilToken()
         }
-    }
-
-    private fun <T: Any> createValueToken(value: T?): JsonToken.Value<T> {
-        return this.tag?.let {
-            if (it !is ValueType) {
-                throw InvalidYamlContent("Cannot use non value tag with value $value")
-            }
-            JsonToken.Value(value, it)
-        } ?: JsonToken.Value(value)
     }
 
     override fun childIsDoneReading() {

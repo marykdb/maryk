@@ -1,12 +1,12 @@
 package maryk.core.json
 
 interface TokenType
-interface ValueType : TokenType {
-    object String: ValueType
-    object Null: ValueType
-    object Bool: ValueType
-    object Int: ValueType
-    object Float: ValueType
+interface ValueType<out T: Any?> : TokenType {
+    object String: ValueType<String>
+    object Null: ValueType<Nothing>
+    object Bool: ValueType<Boolean>
+    object Int: ValueType<kotlin.Long>
+    object Float: ValueType<kotlin.Double>
 }
 interface ArrayType : TokenType {
     object Sequence: ArrayType
@@ -16,7 +16,6 @@ interface ObjectType : TokenType {
     object Map: ObjectType
     object OrderedMap: ObjectType
     object Pairs: ObjectType
-    class Custom(val type: String): ObjectType
 }
 
 sealed class JsonToken(val name: String) {
@@ -29,7 +28,7 @@ sealed class JsonToken(val name: String) {
 
     class FieldName(val value: String?) : JsonToken("FieldName")
     object ObjectSeparator : JsonToken("ObjectSeparator")
-    class Value<out T: Any>(val value: T?, val type: ValueType = ValueType.String) : JsonToken("Value")
+    class Value<out T: Any?>(val value: T, val type: ValueType<T>) : JsonToken("Value")
 
     open class StartArray(val type: ArrayType) : JsonToken("StartArray")
     object SimpleStartArray : StartArray(type = ArrayType.Sequence)
@@ -41,13 +40,13 @@ sealed class JsonToken(val name: String) {
     object EndDocument : Stopped("EndDocument")
     class Suspended(val lastToken: JsonToken, val storedValue: String?): Stopped("Stopped reader")
     class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
-    override fun toString() = if(this is Value<*>) {
-        this.value?.let {
+    override fun toString() = when {
+        this is Value<*> -> this.value.let {
             "$name(\"${this.value}\")"
-        } ?: "$name(null)"
-    } else if(this is FieldName ) {
-        "$name(\"${this.value}\")"
-    } else { name }
+        }
+        this is FieldName -> "$name(\"${this.value}\")"
+        else -> name
+    }
 }
 
 /** For JSON like readers to read String based structures. */

@@ -2,7 +2,6 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
-import maryk.core.json.ValueType
 
 /** Reader for flow sequences [item1, item2, item3] */
 internal class FlowSequenceReader<out P>(
@@ -31,7 +30,7 @@ internal class FlowSequenceReader<out P>(
                 '\'' -> {
                     read()
                     StringInSingleQuoteReader(this.yamlReader, this) {
-                        JsonToken.Value(it)
+                        createYamlValueToken(it, this.tag)
                     }.let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -40,7 +39,7 @@ internal class FlowSequenceReader<out P>(
                 '\"' -> {
                     read()
                     StringInDoubleQuoteReader(this.yamlReader, this) {
-                        JsonToken.Value(it)
+                        createYamlValueToken(it, this.tag)
                     }.let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -106,20 +105,11 @@ internal class FlowSequenceReader<out P>(
             startWith,
             PlainStyleMode.FLOW_COLLECTION
         ) {
-            createValueToken(it)
+            createYamlValueToken(it, this.tag)
         }.let {
             this.currentReader = it
             it.readUntilToken()
         }
-    }
-
-    private fun <T: Any> createValueToken(value: T?): JsonToken.Value<T> {
-        return this.tag?.let {
-            if (it !is ValueType) {
-                throw InvalidYamlContent("Cannot use non value tag with value $value")
-            }
-            JsonToken.Value(value, it)
-        } ?: JsonToken.Value(value)
     }
 
     override fun childIsDoneReading() {

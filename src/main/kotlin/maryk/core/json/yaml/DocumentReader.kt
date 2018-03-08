@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.core.json.ValueType
 
 /** Read a complete yaml document until end stream or "..." */
 internal class DocumentReader(
@@ -174,7 +175,7 @@ internal class DocumentReader(
             lineReader,
             char
         ) {
-            JsonToken.Value(it)
+            JsonToken.Value(it, ValueType.String)
         }.let {
             this.currentReader = it
             it.readUntilToken()

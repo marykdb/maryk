@@ -27,17 +27,17 @@ internal class JsonReaderTest {
         listOf(
             JsonToken.SimpleStartObject,
             JsonToken.FieldName("string"),
-            JsonToken.Value("hey"),
+            JsonToken.Value("hey", ValueType.String),
             JsonToken.FieldName("int"),
-            JsonToken.Value("4"),
+            JsonToken.Value("4", ValueType.String),
             JsonToken.FieldName("array"),
             JsonToken.SimpleStartArray,
-            JsonToken.Value("34"),
-            JsonToken.Value("2352"),
-            JsonToken.Value("3423"),
-            JsonToken.Value("true"),
-            JsonToken.Value("false"),
-            JsonToken.Value(null),
+            JsonToken.Value("34", ValueType.String),
+            JsonToken.Value("2352", ValueType.String),
+            JsonToken.Value("3423", ValueType.String),
+            JsonToken.Value("true", ValueType.String),
+            JsonToken.Value("false", ValueType.String),
+            JsonToken.Value(null, ValueType.Null),
             JsonToken.EndArray,
             JsonToken.FieldName("emptyArray"),
             JsonToken.SimpleStartArray,
@@ -45,19 +45,19 @@ internal class JsonReaderTest {
             JsonToken.FieldName("map"),
             JsonToken.SimpleStartObject,
             JsonToken.FieldName("12"),
-            JsonToken.Value("yes"),
+            JsonToken.Value("yes", ValueType.String),
             JsonToken.FieldName("10"),
-            JsonToken.Value("ahum"),
+            JsonToken.Value("ahum", ValueType.String),
             JsonToken.EndObject,
             JsonToken.FieldName("emptyMap"),
             JsonToken.SimpleStartObject,
             JsonToken.EndObject,
             JsonToken.FieldName("mixed"),
             JsonToken.SimpleStartArray,
-            JsonToken.Value("2"),
+            JsonToken.Value("2", ValueType.String),
             JsonToken.SimpleStartObject,
             JsonToken.FieldName("value"),
-            JsonToken.Value("subInMulti!"),
+            JsonToken.Value("subInMulti!", ValueType.String),
             JsonToken.EndObject,
             JsonToken.EndArray,
             JsonToken.EndObject
@@ -66,6 +66,7 @@ internal class JsonReaderTest {
                 this.name shouldBe token.name
                 if (this is JsonToken.Value<*>) {
                     this.value shouldBe (token as JsonToken.Value<*>).value
+                    this.type shouldBe token.type
                 }
             }
         }
@@ -140,15 +141,15 @@ internal class JsonReaderTest {
         val reader = JsonReader { input[index++] }
         listOf(
             JsonToken.SimpleStartArray,
-            JsonToken.Value("4"),
-            JsonToken.Value("4.723"),
-            JsonToken.Value("-0.123723"),
-            JsonToken.Value("4.723E50"),
-            JsonToken.Value("1.453E-4"),
-            JsonToken.Value("1.453E+53"),
-            JsonToken.Value("13453.442e4234"),
-            JsonToken.Value("53.442e-234"),
-            JsonToken.Value("53.442e+234"),
+            JsonToken.Value("4", ValueType.String),
+            JsonToken.Value("4.723", ValueType.String),
+            JsonToken.Value("-0.123723", ValueType.String),
+            JsonToken.Value("4.723E50", ValueType.String),
+            JsonToken.Value("1.453E-4", ValueType.String),
+            JsonToken.Value("1.453E+53", ValueType.String),
+            JsonToken.Value("13453.442e4234", ValueType.String),
+            JsonToken.Value("53.442e-234", ValueType.String),
+            JsonToken.Value("53.442e+234", ValueType.String),
             JsonToken.EndArray
         ). forEach { token ->
             reader.nextToken().apply {
@@ -228,11 +229,10 @@ internal class JsonReaderTest {
         reader.nextToken() shouldBe JsonToken.EndDocument
     }
 
-    internal fun createJsonReader(yaml: String): JsonReader {
-        val input = yaml
+    private fun createJsonReader(input: String): JsonReader {
         var index = 0
 
-        val reader = JsonReader {
+        return JsonReader {
             val b = input[index].also {
                 // JS platform returns a 0 control char when nothing can be read
                 if (it == '\u0000') {
@@ -242,7 +242,6 @@ internal class JsonReaderTest {
             index++
             b
         }
-        return reader
     }
 
     @Test

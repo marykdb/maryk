@@ -68,9 +68,9 @@ data class NumberDefinition<T: Comparable<T>>(
                     throw ParseException("$value not of expected type")
                 }
             }
-        } else if (value is Int && type is UnsignedNumberDescriptor<T>) {
+        } else if (value is Int) {
             type.ofInt(value)
-        } else if (value is Long && type is UnsignedNumberDescriptor<T>) {
+        } else if (value is Long) {
             type.ofLong(value)
         } else {
             null

@@ -25,6 +25,8 @@ object SInt8 : NumberDescriptor<Byte>(
     }
     override fun ofString(value: String) = value.toByte()
     override fun ofDouble(value: Double) = value.toByte()
+    override fun ofInt(value: Int) = value.toByte()
+    override fun ofLong(value: Long) = value.toByte()
     override fun createRandom() = Byte.random()
     override fun isOfType(value: Any) = value == Byte
 }

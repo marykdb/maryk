@@ -29,12 +29,12 @@ internal class JsonReaderTest {
         testForFieldName(reader, "string")
         testForValue(reader, "hey", ValueType.String)
         testForFieldName(reader, "int")
-        testForValue(reader, "4", ValueType.String)
+        testForValue(reader, 4, ValueType.Int)
         testForFieldName(reader, "array")
         testForArrayStart(reader)
-        testForValue(reader, "34", ValueType.String)
-        testForValue(reader, "2352", ValueType.String)
-        testForValue(reader, "3423", ValueType.String)
+        testForValue(reader, 34, ValueType.Int)
+        testForValue(reader, 2352, ValueType.Int)
+        testForValue(reader, 3423, ValueType.Int)
         testForValue(reader, true, ValueType.Bool)
         testForValue(reader, false, ValueType.Bool)
         testForValue(reader, null, ValueType.Null)
@@ -54,7 +54,7 @@ internal class JsonReaderTest {
         testForObjectEnd(reader)
         testForFieldName(reader, "mixed")
         testForArrayStart(reader)
-        testForValue(reader, "2", ValueType.String)
+        testForValue(reader, 2, ValueType.Int)
         testForObjectStart(reader)
         testForFieldName(reader, "value")
         testForValue(reader, "subInMulti!", ValueType.String)
@@ -117,7 +117,7 @@ internal class JsonReaderTest {
             4.723E50,
             1.453E-4,
             1.453E+53,
-            13453.442e4234,
+            13453.442e234,
             53.442e-234,
             53.442e+234
         ]"""
@@ -126,15 +126,15 @@ internal class JsonReaderTest {
         val reader = JsonReader { input[index++] }
 
         testForArrayStart(reader)
-        testForValue(reader, "4", ValueType.String)
-        testForValue(reader, "4.723", ValueType.String)
-        testForValue(reader, "-0.123723", ValueType.String)
-        testForValue(reader, "4.723E50", ValueType.String)
-        testForValue(reader, "1.453E-4", ValueType.String)
-        testForValue(reader, "1.453E+53", ValueType.String)
-        testForValue(reader, "13453.442e4234", ValueType.String)
-        testForValue(reader, "53.442e-234", ValueType.String)
-        testForValue(reader, "53.442e+234", ValueType.String)
+        testForValue(reader, 4, ValueType.Int)
+        testForValue(reader, 4.723, ValueType.Float)
+        testForValue(reader, -0.123723, ValueType.Float)
+        testForValue(reader, 4.723E50, ValueType.Float)
+        testForValue(reader, 1.453E-4, ValueType.Float)
+        testForValue(reader, 1.453E+53, ValueType.Float)
+        testForValue(reader, 13453.442e234, ValueType.Float)
+        testForValue(reader, 53.442e-234, ValueType.Float)
+        testForValue(reader, 53.442e+234, ValueType.Float)
         testForArrayEnd(reader)
 
         testForDocumentEnd(reader)

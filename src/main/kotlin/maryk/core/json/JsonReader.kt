@@ -100,6 +100,9 @@ class JsonReader(
                 null -> JsonToken.Value(null, ValueType.Null)
                 is Boolean -> JsonToken.Value(it, ValueType.Bool)
                 is String -> JsonToken.Value(it, ValueType.String)
+                is Double -> JsonToken.Value(it, ValueType.Float)
+                is Int -> JsonToken.Value(it, ValueType.Int)
+                is Long -> JsonToken.Value(it, ValueType.Int)
                 else -> JsonToken.Value(it.toString(), ValueType.String)
             }
 
@@ -174,7 +177,7 @@ class JsonReader(
         }
     }
 
-    private fun readNumber(startedWithMinus: Boolean, currentTokenCreator: (value: String?) -> JsonToken) {
+    private fun readNumber(startedWithMinus: Boolean, currentTokenCreator: (value: Any?) -> JsonToken) {
         fun addAndAdvance() {
             storedValue += lastChar
             read()
@@ -195,16 +198,17 @@ class JsonReader(
         }
 
         // Read fraction
-        if(lastChar == '.') {
+        val isFraction = if(lastChar == '.') {
             addAndAdvance()
             if (!lastChar.isDigit()) throwJsonException()
             do {
                 addAndAdvance()
             } while (lastChar.isDigit())
-        }
+            true
+        } else { false }
 
         // read exponent
-        if(lastChar in arrayOf('e', 'E')) {
+        val isExponent = if(lastChar in arrayOf('e', 'E')) {
             addAndAdvance()
             if(lastChar in arrayOf('+', '-')) {
                 addAndAdvance()
@@ -213,9 +217,16 @@ class JsonReader(
             do {
                 addAndAdvance()
             } while (lastChar.isDigit())
-        }
+            true
+        } else { false }
 
-        currentToken = currentTokenCreator(storedValue)
+        currentToken = if(isExponent || isFraction) {
+            currentTokenCreator(storedValue!!.toDouble())
+        } else if(storedValue!!.length < 10) {
+            currentTokenCreator(storedValue!!.toInt())
+        } else {
+            currentTokenCreator(storedValue!!.toLong())
+        }
 
         skipWhiteSpace()
     }

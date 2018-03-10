@@ -25,6 +25,8 @@ object SInt32 : NumberDescriptor<Int>(
     }
     override fun ofString(value: String) = value.toInt()
     override fun ofDouble(value: Double) = value.toInt()
+    override fun ofInt(value: Int) = value
+    override fun ofLong(value: Long) = value.toInt()
     override fun createRandom() = Int.random()
     override fun isOfType(value: Any) = value == Int
 }

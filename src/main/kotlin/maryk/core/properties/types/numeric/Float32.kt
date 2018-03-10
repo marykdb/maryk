@@ -17,6 +17,8 @@ object Float32 : NumberDescriptor<Float>(
     override fun writeTransportBytes(value: Float, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun ofString(value: String) = value.toFloat()
     override fun ofDouble(value: Double) = value.toFloat()
+    override fun ofInt(value: Int) = value.toFloat()
+    override fun ofLong(value: Long) = value.toFloat()
     override fun createRandom() = Float.random()
     override fun isOfType(value: Any) = value == Float
 }

@@ -7,7 +7,4 @@ abstract class UnsignedNumberDescriptor<T: Comparable<T>>(
     type: NumberType,
     internal val MIN_VALUE: T,
     internal val MAX_VALUE: T
-): NumberDescriptor<T>(size, WireType.VAR_INT, type) {
-    internal abstract fun ofInt(value: Int): T
-    internal abstract fun ofLong(value: Long): T
-}
+): NumberDescriptor<T>(size, WireType.VAR_INT, type)

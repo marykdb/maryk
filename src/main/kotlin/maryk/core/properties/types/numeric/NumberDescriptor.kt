@@ -15,5 +15,7 @@ abstract class NumberDescriptor<T: Comparable<T>> internal constructor(
     internal abstract fun readTransportBytes(reader: () -> Byte): T
     internal abstract fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
     internal abstract fun ofDouble(value: Double): T
+    internal abstract fun ofInt(value: Int): T
+    internal abstract fun ofLong(value: Long): T
     internal abstract fun isOfType(value: Any): Boolean
 }

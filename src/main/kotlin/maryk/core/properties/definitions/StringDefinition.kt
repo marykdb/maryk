@@ -52,6 +52,8 @@ data class StringDefinition(
 
     override fun fromString(string: String) = string
 
+    override fun fromNativeType(value: Any) = value as? String
+
     override fun validateWithRef(previousValue: String?, newValue: String?, refGetter: () -> IsPropertyReference<String, IsPropertyDefinition<String>>?) {
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
 

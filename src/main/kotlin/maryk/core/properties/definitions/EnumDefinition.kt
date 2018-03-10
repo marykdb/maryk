@@ -66,6 +66,8 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override fun fromString(string: String) =
         valueByString[string] ?: throw ParseException(string)
 
+    override fun fromNativeType(value: Any) = null
+
     /** Override equals to handle enum values comparison */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

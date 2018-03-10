@@ -47,6 +47,13 @@ class ReferenceDefinition<DO: Any>(
         dataModel.key.get(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
 
+    override fun fromNativeType(value: Any) =
+        if(value is ByteArray && value.size == this.byteSize){
+            dataModel.key.get(value)
+        } else {
+            null
+        }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ReferenceDefinition<*>) return false

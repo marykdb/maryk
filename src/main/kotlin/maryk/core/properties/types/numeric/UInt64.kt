@@ -13,12 +13,17 @@ import maryk.core.properties.exceptions.ParseException
 /** Base class for 64 bit/8 byte unsigned integers */
 class UInt64 internal constructor(number: Long): UInt<Long>(number) {
     override fun compareTo(other: UInt<Long>) = number.compareTo(other.number)
+
     override fun toString(): String {
         val bytes = ByteArray(8)
         var index = 0
         number.writeBytes({ bytes[index++] = it })
         return "0x${bytes.toHex()}"
     }
+
+    override fun toInt() = (this.number - Long.MIN_VALUE).toInt()
+    override fun toLong() = this.number + Long.MIN_VALUE
+
     companion object : UnsignedNumberDescriptor<UInt64>(
         size = 8,
         MIN_VALUE = UInt64(Long.MIN_VALUE),
@@ -39,7 +44,11 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
             var index = 0
             return UInt64(initLong({ bytes[index++] }))
         }
+        override fun ofDouble(value: Double) = value.toLong().toUInt64()
+        override fun ofInt(value: Int) = value.toLong().toUInt64()
+        override fun ofLong(value: Long) = value.toUInt64()
         override fun createRandom() = UInt64(Long.random())
+        override fun isOfType(value: Any) = value == UInt64
     }
 }
 

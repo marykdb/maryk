@@ -14,4 +14,6 @@ abstract class NumberDescriptor<T: Comparable<T>> internal constructor(
     internal abstract fun calculateTransportByteLength(value: T): Int
     internal abstract fun readTransportBytes(reader: () -> Byte): T
     internal abstract fun writeTransportBytes(value: T, writer: (byte: Byte) -> Unit)
+    internal abstract fun ofDouble(value: Double): T
+    internal abstract fun isOfType(value: Any): Boolean
 }

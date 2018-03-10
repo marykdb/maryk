@@ -42,7 +42,7 @@ sealed class JsonToken(val name: String) {
     class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
     override fun toString() = when {
         this is Value<*> -> this.value.let {
-            "$name(\"${this.value}\")"
+            "$name(${this.value})"
         }
         this is FieldName -> "$name(\"${this.value}\")"
         else -> name

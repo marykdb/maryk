@@ -24,5 +24,7 @@ object SInt64 : NumberDescriptor<Long>(
         zigZaggedValue.writeVarBytes(writer)
     }
     override fun ofString(value: String) = value.toLong()
+    override fun ofDouble(value: Double) = value.toLong()
     override fun createRandom() = Long.random()
+    override fun isOfType(value: Any) = value == Short
 }

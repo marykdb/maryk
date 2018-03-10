@@ -24,5 +24,7 @@ object SInt16 : NumberDescriptor<Short>(
         zigZaggedValue.writeVarBytes(writer)
     }
     override fun ofString(value: String) = value.toShort()
+    override fun ofDouble(value: Double) = value.toShort()
     override fun createRandom() = Short.random()
+    override fun isOfType(value: Any) = value == Short
 }

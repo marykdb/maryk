@@ -39,6 +39,13 @@ data class FlexBytesDefinition(
 
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 
+    override fun fromNativeType(value: Any) =
+        if(value is ByteArray){
+            Bytes(value)
+        } else {
+            value as? Bytes
+        }
+
     override fun validateWithRef(previousValue: Bytes?, newValue: Bytes?, refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>>?) {
         super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
 

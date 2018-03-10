@@ -55,6 +55,8 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = Time.parse(string)
 
+    override fun fromNativeType(value: Any) = value as? Time
+
     internal object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
         properties = object : PropertyDefinitions<TimeDefinition>() {
             init {

@@ -47,6 +47,8 @@ data class DateDefinition(
 
     override fun fromString(string: String) = Date.parse(string)
 
+    override fun fromNativeType(value: Any) = value as? Date
+
     internal object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
         properties = object : PropertyDefinitions<DateDefinition>() {
             init {

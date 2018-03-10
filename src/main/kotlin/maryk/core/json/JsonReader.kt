@@ -95,10 +95,13 @@ class JsonReader(
         return currentToken
     }
 
-    private fun constructJsonValueToken(it: String?) =
-        it?.let {
-            JsonToken.Value(it, ValueType.String)
-        } ?: JsonToken.Value(null, ValueType.Null)
+    private fun constructJsonValueToken(it: Any?) =
+            when (it) {
+                null -> JsonToken.Value(null, ValueType.Null)
+                is Boolean -> JsonToken.Value(it, ValueType.Bool)
+                is String -> JsonToken.Value(it, ValueType.String)
+                else -> JsonToken.Value(it.toString(), ValueType.String)
+            }
 
     override fun skipUntilNextField() {
         val currentDepth = typeStack.count()
@@ -157,7 +160,7 @@ class JsonReader(
         }
     }
 
-    private fun readValue(currentTokenCreator: (value: String?) -> JsonToken) {
+    private fun readValue(currentTokenCreator: (value: Any?) -> JsonToken) {
         when (lastChar) {
             '{' -> startObject()
             '[' -> startArray()
@@ -217,30 +220,26 @@ class JsonReader(
         skipWhiteSpace()
     }
 
-    private fun readFalse(currentTokenCreator: (value: String?) -> JsonToken) {
+    private fun readFalse(currentTokenCreator: (value: Any?) -> JsonToken) {
         for (it in "alse") {
             read()
             if(lastChar != it) {
                 throwJsonException()
             }
         }
-        storedValue = "false"
-
-        currentToken = currentTokenCreator(storedValue)
+        currentToken = currentTokenCreator(false)
 
         readSkipWhitespace()
     }
 
-    private fun readTrue(currentTokenCreator: (value: String?) -> JsonToken) {
+    private fun readTrue(currentTokenCreator: (value: Any?) -> JsonToken) {
         ("rue").forEach {
             read()
             if(lastChar != it) {
                 throwJsonException()
             }
         }
-        storedValue = "true"
-
-        currentToken = currentTokenCreator(storedValue)
+        currentToken = currentTokenCreator(true)
 
         readSkipWhitespace()
     }

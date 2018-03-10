@@ -24,52 +24,43 @@ internal class JsonReaderTest {
         var index = 0
 
         val reader = JsonReader { input[index++] }
-        listOf(
-            JsonToken.SimpleStartObject,
-            JsonToken.FieldName("string"),
-            JsonToken.Value("hey", ValueType.String),
-            JsonToken.FieldName("int"),
-            JsonToken.Value("4", ValueType.String),
-            JsonToken.FieldName("array"),
-            JsonToken.SimpleStartArray,
-            JsonToken.Value("34", ValueType.String),
-            JsonToken.Value("2352", ValueType.String),
-            JsonToken.Value("3423", ValueType.String),
-            JsonToken.Value("true", ValueType.String),
-            JsonToken.Value("false", ValueType.String),
-            JsonToken.Value(null, ValueType.Null),
-            JsonToken.EndArray,
-            JsonToken.FieldName("emptyArray"),
-            JsonToken.SimpleStartArray,
-            JsonToken.EndArray,
-            JsonToken.FieldName("map"),
-            JsonToken.SimpleStartObject,
-            JsonToken.FieldName("12"),
-            JsonToken.Value("yes", ValueType.String),
-            JsonToken.FieldName("10"),
-            JsonToken.Value("ahum", ValueType.String),
-            JsonToken.EndObject,
-            JsonToken.FieldName("emptyMap"),
-            JsonToken.SimpleStartObject,
-            JsonToken.EndObject,
-            JsonToken.FieldName("mixed"),
-            JsonToken.SimpleStartArray,
-            JsonToken.Value("2", ValueType.String),
-            JsonToken.SimpleStartObject,
-            JsonToken.FieldName("value"),
-            JsonToken.Value("subInMulti!", ValueType.String),
-            JsonToken.EndObject,
-            JsonToken.EndArray,
-            JsonToken.EndObject
-        ). forEach { token ->
-            reader.nextToken().apply {
-                this.name shouldBe token.name
-                if (this is JsonToken.Value<*>) {
-                    this.value shouldBe (token as JsonToken.Value<*>).value
-                    this.type shouldBe token.type
-                }
-            }
-        }
+
+        testForObjectStart(reader)
+        testForFieldName(reader, "string")
+        testForValue(reader, "hey", ValueType.String)
+        testForFieldName(reader, "int")
+        testForValue(reader, "4", ValueType.String)
+        testForFieldName(reader, "array")
+        testForArrayStart(reader)
+        testForValue(reader, "34", ValueType.String)
+        testForValue(reader, "2352", ValueType.String)
+        testForValue(reader, "3423", ValueType.String)
+        testForValue(reader, true, ValueType.Bool)
+        testForValue(reader, false, ValueType.Bool)
+        testForValue(reader, null, ValueType.Null)
+        testForArrayEnd(reader)
+        testForFieldName(reader, "emptyArray")
+        testForArrayStart(reader)
+        testForArrayEnd(reader)
+        testForFieldName(reader, "map")
+        testForObjectStart(reader)
+        testForFieldName(reader, "12")
+        testForValue(reader, "yes", ValueType.String)
+        testForFieldName(reader, "10")
+        testForValue(reader, "ahum", ValueType.String)
+        testForObjectEnd(reader)
+        testForFieldName(reader, "emptyMap")
+        testForObjectStart(reader)
+        testForObjectEnd(reader)
+        testForFieldName(reader, "mixed")
+        testForArrayStart(reader)
+        testForValue(reader, "2", ValueType.String)
+        testForObjectStart(reader)
+        testForFieldName(reader, "value")
+        testForValue(reader, "subInMulti!", ValueType.String)
+        testForObjectEnd(reader)
+        testForArrayEnd(reader)
+        testForObjectEnd(reader)
 
         reader.nextToken() shouldBe JsonToken.EndDocument
     }
@@ -89,12 +80,9 @@ internal class JsonReaderTest {
         var index = 0
 
         val reader = JsonReader { input[index++] }
-        (reader.nextToken() == JsonToken.SimpleStartObject) shouldBe true
+        testForObjectStart(reader)
 
-        reader.nextToken().apply {
-            (this is JsonToken.FieldName) shouldBe true
-            (this as JsonToken.FieldName).value shouldBe "1"
-        }
+        testForFieldName(reader, "1")
         reader.skipUntilNextField()
 
         reader.currentToken.apply {
@@ -114,13 +102,10 @@ internal class JsonReaderTest {
             (this as JsonToken.FieldName).value shouldBe "4"
         }
 
-        reader.nextToken().apply {
-            (this is JsonToken.Value<*>) shouldBe true
-            (this as JsonToken.Value<*>).value shouldBe "true"
-        }
+        testForValue(reader, true, ValueType.Bool)
 
-        (reader.nextToken() == JsonToken.EndObject) shouldBe true
-        (reader.nextToken() == JsonToken.EndDocument) shouldBe true
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -139,28 +124,20 @@ internal class JsonReaderTest {
         var index = 0
 
         val reader = JsonReader { input[index++] }
-        listOf(
-            JsonToken.SimpleStartArray,
-            JsonToken.Value("4", ValueType.String),
-            JsonToken.Value("4.723", ValueType.String),
-            JsonToken.Value("-0.123723", ValueType.String),
-            JsonToken.Value("4.723E50", ValueType.String),
-            JsonToken.Value("1.453E-4", ValueType.String),
-            JsonToken.Value("1.453E+53", ValueType.String),
-            JsonToken.Value("13453.442e4234", ValueType.String),
-            JsonToken.Value("53.442e-234", ValueType.String),
-            JsonToken.Value("53.442e+234", ValueType.String),
-            JsonToken.EndArray
-        ). forEach { token ->
-            reader.nextToken().apply {
-                this.name shouldBe token.name
-                if (this is JsonToken.Value<*>) {
-                    this.value shouldBe (token as JsonToken.Value<*>).value
-                }
-            }
-        }
 
-        reader.nextToken() shouldBe JsonToken.EndDocument
+        testForArrayStart(reader)
+        testForValue(reader, "4", ValueType.String)
+        testForValue(reader, "4.723", ValueType.String)
+        testForValue(reader, "-0.123723", ValueType.String)
+        testForValue(reader, "4.723E50", ValueType.String)
+        testForValue(reader, "1.453E-4", ValueType.String)
+        testForValue(reader, "1.453E+53", ValueType.String)
+        testForValue(reader, "13453.442e4234", ValueType.String)
+        testForValue(reader, "53.442e-234", ValueType.String)
+        testForValue(reader, "53.442e+234", ValueType.String)
+        testForArrayEnd(reader)
+
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -225,8 +202,8 @@ internal class JsonReaderTest {
 
         input += "]"
 
-        reader.nextToken() shouldBe JsonToken.EndArray
-        reader.nextToken() shouldBe JsonToken.EndDocument
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
     }
 
     private fun createJsonReader(input: String): JsonReader {

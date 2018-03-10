@@ -15,7 +15,7 @@ internal class JsonWriterTest : AbstractJsonWriterTest() {
 
         writeJson(generator)
 
-        output shouldBe "[1,\"#Test\",3.5,true,{\"test\":false,\"test2\":\"value\"},{\"another\":\"yes\"}]"
+        output shouldBe """[1,"#Test",3.5,true,{"test":false,"test2":"value"},{"another":"yes"}]"""
     }
 
     @Test
@@ -27,11 +27,11 @@ internal class JsonWriterTest : AbstractJsonWriterTest() {
 
         writeJson(generator)
 
-        output shouldBe "[1, \"#Test\", 3.5, true, {\n" +
-                "\t\"test\": false,\n" +
-                "\t\"test2\": \"value\"\n" +
-                "}, {\n" +
-                "\t\"another\": \"yes\"\n" +
-                "}]"
+        output shouldBe """[1, "#Test", 3.5, true, {
+                        |	"test": false,
+                        |	"test2": "value"
+                        |}, {
+                        |	"another": "yes"
+                        |}]""".trimMargin()
     }
 }

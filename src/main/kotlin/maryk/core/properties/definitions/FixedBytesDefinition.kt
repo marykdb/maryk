@@ -38,6 +38,13 @@ data class FixedBytesDefinition(
 
     override fun fromString(string: String) = Bytes.ofBase64String(string)
 
+    override fun fromNativeType(value: Any) =
+        if(value is ByteArray && value.size == this.byteSize){
+            Bytes(value)
+        } else {
+            value as? Bytes
+        }
+
     internal object Model : SimpleDataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
         properties = object : PropertyDefinitions<FixedBytesDefinition>() {
             init {

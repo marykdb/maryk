@@ -68,6 +68,14 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
 
     override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DO = dataModel.readJsonToObject(reader, context)
 
+    override fun fromNativeType(value: Any) =
+        if(value is ByteArray && value.size == this.byteSize){
+            var i = 0
+            this.dataModel.readFromBytes {
+                value[i++]
+            }
+        } else { null }
+
     internal object Model : DefinitionDataModel<ValueModelDefinition<*, *>>(
         properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {
             init {

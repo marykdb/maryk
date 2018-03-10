@@ -37,6 +37,8 @@ data class BooleanDefinition(
         else -> throw ParseException(string)
     }
 
+    override fun fromNativeType(value: Any) = value as? Boolean
+
     override fun writeJsonValue(value: Boolean, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
         writer.writeValue(
             this.asString(value)

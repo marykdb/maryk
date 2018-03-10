@@ -12,7 +12,9 @@ import maryk.core.properties.exceptions.ParseException
 class UInt32 internal constructor(number: Int): UInt<Int>(number) {
     override fun compareTo(other: UInt<Int>) = number.compareTo(other.number)
     override fun toString() = (number.toLong() - Int.MIN_VALUE).toString()
-    fun toInt() = this.number - Int.MIN_VALUE
+    override fun toInt() = this.number - Int.MIN_VALUE
+    override fun toLong() = number.toLong() - Int.MIN_VALUE
+
     companion object : UnsignedNumberDescriptor<UInt32>(
         size = 4,
         MIN_VALUE = UInt32(Int.MIN_VALUE),
@@ -28,7 +30,11 @@ class UInt32 internal constructor(number: Int): UInt<Int>(number) {
             number.writeVarBytes(writer)
         }
         override fun ofString(value: String) = UInt32((value.toLong() + Int.MIN_VALUE).toInt())
+        override fun ofDouble(value: Double) = value.toInt().toUInt32()
+        override fun ofInt(value: Int) = value.toUInt32()
+        override fun ofLong(value: Long) = value.toInt().toUInt32()
         override fun createRandom() = UInt32(Int.random())
+        override fun isOfType(value: Any) = value == UInt32
     }
 }
 

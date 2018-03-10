@@ -142,4 +142,22 @@ internal class NumberDefinitionTest {
         checkJsonConversion(this.def, NumberDefinition.Model)
         checkJsonConversion(this.defMaxDefined, NumberDefinition.Model)
     }
+
+    @Test
+    fun convert_native_type() {
+        def.fromNativeType(356725.000) shouldBe 356725.toUInt32()
+        def.fromNativeType(38762873) shouldBe 38762873.toUInt32()
+
+        shouldThrow<ParseException> {
+            def.fromNativeType(Long.MAX_VALUE.toDouble())
+        }
+
+        shouldThrow<ParseException> {
+            def.fromNativeType(356.9)
+        }
+
+        shouldThrow<ParseException> {
+            def.fromNativeType(Double.MAX_VALUE)
+        }
+    }
 }

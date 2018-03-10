@@ -58,15 +58,22 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
         )
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
-        when (it) {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): T = reader.currentToken.let { value ->
+        when (value) {
             is JsonToken.Value<*> -> {
-                it.value?.let {
-                    // TODO: Make it specific
-                    this.fromString(it.toString(), context)
-                } ?: throw ParseException("JSON value cannot be null")
+                when (value.value) {
+                    null -> throw ParseException("JSON value cannot be null")
+                    is String -> this.fromString(value.value, context)
+                    else -> {
+                        this.fromNativeType(value.value)
+                                ?: throw ParseException("Unknown type for value ${value.value}")
+                    }
+                }
             }
             else -> throw ParseException("JSON value should be a simple value")
         }
     }
+
+    /** Convert a value from a native value or returns null if it fails */
+    fun fromNativeType(value: Any): T?
 }

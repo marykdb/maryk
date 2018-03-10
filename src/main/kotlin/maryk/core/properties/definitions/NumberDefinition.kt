@@ -13,6 +13,7 @@ import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.properties.types.numeric.UnsignedNumberDescriptor
 import maryk.core.protobuf.WriteCacheReader
 
 /** Definition for Number properties */
@@ -56,6 +57,24 @@ data class NumberDefinition<T: Comparable<T>>(
     override fun fromString(string: String) = try {
         type.ofString(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
+
+    override fun fromNativeType(value: Any) =
+        if (type.isOfType(value)) {
+            @Suppress("UNCHECKED_CAST")
+            value as T
+        } else if (value is Double) {
+            type.ofDouble(value).also {
+                if (it != value) {
+                    throw ParseException("$value not of expected type")
+                }
+            }
+        } else if (value is Int && type is UnsignedNumberDescriptor<T>) {
+            type.ofInt(value)
+        } else if (value is Long && type is UnsignedNumberDescriptor<T>) {
+            type.ofLong(value)
+        } else {
+            null
+        }
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: IsPropertyContext?) = when (type) {
         !in arrayOf(UInt64, SInt64, Float64, Float32) -> {

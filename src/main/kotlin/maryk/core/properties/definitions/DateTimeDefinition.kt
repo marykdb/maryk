@@ -56,6 +56,8 @@ data class DateTimeDefinition(
 
     override fun fromString(string: String) = DateTime.parse(string)
 
+    override fun fromNativeType(value: Any) = value as? DateTime
+
     internal object Model : SimpleDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>>(
         properties = object : PropertyDefinitions<DateTimeDefinition>() {
             init {

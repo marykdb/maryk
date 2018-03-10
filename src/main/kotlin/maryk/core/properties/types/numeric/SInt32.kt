@@ -24,5 +24,7 @@ object SInt32 : NumberDescriptor<Int>(
         zigZaggedValue.writeVarBytes(writer)
     }
     override fun ofString(value: String) = value.toInt()
+    override fun ofDouble(value: Double) = value.toInt()
     override fun createRandom() = Int.random()
+    override fun isOfType(value: Any) = value == Int
 }

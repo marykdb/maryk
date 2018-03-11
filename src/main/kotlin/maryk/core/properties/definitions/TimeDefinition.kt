@@ -55,7 +55,13 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = Time.parse(string)
 
-    override fun fromNativeType(value: Any) = value as? Time
+    override fun fromNativeType(value: Any) = if (value is Long) {
+        Time.ofSecondOfDay(value.toInt())
+    } else if (value is Int) {
+        Time.ofSecondOfDay(value)
+    } else {
+        value as? Time
+    }
 
     internal object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
         properties = object : PropertyDefinitions<TimeDefinition>() {

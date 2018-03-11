@@ -130,4 +130,10 @@ internal class TimeDefinitionTest {
         checkJsonConversion(this.def, TimeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, TimeDefinition.Model)
     }
+
+    @Test
+    fun read_native_times_to_time() {
+        this.def.fromNativeType(12345L) shouldBe Time(3, 25, 45)
+        this.def.fromNativeType(12346) shouldBe Time(3, 25, 46)
+    }
 }

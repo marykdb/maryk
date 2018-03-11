@@ -15,6 +15,7 @@ private val base8RegEx = Regex("^[-+]?0([0-7_]+)$")
 private val base10RegEx = Regex("^[-+]?(0|[1-9][0-9_]*)$")
 private val base16RegEx = Regex("^[-+]?0x([0-9a-fA-F_]+)$")
 private val base60RegEx = Regex("^[-+]?([1-9][0-9_]*)(:([0-5]?[0-9]))+$")
+private val floatRegEx = Regex("^[-+]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)([eE][-+]?[0-9]+)?$")
 
 internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainStringReader: Boolean): JsonToken.Value<Any?> {
     return tag?.let {
@@ -36,7 +37,8 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
                 in nanValues -> JsonToken.Value(Double.NaN, ValueType.Float)
                 else -> {
                     findInfinity(value!!)?.let { return it }
-                    TODO("IMPLEMENT")
+                    findFloat(value)?.let { return it }
+                    throw InvalidYamlContent("Expected float value")
                 }
             }
             is ValueType.Int -> findInt(value!!)?.let { return it }
@@ -55,6 +57,7 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
                 else -> {
                     findInfinity(value)?.let { return it }
                     findInt(value)?.let { return it }
+                    findFloat(value)?.let { return it }
                     JsonToken.Value(value, ValueType.String)
                 }
             }
@@ -76,26 +79,34 @@ private fun findInfinity(value: String): JsonToken.Value<Double>? {
 }
 
 private fun findInt(value: String): JsonToken.Value<Long>? {
+    val minus = if (value.startsWith('-')) {
+        -1
+    } else {
+        1
+    }
     base2RegEx.find(value)?.let {
+        val result = it.groupValues[1].replace("_", "").toLong(2)
+
         return JsonToken.Value(
-            it.groupValues[1].replace("_", "").toLong(2),
+            result * minus,
             ValueType.Int
         )
     }
     base8RegEx.find(value)?.let {
         return JsonToken.Value(
-            it.groupValues[1].replace("_", "").toLong(8),
+            value.replace("_", "").toLong(8),
             ValueType.Int)
     }
     base10RegEx.find(value)?.let {
         return JsonToken.Value(
-            it.groupValues[1].replace("_", "").toLong(10),
+            value.replace("_", "").toLong(10),
             ValueType.Int
         )
     }
     base16RegEx.find(value)?.let {
+        val result = it.groupValues[1].replace("_", "").toLong(16)
         return JsonToken.Value(
-            it.groupValues[1].replace("_", "").toLong(16),
+            result * minus,
             ValueType.Int
         )
     }
@@ -107,6 +118,20 @@ private fun findInt(value: String): JsonToken.Value<Long>? {
             result += (segment.toInt() * 60.0.pow(power - index)).toLong()
         }
         return JsonToken.Value(result, ValueType.Int)
+    }
+    return null
+}
+
+
+private fun findFloat(value: String): JsonToken.Value<Double>? {
+    floatRegEx.find(value)?.let {
+        value.replace("_", "").toDoubleOrNull()?.let { double ->
+            return JsonToken.Value(
+                double,
+                ValueType.Float
+            )
+        }
+
     }
     return null
 }

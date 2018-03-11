@@ -16,7 +16,8 @@ class TypesTest {
         |- [~, null, NULL, Null]
         |- [.Nan, .NAN, .nan]
         |- [.Inf, .INF, .inf, +.Inf, +.INF, +.inf, -.Inf, -.INF, -.inf]
-        |- [0b1_001_001, 1_234, 012_345, 0xFF_EEDD, 1_90:20:30]
+        |- [0b1_001_001, 1_234, 012_345, 0xFF_EEDD, 1_90:20:30, -20:30, -1234]
+        |- [1.2345, -1.0, 0.0, 2.3e4, -2.2323e-44]
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
@@ -53,6 +54,15 @@ class TypesTest {
         testForValue(reader, 5349L, ValueType.Int)
         testForValue(reader, 16772829L, ValueType.Int)
         testForValue(reader, 685230L, ValueType.Int)
+        testForValue(reader, -1170L, ValueType.Int)
+        testForValue(reader, -1234L, ValueType.Int)
+        testForArrayEnd(reader)
+        testForArrayStart(reader)
+        testForValue(reader, 1.2345, ValueType.Float)
+        testForValue(reader, -1.0, ValueType.Float)
+        testForValue(reader, 0.0, ValueType.Float)
+        testForValue(reader, 2.3e4, ValueType.Float)
+        testForValue(reader, -2.2323e-44, ValueType.Float)
         testForArrayEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)

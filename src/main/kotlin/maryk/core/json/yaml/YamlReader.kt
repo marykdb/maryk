@@ -36,19 +36,6 @@ internal interface YamlValueType<out T: Any>: ValueType<T> {
     object Yaml: YamlValueType<Nothing>
 }
 
-internal fun createYamlValueToken(value: String?, tag: TokenType?): JsonToken.Value<Any?> {
-    return tag?.let {
-        if (it !is ValueType<*>) {
-            throw InvalidYamlContent("Cannot use non value tag with value $value")
-        }
-        JsonToken.Value(value, it)
-    } ?: if (value == null) {
-        JsonToken.Value(null, ValueType.Null)
-    } else {
-        JsonToken.Value(value.toString(), ValueType.String)
-    }
-}
-
 /** Reads YAML from the supplied [reader] */
 internal class YamlReaderImpl(
     private val reader: () -> Char,
@@ -208,4 +195,3 @@ internal class YamlReaderImpl(
 class InvalidYamlContent internal constructor(
     description: String
 ): InvalidJsonContent(description)
-

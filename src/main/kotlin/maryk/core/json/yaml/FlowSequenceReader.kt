@@ -30,7 +30,7 @@ internal class FlowSequenceReader<out P>(
                 '\'' -> {
                     read()
                     StringInSingleQuoteReader(this.yamlReader, this) {
-                        createYamlValueToken(it, this.tag)
+                        createYamlValueToken(it, this.tag, false)
                     }.let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -39,7 +39,7 @@ internal class FlowSequenceReader<out P>(
                 '\"' -> {
                     read()
                     StringInDoubleQuoteReader(this.yamlReader, this) {
-                        createYamlValueToken(it, this.tag)
+                        createYamlValueToken(it, this.tag, false)
                     }.let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -105,7 +105,7 @@ internal class FlowSequenceReader<out P>(
             startWith,
             PlainStyleMode.FLOW_COLLECTION
         ) {
-            createYamlValueToken(it, this.tag)
+            createYamlValueToken(it, this.tag, true)
         }.let {
             this.currentReader = it
             it.readUntilToken()

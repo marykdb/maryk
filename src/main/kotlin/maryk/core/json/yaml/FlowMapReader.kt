@@ -36,14 +36,14 @@ internal class FlowMapItemsReader<out P>(
                 }
                 '\'' -> {
                     read()
-                    StringInSingleQuoteReader(this.yamlReader, this, this::constructToken).let {
+                    StringInSingleQuoteReader(this.yamlReader, this, { this.constructToken(it, false) }).let {
                         this.currentReader = it
                         it.readUntilToken()
                     }
                 }
                 '\"' -> {
                     read()
-                    StringInDoubleQuoteReader(this.yamlReader, this, this::constructToken).let {
+                    StringInDoubleQuoteReader(this.yamlReader, this, { this.constructToken(it, false) }).let {
                         this.currentReader = it
                         it.readUntilToken()
                     }
@@ -82,7 +82,7 @@ internal class FlowMapItemsReader<out P>(
                 }
                 ',' -> {
                     if(this.mode != FlowMapMode.SEPARATOR) {
-                        return this.constructToken(null)
+                        return this.constructToken(null, false)
                     }
 
                     read()
@@ -107,7 +107,7 @@ internal class FlowMapItemsReader<out P>(
         this.tag = tag
     }
 
-    private fun constructToken(value: String?) = when(mode) {
+    private fun constructToken(value: String?, isPlainStringReader: Boolean) = when(mode) {
         FlowMapMode.START -> throw InvalidYamlContent("Map cannot be in start mode")
         FlowMapMode.KEY -> {
             this.mode = FlowMapMode.VALUE
@@ -115,7 +115,7 @@ internal class FlowMapItemsReader<out P>(
         }
         FlowMapMode.VALUE -> {
             this.mode = FlowMapMode.SEPARATOR
-            createYamlValueToken(value, this.tag)
+            createYamlValueToken(value, this.tag, isPlainStringReader)
         }
         FlowMapMode.SEPARATOR -> {
             // If last mode was separator next one will be key
@@ -135,7 +135,7 @@ internal class FlowMapItemsReader<out P>(
             startWith,
             PlainStyleMode.FLOW_MAP
         ) {
-            this.constructToken(it)
+            this.constructToken(it, true)
         }.let {
             this.currentReader = it
             it.readUntilToken()

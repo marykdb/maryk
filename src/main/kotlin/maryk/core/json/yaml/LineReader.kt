@@ -50,7 +50,7 @@ internal class LineReader<out P>(
             '\'' -> {
                 read()
                 StringInSingleQuoteReader(this.yamlReader, this) {
-                    this.jsonTokenCreator(it)
+                    this.jsonTokenCreator(it, false)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -59,7 +59,7 @@ internal class LineReader<out P>(
             '\"' -> {
                 read()
                 StringInDoubleQuoteReader(this.yamlReader, this) {
-                    this.jsonTokenCreator(it)
+                    this.jsonTokenCreator(it, false)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -94,7 +94,7 @@ internal class LineReader<out P>(
                     this.yamlReader,
                     this
                 ) {
-                    this.jsonTokenCreator(it)
+                    this.jsonTokenCreator(it, false)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -106,7 +106,7 @@ internal class LineReader<out P>(
                     this.yamlReader,
                     this
                 ) {
-                    this.jsonTokenCreator(it)
+                    this.jsonTokenCreator(it, false)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -153,7 +153,7 @@ internal class LineReader<out P>(
                     this.yamlReader,
                     this
                 ) {
-                    this.jsonTokenCreator(it)
+                    this.jsonTokenCreator(it, false)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -190,13 +190,13 @@ internal class LineReader<out P>(
         return indents
     }
 
-    private fun jsonTokenCreator(value: String?): JsonToken {
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean): JsonToken {
         if (this.mapKeyFound) {
             this.mapValueFound = true
             if (!this.isExplicitMap) {
                 this.indentToAdd -= 1
             }
-                return createYamlValueToken(value, this.tag)
+                return createYamlValueToken(value, this.tag, isPlainStringReader)
         } else {
             skipWhiteSpace()
             if (this.lastChar == ':') {
@@ -218,7 +218,7 @@ internal class LineReader<out P>(
             }
         }
 
-        return createYamlValueToken(value, this.tag)
+        return createYamlValueToken(value, this.tag, isPlainStringReader)
     }
 
     private fun plainStringReader(startWith: String): JsonToken {
@@ -227,7 +227,7 @@ internal class LineReader<out P>(
             this,
             startWith
         ) {
-            this.jsonTokenCreator(it)
+            this.jsonTokenCreator(it, true)
         }.let {
             this.currentReader = it
             it.readUntilToken()

@@ -1,9 +1,11 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.initByteArrayByHex
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.ValueType
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
+import maryk.core.json.testForByteArrayValue
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForInvalidYaml
 import maryk.core.json.testForValue
@@ -36,8 +38,18 @@ class TypesTest {
         |- [!!float .Inf, !!float .INF, !!float .inf, !!float +.Inf, !!float +.INF, !!float +.inf, !!float -.Inf, !!float -.INF, !!float -.inf]
         |- [!!int 0b1_001_001, !!int 1_234, !!int 012_345, !!int 0xFF_EEDD, !!int 1_90:20:30, !!int -20:30, !!int -1234]
         |- [!!float 1.2345, !!float -1.0, !!float 0.0, !!float 2.3e4, !!float -2.2323e-44]
+        |- !!binary "\
+        |R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5\
+        |OTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/+\
+        |+f/++f/++f/++f/++f/++SH+Dk1hZGUgd2l0aCBHSU1QACwAAAAADAAMAAAFLC\
+        |AgjoEwnuNAFOhpEMTRiggcz4BNJHrv/zCFcLiwMWYNG84BwwEeECcgggoBADs="
         """.trimMargin())
         testForValues(reader)
+        testForByteArrayValue(
+            reader,
+            initByteArrayByHex("4749463839610c000c00840000fffff7f5f5eee9e9e5666666000000e7e7e75e5e5ef3f3ed8e8e8ee0e0e09f9f9f939393a7a7a79e9e9e696969636363a3a3a3848484fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef9fffef921fe0e4d61646520776974682047494d50002c000000000c000c0000052c20208e81309ee34014e86910c4d18a081ccf804d247aefff308570b8b031660d1bce01c3011e102720820a01003b"),
+            YamlValueType.Binary
+        )
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }

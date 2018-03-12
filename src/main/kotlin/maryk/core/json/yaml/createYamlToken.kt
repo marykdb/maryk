@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.bytes.Base64
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
@@ -25,16 +26,16 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
         when (it) {
             !is ValueType<*> -> throw InvalidYamlContent("Cannot use non value tag with value $value")
             is ValueType.Bool -> when(value) {
-                in trueValues -> JsonToken.Value(true, ValueType.Bool)
-                in falseValues -> JsonToken.Value(false, ValueType.Bool)
+                in trueValues -> JsonToken.Value(true, it)
+                in falseValues -> JsonToken.Value(false, it)
                 else -> throw InvalidYamlContent("Unknown !!bool value $value")
             }
             is ValueType.Null -> when(value) {
-                null, in nullValues -> JsonToken.Value(null, ValueType.Null)
+                null, in nullValues -> JsonToken.Value(null, it)
                 else -> throw InvalidYamlContent("Unknown !!null value $value")
             }
             is ValueType.Float -> when(value) {
-                in nanValues -> JsonToken.Value(Double.NaN, ValueType.Float)
+                in nanValues -> JsonToken.Value(Double.NaN, it)
                 else -> {
                     findInfinity(value!!)?.let { return it }
                     findFloat(value)?.let { return it }
@@ -43,6 +44,9 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
             }
             is ValueType.Int -> findInt(value!!)?.let { return it }
                     ?: throw InvalidYamlContent("Not an integer")
+            is YamlValueType.Binary -> {
+                return JsonToken.Value(Base64.decode(value!!), it)
+            }
             else -> JsonToken.Value(value, it)
         }
     } ?: if (value == null) {

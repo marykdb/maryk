@@ -45,6 +45,7 @@ internal class StringInDoubleQuoteReader<out P>(
                     'x' -> SkipCharType.UtfChar('x', 2)
                     'u' -> SkipCharType.UtfChar('u', 4)
                     'U' -> SkipCharType.Utf32Char()
+                    '\n', '\r' -> SkipCharType.None
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
                 is SkipCharType.UtfChar -> when(lastChar.toLowerCase()) {

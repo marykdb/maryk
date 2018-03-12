@@ -1,5 +1,6 @@
 package maryk.core.json
 
+import maryk.core.extensions.toHex
 import maryk.core.json.yaml.InvalidYamlContent
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -59,6 +60,18 @@ internal fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: Va
             this.value shouldBe value
 
             type?.let {
+                this.type shouldBe it
+            }
+        } else { fail("$this should be value '$value'") }
+    }
+}
+
+internal fun testForByteArrayValue(reader: IsJsonLikeReader, value: ByteArray, type: ValueType<ByteArray>) {
+    reader.nextToken().apply {
+        if (this is JsonToken.Value<*> && this.value is ByteArray) {
+            (this.value as ByteArray).toHex() shouldBe value.toHex()
+
+            type.let {
                 this.type shouldBe it
             }
         } else { fail("$this should be value '$value'") }

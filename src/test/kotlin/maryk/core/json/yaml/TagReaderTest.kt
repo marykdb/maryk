@@ -30,7 +30,7 @@ class TagReaderTest {
         testForFieldName(reader, "k2")
         testForValue(reader, "v2", ValueType.String)
         testForFieldName(reader, "k3")
-        testForValue(reader, "true", ValueType.Bool)
+        testForValue(reader, true, ValueType.Bool)
         testForFieldName(reader, "k4")
         testForValue(reader, "v4", ValueType.String)
         testForObjectEnd(reader)
@@ -44,15 +44,15 @@ class TagReaderTest {
         |---
         |   {
         |    k2: !!str v2, k3: !test!bool true,
-        |    k4: !<tag:yaml.org,2002:float> v4 }
+        |    k4: !<tag:yaml.org,2002:float> 1.4665 }
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "k2")
         testForValue(reader, "v2", ValueType.String)
         testForFieldName(reader, "k3")
-        testForValue(reader, "true", ValueType.Bool)
+        testForValue(reader, true, ValueType.Bool)
         testForFieldName(reader, "k4")
-        testForValue(reader, "v4", ValueType.Float)
+        testForValue(reader, 1.4665, ValueType.Float)
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -65,7 +65,7 @@ class TagReaderTest {
         |    - !Boolean { k: v }
         |    - !!str v2
         |    - !test!bool true
-        |    - !<tag:yaml.org,2002:bool> v4
+        |    - !<tag:yaml.org,2002:str> v4
         """.trimMargin())
         testForArrayStart(reader)
         testForObjectStart(reader)
@@ -73,8 +73,8 @@ class TagReaderTest {
         testForValue(reader, "v")
         testForObjectEnd(reader)
         testForValue(reader, "v2", ValueType.String)
-        testForValue(reader, "true", ValueType.Bool)
-        testForValue(reader, "v4", ValueType.Bool)
+        testForValue(reader, true, ValueType.Bool)
+        testForValue(reader, "v4", ValueType.String)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -94,7 +94,7 @@ class TagReaderTest {
         testForValue(reader, "v")
         testForObjectEnd(reader)
         testForValue(reader, "v2", ValueType.String)
-        testForValue(reader, "true", ValueType.Bool)
+        testForValue(reader, true, ValueType.Bool)
         testForValue(reader, "v4")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)

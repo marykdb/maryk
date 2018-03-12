@@ -101,7 +101,6 @@ class JsonReader(
                 is Boolean -> JsonToken.Value(it, ValueType.Bool)
                 is String -> JsonToken.Value(it, ValueType.String)
                 is Double -> JsonToken.Value(it, ValueType.Float)
-                is Int -> JsonToken.Value(it, ValueType.Int)
                 is Long -> JsonToken.Value(it, ValueType.Int)
                 else -> JsonToken.Value(it.toString(), ValueType.String)
             }
@@ -222,8 +221,6 @@ class JsonReader(
 
         currentToken = if(isExponent || isFraction) {
             currentTokenCreator(storedValue!!.toDouble())
-        } else if(storedValue!!.length < 10) {
-            currentTokenCreator(storedValue!!.toInt())
         } else {
             currentTokenCreator(storedValue!!.toLong())
         }

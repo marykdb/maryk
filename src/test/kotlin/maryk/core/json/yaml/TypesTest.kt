@@ -22,6 +22,8 @@ class TypesTest {
         |- [1.2345, -1.0, 0.0, 2.3e4, -2.2323e-44]
         """.trimMargin())
         testForValues(reader)
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
     }
 
     @Test
@@ -36,6 +38,8 @@ class TypesTest {
         |- [!!float 1.2345, !!float -1.0, !!float 0.0, !!float 2.3e4, !!float -2.2323e-44]
         """.trimMargin())
         testForValues(reader)
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
     }
 
     private fun testForValues(reader: IsJsonLikeReader) {
@@ -84,8 +88,6 @@ class TypesTest {
         testForValue(reader, 2.3e4, ValueType.Float)
         testForValue(reader, -2.2323e-44, ValueType.Float)
         testForArrayEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
     }
 
     @Test

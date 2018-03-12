@@ -53,7 +53,7 @@ internal fun testForArrayEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: T? = null) {
+internal fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: ValueType<T>? = null) {
     reader.nextToken().apply {
         if (this is JsonToken.Value<*>) {
             this.value shouldBe value

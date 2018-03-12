@@ -5,31 +5,12 @@ abstract class UInt<T: Number> internal constructor(internal val number: T): Com
     override fun hashCode() = number.hashCode()
     override fun equals(other: Any?) =
         when (other) {
-            is Float -> {
-                if (other % 1 != 0F) {
-                    false
-                } else {
-                    this.toInt() == other.toInt()
-                }
-            }
-            is Double -> {
-                if (other % 1 != 0.0) {
-                    false
-                } else if(other > UInt32.MAX_VALUE.toLong()) {
-                    false
-                } else {
-                    this.toInt() == other.toInt()
-                }
-            }
-            is Int, is Short, is Byte -> {
-                this.toInt() == other
-            }
-            is Long -> {
-                this.toLong() == other
-            }
-            is UInt8 -> this.toInt() == other.toInt()
-            is UInt16 -> this.toInt() == other.toInt()
-            is UInt32 -> this.toInt() == other.toInt()
+            is Double -> other % 1 == 0.0 && this.toLong() == other.toLong()
+            is Float -> other % 1 == 0.0F && this.toLong() == other.toLong()
+            is Int, is Short, is Byte, is Long -> this.toLong() == other
+            is UInt8 -> this.toLong() == other.toLong()
+            is UInt16 -> this.toLong() == other.toLong()
+            is UInt32 -> this.toLong() == other.toLong()
             is UInt64 -> this.toLong() == other.toLong()
             else -> false
         }

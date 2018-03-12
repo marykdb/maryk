@@ -13,7 +13,6 @@ import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.properties.types.numeric.UnsignedNumberDescriptor
 import maryk.core.protobuf.WriteCacheReader
 
 /** Definition for Number properties */

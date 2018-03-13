@@ -12,17 +12,17 @@ interface ArrayType : TokenType {
     object Sequence: ArrayType
     object Set: ArrayType
 }
-interface ObjectType : TokenType {
-    object Map: ObjectType
-    object OrderedMap: ObjectType
-    object Pairs: ObjectType
+interface MapType : TokenType {
+    object Map: MapType
+    object OrderedMap: MapType
+    object Pairs: MapType
 }
 
 sealed class JsonToken(val name: String) {
     object StartDocument : JsonToken("StartDocument")
 
-    open class StartObject(val type: ObjectType) : JsonToken("StartObject")
-    object SimpleStartObject : StartObject(ObjectType.Map)
+    open class StartObject(val type: MapType) : JsonToken("StartObject")
+    object SimpleStartObject : StartObject(MapType.Map)
 
     object EndObject : JsonToken("EndObject")
 

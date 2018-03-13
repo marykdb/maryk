@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.ObjectType
+import maryk.core.json.MapType
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
@@ -16,7 +16,7 @@ import maryk.core.properties.types.IndexedEnum
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(
     override val index: Int
-): IndexedEnum<PropertyDefinitionType>, ObjectType {
+): IndexedEnum<PropertyDefinitionType>, MapType {
     Boolean(0),
     Date(1),
     DateTime(2),

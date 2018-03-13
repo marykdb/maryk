@@ -103,4 +103,12 @@ internal class DateTimeTest {
             ) shouldBe it
         }
     }
+
+    @Test
+    fun iso8601() {
+         DateTime.parse("2014-02-28T09:34:43.123") shouldBe DateTime(2014, 2, 28, 9, 34, 43, 123)
+         DateTime.parse("2014-02-28T09:34:43.123Z") shouldBe DateTime(2014, 2, 28, 9, 34, 43, 123)
+         DateTime.parse("2015-05-24T12:03:55-05:00") shouldBe DateTime(2015, 5, 24, 17, 3, 55)
+         DateTime.parse("2015-05-24T09:33:44+05:00") shouldBe DateTime(2015, 5, 24, 4, 33, 44)
+    }
 }

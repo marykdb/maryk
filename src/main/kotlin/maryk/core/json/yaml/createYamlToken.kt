@@ -4,6 +4,7 @@ import maryk.core.bytes.Base64
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
+import maryk.core.properties.types.DateTime
 import kotlin.math.pow
 
 private val trueValues = arrayOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
@@ -17,6 +18,16 @@ private val base10RegEx = Regex("^[-+]?(0|[1-9][0-9_]*)$")
 private val base16RegEx = Regex("^[-+]?0x([0-9a-fA-F_]+)$")
 private val base60RegEx = Regex("^[-+]?([1-9][0-9_]*)(:([0-5]?[0-9]))+$")
 private val floatRegEx = Regex("^[-+]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)([eE][-+]?[0-9]+)?$")
+private val timestampRegex = Regex(
+    "^([0-9][0-9][0-9][0-9])" + // year
+        "-([0-9][0-9]?)" + // month
+        "-([0-9][0-9]?)" + // day
+        "(([Tt]|[ \\t]+)([0-9][0-9]?)" + // hour
+        ":([0-9][0-9])" + // minute
+        ":([0-9][0-9])" + // second
+        "(\\.([0-9]*))?" + // fraction
+        "(([ \\t]*)Z|([-+][0-9][0-9])?(:([0-9][0-9]))?)?)?$"  // time zone
+)
 
 internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainStringReader: Boolean): JsonToken.Value<Any?> {
     return tag?.let {
@@ -45,7 +56,10 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
             is ValueType.Int -> findInt(value!!)?.let { return it }
                     ?: throw InvalidYamlContent("Not an integer")
             is YamlValueType.Binary -> {
-                return JsonToken.Value(Base64.decode(value!!), it)
+                JsonToken.Value(Base64.decode(value!!), it)
+            }
+            is YamlValueType.TimeStamp -> {
+                findTimestamp(value!!)
             }
             else -> JsonToken.Value(value, it)
         }
@@ -62,6 +76,7 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
                     findInfinity(value)?.let { return it }
                     findInt(value)?.let { return it }
                     findFloat(value)?.let { return it }
+                    findTimestamp(value)?.let { return it }
                     JsonToken.Value(value, ValueType.String)
                 }
             }
@@ -126,7 +141,6 @@ private fun findInt(value: String): JsonToken.Value<Long>? {
     return null
 }
 
-
 private fun findFloat(value: String): JsonToken.Value<Double>? {
     floatRegEx.find(value)?.let {
         value.replace("_", "").toDoubleOrNull()?.let { double ->
@@ -136,6 +150,51 @@ private fun findFloat(value: String): JsonToken.Value<Double>? {
             )
         }
 
+    }
+    return null
+}
+
+private fun findTimestamp(value: String): JsonToken.Value<DateTime>? {
+    timestampRegex.find(value)?.let {
+        return if (it.groups[4] == null) {
+            JsonToken.Value(
+                DateTime(
+                    it.groups[1]!!.value.toInt(),
+                    it.groups[2]!!.value.toByte(),
+                    it.groups[3]!!.value.toByte()
+                ),
+                YamlValueType.TimeStamp
+            )
+        } else {
+            val dateTime = if (it.groups[11] == null || it.groups[11]!!.value == "Z" || it.groups[11]!!.value.isEmpty()) {
+                DateTime(
+                    it.groups[1]!!.value.toInt(),
+                    it.groups[2]!!.value.toByte(),
+                    it.groups[3]!!.value.toByte(),
+                    it.groups[6]!!.value.toByte(),
+                    it.groups[7]!!.value.toByte(),
+                    it.groups[8]!!.value.toByte(),
+                    it.groups[10]?.value?.let {
+                        if (it.length < 3) {
+                            var longer = it
+                            (1..3 - it.length).forEach {
+                                longer += "0"
+                            }
+                            longer
+                        } else if (it.length == 3) {
+                            it
+                        } else {
+                            it.substring(0, 3)
+                        }
+                    }?.toShort() ?: 0
+                )
+            } else {
+                DateTime.parse(value)
+            }
+
+            JsonToken.Value(dateTime, YamlValueType.TimeStamp)
+
+        }
     }
     return null
 }

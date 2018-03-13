@@ -9,6 +9,7 @@ import maryk.core.json.testForByteArrayValue
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForInvalidYaml
 import maryk.core.json.testForValue
+import maryk.core.properties.types.DateTime
 import kotlin.test.Test
 
 class TypesTest {
@@ -22,6 +23,7 @@ class TypesTest {
         |- [.Inf, .INF, .inf, +.Inf, +.INF, +.inf, -.Inf, -.INF, -.inf]
         |- [0b1_001_001, 1_234, 012_345, 0xFF_EEDD, 1_90:20:30, -20:30, -1234]
         |- [1.2345, -1.0, 0.0, 2.3e4, -2.2323e-44]
+        |- [2018-03-13, 2017-12-01T12:45:13, !!timestamp 2016-09-05 1:12:05.123456789Z, !!timestamp 2015-05-24T12:03:55+05:00, !!timestamp 2014-02-28T09:34:43.22Z]
         """.trimMargin())
         testForValues(reader)
         testForArrayEnd(reader)
@@ -38,6 +40,7 @@ class TypesTest {
         |- [!!float .Inf, !!float .INF, !!float .inf, !!float +.Inf, !!float +.INF, !!float +.inf, !!float -.Inf, !!float -.INF, !!float -.inf]
         |- [!!int 0b1_001_001, !!int 1_234, !!int 012_345, !!int 0xFF_EEDD, !!int 1_90:20:30, !!int -20:30, !!int -1234]
         |- [!!float 1.2345, !!float -1.0, !!float 0.0, !!float 2.3e4, !!float -2.2323e-44]
+        |- [!!timestamp 2018-03-13, !!timestamp 2017-12-01T12:45:13Z, !!timestamp 2016-09-05 1:12:05.123456789Z, 2015-05-24T12:03:55+05:00, 2014-02-28T09:34:43.22Z]
         |- !!binary "\
         |R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5\
         |OTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/+\
@@ -99,6 +102,13 @@ class TypesTest {
         testForValue(reader, 0.0, ValueType.Float)
         testForValue(reader, 2.3e4, ValueType.Float)
         testForValue(reader, -2.2323e-44, ValueType.Float)
+        testForArrayEnd(reader)
+        testForArrayStart(reader)
+        testForValue(reader, DateTime(2018, 3, 13), YamlValueType.TimeStamp)
+        testForValue(reader, DateTime(2017, 12, 1, 12, 45, 13), YamlValueType.TimeStamp)
+        testForValue(reader, DateTime(2016, 9, 5, 1, 12, 5, 123), YamlValueType.TimeStamp)
+        testForValue(reader, DateTime(2015, 5, 24, 7, 3, 55), YamlValueType.TimeStamp)
+        testForValue(reader, DateTime(2014, 2, 28, 9, 34, 43, 220), YamlValueType.TimeStamp)
         testForArrayEnd(reader)
     }
 

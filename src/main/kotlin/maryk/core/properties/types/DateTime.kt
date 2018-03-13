@@ -100,12 +100,25 @@ data class DateTime(
             else -> throw IllegalArgumentException("Invalid length for bytes for DateTime conversion: " + length)
         }
 
-        override fun parse(value: String) = try {
-            val (date, time) = value.split('T', limit = 2)
-            DateTime(
-                Date.parse(date),
-                Time.parse(time)
-            )
-        } catch (e: Throwable) { throw ParseException(value, e) }
+        override fun parse(value: String): DateTime {
+            try {
+                var (date, time) = value.split('T', limit = 2)
+                if (time.contains("+") || time.contains("-")) {
+                    return ISO8601.toDate(value)
+                } else if (time.endsWith("Z")) {
+                    time = time.removeSuffix("Z")
+                }
+                return DateTime(
+                    Date.parse(date),
+                    Time.parse(time)
+                )
+            } catch (e: Throwable) { throw ParseException(value, e) }
+        }
     }
+}
+
+/** Object to convert native ISO8601 */
+expect object ISO8601 {
+    /** Decode [iso8601] string into DateTime */
+    fun toDate(iso8601: String): DateTime
 }

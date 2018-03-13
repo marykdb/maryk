@@ -14,11 +14,13 @@ internal fun testForDocumentStart(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForObjectStart(reader: IsJsonLikeReader) {
+internal fun testForObjectStart(reader: IsJsonLikeReader, type: MapType = MapType.Map) {
     reader.nextToken().apply {
-        if (this !is JsonToken.StartObject) {
-            fail("$this should be object start")
-        }
+        if (this is JsonToken.StartObject) {
+            type.let {
+                this.type shouldBe it
+            }
+        } else { fail("$this should be object start") }
     }
 }
 
@@ -38,11 +40,13 @@ internal fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
     }
 }
 
-internal fun testForArrayStart(reader: IsJsonLikeReader) {
+internal fun testForArrayStart(reader: IsJsonLikeReader, type: ArrayType = ArrayType.Sequence) {
     reader.nextToken().apply {
-        if (this !is JsonToken.StartArray) {
-            fail("$this should be array start")
-        }
+        if (this is JsonToken.StartArray) {
+            type.let {
+                this.type shouldBe it
+            }
+        } else { fail("$this should be array start") }
     }
 }
 

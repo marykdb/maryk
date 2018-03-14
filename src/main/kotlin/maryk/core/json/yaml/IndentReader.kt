@@ -9,7 +9,7 @@ import maryk.core.json.TokenType
 internal class IndentReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    private var givenTag: TokenType? = null
+    private var startTag: TokenType? = null
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -31,7 +31,7 @@ internal class IndentReader<out P>(
         LineReader(
             this.yamlReader,
             this,
-            givenTag = tag
+            startTag = tag
         ).let {
             this.currentReader = it
             it.readUntilToken()
@@ -40,8 +40,8 @@ internal class IndentReader<out P>(
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
-            this.givenTag?.let {
-                this.givenTag = null
+            this.startTag?.let {
+                this.startTag = null
                 (it as? MapType)?.let {
                     JsonToken.StartObject(it)
                 } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
@@ -105,7 +105,7 @@ internal class IndentReader<out P>(
 
         val parentIndentCount = this.parentReader.indentCount()
         return when(currentIndentCount) {
-            parentIndentCount -> this.parentReader.continueIndentLevel(this.givenTag)
+            parentIndentCount -> this.parentReader.continueIndentLevel(this.startTag)
             in 0 until parentIndentCount -> {
                 this.parentReader.childIsDoneReading()
 
@@ -119,7 +119,7 @@ internal class IndentReader<out P>(
                 this.parentReader.endIndentLevel(currentIndentCount, tokenToReturn)
             }
             else -> if (currentIndentCount == this.indentCounter){
-                this.parentReader.newIndentLevel(currentIndentCount, this, this.givenTag)
+                this.parentReader.newIndentLevel(currentIndentCount, this, this.startTag)
             } else {
                 throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
             }

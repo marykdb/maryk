@@ -171,7 +171,7 @@ internal class DocumentReader(
         return LineReader(
             parentReader = parentReader,
             yamlReader = this.yamlReader,
-            givenTag = tag
+            startTag = tag
         ).let {
             this.currentReader = it
             it.readUntilToken()

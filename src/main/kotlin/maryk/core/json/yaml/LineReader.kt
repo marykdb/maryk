@@ -10,7 +10,7 @@ internal class LineReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     private var indentToAdd: Int = 0,
-    givenTag: TokenType? = null
+    startTag: TokenType? = null
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -25,7 +25,7 @@ internal class LineReader<out P>(
 
     private var hasFoundFieldName: JsonToken.FieldName? = null
 
-    private var tag: TokenType? = givenTag
+    private var tag: TokenType? = startTag
 
     override fun readUntilToken(): JsonToken {
         if (this.hasFoundFieldName != null) {
@@ -71,7 +71,7 @@ internal class LineReader<out P>(
                 FlowSequenceReader(
                     yamlReader = this.yamlReader,
                     parentReader = this,
-                    givenTag = this.tag
+                    startTag = this.tag
                 ).let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -82,7 +82,7 @@ internal class LineReader<out P>(
                 FlowMapItemsReader(
                     yamlReader = this.yamlReader,
                     parentReader = this,
-                    givenTag = this.tag
+                    startTag = this.tag
                 ).let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -143,7 +143,7 @@ internal class LineReader<out P>(
                         yamlReader = this.yamlReader,
                         parentReader = this,
                         indentToAdd = indentToAdd,
-                        givenTag = this.tag
+                        startTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()

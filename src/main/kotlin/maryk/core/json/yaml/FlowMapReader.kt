@@ -12,14 +12,14 @@ private enum class FlowMapMode {
 internal class FlowMapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    givenTag: TokenType?
+    startTag: TokenType?
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithChildrenReader, IsYamlCharWithIndentsReader
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var tag: TokenType? = givenTag
+    private var tag: TokenType? = startTag
 
     private var mode = FlowMapMode.START
     override fun readUntilToken(): JsonToken {
@@ -66,7 +66,7 @@ internal class FlowMapItemsReader<out P>(
                     FlowSequenceReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
-                        givenTag = this.tag
+                        startTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -77,7 +77,7 @@ internal class FlowMapItemsReader<out P>(
                     FlowMapItemsReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
-                        givenTag = this.tag
+                        startTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()

@@ -9,7 +9,7 @@ internal class ArrayItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     val indentToAdd: Int = 0,
-    givenTag: TokenType? = null
+    startTag: TokenType? = null
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -21,7 +21,7 @@ internal class ArrayItemsReader<out P>(
     private var isStarted = false
 
     init {
-        givenTag?.let {
+        startTag?.let {
             this.setTag(it)
         }
     }

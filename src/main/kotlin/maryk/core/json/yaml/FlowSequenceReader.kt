@@ -8,7 +8,7 @@ import maryk.core.json.TokenType
 internal class FlowSequenceReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    givenTag: TokenType?
+    startTag: TokenType?
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
@@ -17,7 +17,7 @@ internal class FlowSequenceReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var isStarted = false
-    private var tag: TokenType? = givenTag
+    private var tag: TokenType? = startTag
 
     override fun readUntilToken(): JsonToken {
         return if (!this.isStarted) {
@@ -57,7 +57,7 @@ internal class FlowSequenceReader<out P>(
                     FlowMapItemsReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
-                        givenTag = this.tag
+                        startTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -68,7 +68,7 @@ internal class FlowSequenceReader<out P>(
                     FlowSequenceReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
-                        givenTag = this.tag
+                        startTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()

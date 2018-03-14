@@ -2,6 +2,10 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForDocumentStart
+import maryk.core.json.testForFieldName
+import maryk.core.json.testForInvalidYaml
+import maryk.core.json.testForObjectEnd
+import maryk.core.json.testForObjectStart
 import maryk.core.json.testForValue
 import kotlin.test.Test
 
@@ -44,5 +48,36 @@ class DocumentReaderTest {
         |  # Line 2
         """.trimMargin())
         testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun fail_on_wrong_indent() {
+        val reader = createYamlReader("""
+        |  k1: 1
+        | k2: 2
+        """.trimMargin())
+
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, 1.toLong())
+        testForObjectEnd(reader)
+        testForInvalidYaml(reader)
+    }
+
+    @Test
+    fun fail_on_wrong_with_comment_indent() {
+        val reader = createYamlReader("""
+        |  k1: 1
+        |
+        |   # ignore
+        |
+        | k2: 2
+        """.trimMargin())
+
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, 1.toLong())
+        testForObjectEnd(reader)
+        testForInvalidYaml(reader)
     }
 }

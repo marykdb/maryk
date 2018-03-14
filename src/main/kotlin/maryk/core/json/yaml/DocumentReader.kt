@@ -145,7 +145,7 @@ internal class DocumentReader(
     }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
-        handleReaderInterrupt()
+        throw InvalidYamlContent("Document should not have a lower indent than started")
 
     override fun indentCount() = 0
 

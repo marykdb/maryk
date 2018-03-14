@@ -2,13 +2,15 @@ buildscript {
     ext.kotlin_version = '1.2.30'
 
     repositories {
-        mavenCentral()
-        maven { url "https://plugins.gradle.org/m2/" }
+        jcenter()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.moowork.gradle:gradle-node-plugin:1.2.0'
     }
+}
+
+plugins {
+    id "com.moowork.node" version "1.2.0"
 }
 
 apply plugin: 'kotlin-platform-js'

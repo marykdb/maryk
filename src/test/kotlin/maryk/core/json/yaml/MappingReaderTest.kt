@@ -94,7 +94,10 @@ class MappingReaderTest {
         |'key2':
         |  "key3": 'value3'
         |  key4: "value4"
-        |key5: "value5"
+        |key5:
+        |   "value5"
+        |key6: value6
+
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key1")
@@ -108,6 +111,8 @@ class MappingReaderTest {
         testForObjectEnd(reader)
         testForFieldName(reader, "key5")
         testForValue(reader, "value5")
+        testForFieldName(reader, "key6")
+        testForValue(reader, "value6")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }

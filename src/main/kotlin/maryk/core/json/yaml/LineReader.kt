@@ -135,14 +135,11 @@ internal class LineReader<out P>(
                 read()
                 if (this.lastChar.isWhitespace()) {
                     read() // Skip whitespace char
-                    val indentToAdd = indents + if (parentReader !is IndentReader<*>) {
-                        1
-                    } else { 0 }
 
                     ArrayItemsReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
-                        indentToAdd = indentToAdd,
+                        indentToAdd = indents,
                         startTag = this.tag
                     ).let {
                         this.currentReader = it

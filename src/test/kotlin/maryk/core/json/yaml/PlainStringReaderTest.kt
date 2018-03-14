@@ -45,7 +45,6 @@ class PlainStringReaderTest {
             |  test
             | test
         """.trimMargin())
-        testForValue(reader, "test")
         testForInvalidYaml(reader)
     }
 

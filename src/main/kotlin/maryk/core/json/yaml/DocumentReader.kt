@@ -19,6 +19,8 @@ internal class DocumentReader(
 
     private var tag: TokenType? = null
 
+    private var indentCount: Int = 0
+
     override fun readUntilToken(): JsonToken {
         if(this.lastChar == '\u0000') {
             this.read()
@@ -48,6 +50,7 @@ internal class DocumentReader(
                             '-' -> {
                                 read()
                                 return if (this.contentWasFound) {
+                                    this.indentCount = 0
                                     JsonToken.StartDocument
                                 } else {
                                     // First found document open before content
@@ -59,9 +62,12 @@ internal class DocumentReader(
                         }
                     }
                     ' ' -> {
+                        checkAlreadyOnIndent()
+
                         ArrayItemsReader(
                             yamlReader = this.yamlReader,
-                            parentReader = this
+                            parentReader = this,
+                            startTag = this.tag
                         ).let {
                             this.currentReader = it
                             it.readUntilToken()
@@ -144,10 +150,18 @@ internal class DocumentReader(
         return readUntilToken()
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
+    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+        if (indentCount == 0
+            && tokenToReturn != null
+            && (this.lastChar == '-' || this.lastChar == '.')
+        ) {
+            this.indentCount = -1 // fail indents
+            return tokenToReturn()
+        }
         throw InvalidYamlContent("Document should not have a lower indent than started")
+    }
 
-    override fun indentCount() = 0
+    override fun indentCount() = this.indentCount
 
     override fun indentCountForChildren() = this.indentCount()
 
@@ -179,6 +193,8 @@ internal class DocumentReader(
     }
 
     private fun plainStringReader(char: String): JsonToken {
+        checkAlreadyOnIndent()
+
         val lineReader = LineReader(this.yamlReader, this)
 
         return PlainStringReader(
@@ -191,5 +207,15 @@ internal class DocumentReader(
             this.currentReader = it
             it.readUntilToken()
         }
+    }
+
+    private fun checkAlreadyOnIndent() {
+        if (this.indentCount == -1) {
+            throw InvalidYamlContent("Document should not have a lower indent than started")
+        }
+    }
+
+    internal fun setIndent(indentCount: Int) {
+        this.indentCount = indentCount
     }
 }

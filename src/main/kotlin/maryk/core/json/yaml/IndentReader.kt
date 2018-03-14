@@ -101,6 +101,10 @@ internal class IndentReader<out P>(
 
         if (this.indentCounter == -1) {
             this.indentCounter = currentIndentCount
+
+            if (this.parentReader is DocumentReader) {
+                this.parentReader.setIndent(this.indentCounter)
+            }
         }
 
         val parentIndentCount = this.parentReader.indentCount()

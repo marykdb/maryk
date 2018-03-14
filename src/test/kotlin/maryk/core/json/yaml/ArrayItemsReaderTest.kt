@@ -107,7 +107,6 @@ class ArrayItemsReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForValue(reader, "test")
-        testForArrayEnd(reader)
         testForInvalidYaml(reader)
     }
 }

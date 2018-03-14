@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.MapType
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
 
@@ -118,7 +119,12 @@ internal class DocumentReader(
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
-            JsonToken.SimpleStartObject
+            this.tag?.let {
+                this.tag = null
+                (it as? MapType)?.let {
+                    JsonToken.StartObject(it)
+                } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
+            } ?: JsonToken.SimpleStartObject
         } else {
             null
         }

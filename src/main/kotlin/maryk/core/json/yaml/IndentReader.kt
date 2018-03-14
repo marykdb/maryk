@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
+import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 /** Reads indents on a new line until a char is found */
@@ -39,7 +40,12 @@ internal class IndentReader<out P>(
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
-            JsonToken.SimpleStartObject
+            this.givenTag?.let {
+                this.givenTag = null
+                (it as? MapType)?.let {
+                    JsonToken.StartObject(it)
+                } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
+            } ?: JsonToken.SimpleStartObject
         } else {
             null
         }
@@ -47,18 +53,32 @@ internal class IndentReader<out P>(
     override fun isWithinMap() = this.mapKeyFound
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
-        this.yamlReader.hasUnclaimedIndenting(indentCount)
-
         if (this.mapKeyFound) {
+            this.yamlReader.hasUnclaimedIndenting(indentCount)
             this.mapKeyFound = false
             return JsonToken.EndObject
         }
 
         this.parentReader.childIsDoneReading()
+
         return if(tokenToReturn != null) {
+            this.yamlReader.hasUnclaimedIndenting(indentCount)
             tokenToReturn()
         } else {
-            this.currentReader.readUntilToken()
+            @Suppress("UNCHECKED_CAST")
+            (this.currentReader as P).let {
+                if (it.indentCount() == indentCount) {
+                    // found right level so continue
+                    this.yamlReader.hasUnclaimedIndenting(null)
+                    if (it is IndentReader<*>) {
+                        it.continueIndentLevel(null)
+                    } else {
+                        it.readUntilToken()
+                    }
+                } else {
+                    it.endIndentLevel(indentCount, null)
+                }
+            }
         }
     }
 

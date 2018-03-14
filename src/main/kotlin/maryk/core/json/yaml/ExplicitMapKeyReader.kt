@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
+import maryk.core.json.MapType
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
 
@@ -154,7 +155,12 @@ internal class ExplicitMapKeyReader<out P>(
     override fun handleReaderInterrupt() = when (this.state) {
         ExplicitMapKeyState.QUESTION -> {
             this.state = ExplicitMapKeyState.KEY
-            JsonToken.SimpleStartObject
+            this.tag?.let {
+                this.tag = null
+                (it as? MapType)?.let {
+                    JsonToken.StartObject(it)
+                } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
+            } ?: JsonToken.SimpleStartObject
         }
         ExplicitMapKeyState.KEY -> {
             this.state = ExplicitMapKeyState.VALUE

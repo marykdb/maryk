@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 private enum class FlowMapMode {
@@ -10,20 +11,26 @@ private enum class FlowMapMode {
 /** Reader for flow Map Items {key1: value1, key2: value2} */
 internal class FlowMapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P
+    parentReader: P,
+    givenTag: TokenType?
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithChildrenReader, IsYamlCharWithIndentsReader
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var tag: TokenType? = null
+    private var tag: TokenType? = givenTag
 
     private var mode = FlowMapMode.START
     override fun readUntilToken(): JsonToken {
         return if (this.mode == FlowMapMode.START) {
             this.mode = FlowMapMode.KEY
-            JsonToken.SimpleStartObject
+            this.tag?.let {
+                this.tag = null
+                (it as? MapType)?.let {
+                    JsonToken.StartObject(it)
+                } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
+            } ?: JsonToken.SimpleStartObject
         } else {
             while(this.lastChar.isWhitespace()) {
                 read()
@@ -69,7 +76,8 @@ internal class FlowMapItemsReader<out P>(
                     read()
                     FlowMapItemsReader(
                         yamlReader = this.yamlReader,
-                        parentReader = this
+                        parentReader = this,
+                        givenTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()

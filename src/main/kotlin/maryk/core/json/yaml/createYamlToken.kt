@@ -35,7 +35,9 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
             throw InvalidYamlContent("Cannot have a null value with explicit tag which is not !!null")
         }
         when (it) {
-            !is ValueType<*> -> throw InvalidYamlContent("Cannot use non value tag with value $value")
+            !is ValueType<*> -> {
+                throw InvalidYamlContent("Cannot use non value tag with value $value")
+            }
             is ValueType.Bool -> when(value) {
                 in trueValues -> JsonToken.Value(true, it)
                 in falseValues -> JsonToken.Value(false, it)

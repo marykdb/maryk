@@ -81,7 +81,8 @@ internal class LineReader<out P>(
                 read()
                 FlowMapItemsReader(
                     yamlReader = this.yamlReader,
-                    parentReader = this
+                    parentReader = this,
+                    givenTag = this.tag
                 ).let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -242,7 +243,9 @@ internal class LineReader<out P>(
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
         this.mapKeyFound = true
-        return this.parentReader.foundMapKey(isExplicitMap)
+        return this.parentReader.foundMapKey(isExplicitMap).also {
+            this.tag = null
+        }
     }
 
     override fun isWithinMap() = this.parentReader.isWithinMap()

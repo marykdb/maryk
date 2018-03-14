@@ -92,7 +92,7 @@ internal class YamlReaderImpl(
             return this.currentReader.handleReaderInterrupt()
         }
 
-        currentToken = try {
+        this.currentToken = try {
             this.currentReader.let {
                 if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
                     // Skip stray comments and read until first relevant character

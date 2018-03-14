@@ -196,7 +196,7 @@ internal class LineReader<out P>(
             if (!this.isExplicitMap) {
                 this.indentToAdd -= 1
             }
-                return createYamlValueToken(value, this.tag, isPlainStringReader)
+            return createYamlValueToken(value, this.tag, isPlainStringReader)
         } else {
             skipWhiteSpace()
             if (this.lastChar == ':') {

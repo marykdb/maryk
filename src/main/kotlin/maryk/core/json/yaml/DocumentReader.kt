@@ -112,13 +112,7 @@ internal class DocumentReader(
                 if (this.finishedWithDirectives == false) {
                     throw InvalidYamlContent("Directives has to end with an start document --- separator")
                 }
-                LineReader(
-                    parentReader = this,
-                    yamlReader = this.yamlReader
-                ).let {
-                    this.currentReader = it
-                    it.readUntilToken()
-                }
+                this.lineReader(this)
             }
         }.also {
             this.contentWasFound = true
@@ -136,14 +130,7 @@ internal class DocumentReader(
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P)
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader =
-        LineReader(
-            parentReader = parentReader,
-            yamlReader = this.yamlReader
-        ).let {
-            this.currentReader = it
-            it.readUntilToken()
-        }
+                  P : IsYamlCharWithIndentsReader = this.lineReader(parentReader)
 
     override fun continueIndentLevel() = readUntilToken()
 
@@ -165,6 +152,19 @@ internal class DocumentReader(
         }
 
         return JsonToken.EndDocument
+    }
+
+    private fun <P> lineReader(parentReader: P): JsonToken
+            where P : maryk.core.json.yaml.YamlCharReader,
+                  P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
+                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
+        return LineReader(
+            parentReader = parentReader,
+            yamlReader = this.yamlReader
+        ).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
     }
 
     private fun plainStringReader(char: String): JsonToken {

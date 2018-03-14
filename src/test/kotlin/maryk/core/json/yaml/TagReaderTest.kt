@@ -11,11 +11,12 @@ import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
 import maryk.core.json.testForValue
 import maryk.core.properties.definitions.PropertyDefinitionType
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class TagReaderTest {
     @Test
-    fun readTagsInMap() {
+    fun read_tags_in_map() {
         val reader = createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -95,7 +96,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun readTagsInFlowMap() {
+    fun read_tags_in_flow_map() {
         val reader = createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -115,7 +116,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun readTagsInSequence() {
+    fun read_tags_in_sequence() {
         val reader = createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -137,7 +138,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun readTagsInFlowSequence() {
+    fun read_tags_in_flow_sequence() {
         val reader = createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -162,7 +163,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun readMarykTags() {
+    fun read_maryk_tags() {
         val reader = createMarykYamlReader("""
         |    - !Boolean { k1: v1 }
         |    - !SubModel { k2: v2 }
@@ -178,5 +179,16 @@ class TagReaderTest {
         testForObjectEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun fail_on_unknown_tag() {
+        val reader = createYamlReader("""
+        |    - !Nonsense { k1: v1 }
+        """.trimMargin())
+        testForArrayStart(reader)
+        shouldThrow<InvalidYamlContent> {
+            reader.nextToken()
+        }
     }
 }

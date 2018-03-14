@@ -14,7 +14,7 @@ class FlowMapReaderTest {
     @Test
     fun read_map_items() {
         val reader = createYamlReader("""
-        |     - {"key0","key1": "value1", 'key2': 'value2'}
+        |     - {"key0",key1: "value1", 'key2': 'value2'}
         """.trimMargin())
         testForArrayStart(reader)
         testForObjectStart(reader)
@@ -24,6 +24,30 @@ class FlowMapReaderTest {
         testForValue(reader, "value1")
         testForFieldName(reader, "key2")
         testForValue(reader, "value2")
+        testForObjectEnd(reader)
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_and_sequence_in_map_items() {
+        val reader = createYamlReader("""
+        |     - {"key0","key1": {e1: v1}, 'key2': [v1, v2]}
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "key0")
+        testForValue(reader, null)
+        testForFieldName(reader, "key1")
+        testForObjectStart(reader)
+        testForFieldName(reader, "e1")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForFieldName(reader, "key2")
+        testForArrayStart(reader)
+        testForValue(reader, "v1")
+        testForValue(reader, "v2")
+        testForArrayEnd(reader)
         testForObjectEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)

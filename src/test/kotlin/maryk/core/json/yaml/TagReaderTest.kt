@@ -40,7 +40,7 @@ class TagReaderTest {
         |       a2: 2
         |    k11:
         |       b1: 1
-        |    k12: !!pairs {test: value}
+        |    k12: !!pairs {test: !!str true}
         """.trimMargin())
 
         testForObjectStart(reader)
@@ -89,7 +89,7 @@ class TagReaderTest {
         testForFieldName(reader, "k12")
         testForObjectStart(reader, MapType.Pairs)
         testForFieldName(reader, "test")
-        testForValue(reader, "value")
+        testForValue(reader, "true", ValueType.String)
         testForObjectEnd(reader)
         testForObjectEnd(reader)
         testForDocumentEnd(reader)

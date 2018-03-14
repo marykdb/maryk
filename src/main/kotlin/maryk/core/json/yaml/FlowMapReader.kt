@@ -63,6 +63,7 @@ internal class FlowMapItemsReader<out P>(
                 }
                 '[' -> {
                     read()
+                    this.mode = FlowMapMode.SEPARATOR
                     FlowSequenceReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
@@ -74,6 +75,7 @@ internal class FlowMapItemsReader<out P>(
                 }
                 '{' -> {
                     read()
+                    this.mode = FlowMapMode.SEPARATOR
                     FlowMapItemsReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,

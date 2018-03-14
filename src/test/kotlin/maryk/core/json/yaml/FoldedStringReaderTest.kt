@@ -93,7 +93,6 @@ class FoldedStringReaderTest {
         testForInvalidYaml(reader)
     }
 
-
     @Test
     fun read_with_strip_chomp_indent() {
         val reader = createYamlReader("""

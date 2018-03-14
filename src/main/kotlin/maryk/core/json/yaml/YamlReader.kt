@@ -55,6 +55,9 @@ internal class YamlReaderImpl(
     private var hasException: Boolean = false
     internal val tags: MutableMap<String, String> = mutableMapOf()
 
+    var columnNumber = -1
+    var lineNumber = 1
+
     private val tagMap: MutableMap<String, Map<String, TokenType>> = mutableMapOf(
         "tag:yaml.org,2002:" to mapOf(
             "str" to ValueType.String,
@@ -92,33 +95,40 @@ internal class YamlReaderImpl(
             return this.currentReader.handleReaderInterrupt()
         }
 
-        this.currentToken = try {
-            this.currentReader.let {
-                if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
-                    // Skip stray comments and read until first relevant character
-                    if (this.lastChar == '#') {
-                        skipComments()
-                    }
-
-                    val remainder = it.indentCount() - this.unclaimedIndenting!!
-                    when {
-                        remainder > 0 -> it.endIndentLevel(this.unclaimedIndenting!!, null)
-                        remainder == 0 -> {
-                            this.unclaimedIndenting = null
-                            it.continueIndentLevel(null)
+        try {
+            this.currentToken = try {
+                this.currentReader.let {
+                    if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
+                        // Skip stray comments and read until first relevant character
+                        if (this.lastChar == '#') {
+                            skipComments()
                         }
-                        else -> // Indents are only left over on closing indents so should never be lower
-                            throw InvalidYamlContent("Lower indent found than previous started indents")
+
+                        val remainder = it.indentCount() - this.unclaimedIndenting!!
+                        when {
+                            remainder > 0 -> it.endIndentLevel(this.unclaimedIndenting!!, null)
+                            remainder == 0 -> {
+                                this.unclaimedIndenting = null
+                                it.continueIndentLevel(null)
+                            }
+                            else -> // Indents are only left over on closing indents so should never be lower
+                                throw InvalidYamlContent("Lower indent found than previous started indents")
+                        }
+                    } else {
+                        it.readUntilToken()
                     }
-                } else {
-                    it.readUntilToken()
                 }
+            } catch (e: ExceptionWhileReadingJson) {
+                this.hasException = true
+                currentReader.handleReaderInterrupt()
             }
-        } catch (e: ExceptionWhileReadingJson) {
-            this.hasException = true
-            currentReader.handleReaderInterrupt()
+
+            return currentToken
+        } catch (e: InvalidYamlContent) {
+            e.lineNumber = this.lineNumber
+            e.columnNumber = this.columnNumber
+            throw e
         }
-        return currentToken
     }
 
     private fun skipComments() {
@@ -148,6 +158,12 @@ internal class YamlReaderImpl(
     }
 
     override fun read() = try {
+        if (lastChar.isLineBreak()) {
+            lineNumber += 1
+            columnNumber = 0
+        } else {
+            columnNumber += 1
+        }
         lastChar = reader()
     } catch (e: Throwable) { // Reached end or something bad happened
         throw ExceptionWhileReadingJson()

@@ -3,7 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForInvalidJson
+import maryk.core.json.testForInvalidYaml
 import maryk.core.json.testForValue
 import kotlin.test.Test
 
@@ -96,7 +96,7 @@ class ArrayItemsReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForValue(reader, "test")
-        testForInvalidJson(reader)
+        testForInvalidYaml(reader)
     }
 
     @Test
@@ -108,6 +108,6 @@ class ArrayItemsReaderTest {
         testForArrayStart(reader)
         testForValue(reader, "test")
         testForArrayEnd(reader)
-        testForInvalidJson(reader)
+        testForInvalidYaml(reader)
     }
 }

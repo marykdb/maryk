@@ -66,4 +66,10 @@ class ExceptionWhileReadingJson internal constructor(): Throwable()
 /** Exception for invalid JSON */
 open class InvalidJsonContent internal constructor(
     description: String
-): Throwable(description)
+): Throwable(description) {
+    var lineNumber: Int? = null
+    var columnNumber: Int? = null
+
+    override val message: String?
+        get() = "[l: $lineNumber, c: $columnNumber] ${super.message}"
+}

@@ -4,7 +4,7 @@ import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
-import maryk.core.json.testForInvalidJson
+import maryk.core.json.testForInvalidYaml
 import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
 import maryk.core.json.testForValue
@@ -89,7 +89,7 @@ class FlowSequenceReaderTest {
         """.trimMargin())
         testForArrayStart(reader)
         testForArrayStart(reader)
-        testForInvalidJson(reader)
+        testForInvalidYaml(reader)
     }
 
     @Test

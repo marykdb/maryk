@@ -3,7 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForInvalidJson
+import maryk.core.json.testForInvalidYaml
 import maryk.core.json.testForValue
 import kotlin.test.Test
 
@@ -46,7 +46,7 @@ class PlainStringReaderTest {
             | test
         """.trimMargin())
         testForValue(reader, "test")
-        testForInvalidJson(reader)
+        testForInvalidYaml(reader)
     }
 
     @Test

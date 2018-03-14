@@ -90,12 +90,6 @@ internal fun testForDocumentEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForInvalidJson(reader: IsJsonLikeReader) {
-    shouldThrow<InvalidJsonContent> {
-        println(reader.nextToken())
-    }
-}
-
 internal fun testForInvalidYaml(reader: IsJsonLikeReader) {
     shouldThrow<InvalidYamlContent> {
         println(reader.nextToken())

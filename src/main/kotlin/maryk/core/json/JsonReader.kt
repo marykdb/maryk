@@ -3,6 +3,7 @@ package maryk.core.json
 import maryk.core.extensions.HEX_CHARS
 import maryk.core.extensions.digitChars
 import maryk.core.extensions.isDigit
+import maryk.core.extensions.isLineBreak
 
 private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartDocument)
 
@@ -11,6 +12,9 @@ class JsonReader(
     private val reader: () -> Char
 ) : IsJsonLikeReader {
     override var currentToken: JsonToken = JsonToken.StartDocument
+
+    var columnNumber = 0
+    var lineNumber = 1
 
     private var storedValue: String? = ""
     private val typeStack: MutableList<JsonComplexType> = mutableListOf()
@@ -85,6 +89,8 @@ class JsonReader(
             currentToken = JsonToken.Suspended(currentToken, storedValue)
         } catch (e: InvalidJsonContent) {
             currentToken = JsonToken.JsonException(e)
+            e.columnNumber = this.columnNumber
+            e.lineNumber = this.lineNumber
             throw e
         }
 
@@ -114,6 +120,12 @@ class JsonReader(
 
     private fun read() = try {
         lastChar = reader()
+        if (lastChar.isLineBreak()) {
+            lineNumber += 1
+            columnNumber = 0
+        } else {
+            columnNumber += 1
+        }
     } catch (e: Throwable) { // Reached end or something bad happened
         throw ExceptionWhileReadingJson()
     }

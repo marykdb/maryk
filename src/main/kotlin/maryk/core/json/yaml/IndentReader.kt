@@ -7,7 +7,8 @@ import maryk.core.json.TokenType
 /** Reads indents on a new line until a char is found */
 internal class IndentReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P
+    parentReader: P,
+    private var givenTag: TokenType? = null
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -19,19 +20,21 @@ internal class IndentReader<out P>(
     private var mapKeyFound: Boolean = false
 
     // Should not be called
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader =
-        this.parentReader.newIndentLevel(indentCount, parentReader)
+        this.parentReader.newIndentLevel(indentCount, parentReader, tag)
 
-    override fun continueIndentLevel() =
-        LineReader(this.yamlReader, this).let {
+    override fun continueIndentLevel(tag: TokenType?) =
+        LineReader(
+            this.yamlReader,
+            this,
+            givenTag = tag
+        ).let {
             this.currentReader = it
             it.readUntilToken()
         }
-
-    override fun setTag(tag: TokenType) = this.parentReader.setTag(tag)
 
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
@@ -40,6 +43,8 @@ internal class IndentReader<out P>(
         } else {
             null
         }
+
+    override fun isWithinMap() = this.mapKeyFound
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         this.yamlReader.hasUnclaimedIndenting(indentCount)
@@ -80,22 +85,21 @@ internal class IndentReader<out P>(
 
         val parentIndentCount = this.parentReader.indentCount()
         return when(currentIndentCount) {
-            parentIndentCount -> this.parentReader.continueIndentLevel()
+            parentIndentCount -> this.parentReader.continueIndentLevel(this.givenTag)
             in 0 until parentIndentCount -> {
                 this.parentReader.childIsDoneReading()
 
-                if (this.mapKeyFound) {
+                val tokenToReturn: (() -> JsonToken)? = if (this.mapKeyFound) {
                     this.mapKeyFound = false
-                    return this.parentReader.endIndentLevel(
-                        currentIndentCount,
-                        tokenToReturn = { JsonToken.EndObject }
-                    )
+                    { JsonToken.EndObject }
+                } else {
+                    null
                 }
 
-                this.parentReader.endIndentLevel(currentIndentCount)
+                this.parentReader.endIndentLevel(currentIndentCount, tokenToReturn)
             }
             else -> if (currentIndentCount == this.indentCounter){
-                this.parentReader.newIndentLevel(currentIndentCount, this)
+                this.parentReader.newIndentLevel(currentIndentCount, this, this.givenTag)
             } else {
                 throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
             }

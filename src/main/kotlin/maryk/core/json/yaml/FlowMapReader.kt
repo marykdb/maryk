@@ -58,7 +58,8 @@ internal class FlowMapItemsReader<out P>(
                     read()
                     FlowSequenceReader(
                         yamlReader = this.yamlReader,
-                        parentReader = this
+                        parentReader = this,
+                        givenTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -101,10 +102,6 @@ internal class FlowMapItemsReader<out P>(
                 else -> this.plainStringReader("")
             }
         }
-    }
-
-    override fun setTag(tag: TokenType) {
-        this.tag = tag
     }
 
     private fun constructToken(value: String?, isPlainStringReader: Boolean) = when(mode) {
@@ -155,12 +152,16 @@ internal class FlowMapItemsReader<out P>(
 
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
 
-    override fun continueIndentLevel() = this.readUntilToken()
+    override fun continueIndentLevel(tag: TokenType?): JsonToken {
+        this.tag = tag
+        return this.readUntilToken()
+    }
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
+        this.tag = tag
         return this.readUntilToken()
     }
 
@@ -168,4 +169,6 @@ internal class FlowMapItemsReader<out P>(
         this.readUntilToken()
 
     override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
+
+    override fun isWithinMap() = this.parentReader.isWithinMap()
 }

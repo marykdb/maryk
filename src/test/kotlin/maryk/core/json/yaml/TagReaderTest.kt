@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ArrayType
 import maryk.core.json.ValueType
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
@@ -20,7 +21,19 @@ class TagReaderTest {
         |    k2: !!str v2
         |    k3: !test!bool true
         |    k4: !<tag:yaml.org,2002:str> v4
+        |    k5: !!str
+        |      true
+        |    k6:
+        |      true
+        |    k7: !!set
+        |    - v1
+        |    - v2
+        |    - v3
+        |    k8:
+        |    - t1
+        |    k9: !!set [f1, f2]
         """.trimMargin())
+
         testForObjectStart(reader)
         testForFieldName(reader, "k1")
         testForObjectStart(reader)
@@ -33,6 +46,25 @@ class TagReaderTest {
         testForValue(reader, true, ValueType.Bool)
         testForFieldName(reader, "k4")
         testForValue(reader, "v4", ValueType.String)
+        testForFieldName(reader, "k5")
+        testForValue(reader, "true", ValueType.String)
+        testForFieldName(reader, "k6")
+        testForValue(reader, true, ValueType.Bool)
+        testForFieldName(reader, "k7")
+        testForArrayStart(reader, ArrayType.Set)
+        testForValue(reader, "v1")
+        testForValue(reader, "v2")
+        testForValue(reader, "v3")
+        testForArrayEnd(reader)
+        testForFieldName(reader, "k8")
+        testForArrayStart(reader, ArrayType.Sequence)
+        testForValue(reader, "t1")
+        testForArrayEnd(reader)
+        testForFieldName(reader, "k9")
+        testForArrayStart(reader, ArrayType.Set)
+        testForValue(reader, "f1")
+        testForValue(reader, "f2")
+        testForArrayEnd(reader)
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
@@ -86,7 +118,7 @@ class TagReaderTest {
         |---
         |    [ !Boolean { k: v },
         |     !!str v2,
-        |     !test!bool true, !<tag:yaml.org,2002:str> v4]
+        |     !test!bool true, !<tag:yaml.org,2002:str> v4, !!set [a1, a2]]
         """.trimMargin())
         testForArrayStart(reader)
         testForObjectStart(reader)
@@ -96,6 +128,10 @@ class TagReaderTest {
         testForValue(reader, "v2", ValueType.String)
         testForValue(reader, true, ValueType.Bool)
         testForValue(reader, "v4")
+        testForArrayStart(reader, ArrayType.Set)
+        testForValue(reader, "a1")
+        testForValue(reader, "a2")
+        testForArrayEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }

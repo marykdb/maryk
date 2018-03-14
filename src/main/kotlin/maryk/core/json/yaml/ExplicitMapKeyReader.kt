@@ -68,22 +68,19 @@ internal class ExplicitMapKeyReader<out P>(
         }
     }
 
-    override fun setTag(tag: TokenType) {
-        this.tag = tag
-    }
-
     override fun indentCount() = this.parentReader.indentCountForChildren()
 
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
         TODO("not implemented")
     }
 
-    override fun continueIndentLevel(): JsonToken {
+    override fun continueIndentLevel(tag: TokenType?): JsonToken {
+        this.tag = tag
         if (lastChar == ':') {
             read()
             if(this.lastChar.isWhitespace()) {
@@ -111,7 +108,7 @@ internal class ExplicitMapKeyReader<out P>(
                 updateState()
                 tokenToReturn()
             } else {
-                this.continueIndentLevel()
+                this.continueIndentLevel(null)
             }
         } else {
             this.parentReader.endIndentLevel(indentCount, tokenToReturn)
@@ -131,13 +128,15 @@ internal class ExplicitMapKeyReader<out P>(
             }
             else -> {
                 this.parentReader.childIsDoneReading()
-                return (this.currentReader as IsYamlCharWithIndentsReader).continueIndentLevel()
+                return (this.currentReader as IsYamlCharWithIndentsReader).continueIndentLevel(null)
             }
         }
     }
 
     // Return null because already set explicitly
-    override fun foundMapKey(isExplicitMap: Boolean) = null
+    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? = null
+
+    override fun isWithinMap() = this.parentReader.isWithinMap()
 
     override fun childIsDoneReading() {
         updateState()

@@ -1,12 +1,14 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ArrayType
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
 /** Reader for flow sequences [item1, item2, item3] */
 internal class FlowSequenceReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P
+    parentReader: P,
+    givenTag: TokenType?
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
@@ -15,12 +17,17 @@ internal class FlowSequenceReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var isStarted = false
-    private var tag: TokenType? = null
+    private var tag: TokenType? = givenTag
 
     override fun readUntilToken(): JsonToken {
         return if (!this.isStarted) {
             this.isStarted = true
-            JsonToken.SimpleStartArray
+            this.tag?.let {
+                this.tag = null
+                JsonToken.StartArray(
+                    it as? ArrayType ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
+                )
+            } ?: JsonToken.SimpleStartArray
         } else {
             while(this.lastChar.isWhitespace()) {
                 read()
@@ -59,7 +66,8 @@ internal class FlowSequenceReader<out P>(
                     read()
                     FlowSequenceReader(
                         yamlReader = this.yamlReader,
-                        parentReader = this
+                        parentReader = this,
+                        givenTag = this.tag
                     ).let {
                         this.currentReader = it
                         it.readUntilToken()
@@ -94,10 +102,6 @@ internal class FlowSequenceReader<out P>(
         }
     }
 
-    override fun setTag(tag: TokenType) {
-        this.tag = tag
-    }
-
     private fun plainStringReader(startWith: String): JsonToken {
         return PlainStringReader(
             this.yamlReader,
@@ -125,18 +129,28 @@ internal class FlowSequenceReader<out P>(
 
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
 
-    override fun continueIndentLevel() = this.readUntilToken()
+    override fun continueIndentLevel(tag: TokenType?): JsonToken {
+        this.setTag(tag)
+        return this.readUntilToken()
+    }
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P): JsonToken
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
+        this.setTag(tag)
         return this.readUntilToken()
     }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
         this.readUntilToken()
 
+    private fun setTag(tag: TokenType?) {
+        this.tag = tag
+    }
+
     override fun foundMapKey(isExplicitMap: Boolean) =
         this.parentReader.foundMapKey(isExplicitMap)
+
+    override fun isWithinMap() = this.parentReader.isWithinMap()
 }

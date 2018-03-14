@@ -96,8 +96,6 @@ internal class PlainStringReader<out P>(
         }
     }
 
-    override fun setTag(tag: TokenType) = this.parentReader.setTag(tag)
-
     private fun storeCharAndProceed() {
         this.storedValue += lastChar
         read()
@@ -105,16 +103,18 @@ internal class PlainStringReader<out P>(
 
     override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
 
+    override fun isWithinMap() = this.parentReader.isWithinMap()
+
     override fun indentCount() = this.parentReader.indentCountForChildren()
 
     override fun indentCountForChildren() = this.indentCount()
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P)
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?)
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader = this.continueIndentLevel()
+                  P : IsYamlCharWithIndentsReader = this.continueIndentLevel(tag)
 
-    override fun continueIndentLevel(): JsonToken {
+    override fun continueIndentLevel(tag: TokenType?): JsonToken {
         this.storedValue += ' '
         return this.readUntilToken()
     }

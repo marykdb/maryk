@@ -36,12 +36,10 @@ internal class TagReader<out P>(
             this.prefix = "!"
         }
 
-        this.parentReader.setTag(
+        this.parentReader.childIsDoneReading()
+        return this.parentReader.continueIndentLevel(
             this.yamlReader.resolveTag(prefix, tag)
         )
-
-        this.parentReader.childIsDoneReading()
-        return this.parentReader.continueIndentLevel()
     }
 
     override fun handleReaderInterrupt(): JsonToken {

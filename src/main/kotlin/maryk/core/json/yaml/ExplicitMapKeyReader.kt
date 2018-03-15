@@ -7,13 +7,14 @@ import maryk.core.json.TokenType
 import maryk.core.json.ValueType
 
 private enum class ExplicitMapKeyState {
-    QUESTION, KEY, VALUE, END, DONE
+    START, KEY, VALUE, END, DONE
 }
 
 /** Reads Explicit map keys started with ? */
 internal class ExplicitMapKeyReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
+    flowMode: Boolean = false,
     private val jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
@@ -22,11 +23,11 @@ internal class ExplicitMapKeyReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var state: ExplicitMapKeyState = ExplicitMapKeyState.QUESTION
+    private var state: ExplicitMapKeyState = ExplicitMapKeyState.START
     private var tag: TokenType? = null
 
     override fun readUntilToken(): JsonToken {
-        if(this.state == ExplicitMapKeyState.QUESTION) {
+        if(this.state == ExplicitMapKeyState.START) {
             read()
             // If it turns out to not be an explicit key make it a Plain String reader
             if (!this.lastChar.isWhitespace()) {
@@ -153,7 +154,7 @@ internal class ExplicitMapKeyReader<out P>(
     }
 
     override fun handleReaderInterrupt() = when (this.state) {
-        ExplicitMapKeyState.QUESTION -> {
+        ExplicitMapKeyState.START -> {
             this.state = ExplicitMapKeyState.KEY
             this.tag?.let {
                 this.tag = null

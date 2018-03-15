@@ -131,7 +131,7 @@ internal class FlowSequenceReader<out P>(
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        this.setTag(tag)
+        this.tag
         return this.readUntilToken()
     }
 
@@ -139,16 +139,12 @@ internal class FlowSequenceReader<out P>(
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
-        this.setTag(tag)
+        this.tag = tag
         return this.readUntilToken()
     }
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
         this.readUntilToken()
-
-    private fun setTag(tag: TokenType?) {
-        this.tag = tag
-    }
 
     override fun foundMapKey(isExplicitMap: Boolean) =
         this.parentReader.foundMapKey(isExplicitMap)

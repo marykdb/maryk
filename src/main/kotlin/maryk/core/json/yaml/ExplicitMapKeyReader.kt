@@ -14,7 +14,6 @@ private enum class ExplicitMapKeyState {
 internal class ExplicitMapKeyReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    flowMode: Boolean = false,
     private val jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,

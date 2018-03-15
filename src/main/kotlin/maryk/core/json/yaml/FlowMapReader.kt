@@ -13,14 +13,12 @@ internal class FlowMapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     startTag: TokenType?
-) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_MAP, startTag),
     IsYamlCharWithChildrenReader, IsYamlCharWithIndentsReader
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var tag: TokenType? = startTag
-
     private var mode = FlowMapMode.START
     override fun readUntilToken(): JsonToken {
         return if (this.mode == FlowMapMode.START) {
@@ -43,14 +41,14 @@ internal class FlowMapItemsReader<out P>(
                 }
                 '\'' -> {
                     read()
-                    StringInSingleQuoteReader(this.yamlReader, this, { this.constructToken(it, false) }).let {
+                    StringInSingleQuoteReader(this.yamlReader, this, { this.jsonTokenCreator(it, false) }).let {
                         this.currentReader = it
                         it.readUntilToken()
                     }
                 }
                 '\"' -> {
                     read()
-                    StringInDoubleQuoteReader(this.yamlReader, this, { this.constructToken(it, false) }).let {
+                    StringInDoubleQuoteReader(this.yamlReader, this, { this.jsonTokenCreator(it, false) }).let {
                         this.currentReader = it
                         it.readUntilToken()
                     }
@@ -93,7 +91,7 @@ internal class FlowMapItemsReader<out P>(
                 }
                 ',' -> {
                     if(this.mode != FlowMapMode.SEPARATOR) {
-                        return this.constructToken(null, false)
+                        return this.jsonTokenCreator(null, false)
                     }
 
                     read()
@@ -114,7 +112,7 @@ internal class FlowMapItemsReader<out P>(
         }
     }
 
-    private fun constructToken(value: String?, isPlainStringReader: Boolean) = when(mode) {
+    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean) = when(mode) {
         FlowMapMode.START -> throw InvalidYamlContent("Map cannot be in start mode")
         FlowMapMode.KEY -> {
             this.mode = FlowMapMode.VALUE
@@ -135,50 +133,8 @@ internal class FlowMapItemsReader<out P>(
         }
     }
 
-    private fun plainStringReader(startWith: String): JsonToken {
-        return PlainStringReader(
-            this.yamlReader,
-            this,
-            startWith,
-            PlainStyleMode.FLOW_MAP
-        ) {
-            this.constructToken(it, true)
-        }.let {
-            this.currentReader = it
-            it.readUntilToken()
-        }
-    }
-
-    override fun childIsDoneReading() {
-        this.currentReader = this
-    }
-
     override fun handleReaderInterrupt(): JsonToken {
         this.parentReader.childIsDoneReading()
         return JsonToken.EndObject
     }
-
-    override fun indentCount() = this.parentReader.indentCountForChildren()
-
-    override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
-
-    override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        this.tag = tag
-        return this.readUntilToken()
-    }
-
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        this.tag = tag
-        return this.readUntilToken()
-    }
-
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
-        this.readUntilToken()
-
-    override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
-
-    override fun isWithinMap() = this.parentReader.isWithinMap()
 }

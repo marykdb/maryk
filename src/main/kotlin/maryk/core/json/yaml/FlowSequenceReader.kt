@@ -9,7 +9,7 @@ internal class FlowSequenceReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     startTag: TokenType?
-) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_COLLECTION, startTag),
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
         where P : YamlCharReader,
@@ -17,7 +17,6 @@ internal class FlowSequenceReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var isStarted = false
-    private var tag: TokenType? = startTag
 
     override fun readUntilToken(): JsonToken {
         return if (!this.isStarted) {
@@ -103,51 +102,11 @@ internal class FlowSequenceReader<out P>(
         }
     }
 
-    private fun plainStringReader(startWith: String): JsonToken {
-        return PlainStringReader(
-            this.yamlReader,
-            this,
-            startWith,
-            PlainStyleMode.FLOW_COLLECTION
-        ) {
-            createYamlValueToken(it, this.tag, true)
-        }.let {
-            this.currentReader = it
-            it.readUntilToken()
-        }
-    }
-
-    override fun childIsDoneReading() {
-        this.currentReader = this
-    }
+    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean) =
+        createYamlValueToken(value, this.tag, isPlainStringReader)
 
     override fun handleReaderInterrupt(): JsonToken {
         this.currentReader = this.parentReader
         return JsonToken.EndArray
     }
-
-    override fun indentCount() = this.parentReader.indentCountForChildren()
-
-    override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
-
-    override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        this.tag
-        return this.readUntilToken()
-    }
-
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        this.tag = tag
-        return this.readUntilToken()
-    }
-
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
-        this.readUntilToken()
-
-    override fun foundMapKey(isExplicitMap: Boolean) =
-        this.parentReader.foundMapKey(isExplicitMap)
-
-    override fun isWithinMap() = this.parentReader.isWithinMap()
 }

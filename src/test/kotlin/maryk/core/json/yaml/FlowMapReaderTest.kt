@@ -127,4 +127,60 @@ class FlowMapReaderTest {
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
+
+    @Test
+    fun read_map_with_explicit_key_items() {
+        val reader = createYamlReader("""
+        |   {? ,test: v1}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, null)
+        testForFieldName(reader, "test")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_direct_key_items() {
+        val reader = createYamlReader("""
+        |   {?,test: v1}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, null)
+        testForFieldName(reader, "test")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_defined_key_with_value_items() {
+        val reader = createYamlReader("""
+        |   {? t1: v0,test: v1}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, "t1")
+        testForValue(reader, "v0")
+        testForFieldName(reader, "test")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_key_value_items() {
+        val reader = createYamlReader("""
+        |   {?: v0,test: v1}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, "v0")
+        testForFieldName(reader, "test")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
 }

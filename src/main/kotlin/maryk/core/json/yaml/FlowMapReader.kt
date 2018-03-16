@@ -5,7 +5,7 @@ import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 private enum class FlowMapMode {
-    START, KEY, VALUE, SEPARATOR, STOP
+    START, EXPLICITKEY, KEY, VALUE, SEPARATOR, STOP
 }
 
 /** Reader for flow Map Items {key1: value1, key2: value2} */
@@ -106,6 +106,20 @@ internal class FlowMapItemsReader<out P>(
                     this.parentReader.childIsDoneReading()
                     JsonToken.EndObject
                 }
+                '?' -> {
+                    read()
+                    if (this.lastChar.isWhitespace()) {
+                        if (this.mode == FlowMapMode.EXPLICITKEY) {
+                            throw InvalidYamlContent("Cannot have two ? explicit keys in a row")
+                        }
+                        this.mode = FlowMapMode.EXPLICITKEY
+                        this.jsonTokenCreator(null, false)
+                    } else if(this.lastChar == ',' || this.lastChar == ':') {
+                        this.jsonTokenCreator(null, false)
+                    } else {
+                        this.plainStringReader("?")
+                    }
+                }
                 '|', '>' -> throw InvalidYamlContent("Unsupported character $lastChar in flow map")
                 else -> this.plainStringReader("")
             }
@@ -114,6 +128,10 @@ internal class FlowMapItemsReader<out P>(
 
     override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean) = when(mode) {
         FlowMapMode.START -> throw InvalidYamlContent("Map cannot be in start mode")
+        FlowMapMode.EXPLICITKEY -> {
+            this.mode = FlowMapMode.KEY
+            this.readUntilToken()
+        }
         FlowMapMode.KEY -> {
             this.mode = FlowMapMode.VALUE
             JsonToken.FieldName(value)

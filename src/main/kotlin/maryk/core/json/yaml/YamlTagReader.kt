@@ -55,6 +55,57 @@ internal abstract class YamlTagReader<out P>(
         }
     }
 
+    protected fun singleQuoteString(): JsonToken {
+        read()
+        return StringInSingleQuoteReader(this.yamlReader, this, {
+            this.jsonTokenCreator(it, false)
+        }).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
+    }
+
+    protected fun doubleQuoteString(): JsonToken {
+        read()
+        return StringInDoubleQuoteReader(this.yamlReader, this, {
+            this.jsonTokenCreator(it, false)
+        }).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
+    }
+
+    protected fun flowSequenceReader(): JsonToken {
+        read()
+        return FlowSequenceReader(
+            yamlReader = this.yamlReader,
+            parentReader = this,
+            startTag = this.tag
+        ).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
+    }
+
+    protected fun flowMapReader(): JsonToken {
+        read()
+        return FlowMapItemsReader(
+            yamlReader = this.yamlReader,
+            parentReader = this,
+            startTag = this.tag
+        ).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
+    }
+
+    protected fun tagReader(): JsonToken {
+        return TagReader(this.yamlReader, this).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
+    }
+
     override fun handleReaderInterrupt(): JsonToken {
         return this.parentReader.handleReaderInterrupt()
     }

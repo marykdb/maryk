@@ -46,46 +46,10 @@ internal class LineReader<out P>(
                     it.readUntilToken()
                 }
             }
-            '\'' -> {
-                read()
-                StringInSingleQuoteReader(this.yamlReader, this) {
-                    this.jsonTokenCreator(it, false)
-                }.let {
-                    this.currentReader = it
-                    it.readUntilToken()
-                }
-            }
-            '\"' -> {
-                read()
-                StringInDoubleQuoteReader(this.yamlReader, this) {
-                    this.jsonTokenCreator(it, false)
-                }.let {
-                    this.currentReader = it
-                    it.readUntilToken()
-                }
-            }
-            '[' -> {
-                read()
-                FlowSequenceReader(
-                    yamlReader = this.yamlReader,
-                    parentReader = this,
-                    startTag = this.tag
-                ).let {
-                    this.currentReader = it
-                    it.readUntilToken()
-                }
-            }
-            '{' -> {
-                read()
-                FlowMapItemsReader(
-                    yamlReader = this.yamlReader,
-                    parentReader = this,
-                    startTag = this.tag
-                ).let {
-                    this.currentReader = it
-                    it.readUntilToken()
-                }
-            }
+            '\'' -> this.singleQuoteString()
+            '\"' -> this.doubleQuoteString()
+            '[' -> this.flowSequenceReader()
+            '{' -> this.flowMapReader()
             ',' -> {
                 throw InvalidYamlContent("Invalid char $lastChar at this position")
             }
@@ -113,12 +77,7 @@ internal class LineReader<out P>(
                     it.readUntilToken()
                 }
             }
-            '!' -> {
-                TagReader(this.yamlReader, this).let {
-                    this.currentReader = it
-                    it.readUntilToken()
-                }
-            }
+            '!' -> this.tagReader()
             '@', '`' -> {
                 throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
             }

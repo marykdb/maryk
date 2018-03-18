@@ -37,52 +37,11 @@ internal class FlowSequenceReader<out P>(
             }
 
             return when(this.lastChar) {
-                '\'' -> {
-                    read()
-                    StringInSingleQuoteReader(this.yamlReader, this) {
-                        this.jsonTokenCreator(it, false)
-                    }.let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
-                '\"' -> {
-                    read()
-                    StringInDoubleQuoteReader(this.yamlReader, this) {
-                        this.jsonTokenCreator(it, false)
-                    }.let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
-                '{' -> {
-                    read()
-                    FlowMapItemsReader(
-                        yamlReader = this.yamlReader,
-                        parentReader = this,
-                        startTag = this.tag
-                    ).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
-                '[' -> {
-                    read()
-                    FlowSequenceReader(
-                        yamlReader = this.yamlReader,
-                        parentReader = this,
-                        startTag = this.tag
-                    ).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
-                '!' -> {
-                    TagReader(this.yamlReader, this).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
+                '\'' -> this.singleQuoteString()
+                '\"' -> this.doubleQuoteString()
+                '{' -> this.flowMapReader()
+                '[' -> this.flowSequenceReader()
+                '!' -> this.tagReader()
                 '-' -> {
                     read()
                     if (this.lastChar.isWhitespace()) {
@@ -115,6 +74,10 @@ internal class FlowSequenceReader<out P>(
                         this.parentReader.childIsDoneReading()
                         JsonToken.EndArray
                     }
+                }
+                '}' -> {
+                    read() // This should be handled in Map reader. Otherwise incorrect content
+                    throw InvalidYamlContent("Invalid char $lastChar at this position")
                 }
                 '?' -> {
                     read()

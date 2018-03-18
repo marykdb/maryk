@@ -4,8 +4,8 @@ import maryk.core.json.JsonToken
 import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
-private enum class FlowMapMode {
-    START, EXPLICITKEY, KEY, VALUE, SEPARATOR, STOP
+private enum class FlowMapState {
+    START, EXPLICIT_KEY, KEY, VALUE, SEPARATOR, STOP
 }
 
 /** Reader for flow Map Items {key1: value1, key2: value2} */
@@ -19,10 +19,11 @@ internal class FlowMapItemsReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var mode = FlowMapMode.START
+    private var state = FlowMapState.START
+
     override fun readUntilToken(): JsonToken {
-        return if (this.mode == FlowMapMode.START) {
-            this.mode = FlowMapMode.KEY
+        return if (this.state == FlowMapState.START) {
+            this.state = FlowMapState.KEY
             this.tag?.let {
                 this.tag = null
                 (it as? MapType)?.let {
@@ -35,54 +36,17 @@ internal class FlowMapItemsReader<out P>(
             }
 
             return when(this.lastChar) {
-                ':' -> {
-                    read()
-                    this.readUntilToken()
-                }
-                '\'' -> {
-                    read()
-                    StringInSingleQuoteReader(this.yamlReader, this, { this.jsonTokenCreator(it, false) }).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
-                '\"' -> {
-                    read()
-                    StringInDoubleQuoteReader(this.yamlReader, this, { this.jsonTokenCreator(it, false) }).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
-                '!' -> {
-                    TagReader(this.yamlReader, this).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
-                }
+                '\'' -> this.singleQuoteString()
+                '\"' -> this.doubleQuoteString()
                 '[' -> {
-                    read()
-                    this.mode = FlowMapMode.SEPARATOR
-                    FlowSequenceReader(
-                        yamlReader = this.yamlReader,
-                        parentReader = this,
-                        startTag = this.tag
-                    ).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
+                    this.state = FlowMapState.SEPARATOR
+                    this.flowSequenceReader()
                 }
                 '{' -> {
-                    read()
-                    this.mode = FlowMapMode.SEPARATOR
-                    FlowMapItemsReader(
-                        yamlReader = this.yamlReader,
-                        parentReader = this,
-                        startTag = this.tag
-                    ).let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
+                    this.state = FlowMapState.SEPARATOR
+                    this.flowMapReader()
                 }
+                '!' -> this.tagReader()
                 '-' -> {
                     read()
                     if (this.lastChar.isWhitespace()) {
@@ -90,15 +54,19 @@ internal class FlowMapItemsReader<out P>(
                     } else this.plainStringReader("-")
                 }
                 ',' -> {
-                    if(this.mode != FlowMapMode.SEPARATOR) {
+                    if(this.state != FlowMapState.SEPARATOR) {
                         return this.jsonTokenCreator(null, false)
                     }
 
                     read()
                     this.readUntilToken()
                 }
+                ':' -> {
+                    read()
+                    this.readUntilToken()
+                }
                 ']' -> {
-                    read() // This should only happen in Array reader. Otherwise incorrect content
+                    read() // This should be handled in Array reader. Otherwise incorrect content
                     throw InvalidYamlContent("Invalid char $lastChar at this position")
                 }
                 '}' -> {
@@ -109,10 +77,10 @@ internal class FlowMapItemsReader<out P>(
                 '?' -> {
                     read()
                     if (this.lastChar.isWhitespace()) {
-                        if (this.mode == FlowMapMode.EXPLICITKEY) {
+                        if (this.state == FlowMapState.EXPLICIT_KEY) {
                             throw InvalidYamlContent("Cannot have two ? explicit keys in a row")
                         }
-                        this.mode = FlowMapMode.EXPLICITKEY
+                        this.state = FlowMapState.EXPLICIT_KEY
                         this.jsonTokenCreator(null, false)
                     } else if(this.lastChar == ',' || this.lastChar == ':') {
                         this.jsonTokenCreator(null, false)
@@ -126,27 +94,27 @@ internal class FlowMapItemsReader<out P>(
         }
     }
 
-    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean) = when(mode) {
-        FlowMapMode.START -> throw InvalidYamlContent("Map cannot be in start mode")
-        FlowMapMode.EXPLICITKEY -> {
-            this.mode = FlowMapMode.KEY
+    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean) = when(state) {
+        FlowMapState.START -> throw InvalidYamlContent("Map cannot be in start state")
+        FlowMapState.EXPLICIT_KEY -> {
+            this.state = FlowMapState.KEY
             this.readUntilToken()
         }
-        FlowMapMode.KEY -> {
-            this.mode = FlowMapMode.VALUE
+        FlowMapState.KEY -> {
+            this.state = FlowMapState.VALUE
             JsonToken.FieldName(value)
         }
-        FlowMapMode.VALUE -> {
-            this.mode = FlowMapMode.SEPARATOR
+        FlowMapState.VALUE -> {
+            this.state = FlowMapState.SEPARATOR
             createYamlValueToken(value, this.tag, isPlainStringReader)
         }
-        FlowMapMode.SEPARATOR -> {
-            // If last mode was separator next one will be key
-            this.mode = FlowMapMode.VALUE
+        FlowMapState.SEPARATOR -> {
+            // If last state was separator next one will be key
+            this.state = FlowMapState.VALUE
             JsonToken.FieldName(value)
         }
-        FlowMapMode.STOP -> {
-            this.mode = FlowMapMode.STOP
+        FlowMapState.STOP -> {
+            this.state = FlowMapState.STOP
             JsonToken.EndObject
         }
     }

@@ -107,4 +107,84 @@ class FlowSequenceReaderTest {
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
+
+    @Test
+    fun read_array_with_map_items() {
+        val reader = createYamlReader("""
+            |     - [t1: v1, t2: v2]
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "t1")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "t2")
+        testForValue(reader, "v2")
+        testForObjectEnd(reader)
+        testForArrayEnd(reader)
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_key_items() {
+        val reader = createYamlReader("""
+        |   [? ,test]
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, null)
+        testForObjectEnd(reader)
+        testForValue(reader, "test")
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_direct_key_items() {
+        val reader = createYamlReader("""
+        |   [?,test]
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, null)
+        testForObjectEnd(reader)
+        testForValue(reader, "test")
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_defined_key_with_value_items() {
+        val reader = createYamlReader("""
+        |   [? t1: v0,test]
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "t1")
+        testForValue(reader, "v0")
+        testForObjectEnd(reader)
+        testForValue(reader, "test")
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_key_value_items() {
+        val reader = createYamlReader("""
+        |   [?: v0,test]
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, "v0")
+        testForObjectEnd(reader)
+        testForValue(reader, "test")
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
+    }
 }

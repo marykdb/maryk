@@ -144,7 +144,7 @@ class TagReaderTest {
         |---
         |    [ !Boolean { k: v },
         |     !!str v2,
-        |     !test!bool true, !<tag:yaml.org,2002:str> v4, !!set [a1, a2]]
+        |     !test!bool true, !<tag:yaml.org,2002:str> v4, !!set [a1, a2], !SubModel s: m, !ValueModel ? v]
         """.trimMargin())
         testForArrayStart(reader)
         testForObjectStart(reader, PropertyDefinitionType.Boolean)
@@ -158,6 +158,14 @@ class TagReaderTest {
         testForValue(reader, "a1")
         testForValue(reader, "a2")
         testForArrayEnd(reader)
+        testForObjectStart(reader, PropertyDefinitionType.SubModel)
+        testForFieldName(reader, "s")
+        testForValue(reader, "m")
+        testForObjectEnd(reader)
+        testForObjectStart(reader, PropertyDefinitionType.ValueModel)
+        testForFieldName(reader, "v")
+        testForValue(reader, null)
+        testForObjectEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }

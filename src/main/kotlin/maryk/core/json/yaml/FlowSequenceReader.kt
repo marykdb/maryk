@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.json.ArrayType
 import maryk.core.json.JsonToken
+import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 private enum class FlowSequenceState {
@@ -111,7 +112,7 @@ internal class FlowSequenceReader<out P>(
         } ?: if (this.state == FlowSequenceState.MAP_END) {
             this.state = FlowSequenceState.VALUE_START
             JsonToken.EndObject
-        } else if (this.state == FlowSequenceState.KEY) {
+        } else if (this.state == FlowSequenceState.KEY || this.state == FlowSequenceState.MAP_VALUE) {
             this.jsonTokenCreator(null, false)
         } else {
             doIfNoToken()
@@ -124,7 +125,7 @@ internal class FlowSequenceReader<out P>(
         FlowSequenceState.START -> throw InvalidYamlContent("Sequence cannot be in start mode")
         FlowSequenceState.EXPLICIT_KEY -> {
             this.state = FlowSequenceState.KEY
-            JsonToken.SimpleStartObject
+            this.startObject()
         }
         FlowSequenceState.VALUE_START -> {
             this.cachedCall = { this.jsonTokenCreator(value, isPlainStringReader) }
@@ -149,12 +150,22 @@ internal class FlowSequenceReader<out P>(
 
     override fun foundMapKey(isExplicitMap: Boolean) =
         if (this.state == FlowSequenceState.VALUE_START) {
-            JsonToken.SimpleStartObject
+            startObject()
         } else {
             null
         }.also {
             this.state = FlowSequenceState.MAP_VALUE
         }
+
+    private fun startObject(): JsonToken {
+        return this.tag?.let {
+            JsonToken.StartObject(
+                this.tag as? MapType ?: throw InvalidYamlContent("$tag should be a map type")
+            ).also {
+                this.tag = null
+            }
+        } ?: JsonToken.SimpleStartObject
+    }
 
     override fun handleReaderInterrupt(): JsonToken {
         this.currentReader = this.parentReader

@@ -171,6 +171,18 @@ class FlowMapReaderTest {
     }
 
     @Test
+    fun read_map_with_explicit_defined_key_items() {
+        val reader = createYamlReader("""
+        |   {? t1}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, "t1")
+        testForValue(reader, null)
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
     fun read_map_with_explicit_key_value_items() {
         val reader = createYamlReader("""
         |   {?: v0,test: v1}

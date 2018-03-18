@@ -70,6 +70,10 @@ internal class FlowMapItemsReader<out P>(
                     throw InvalidYamlContent("Invalid char $lastChar at this position")
                 }
                 '}' -> {
+                    if(this.state != FlowMapState.SEPARATOR) {
+                        return this.jsonTokenCreator(null, false)
+                    }
+
                     read()
                     this.parentReader.childIsDoneReading()
                     JsonToken.EndObject

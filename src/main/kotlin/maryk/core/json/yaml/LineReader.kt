@@ -4,6 +4,7 @@ import maryk.core.extensions.isLineBreak
 import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.core.json.ValueType
 
 /** Reads Lines with actual non whitespace chars */
 internal class LineReader<out P>(
@@ -26,10 +27,23 @@ internal class LineReader<out P>(
     private var hasFoundFieldName: JsonToken.FieldName? = null
 
     override fun readUntilToken(): JsonToken {
-        if (this.hasFoundFieldName != null) {
-            return this.hasFoundFieldName!!.also {
+        this.hasFoundFieldName?.let {
+            return it.also {
                 this.hasFoundFieldName = null
             }
+        }
+
+        if (this.isExplicitMap) {
+            if (this.lastChar == ':') {
+                read()
+                if(this.lastChar == ' ') {
+                    this.isExplicitMap = false
+                    return this.readUntilToken()
+                }
+            }
+
+            this.parentReader.childIsDoneReading()
+            return JsonToken.Value(null, ValueType.Null)
         }
 
         val indents = skipWhiteSpace()
@@ -120,7 +134,8 @@ internal class LineReader<out P>(
             ':' -> {
                 read()
                 if(this.lastChar == ' ') {
-                    TODO("Value reader")
+                    this.mapKeyFound = true
+                    this.readUntilToken()
                 } else {
                     plainStringReader(":")
                 }
@@ -153,7 +168,9 @@ internal class LineReader<out P>(
             return createYamlValueToken(value, this.tag, isPlainStringReader)
         } else {
             skipWhiteSpace()
-            if (this.lastChar == ':') {
+            if (this.parentReader is ExplicitMapKeyReader<*>) {
+                return JsonToken.FieldName(value)
+            } else if (this.lastChar == ':') {
                 read()
                 if (this.lastChar.isWhitespace()) {
                     if (this.lastChar.isLineBreak()) {
@@ -176,11 +193,13 @@ internal class LineReader<out P>(
     }
 
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? {
-        this.isExplicitMap = isExplicitMap
-        if (!this.isExplicitMap) {
+        if (isExplicitMap) {
+            this.isExplicitMap = isExplicitMap
+        } else if (!this.mapKeyFound) {
             this.indentToAdd += 1
         }
-        if (this.mapKeyFound) {
+
+        if (this.mapKeyFound && !this.isExplicitMap) {
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
         this.mapKeyFound = true

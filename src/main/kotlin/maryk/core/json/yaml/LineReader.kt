@@ -193,15 +193,21 @@ internal class LineReader<out P>(
     }
 
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? {
+        if (this.mapKeyFound && !isExplicitMap) {
+            throw InvalidYamlContent("Already found mapping key. No other : allowed")
+        }
+
+        // break off since already processed
+        if (this.mapKeyFound) {
+            return null
+        }
+
         if (isExplicitMap) {
             this.isExplicitMap = isExplicitMap
         } else if (!this.mapKeyFound) {
             this.indentToAdd += 1
         }
 
-        if (this.mapKeyFound && !this.isExplicitMap) {
-            throw InvalidYamlContent("Already found mapping key. No other : allowed")
-        }
         this.mapKeyFound = true
         return this.parentReader.foundMapKey(isExplicitMap).also {
             this.tag = null
@@ -249,5 +255,16 @@ internal class LineReader<out P>(
         } else {
             this.currentReader = this
         }
+    }
+
+    override fun handleReaderInterrupt(): JsonToken {
+        if (this.mapKeyFound && this.isExplicitMap) {
+            if (!this.mapValueFound) {
+                this.mapValueFound = true
+                return JsonToken.Value(null, ValueType.Null)
+            }
+        }
+
+        return this.parentReader.handleReaderInterrupt()
     }
 }

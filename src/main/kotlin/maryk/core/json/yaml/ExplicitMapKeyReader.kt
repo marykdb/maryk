@@ -4,11 +4,6 @@ import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.MapType
 import maryk.core.json.TokenType
-import maryk.core.json.ValueType
-
-private enum class ExplicitMapKeyState {
-    START, KEY, VALUE, END, DONE
-}
 
 /** Reads Explicit map keys started with ? */
 internal class ExplicitMapKeyReader<out P>(
@@ -22,11 +17,11 @@ internal class ExplicitMapKeyReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var state: ExplicitMapKeyState = ExplicitMapKeyState.START
     private var tag: TokenType? = null
+    private var started: Boolean = false
 
     override fun readUntilToken(): JsonToken {
-        if(this.state == ExplicitMapKeyState.START) {
+        if (!this.started) {
             read()
             // If it turns out to not be an explicit key make it a Plain String reader
             if (!this.lastChar.isWhitespace()) {
@@ -45,7 +40,7 @@ internal class ExplicitMapKeyReader<out P>(
                 }
             }
 
-            this.state = ExplicitMapKeyState.KEY
+            this.started = true
 
             this.parentReader.foundMapKey(true)?.let {
                 return it
@@ -82,15 +77,10 @@ internal class ExplicitMapKeyReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         this.currentReader = this
-        if (this.state == ExplicitMapKeyState.KEY) {
-            this.state = ExplicitMapKeyState.VALUE
-            this.parentReader.childIsDoneReading()
-            return tokenToReturn?.let { it() } ?: JsonToken.FieldName(null)
-        }
-        return this.parentReader.endIndentLevel(indentCount, tokenToReturn)
+        this.parentReader.childIsDoneReading()
+        return tokenToReturn?.let { it() } ?: JsonToken.FieldName(null)
     }
 
-    // Return null because already set explicitly
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? = null
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
@@ -99,28 +89,21 @@ internal class ExplicitMapKeyReader<out P>(
         this.currentReader = this
     }
 
-    override fun handleReaderInterrupt() = when (this.state) {
-        ExplicitMapKeyState.START -> {
-            this.state = ExplicitMapKeyState.KEY
+    override fun handleReaderInterrupt() =
+        if (!this.started) {
+            this.started = true
+            this.parentReader.foundMapKey(true)?.let {
+                return it
+            }
+
             this.tag?.let {
                 this.tag = null
                 (it as? MapType)?.let {
                     JsonToken.StartObject(it)
                 } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
             } ?: JsonToken.SimpleStartObject
-        }
-        ExplicitMapKeyState.KEY -> {
-            this.state = ExplicitMapKeyState.VALUE
+        } else {
+            this.parentReader.childIsDoneReading()
             JsonToken.FieldName(null)
         }
-        ExplicitMapKeyState.VALUE -> {
-            this.state = ExplicitMapKeyState.END
-            JsonToken.Value(null, ValueType.String)
-        }
-        ExplicitMapKeyState.END -> {
-            this.state = ExplicitMapKeyState.DONE
-            JsonToken.EndObject
-        }
-        ExplicitMapKeyState.DONE -> this.parentReader.handleReaderInterrupt()
-    }
 }

@@ -40,6 +40,22 @@ internal fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
     }
 }
 
+internal fun testForComplexFieldNameStart(reader: IsJsonLikeReader) {
+    reader.nextToken().apply {
+        if (this !is JsonToken.StartComplexFieldName) {
+            fail("$this should be complex field name start")
+        }
+    }
+}
+
+internal fun testForComplexFieldNameEnd(reader: IsJsonLikeReader) {
+    reader.nextToken().apply {
+        if (this !is JsonToken.EndComplexFieldName) {
+            fail("$this should be complex field name end")
+        }
+    }
+}
+
 internal fun testForArrayStart(reader: IsJsonLikeReader, type: ArrayType = ArrayType.Sequence) {
     reader.nextToken().apply {
         if (this is JsonToken.StartArray) {

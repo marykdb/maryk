@@ -24,15 +24,7 @@ internal class LineReader<out P>(
     private var mapKeyFound = false
     private var mapValueFound = false
 
-    private var hasFoundFieldName: JsonToken.FieldName? = null
-
     override fun readUntilToken(): JsonToken {
-        this.hasFoundFieldName?.let {
-            return it.also {
-                this.hasFoundFieldName = null
-            }
-        }
-
         if (this.isExplicitMap) {
             if (this.lastChar == ':') {
                 read()
@@ -165,10 +157,13 @@ internal class LineReader<out P>(
             if (!this.isExplicitMap) {
                 this.indentToAdd -= 1
             }
-            return createYamlValueToken(value, this.tag, isPlainStringReader)
+            return createYamlValueToken(value, this.tag, isPlainStringReader).also {
+                // Unset so it can find more map keys if it is an embedded explicit map
+                this.mapKeyFound = false
+            }
         } else {
             skipWhiteSpace()
-            if (this.parentReader is ExplicitMapKeyReader<*>) {
+            if (this.parentReader is ExplicitMapKeyReader<*> && this.currentReader != this) {
                 return JsonToken.FieldName(value)
             } else if (this.lastChar == ':') {
                 read()
@@ -179,8 +174,8 @@ internal class LineReader<out P>(
                         }
                     }
 
-                     return this.foundMapKey(this.isExplicitMap)?.let {
-                        this.hasFoundFieldName = JsonToken.FieldName(value)
+                    return this.foundMapKey(this.isExplicitMap)?.let {
+                        this.yamlReader.pushToken(JsonToken.FieldName(value))
                         it
                     } ?: JsonToken.FieldName(value)
                 } else {
@@ -227,9 +222,12 @@ internal class LineReader<out P>(
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         if (mapKeyFound) {
             if (tokenToReturn != null) {
-                this.parentReader.childIsDoneReading()
-                this.yamlReader.hasUnclaimedIndenting(indentCount)
-                return tokenToReturn()
+                return tokenToReturn().also {
+                    if(this.parentReader.indentCountForChildren() >= indentCount){
+                        this.parentReader.childIsDoneReading()
+                        this.yamlReader.hasUnclaimedIndenting(indentCount)
+                    }
+                }
             } else if (!mapValueFound) {
                 return this.parentReader.continueIndentLevel(this.tag)
             }

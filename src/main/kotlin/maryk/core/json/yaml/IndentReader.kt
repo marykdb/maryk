@@ -1,6 +1,5 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.MapType
 import maryk.core.json.TokenType
@@ -83,21 +82,7 @@ internal class IndentReader<out P>(
     }
 
     override fun readUntilToken(): JsonToken {
-        var currentIndentCount = 0
-        while(this.lastChar.isWhitespace()) {
-            if (this.lastChar.isLineBreak()) {
-                currentIndentCount = 0
-            } else {
-                currentIndentCount++
-            }
-            read()
-
-            if (this.lastChar == '#' && currentIndentCount != 0) {
-                while (!this.lastChar.isLineBreak()) {
-                    read()
-                }
-            }
-        }
+        val currentIndentCount = this.skipEmptyLinesAndCountIndent()
 
         if (this.indentCounter == -1) {
             this.indentCounter = currentIndentCount

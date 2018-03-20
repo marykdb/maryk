@@ -20,14 +20,8 @@ internal class PlainStringReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var storedValue: String = startWith
-    private var isDone = false
 
     override fun readUntilToken(): JsonToken {
-        if (this.isDone) {
-            this.parentReader.childIsDoneReading()
-            return this.createToken()
-        }
-
         loop@while(true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
@@ -40,20 +34,20 @@ internal class PlainStringReader<out P>(
                 ':' -> {
                     read()
                     if (this.lastChar.isWhitespace()) {
-                        this.isDone = true
+                        this.parentReader.childIsDoneReading()
 
                         // Only override token creators with non flow maps
                         if (this.mode != PlainStyleMode.FLOW_MAP) {
                             this.jsonTokenConstructor = { JsonToken.FieldName(it) }
 
-                            // If new map return New Map
+                            // If new map return Object Start and push new token
                             this.parentReader.foundMapKey(false)?.let {
+                                this.yamlReader.pushToken(this.createToken())
                                 return it
                             }
                         }
 
                         // Else return specific token
-                        this.parentReader.childIsDoneReading()
                         return this.createToken()
                     }
                     this.storedValue += ":$lastChar"
@@ -73,7 +67,6 @@ internal class PlainStringReader<out P>(
                     when(this.mode) {
                         PlainStyleMode.FLOW_COLLECTION -> when (this.lastChar) {
                             ',', ']' -> {
-                                this.isDone = true
                                 this.parentReader.childIsDoneReading()
                                 return createToken()
                             }
@@ -81,7 +74,6 @@ internal class PlainStringReader<out P>(
                         }
                         PlainStyleMode.FLOW_MAP -> when (this.lastChar) {
                             ',', '}' -> {
-                                this.isDone = true
                                 this.parentReader.childIsDoneReading()
                                 return createToken()
                             }
@@ -150,5 +142,7 @@ internal class PlainStringReader<out P>(
         }
     }
 
-    private fun createToken() = this.jsonTokenConstructor(this.storedValue.trim())
+    private fun createToken(): JsonToken {
+        return this.jsonTokenConstructor(this.storedValue.trim())
+    }
 }

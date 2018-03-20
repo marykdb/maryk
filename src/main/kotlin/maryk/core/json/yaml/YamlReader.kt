@@ -55,6 +55,8 @@ internal class YamlReaderImpl(
     private var hasException: Boolean = false
     internal val tags: MutableMap<String, String> = mutableMapOf()
 
+    private val tokenStack = mutableListOf<JsonToken>()
+
     var columnNumber = -1
     var lineNumber = 1
 
@@ -97,6 +99,10 @@ internal class YamlReaderImpl(
 
         try {
             this.currentToken = try {
+                if (!this.tokenStack.isEmpty()) {
+                    return this.tokenStack.removeAt(0)
+                }
+
                 this.currentReader.let {
                     if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
                         // Skip stray comments and read until first relevant character
@@ -211,6 +217,10 @@ internal class YamlReaderImpl(
             }
             else -> throw InvalidYamlContent("Unknown tag prefix $prefix")
         }
+    }
+
+    fun pushToken(token: JsonToken) {
+        this.tokenStack.add(token)
     }
 }
 

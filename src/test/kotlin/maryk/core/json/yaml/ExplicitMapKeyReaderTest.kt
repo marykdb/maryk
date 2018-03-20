@@ -1,5 +1,7 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.testForComplexFieldNameEnd
+import maryk.core.json.testForComplexFieldNameStart
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForObjectEnd
@@ -68,6 +70,71 @@ class ExplicitMapKeyReaderTest {
         """.trimMargin())
         testForObjectStart(reader)
         testForFieldName(reader, "key with more lines")
+        testForValue(reader, "value")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun map_multiline_key_indicator_with_value() {
+        val reader = createYamlReader("""
+        | ? k1: v1
+        |   k2: v2
+        | : value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, "v1")
+        testForFieldName(reader, "k2")
+        testForValue(reader, "v2")
+        testForObjectEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "value")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+
+    @Test
+    fun map_multiline_key_indicator_on_new_line_with_value() {
+        val reader = createYamlReader("""
+        | ?
+        |     k1: v1
+        |     k2: v2
+        | : value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, "v1")
+        testForFieldName(reader, "k2")
+        testForValue(reader, "v2")
+        testForObjectEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "value")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun map_multiline_key_indicator_with_value_and_double_quotes() {
+        val reader = createYamlReader("""
+        | ?    "k1": "v1"
+        |      "k2": "v2"
+        | : "value"
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, "v1")
+        testForFieldName(reader, "k2")
+        testForValue(reader, "v2")
+        testForObjectEnd(reader)
+        testForComplexFieldNameEnd(reader)
         testForValue(reader, "value")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)

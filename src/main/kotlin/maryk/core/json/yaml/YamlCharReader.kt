@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
@@ -11,6 +12,25 @@ internal abstract class YamlCharReader(
     abstract fun readUntilToken(): JsonToken
     /** Handles reader interuptions */
     abstract fun handleReaderInterrupt(): JsonToken
+
+    internal fun skipEmptyLinesAndCountIndent(): Int {
+        var currentIndentCount = 0
+        while(this.lastChar.isWhitespace()) {
+            if (this.lastChar.isLineBreak()) {
+                currentIndentCount = 0
+            } else {
+                currentIndentCount++
+            }
+            read()
+
+            if (this.lastChar == '#' && currentIndentCount != 0) {
+                while (!this.lastChar.isLineBreak()) {
+                    read()
+                }
+            }
+        }
+        return currentIndentCount
+    }
 }
 
 /** Yaml Character reader which is a child to a parent reader */

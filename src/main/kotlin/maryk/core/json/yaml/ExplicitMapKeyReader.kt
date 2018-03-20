@@ -5,6 +5,10 @@ import maryk.core.json.JsonToken
 import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
+private enum class ExplicitMapState {
+    INTERNAL_MAP, INTERNAL_MAP_CLOSED
+}
+
 /** Reads Explicit map keys started with ? */
 internal class ExplicitMapKeyReader<out P>(
     yamlReader: YamlReaderImpl,
@@ -19,6 +23,8 @@ internal class ExplicitMapKeyReader<out P>(
 {
     private var tag: TokenType? = null
     private var started: Boolean = false
+
+    private var state: ExplicitMapState? = null
 
     override fun readUntilToken(): JsonToken {
         if (!this.started) {
@@ -47,16 +53,17 @@ internal class ExplicitMapKeyReader<out P>(
             }
         }
 
-        if (this.lastChar.isLineBreak()) {
-            return IndentReader(this.yamlReader, this).let {
-                this.currentReader = it
-                it.readUntilToken()
-            }
+        val startedOnNewLine = this.lastChar.isLineBreak()
+        val currentIndentCount = this.skipEmptyLinesAndCountIndent()
+
+        if (startedOnNewLine && currentIndentCount < this.indentCount()) {
+            return this.endIndentLevel(currentIndentCount, null)
         }
 
         return LineReader(
             this.yamlReader,
-            parentReader = this
+            parentReader = this,
+            indentToAdd = currentIndentCount
         ).let {
             this.currentReader = it
             it.readUntilToken()
@@ -77,11 +84,39 @@ internal class ExplicitMapKeyReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         this.currentReader = this
-        this.parentReader.childIsDoneReading()
-        return tokenToReturn?.let { it() } ?: JsonToken.FieldName(null)
+
+        return when(this.state) {
+            ExplicitMapState.INTERNAL_MAP -> {
+                this.state = ExplicitMapState.INTERNAL_MAP_CLOSED
+                this.yamlReader.hasUnclaimedIndenting(indentCount)
+                JsonToken.EndObject
+            }
+            ExplicitMapState.INTERNAL_MAP_CLOSED -> {
+                this.state = null
+                this.parentReader.childIsDoneReading()
+                JsonToken.EndComplexFieldName
+            }
+            null -> {
+                this.parentReader.childIsDoneReading()
+
+                tokenToReturn?.let {
+                    return it()
+                }
+
+                JsonToken.FieldName(null)
+            }
+        }
     }
 
-    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? = null
+    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? {
+        if (this.state == null) {
+            this.state = ExplicitMapState.INTERNAL_MAP
+            this.yamlReader.pushToken(JsonToken.SimpleStartObject)
+            return JsonToken.StartComplexFieldName
+        }
+
+        return null
+    }
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 

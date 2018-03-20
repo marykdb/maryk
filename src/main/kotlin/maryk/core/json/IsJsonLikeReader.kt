@@ -27,6 +27,9 @@ sealed class JsonToken(val name: String) {
     object EndObject : JsonToken("EndObject")
 
     class FieldName(val value: String?) : JsonToken("FieldName")
+    object StartComplexFieldName : JsonToken("StartComplexFieldName")
+    object EndComplexFieldName : JsonToken("EndComplexFieldName")
+
     object ObjectSeparator : JsonToken("ObjectSeparator")
     class Value<out T: Any?>(val value: T, val type: ValueType<T>) : JsonToken("Value")
 

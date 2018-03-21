@@ -118,7 +118,7 @@ internal class ArrayItemsReader<out P>(
         }
     }
 
-    override fun childIsDoneReading() {
+    override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this
     }
 

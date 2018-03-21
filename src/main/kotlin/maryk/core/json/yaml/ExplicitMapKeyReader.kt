@@ -139,7 +139,7 @@ internal class ExplicitMapKeyReader<out P>(
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 
-    override fun childIsDoneReading() {
+    override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this
     }
 

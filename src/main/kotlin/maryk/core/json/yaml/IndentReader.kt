@@ -63,7 +63,7 @@ internal class IndentReader<out P>(
             return JsonToken.EndObject
         }
 
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(true)
 
         tokenToReturn?.let {
             this.yamlReader.setUnclaimedIndenting(indentCount)
@@ -124,7 +124,7 @@ internal class IndentReader<out P>(
 
     override fun indentCountForChildren() = this.indentCount()
 
-    override fun childIsDoneReading() {
+    override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this
     }
 
@@ -133,6 +133,7 @@ internal class IndentReader<out P>(
             this.mapKeyFound = false
             return JsonToken.EndObject
         }
+        this.parentReader.childIsDoneReading()
         return parentReader.handleReaderInterrupt()
     }
 }

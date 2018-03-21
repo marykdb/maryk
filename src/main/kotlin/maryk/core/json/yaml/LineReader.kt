@@ -249,7 +249,7 @@ internal class LineReader<out P>(
 
     override fun indentCountForChildren() = this.indentCount()
 
-    override fun childIsDoneReading() {
+    override fun childIsDoneReading(closeLineReader: Boolean) {
         when (this.currentReader) {
             is StringInSingleQuoteReader<*>, is StringInDoubleQuoteReader<*> -> {
                 this.hasCompletedValueReading = true
@@ -257,7 +257,8 @@ internal class LineReader<out P>(
             else -> {}
         }
 
-        if (this.mapValueFound) {
+        if (closeLineReader) {
+            this.mapValueFound = true
             this.parentReader.childIsDoneReading()
         } else {
             this.currentReader = this

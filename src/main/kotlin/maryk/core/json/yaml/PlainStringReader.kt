@@ -124,7 +124,7 @@ internal class PlainStringReader<out P>(
         }
     }
 
-    override fun childIsDoneReading() {
+    override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this
     }
 
@@ -135,11 +135,6 @@ internal class PlainStringReader<out P>(
 
     private fun setToParent() {
         this.parentReader.childIsDoneReading()
-        this.currentReader.let {
-            if (it is LineReader<*>) {
-                (it.parentReader as IsYamlCharWithChildrenReader).childIsDoneReading()
-            }
-        }
     }
 
     private fun createToken(): JsonToken {

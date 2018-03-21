@@ -110,7 +110,7 @@ internal abstract class YamlTagReader<out P>(
         return this.parentReader.handleReaderInterrupt()
     }
 
-    override fun childIsDoneReading() {
+    override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this
     }
 }

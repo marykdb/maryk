@@ -165,7 +165,7 @@ internal class DocumentReader(
 
     override fun indentCountForChildren() = this.indentCount()
 
-    override fun childIsDoneReading() {
+    override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this
     }
 

@@ -167,11 +167,6 @@ internal open class LiteralStringReader<out P>(
         }
 
         this.parentReader.childIsDoneReading()
-        this.currentReader.let {
-            if (it is LineReader<*>) {
-                (it.parentReader as IsYamlCharWithChildrenReader).childIsDoneReading()
-            }
-        }
 
         return this.jsonTokenConstructor(this.storedValue)
     }

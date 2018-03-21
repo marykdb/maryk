@@ -57,6 +57,8 @@ internal class YamlReaderImpl(
 
     private val tokenStack = mutableListOf<JsonToken>()
 
+    private var objectDepth = 0
+
     var columnNumber = -1
     var lineNumber = 1
 
@@ -93,43 +95,46 @@ internal class YamlReaderImpl(
     }
 
     override fun nextToken(): JsonToken {
-        if (this.hasException) {
-            return this.currentReader.handleReaderInterrupt()
-        }
-
         try {
             this.currentToken = try {
                 if (!this.tokenStack.isEmpty()) {
-                    return this.tokenStack.removeAt(0)
-                }
-
-                this.currentReader.let {
-                    if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
-                        // Skip stray comments and read until first relevant character
-                        if (this.lastChar == '#') {
-                            while (!this.lastChar.isLineBreak()) {
-                                read()
+                    this.tokenStack.removeAt(0)
+                } else if (this.hasException) {
+                    this.currentReader.handleReaderInterrupt()
+                } else {
+                    this.currentReader.let {
+                        if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
+                            // Skip stray comments and read until first relevant character
+                            if (this.lastChar == '#') {
+                                while (!this.lastChar.isLineBreak()) {
+                                    read()
+                                }
+                                this.unclaimedIndenting = skipEmptyLinesAndCommentsAndCountIndents()
                             }
-                            this.unclaimedIndenting = skipEmptyLinesAndCommentsAndCountIndents()
-                        }
 
-                        val remainder = it.indentCount() - this.unclaimedIndenting!!
-                        when {
-                            remainder > 0 -> it.endIndentLevel(this.unclaimedIndenting!!, null)
-                            remainder == 0 -> {
-                                this.unclaimedIndenting = null
-                                it.continueIndentLevel(null)
+                            val remainder = it.indentCount() - this.unclaimedIndenting!!
+                            when {
+                                remainder > 0 -> it.endIndentLevel(this.unclaimedIndenting!!, null)
+                                remainder == 0 -> {
+                                    this.unclaimedIndenting = null
+                                    it.continueIndentLevel(null)
+                                }
+                                else -> // Indents are only left over on closing indents so should never be lower
+                                    throw InvalidYamlContent("Lower indent found than previous started indents")
                             }
-                            else -> // Indents are only left over on closing indents so should never be lower
-                                throw InvalidYamlContent("Lower indent found than previous started indents")
+                        } else {
+                            it.readUntilToken()
                         }
-                    } else {
-                        it.readUntilToken()
                     }
                 }
             } catch (e: ExceptionWhileReadingJson) {
                 this.hasException = true
                 currentReader.handleReaderInterrupt()
+            }
+
+            when (currentToken) {
+                is JsonToken.StartObject -> this.objectDepth++
+                is JsonToken.EndObject -> this.objectDepth--
             }
 
             return currentToken
@@ -160,7 +165,13 @@ internal class YamlReaderImpl(
     }
 
     override fun skipUntilNextField() {
-        TODO("not implemented")
+        val startDepth = this.objectDepth
+        do {
+            nextToken()
+        } while (
+            !(currentToken is JsonToken.FieldName && this.objectDepth <= startDepth)
+            && currentToken !is JsonToken.Stopped
+        )
     }
 
     override fun read() = try {

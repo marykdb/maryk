@@ -53,11 +53,11 @@ internal class IndentReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         if (this.mapKeyFound) {
-            this.yamlReader.hasUnclaimedIndenting(indentCount)
+            this.yamlReader.setUnclaimedIndenting(indentCount)
             this.mapKeyFound = false
 
             tokenToReturn?.let {
-                this.yamlReader.hasUnclaimedIndenting(indentCount)
+                this.yamlReader.setUnclaimedIndenting(indentCount)
                 this.yamlReader.pushToken(it())
             }
             return JsonToken.EndObject
@@ -66,7 +66,7 @@ internal class IndentReader<out P>(
         this.parentReader.childIsDoneReading()
 
         tokenToReturn?.let {
-            this.yamlReader.hasUnclaimedIndenting(indentCount)
+            this.yamlReader.setUnclaimedIndenting(indentCount)
             return it()
         }
 
@@ -74,7 +74,7 @@ internal class IndentReader<out P>(
         (this.currentReader as P).let {
             return if (it.indentCount() == indentCount) {
                 // found right level so continue
-                this.yamlReader.hasUnclaimedIndenting(null)
+                this.yamlReader.setUnclaimedIndenting(null)
                 if (it is IndentReader<*>) {
                     it.continueIndentLevel(null)
                 } else {

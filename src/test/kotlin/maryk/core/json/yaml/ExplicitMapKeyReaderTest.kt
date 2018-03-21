@@ -1,5 +1,7 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.testForArrayEnd
+import maryk.core.json.testForArrayStart
 import maryk.core.json.testForComplexFieldNameEnd
 import maryk.core.json.testForComplexFieldNameStart
 import maryk.core.json.testForDocumentEnd
@@ -96,7 +98,6 @@ class ExplicitMapKeyReaderTest {
         testForDocumentEnd(reader)
     }
 
-
     @Test
     fun map_multiline_key_indicator_on_new_line_with_value() {
         val reader = createYamlReader("""
@@ -138,5 +139,51 @@ class ExplicitMapKeyReaderTest {
         testForValue(reader, "value")
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun sequence_multiline_key_indicator_with_value() {
+        val reader = createYamlReader("""
+        | ? - a1
+        |   - a2
+        | : value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForArrayStart(reader)
+        testForValue(reader, "a1")
+        testForValue(reader, "a2")
+        testForArrayEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "value")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun interrupt_sequence_within_explicit_map_key() {
+        val reader = createYamlReader("""
+        | ? - a1
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForArrayStart(reader)
+        testForValue(reader, "a1")
+        testForArrayEnd(reader)
+        testForComplexFieldNameEnd(reader)
+    }
+
+    @Test
+    fun interrupt_map_within_explicit_map_key() {
+        val reader = createYamlReader("""
+        | ? k1: v1
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForComplexFieldNameEnd(reader)
     }
 }

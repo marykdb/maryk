@@ -165,7 +165,7 @@ internal class LineReader<out P>(
             skipWhiteSpace()
             if (this.parentReader is ExplicitMapKeyReader<*> && this.currentReader != this) {
                 return JsonToken.FieldName(value)
-            } else if (this.lastChar == ':') {
+            } else if (this.lastChar == ':' && !this.yamlReader.hasUnclaimedIndenting()) {
                 read()
                 if (this.lastChar.isWhitespace()) {
                     if (this.lastChar.isLineBreak()) {
@@ -228,13 +228,13 @@ internal class LineReader<out P>(
                     // Only return to parent if in indent count is done
                     if(this.parentReader.indentCountForChildren() >= indentCount){
                         this.parentReader.childIsDoneReading()
-                        this.yamlReader.hasUnclaimedIndenting(indentCount)
+                        this.yamlReader.setUnclaimedIndenting(indentCount)
                     }
                 }
             }
 
             if (this.parentReader.indentCountForChildren() < indentCount) {
-                this.yamlReader.hasUnclaimedIndenting(indentCount)
+                this.yamlReader.setUnclaimedIndenting(indentCount)
             } else {
                 // Was ended but not below parent reader count so should continue reading map values
                 this.parentReader.childIsDoneReading()

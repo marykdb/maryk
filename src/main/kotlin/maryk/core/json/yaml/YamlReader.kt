@@ -175,9 +175,11 @@ internal class YamlReaderImpl(
         throw ExceptionWhileReadingJson()
     }
 
-    fun hasUnclaimedIndenting(indentCount: Int?) {
+    fun setUnclaimedIndenting(indentCount: Int?) {
         this.unclaimedIndenting = indentCount
     }
+
+    fun hasUnclaimedIndenting() = this.unclaimedIndenting != null
 
     fun resolveTag(prefix: String, tag: String): TokenType {
         return when {

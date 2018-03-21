@@ -44,7 +44,7 @@ internal class FoldedStringReader<out P>(
                     }
 
                     if (currentIndentCount < this.indentCount!!) {
-                        this.yamlReader.hasUnclaimedIndenting(currentIndentCount)
+                        this.yamlReader.setUnclaimedIndenting(currentIndentCount)
                         break@loop
                     }
 

@@ -6,7 +6,7 @@ import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 private enum class ExplicitMapState {
-    INTERNAL_MAP
+    STARTED, INTERNAL_MAP, COMPLEX, SIMPLE
 }
 
 /** Reads Explicit map keys started with ? */
@@ -22,12 +22,11 @@ internal class ExplicitMapKeyReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var tag: TokenType? = null
-    private var started: Boolean = false
 
     private var state: ExplicitMapState? = null
 
     override fun readUntilToken(): JsonToken {
-        if (!this.started) {
+        if (this.state == null) {
             read()
             // If it turns out to not be an explicit key make it a Plain String reader
             if (!this.lastChar.isWhitespace()) {
@@ -46,7 +45,7 @@ internal class ExplicitMapKeyReader<out P>(
                 }
             }
 
-            this.started = true
+            this.state = ExplicitMapState.STARTED
 
             this.parentReader.foundMapKey(true)?.let {
                 return it
@@ -60,13 +59,24 @@ internal class ExplicitMapKeyReader<out P>(
             return this.endIndentLevel(currentIndentCount, null)
         }
 
-        return LineReader(
+        LineReader(
             this.yamlReader,
             parentReader = this,
             indentToAdd = currentIndentCount
         ).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken().let {
+                if (this.state == ExplicitMapState.STARTED) {
+                    if (it !is JsonToken.FieldName) {
+                        this.yamlReader.pushToken(it)
+                        this.state = ExplicitMapState.COMPLEX
+                        return JsonToken.StartComplexFieldName
+                    } else {
+                        this.state = ExplicitMapState.SIMPLE
+                    }
+                }
+                return it
+            }
         }
     }
 
@@ -88,14 +98,23 @@ internal class ExplicitMapKeyReader<out P>(
 
         return when(this.state) {
             ExplicitMapState.INTERNAL_MAP -> {
-                this.yamlReader.hasUnclaimedIndenting(indentCount)
+                this.yamlReader.setUnclaimedIndenting(indentCount)
                 this.yamlReader.pushToken(JsonToken.EndComplexFieldName)
                 tokenToReturn?.let {
                     this.yamlReader.pushToken(it())
                 }
                 JsonToken.EndObject
             }
-            null -> {
+            ExplicitMapState.COMPLEX -> {
+                this.yamlReader.setUnclaimedIndenting(indentCount)
+                tokenToReturn?.let {
+                    return it().also {
+                        yamlReader.pushToken(JsonToken.EndComplexFieldName)
+                    }
+                }
+                JsonToken.EndComplexFieldName
+            }
+            null, ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
                 tokenToReturn?.let {
                     return it()
                 }
@@ -106,7 +125,7 @@ internal class ExplicitMapKeyReader<out P>(
     }
 
     override fun foundMapKey(isExplicitMap: Boolean): JsonToken? {
-        if (this.state == null) {
+        if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
             this.state = ExplicitMapState.INTERNAL_MAP
             this.yamlReader.pushToken(JsonToken.SimpleStartObject)
             return JsonToken.StartComplexFieldName
@@ -122,20 +141,31 @@ internal class ExplicitMapKeyReader<out P>(
     }
 
     override fun handleReaderInterrupt() =
-        if (!this.started) {
-            this.started = true
-            this.parentReader.foundMapKey(true)?.let {
-                return it
-            }
+        when(this.state) {
+            null -> {
+                this.state = ExplicitMapState.STARTED
+                this.parentReader.foundMapKey(true)?.let {
+                    return it
+                }
 
-            this.tag?.let {
-                this.tag = null
-                (it as? MapType)?.let {
-                    JsonToken.StartObject(it)
-                } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
-            } ?: JsonToken.SimpleStartObject
-        } else {
-            this.parentReader.childIsDoneReading()
-            JsonToken.FieldName(null)
+                this.tag?.let {
+                    this.tag = null
+                    (it as? MapType)?.let {
+                        JsonToken.StartObject(it)
+                    } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
+                } ?: JsonToken.SimpleStartObject
+            }
+            ExplicitMapState.COMPLEX -> {
+                this.parentReader.childIsDoneReading()
+                JsonToken.EndComplexFieldName
+            }
+            ExplicitMapState.INTERNAL_MAP -> {
+                this.state = ExplicitMapState.COMPLEX
+                JsonToken.EndObject
+            }
+            ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
+                this.parentReader.childIsDoneReading()
+                JsonToken.FieldName(null)
+            }
         }
 }

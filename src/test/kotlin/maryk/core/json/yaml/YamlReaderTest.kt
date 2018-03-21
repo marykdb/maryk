@@ -13,7 +13,7 @@ import kotlin.test.Test
 
 class YamlReaderTest {
     @Test
-    fun testSkipFieldsStructure() {
+    fun test_skip_fields_structure() {
         val input = """
             1: 567
             2: [a1, a2, a3]
@@ -25,6 +25,11 @@ class YamlReaderTest {
             5:
                 map: {}
             6: v6
+            7:
+                seq:
+                - a
+                - b
+            8: v8
         """
         var index = 0
 
@@ -48,6 +53,12 @@ class YamlReaderTest {
 
         testForCurrentField(reader, "6")
         testForValue(reader, "v6", ValueType.String)
+
+        testForFieldName(reader, "7")
+        reader.skipUntilNextField()
+
+        testForCurrentField(reader, "8")
+        testForValue(reader, "v8", ValueType.String)
 
         testForObjectEnd(reader)
         testForDocumentEnd(reader)

@@ -58,7 +58,8 @@ internal class IndentReader<out P>(
 
             tokenToReturn?.let {
                 this.yamlReader.setUnclaimedIndenting(indentCount)
-                this.yamlReader.pushToken(it())
+                this.yamlReader.pushToken(JsonToken.EndObject)
+                return it()
             }
             return JsonToken.EndObject
         }

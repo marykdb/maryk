@@ -104,17 +104,17 @@ internal class ArrayItemsReader<out P>(
             this.yamlReader.setUnclaimedIndenting(indentCount)
             this.parentReader.childIsDoneReading()
             tokenToReturn?.let {
-                this.yamlReader.pushToken(it())
+                this.yamlReader.pushToken(JsonToken.EndArray)
+                return it()
             }
             JsonToken.EndArray
         } else {
-            this.parentReader.endIndentLevel(indentCount) {
-                tokenToReturn?.let {
-                    it().also {
-                        this.yamlReader.pushToken(JsonToken.EndArray)
-                    }
-                } ?: JsonToken.EndArray
-            }
+            val returnFunction = tokenToReturn?.let {
+                this.yamlReader.pushToken(JsonToken.EndArray)
+                it
+            } ?: { JsonToken.EndArray }
+
+            this.parentReader.endIndentLevel(indentCount, returnFunction)
         }
     }
 

@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ValueType
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForDocumentEnd
@@ -136,6 +137,36 @@ class MappingReaderTest {
         testForArrayEnd(reader)
         testForFieldName(reader, "key5")
         testForValue(reader, "value5")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_sequence_in_map() {
+        val input = """
+        | 1:
+        |   seq:
+        |   - a
+        |   - b
+        | 2: v2
+        """.trimMargin()
+        var index = 0
+
+        val reader = YamlReader { input[index++] }
+        testForObjectStart(reader)
+
+        testForFieldName(reader, "1")
+        testForObjectStart(reader)
+        testForFieldName(reader, "seq")
+        testForArrayStart(reader)
+        testForValue(reader, "a")
+        testForValue(reader, "b")
+        testForArrayEnd(reader)
+        testForObjectEnd(reader)
+
+        testForFieldName(reader, "2")
+        testForValue(reader, "v2", ValueType.String)
+
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }

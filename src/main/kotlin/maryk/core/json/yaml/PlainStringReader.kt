@@ -113,7 +113,8 @@ internal class PlainStringReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         val readerIndentCount = this.indentCount()
-        this.setToParent()
+        this.parentReader.childIsDoneReading()
+        @Suppress("UNCHECKED_CAST")
         return when {
             indentCount == readerIndentCount -> this.createToken()
             this.mode == PlainStyleMode.FLOW_COLLECTION -> throw InvalidYamlContent("Missing a comma")
@@ -129,12 +130,8 @@ internal class PlainStringReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        this.setToParent()
-        return this.createToken()
-    }
-
-    private fun setToParent() {
         this.parentReader.childIsDoneReading()
+        return this.createToken()
     }
 
     private fun createToken(): JsonToken {

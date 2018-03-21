@@ -21,6 +21,7 @@ internal class FlowSequenceReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
+    private var isComplex = false
     private var state = FlowSequenceState.START
     private var cachedCall: (() -> JsonToken)? = null
 
@@ -41,8 +42,8 @@ internal class FlowSequenceReader<out P>(
             return when(this.lastChar) {
                 '\'' -> this.singleQuoteString()
                 '\"' -> this.doubleQuoteString()
-                '{' -> this.flowMapReader()
-                '[' -> this.flowSequenceReader()
+                '{' -> this.flowMapReader().let(this::checkComplexFieldAndReturn)
+                '[' -> this.flowSequenceReader().let(this::checkComplexFieldAndReturn)
                 '!' -> this.tagReader()
                 '-' -> {
                     read()
@@ -104,6 +105,15 @@ internal class FlowSequenceReader<out P>(
         }
     }
 
+    private fun checkComplexFieldAndReturn(jsonToken: JsonToken): JsonToken {
+        if (this.state == FlowSequenceState.KEY) {
+            this.isComplex = true
+            this.yamlReader.pushToken(jsonToken)
+            return JsonToken.StartComplexFieldName
+        }
+        return jsonToken
+    }
+
     private fun tokenReturner(doIfNoToken: () -> JsonToken): JsonToken {
         return this.cachedCall?.let {
             this.cachedCall = null
@@ -133,7 +143,11 @@ internal class FlowSequenceReader<out P>(
         }
         FlowSequenceState.KEY -> {
             this.state = FlowSequenceState.MAP_VALUE
-            JsonToken.FieldName(value)
+            if (this.isComplex) {
+                JsonToken.EndComplexFieldName
+            } else {
+                JsonToken.FieldName(value)
+            }
         }
         FlowSequenceState.VALUE -> {
             this.state = FlowSequenceState.VALUE_START

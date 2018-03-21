@@ -2,6 +2,8 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
+import maryk.core.json.testForComplexFieldNameEnd
+import maryk.core.json.testForComplexFieldNameStart
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForInvalidYaml
@@ -12,7 +14,7 @@ import kotlin.test.Test
 
 class FlowSequenceReaderTest {
     @Test
-    fun read_array_items() {
+    fun read_sequence_items() {
         val reader = createYamlReader("""
             |     - ["test1", "test2", "test3"]
         """.trimMargin())
@@ -27,7 +29,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_array_items_plain() {
+    fun read_sequence_items_plain() {
         val reader = createYamlReader("""
             |     - [test1, test2, test3]
         """.trimMargin())
@@ -42,7 +44,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_array_items_with_sequences_and_maps() {
+    fun read_sequence_items_with_sequences_and_maps() {
         val reader = createYamlReader("""
             |     - [test1, [t1, t2], {k: v}]
         """.trimMargin())
@@ -63,7 +65,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_array_items_plain_multiline() {
+    fun read_sequence_items_plain_multiline() {
         val reader = createYamlReader("""
             |     - [test1
             |      longer
@@ -82,7 +84,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_array_items_plain_wrong_multiline() {
+    fun read_sequence_items_plain_wrong_multiline() {
         val reader = createYamlReader("""
             |     - [test1
             |     wrong]
@@ -93,7 +95,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_array_with_whitespacing_items() {
+    fun read_sequence_with_whitespacing_items() {
         val reader = createYamlReader("""
             |     - ["test1"    ,    "test2",
             |"test3"  ]
@@ -109,7 +111,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_array_with_map_items() {
+    fun read_sequence_with_map_items() {
         val reader = createYamlReader("""
             |     - [t1: v1, t2: v2]
         """.trimMargin())
@@ -129,7 +131,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_key_items() {
+    fun read_sequence_with_explicit_key_items() {
         val reader = createYamlReader("""
         |   [? ,test]
         """.trimMargin())
@@ -144,7 +146,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_direct_key_items() {
+    fun read_sequence_with_explicit_direct_key_items() {
         val reader = createYamlReader("""
         |   [?,test]
         """.trimMargin())
@@ -159,7 +161,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_defined_key_with_value_items() {
+    fun read_sequence_with_explicit_defined_key_with_value_items() {
         val reader = createYamlReader("""
         |   [? t1: v0,test]
         """.trimMargin())
@@ -174,7 +176,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_defined_key_items() {
+    fun read_sequence_with_explicit_defined_key_items() {
         val reader = createYamlReader("""
         |   [? t1]
         """.trimMargin())
@@ -188,7 +190,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_key_value_items() {
+    fun read_sequence_with_explicit_key_value_items() {
         val reader = createYamlReader("""
         |   [?: v0,test]
         """.trimMargin())
@@ -212,5 +214,45 @@ class FlowSequenceReaderTest {
         testForFieldName(reader, null)
         testForValue(reader, "v0")
         testForInvalidYaml(reader)
+    }
+
+    @Test
+    fun read_sequence_with_explicit_defined_sequence_key_with_value_items() {
+        val reader = createYamlReader("""
+        |   [? [a1, a2]: v0,test]
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForArrayStart(reader)
+        testForValue(reader, "a1")
+        testForValue(reader, "a2")
+        testForArrayEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "v0")
+        testForObjectEnd(reader)
+        testForValue(reader, "test")
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_sequence_with_explicit_defined_map_key_with_value_items() {
+        val reader = createYamlReader("""
+        |   [? {k1: v1}: v0,test]
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "v0")
+        testForObjectEnd(reader)
+        testForValue(reader, "test")
+        testForArrayEnd(reader)
+        testForDocumentEnd(reader)
     }
 }

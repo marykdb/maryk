@@ -195,4 +195,18 @@ class FlowMapReaderTest {
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
     }
+
+
+    @Test
+    fun fail_with_unfinished_map() {
+        val reader = createYamlReader("""
+        |   {?: v0,test: v1
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, "v0")
+        testForFieldName(reader, "test")
+        testForValue(reader, "v1")
+        testForInvalidYaml(reader)
+    }
 }

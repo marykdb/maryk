@@ -201,4 +201,16 @@ class FlowSequenceReaderTest {
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
     }
+
+    @Test
+    fun fail_when_not_closed_sequence() {
+        val reader = createYamlReader("""
+        |   [?: v0
+        """.trimMargin())
+        testForArrayStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, null)
+        testForValue(reader, "v0")
+        testForInvalidYaml(reader)
+    }
 }

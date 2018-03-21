@@ -73,6 +73,7 @@ internal class FlowMapItemsReader<out P>(
                     if(this.state != FlowMapState.SEPARATOR) {
                         return this.jsonTokenCreator(null, false)
                     }
+                    this.state = FlowMapState.STOP
 
                     read()
                     this.parentReader.childIsDoneReading()
@@ -124,6 +125,9 @@ internal class FlowMapItemsReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
+        if (this.state != FlowMapState.STOP) {
+            throw InvalidYamlContent("Maps started with { should always end with a }")
+        }
         this.parentReader.childIsDoneReading()
         return JsonToken.EndObject
     }

@@ -72,6 +72,7 @@ internal class FlowSequenceReader<out P>(
                 }
                 ']' -> {
                     tokenReturner {
+                        this.state = FlowSequenceState.STOP
                         read()
                         this.parentReader.childIsDoneReading()
                         JsonToken.EndArray
@@ -167,7 +168,10 @@ internal class FlowSequenceReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        this.currentReader = this.parentReader
+        if (this.state != FlowSequenceState.STOP) {
+            throw InvalidYamlContent("Sequences started with [ should always end with a ]")
+        }
+        this.parentReader.childIsDoneReading()
         return JsonToken.EndArray
     }
 }

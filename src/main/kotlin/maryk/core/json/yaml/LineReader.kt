@@ -38,7 +38,7 @@ internal class LineReader<out P>(
             return JsonToken.Value(null, ValueType.Null)
         }
 
-        val indents = skipWhiteSpace()
+        val indents = this.skipWhiteSpace()
 
         return when(this.lastChar) {
             '\n', '\r' -> {
@@ -221,14 +221,23 @@ internal class LineReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         if (mapKeyFound) {
-            if (tokenToReturn != null) {
-                return tokenToReturn().also {
+            tokenToReturn?.let {
+                return it().also {
+                    // This code needs to be after it() because of indent correction on found map values
+
+                    // Only return to parent if in indent count is done
                     if(this.parentReader.indentCountForChildren() >= indentCount){
                         this.parentReader.childIsDoneReading()
                         this.yamlReader.hasUnclaimedIndenting(indentCount)
                     }
                 }
-            } else if (!mapValueFound) {
+            }
+
+            if (this.parentReader.indentCountForChildren() < indentCount) {
+                this.yamlReader.hasUnclaimedIndenting(indentCount)
+            } else {
+                // Was ended but not below parent reader count so should continue reading map values
+                this.parentReader.childIsDoneReading()
                 return this.parentReader.continueIndentLevel(this.tag)
             }
         }

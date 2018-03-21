@@ -107,7 +107,10 @@ internal class YamlReaderImpl(
                     if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
                         // Skip stray comments and read until first relevant character
                         if (this.lastChar == '#') {
-                            skipComments()
+                            while (!this.lastChar.isLineBreak()) {
+                                read()
+                            }
+                            this.unclaimedIndenting = skipEmptyLinesAndCommentsAndCountIndents()
                         }
 
                         val remainder = it.indentCount() - this.unclaimedIndenting!!
@@ -137,26 +140,23 @@ internal class YamlReaderImpl(
         }
     }
 
-    private fun skipComments() {
-        while (!this.lastChar.isLineBreak()) {
-            read()
-        }
+    internal fun skipEmptyLinesAndCommentsAndCountIndents(): Int {
         var currentIndentCount = 0
-        while (this.lastChar.isWhitespace()) {
+        while(this.lastChar.isWhitespace()) {
             if (this.lastChar.isLineBreak()) {
                 currentIndentCount = 0
             } else {
                 currentIndentCount++
             }
             read()
-            // Skip comments since they can start early
-            if (this.lastChar == '#') {
+
+            if (this.lastChar == '#' && currentIndentCount != 0) {
                 while (!this.lastChar.isLineBreak()) {
                     read()
                 }
             }
         }
-        this.unclaimedIndenting = currentIndentCount
+        return currentIndentCount
     }
 
     override fun skipUntilNextField() {

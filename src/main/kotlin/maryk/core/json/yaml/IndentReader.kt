@@ -55,34 +55,39 @@ internal class IndentReader<out P>(
         if (this.mapKeyFound) {
             this.yamlReader.hasUnclaimedIndenting(indentCount)
             this.mapKeyFound = false
+
+            tokenToReturn?.let {
+                this.yamlReader.hasUnclaimedIndenting(indentCount)
+                this.yamlReader.pushToken(it())
+            }
             return JsonToken.EndObject
         }
 
         this.parentReader.childIsDoneReading()
 
-        return if(tokenToReturn != null) {
+        tokenToReturn?.let {
             this.yamlReader.hasUnclaimedIndenting(indentCount)
-            tokenToReturn()
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            (this.currentReader as P).let {
-                if (it.indentCount() == indentCount) {
-                    // found right level so continue
-                    this.yamlReader.hasUnclaimedIndenting(null)
-                    if (it is IndentReader<*>) {
-                        it.continueIndentLevel(null)
-                    } else {
-                        it.readUntilToken()
-                    }
+            return it()
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        (this.currentReader as P).let {
+            return if (it.indentCount() == indentCount) {
+                // found right level so continue
+                this.yamlReader.hasUnclaimedIndenting(null)
+                if (it is IndentReader<*>) {
+                    it.continueIndentLevel(null)
                 } else {
-                    it.endIndentLevel(indentCount, null)
+                    it.readUntilToken()
                 }
+            } else {
+                it.endIndentLevel(indentCount, null)
             }
         }
     }
 
     override fun readUntilToken(): JsonToken {
-        val currentIndentCount = this.skipEmptyLinesAndCountIndent()
+        val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 
         if (this.indentCounter == -1) {
             this.indentCounter = currentIndentCount

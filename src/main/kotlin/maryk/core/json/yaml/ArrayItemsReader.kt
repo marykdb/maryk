@@ -103,6 +103,9 @@ internal class ArrayItemsReader<out P>(
         return if (indentToAdd > 0) {
             this.yamlReader.hasUnclaimedIndenting(indentCount)
             this.parentReader.childIsDoneReading()
+            tokenToReturn?.let {
+                this.yamlReader.pushToken(it())
+            }
             JsonToken.EndArray
         } else {
             this.parentReader.endIndentLevel(indentCount) { JsonToken.EndArray }

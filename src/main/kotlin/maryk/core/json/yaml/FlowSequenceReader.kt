@@ -22,6 +22,7 @@ internal class FlowSequenceReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var state = FlowSequenceState.START
+    private var cachedCall: (() -> JsonToken)? = null
 
     override fun readUntilToken(): JsonToken {
         return if (this.state == FlowSequenceState.START) {
@@ -118,8 +119,6 @@ internal class FlowSequenceReader<out P>(
             doIfNoToken()
         }
     }
-
-    private var cachedCall: (() -> JsonToken)? = null
 
     override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean): JsonToken = when(this.state) {
         FlowSequenceState.START -> throw InvalidYamlContent("Sequence cannot be in start mode")

@@ -6,7 +6,7 @@ import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 private enum class ExplicitMapState {
-    INTERNAL_MAP, INTERNAL_MAP_CLOSED
+    INTERNAL_MAP
 }
 
 /** Reads Explicit map keys started with ? */
@@ -54,7 +54,7 @@ internal class ExplicitMapKeyReader<out P>(
         }
 
         val startedOnNewLine = this.lastChar.isLineBreak()
-        val currentIndentCount = this.skipEmptyLinesAndCountIndent()
+        val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 
         if (startedOnNewLine && currentIndentCount < this.indentCount()) {
             return this.endIndentLevel(currentIndentCount, null)
@@ -84,21 +84,18 @@ internal class ExplicitMapKeyReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         this.currentReader = this
+        this.parentReader.childIsDoneReading()
 
         return when(this.state) {
             ExplicitMapState.INTERNAL_MAP -> {
-                this.state = ExplicitMapState.INTERNAL_MAP_CLOSED
                 this.yamlReader.hasUnclaimedIndenting(indentCount)
+                this.yamlReader.pushToken(JsonToken.EndComplexFieldName)
+                tokenToReturn?.let {
+                    this.yamlReader.pushToken(it())
+                }
                 JsonToken.EndObject
             }
-            ExplicitMapState.INTERNAL_MAP_CLOSED -> {
-                this.state = null
-                this.parentReader.childIsDoneReading()
-                JsonToken.EndComplexFieldName
-            }
             null -> {
-                this.parentReader.childIsDoneReading()
-
                 tokenToReturn?.let {
                     return it()
                 }

@@ -2,6 +2,8 @@ package maryk.core.json.yaml
 
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
+import maryk.core.json.testForComplexFieldNameEnd
+import maryk.core.json.testForComplexFieldNameStart
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
 import maryk.core.json.testForInvalidYaml
@@ -208,5 +210,42 @@ class FlowMapReaderTest {
         testForFieldName(reader, "test")
         testForValue(reader, "v1")
         testForInvalidYaml(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_defined_sequence_key_with_value_items() {
+        val reader = createYamlReader("""
+        |   {? [a1]: v0,test: v1}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForArrayStart(reader)
+        testForValue(reader, "a1")
+        testForArrayEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "v0")
+        testForFieldName(reader, "test")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun read_map_with_explicit_defined_map_key_with_value_items() {
+        val reader = createYamlReader("""
+        |   {? {k1: v1}: v0,test: v1}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "v0")
+        testForFieldName(reader, "test")
+        testForValue(reader, "v1")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
     }
 }

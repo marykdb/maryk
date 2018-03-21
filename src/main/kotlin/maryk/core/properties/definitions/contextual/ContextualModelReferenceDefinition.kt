@@ -37,10 +37,11 @@ internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
         when(it) {
             is JsonToken.Value<*> -> {
-                it.value?.let {
-                    // TODO: make specific
-                    this.fromString(it.toString(), context)
-                } ?: throw ParseException("Model reference cannot be null in JSON")
+                when (it.value) {
+                    null -> throw ParseException("Model reference cannot be null in JSON")
+                    is String -> this.fromString(it.value, context)
+                    else -> throw ParseException("Model reference has to be a String")
+                }
             }
             else -> throw ParseException("Model reference has to be a value")
         }

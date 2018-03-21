@@ -57,23 +57,7 @@ data class NumberDefinition<T: Comparable<T>>(
         type.ofString(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
 
-    override fun fromNativeType(value: Any) =
-        if (type.isOfType(value)) {
-            @Suppress("UNCHECKED_CAST")
-            value as T
-        } else if (value is Double) {
-            type.ofDouble(value).also {
-                if (it != value) {
-                    throw ParseException("$value not of expected type")
-                }
-            }
-        } else if (value is Int) {
-            type.ofInt(value)
-        } else if (value is Long) {
-            type.ofLong(value)
-        } else {
-            null
-        }
+    override fun fromNativeType(value: Any) = fromNativeType(this.type, value)
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: IsPropertyContext?) = when (type) {
         !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
@@ -138,3 +122,21 @@ data class NumberDefinition<T: Comparable<T>>(
 internal object NumericContext : IsPropertyContext {
     var numberType: NumberDescriptor<Comparable<Any>>? = null
 }
+
+fun <T: Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
+    if (type.isOfType(value)) {
+        @Suppress("UNCHECKED_CAST")
+        value as T
+    } else if (value is Double) {
+        type.ofDouble(value).also {
+            if (it != value) {
+                throw ParseException("$value not of expected type")
+            }
+        }
+    } else if (value is Int) {
+        type.ofInt(value)
+    } else if (value is Long) {
+        type.ofLong(value)
+    } else {
+        null
+    }

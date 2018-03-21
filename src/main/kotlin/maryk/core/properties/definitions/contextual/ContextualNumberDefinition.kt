@@ -6,6 +6,7 @@ import maryk.core.json.JsonToken
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.fromNativeType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.numeric.Float32
@@ -47,12 +48,14 @@ internal class ContextualNumberDefinition<in CX: IsPropertyContext>(
     override fun readJson(reader: IsJsonLikeReader, context: CX?): Comparable<Any> = reader.currentToken.let {
         when (it) {
             is JsonToken.Value<*> -> {
-                it.value?.let {
-                    try {
-                        // TODO: Make specific for Any
-                        contextualResolver(context).ofString(it.toString())
-                    } catch (e: Throwable) { throw ParseException(it.toString(), e) }
-                } ?: throw ParseException("Contextual number cannot be null in JSON")
+                when (it.value) {
+                    null -> throw ParseException("Contextual number cannot be null in JSON")
+                    is String -> contextualResolver(context).ofString(it.value)
+                    else -> {
+                        fromNativeType(contextualResolver(context), it.value)
+                                ?: throw ParseException("Contextual number was not defined as a number or string")
+                    }
+                }
             }
             else -> throw ParseException("Contextual number has to be a value")
         }

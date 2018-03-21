@@ -36,10 +36,19 @@ internal data class ContextualPropertyReferenceDefinition<in CX: IsPropertyConte
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
         when(it) {
             is JsonToken.Value<*> -> {
-                it.value?.let {
-                    // TODO: Make specific for value
-                    fromString(it.toString(), context)
-                } ?: throw ParseException("Property reference cannot be null in JSON")
+                when (it.value) {
+                    null -> throw ParseException("Property reference cannot be null in JSON")
+                    is String -> fromString(it.value, context)
+                    is ByteArray -> {
+                        var readIndex = 0
+                        contextualResolver(context).getPropertyReferenceByBytes(it.value.size) {
+                            it.value[readIndex++]
+                        }
+                    }
+                    else -> {
+                        throw ParseException("Property reference was not defined as byte array or string")
+                    }
+                }
             }
             else -> throw ParseException("Property reference should be a value")
         }

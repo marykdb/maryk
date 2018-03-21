@@ -102,7 +102,7 @@ internal class IndentReader<out P>(
         return when(currentIndentCount) {
             parentIndentCount -> this.parentReader.continueIndentLevel(this.startTag)
             in 0 until parentIndentCount -> {
-                this.parentReader.childIsDoneReading()
+                this.parentReader.childIsDoneReading(false)
 
                 val tokenToReturn: (() -> JsonToken)? = if (this.mapKeyFound) {
                     this.mapKeyFound = false
@@ -134,7 +134,7 @@ internal class IndentReader<out P>(
             this.mapKeyFound = false
             return JsonToken.EndObject
         }
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
         return parentReader.handleReaderInterrupt()
     }
 }

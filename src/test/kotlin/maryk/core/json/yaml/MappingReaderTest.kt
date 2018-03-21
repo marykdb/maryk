@@ -150,9 +150,7 @@ class MappingReaderTest {
         |   - b
         | 2: v2
         """.trimMargin()
-        var index = 0
-
-        val reader = YamlReader { input[index++] }
+        val reader = createYamlReader(input)
         testForObjectStart(reader)
 
         testForFieldName(reader, "1")

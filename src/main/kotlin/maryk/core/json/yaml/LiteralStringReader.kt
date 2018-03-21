@@ -166,7 +166,7 @@ internal open class LiteralStringReader<out P>(
             }
         }
 
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
 
         return this.jsonTokenConstructor(this.storedValue)
     }

@@ -2,7 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.json.IsJsonLikeReader
 
-internal fun createYamlReader(yaml: String): IsJsonLikeReader {
+fun createYamlReader(yaml: String): IsJsonLikeReader {
     val input = yaml
     var index = 0
 

@@ -36,7 +36,7 @@ internal class TagReader<out P>(
             this.prefix = "!"
         }
 
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
         return this.parentReader.continueIndentLevel(
             this.yamlReader.resolveTag(prefix, tag)
         )

@@ -30,7 +30,7 @@ internal class ExplicitMapKeyReader<out P>(
             read()
             // If it turns out to not be an explicit key make it a Plain String reader
             if (!this.lastChar.isWhitespace()) {
-                this.parentReader.childIsDoneReading()
+                this.parentReader.childIsDoneReading(false)
 
                 @Suppress("UNCHECKED_CAST")
                 return PlainStringReader(
@@ -97,7 +97,7 @@ internal class ExplicitMapKeyReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         this.currentReader = this
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
 
         return when(this.state) {
             ExplicitMapState.INTERNAL_MAP -> {
@@ -159,7 +159,7 @@ internal class ExplicitMapKeyReader<out P>(
                 } ?: JsonToken.SimpleStartObject
             }
             ExplicitMapState.COMPLEX -> {
-                this.parentReader.childIsDoneReading()
+                this.parentReader.childIsDoneReading(false)
                 JsonToken.EndComplexFieldName
             }
             ExplicitMapState.INTERNAL_MAP -> {
@@ -167,7 +167,7 @@ internal class ExplicitMapKeyReader<out P>(
                 JsonToken.EndObject
             }
             ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
-                this.parentReader.childIsDoneReading()
+                this.parentReader.childIsDoneReading(false)
                 JsonToken.FieldName(null)
             }
         }

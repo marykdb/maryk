@@ -67,7 +67,7 @@ internal class StringInDoubleQuoteReader<out P>(
         try {
             read()
         } catch (e: ExceptionWhileReadingJson) {
-            this.parentReader.childIsDoneReading()
+            this.parentReader.childIsDoneReading(false)
         }
 
         return this.jsonTokenConstructor(foundValue)

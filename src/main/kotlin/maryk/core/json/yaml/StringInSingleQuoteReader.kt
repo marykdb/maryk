@@ -33,14 +33,14 @@ internal class StringInSingleQuoteReader<out P>(
             read()
         }
 
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
 
         return this.jsonTokenConstructor(storedValue)
     }
 
     override fun handleReaderInterrupt(): JsonToken {
         if (this.aQuoteFound) {
-            this.parentReader.childIsDoneReading()
+            this.parentReader.childIsDoneReading(false)
             return this.jsonTokenConstructor(storedValue)
         } else {
             throw InvalidYamlContent("Single quoted string was never closed")

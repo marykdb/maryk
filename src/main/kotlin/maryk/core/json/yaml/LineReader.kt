@@ -34,7 +34,7 @@ internal class LineReader<out P>(
                 }
             }
 
-            this.parentReader.childIsDoneReading()
+            this.parentReader.childIsDoneReading(false)
             return JsonToken.Value(null, ValueType.Null)
         }
 
@@ -44,7 +44,7 @@ internal class LineReader<out P>(
             '\n', '\r' -> {
                 read()
                 if (this.hasCompletedValueReading) {
-                    this.parentReader.childIsDoneReading()
+                    this.parentReader.childIsDoneReading(false)
                 }
                 @Suppress("UNCHECKED_CAST")
                 IndentReader(this.yamlReader, this.currentReader as P, this.tag).let {
@@ -227,7 +227,7 @@ internal class LineReader<out P>(
 
                     // Only return to parent if in indent count is done
                     if(this.parentReader.indentCountForChildren() >= indentCount){
-                        this.parentReader.childIsDoneReading()
+                        this.parentReader.childIsDoneReading(false)
                         this.yamlReader.setUnclaimedIndenting(indentCount)
                     }
                 }
@@ -237,11 +237,11 @@ internal class LineReader<out P>(
                 this.yamlReader.setUnclaimedIndenting(indentCount)
             } else {
                 // Was ended but not below parent reader count so should continue reading map values
-                this.parentReader.childIsDoneReading()
+                this.parentReader.childIsDoneReading(false)
                 return this.parentReader.continueIndentLevel(this.tag)
             }
         }
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
         return this.parentReader.endIndentLevel(indentCount, tokenToReturn)
     }
 
@@ -259,7 +259,7 @@ internal class LineReader<out P>(
 
         if (closeLineReader) {
             this.mapValueFound = true
-            this.parentReader.childIsDoneReading()
+            this.parentReader.childIsDoneReading(false)
         } else {
             this.currentReader = this
         }

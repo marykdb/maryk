@@ -45,7 +45,7 @@ internal class DirectiveReader<out P>(
             }
         }
 
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
         return this.parentReader.readUntilToken()
     }
 

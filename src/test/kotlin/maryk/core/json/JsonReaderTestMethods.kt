@@ -6,7 +6,7 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.fail
 
-internal fun testForDocumentStart(reader: IsJsonLikeReader) {
+fun testForDocumentStart(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !== JsonToken.StartDocument) {
             fail("$this should be document start")
@@ -14,7 +14,7 @@ internal fun testForDocumentStart(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForObjectStart(reader: IsJsonLikeReader, type: MapType = MapType.Map) {
+fun testForObjectStart(reader: IsJsonLikeReader, type: MapType = MapType.Map) {
     reader.nextToken().apply {
         if (this is JsonToken.StartObject) {
             type.let {
@@ -24,7 +24,7 @@ internal fun testForObjectStart(reader: IsJsonLikeReader, type: MapType = MapTyp
     }
 }
 
-internal fun testForObjectEnd(reader: IsJsonLikeReader) {
+fun testForObjectEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !== JsonToken.EndObject) {
             fail("$this should be object end")
@@ -32,7 +32,7 @@ internal fun testForObjectEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
+fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
     reader.nextToken().apply {
         if (this is JsonToken.FieldName) {
             this.value shouldBe value
@@ -40,7 +40,7 @@ internal fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
     }
 }
 
-internal fun testForComplexFieldNameStart(reader: IsJsonLikeReader) {
+fun testForComplexFieldNameStart(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !is JsonToken.StartComplexFieldName) {
             fail("$this should be complex field name start")
@@ -48,7 +48,7 @@ internal fun testForComplexFieldNameStart(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForComplexFieldNameEnd(reader: IsJsonLikeReader) {
+fun testForComplexFieldNameEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !is JsonToken.EndComplexFieldName) {
             fail("$this should be complex field name end")
@@ -56,7 +56,7 @@ internal fun testForComplexFieldNameEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForArrayStart(reader: IsJsonLikeReader, type: ArrayType = ArrayType.Sequence) {
+fun testForArrayStart(reader: IsJsonLikeReader, type: ArrayType = ArrayType.Sequence) {
     reader.nextToken().apply {
         if (this is JsonToken.StartArray) {
             type.let {
@@ -66,7 +66,7 @@ internal fun testForArrayStart(reader: IsJsonLikeReader, type: ArrayType = Array
     }
 }
 
-internal fun testForArrayEnd(reader: IsJsonLikeReader) {
+fun testForArrayEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !== JsonToken.EndArray) {
             fail("$this should be array end")
@@ -74,7 +74,7 @@ internal fun testForArrayEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: ValueType<T>? = null) {
+fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: ValueType<T>? = null) {
     reader.nextToken().apply {
         if (this is JsonToken.Value<*>) {
             this.value shouldBe value
@@ -86,7 +86,7 @@ internal fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: Va
     }
 }
 
-internal fun testForByteArrayValue(reader: IsJsonLikeReader, value: ByteArray, type: ValueType<ByteArray>) {
+fun testForByteArrayValue(reader: IsJsonLikeReader, value: ByteArray, type: ValueType<ByteArray>) {
     reader.nextToken().apply {
         if (this is JsonToken.Value<*> && this.value is ByteArray) {
             (this.value as ByteArray).toHex() shouldBe value.toHex()
@@ -98,7 +98,7 @@ internal fun testForByteArrayValue(reader: IsJsonLikeReader, value: ByteArray, t
     }
 }
 
-internal fun testForDocumentEnd(reader: IsJsonLikeReader) {
+fun testForDocumentEnd(reader: IsJsonLikeReader) {
     reader.nextToken().apply {
         if (this !== JsonToken.EndDocument) {
             fail("$this should be End Document")
@@ -106,7 +106,7 @@ internal fun testForDocumentEnd(reader: IsJsonLikeReader) {
     }
 }
 
-internal fun testForInvalidYaml(reader: IsJsonLikeReader) {
+fun testForInvalidYaml(reader: IsJsonLikeReader) {
     shouldThrow<InvalidYamlContent> {
         println(reader.nextToken())
     }

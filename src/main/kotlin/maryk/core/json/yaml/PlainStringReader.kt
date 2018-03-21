@@ -34,7 +34,7 @@ internal class PlainStringReader<out P>(
                 ':' -> {
                     read()
                     if (this.lastChar.isWhitespace()) {
-                        this.parentReader.childIsDoneReading()
+                        this.parentReader.childIsDoneReading(false)
 
                         // Only override token creators with non flow maps
                         if (this.mode != PlainStyleMode.FLOW_MAP) {
@@ -67,14 +67,14 @@ internal class PlainStringReader<out P>(
                     when(this.mode) {
                         PlainStyleMode.FLOW_COLLECTION -> when (this.lastChar) {
                             ',', ']' -> {
-                                this.parentReader.childIsDoneReading()
+                                this.parentReader.childIsDoneReading(false)
                                 return createToken()
                             }
                             else -> {}
                         }
                         PlainStyleMode.FLOW_MAP -> when (this.lastChar) {
                             ',', '}' -> {
-                                this.parentReader.childIsDoneReading()
+                                this.parentReader.childIsDoneReading(false)
                                 return createToken()
                             }
                             else -> {}
@@ -113,7 +113,7 @@ internal class PlainStringReader<out P>(
 
     override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
         val readerIndentCount = this.indentCount()
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
         @Suppress("UNCHECKED_CAST")
         return when {
             indentCount == readerIndentCount -> this.createToken()
@@ -130,7 +130,7 @@ internal class PlainStringReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
         return this.createToken()
     }
 

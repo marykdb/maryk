@@ -17,7 +17,7 @@ internal class CommentReader<out P>(
             read()
         }
 
-        this.parentReader.childIsDoneReading()
+        this.parentReader.childIsDoneReading(false)
         @Suppress("UNCHECKED_CAST")
         return IndentReader(this.yamlReader, this.currentReader as P).let {
             this.currentReader = it

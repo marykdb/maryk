@@ -15,25 +15,24 @@ class YamlReaderTest {
     @Test
     fun test_skip_fields_structure() {
         val input = """
-            1: 567
-            2: [a1, a2, a3]
-            3:
-                test1: 1
-                test2: 2
-                array: []
-            4: v4
-            5:
-                map: {}
-            6: v6
-            7:
-                seq:
-                - a
-                - b
-            8: v8
-        """
-        var index = 0
+        |  1: 567
+        |  2: [a1, a2, a3]
+        |  3:
+        |      test1: 1
+        |      test2: 2
+        |      array: []
+        |  4: v4
+        |  5:
+        |      map: {}
+        |  6: v6
+        |  7:
+        |      seq:
+        |      - a
+        |      - b
+        |  8: v8
+        """.trimMargin()
 
-        val reader = YamlReader { input[index++] }
+        val reader = createYamlReader(input)
         testForObjectStart(reader)
 
         testForFieldName(reader, "1")

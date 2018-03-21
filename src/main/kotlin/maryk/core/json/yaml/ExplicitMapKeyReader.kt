@@ -53,10 +53,13 @@ internal class ExplicitMapKeyReader<out P>(
         }
 
         val startedOnNewLine = this.lastChar.isLineBreak()
-        val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
+        var currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 
-        if (startedOnNewLine && currentIndentCount < this.indentCount()) {
-            return this.endIndentLevel(currentIndentCount, null)
+        if (startedOnNewLine) {
+            if (currentIndentCount < this.indentCount()) {
+                return this.endIndentLevel(currentIndentCount, null)
+            }
+            currentIndentCount = currentIndentCount - this.indentCount()
         }
 
         LineReader(

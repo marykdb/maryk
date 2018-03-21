@@ -78,7 +78,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun map_multiline_key_indicator_with_value() {
+    fun map_in_key_indicator_with_value() {
         val reader = createYamlReader("""
         | ? k1: v1
         |   k2: v2
@@ -99,7 +99,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun map_multiline_key_indicator_on_new_line_with_value() {
+    fun map_in_key_indicator_on_new_line_with_value() {
         val reader = createYamlReader("""
         | ?
         |     k1: v1
@@ -121,7 +121,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun map_multiline_key_indicator_with_value_and_double_quotes() {
+    fun map_in_key_indicator_with_value_and_double_quotes() {
         val reader = createYamlReader("""
         | ?    "k1": "v1"
         |      "k2": "v2"
@@ -142,9 +142,29 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun sequence_multiline_key_indicator_with_value() {
+    fun sequence_in_key_indicator_with_value() {
         val reader = createYamlReader("""
         | ? - a1
+        |   - a2
+        | : value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForArrayStart(reader)
+        testForValue(reader, "a1")
+        testForValue(reader, "a2")
+        testForArrayEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "value")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun sequence_with_new_line_in_key_indicator_with_value() {
+        val reader = createYamlReader("""
+        | ?
+        |   - a1
         |   - a2
         | : value
         """.trimMargin())
@@ -185,5 +205,44 @@ class ExplicitMapKeyReaderTest {
         testForValue(reader, "v1")
         testForObjectEnd(reader)
         testForComplexFieldNameEnd(reader)
+    }
+
+    @Test
+    fun flow_sequence_with_new_line_in_key_indicator_with_value() {
+        val reader = createYamlReader("""
+        | ? [ a1, a2]
+        | : value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForArrayStart(reader)
+        testForValue(reader, "a1")
+        testForValue(reader, "a2")
+        testForArrayEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "value")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun flow_map_in_key_indicator_with_value() {
+        val reader = createYamlReader("""
+        | ? { k1: v1,
+        |     k2: v2 }
+        | : value
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForComplexFieldNameStart(reader)
+        testForObjectStart(reader)
+        testForFieldName(reader, "k1")
+        testForValue(reader, "v1")
+        testForFieldName(reader, "k2")
+        testForValue(reader, "v2")
+        testForObjectEnd(reader)
+        testForComplexFieldNameEnd(reader)
+        testForValue(reader, "value")
+        testForObjectEnd(reader)
+        testForDocumentEnd(reader)
     }
 }

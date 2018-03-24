@@ -1,93 +1,97 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.ValueType
-import maryk.core.json.testForArrayEnd
-import maryk.core.json.testForArrayStart
-import maryk.core.json.testForComplexFieldNameEnd
-import maryk.core.json.testForComplexFieldNameStart
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForObjectEnd
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndArray
+import maryk.core.json.assertEndComplexFieldName
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertStartArray
+import maryk.core.json.assertStartComplexFieldName
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import kotlin.test.Test
 
 class FlowMapReaderTest {
     @Test
     fun read_map_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |     - {"key0",key1: "value1", 'key2': 'value2'}
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "key0")
-        testForValue(reader, null)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "value2")
-        testForObjectEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("key0")
+            assertValue(null)
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("value2")
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun fail_on_duplicate_map_field_names() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |    {a: 1, a: 2}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "a")
-        testForValue(reader, 1, ValueType.Int)
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("a")
+            assertValue(1, ValueType.Int)
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun read_map_and_sequence_in_map_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |     - {"key0","key1": {e1: v1}, 'key2': [v1, v2]}
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "key0")
-        testForValue(reader, null)
-        testForFieldName(reader, "key1")
-        testForObjectStart(reader)
-        testForFieldName(reader, "e1")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForFieldName(reader, "key2")
-        testForArrayStart(reader)
-        testForValue(reader, "v1")
-        testForValue(reader, "v2")
-        testForArrayEnd(reader)
-        testForObjectEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("key0")
+            assertValue(null)
+            assertFieldName("key1")
+            assertStartObject()
+            assertFieldName("e1")
+            assertValue("v1")
+            assertEndObject()
+            assertFieldName("key2")
+            assertStartArray()
+            assertValue("v1")
+            assertValue("v2")
+            assertEndArray()
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_items_plain_string() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |     - {key0, key1: value1, key2: value2}
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "key0")
-        testForValue(reader, null)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "value2")
-        testForObjectEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("key0")
+            assertValue(null)
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("value2")
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_items_plain_string_multiline() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |     - {key0,
         |      key1:
         |
@@ -98,166 +102,177 @@ class FlowMapReaderTest {
         |
         |        and longer
         |       }
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "key0")
-        testForValue(reader, null)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "value2 and longer and longer")
-        testForObjectEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("key0")
+            assertValue(null)
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("value2 and longer and longer")
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_items_plain_string_wrong_multiline() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |     - {key0
         |     multiline
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader)
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun read_map_multiline_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {"key0",
         |"key1":
         |"value1",
         |'key2': 'value2'}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key0")
-        testForValue(reader, null)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "value2")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key0")
+            assertValue(null)
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("value2")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_with_explicit_key_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {? ,test: v1}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, null)
-        testForValue(reader, null)
-        testForFieldName(reader, "test")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName(null)
+            assertValue(null)
+            assertFieldName("test")
+            assertValue("v1")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_with_explicit_direct_key_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {?,test: v1}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, null)
-        testForValue(reader, null)
-        testForFieldName(reader, "test")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName(null)
+            assertValue(null)
+            assertFieldName("test")
+            assertValue("v1")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_with_explicit_defined_key_with_value_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {? t1: v0,test: v1}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "t1")
-        testForValue(reader, "v0")
-        testForFieldName(reader, "test")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("t1")
+            assertValue("v0")
+            assertFieldName("test")
+            assertValue("v1")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_with_explicit_defined_key_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {? t1}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "t1")
-        testForValue(reader, null)
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("t1")
+            assertValue(null)
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_with_explicit_key_value_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {?: v0,test: v1}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, null)
-        testForValue(reader, "v0")
-        testForFieldName(reader, "test")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName(null)
+            assertValue("v0")
+            assertFieldName("test")
+            assertValue("v1")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
 
     @Test
     fun fail_with_unfinished_map() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {?: v0,test: v1
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, null)
-        testForValue(reader, "v0")
-        testForFieldName(reader, "test")
-        testForValue(reader, "v1")
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply{
+            assertStartObject()
+            assertFieldName(null)
+            assertValue("v0")
+            assertFieldName("test")
+            assertValue("v1")
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun read_map_with_explicit_defined_sequence_key_with_value_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {? [a1]: v0,test: v1}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForArrayStart(reader)
-        testForValue(reader, "a1")
-        testForArrayEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "v0")
-        testForFieldName(reader, "test")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartArray()
+            assertValue("a1")
+            assertEndArray()
+            assertEndComplexFieldName()
+            assertValue("v0")
+            assertFieldName("test")
+            assertValue("v1")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_map_with_explicit_defined_map_key_with_value_items() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |   {? {k1: v1}: v0,test: v1}
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "v0")
-        testForFieldName(reader, "test")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertValue("v0")
+            assertFieldName("test")
+            assertValue("v1")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 }

@@ -1,248 +1,262 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForArrayEnd
-import maryk.core.json.testForArrayStart
-import maryk.core.json.testForComplexFieldNameEnd
-import maryk.core.json.testForComplexFieldNameStart
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForObjectEnd
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndArray
+import maryk.core.json.assertEndComplexFieldName
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertStartArray
+import maryk.core.json.assertStartComplexFieldName
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import kotlin.test.Test
 
 class ExplicitMapKeyReaderTest {
     @Test
     fun empty_key_indicator() {
-        val reader = createYamlReader("?")
-        testForObjectStart(reader)
-        testForFieldName(reader, null)
-        testForValue(reader, null)
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        createYamlReader("?").apply {
+            assertStartObject()
+            assertFieldName(null)
+            assertValue(null)
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun empty_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ?
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, null)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName(null)
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun empty_key_indicator_with_no_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ?
         | key: value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, null)
-        testForValue(reader, null)
-        testForFieldName(reader, "key")
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName(null)
+            assertValue(null)
+            assertFieldName("key")
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun plain_string_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? key
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key")
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key")
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun plain_string_multiline_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? key
         |   with more lines
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key with more lines")
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key with more lines")
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun map_in_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? k1: v1
         |   k2: v2
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, "v1")
-        testForFieldName(reader, "k2")
-        testForValue(reader, "v2")
-        testForObjectEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertFieldName("k2")
+            assertValue("v2")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun map_in_key_indicator_on_new_line_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ?
         |     k1: v1
         |     k2: v2
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, "v1")
-        testForFieldName(reader, "k2")
-        testForValue(reader, "v2")
-        testForObjectEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertFieldName("k2")
+            assertValue("v2")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun map_in_key_indicator_with_value_and_double_quotes() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ?    "k1": "v1"
         |      "k2": "v2"
         | : "value"
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, "v1")
-        testForFieldName(reader, "k2")
-        testForValue(reader, "v2")
-        testForObjectEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertFieldName("k2")
+            assertValue("v2")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun sequence_in_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? - a1
         |   - a2
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForArrayStart(reader)
-        testForValue(reader, "a1")
-        testForValue(reader, "a2")
-        testForArrayEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartArray()
+            assertValue("a1")
+            assertValue("a2")
+            assertEndArray()
+            assertEndComplexFieldName()
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun sequence_with_new_line_in_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ?
         |   - a1
         |   - a2
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForArrayStart(reader)
-        testForValue(reader, "a1")
-        testForValue(reader, "a2")
-        testForArrayEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartArray()
+            assertValue("a1")
+            assertValue("a2")
+            assertEndArray()
+            assertEndComplexFieldName()
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun interrupt_sequence_within_explicit_map_key() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? - a1
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForArrayStart(reader)
-        testForValue(reader, "a1")
-        testForArrayEnd(reader)
-        testForComplexFieldNameEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartArray()
+            assertValue("a1")
+            assertEndArray()
+            assertEndComplexFieldName()
+        }
     }
 
     @Test
     fun interrupt_map_within_explicit_map_key() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? k1: v1
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForComplexFieldNameEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertEndObject()
+            assertEndComplexFieldName()
+        }
     }
 
     @Test
     fun flow_sequence_with_new_line_in_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? [ a1, a2]
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForArrayStart(reader)
-        testForValue(reader, "a1")
-        testForValue(reader, "a2")
-        testForArrayEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartArray()
+            assertValue("a1")
+            assertValue("a2")
+            assertEndArray()
+            assertEndComplexFieldName()
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun flow_map_in_key_indicator_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         | ? { k1: v1,
         |     k2: v2 }
         | : value
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForComplexFieldNameStart(reader)
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, "v1")
-        testForFieldName(reader, "k2")
-        testForValue(reader, "v2")
-        testForObjectEnd(reader)
-        testForComplexFieldNameEnd(reader)
-        testForValue(reader, "value")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertFieldName("k2")
+            assertValue("v2")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 }

@@ -1,49 +1,53 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForValue
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertValue
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DirectiveReaderTest {
     @Test
     fun read_yaml_directive() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |%YAML 1.2
         |---
         |test
-        """.trimMargin())
-        testForValue(reader, "test")
+        """.trimMargin()).apply {
+            assertValue("test")
+        }
     }
 
     @Test
     fun fail_unsupported_yaml_version() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |%YAML 2.0
         |---
-        """.trimMargin())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun fail_when_yaml_version_twice() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |%YAML 1.2
         |%YAML 1.3
         |---
-        """.trimMargin())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun ignore_unknown_directive() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |%UNKNOWN directive
         |%UNKNOWN two
         |---
         |test
-        """.trimMargin())
-        testForValue(reader, "test")
+        """.trimMargin()).apply {
+            assertValue("test")
+        }
     }
 
     @Test
@@ -58,12 +62,14 @@ class DirectiveReaderTest {
         |test
         """.trimMargin()) as YamlReaderImpl
 
-        testForValue(reader, "test")
+        reader.apply {
+            assertValue("test")
 
-        reader.tags["!"] shouldBe "tag:maryk.io,2018:"
-        reader.tags["!!"] shouldBe "tag:maryk.io,2016:"
-        reader.tags["!yaml!"] shouldBe "tag:yaml.org,2002"
-        reader.tags["!prefix!"] shouldBe "!my-"
-        reader.tags["ignored"] shouldBe null
+            tags["!"] shouldBe "tag:maryk.io,2018:"
+            tags["!!"] shouldBe "tag:maryk.io,2016:"
+            tags["!yaml!"] shouldBe "tag:yaml.org,2002"
+            tags["!prefix!"] shouldBe "!my-"
+            tags["ignored"] shouldBe null
+        }
     }
 }

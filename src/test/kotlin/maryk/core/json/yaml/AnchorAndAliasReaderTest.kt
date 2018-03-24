@@ -1,56 +1,56 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.ValueType
-import maryk.core.json.testForArrayEnd
-import maryk.core.json.testForArrayStart
-import maryk.core.json.testForComplexFieldNameEnd
-import maryk.core.json.testForComplexFieldNameStart
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForObjectEnd
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndArray
+import maryk.core.json.assertEndComplexFieldName
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertStartArray
+import maryk.core.json.assertStartComplexFieldName
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import kotlin.test.Test
 
 class AnchorAndAliasReaderTest {
     @Test
     fun anchors_with_value() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  - &array alfa
         |  - *array
-        """.trimMargin())
-
-        testForArrayStart(reader)
-        testForValue(reader, "alfa")
-        testForValue(reader, "alfa")
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("alfa")
+            assertValue("alfa")
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun anchors_in_sequences() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  - &array [a, b]
         |  - *array
-        """.trimMargin())
-
-        testForArrayStart(reader)
-        testForArrayStart(reader)
-        testForValue(reader, "a")
-        testForValue(reader, "b")
-        testForArrayEnd(reader)
-        testForArrayStart(reader)
-        testForValue(reader, "a")
-        testForValue(reader, "b")
-        testForArrayEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartArray()
+            assertValue("a")
+            assertValue("b")
+            assertEndArray()
+            assertStartArray()
+            assertValue("a")
+            assertValue("b")
+            assertEndArray()
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun anchors_complex() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  - &complex
         |       test: {a: b}
         |       2: [1,2, {[a]}]
@@ -58,74 +58,75 @@ class AnchorAndAliasReaderTest {
         |           - a
         |  - *complex
         |  - blaat
-        """.trimMargin())
+        """.trimMargin()).apply {
 
-        testForArrayStart(reader)
+            assertStartArray()
 
-        // twice the same
-        (0..1).forEach {
-            testForObjectStart(reader)
-            testForFieldName(reader, "test")
-            testForObjectStart(reader)
-            testForFieldName(reader, "a")
-            testForValue(reader, "b")
-            testForObjectEnd(reader)
-            testForFieldName(reader, "2")
-            testForArrayStart(reader)
-            testForValue(reader, 1, ValueType.Int)
-            testForValue(reader, 2, ValueType.Int)
-            testForObjectStart(reader)
-            testForComplexFieldNameStart(reader)
-            testForArrayStart(reader)
-            testForValue(reader, "a")
-            testForArrayEnd(reader)
-            testForComplexFieldNameEnd(reader)
-            testForValue(reader, null, ValueType.Null)
-            testForObjectEnd(reader)
-            testForArrayEnd(reader)
-            testForFieldName(reader, "3")
-            testForArrayStart(reader)
-            testForValue(reader, "a")
-            testForArrayEnd(reader)
-            testForObjectEnd(reader)
+            // twice the same
+            (0..1).forEach {
+                assertStartObject()
+                assertFieldName("test")
+                assertStartObject()
+                assertFieldName("a")
+                assertValue("b")
+                assertEndObject()
+                assertFieldName("2")
+                assertStartArray()
+                assertValue(1, ValueType.Int)
+                assertValue(2, ValueType.Int)
+                assertStartObject()
+                assertStartComplexFieldName()
+                assertStartArray()
+                assertValue("a")
+                assertEndArray()
+                assertEndComplexFieldName()
+                assertValue(null, ValueType.Null)
+                assertEndObject()
+                assertEndArray()
+                assertFieldName("3")
+                assertStartArray()
+                assertValue("a")
+                assertEndArray()
+                assertEndObject()
+            }
+
+            assertValue("blaat")
+            assertEndArray()
+            assertEndDocument()
         }
-
-        testForValue(reader, "blaat")
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
     }
 
     @Test
     fun fail_on_invalid_anchor() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  - & [a, b]
-        """.trimMargin())
-
-        testForArrayStart(reader)
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun fail_on_invalid_alias() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  - &array a
         |  - *
-        """.trimMargin())
-
-        testForArrayStart(reader)
-        testForValue(reader, "a")
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("a")
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun fail_on_unknown_alias() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  - &array a
         |  - *unknown
-        """.trimMargin())
-
-        testForArrayStart(reader)
-        testForValue(reader, "a")
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("a")
+            assertInvalidYaml()
+        }
     }
 }

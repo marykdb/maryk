@@ -1,41 +1,37 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForArrayStart
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForObjectStart
-import maryk.test.shouldThrow
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertStartArray
+import maryk.core.json.assertStartObject
 import kotlin.test.Test
 
 class ReservedIndicatorReaderTest {
     @Test
     fun fail_on_reserved_chars() {
-        shouldThrow<InvalidYamlContent> {
-            createYamlReader("`test").nextToken()
+        createYamlReader("`test").apply {
+            assertInvalidYaml()
         }
 
-        shouldThrow<InvalidYamlContent> {
-            createYamlReader("@test").nextToken()
+        createYamlReader("@test").apply {
+            assertInvalidYaml()
         }
     }
 
     @Test
     fun fail_on_reserved_sign_in_map() {
-        val reader = createYamlReader("test: @test")
-
-        testForObjectStart(reader)
-        testForFieldName(reader, "test")
-        shouldThrow<InvalidYamlContent> {
-            reader.nextToken()
+        createYamlReader("test: @test").apply {
+            assertStartObject()
+            assertFieldName("test")
+            assertInvalidYaml()
         }
     }
 
     @Test
     fun fail_on_reserved_sign_in_array() {
-        val reader = createYamlReader(" - `test")
-
-        testForArrayStart(reader)
-        shouldThrow<InvalidYamlContent> {
-            reader.nextToken()
+        createYamlReader(" - `test").apply {
+            assertStartArray()
+            assertInvalidYaml()
         }
     }
 }

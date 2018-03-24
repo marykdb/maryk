@@ -1,69 +1,72 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForObjectEnd
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import kotlin.test.Test
 
 class MergeTest{
     @Test
     fun test_map_merge() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: value1
         |<<: { key2: b, key3: c }
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "b")
-        testForFieldName(reader, "key3")
-        testForValue(reader, "c")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("b")
+            assertFieldName("key3")
+            assertValue("c")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun test_map_in_array_merge() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: value1
         |<<: [{ key2: b }, {key3: c }]
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "b")
-        testForFieldName(reader, "key3")
-        testForValue(reader, "c")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("b")
+            assertFieldName("key3")
+            assertValue("c")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun test_map_in_array_with_alias_merge() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: &map { key2: b, key3: c }
         |<<: *map
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
 
-        testForObjectStart(reader)
-        testForFieldName(reader, "key2")
-        testForValue(reader, "b")
-        testForFieldName(reader, "key3")
-        testForValue(reader, "c")
-        testForObjectEnd(reader)
+            assertStartObject()
+            assertFieldName("key2")
+            assertValue("b")
+            assertFieldName("key3")
+            assertValue("c")
+            assertEndObject()
 
-        testForFieldName(reader, "key2")
-        testForValue(reader, "b")
-        testForFieldName(reader, "key3")
-        testForValue(reader, "c")
+            assertFieldName("key2")
+            assertValue("b")
+            assertFieldName("key3")
+            assertValue("c")
 
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 }

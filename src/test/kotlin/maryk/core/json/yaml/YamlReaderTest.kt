@@ -3,11 +3,11 @@ package maryk.core.json.yaml
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.JsonToken
 import maryk.core.json.ValueType
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForObjectEnd
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -32,39 +32,40 @@ class YamlReaderTest {
         |  8: v8
         """.trimMargin()
 
-        val reader = createYamlReader(input)
-        testForObjectStart(reader)
+        createYamlReader(input).apply {
+            assertStartObject()
 
-        testForFieldName(reader, "1")
-        reader.skipUntilNextField()
+            assertFieldName("1")
+            skipUntilNextField()
 
-        testForCurrentField(reader, "2")
-        reader.skipUntilNextField()
+            assertCurrentFieldName("2")
+            skipUntilNextField()
 
-        testForCurrentField(reader, "3")
-        reader.skipUntilNextField()
+            assertCurrentFieldName("3")
+            skipUntilNextField()
 
-        testForCurrentField(reader, "4")
-        testForValue(reader, "v4", ValueType.String)
+            assertCurrentFieldName("4")
+            assertValue("v4", ValueType.String)
 
-        testForFieldName(reader, "5")
-        reader.skipUntilNextField()
+            assertFieldName("5")
+            skipUntilNextField()
 
-        testForCurrentField(reader, "6")
-        testForValue(reader, "v6", ValueType.String)
+            assertCurrentFieldName("6")
+            assertValue("v6", ValueType.String)
 
-        testForFieldName(reader, "7")
-        reader.skipUntilNextField()
+            assertFieldName("7")
+            skipUntilNextField()
 
-        testForCurrentField(reader, "8")
-        testForValue(reader, "v8", ValueType.String)
+            assertCurrentFieldName("8")
+            assertValue("v8", ValueType.String)
 
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
-    private fun testForCurrentField(reader: IsJsonLikeReader, value: String) {
-        reader.currentToken.apply {
+    private fun IsJsonLikeReader.assertCurrentFieldName(value: String) {
+        this.currentToken.apply {
             (this is JsonToken.FieldName) shouldBe true
             (this as JsonToken.FieldName).value shouldBe value
         }

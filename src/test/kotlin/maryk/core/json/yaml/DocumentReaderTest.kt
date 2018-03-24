@@ -1,17 +1,17 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForDocumentStart
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertStartDocument
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import kotlin.test.Test
 
 class DocumentReaderTest {
     @Test
     fun readDocument() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |%YAML 1.2
         |# Comment
         |---
@@ -21,86 +21,89 @@ class DocumentReaderTest {
         |---
         |    Hoho
         |...
-        """.trimMargin())
-        testForValue(reader, "Test")
-        testForDocumentStart(reader)
-        testForValue(reader, "Test2")
-        testForDocumentStart(reader)
-        testForValue(reader, "Hoho")
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertValue("Test")
+            assertStartDocument()
+            assertValue("Test2")
+            assertStartDocument()
+            assertValue("Hoho")
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_comment_with_directive() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |%YAML 1.2
         |# Comment
         |---
-        """.trimMargin())
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_multi_line_comment() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  # Comment
         |  # Line 2
-        """.trimMargin())
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertEndDocument()
+        }
     }
 
     @Test
     fun fail_on_wrong_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  k1: 1
         | k2: 2
-        """.trimMargin())
-
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, 1.toLong())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue(1.toLong())
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun fail_on_wrong_with_comment_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  k1: 1
         |
         |   # ignore
         |
         | k2: 2
-        """.trimMargin())
-
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, 1.toLong())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue(1.toLong())
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun fail_on_wronger_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  k1: 1
         |k2: 2
-        """.trimMargin())
-
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, 1.toLong())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue(1.toLong())
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun fail_on_wrong_array_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  k1: 1
         |--
-        """.trimMargin())
-
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForValue(reader, 1.toLong())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue(1.toLong())
+            assertInvalidYaml()
+        }
     }
 }

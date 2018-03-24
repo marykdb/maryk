@@ -3,21 +3,21 @@ package maryk.core.json.yaml
 import maryk.core.json.ArrayType
 import maryk.core.json.MapType
 import maryk.core.json.ValueType
-import maryk.core.json.testForArrayEnd
-import maryk.core.json.testForArrayStart
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForObjectEnd
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndArray
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertStartArray
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class TagReaderTest {
     @Test
     fun read_tags_in_map() {
-        val reader = createMarykYamlReader("""
+        createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
         |    k1: !Boolean { k: v }
@@ -41,162 +41,165 @@ class TagReaderTest {
         |    k11:
         |       b1: 1
         |    k12: !!pairs {test: !!str true}
-        """.trimMargin())
-
-        testForObjectStart(reader)
-        testForFieldName(reader, "k1")
-        testForObjectStart(reader, PropertyDefinitionType.Boolean)
-        testForFieldName(reader, "k")
-        testForValue(reader, "v")
-        testForObjectEnd(reader)
-        testForFieldName(reader, "k2")
-        testForValue(reader, "v2", ValueType.String)
-        testForFieldName(reader, "k3")
-        testForValue(reader, true, ValueType.Bool)
-        testForFieldName(reader, "k4")
-        testForValue(reader, "v4", ValueType.String)
-        testForFieldName(reader, "k5")
-        testForValue(reader, "true", ValueType.String)
-        testForFieldName(reader, "k6")
-        testForValue(reader, true, ValueType.Bool)
-        testForFieldName(reader, "k7")
-        testForArrayStart(reader, ArrayType.Set)
-        testForValue(reader, "v1")
-        testForValue(reader, "v2")
-        testForValue(reader, "v3")
-        testForArrayEnd(reader)
-        testForFieldName(reader, "k8")
-        testForArrayStart(reader, ArrayType.Sequence)
-        testForValue(reader, "t1")
-        testForArrayEnd(reader)
-        testForFieldName(reader, "k9")
-        testForArrayStart(reader, ArrayType.Set)
-        testForValue(reader, "f1")
-        testForValue(reader, "f2")
-        testForArrayEnd(reader)
-        testForFieldName(reader, "k10")
-        testForObjectStart(reader, MapType.OrderedMap)
-        testForFieldName(reader, "a1")
-        testForValue(reader, 1.toLong())
-        testForFieldName(reader, "a2")
-        testForValue(reader, 2.toLong())
-        testForObjectEnd(reader)
-        testForFieldName(reader, "k11")
-        testForObjectStart(reader, MapType.Map)
-        testForFieldName(reader, "b1")
-        testForValue(reader, 1.toLong(), ValueType.Int)
-        testForObjectEnd(reader)
-        testForFieldName(reader, "k12")
-        testForObjectStart(reader, MapType.Pairs)
-        testForFieldName(reader, "test")
-        testForValue(reader, "true", ValueType.String)
-        testForObjectEnd(reader)
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("k1")
+            assertStartObject(PropertyDefinitionType.Boolean)
+            assertFieldName("k")
+            assertValue("v")
+            assertEndObject()
+            assertFieldName("k2")
+            assertValue("v2", ValueType.String)
+            assertFieldName("k3")
+            assertValue(true, ValueType.Bool)
+            assertFieldName("k4")
+            assertValue("v4", ValueType.String)
+            assertFieldName("k5")
+            assertValue("true", ValueType.String)
+            assertFieldName("k6")
+            assertValue(true, ValueType.Bool)
+            assertFieldName("k7")
+            assertStartArray(ArrayType.Set)
+            assertValue("v1")
+            assertValue("v2")
+            assertValue("v3")
+            assertEndArray()
+            assertFieldName("k8")
+            assertStartArray(ArrayType.Sequence)
+            assertValue("t1")
+            assertEndArray()
+            assertFieldName("k9")
+            assertStartArray(ArrayType.Set)
+            assertValue("f1")
+            assertValue("f2")
+            assertEndArray()
+            assertFieldName("k10")
+            assertStartObject(MapType.OrderedMap)
+            assertFieldName("a1")
+            assertValue(1.toLong())
+            assertFieldName("a2")
+            assertValue(2.toLong())
+            assertEndObject()
+            assertFieldName("k11")
+            assertStartObject(MapType.Map)
+            assertFieldName("b1")
+            assertValue(1.toLong(), ValueType.Int)
+            assertEndObject()
+            assertFieldName("k12")
+            assertStartObject(MapType.Pairs)
+            assertFieldName("test")
+            assertValue("true", ValueType.String)
+            assertEndObject()
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_tags_in_flow_map() {
-        val reader = createMarykYamlReader("""
+        createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
         |   {
         |    k2: !!str v2, k3: !test!bool true,
         |    k4: !<tag:yaml.org,2002:float> 1.4665 }
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "k2")
-        testForValue(reader, "v2", ValueType.String)
-        testForFieldName(reader, "k3")
-        testForValue(reader, true, ValueType.Bool)
-        testForFieldName(reader, "k4")
-        testForValue(reader, 1.4665, ValueType.Float)
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("k2")
+            assertValue("v2", ValueType.String)
+            assertFieldName("k3")
+            assertValue(true, ValueType.Bool)
+            assertFieldName("k4")
+            assertValue(1.4665, ValueType.Float)
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_tags_in_sequence() {
-        val reader = createMarykYamlReader("""
+        createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
         |    - !Boolean { k: v }
         |    - !!str v2
         |    - !test!bool true
         |    - !<tag:yaml.org,2002:str> v4
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader, PropertyDefinitionType.Boolean)
-        testForFieldName(reader, "k")
-        testForValue(reader, "v")
-        testForObjectEnd(reader)
-        testForValue(reader, "v2", ValueType.String)
-        testForValue(reader, true, ValueType.Bool)
-        testForValue(reader, "v4", ValueType.String)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject(PropertyDefinitionType.Boolean)
+            assertFieldName("k")
+            assertValue("v")
+            assertEndObject()
+            assertValue("v2", ValueType.String)
+            assertValue(true, ValueType.Bool)
+            assertValue("v4", ValueType.String)
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_tags_in_flow_sequence() {
-        val reader = createMarykYamlReader("""
+        createMarykYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
         |    [ !Boolean { k: v },
         |     !!str v2,
         |     !test!bool true, !<tag:yaml.org,2002:str> v4, !!set [a1, a2], !SubModel s: m, !ValueModel ? v]
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader, PropertyDefinitionType.Boolean)
-        testForFieldName(reader, "k")
-        testForValue(reader, "v")
-        testForObjectEnd(reader)
-        testForValue(reader, "v2", ValueType.String)
-        testForValue(reader, true, ValueType.Bool)
-        testForValue(reader, "v4")
-        testForArrayStart(reader, ArrayType.Set)
-        testForValue(reader, "a1")
-        testForValue(reader, "a2")
-        testForArrayEnd(reader)
-        testForObjectStart(reader, PropertyDefinitionType.SubModel)
-        testForFieldName(reader, "s")
-        testForValue(reader, "m")
-        testForObjectEnd(reader)
-        testForObjectStart(reader, PropertyDefinitionType.ValueModel)
-        testForFieldName(reader, "v")
-        testForValue(reader, null)
-        testForObjectEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject(PropertyDefinitionType.Boolean)
+            assertFieldName("k")
+            assertValue("v")
+            assertEndObject()
+            assertValue("v2", ValueType.String)
+            assertValue(true, ValueType.Bool)
+            assertValue("v4")
+            assertStartArray(ArrayType.Set)
+            assertValue("a1")
+            assertValue("a2")
+            assertEndArray()
+            assertStartObject(PropertyDefinitionType.SubModel)
+            assertFieldName("s")
+            assertValue("m")
+            assertEndObject()
+            assertStartObject(PropertyDefinitionType.ValueModel)
+            assertFieldName("v")
+            assertValue(null)
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_maryk_tags() {
-        val reader = createMarykYamlReader("""
+        createMarykYamlReader("""
         |    - !Boolean { k1: v1 }
         |    - !SubModel { k2: v2 }
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForObjectStart(reader, PropertyDefinitionType.Boolean)
-        testForFieldName(reader, "k1")
-        testForValue(reader, "v1")
-        testForObjectEnd(reader)
-        testForObjectStart(reader, PropertyDefinitionType.SubModel)
-        testForFieldName(reader, "k2")
-        testForValue(reader, "v2")
-        testForObjectEnd(reader)
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject(PropertyDefinitionType.Boolean)
+            assertFieldName("k1")
+            assertValue("v1")
+            assertEndObject()
+            assertStartObject(PropertyDefinitionType.SubModel)
+            assertFieldName("k2")
+            assertValue("v2")
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun fail_on_unknown_tag() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |    - !Nonsense { k1: v1 }
-        """.trimMargin())
-        testForArrayStart(reader)
-        shouldThrow<InvalidYamlContent> {
-            reader.nextToken()
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertInvalidYaml()
         }
     }
 }

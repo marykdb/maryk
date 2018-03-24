@@ -1,31 +1,34 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForDocumentEnd
+import maryk.core.json.assertEndDocument
 import kotlin.test.Test
 
 class CommentReaderTest {
     @Test
     fun read_comment() {
-        val reader = createYamlReader("# Comment")
-        testForDocumentEnd(reader)
+        createYamlReader("# Comment").apply {
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_comment_with_directive() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |%YAML 1.2
         |# Comment
         |---
-        """.trimMargin())
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_multi_line_comment() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  # Comment
         |  # Line 2
-        """.trimMargin())
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertEndDocument()
+        }
     }
 }

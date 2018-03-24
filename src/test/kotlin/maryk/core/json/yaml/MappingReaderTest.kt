@@ -1,42 +1,42 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.ValueType
-import maryk.core.json.testForArrayEnd
-import maryk.core.json.testForArrayStart
-import maryk.core.json.testForDocumentEnd
-import maryk.core.json.testForFieldName
-import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForObjectEnd
-import maryk.core.json.testForObjectStart
-import maryk.core.json.testForValue
-import maryk.test.shouldThrow
+import maryk.core.json.assertEndArray
+import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertStartArray
+import maryk.core.json.assertStartObject
+import maryk.core.json.assertValue
 import kotlin.test.Test
 
 class MappingReaderTest {
     @Test
     fun read_simple_mapping() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: value1
         |'key2': "value2"
         |"key3": 'value3'
         |key4: "value4"
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "value2")
-        testForFieldName(reader, "key3")
-        testForValue(reader, "value3")
-        testForFieldName(reader, "key4")
-        testForValue(reader, "value4")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("value2")
+            assertFieldName("key3")
+            assertValue("value3")
+            assertFieldName("key4")
+            assertValue("value4")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_mapping_with_comments_and_line_breaks() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: "value1" #comment at end
         |'key2': #comment after key
         |
@@ -46,52 +46,53 @@ class MappingReaderTest {
         |   #another comment line
         | #and another
         |  'value3'
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "value2")
-        testForFieldName(reader, "key3")
-        testForValue(reader, "value3")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("value2")
+            assertFieldName("key3")
+            assertValue("value3")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_indented_mapping() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |  key1: value1
         |  'key2': "value2"
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForValue(reader, "value2")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertValue("value2")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_wrong_mapping() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: value1
         |'key2': value2
         |  "key3": 'value3'
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        shouldThrow<InvalidYamlContent> {
-            reader.nextToken()
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertInvalidYaml()
         }
     }
 
     @Test
     fun read_deeper_mapping() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: value1
         |'key2':
         |  "key3": 'value3'
@@ -100,46 +101,48 @@ class MappingReaderTest {
         |   "value5"
         |key6: value6
 
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForObjectStart(reader)
-        testForFieldName(reader, "key3")
-        testForValue(reader, "value3")
-        testForFieldName(reader, "key4")
-        testForValue(reader, "value4")
-        testForObjectEnd(reader)
-        testForFieldName(reader, "key5")
-        testForValue(reader, "value5")
-        testForFieldName(reader, "key6")
-        testForValue(reader, "value6")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertStartObject()
+            assertFieldName("key3")
+            assertValue("value3")
+            assertFieldName("key4")
+            assertValue("value4")
+            assertEndObject()
+            assertFieldName("key5")
+            assertValue("value5")
+            assertFieldName("key6")
+            assertValue("value6")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_mapping_with_array() {
-        val reader = createYamlReader("""
+        createYamlReader("""
         |key1: value1
         |'key2':
         |  - hey
         |  - "hoi"
         |key5: "value5"
-        """.trimMargin())
-        testForObjectStart(reader)
-        testForFieldName(reader, "key1")
-        testForValue(reader, "value1")
-        testForFieldName(reader, "key2")
-        testForArrayStart(reader)
-        testForValue(reader, "hey")
-        testForValue(reader, "hoi")
-        testForArrayEnd(reader)
-        testForFieldName(reader, "key5")
-        testForValue(reader, "value5")
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue("value1")
+            assertFieldName("key2")
+            assertStartArray()
+            assertValue("hey")
+            assertValue("hoi")
+            assertEndArray()
+            assertFieldName("key5")
+            assertValue("value5")
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
@@ -151,23 +154,24 @@ class MappingReaderTest {
         |   - b
         | 2: v2
         """.trimMargin()
-        val reader = createYamlReader(input)
-        testForObjectStart(reader)
+        createYamlReader(input).apply {
+            assertStartObject()
 
-        testForFieldName(reader, "1")
-        testForObjectStart(reader)
-        testForFieldName(reader, "seq")
-        testForArrayStart(reader)
-        testForValue(reader, "a")
-        testForValue(reader, "b")
-        testForArrayEnd(reader)
-        testForObjectEnd(reader)
+            assertFieldName("1")
+            assertStartObject()
+            assertFieldName("seq")
+            assertStartArray()
+            assertValue("a")
+            assertValue("b")
+            assertEndArray()
+            assertEndObject()
 
-        testForFieldName(reader, "2")
-        testForValue(reader, "v2", ValueType.String)
+            assertFieldName("2")
+            assertValue("v2", ValueType.String)
 
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
@@ -176,11 +180,11 @@ class MappingReaderTest {
         | alfa: a
         | alfa: b
         """.trimMargin()
-        val reader = createYamlReader(input)
-        testForObjectStart(reader)
-
-        testForFieldName(reader, "alfa")
-        testForValue(reader, "a")
-        testForInvalidYaml(reader)
+        createYamlReader(input).apply {
+            assertStartObject()
+            assertFieldName("alfa")
+            assertValue("a")
+            assertInvalidYaml()
+        }
     }
 }

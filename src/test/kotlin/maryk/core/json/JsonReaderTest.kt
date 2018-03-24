@@ -23,46 +23,45 @@ internal class JsonReaderTest {
         }"""
         var index = 0
 
-        val reader = JsonReader { input[index++] }
-
-        testForObjectStart(reader)
-        testForFieldName(reader, "string")
-        testForValue(reader, "hey", ValueType.String)
-        testForFieldName(reader, "int")
-        testForValue(reader, 4L, ValueType.Int)
-        testForFieldName(reader, "array")
-        testForArrayStart(reader)
-        testForValue(reader, 34L, ValueType.Int)
-        testForValue(reader, 2352L, ValueType.Int)
-        testForValue(reader, 3423L, ValueType.Int)
-        testForValue(reader, true, ValueType.Bool)
-        testForValue(reader, false, ValueType.Bool)
-        testForValue(reader, null, ValueType.Null)
-        testForArrayEnd(reader)
-        testForFieldName(reader, "emptyArray")
-        testForArrayStart(reader)
-        testForArrayEnd(reader)
-        testForFieldName(reader, "map")
-        testForObjectStart(reader)
-        testForFieldName(reader, "12")
-        testForValue(reader, "yes", ValueType.String)
-        testForFieldName(reader, "10")
-        testForValue(reader, "ahum", ValueType.String)
-        testForObjectEnd(reader)
-        testForFieldName(reader, "emptyMap")
-        testForObjectStart(reader)
-        testForObjectEnd(reader)
-        testForFieldName(reader, "mixed")
-        testForArrayStart(reader)
-        testForValue(reader, 2, ValueType.Int)
-        testForObjectStart(reader)
-        testForFieldName(reader, "value")
-        testForValue(reader, "subInMulti!", ValueType.String)
-        testForObjectEnd(reader)
-        testForArrayEnd(reader)
-        testForObjectEnd(reader)
-
-        reader.nextToken() shouldBe JsonToken.EndDocument
+        JsonReader { input[index++] }.apply {
+            assertStartObject()
+            assertFieldName("string")
+            assertValue("hey", ValueType.String)
+            assertFieldName("int")
+            assertValue(4L, ValueType.Int)
+            assertFieldName("array")
+            assertStartArray()
+            assertValue(34L, ValueType.Int)
+            assertValue(2352L, ValueType.Int)
+            assertValue(3423L, ValueType.Int)
+            assertValue(true, ValueType.Bool)
+            assertValue(false, ValueType.Bool)
+            assertValue(null, ValueType.Null)
+            assertEndArray()
+            assertFieldName("emptyArray")
+            assertStartArray()
+            assertEndArray()
+            assertFieldName("map")
+            assertStartObject()
+            assertFieldName("12")
+            assertValue("yes", ValueType.String)
+            assertFieldName("10")
+            assertValue("ahum", ValueType.String)
+            assertEndObject()
+            assertFieldName("emptyMap")
+            assertStartObject()
+            assertEndObject()
+            assertFieldName("mixed")
+            assertStartArray()
+            assertValue(2, ValueType.Int)
+            assertStartObject()
+            assertFieldName("value")
+            assertValue("subInMulti!", ValueType.String)
+            assertEndObject()
+            assertEndArray()
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test
@@ -79,33 +78,35 @@ internal class JsonReaderTest {
         }"""
         var index = 0
 
-        val reader = JsonReader { input[index++] }
-        testForObjectStart(reader)
+        JsonReader { input[index++] }.apply {
+            assertStartObject()
 
-        testForFieldName(reader, "1")
-        reader.skipUntilNextField()
+            assertFieldName("1")
+            skipUntilNextField()
 
-        reader.currentToken.apply {
-            (this is JsonToken.FieldName) shouldBe true
-            (this as JsonToken.FieldName).value shouldBe "2"
+            currentToken.apply {
+                (this is JsonToken.FieldName) shouldBe true
+                (this as JsonToken.FieldName).value shouldBe "2"
+            }
+            skipUntilNextField()
+
+            currentToken.apply {
+                (this is JsonToken.FieldName) shouldBe true
+                (this as JsonToken.FieldName).value shouldBe "3"
+            }
+            skipUntilNextField()
+
+            currentToken.apply {
+                (this is JsonToken.FieldName) shouldBe true
+                (this as JsonToken.FieldName).value shouldBe "4"
+            }
+
+            assertValue(true, ValueType.Bool)
+
+            assertEndObject()
+            assertEndDocument()
         }
-        reader.skipUntilNextField()
 
-        reader.currentToken.apply {
-            (this is JsonToken.FieldName) shouldBe true
-            (this as JsonToken.FieldName).value shouldBe "3"
-        }
-        reader.skipUntilNextField()
-
-        reader.currentToken.apply {
-            (this is JsonToken.FieldName) shouldBe true
-            (this as JsonToken.FieldName).value shouldBe "4"
-        }
-
-        testForValue(reader, true, ValueType.Bool)
-
-        testForObjectEnd(reader)
-        testForDocumentEnd(reader)
     }
 
     @Test
@@ -123,21 +124,20 @@ internal class JsonReaderTest {
         ]"""
         var index = 0
 
-        val reader = JsonReader { input[index++] }
-
-        testForArrayStart(reader)
-        testForValue(reader, 4L, ValueType.Int)
-        testForValue(reader, 4.723, ValueType.Float)
-        testForValue(reader, -0.123723, ValueType.Float)
-        testForValue(reader, 4.723E50, ValueType.Float)
-        testForValue(reader, 1.453E-4, ValueType.Float)
-        testForValue(reader, 1.453E+53, ValueType.Float)
-        testForValue(reader, 13453.442e234, ValueType.Float)
-        testForValue(reader, 53.442e-234, ValueType.Float)
-        testForValue(reader, 53.442e+234, ValueType.Float)
-        testForArrayEnd(reader)
-
-        testForDocumentEnd(reader)
+        JsonReader { input[index++] }.apply {
+            assertStartArray()
+            assertValue(4L, ValueType.Int)
+            assertValue(4.723, ValueType.Float)
+            assertValue(-0.123723, ValueType.Float)
+            assertValue(4.723E50, ValueType.Float)
+            assertValue(1.453E-4, ValueType.Float)
+            assertValue(1.453E+53, ValueType.Float)
+            assertValue(13453.442e234, ValueType.Float)
+            assertValue(53.442e-234, ValueType.Float)
+            assertValue(53.442e+234, ValueType.Float)
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
@@ -184,7 +184,7 @@ internal class JsonReaderTest {
         var input = "[343,22452,true"
         var index = 0
 
-        val reader = JsonReader {
+        JsonReader {
             val b = input[index].also {
                 // JS platform returns a 0 control char when nothing can be read
                 if (it == '\u0000') {
@@ -193,17 +193,18 @@ internal class JsonReaderTest {
             }
             index++
             b
+        }.apply {
+            do {
+                nextToken()
+            } while (currentToken !is JsonToken.Stopped)
+
+            (currentToken is JsonToken.Suspended) shouldBe true
+
+            input += "]"
+
+            assertEndArray()
+            assertEndDocument()
         }
-        do {
-            reader.nextToken()
-        } while (reader.currentToken !is JsonToken.Stopped)
-
-        (reader.currentToken is JsonToken.Suspended) shouldBe true
-
-        input += "]"
-
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
     }
 
     private fun createJsonReader(input: String): JsonReader {
@@ -223,28 +224,31 @@ internal class JsonReaderTest {
 
     @Test
     fun read_double_quote() {
-        val reader = createJsonReader("""["test"]""")
-        testForArrayStart(reader)
-        testForValue(reader, "test")
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        createJsonReader("""["test"]""").apply {
+            assertStartArray()
+            assertValue("test")
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_double_quote_with_special_chars() {
-        val reader = createJsonReader("""["te\"\b\f\n\t\\\/\r'"]""")
-        testForArrayStart(reader)
-        testForValue(reader, "te\"\b\u000C\n\t\\/\r'")
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        createJsonReader("""["te\"\b\f\n\t\\\/\r'"]""").apply {
+            assertStartArray()
+            assertValue("te\"\b\u000C\n\t\\/\r'")
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 
     @Test
     fun read_double_quote_with_utf_chars() {
-        val reader = createJsonReader("""["\uD83D\uDE0D\uwrong\u0w\u00w\u000w"]""")
-        testForArrayStart(reader)
-        testForValue(reader, "😍\\uwrong\\u0w\\u00w\\u000w")
-        testForArrayEnd(reader)
-        testForDocumentEnd(reader)
+        createJsonReader("""["\uD83D\uDE0D\uwrong\u0w\u00w\u000w"]""").apply {
+            assertStartArray()
+            assertValue("😍\\uwrong\\u0w\\u00w\\u000w")
+            assertEndArray()
+            assertEndDocument()
+        }
     }
 }

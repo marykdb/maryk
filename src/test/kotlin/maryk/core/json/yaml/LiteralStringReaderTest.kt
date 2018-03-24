@@ -1,30 +1,32 @@
 package maryk.core.json.yaml
 
-import maryk.core.json.testForArrayEnd
-import maryk.core.json.testForArrayStart
-import maryk.core.json.testForInvalidYaml
-import maryk.core.json.testForValue
+import maryk.core.json.assertEndArray
+import maryk.core.json.assertInvalidYaml
+import maryk.core.json.assertStartArray
+import maryk.core.json.assertValue
 import kotlin.test.Test
 
 class LiteralStringReaderTest {
     @Test
     fun fail_on_literal_string_without_break() {
-        val reader = createYamlReader("  | test")
-        testForInvalidYaml(reader)
+        createYamlReader("  | test").apply {
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun fail_on_invalid_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             |   |
             | test
-        """.trimMargin())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun read_literal_string() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             ||
             |
             | test
@@ -32,80 +34,87 @@ class LiteralStringReaderTest {
             |  line
             |
             |  - haha
-        """.trimMargin())
-        testForValue(reader, "\ntest\nanother\n line\n\n - haha\n")
+        """.trimMargin()).apply {
+            assertValue("\ntest\nanother\n line\n\n - haha\n")
+        }
     }
 
     @Test
     fun read_literal_string_in_array() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             |- |
             |  test
             |- |
             |  test2
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForValue(reader, "test\n")
-        testForValue(reader, "test2\n")
-        testForArrayEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("test\n")
+            assertValue("test2\n")
+            assertEndArray()
+        }
     }
 
 
     @Test
     fun fail_on_invalid_preset_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             | |3
             |  test
-        """.trimMargin())
-        testForInvalidYaml(reader)
+        """.trimMargin()).apply {
+            assertInvalidYaml()
+        }
     }
 
     @Test
     fun read_with_preset_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             | |7
             |         test
-        """.trimMargin())
-        testForValue(reader, "  test\n")
+        """.trimMargin()).apply {
+            assertValue("  test\n")
+        }
     }
 
     @Test
     fun read_with_strip_chomp_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             | |-
             | test
             |
             |
-        """.trimMargin())
-        testForValue(reader, "test")
+        """.trimMargin()).apply {
+            assertValue("test")
+        }
     }
 
 
     @Test
     fun read_with_keep_chomp_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             | |+
             | test
             |
             |
-        """.trimMargin())
-        testForValue(reader, "test\n\n")
+        """.trimMargin()).apply {
+            assertValue("test\n\n")
+        }
     }
 
     @Test
     fun read_with_clip_chomp_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             | |
             | test
             |
             |
-        """.trimMargin())
-        testForValue(reader, "test\n")
+        """.trimMargin()).apply {
+            assertValue("test\n")
+        }
     }
 
     @Test
     fun read_with_array_with_multiple_chomps_indent() {
-        val reader = createYamlReader("""
+        createYamlReader("""
             | - |
             |   test1
             |
@@ -121,12 +130,13 @@ class LiteralStringReaderTest {
             |
             | - |-2
             |   test4
-        """.trimMargin())
-        testForArrayStart(reader)
-        testForValue(reader, "test1\n")
-        testForValue(reader, "test2\n\n\n")
-        testForValue(reader, "test3")
-        testForValue(reader, "test4")
-        testForArrayEnd(reader)
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("test1\n")
+            assertValue("test2\n\n\n")
+            assertValue("test3")
+            assertValue("test4")
+            assertEndArray()
+        }
     }
 }

@@ -6,16 +6,16 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.fail
 
-fun testForDocumentStart(reader: IsJsonLikeReader) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertStartDocument() {
+    this.nextToken().apply {
         if (this !== JsonToken.StartDocument) {
             fail("$this should be document start")
         }
     }
 }
 
-fun testForObjectStart(reader: IsJsonLikeReader, type: MapType = MapType.Map) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertStartObject(type: MapType = MapType.Map) {
+    this.nextToken().apply {
         if (this is JsonToken.StartObject) {
             type.let {
                 this.type shouldBe it
@@ -24,40 +24,40 @@ fun testForObjectStart(reader: IsJsonLikeReader, type: MapType = MapType.Map) {
     }
 }
 
-fun testForObjectEnd(reader: IsJsonLikeReader) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertEndObject() {
+    this.nextToken().apply {
         if (this !== JsonToken.EndObject) {
             fail("$this should be object end")
         }
     }
 }
 
-fun testForFieldName(reader: IsJsonLikeReader, value: String?) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertFieldName(value: String?) {
+    this.nextToken().apply {
         if (this is JsonToken.FieldName) {
             this.value shouldBe value
         } else { fail("$this should be field name '$value'") }
     }
 }
 
-fun testForComplexFieldNameStart(reader: IsJsonLikeReader) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertStartComplexFieldName() {
+    this.nextToken().apply {
         if (this !is JsonToken.StartComplexFieldName) {
             fail("$this should be complex field name start")
         }
     }
 }
 
-fun testForComplexFieldNameEnd(reader: IsJsonLikeReader) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertEndComplexFieldName() {
+    this.nextToken().apply {
         if (this !is JsonToken.EndComplexFieldName) {
             fail("$this should be complex field name end")
         }
     }
 }
 
-fun testForArrayStart(reader: IsJsonLikeReader, type: ArrayType = ArrayType.Sequence) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertStartArray(type: ArrayType = ArrayType.Sequence) {
+    this.nextToken().apply {
         if (this is JsonToken.StartArray) {
             type.let {
                 this.type shouldBe it
@@ -66,16 +66,16 @@ fun testForArrayStart(reader: IsJsonLikeReader, type: ArrayType = ArrayType.Sequ
     }
 }
 
-fun testForArrayEnd(reader: IsJsonLikeReader) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertEndArray() {
+    this.nextToken().apply {
         if (this !== JsonToken.EndArray) {
             fail("$this should be array end")
         }
     }
 }
 
-fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: ValueType<T>? = null) {
-    reader.nextToken().apply {
+fun <T: Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null) {
+    this.nextToken().apply {
         if (this is JsonToken.Value<*>) {
             this.value shouldBe value
 
@@ -86,8 +86,8 @@ fun <T: Any> testForValue(reader: IsJsonLikeReader, value: T?, type: ValueType<T
     }
 }
 
-fun testForByteArrayValue(reader: IsJsonLikeReader, value: ByteArray, type: ValueType<ByteArray>) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<ByteArray>) {
+    this.nextToken().apply {
         if (this is JsonToken.Value<*> && this.value is ByteArray) {
             (this.value as ByteArray).toHex() shouldBe value.toHex()
 
@@ -98,16 +98,16 @@ fun testForByteArrayValue(reader: IsJsonLikeReader, value: ByteArray, type: Valu
     }
 }
 
-fun testForDocumentEnd(reader: IsJsonLikeReader) {
-    reader.nextToken().apply {
+fun IsJsonLikeReader.assertEndDocument() {
+    this.nextToken().apply {
         if (this !== JsonToken.EndDocument) {
             fail("$this should be End Document")
         }
     }
 }
 
-fun testForInvalidYaml(reader: IsJsonLikeReader) {
+fun IsJsonLikeReader.assertInvalidYaml() {
     shouldThrow<InvalidYamlContent> {
-        println(reader.nextToken())
+        println(this.nextToken())
     }
 }

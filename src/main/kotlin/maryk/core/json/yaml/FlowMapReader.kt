@@ -115,10 +115,9 @@ internal class FlowMapItemsReader<out P>(
             this.state = FlowMapState.KEY
             this.readUntilToken()
         }
-        FlowMapState.KEY -> {
+        FlowMapState.KEY, FlowMapState.SEPARATOR -> {
             this.state = FlowMapState.VALUE
-            this.checkDuplicateFieldName(value)
-            JsonToken.FieldName(value)
+            this.checkAndCreateFieldName(value, isPlainStringReader)
         }
         FlowMapState.COMPLEX_KEY -> {
             this.state = FlowMapState.VALUE
@@ -128,25 +127,14 @@ internal class FlowMapItemsReader<out P>(
             this.state = FlowMapState.SEPARATOR
             createYamlValueToken(value, this.tag, isPlainStringReader)
         }
-        FlowMapState.SEPARATOR -> {
-            // If last state was separator next one will be key
-            this.state = FlowMapState.VALUE
-            this.checkDuplicateFieldName(value)
-            JsonToken.FieldName(value)
-        }
         FlowMapState.STOP -> {
             this.state = FlowMapState.STOP
             JsonToken.EndObject
         }
     }
 
-    override fun checkDuplicateFieldName(fieldName: String?) {
-        if(!this.fieldNames.contains(fieldName)) {
-            this.fieldNames += fieldName
-        } else {
-            throw InvalidYamlContent("Duplicate field name $fieldName in flow map")
-        }
-    }
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
 
     private fun checkComplexFieldAndReturn(jsonToken: JsonToken): JsonToken {
         if (this.state == FlowMapState.KEY) {

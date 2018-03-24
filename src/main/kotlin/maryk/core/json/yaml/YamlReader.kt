@@ -62,6 +62,7 @@ internal class YamlReaderImpl(
     private val storedAnchors = mutableMapOf<String, Array<JsonToken>>()
 
     private var tokenDepth = 0
+    private var merges = mutableListOf<Merge>()
 
     var columnNumber = -1
     var lineNumber = 1
@@ -139,6 +140,37 @@ internal class YamlReaderImpl(
             when (currentToken) {
                 is JsonToken.StartObject, is JsonToken.StartArray -> this.tokenDepth++
                 is JsonToken.EndObject, is JsonToken.EndArray -> this.tokenDepth--
+                is JsonToken.MergeFieldName -> {
+                    this.merges.add(Merge(this.tokenDepth))
+                    return this.nextToken()
+                }
+            }
+
+            // Handle map merges
+            this.merges.lastOrNull()?.let { merge ->
+                when (merge.isWithArray) {
+                    null -> {
+                        merge.setStartToken(this.currentToken)
+                        return this.nextToken()
+                    }
+                    true -> {
+                        if (merge.tokenStartDepth == this.tokenDepth) {
+                            this.merges.remove(merge)
+                            return this.nextToken()
+                        }
+                        this.merges.add(Merge(
+                            this.tokenDepth - 1,
+                            this.currentToken
+                        ))
+                        return this.nextToken()
+                    }
+                    false -> {
+                        if (merge.tokenStartDepth == this.tokenDepth) {
+                            this.merges.remove(merge)
+                            return this.nextToken()
+                        }
+                    }
+                }
             }
 
             for (it in this.anchorReaders) {
@@ -267,6 +299,27 @@ internal class YamlReaderImpl(
     fun recordAnchors(anchorReader: AnchorReader<*>) {
         anchorReader.setTokenDepth(this.tokenDepth)
         this.anchorReaders.add(anchorReader)
+    }
+}
+
+private class Merge(
+    val tokenStartDepth: Int,
+    startToken: JsonToken? = null
+) {
+    var isWithArray: Boolean? = null
+
+    init {
+        startToken?.let {
+            this.setStartToken(it)
+        }
+    }
+
+    fun setStartToken(token: JsonToken) {
+        when (token) {
+            is JsonToken.StartArray -> this.isWithArray = true
+            is JsonToken.StartObject -> this.isWithArray = false
+            else -> throw InvalidYamlContent("Merges should contain Maps or Sequences with maps")
+        }
     }
 }
 

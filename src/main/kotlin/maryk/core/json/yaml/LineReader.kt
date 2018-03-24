@@ -169,8 +169,7 @@ internal class LineReader<out P>(
         } else {
             skipWhiteSpace()
             if (this.parentReader is ExplicitMapKeyReader<*> && this.currentReader != this) {
-                this.checkDuplicateFieldName(value)
-                return JsonToken.FieldName(value)
+                return this.checkAndCreateFieldName(value, isPlainStringReader)
             } else if (this.lastChar == ':' && !this.yamlReader.hasUnclaimedIndenting()) {
                 read()
                 if (this.lastChar.isWhitespace()) {
@@ -180,11 +179,11 @@ internal class LineReader<out P>(
                         }
                     }
 
-                    this.checkDuplicateFieldName(value)
+                    val fieldName = this.checkAndCreateFieldName(value, isPlainStringReader)
                     return this.foundMap(this.isExplicitMap)?.let {
-                        this.yamlReader.pushToken(JsonToken.FieldName(value))
+                        this.yamlReader.pushToken(fieldName)
                         it
-                    } ?: JsonToken.FieldName(value)
+                    } ?: fieldName
                 } else {
                     throw InvalidYamlContent("There should be whitespace after :")
                 }

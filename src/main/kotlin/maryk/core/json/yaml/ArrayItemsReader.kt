@@ -52,8 +52,8 @@ internal class ArrayItemsReader<out P>(
 
     override fun foundMap(isExplicitMap: Boolean) = this.parentReader.foundMap(isExplicitMap)
 
-    override fun checkDuplicateFieldName(fieldName: String?) =
-        this.parentReader.checkDuplicateFieldName(fieldName)
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 

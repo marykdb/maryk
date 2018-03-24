@@ -45,7 +45,7 @@ internal interface IsYamlCharWithIndentsReader {
     fun foundMap(isExplicitMap: Boolean): JsonToken?
 
     /** Checks if field name was set or otherwise throws error */
-    fun checkDuplicateFieldName(fieldName: String?)
+    fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean): JsonToken.FieldName
 }
 
 /** An interface for a Yaml char reader with children so children can call it when it is done*/

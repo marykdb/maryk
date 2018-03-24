@@ -26,7 +26,8 @@ sealed class JsonToken(val name: String) {
 
     object EndObject : JsonToken("EndObject")
 
-    class FieldName(val value: String?) : JsonToken("FieldName")
+    open class FieldName(val value: String?) : JsonToken("FieldName")
+    object MergeFieldName: FieldName("<<")
     object StartComplexFieldName : JsonToken("StartComplexFieldName")
     object EndComplexFieldName : JsonToken("EndComplexFieldName")
 

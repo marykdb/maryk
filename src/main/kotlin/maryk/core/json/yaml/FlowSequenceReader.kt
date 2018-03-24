@@ -155,7 +155,7 @@ internal class FlowSequenceReader<out P>(
         }
         FlowSequenceState.KEY -> {
             this.state = FlowSequenceState.MAP_VALUE
-            JsonToken.FieldName(value)
+            checkAndCreateFieldName(value, isPlainStringReader)
         }
         FlowSequenceState.COMPLEX_KEY -> {
             this.state = FlowSequenceState.MAP_VALUE_AFTER_COMPLEX_KEY

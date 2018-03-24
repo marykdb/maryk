@@ -136,13 +136,8 @@ internal class DocumentReader(
             null
         }
 
-    override fun checkDuplicateFieldName(fieldName: String?) {
-        if(!this.fieldNames.contains(fieldName)) {
-            this.fieldNames += fieldName
-        } else {
-            throw InvalidYamlContent("Duplicate field name $fieldName in flow map")
-        }
-    }
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
 
     override fun isWithinMap() = this.mapKeyFound
 

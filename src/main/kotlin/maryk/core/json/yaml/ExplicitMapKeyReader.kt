@@ -122,14 +122,13 @@ internal class ExplicitMapKeyReader<out P>(
                     return it()
                 }
 
-                this.parentReader.checkDuplicateFieldName(null)
-                JsonToken.FieldName(null)
+                this.parentReader.checkAndCreateFieldName(null, false)
             }
         }
     }
 
-    override fun checkDuplicateFieldName(fieldName: String?) =
-        this.parentReader.checkDuplicateFieldName(fieldName)
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
 
     override fun foundMap(isExplicitMap: Boolean): JsonToken? {
         if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
@@ -172,8 +171,7 @@ internal class ExplicitMapKeyReader<out P>(
             }
             ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
                 this.parentReader.childIsDoneReading(false)
-                this.parentReader.checkDuplicateFieldName(null)
-                JsonToken.FieldName(null)
+                this.parentReader.checkAndCreateFieldName(null, false)
             }
         }
 }

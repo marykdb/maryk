@@ -134,13 +134,8 @@ internal class IndentReader<out P>(
         this.currentReader = this
     }
 
-    override fun checkDuplicateFieldName(fieldName: String?) {
-        if(!this.fieldNames.contains(fieldName)) {
-            this.fieldNames += fieldName
-        } else {
-            throw InvalidYamlContent("Duplicate field name $fieldName")
-        }
-    }
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
 
     override fun handleReaderInterrupt(): JsonToken {
         if (this.mapKeyFound) {

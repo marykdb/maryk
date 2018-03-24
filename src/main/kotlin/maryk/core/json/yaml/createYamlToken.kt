@@ -29,6 +29,18 @@ private val timestampRegex = Regex(
         "(([ \\t]*)Z|([-+][0-9][0-9])?(:([0-9][0-9]))?)?)?$"  // time zone
 )
 
+internal fun checkAndCreateFieldName(foundFieldNames: MutableList<String?>, fieldName: String?, isPlainStringReader: Boolean) =
+    if(!foundFieldNames.contains(fieldName)) {
+        foundFieldNames += fieldName
+        if (isPlainStringReader && fieldName == "<<") {
+            JsonToken.MergeFieldName
+        } else {
+            JsonToken.FieldName(fieldName)
+        }
+    } else {
+        throw InvalidYamlContent("Duplicate field name $fieldName in flow map")
+    }
+
 internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainStringReader: Boolean): JsonToken.Value<Any?> {
     return tag?.let {
         if (value == null && it != ValueType.Null) {

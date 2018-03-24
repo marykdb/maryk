@@ -169,6 +169,7 @@ internal class LineReader<out P>(
         } else {
             skipWhiteSpace()
             if (this.parentReader is ExplicitMapKeyReader<*> && this.currentReader != this) {
+                this.checkDuplicateFieldName(value)
                 return JsonToken.FieldName(value)
             } else if (this.lastChar == ':' && !this.yamlReader.hasUnclaimedIndenting()) {
                 read()
@@ -179,7 +180,8 @@ internal class LineReader<out P>(
                         }
                     }
 
-                    return this.foundMapKey(this.isExplicitMap)?.let {
+                    this.checkDuplicateFieldName(value)
+                    return this.foundMap(this.isExplicitMap)?.let {
                         this.yamlReader.pushToken(JsonToken.FieldName(value))
                         it
                     } ?: JsonToken.FieldName(value)
@@ -192,7 +194,7 @@ internal class LineReader<out P>(
         return createYamlValueToken(value, this.tag, isPlainStringReader)
     }
 
-    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? {
+    override fun foundMap(isExplicitMap: Boolean): JsonToken? {
         if (this.mapKeyFound && !isExplicitMap) {
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
@@ -209,7 +211,7 @@ internal class LineReader<out P>(
         }
 
         this.mapKeyFound = true
-        return this.parentReader.foundMapKey(isExplicitMap).also {
+        return this.parentReader.foundMap(isExplicitMap).also {
             this.tag = null
         }
     }

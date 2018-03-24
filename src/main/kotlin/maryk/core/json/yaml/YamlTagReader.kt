@@ -35,7 +35,9 @@ internal abstract class YamlTagReader<out P>(
 
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
 
-    override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
+    override fun foundMap(isExplicitMap: Boolean) = this.parentReader.foundMap(isExplicitMap)
+
+    override fun checkDuplicateFieldName(fieldName: String?) = this.parentReader.checkDuplicateFieldName(fieldName)
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 

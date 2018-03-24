@@ -38,10 +38,13 @@ internal class PlainStringReader<out P>(
 
                         // Only override token creators with non flow maps
                         if (this.mode != PlainStyleMode.FLOW_MAP) {
-                            this.jsonTokenConstructor = { JsonToken.FieldName(it) }
+                            this.jsonTokenConstructor = {
+                                this.parentReader.checkDuplicateFieldName(it)
+                                JsonToken.FieldName(it)
+                            }
 
                             // If new map return Object Start and push new token
-                            this.parentReader.foundMapKey(false)?.let {
+                            this.parentReader.foundMap(false)?.let {
                                 this.yamlReader.pushToken(this.createToken())
                                 return it
                             }
@@ -93,7 +96,10 @@ internal class PlainStringReader<out P>(
         read()
     }
 
-    override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
+    override fun foundMap(isExplicitMap: Boolean) = this.parentReader.foundMap(isExplicitMap)
+
+    override fun checkDuplicateFieldName(fieldName: String?) =
+        this.parentReader.checkDuplicateFieldName(fieldName)
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 

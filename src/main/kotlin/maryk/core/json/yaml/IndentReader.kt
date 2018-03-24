@@ -18,6 +18,7 @@ internal class IndentReader<out P>(
 {
     private var indentCounter = -1
     private var mapKeyFound: Boolean = false
+    private val fieldNames = mutableListOf<String?>()
 
     // Should not be called
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
@@ -36,7 +37,7 @@ internal class IndentReader<out P>(
             it.readUntilToken()
         }
 
-    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
+    override fun foundMap(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
             this.startTag?.let {
@@ -131,6 +132,14 @@ internal class IndentReader<out P>(
 
     override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this
+    }
+
+    override fun checkDuplicateFieldName(fieldName: String?) {
+        if(!this.fieldNames.contains(fieldName)) {
+            this.fieldNames += fieldName
+        } else {
+            throw InvalidYamlContent("Duplicate field name $fieldName")
+        }
     }
 
     override fun handleReaderInterrupt(): JsonToken {

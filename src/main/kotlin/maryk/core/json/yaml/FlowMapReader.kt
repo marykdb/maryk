@@ -20,6 +20,7 @@ internal class FlowMapItemsReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var state = FlowMapState.START
+    private val fieldNames = mutableListOf<String?>()
 
     override fun readUntilToken(): JsonToken {
         return when(this.state) {
@@ -116,6 +117,7 @@ internal class FlowMapItemsReader<out P>(
         }
         FlowMapState.KEY -> {
             this.state = FlowMapState.VALUE
+            this.checkDuplicateFieldName(value)
             JsonToken.FieldName(value)
         }
         FlowMapState.COMPLEX_KEY -> {
@@ -129,11 +131,20 @@ internal class FlowMapItemsReader<out P>(
         FlowMapState.SEPARATOR -> {
             // If last state was separator next one will be key
             this.state = FlowMapState.VALUE
+            this.checkDuplicateFieldName(value)
             JsonToken.FieldName(value)
         }
         FlowMapState.STOP -> {
             this.state = FlowMapState.STOP
             JsonToken.EndObject
+        }
+    }
+
+    override fun checkDuplicateFieldName(fieldName: String?) {
+        if(!this.fieldNames.contains(fieldName)) {
+            this.fieldNames += fieldName
+        } else {
+            throw InvalidYamlContent("Duplicate field name $fieldName in flow map")
         }
     }
 

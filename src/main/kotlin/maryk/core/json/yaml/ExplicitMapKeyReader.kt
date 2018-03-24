@@ -47,7 +47,7 @@ internal class ExplicitMapKeyReader<out P>(
 
             this.state = ExplicitMapState.STARTED
 
-            this.parentReader.foundMapKey(true)?.let {
+            this.parentReader.foundMap(true)?.let {
                 return it
             }
         }
@@ -59,7 +59,7 @@ internal class ExplicitMapKeyReader<out P>(
             if (currentIndentCount < this.indentCount()) {
                 return this.endIndentLevel(currentIndentCount, null)
             }
-            currentIndentCount = currentIndentCount - this.indentCount()
+            currentIndentCount -= this.indentCount()
         }
 
         LineReader(
@@ -122,12 +122,16 @@ internal class ExplicitMapKeyReader<out P>(
                     return it()
                 }
 
+                this.parentReader.checkDuplicateFieldName(null)
                 JsonToken.FieldName(null)
             }
         }
     }
 
-    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? {
+    override fun checkDuplicateFieldName(fieldName: String?) =
+        this.parentReader.checkDuplicateFieldName(fieldName)
+
+    override fun foundMap(isExplicitMap: Boolean): JsonToken? {
         if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
             this.state = ExplicitMapState.INTERNAL_MAP
             this.yamlReader.pushToken(JsonToken.SimpleStartObject)
@@ -147,7 +151,7 @@ internal class ExplicitMapKeyReader<out P>(
         when(this.state) {
             null -> {
                 this.state = ExplicitMapState.STARTED
-                this.parentReader.foundMapKey(true)?.let {
+                this.parentReader.foundMap(true)?.let {
                     return it
                 }
 
@@ -168,6 +172,7 @@ internal class ExplicitMapKeyReader<out P>(
             }
             ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
                 this.parentReader.childIsDoneReading(false)
+                this.parentReader.checkDuplicateFieldName(null)
                 JsonToken.FieldName(null)
             }
         }

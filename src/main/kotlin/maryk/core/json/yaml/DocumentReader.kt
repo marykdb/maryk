@@ -14,6 +14,7 @@ internal class DocumentReader(
 {
     private var finishedWithDirectives: Boolean? = null
     private var mapKeyFound: Boolean = false
+    private val fieldNames = mutableListOf<String?>()
 
     private var contentWasFound = false
 
@@ -122,7 +123,7 @@ internal class DocumentReader(
         }
     }
 
-    override fun foundMapKey(isExplicitMap: Boolean): JsonToken? =
+    override fun foundMap(isExplicitMap: Boolean): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
             this.tag?.let {
@@ -134,6 +135,14 @@ internal class DocumentReader(
         } else {
             null
         }
+
+    override fun checkDuplicateFieldName(fieldName: String?) {
+        if(!this.fieldNames.contains(fieldName)) {
+            this.fieldNames += fieldName
+        } else {
+            throw InvalidYamlContent("Duplicate field name $fieldName in flow map")
+        }
+    }
 
     override fun isWithinMap() = this.mapKeyFound
 

@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ValueType
 import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForComplexFieldNameEnd
@@ -29,6 +30,17 @@ class FlowMapReaderTest {
         testForObjectEnd(reader)
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun fail_on_duplicate_map_field_names() {
+        val reader = createYamlReader("""
+        |    {a: 1, a: 2}
+        """.trimMargin())
+        testForObjectStart(reader)
+        testForFieldName(reader, "a")
+        testForValue(reader, 1, ValueType.Int)
+        testForInvalidYaml(reader)
     }
 
     @Test

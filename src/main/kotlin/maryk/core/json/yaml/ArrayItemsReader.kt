@@ -50,7 +50,10 @@ internal class ArrayItemsReader<out P>(
         }
     }
 
-    override fun foundMapKey(isExplicitMap: Boolean) = this.parentReader.foundMapKey(isExplicitMap)
+    override fun foundMap(isExplicitMap: Boolean) = this.parentReader.foundMap(isExplicitMap)
+
+    override fun checkDuplicateFieldName(fieldName: String?) =
+        this.parentReader.checkDuplicateFieldName(fieldName)
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 

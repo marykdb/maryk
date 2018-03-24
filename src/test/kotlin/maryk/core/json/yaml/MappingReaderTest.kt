@@ -5,6 +5,7 @@ import maryk.core.json.testForArrayEnd
 import maryk.core.json.testForArrayStart
 import maryk.core.json.testForDocumentEnd
 import maryk.core.json.testForFieldName
+import maryk.core.json.testForInvalidYaml
 import maryk.core.json.testForObjectEnd
 import maryk.core.json.testForObjectStart
 import maryk.core.json.testForValue
@@ -167,5 +168,19 @@ class MappingReaderTest {
 
         testForObjectEnd(reader)
         testForDocumentEnd(reader)
+    }
+
+    @Test
+    fun fail_duplicate_key() {
+        val input = """
+        | alfa: a
+        | alfa: b
+        """.trimMargin()
+        val reader = createYamlReader(input)
+        testForObjectStart(reader)
+
+        testForFieldName(reader, "alfa")
+        testForValue(reader, "a")
+        testForInvalidYaml(reader)
     }
 }

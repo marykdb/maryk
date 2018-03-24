@@ -56,6 +56,10 @@ internal class IndentReader<out P>(
             this.yamlReader.setUnclaimedIndenting(indentCount)
             this.mapKeyFound = false
 
+            if (indentCount < this.indentCount()) {
+                this.parentReader.childIsDoneReading(true)
+            }
+
             tokenToReturn?.let {
                 this.yamlReader.setUnclaimedIndenting(indentCount)
                 this.yamlReader.pushToken(JsonToken.EndObject)

@@ -54,7 +54,10 @@ class AnchorAndAliasReaderTest {
         |  - &complex
         |       test: {a: b}
         |       2: [1,2, {[a]}]
+        |       3:
+        |           - a
         |  - *complex
+        |  - blaat
         """.trimMargin())
 
         testForArrayStart(reader)
@@ -80,12 +83,16 @@ class AnchorAndAliasReaderTest {
             testForValue(reader, null, ValueType.Null)
             testForObjectEnd(reader)
             testForArrayEnd(reader)
+            testForFieldName(reader, "3")
+            testForArrayStart(reader)
+            testForValue(reader, "a")
+            testForArrayEnd(reader)
             testForObjectEnd(reader)
         }
 
+        testForValue(reader, "blaat")
         testForArrayEnd(reader)
         testForDocumentEnd(reader)
-
     }
 
     @Test

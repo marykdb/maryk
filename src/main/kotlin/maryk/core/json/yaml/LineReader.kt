@@ -84,6 +84,11 @@ internal class LineReader<out P>(
                 }
             }
             '!' -> this.tagReader()
+            '&' -> this.anchorReader().let {
+                this.currentReader = it
+                it.readUntilToken()
+            }
+            '*' -> this.aliasReader()
             '@', '`' -> {
                 throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
             }

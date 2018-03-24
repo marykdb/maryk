@@ -106,6 +106,17 @@ internal abstract class YamlTagReader<out P>(
         }
     }
 
+    protected fun anchorReader(): AnchorReader<YamlTagReader<P>> {
+        return AnchorReader(this.yamlReader, this)
+    }
+
+    protected fun aliasReader(): JsonToken {
+        return AliasReader(this.yamlReader, this).let {
+            this.currentReader = it
+            it.readUntilToken()
+        }
+    }
+
     override fun handleReaderInterrupt(): JsonToken {
         return this.parentReader.handleReaderInterrupt()
     }

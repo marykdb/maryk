@@ -55,9 +55,13 @@ internal class YamlReaderImpl(
     private var hasException: Boolean = false
     internal val tags: MutableMap<String, String> = mutableMapOf()
 
-    private val tokenStack = mutableListOf<JsonToken>()
+    private val anchorReaders = mutableListOf<AnchorReader<*>>()
+    private val anchorReadersToRemove = mutableListOf<AnchorReader<*>>()
 
-    private var objectDepth = 0
+    private val tokenStack = mutableListOf<JsonToken>()
+    private val storedAnchors = mutableMapOf<String, Array<JsonToken>>()
+
+    private var tokenDepth = 0
 
     var columnNumber = -1
     var lineNumber = 1
@@ -133,9 +137,20 @@ internal class YamlReaderImpl(
             }
 
             when (currentToken) {
-                is JsonToken.StartObject -> this.objectDepth++
-                is JsonToken.EndObject -> this.objectDepth--
+                is JsonToken.StartObject, is JsonToken.StartArray -> this.tokenDepth++
+                is JsonToken.EndObject, is JsonToken.EndArray -> this.tokenDepth--
             }
+
+            for (it in this.anchorReaders) {
+                it.recordToken(currentToken, this.tokenDepth) {
+                    this.anchorReadersToRemove.add(it)
+                }
+            }
+
+            for (it in this.anchorReadersToRemove) {
+                this.anchorReaders.remove(it)
+            }
+            this.anchorReadersToRemove.clear()
 
             return currentToken
         } catch (e: InvalidYamlContent) {
@@ -165,11 +180,11 @@ internal class YamlReaderImpl(
     }
 
     override fun skipUntilNextField() {
-        val startDepth = this.objectDepth
+        val startDepth = this.tokenDepth
         do {
             nextToken()
         } while (
-            !(currentToken is JsonToken.FieldName && this.objectDepth <= startDepth)
+            !(currentToken is JsonToken.FieldName && this.tokenDepth <= startDepth)
             && currentToken !is JsonToken.Stopped
         )
     }
@@ -234,6 +249,24 @@ internal class YamlReaderImpl(
 
     fun pushToken(token: JsonToken) {
         this.tokenStack.add(token)
+    }
+
+    fun storeTokensForAnchor(anchor: String, tokens: Array<JsonToken>) {
+        this.storedAnchors[anchor.trim()] = tokens
+    }
+
+    fun getTokensForAlias(alias: String): Array<JsonToken> {
+        val trimmedAlias = alias.trim()
+        if (trimmedAlias.isEmpty()) {
+            throw InvalidYamlContent("Alias (*) does not contain valid name")
+        }
+
+        return this.storedAnchors[trimmedAlias] ?: throw InvalidYamlContent("Unknown alias *$trimmedAlias")
+    }
+
+    fun recordAnchors(anchorReader: AnchorReader<*>) {
+        anchorReader.setTokenDepth(this.tokenDepth)
+        this.anchorReaders.add(anchorReader)
     }
 }
 

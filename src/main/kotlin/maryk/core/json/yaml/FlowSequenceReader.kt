@@ -47,6 +47,11 @@ internal class FlowSequenceReader<out P>(
                     '{' -> this.flowMapReader().let(this::checkComplexFieldAndReturn)
                     '[' -> this.flowSequenceReader().let(this::checkComplexFieldAndReturn)
                     '!' -> this.tagReader()
+                    '&' -> this.anchorReader().let {
+                        this.currentReader = it
+                        it.readUntilToken()
+                    }
+                    '*' -> this.aliasReader()
                     '-' -> {
                         read()
                         if (this.lastChar.isWhitespace()) {

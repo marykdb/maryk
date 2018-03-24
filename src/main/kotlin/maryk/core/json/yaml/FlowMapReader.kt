@@ -50,6 +50,11 @@ internal class FlowMapItemsReader<out P>(
                             .let(this::checkComplexFieldAndReturn)
                     }
                     '!' -> this.tagReader()
+                    '&' -> this.anchorReader().let {
+                        this.currentReader = it
+                        it.readUntilToken()
+                    }
+                    '*' -> this.aliasReader()
                     '-' -> {
                         read()
                         if (this.lastChar.isWhitespace()) {

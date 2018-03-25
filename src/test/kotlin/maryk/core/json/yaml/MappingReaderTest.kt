@@ -187,4 +187,52 @@ class MappingReaderTest {
             assertInvalidYaml()
         }
     }
+
+    @Test
+    fun read_map_in_array_at_end() {
+        createMarykYamlReader("""
+        |  properties:
+        |  - index: 0
+        |    name: string
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("properties")
+
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("index")
+            assertValue(0, ValueType.Int)
+            assertFieldName("name")
+            assertValue("string")
+            assertEndObject()
+            assertEndArray()
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun read_map_in_array() {
+        createMarykYamlReader("""
+        |  properties:
+        |  - index: 0
+        |    name: string
+        |  - test
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("properties")
+
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("index")
+            assertValue(0, ValueType.Int)
+            assertFieldName("name")
+            assertValue("string")
+            assertEndObject()
+            assertValue("test")
+            assertEndArray()
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
 }

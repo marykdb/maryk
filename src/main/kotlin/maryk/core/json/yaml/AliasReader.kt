@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Reads an *alias to return possible anchored tags */
 internal class AliasReader<out P>(
@@ -13,7 +14,7 @@ internal class AliasReader<out P>(
 {
     var alias = ""
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         read()
 
         while(!this.lastChar.isWhitespace()) {

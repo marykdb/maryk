@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Reads comments and returns reading when done */
 internal class CommentReader<out P>(
@@ -12,7 +13,7 @@ internal class CommentReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         while(!this.lastChar.isLineBreak()) {
             read()
         }

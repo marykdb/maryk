@@ -18,11 +18,9 @@ internal class DocumentReader(
 
     private var contentWasFound = false
 
-    private var tag: TokenType? = null
-
     private var indentCount: Int = 0
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         if(this.lastChar == '\u0000') {
             this.read()
         }
@@ -67,11 +65,10 @@ internal class DocumentReader(
 
                         ArrayItemsReader(
                             yamlReader = this.yamlReader,
-                            parentReader = this,
-                            startTag = this.tag
+                            parentReader = this
                         ).let {
                             this.currentReader = it
-                            it.readUntilToken()
+                            it.readUntilToken(tag)
                         }
                     }
                     else -> plainStringReader("-")
@@ -123,11 +120,10 @@ internal class DocumentReader(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean): JsonToken? =
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
-            this.tag?.let {
-                this.tag = null
+            tag?.let {
                 (it as? MapType)?.let {
                     JsonToken.StartObject(it)
                 } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
@@ -145,16 +141,18 @@ internal class DocumentReader(
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
-        this.tag = tag
         return this.lineReader(parentReader, tag)
     }
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        this.tag = tag
-        return readUntilToken()
+        return readUntilToken(tag)
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken {
         if (indentCount == 0
             && tokenToReturn != null
             && (this.lastChar == '-' || this.lastChar == '.')
@@ -188,11 +186,10 @@ internal class DocumentReader(
                   P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
         return LineReader(
             parentReader = parentReader,
-            yamlReader = this.yamlReader,
-            startTag = tag
+            yamlReader = this.yamlReader
         ).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
     }
 

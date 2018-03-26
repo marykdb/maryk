@@ -4,6 +4,7 @@ import maryk.core.bytes.fromCodePoint
 import maryk.core.extensions.HEX_CHARS
 import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Reads Strings encoded with "double quotes" */
 internal class StringInDoubleQuoteReader<out P>(
@@ -16,7 +17,7 @@ internal class StringInDoubleQuoteReader<out P>(
 {
     private var foundValue: String? = ""
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         var skipChar: SkipCharType = SkipCharType.None
         loop@while(lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
             skipChar = when (skipChar) {

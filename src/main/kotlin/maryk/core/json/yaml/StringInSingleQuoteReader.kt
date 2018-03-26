@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Last char is already at '. Read until next ' */
 internal class StringInSingleQuoteReader<out P>(
@@ -14,7 +15,7 @@ internal class StringInSingleQuoteReader<out P>(
     private var aQuoteFound = false
     private var storedValue: String? = ""
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         loop@while(true) {
             if(lastChar == '\'') {
                 if (this.aQuoteFound) {

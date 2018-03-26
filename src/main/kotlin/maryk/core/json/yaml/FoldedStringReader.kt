@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Literal style string reader */
 internal class FoldedStringReader<out P>(
@@ -13,7 +14,7 @@ internal class FoldedStringReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         // Read options and end at first line break
         readStartForOptionsAndReturnIndent("Folded >")
 

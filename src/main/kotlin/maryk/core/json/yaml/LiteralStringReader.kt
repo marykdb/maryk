@@ -4,6 +4,7 @@ import maryk.core.extensions.digitCharsWithoutZero
 import maryk.core.extensions.isLineBreak
 import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 internal enum class ChompStyle {
     STRIP, CLIP, KEEP
@@ -32,7 +33,7 @@ internal open class LiteralStringReader<out P>(
     protected var foundLineBreaks: Int = 0
     protected var chompStyle: ChompStyle = ChompStyle.CLIP
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         // Read options and end at first line break
         readStartForOptionsAndReturnIndent("Literal |")
 

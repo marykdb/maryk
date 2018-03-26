@@ -10,9 +10,8 @@ import maryk.core.json.ValueType
 internal class LineReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    startTag: TokenType? = null,
     private var indentToAdd: Int = 0
-) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.NORMAL, startTag),
+) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.NORMAL),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
         where P : YamlCharReader,
@@ -24,7 +23,7 @@ internal class LineReader<out P>(
     private var mapKeyFound = false
     private var mapValueFound = false
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         if (this.isExplicitMap) {
             if (this.lastChar == ':') {
                 read()
@@ -47,15 +46,15 @@ internal class LineReader<out P>(
                     this.parentReader.childIsDoneReading(false)
                 }
                 @Suppress("UNCHECKED_CAST")
-                IndentReader(this.yamlReader, this.currentReader as P, this.tag).let {
+                IndentReader(this.yamlReader, this.currentReader as P).let {
                     this.currentReader = it
-                    it.readUntilToken()
+                    it.readUntilToken(tag)
                 }
             }
-            '\'' -> this.singleQuoteString()
-            '\"' -> this.doubleQuoteString()
-            '[' -> this.flowSequenceReader()
-            '{' -> this.flowMapReader()
+            '\'' -> this.singleQuoteString(tag)
+            '\"' -> this.doubleQuoteString(tag)
+            '[' -> this.flowSequenceReader(tag)
+            '{' -> this.flowMapReader(tag)
             ',' -> {
                 throw InvalidYamlContent("Invalid char $lastChar at this position")
             }
@@ -65,7 +64,7 @@ internal class LineReader<out P>(
                     this.yamlReader,
                     this
                 ) {
-                    this.jsonTokenCreator(it, false)
+                    this.jsonTokenCreator(it, false, tag)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -77,7 +76,7 @@ internal class LineReader<out P>(
                     this.yamlReader,
                     this
                 ) {
-                    this.jsonTokenCreator(it, false)
+                    this.jsonTokenCreator(it, false, tag)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -107,14 +106,13 @@ internal class LineReader<out P>(
                     ArrayItemsReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
-                        indentToAdd = indents,
-                        startTag = this.tag
+                        indentToAdd = indents
                     ).let {
                         this.currentReader = it
-                        it.readUntilToken()
+                        it.readUntilToken(tag)
                     }
                 } else {
-                    plainStringReader("-")
+                    plainStringReader("-", tag)
                 }
             }
             '?' -> {
@@ -122,7 +120,7 @@ internal class LineReader<out P>(
                     this.yamlReader,
                     this
                 ) {
-                    this.jsonTokenCreator(it, false)
+                    this.jsonTokenCreator(it, false, tag)
                 }.let {
                     this.currentReader = it
                     it.readUntilToken()
@@ -134,7 +132,7 @@ internal class LineReader<out P>(
                     this.mapKeyFound = true
                     this.readUntilToken()
                 } else {
-                    plainStringReader(":")
+                    plainStringReader(":", tag)
                 }
             }
             '#' -> {
@@ -143,7 +141,7 @@ internal class LineReader<out P>(
                     it.readUntilToken()
                 }
             }
-            else -> this.plainStringReader("")
+            else -> this.plainStringReader("", tag)
         }
     }
 
@@ -156,13 +154,13 @@ internal class LineReader<out P>(
         return indents
     }
 
-    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean): JsonToken {
+    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken {
         if (this.mapKeyFound) {
             this.mapValueFound = true
             if (!this.isExplicitMap) {
                 this.indentToAdd -= 1
             }
-            return createYamlValueToken(value, this.tag, isPlainStringReader).also {
+            return createYamlValueToken(value, tag, isPlainStringReader).also {
                 // Unset so it can find more map keys if it is an embedded explicit map
                 this.mapKeyFound = false
             }
@@ -180,7 +178,7 @@ internal class LineReader<out P>(
                     }
 
                     val fieldName = this.checkAndCreateFieldName(value, isPlainStringReader)
-                    return this.foundMap(this.isExplicitMap)?.let {
+                    return this.foundMap(this.isExplicitMap, tag)?.let {
                         this.yamlReader.pushToken(fieldName)
                         it
                     } ?: fieldName
@@ -190,10 +188,10 @@ internal class LineReader<out P>(
             }
         }
 
-        return createYamlValueToken(value, this.tag, isPlainStringReader)
+        return createYamlValueToken(value, tag, isPlainStringReader)
     }
 
-    override fun foundMap(isExplicitMap: Boolean): JsonToken? {
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? {
         if (this.mapKeyFound && !isExplicitMap) {
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
@@ -210,9 +208,7 @@ internal class LineReader<out P>(
         }
 
         this.mapKeyFound = true
-        return this.parentReader.foundMap(isExplicitMap).also {
-            this.tag = null
-        }
+        return this.parentReader.foundMap(isExplicitMap, tag)
     }
 
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
@@ -225,7 +221,11 @@ internal class LineReader<out P>(
         return this.parentReader.newIndentLevel(indentCount, parentReader, tag)
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken {
         if (mapKeyFound) {
             tokenToReturn?.let {
                 return it().also {
@@ -244,11 +244,11 @@ internal class LineReader<out P>(
             } else {
                 // Was ended but not below parent reader count so should continue reading map values
                 this.parentReader.childIsDoneReading(false)
-                return this.parentReader.continueIndentLevel(this.tag)
+                return this.parentReader.continueIndentLevel(tag)
             }
         }
         this.parentReader.childIsDoneReading(false)
-        return this.parentReader.endIndentLevel(indentCount, tokenToReturn)
+        return this.parentReader.endIndentLevel(indentCount, tag, tokenToReturn)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd

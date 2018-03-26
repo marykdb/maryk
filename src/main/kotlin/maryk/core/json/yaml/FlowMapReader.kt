@@ -11,9 +11,8 @@ private enum class FlowMapState {
 /** Reader for flow Map Items {key1: value1, key2: value2} */
 internal class FlowMapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P,
-    startTag: TokenType?
-) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_MAP, startTag),
+    parentReader: P
+) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_MAP),
     IsYamlCharWithChildrenReader, IsYamlCharWithIndentsReader
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
@@ -22,32 +21,31 @@ internal class FlowMapItemsReader<out P>(
     private var state = FlowMapState.START
     private val fieldNames = mutableListOf<String?>()
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         return when(this.state) {
             FlowMapState.START -> {
                 this.state = FlowMapState.KEY
-                this.tag?.let {
-                    this.tag = null
+                tag?.let {
                     (it as? MapType)?.let {
                         JsonToken.StartObject(it)
                     } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
                 } ?: JsonToken.SimpleStartObject
             }
-            FlowMapState.COMPLEX_KEY -> this.jsonTokenCreator(null, false)
+            FlowMapState.COMPLEX_KEY -> this.jsonTokenCreator(null, false, tag)
             else -> {
                 while(this.lastChar.isWhitespace()) {
                     read()
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString()
-                    '\"' -> this.doubleQuoteString()
+                    '\'' -> this.singleQuoteString(tag)
+                    '\"' -> this.doubleQuoteString(tag)
                     '[' -> {
-                        this.flowSequenceReader()
+                        this.flowSequenceReader(tag)
                             .let(this::checkComplexFieldAndReturn)
                     }
                     '{' -> {
-                        this.flowMapReader()
+                        this.flowMapReader(tag)
                             .let(this::checkComplexFieldAndReturn)
                     }
                     '!' -> this.tagReader()
@@ -60,11 +58,11 @@ internal class FlowMapItemsReader<out P>(
                         read()
                         if (this.lastChar.isWhitespace()) {
                             throw InvalidYamlContent("Expected a comma")
-                        } else this.plainStringReader("-")
+                        } else this.plainStringReader("-", tag)
                     }
                     ',' -> {
                         if(this.state != FlowMapState.SEPARATOR) {
-                            return this.jsonTokenCreator(null, false)
+                            return this.jsonTokenCreator(null, false, tag)
                         }
 
                         read()
@@ -80,7 +78,7 @@ internal class FlowMapItemsReader<out P>(
                     }
                     '}' -> {
                         if(this.state != FlowMapState.SEPARATOR) {
-                            return this.jsonTokenCreator(null, false)
+                            return this.jsonTokenCreator(null, false, tag)
                         }
                         this.state = FlowMapState.STOP
 
@@ -95,21 +93,21 @@ internal class FlowMapItemsReader<out P>(
                                 throw InvalidYamlContent("Cannot have two ? explicit keys in a row")
                             }
                             this.state = FlowMapState.EXPLICIT_KEY
-                            this.jsonTokenCreator(null, false)
+                            this.jsonTokenCreator(null, false, tag)
                         } else if(this.lastChar == ',' || this.lastChar == ':') {
-                            this.jsonTokenCreator(null, false)
+                            this.jsonTokenCreator(null, false, tag)
                         } else {
-                            this.plainStringReader("?")
+                            this.plainStringReader("?", tag)
                         }
                     }
                     '|', '>' -> throw InvalidYamlContent("Unsupported character $lastChar in flow map")
-                    else -> this.plainStringReader("")
+                    else -> this.plainStringReader("", tag)
                 }
             }
         }
     }
 
-    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean) = when(state) {
+    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?) = when(state) {
         FlowMapState.START -> throw InvalidYamlContent("Map cannot be in start state")
         FlowMapState.EXPLICIT_KEY -> {
             this.state = FlowMapState.KEY
@@ -125,7 +123,7 @@ internal class FlowMapItemsReader<out P>(
         }
         FlowMapState.VALUE -> {
             this.state = FlowMapState.SEPARATOR
-            createYamlValueToken(value, this.tag, isPlainStringReader)
+            createYamlValueToken(value, tag, isPlainStringReader)
         }
         FlowMapState.STOP -> {
             this.state = FlowMapState.STOP

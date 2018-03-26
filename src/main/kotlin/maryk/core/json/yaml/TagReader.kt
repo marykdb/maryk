@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Reads comments and returns reading when done */
 internal class TagReader<out P>(
@@ -11,34 +12,35 @@ internal class TagReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    var prefix = ""
-    var tag = ""
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         read()
+
+        var prefix = ""
+        var newTag = ""
 
         while(!this.lastChar.isWhitespace()) {
             if(this.lastChar == '!') {
                 // Double !!
-                if(this.prefix.isEmpty()) {
-                    this.prefix = "!" + this.tag + "!"
-                    this.tag = ""
+                if(prefix.isEmpty()) {
+                    prefix = "!$newTag!"
+                    newTag = ""
                 } else {
-                    throw InvalidYamlContent("Invalid tag"+this.tag)
+                    throw InvalidYamlContent("Invalid tag $newTag")
                 }
             } else {
-                tag += this.lastChar
+                newTag += this.lastChar
             }
             read()
         }
         // Single !
-        if(this.prefix.isEmpty()) {
-            this.prefix = "!"
+        if(prefix.isEmpty()) {
+            prefix = "!"
         }
 
         this.parentReader.childIsDoneReading(false)
         return this.parentReader.continueIndentLevel(
-            this.yamlReader.resolveTag(prefix, tag)
+            this.yamlReader.resolveTag(prefix, newTag)
         )
     }
 

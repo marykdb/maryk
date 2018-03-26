@@ -6,8 +6,7 @@ import maryk.core.json.TokenType
 internal abstract class YamlTagReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    val flowMode: PlainStyleMode,
-    var tag: TokenType?
+    val flowMode: PlainStyleMode
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
@@ -19,23 +18,25 @@ internal abstract class YamlTagReader<out P>(
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
-        this.tag = tag
-        return this.readUntilToken()
+        return this.readUntilToken(tag)
     }
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        this.tag = tag
-        return this.readUntilToken()
+        return this.readUntilToken(tag)
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?) =
-        this.readUntilToken()
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ) =
+        this.readUntilToken(tag)
 
     override fun indentCount() = this.parentReader.indentCountForChildren()
 
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
 
-    override fun foundMap(isExplicitMap: Boolean) = this.parentReader.foundMap(isExplicitMap)
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) = this.parentReader.foundMap(isExplicitMap, tag)
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) = this.parentReader.checkAndCreateFieldName(
         fieldName,
@@ -44,63 +45,61 @@ internal abstract class YamlTagReader<out P>(
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 
-    abstract fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean): JsonToken
+    abstract fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken
 
-    internal fun plainStringReader(startWith: String): JsonToken {
+    internal fun plainStringReader(startWith: String, tag: TokenType?): JsonToken {
         return PlainStringReader(
             this.yamlReader,
             this,
             startWith,
             this.flowMode
         ) {
-            this.jsonTokenCreator(it, true)
+            this.jsonTokenCreator(it, true, tag)
         }.let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
     }
 
-    protected fun singleQuoteString(): JsonToken {
+    protected fun singleQuoteString(tag: TokenType?): JsonToken {
         read()
         return StringInSingleQuoteReader(this.yamlReader, this, {
-            this.jsonTokenCreator(it, false)
+            this.jsonTokenCreator(it, false, tag)
         }).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
     }
 
-    protected fun doubleQuoteString(): JsonToken {
+    protected fun doubleQuoteString(tag: TokenType?): JsonToken {
         read()
         return StringInDoubleQuoteReader(this.yamlReader, this, {
-            this.jsonTokenCreator(it, false)
+            this.jsonTokenCreator(it, false, tag)
         }).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
     }
 
-    protected fun flowSequenceReader(): JsonToken {
+    protected fun flowSequenceReader(tag: TokenType?): JsonToken {
         read()
         return FlowSequenceReader(
             yamlReader = this.yamlReader,
-            parentReader = this,
-            startTag = this.tag
+            parentReader = this
         ).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
     }
 
-    protected fun flowMapReader(): JsonToken {
+    protected fun flowMapReader(tag: TokenType?): JsonToken {
         read()
         return FlowMapItemsReader(
             yamlReader = this.yamlReader,
-            parentReader = this,
-            startTag = this.tag
+            parentReader = this
         ).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
     }
 

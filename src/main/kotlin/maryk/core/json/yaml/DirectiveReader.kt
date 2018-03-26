@@ -2,6 +2,7 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 private val yamlRegEx = Regex("^YAML ([0-9]).([0-9]+)$")
 private val tagRegEx = Regex("^TAG (!|!!|![a-zAZ]+!) ([^ ]+)$")
@@ -15,7 +16,7 @@ internal class DirectiveReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         var foundDirective = ""
         while(!this.lastChar.isLineBreak()) {
             foundDirective += lastChar

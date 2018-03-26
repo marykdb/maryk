@@ -7,8 +7,7 @@ import maryk.core.json.TokenType
 /** Reads indents on a new line until a char is found */
 internal class IndentReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P,
-    private var startTag: TokenType? = null
+    parentReader: P
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -30,18 +29,16 @@ internal class IndentReader<out P>(
     override fun continueIndentLevel(tag: TokenType?) =
         LineReader(
             this.yamlReader,
-            this,
-            startTag = tag
+            this
         ).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
 
-    override fun foundMap(isExplicitMap: Boolean): JsonToken? =
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? =
         if (!this.mapKeyFound) {
             this.mapKeyFound = true
-            this.startTag?.let {
-                this.startTag = null
+            tag?.let {
                 (it as? MapType)?.let {
                     JsonToken.StartObject(it)
                 } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
@@ -52,7 +49,11 @@ internal class IndentReader<out P>(
 
     override fun isWithinMap() = this.mapKeyFound
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken {
         if (this.mapKeyFound) {
             this.yamlReader.setUnclaimedIndenting(indentCount)
             this.mapKeyFound = false
@@ -87,12 +88,12 @@ internal class IndentReader<out P>(
                     it.readUntilToken()
                 }
             } else {
-                it.endIndentLevel(indentCount, null)
+                it.endIndentLevel(indentCount, tag, null)
             }
         }
     }
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 
         if (this.indentCounter == -1) {
@@ -105,7 +106,7 @@ internal class IndentReader<out P>(
 
         val parentIndentCount = this.parentReader.indentCount()
         return when(currentIndentCount) {
-            parentIndentCount -> this.parentReader.continueIndentLevel(this.startTag)
+            parentIndentCount -> this.parentReader.continueIndentLevel(tag)
             in 0 until parentIndentCount -> {
                 this.parentReader.childIsDoneReading(false)
 
@@ -116,10 +117,10 @@ internal class IndentReader<out P>(
                     null
                 }
 
-                this.parentReader.endIndentLevel(currentIndentCount, tokenToReturn)
+                this.parentReader.endIndentLevel(currentIndentCount, tag, tokenToReturn)
             }
             else -> if (currentIndentCount == this.indentCounter){
-                this.parentReader.newIndentLevel(currentIndentCount, this, this.startTag)
+                this.parentReader.newIndentLevel(currentIndentCount, this, tag)
             } else {
                 throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
             }

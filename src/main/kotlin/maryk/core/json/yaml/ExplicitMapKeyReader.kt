@@ -2,7 +2,6 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
-import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 private enum class ExplicitMapState {
@@ -21,11 +20,9 @@ internal class ExplicitMapKeyReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var tag: TokenType? = null
-
     private var state: ExplicitMapState? = null
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         if (this.state == null) {
             read()
             // If it turns out to not be an explicit key make it a Plain String reader
@@ -47,7 +44,7 @@ internal class ExplicitMapKeyReader<out P>(
 
             this.state = ExplicitMapState.STARTED
 
-            this.parentReader.foundMap(true)?.let {
+            this.parentReader.foundMap(true, tag)?.let {
                 return it
             }
         }
@@ -57,7 +54,7 @@ internal class ExplicitMapKeyReader<out P>(
 
         if (startedOnNewLine) {
             if (currentIndentCount < this.indentCount()) {
-                return this.endIndentLevel(currentIndentCount, null)
+                return this.endIndentLevel(currentIndentCount, tag, null)
             }
             currentIndentCount -= this.indentCount()
         }
@@ -95,7 +92,11 @@ internal class ExplicitMapKeyReader<out P>(
 
     override fun continueIndentLevel(tag: TokenType?) = this.readUntilToken()
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken {
         this.currentReader = this
         this.parentReader.childIsDoneReading(false)
 
@@ -130,7 +131,7 @@ internal class ExplicitMapKeyReader<out P>(
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
 
-    override fun foundMap(isExplicitMap: Boolean): JsonToken? {
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? {
         if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
             this.state = ExplicitMapState.INTERNAL_MAP
             this.yamlReader.pushToken(JsonToken.SimpleStartObject)
@@ -150,16 +151,11 @@ internal class ExplicitMapKeyReader<out P>(
         when(this.state) {
             null -> {
                 this.state = ExplicitMapState.STARTED
-                this.parentReader.foundMap(true)?.let {
+                this.parentReader.foundMap(true, null)?.let {
                     return it
                 }
 
-                this.tag?.let {
-                    this.tag = null
-                    (it as? MapType)?.let {
-                        JsonToken.StartObject(it)
-                    } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
-                } ?: JsonToken.SimpleStartObject
+                JsonToken.SimpleStartObject
             }
             ExplicitMapState.COMPLEX -> {
                 this.parentReader.childIsDoneReading(false)

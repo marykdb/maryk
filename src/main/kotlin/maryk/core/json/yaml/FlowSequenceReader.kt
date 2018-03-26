@@ -12,9 +12,8 @@ private enum class FlowSequenceState {
 /** Reader for flow sequences [item1, item2, item3] */
 internal class FlowSequenceReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P,
-    startTag: TokenType?
-) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_COLLECTION, startTag),
+    parentReader: P
+) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_COLLECTION),
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
         where P : YamlCharReader,
@@ -24,28 +23,27 @@ internal class FlowSequenceReader<out P>(
     private var state = FlowSequenceState.START
     private var cachedCall: (() -> JsonToken)? = null
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         return when(this.state) {
             FlowSequenceState.START -> {
                 this.state = FlowSequenceState.VALUE_START
-                this.tag?.let {
-                    this.tag = null
+                tag?.let {
                     JsonToken.StartArray(
                         it as? ArrayType ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
                     )
                 } ?: JsonToken.SimpleStartArray
             }
-            FlowSequenceState.COMPLEX_KEY -> this.jsonTokenCreator(null, false)
+            FlowSequenceState.COMPLEX_KEY -> this.jsonTokenCreator(null, false, null)
             else -> {
                 while(this.lastChar.isWhitespace()) {
                     read()
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString()
-                    '\"' -> this.doubleQuoteString()
-                    '{' -> this.flowMapReader().let(this::checkComplexFieldAndReturn)
-                    '[' -> this.flowSequenceReader().let(this::checkComplexFieldAndReturn)
+                    '\'' -> this.singleQuoteString(tag)
+                    '\"' -> this.doubleQuoteString(tag)
+                    '{' -> this.flowMapReader(tag).let(this::checkComplexFieldAndReturn)
+                    '[' -> this.flowSequenceReader(tag).let(this::checkComplexFieldAndReturn)
                     '!' -> this.tagReader()
                     '&' -> this.anchorReader().let {
                         this.currentReader = it
@@ -57,12 +55,12 @@ internal class FlowSequenceReader<out P>(
                         if (this.lastChar.isWhitespace()) {
                             throw InvalidYamlContent("Expected a comma")
                         } else {
-                            this.plainStringReader("-")
+                            this.plainStringReader("-", tag)
                         }
                     }
                     ',' -> {
                         if(this.state != FlowSequenceState.MAP_END && this.state != FlowSequenceState.VALUE_START) {
-                            return this.jsonTokenCreator(null, false)
+                            return this.jsonTokenCreator(null, false, null)
                         }
 
                         read()
@@ -99,17 +97,17 @@ internal class FlowSequenceReader<out P>(
                                 throw InvalidYamlContent("Cannot have two ? explicit keys in a row")
                             }
                             this.state = FlowSequenceState.EXPLICIT_KEY
-                            this.jsonTokenCreator(null, false)
+                            this.jsonTokenCreator(null, false, tag)
                         } else if(this.lastChar == ',' || this.lastChar == ':') {
                             this.state = FlowSequenceState.EXPLICIT_KEY
-                            this.jsonTokenCreator(null, false)
+                            this.jsonTokenCreator(null, false, null)
                         } else {
                             this.state = FlowSequenceState.KEY
-                            this.plainStringReader("?")
+                            this.plainStringReader("?", tag)
                         }
                     }
                     '|', '>' -> throw InvalidYamlContent("Unsupported character $lastChar in flow array")
-                    else -> this.plainStringReader("")
+                    else -> this.plainStringReader("", tag)
                 }
             }
         }
@@ -137,20 +135,20 @@ internal class FlowSequenceReader<out P>(
             this.state = FlowSequenceState.VALUE_START
             JsonToken.EndObject
         } else if (this.state == FlowSequenceState.KEY || this.state == FlowSequenceState.MAP_VALUE) {
-            this.jsonTokenCreator(null, false)
+            this.jsonTokenCreator(null, false, null)
         } else {
             doIfNoToken()
         }
     }
 
-    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean): JsonToken = when(this.state) {
+    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken = when(this.state) {
         FlowSequenceState.START -> throw InvalidYamlContent("Sequence cannot be in start mode")
         FlowSequenceState.EXPLICIT_KEY -> {
             this.state = FlowSequenceState.KEY
-            this.startObject()
+            this.startObject(tag)
         }
         FlowSequenceState.VALUE_START -> {
-            this.cachedCall = { this.jsonTokenCreator(value, isPlainStringReader) }
+            this.cachedCall = { this.jsonTokenCreator(value, isPlainStringReader, tag) }
             this.readUntilToken()
         }
         FlowSequenceState.KEY -> {
@@ -163,33 +161,31 @@ internal class FlowSequenceReader<out P>(
         }
         FlowSequenceState.VALUE -> {
             this.state = FlowSequenceState.VALUE_START
-            createYamlValueToken(value, this.tag, isPlainStringReader)
+            createYamlValueToken(value, tag, isPlainStringReader)
         }
         FlowSequenceState.MAP_VALUE, FlowSequenceState.MAP_VALUE_AFTER_COMPLEX_KEY -> {
             this.state = FlowSequenceState.MAP_END
-            createYamlValueToken(value, this.tag, isPlainStringReader)
+            createYamlValueToken(value, tag, isPlainStringReader)
         }
         FlowSequenceState.MAP_END, FlowSequenceState.STOP -> {
             throw InvalidYamlContent("Not a content token creator")
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean) =
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) =
         if (this.state == FlowSequenceState.VALUE_START) {
-            startObject()
+            startObject(tag)
         } else {
             null
         }.also {
             this.state = FlowSequenceState.MAP_VALUE
         }
 
-    private fun startObject(): JsonToken {
-        return this.tag?.let {
+    private fun startObject(tag: TokenType?): JsonToken {
+        return tag?.let {
             JsonToken.StartObject(
-                this.tag as? MapType ?: throw InvalidYamlContent("$tag should be a map type")
-            ).also {
-                this.tag = null
-            }
+                tag as? MapType ?: throw InvalidYamlContent("$tag should be a map type")
+            )
         } ?: JsonToken.SimpleStartObject
     }
 

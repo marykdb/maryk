@@ -1,6 +1,7 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
+import maryk.core.json.TokenType
 
 /** Reads an &anchor to enable to reuse them in other spots */
 internal class AnchorReader<out P>(
@@ -15,7 +16,7 @@ internal class AnchorReader<out P>(
     private var storedValues = mutableListOf<JsonToken>()
     private var tokenStartDepth: Int? = null
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         read()
 
         while(!this.lastChar.isWhitespace()) {

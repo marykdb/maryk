@@ -21,7 +21,7 @@ internal class PlainStringReader<out P>(
 {
     private var storedValue: String = startWith
 
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         loop@while(true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
@@ -43,7 +43,7 @@ internal class PlainStringReader<out P>(
                             }
 
                             // If new map return Object Start and push new token
-                            this.parentReader.foundMap(false)?.let {
+                            this.parentReader.foundMap(false, tag)?.let {
                                 this.yamlReader.pushToken(this.createToken())
                                 return it
                             }
@@ -95,7 +95,7 @@ internal class PlainStringReader<out P>(
         read()
     }
 
-    override fun foundMap(isExplicitMap: Boolean) = this.parentReader.foundMap(isExplicitMap)
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) = this.parentReader.foundMap(isExplicitMap, tag)
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
@@ -116,7 +116,11 @@ internal class PlainStringReader<out P>(
         return this.readUntilToken()
     }
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken {
         val readerIndentCount = this.indentCount()
         this.parentReader.childIsDoneReading(false)
         @Suppress("UNCHECKED_CAST")
@@ -124,7 +128,7 @@ internal class PlainStringReader<out P>(
             indentCount == readerIndentCount -> this.createToken()
             this.mode == PlainStyleMode.FLOW_COLLECTION -> throw InvalidYamlContent("Missing a comma")
             this.mode == PlainStyleMode.FLOW_MAP -> throw InvalidYamlContent("Did not close map")
-            else -> this.parentReader.endIndentLevel(indentCount) {
+            else -> this.parentReader.endIndentLevel(indentCount, tag) {
                 this.createToken()
             }
         }

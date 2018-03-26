@@ -8,8 +8,7 @@ import maryk.core.json.TokenType
 internal class ArrayItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    val indentToAdd: Int = 0,
-    startTag: TokenType? = null
+    val indentToAdd: Int = 0
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -17,22 +16,16 @@ internal class ArrayItemsReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    private var tag: ArrayType? = null
     private var isStarted = false
 
-    init {
-        startTag?.let {
-            this.setTag(it)
-        }
-    }
-
-    override fun readUntilToken(): JsonToken {
+    override fun readUntilToken(tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
             createLineReader(this)
 
             this.isStarted = true
-            return this.tag?.let {
-                JsonToken.StartArray(it)
+            return tag?.let {
+                val arrayType = it as? ArrayType ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
+                JsonToken.StartArray(arrayType)
             } ?: JsonToken.SimpleStartArray
         } else {
             IndentReader(
@@ -44,21 +37,14 @@ internal class ArrayItemsReader<out P>(
         }
     }
 
-    private fun setTag(tag: TokenType?) {
-        this.tag = tag?.let {
-            it as? ArrayType ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
-        }
-    }
-
-    override fun foundMap(isExplicitMap: Boolean): JsonToken {
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken {
         @Suppress("UNCHECKED_CAST")
         return MapItemsReader(
             this.yamlReader,
-            this.currentReader as P,
-            startTag = tag
+            this.currentReader as P
         ).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(tag)
         }
     }
 
@@ -72,8 +58,7 @@ internal class ArrayItemsReader<out P>(
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
         this.createLineReader(parentReader)
-        this.setTag(tag)
-        return this.currentReader.readUntilToken()
+        return this.currentReader.readUntilToken(tag)
     }
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
@@ -92,15 +77,18 @@ internal class ArrayItemsReader<out P>(
         }
         read()
 
-        this.setTag(tag)
-        return createLineReader(this).readUntilToken()
+        return createLineReader(this).readUntilToken(tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
 
     override fun indentCountForChildren() = this.indentCount() + 1
 
-    override fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken {
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken {
         if (indentCount == this.indentCount()) {
             // this reader should handle the read
             this.currentReader = this
@@ -127,7 +115,7 @@ internal class ArrayItemsReader<out P>(
                 it
             } ?: { JsonToken.EndArray }
 
-            this.parentReader.endIndentLevel(indentCount, returnFunction)
+            this.parentReader.endIndentLevel(indentCount, tag, returnFunction)
         }
     }
 

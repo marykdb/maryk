@@ -8,7 +8,7 @@ internal abstract class YamlCharReader(
     internal val yamlReader: YamlReaderImpl
 ) : IsYamlReader by yamlReader {
     /** Reads Yaml until next found Token */
-    abstract fun readUntilToken(): JsonToken
+    abstract fun readUntilToken(tag: TokenType? = null): JsonToken
     /** Handles reader interuptions */
     abstract fun handleReaderInterrupt(): JsonToken
 }
@@ -39,10 +39,14 @@ internal interface IsYamlCharWithIndentsReader {
                   P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
 
     /** Go back to a higher indent level of [indentCount] by closing this reader ans passing optionally a [tokenToReturn] */
-    fun endIndentLevel(indentCount: Int, tokenToReturn: (() -> JsonToken)?): JsonToken
+    fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken
 
     /** Signal reader a map key was found so this indent level expects maps */
-    fun foundMap(isExplicitMap: Boolean): JsonToken?
+    fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken?
 
     /** Checks if field name was set or otherwise throws error */
     fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean): JsonToken.FieldName

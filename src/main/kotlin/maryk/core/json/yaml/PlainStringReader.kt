@@ -39,7 +39,8 @@ internal class PlainStringReader<out P>(
                         // Only override token creators with non flow maps
                         if (this.mode != PlainStyleMode.FLOW_MAP) {
                             this.jsonTokenConstructor = {
-                                this.parentReader.checkAndCreateFieldName(it, true)
+                                @Suppress("UNCHECKED_CAST")
+                                (this.currentReader as P).checkAndCreateFieldName(it, true)
                             }
 
                             // If new map return Object Start and push new token

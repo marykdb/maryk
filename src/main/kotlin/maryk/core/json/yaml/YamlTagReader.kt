@@ -38,10 +38,12 @@ internal abstract class YamlTagReader<out P>(
 
     override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) = this.parentReader.foundMap(isExplicitMap, tag)
 
-    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) = this.parentReader.checkAndCreateFieldName(
-        fieldName,
-        isPlainStringReader
-    )
+    @Suppress("UNCHECKED_CAST")
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        this.parentReader.checkAndCreateFieldName(
+            fieldName,
+            isPlainStringReader
+        )
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 

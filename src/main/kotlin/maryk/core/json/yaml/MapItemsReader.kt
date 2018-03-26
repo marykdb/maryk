@@ -43,7 +43,6 @@ internal class MapItemsReader<out P>(
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
 
-
     override fun isWithinMap() = true
 
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken

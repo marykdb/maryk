@@ -23,6 +23,8 @@ internal class FlowSequenceReader<out P>(
     private var state = FlowSequenceState.START
     private var cachedCall: (() -> JsonToken)? = null
 
+    private val fieldNames = mutableListOf<String?>()
+
     override fun readUntilToken(tag: TokenType?): JsonToken {
         return when(this.state) {
             FlowSequenceState.START -> {
@@ -188,6 +190,9 @@ internal class FlowSequenceReader<out P>(
             )
         } ?: JsonToken.SimpleStartObject
     }
+
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
 
     override fun handleReaderInterrupt(): JsonToken {
         if (this.state != FlowSequenceState.STOP) {

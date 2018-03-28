@@ -1,7 +1,7 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
-import maryk.core.json.MapType
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
 
@@ -13,8 +13,6 @@ internal class DocumentReader(
     IsYamlCharWithIndentsReader
 {
     private var finishedWithDirectives: Boolean? = null
-    private var mapKeyFound: Boolean = false
-    private val fieldNames = mutableListOf<String?>()
 
     private var contentWasFound = false
 
@@ -40,11 +38,19 @@ internal class DocumentReader(
                 }
             }
             '-' -> {
-                this.read()
+                try {
+                    this.read()
+                } catch(e: ExceptionWhileReadingJson) {
+                    return plainStringReader("")
+                }
 
                 when(this.lastChar) {
                     '-' -> {
-                        this.read()
+                        try {
+                            this.read()
+                        } catch(e: ExceptionWhileReadingJson) {
+                            plainStringReader("-")
+                        }
                         when(this.lastChar) {
                             '-' -> {
                                 read()
@@ -75,11 +81,19 @@ internal class DocumentReader(
                 }
             }
             '.' -> {
-                this.read()
+                try {
+                    this.read()
+                } catch(e: ExceptionWhileReadingJson) {
+                    plainStringReader("")
+                }
 
                 when(this.lastChar) {
                     '.' -> {
-                        this.read()
+                        try {
+                            this.read()
+                        } catch(e: ExceptionWhileReadingJson) {
+                            plainStringReader(".")
+                        }
                         when(this.lastChar) {
                             '.' -> {
                                 read()
@@ -120,22 +134,22 @@ internal class DocumentReader(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? =
-        if (!this.mapKeyFound) {
-            this.mapKeyFound = true
-            tag?.let {
-                (it as? MapType)?.let {
-                    JsonToken.StartObject(it)
-                } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
-            } ?: JsonToken.SimpleStartObject
-        } else {
-            null
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken {
+        @Suppress("UNCHECKED_CAST")
+        return MapItemsReader(
+            this.yamlReader,
+            this,
+            isExplicitMap
+        ).let {
+            this.currentReader = it
+            it.readUntilToken(tag)
         }
+    }
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
+        throw InvalidYamlContent("FieldNames are only allowed within maps")
 
-    override fun isWithinMap() = this.mapKeyFound
+    override fun isWithinMap() = false
 
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
             where P : YamlCharReader,
@@ -172,11 +186,6 @@ internal class DocumentReader(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        if (this.mapKeyFound) {
-            this.mapKeyFound = false
-            return JsonToken.EndObject
-        }
-
         return JsonToken.EndDocument
     }
 

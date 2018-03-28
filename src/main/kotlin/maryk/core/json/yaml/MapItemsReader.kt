@@ -8,6 +8,7 @@ import maryk.core.json.TokenType
 internal class MapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
+    val isExplicitMap: Boolean,
     private val indentToAdd: Int = 0
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
@@ -74,13 +75,13 @@ internal class MapItemsReader<out P>(
                 tokenToReturn()
             } else {
                 this.yamlReader.setUnclaimedIndenting(null)
-                this.continueIndentLevel(null)
+                this.continueIndentLevel(tag)
             }
         }
 
+        this.parentReader.childIsDoneReading(false)
         return if (indentToAdd > 0) {
             this.yamlReader.setUnclaimedIndenting(indentCount)
-            this.parentReader.childIsDoneReading(false)
             tokenToReturn?.let {
                 this.yamlReader.pushToken(JsonToken.EndObject)
                 return it()
@@ -110,7 +111,8 @@ internal class MapItemsReader<out P>(
                   P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
                   P : maryk.core.json.yaml.IsYamlCharWithIndentsReader = LineReader(
         yamlReader = yamlReader,
-        parentReader = parentReader
+        parentReader = parentReader,
+        isExplicitMap = this.isExplicitMap
     ).apply {
         this.currentReader = this
     }

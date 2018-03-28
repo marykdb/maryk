@@ -1,7 +1,6 @@
 package maryk.core.json.yaml
 
 import maryk.core.json.JsonToken
-import maryk.core.json.MapType
 import maryk.core.json.TokenType
 
 /** Reads indents on a new line until a char is found */
@@ -13,11 +12,8 @@ internal class IndentReader<out P>(
     IsYamlCharWithChildrenReader
         where P : maryk.core.json.yaml.YamlCharReader,
               P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-              P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
-{
+              P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
     private var indentCounter = -1
-    private var mapKeyFound: Boolean = false
-    private val fieldNames = mutableListOf<String?>()
 
     // Should not be called
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
@@ -36,40 +32,23 @@ internal class IndentReader<out P>(
         }
 
     override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? =
-        if (!this.mapKeyFound) {
-            this.mapKeyFound = true
-            tag?.let {
-                (it as? MapType)?.let {
-                    JsonToken.StartObject(it)
-                } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
-            } ?: JsonToken.SimpleStartObject
-        } else {
-            null
+        @Suppress("UNCHECKED_CAST")
+        MapItemsReader(
+            this.yamlReader,
+            this,
+            isExplicitMap
+        ).let {
+            this.currentReader = it
+            it.readUntilToken(tag)
         }
 
-    override fun isWithinMap() = this.mapKeyFound
+    override fun isWithinMap() = false
 
     override fun endIndentLevel(
         indentCount: Int,
         tag: TokenType?,
         tokenToReturn: (() -> JsonToken)?
     ): JsonToken {
-        if (this.mapKeyFound) {
-            this.yamlReader.setUnclaimedIndenting(indentCount)
-            this.mapKeyFound = false
-
-            if (indentCount < this.indentCount()) {
-                this.parentReader.childIsDoneReading(true)
-            }
-
-            tokenToReturn?.let {
-                this.yamlReader.setUnclaimedIndenting(indentCount)
-                this.yamlReader.pushToken(JsonToken.EndObject)
-                return it()
-            }
-            return JsonToken.EndObject
-        }
-
         this.parentReader.childIsDoneReading(true)
 
         tokenToReturn?.let {
@@ -109,15 +88,7 @@ internal class IndentReader<out P>(
             parentIndentCount -> this.parentReader.continueIndentLevel(tag)
             in 0 until parentIndentCount -> {
                 this.parentReader.childIsDoneReading(false)
-
-                val tokenToReturn: (() -> JsonToken)? = if (this.mapKeyFound) {
-                    this.mapKeyFound = false
-                    { JsonToken.EndObject }
-                } else {
-                    null
-                }
-
-                this.parentReader.endIndentLevel(currentIndentCount, tag, tokenToReturn)
+                this.parentReader.endIndentLevel(currentIndentCount, tag, null)
             }
             else -> if (currentIndentCount == this.indentCounter){
                 this.parentReader.newIndentLevel(currentIndentCount, this, tag)
@@ -127,6 +98,9 @@ internal class IndentReader<out P>(
         }
     }
 
+    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
+        this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
+
     override fun indentCount() = this.indentCounter
 
     override fun indentCountForChildren() = this.indentCount()
@@ -135,14 +109,7 @@ internal class IndentReader<out P>(
         this.currentReader = this
     }
 
-    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
-
     override fun handleReaderInterrupt(): JsonToken {
-        if (this.mapKeyFound) {
-            this.mapKeyFound = false
-            return JsonToken.EndObject
-        }
         this.parentReader.childIsDoneReading(false)
         return parentReader.handleReaderInterrupt()
     }

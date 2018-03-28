@@ -41,7 +41,8 @@ internal class ArrayItemsReader<out P>(
         @Suppress("UNCHECKED_CAST")
         return MapItemsReader(
             this.yamlReader,
-            this.currentReader as P
+            this.currentReader as P,
+            isExplicitMap
         ).let {
             this.currentReader = it
             it.readUntilToken(tag)
@@ -89,7 +90,8 @@ internal class ArrayItemsReader<out P>(
         tag: TokenType?,
         tokenToReturn: (() -> JsonToken)?
     ): JsonToken {
-        if (indentCount == this.indentCount()) {
+        val correction = if(this.isWithinMap()) -1 else 0
+        if (indentCount == this.indentCount() + correction) {
             // this reader should handle the read
             this.currentReader = this
             return if (tokenToReturn != null) {

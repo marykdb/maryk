@@ -89,7 +89,11 @@ fun <T: Any> IsJsonLikeReader.assertValue(value: T?, type: ValueType<T>? = null)
 fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<ByteArray>) {
     this.nextToken().apply {
         if (this is JsonToken.Value<*> && this.value is ByteArray) {
-            (this.value as ByteArray).toHex() shouldBe value.toHex()
+            val byteArray = this.value as? ByteArray
+
+            byteArray?.let {
+                it.toHex() shouldBe value.toHex()
+            } ?: fail("$this should be bytearray")
 
             type.let {
                 this.type shouldBe it

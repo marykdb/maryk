@@ -20,11 +20,37 @@ internal class YamlWriterTest : AbstractJsonWriterTest() {
     fun write_expected_YAML() {
         var output = ""
         val writer = { string: String -> output += string }
-
         val generator = YamlWriter(writer = writer)
 
         writeJson(generator)
 
         output shouldBe YAML_OUTPUT
+    }
+
+    @Test
+    fun write_YAML_in_double_array() {
+        var output = ""
+        val writer = { string: String -> output += string }
+        val generator = YamlWriter(writer = writer)
+
+        generator.writeStartArray()
+        generator.writeStartArray()
+        generator.writeValue("1")
+        generator.writeValue("2")
+        generator.writeEndArray()
+        generator.writeStartArray()
+        generator.writeValue("3")
+        generator.writeValue("4")
+        generator.writeEndArray()
+        generator.writeEndArray()
+
+        output shouldBe """
+        |-
+        |  - 1
+        |  - 2
+        |-
+        |  - 3
+        |  - 4
+        |""".trimMargin()
     }
 }

@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.MapType
 import maryk.core.json.TokenType
@@ -22,7 +23,7 @@ internal class MapItemsReader<out P>(
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
-            createLineReader(this)
+            createLineReader(this, this.lastChar.isLineBreak())
 
             this.isStarted = true
             return tag?.let {
@@ -50,12 +51,12 @@ internal class MapItemsReader<out P>(
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
-        this.createLineReader(parentReader)
+        this.createLineReader(parentReader, true)
         return this.currentReader.readUntilToken(tag)
     }
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        return createLineReader(this).readUntilToken(tag)
+        return createLineReader(this, true).readUntilToken(tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
@@ -106,14 +107,16 @@ internal class MapItemsReader<out P>(
         return JsonToken.EndObject
     }
 
-    private fun <P> createLineReader(parentReader: P)
+    private fun <P> createLineReader(parentReader: P, startsAtNewLine: Boolean)
             where P : maryk.core.json.yaml.YamlCharReader,
                   P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader = LineReader(
-        yamlReader = yamlReader,
-        parentReader = parentReader,
-        isExplicitMap = this.isExplicitMap
-    ).apply {
-        this.currentReader = this
-    }
+                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader =
+        LineReader(
+            yamlReader = yamlReader,
+            parentReader = parentReader,
+            startsAtNewLine = startsAtNewLine,
+            isExplicitMap = this.isExplicitMap
+        ).apply {
+            this.currentReader = this
+        }
 }

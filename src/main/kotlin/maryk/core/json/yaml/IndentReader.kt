@@ -25,7 +25,8 @@ internal class IndentReader<out P>(
     override fun continueIndentLevel(tag: TokenType?) =
         LineReader(
             this.yamlReader,
-            this
+            this,
+            true
         ).let {
             this.currentReader = it
             it.readUntilToken(tag)

@@ -45,7 +45,8 @@ internal class ExplicitMapKeyReader<out P>(
 
         LineReader(
             this.yamlReader,
-            parentReader = this
+            parentReader = this,
+            startsAtNewLine = false
         ).let {
             this.currentReader = it
             it.readUntilToken().let {

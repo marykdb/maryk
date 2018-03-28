@@ -2,8 +2,11 @@ package maryk.core.json.yaml
 
 import maryk.core.json.assertEndArray
 import maryk.core.json.assertEndDocument
+import maryk.core.json.assertEndObject
+import maryk.core.json.assertFieldName
 import maryk.core.json.assertInvalidYaml
 import maryk.core.json.assertStartArray
+import maryk.core.json.assertStartObject
 import maryk.core.json.assertValue
 import kotlin.test.Test
 
@@ -113,6 +116,56 @@ class SequenceItemsReaderTest {
             assertStartArray()
             assertValue("test")
             assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun read_embedded_sequence() {
+        createYamlReader("""
+        |-
+        |  - Reference
+        |  - uint
+        |-
+        |  - Reference
+        |  - bool
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartArray()
+            assertValue("Reference")
+            assertValue("uint")
+            assertEndArray()
+            assertStartArray()
+            assertValue("Reference")
+            assertValue("bool")
+            assertEndArray()
+            assertEndArray()
+        }
+    }
+
+    @Test
+    fun read_embedded_sequence_in_map() {
+        createYamlReader("""
+        |key:
+        |-
+        |  - Reference
+        |  - uint
+        |-
+        |  - Reference
+        |  - bool
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key")
+            assertStartArray()
+            assertStartArray()
+            assertValue("Reference")
+            assertValue("uint")
+            assertEndArray()
+            assertStartArray()
+            assertValue("Reference")
+            assertValue("bool")
+            assertEndArray()
+            assertEndArray()
+            assertEndObject()
         }
     }
 }

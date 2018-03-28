@@ -11,6 +11,7 @@ import maryk.core.json.ValueType
 internal class LineReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
+    var startsAtNewLine: Boolean,
     var isExplicitMap: Boolean = false,
     private var indentToAdd: Int = 0
 ) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.NORMAL),
@@ -25,7 +26,13 @@ internal class LineReader<out P>(
     private var mapValueFound = false
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
-        val indents = this.skipWhiteSpace()
+        val indents = if(!this.startsAtNewLine) {
+            skipWhiteSpace()
+        } else {
+            this.startsAtNewLine = false
+            skipWhiteSpace()
+            0
+        }
 
         return when(this.lastChar) {
             '\n', '\r' -> {
@@ -89,8 +96,6 @@ internal class LineReader<out P>(
             '-' -> {
                 read()
                 if (this.lastChar.isWhitespace()) {
-                    read() // Skip whitespace char
-
                     SequenceItemsReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,

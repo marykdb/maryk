@@ -66,7 +66,7 @@ internal class DocumentReader(
                             else -> plainStringReader("--")
                         }
                     }
-                    ' ' -> {
+                    ' ', '\n', '\r' -> {
                         checkAlreadyOnIndent()
 
                         SequenceItemsReader(
@@ -127,7 +127,7 @@ internal class DocumentReader(
                 if (this.finishedWithDirectives == false) {
                     throw InvalidYamlContent("Directives has to end with an start document --- separator")
                 }
-                this.lineReader(this)
+                this.lineReader(this, true)
             }
         }.also {
             this.contentWasFound = true
@@ -155,7 +155,7 @@ internal class DocumentReader(
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
-        return this.lineReader(parentReader, tag)
+        return this.lineReader(parentReader, true, tag)
     }
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
@@ -189,13 +189,14 @@ internal class DocumentReader(
         return JsonToken.EndDocument
     }
 
-    private fun <P> lineReader(parentReader: P, tag: TokenType? = null): JsonToken
+    private fun <P> lineReader(parentReader: P, startsAtNewLine: Boolean, tag: TokenType? = null): JsonToken
             where P : maryk.core.json.yaml.YamlCharReader,
                   P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
                   P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
         return LineReader(
             parentReader = parentReader,
-            yamlReader = this.yamlReader
+            yamlReader = this.yamlReader,
+            startsAtNewLine = startsAtNewLine
         ).let {
             this.currentReader = it
             it.readUntilToken(tag)
@@ -205,7 +206,7 @@ internal class DocumentReader(
     private fun plainStringReader(char: String): JsonToken {
         checkAlreadyOnIndent()
 
-        val lineReader = LineReader(this.yamlReader, this)
+        val lineReader = LineReader(this.yamlReader, this, true)
 
         return PlainStringReader(
             this.yamlReader,

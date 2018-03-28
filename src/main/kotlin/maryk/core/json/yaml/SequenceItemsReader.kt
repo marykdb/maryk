@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.isLineBreak
 import maryk.core.json.ArrayType
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
@@ -20,7 +21,7 @@ internal class SequenceItemsReader<out P>(
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
-            createLineReader(this)
+            createLineReader(this, this.lastChar.isLineBreak())
 
             this.isStarted = true
             return tag?.let {
@@ -52,13 +53,13 @@ internal class SequenceItemsReader<out P>(
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
 
-    override fun isWithinMap() = this.parentReader.isWithinMap()
+    override fun isWithinMap() = false
 
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
-        this.createLineReader(parentReader)
+        this.createLineReader(parentReader, true)
         return this.currentReader.readUntilToken(tag)
     }
 
@@ -76,9 +77,18 @@ internal class SequenceItemsReader<out P>(
         if (!this.lastChar.isWhitespace()) {
             throwSequenceException()
         }
+        if (this.lastChar.isLineBreak()) {
+            return IndentReader(
+                yamlReader, this
+            ).let {
+                this.currentReader = it
+                it.readUntilToken()
+            }
+        }
+
         read()
 
-        return createLineReader(this).readUntilToken(tag)
+        return createLineReader(this, false).readUntilToken(tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
@@ -90,7 +100,7 @@ internal class SequenceItemsReader<out P>(
         tag: TokenType?,
         tokenToReturn: (() -> JsonToken)?
     ): JsonToken {
-        val correction = if(this.isWithinMap()) -1 else 0
+        val correction = if(this.parentReader.isWithinMap()) -1 else 0
         if (indentCount == this.indentCount() + correction) {
             // this reader should handle the read
             this.currentReader = this
@@ -134,13 +144,15 @@ internal class SequenceItemsReader<out P>(
         throw InvalidYamlContent("Sequence was started on this indentation level, this is not an Sequence entry")
     }
 
-    private fun <P> createLineReader(parentReader: P)
+    private fun <P> createLineReader(parentReader: P, startsAtNewLine: Boolean)
             where P : maryk.core.json.yaml.YamlCharReader,
                   P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader = LineReader(
-        yamlReader = yamlReader,
-        parentReader = parentReader
-    ).apply {
-        this.currentReader = this
-    }
+                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader =
+        LineReader(
+            yamlReader = yamlReader,
+            parentReader = parentReader,
+            startsAtNewLine = startsAtNewLine
+        ).apply {
+            this.currentReader = this
+        }
 }

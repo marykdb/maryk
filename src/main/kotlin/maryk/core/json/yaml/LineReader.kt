@@ -91,7 +91,7 @@ internal class LineReader<out P>(
                 if (this.lastChar.isWhitespace()) {
                     read() // Skip whitespace char
 
-                    ArrayItemsReader(
+                    SequenceItemsReader(
                         yamlReader = this.yamlReader,
                         parentReader = this,
                         indentToAdd = indents

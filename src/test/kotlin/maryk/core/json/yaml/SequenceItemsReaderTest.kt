@@ -7,9 +7,9 @@ import maryk.core.json.assertStartArray
 import maryk.core.json.assertValue
 import kotlin.test.Test
 
-class ArrayItemsReaderTest {
+class SequenceItemsReaderTest {
     @Test
-    fun read_array_items() {
+    fun read_sequence_items() {
         createYamlReader("""
             |     - 'test'
             |     - hey
@@ -25,7 +25,7 @@ class ArrayItemsReaderTest {
     }
 
     @Test
-    fun read_array_with_comments() {
+    fun read_sequence_with_comments() {
         createYamlReader("""
             |     - 'test' #ignore
             |  # ignore too
@@ -43,7 +43,7 @@ class ArrayItemsReaderTest {
     }
 
     @Test
-    fun read_complex_array_items() {
+    fun read_complex_sequence_items() {
         createYamlReader("""
             |     - 'test'
             |     - 'hey'
@@ -75,7 +75,7 @@ class ArrayItemsReaderTest {
     }
 
     @Test
-    fun read_double_array_items() {
+    fun read_double_sequence_items() {
         createYamlReader("""
             |     -   - 'test'
             |         - 'hey'
@@ -93,7 +93,7 @@ class ArrayItemsReaderTest {
     }
 
     @Test
-    fun read_wrong_array_items() {
+    fun read_wrong_sequence_items() {
         createYamlReader("""
             |     - 'test'
             |     "wrong"
@@ -105,7 +105,7 @@ class ArrayItemsReaderTest {
     }
 
     @Test
-    fun read_wrong_array_start_items() {
+    fun read_wrong_sequence_start_items() {
         createYamlReader("""
             |     - 'test'
             |  - 'hey'

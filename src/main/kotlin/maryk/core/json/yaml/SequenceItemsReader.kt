@@ -4,8 +4,8 @@ import maryk.core.json.ArrayType
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
-/** Reader for Array Items */
-internal class ArrayItemsReader<out P>(
+/** Reader for Sequence Items */
+internal class SequenceItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     val indentToAdd: Int = 0
@@ -24,8 +24,8 @@ internal class ArrayItemsReader<out P>(
 
             this.isStarted = true
             return tag?.let {
-                val arrayType = it as? ArrayType ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
-                JsonToken.StartArray(arrayType)
+                val sequenceType = it as? ArrayType ?: throw InvalidYamlContent("Can only use sequence tags on sequences")
+                JsonToken.StartArray(sequenceType)
             } ?: JsonToken.SimpleStartArray
         } else {
             IndentReader(

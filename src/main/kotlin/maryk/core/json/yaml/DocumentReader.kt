@@ -69,7 +69,7 @@ internal class DocumentReader(
                     ' ' -> {
                         checkAlreadyOnIndent()
 
-                        ArrayItemsReader(
+                        SequenceItemsReader(
                             yamlReader = this.yamlReader,
                             parentReader = this
                         ).let {

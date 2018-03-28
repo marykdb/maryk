@@ -2,7 +2,7 @@ package maryk
 
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
-import maryk.core.json.yaml.YamlReader
+import maryk.core.json.yaml.MarykYamlReader
 import maryk.core.json.yaml.YamlWriter
 import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.ByteCollector
@@ -71,7 +71,13 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
     dataModel.writeJson(value, writer, newContext)
 
     val chars = output.iterator()
-    val reader = YamlReader { chars.nextChar() }
+    val reader = MarykYamlReader {
+        chars.nextChar().also {
+            if (it == '\u0000') {
+                throw Throwable("0 char encountered")
+            }
+        }
+    }
     val converted = dataModel.readJsonToObject(reader, newContext)
 
     checker(converted, value)

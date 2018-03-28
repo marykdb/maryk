@@ -5,6 +5,7 @@ import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -71,6 +72,11 @@ internal class RootDataModelTest {
     @Test
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(TestMarykObject, RootDataModel.Model, DataModelContext(), ::compareDataModels)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(TestMarykObject, RootDataModel.Model, DataModelContext(), ::compareDataModels)
     }
 
     private fun compareDataModels(converted: RootDataModel<out Any, out PropertyDefinitions<out Any>>, original: RootDataModel<out Any, out PropertyDefinitions<out Any>>) {

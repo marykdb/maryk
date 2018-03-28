@@ -2,6 +2,8 @@ package maryk
 
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
+import maryk.core.json.yaml.YamlReader
+import maryk.core.json.yaml.YamlWriter
 import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
@@ -47,6 +49,29 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
 
     val chars = output.iterator()
     val reader = JsonReader { chars.nextChar() }
+    val converted = dataModel.readJsonToObject(reader, newContext)
+
+    checker(converted, value)
+}
+
+fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
+    value: T,
+    dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+    context: CXI? = null,
+    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
+) {
+    var output = ""
+
+    val writer = YamlWriter {
+        output += it
+    }
+
+    val newContext = dataModel.transformContext(context)
+
+    dataModel.writeJson(value, writer, newContext)
+
+    val chars = output.iterator()
+    val reader = YamlReader { chars.nextChar() }
     val converted = dataModel.readJsonToObject(reader, newContext)
 
     checker(converted, value)

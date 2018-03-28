@@ -1,8 +1,8 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 apply {
     plugin("kotlin-platform-jvm")
 }
-
-val kotlinVersion by project
 
 dependencies {
     compile("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
@@ -12,7 +12,7 @@ dependencies {
     testCompile("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+tasks.withType(KotlinCompile) {
     kotlinOptions {
         allWarningsAsErrors = true
         jvmTarget = "1.8"

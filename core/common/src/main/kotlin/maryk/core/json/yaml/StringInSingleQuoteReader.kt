@@ -48,3 +48,16 @@ internal class StringInSingleQuoteReader<out P>(
         }
     }
 }
+
+fun <P> P.singleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken
+        where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader {
+    read()
+    return StringInSingleQuoteReader(this.yamlReader, this, {
+        jsonTokenCreator(it, false, tag)
+    }).let {
+        this.currentReader = it
+        it.readUntilToken(tag)
+    }
+}

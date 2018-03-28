@@ -12,8 +12,7 @@ private enum class FlowMapState {
 internal class FlowMapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
-) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_MAP),
-    IsYamlCharWithChildrenReader, IsYamlCharWithIndentsReader
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
@@ -38,8 +37,8 @@ internal class FlowMapItemsReader<out P>(
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString(tag)
-                    '\"' -> this.doubleQuoteString(tag)
+                    '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
+                    '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
                     '[' -> {
                         this.flowSequenceReader(tag)
                             .let(this::checkComplexFieldAndReturn)
@@ -49,16 +48,13 @@ internal class FlowMapItemsReader<out P>(
                             .let(this::checkComplexFieldAndReturn)
                     }
                     '!' -> this.tagReader()
-                    '&' -> this.anchorReader().let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
+                    '&' -> this.anchorReader()
                     '*' -> this.aliasReader()
                     '-' -> {
                         read()
                         if (this.lastChar.isWhitespace()) {
                             throw InvalidYamlContent("Expected a comma")
-                        } else this.plainStringReader("-", tag)
+                        } else this.plainStringReader("-", tag, PlainStyleMode.FLOW_MAP, this::jsonTokenCreator)
                     }
                     ',' -> {
                         if(this.state != FlowMapState.SEPARATOR) {
@@ -97,17 +93,17 @@ internal class FlowMapItemsReader<out P>(
                         } else if(this.lastChar == ',' || this.lastChar == ':') {
                             this.jsonTokenCreator(null, false, tag)
                         } else {
-                            this.plainStringReader("?", tag)
+                            this.plainStringReader("?", tag, PlainStyleMode.FLOW_MAP, this::jsonTokenCreator)
                         }
                     }
                     '|', '>' -> throw InvalidYamlContent("Unsupported character $lastChar in flow map")
-                    else -> this.plainStringReader("", tag)
+                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_MAP, this::jsonTokenCreator)
                 }
             }
         }
     }
 
-    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?) = when(state) {
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?) = when(state) {
         FlowMapState.START -> throw InvalidYamlContent("Map cannot be in start state")
         FlowMapState.EXPLICIT_KEY -> {
             this.state = FlowMapState.KEY
@@ -131,7 +127,7 @@ internal class FlowMapItemsReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) = null
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? = null
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
@@ -152,5 +148,19 @@ internal class FlowMapItemsReader<out P>(
         }
         this.parentReader.childIsDoneReading(true)
         return JsonToken.EndObject
+    }
+}
+
+internal fun <P> P.flowMapReader(tag: TokenType?): JsonToken
+        where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader {
+    read()
+    return FlowMapItemsReader(
+        yamlReader = this.yamlReader,
+        parentReader = this
+    ).let {
+        this.currentReader = it
+        it.readUntilToken(tag)
     }
 }

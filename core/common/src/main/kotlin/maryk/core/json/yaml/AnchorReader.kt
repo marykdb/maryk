@@ -55,3 +55,12 @@ internal class AnchorReader<out P>(
         this.tokenStartDepth = tokenDepth
     }
 }
+
+internal fun <P> P.anchorReader(): JsonToken
+        where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader =
+    AnchorReader(this.yamlReader, this).let {
+        this.currentReader = it
+        it.readUntilToken()
+    }

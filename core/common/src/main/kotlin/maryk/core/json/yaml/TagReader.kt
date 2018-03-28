@@ -48,3 +48,12 @@ internal class TagReader<out P>(
         return this.parentReader.handleReaderInterrupt()
     }
 }
+
+internal fun <P> P.tagReader()
+        where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader =
+    TagReader(this.yamlReader, this).let {
+        this.currentReader = it
+        it.readUntilToken()
+    }

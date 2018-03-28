@@ -40,3 +40,12 @@ internal class AliasReader<out P>(
         return this.pushStoredTokens()
     }
 }
+
+internal fun <P> P.aliasReader()
+        where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader =
+    AliasReader(this.yamlReader, this).let {
+        this.currentReader = it
+        it.readUntilToken()
+    }

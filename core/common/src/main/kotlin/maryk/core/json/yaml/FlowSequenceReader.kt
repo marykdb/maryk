@@ -13,9 +13,7 @@ private enum class FlowSequenceState {
 internal class FlowSequenceReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
-) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.FLOW_COLLECTION),
-    IsYamlCharWithChildrenReader,
-    IsYamlCharWithIndentsReader
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
@@ -40,22 +38,19 @@ internal class FlowSequenceReader<out P>(
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString(tag)
-                    '\"' -> this.doubleQuoteString(tag)
+                    '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
+                    '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
                     '{' -> this.flowMapReader(tag).let(this::checkComplexFieldAndReturn)
                     '[' -> this.flowSequenceReader(tag).let(this::checkComplexFieldAndReturn)
                     '!' -> this.tagReader()
-                    '&' -> this.anchorReader().let {
-                        this.currentReader = it
-                        it.readUntilToken()
-                    }
+                    '&' -> this.anchorReader()
                     '*' -> this.aliasReader()
                     '-' -> {
                         read()
                         if (this.lastChar.isWhitespace()) {
                             throw InvalidYamlContent("Expected a comma")
                         } else {
-                            this.plainStringReader("-", tag)
+                            this.plainStringReader("-", tag, PlainStyleMode.FLOW_COLLECTION, this::jsonTokenCreator)
                         }
                     }
                     ',' -> {
@@ -88,7 +83,7 @@ internal class FlowSequenceReader<out P>(
                     }
                     '}' -> {
                         read() // This should be handled in Map reader. Otherwise incorrect content
-                        throw InvalidYamlContent("Invalid char $lastChar at this position")
+                        throw Exception("Invalid char $lastChar at this position")
                     }
                     '?' -> {
                         read()
@@ -103,11 +98,11 @@ internal class FlowSequenceReader<out P>(
                             this.jsonTokenCreator(null, false, null)
                         } else {
                             this.state = FlowSequenceState.KEY
-                            this.plainStringReader("?", tag)
+                            this.plainStringReader("?", tag, PlainStyleMode.FLOW_COLLECTION, this::jsonTokenCreator)
                         }
                     }
                     '|', '>' -> throw InvalidYamlContent("Unsupported character $lastChar in flow array")
-                    else -> this.plainStringReader("", tag)
+                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_COLLECTION, this::jsonTokenCreator)
                 }
             }
         }
@@ -141,8 +136,8 @@ internal class FlowSequenceReader<out P>(
         }
     }
 
-    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken = when(this.state) {
-        FlowSequenceState.START -> throw InvalidYamlContent("Sequence cannot be in start mode")
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken = when(this.state) {
+        FlowSequenceState.START -> throw Exception("Sequence cannot be in start mode")
         FlowSequenceState.EXPLICIT_KEY -> {
             this.state = FlowSequenceState.KEY
             this.startObject(tag)
@@ -168,7 +163,7 @@ internal class FlowSequenceReader<out P>(
             createYamlValueToken(value, tag, isPlainStringReader)
         }
         FlowSequenceState.MAP_END, FlowSequenceState.STOP -> {
-            throw InvalidYamlContent("Not a content token creator")
+            throw Exception("Not a content token creator")
         }
     }
 
@@ -199,5 +194,19 @@ internal class FlowSequenceReader<out P>(
         }
         this.parentReader.childIsDoneReading(true)
         return JsonToken.EndArray
+    }
+}
+
+internal fun <P> P.flowSequenceReader(tag: TokenType?): JsonToken
+        where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader {
+    read()
+    return FlowSequenceReader(
+        yamlReader = this.yamlReader,
+        parentReader = this
+    ).let {
+        this.currentReader = it
+        it.readUntilToken(tag)
     }
 }

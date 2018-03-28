@@ -14,7 +14,7 @@ internal class LineReader<out P>(
     private var startsAtNewLine: Boolean,
     private var isExplicitMap: Boolean = false,
     private var indentToAdd: Int = 0
-) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.NORMAL),
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
         where P : YamlCharReader,
@@ -46,8 +46,8 @@ internal class LineReader<out P>(
                     it.readUntilToken(tag)
                 }
             }
-            '\'' -> this.singleQuoteString(tag)
-            '\"' -> this.doubleQuoteString(tag)
+            '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
+            '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
             '[' -> this.flowSequenceReader(tag)
             '{' -> this.flowMapReader(tag)
             ',' -> {
@@ -78,10 +78,7 @@ internal class LineReader<out P>(
                 }
             }
             '!' -> this.tagReader()
-            '&' -> this.anchorReader().let {
-                this.currentReader = it
-                it.readUntilToken()
-            }
+            '&' -> this.anchorReader()
             '*' -> this.aliasReader()
             '@', '`' -> {
                 throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
@@ -105,7 +102,7 @@ internal class LineReader<out P>(
                         it.readUntilToken(tag)
                     }
                 } else {
-                    plainStringReader("-", tag)
+                    this.plainStringReader("-", tag, PlainStyleMode.NORMAL, this::jsonTokenCreator)
                 }
             }
             '?' -> {
@@ -160,7 +157,7 @@ internal class LineReader<out P>(
                     this.mapKeyFound = true
                     this.readUntilToken()
                 } else {
-                    plainStringReader(":", tag)
+                    plainStringReader(":", tag, PlainStyleMode.NORMAL, this::jsonTokenCreator)
                 }
             }
             '#' -> {
@@ -169,7 +166,7 @@ internal class LineReader<out P>(
                     it.readUntilToken()
                 }
             }
-            else -> this.plainStringReader("", tag)
+            else -> this.plainStringReader("", tag, PlainStyleMode.NORMAL, this::jsonTokenCreator)
         }
     }
 
@@ -182,7 +179,7 @@ internal class LineReader<out P>(
         return indents
     }
 
-    override fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken {
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken {
         if (this.mapKeyFound) {
             this.mapValueFound = true
             if(this.parentReader is ExplicitMapKeyReader<*>) {

@@ -118,3 +118,16 @@ private sealed class SkipCharType {
         }
     }
 }
+
+fun <P> P.doubleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken
+            where P : IsYamlCharWithChildrenReader,
+                  P : YamlCharReader,
+                  P : IsYamlCharWithIndentsReader {
+    read()
+    return StringInDoubleQuoteReader(this.yamlReader, this, {
+        jsonTokenCreator(it, false, tag)
+    }).let {
+        this.currentReader = it
+        it.readUntilToken(tag)
+    }
+}

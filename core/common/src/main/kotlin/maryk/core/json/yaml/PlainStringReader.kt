@@ -148,3 +148,23 @@ internal class PlainStringReader<out P>(
         return this.jsonTokenConstructor(this.storedValue.trim())
     }
 }
+
+internal fun <P> P.plainStringReader(
+    startWith: String,
+    tag: TokenType?,
+    flowMode: PlainStyleMode,
+    jsonTokenCreator: JsonTokenCreator
+) where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader =
+    PlainStringReader(
+        this.yamlReader,
+        this,
+        startWith,
+        flowMode
+    ) {
+        jsonTokenCreator(it, true, tag)
+    }.let {
+        this.currentReader = it
+        it.readUntilToken(tag)
+    }

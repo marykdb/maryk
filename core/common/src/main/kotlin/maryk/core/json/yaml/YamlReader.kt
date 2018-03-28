@@ -41,8 +41,8 @@ internal interface YamlValueType<out T: Any>: ValueType<T> {
 /** Reads YAML from the supplied [reader] */
 internal class YamlReaderImpl(
     private val reader: () -> Char,
-    private val defaultTag: String? = null,
-    tagMap: Map<String, Map<String, TokenType>>? = null
+    private val defaultTag: String?,
+    tagMap: Map<String, Map<String, TokenType>>?
 ) : IsJsonLikeReader, IsYamlReader {
     var version: String? = null
 

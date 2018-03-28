@@ -1,6 +1,7 @@
 package maryk.core.json
 
 interface TokenType
+@Suppress("unused")
 interface ValueType<out T: Any?> : TokenType {
     object String: ValueType<String>
     object Null: ValueType<Nothing>

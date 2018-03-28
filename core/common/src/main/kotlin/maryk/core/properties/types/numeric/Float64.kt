@@ -20,5 +20,5 @@ object Float64 : NumberDescriptor<Double>(
     override fun ofInt(value: Int) = value.toDouble()
     override fun ofLong(value: Long) = value.toDouble()
     override fun createRandom() = Double.random()
-    override fun isOfType(value: Any) = value == Double
+    override fun isOfType(value: Any) = value is Double
 }

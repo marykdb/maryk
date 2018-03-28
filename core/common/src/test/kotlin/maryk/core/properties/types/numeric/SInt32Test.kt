@@ -49,4 +49,17 @@ internal class SInt32Test {
             bc.reset()
         }
     }
+
+    @Test
+    fun test_of_native_types() {
+        SInt32.ofLong(123) shouldBe 123
+        SInt32.ofDouble(12.0) shouldBe 12
+        SInt32.ofInt(12) shouldBe 12
+    }
+
+    @Test
+    fun test_is_of_type() {
+        SInt32.isOfType(12) shouldBe true
+        SInt32.isOfType(1234L) shouldBe false
+    }
 }

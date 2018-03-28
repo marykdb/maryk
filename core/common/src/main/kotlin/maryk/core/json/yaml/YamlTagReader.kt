@@ -6,7 +6,7 @@ import maryk.core.json.TokenType
 internal abstract class YamlTagReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    val flowMode: PlainStyleMode
+    private val flowMode: PlainStyleMode
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
@@ -35,8 +35,6 @@ internal abstract class YamlTagReader<out P>(
     override fun indentCount() = this.parentReader.indentCountForChildren()
 
     override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
-
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) = this.parentReader.foundMap(isExplicitMap, tag)
 
     @Suppress("UNCHECKED_CAST")
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
@@ -121,10 +119,6 @@ internal abstract class YamlTagReader<out P>(
             this.currentReader = it
             it.readUntilToken()
         }
-    }
-
-    override fun handleReaderInterrupt(): JsonToken {
-        return this.parentReader.handleReaderInterrupt()
     }
 
     override fun childIsDoneReading(closeLineReader: Boolean) {

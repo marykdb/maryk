@@ -3,7 +3,7 @@ package maryk.core.json.yaml
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
-/** Reads comments and returns reading when done */
+/** Reads tags and returns reading when done */
 internal class TagReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P

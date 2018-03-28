@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
  */
 internal abstract class ContextualDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
     properties: P,
-    val contextTransformer: (CXI?) -> CX?
+    private val contextTransformer: (CXI?) -> CX?
 ) : AbstractDataModel<DO, P, CXI, CX>(properties) {
     override fun transformContext(context: CXI?) = this.contextTransformer(context)
 }

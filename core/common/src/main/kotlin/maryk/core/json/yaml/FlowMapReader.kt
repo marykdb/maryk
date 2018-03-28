@@ -131,6 +131,8 @@ internal class FlowMapItemsReader<out P>(
         }
     }
 
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) = null
+
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
 

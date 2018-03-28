@@ -56,4 +56,9 @@ internal class UInt32Test {
             bc.reset()
         }
     }
+
+    @Test
+    fun test_int_conversion() {
+        12345678.toUInt32().toInt() shouldBe 12345678
+    }
 }

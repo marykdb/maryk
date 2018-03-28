@@ -18,19 +18,19 @@ internal class Float32Test {
     )
 
     @Test
-    fun testRandom() {
+    fun test_random() {
         Float32.createRandom()
     }
 
     @Test
-    fun testStringConversion() {
+    fun test_string_conversion() {
         for (it in float32values) {
             Float32.ofString(it.toString()) shouldBe it
         }
     }
 
     @Test
-    fun testStorageBytesConversion() {
+    fun test_storage_bytes_conversion() {
         val bc = ByteCollector()
         for (it in float32values) {
             bc.reserve(Float32.size)
@@ -41,7 +41,7 @@ internal class Float32Test {
     }
 
     @Test
-    fun testTransportBytesConversion() {
+    fun test_transport_bytes_conversion() {
         val bc = ByteCollector()
         for (it in float32values) {
             bc.reserve(Float32.calculateTransportByteLength(it))
@@ -49,5 +49,18 @@ internal class Float32Test {
             Float32.readTransportBytes(bc::read) shouldBe it
             bc.reset()
         }
+    }
+
+    @Test
+    fun test_of_native_types() {
+        Float32.ofLong(21312321) shouldBe 21312321F
+        Float32.ofDouble(1221321.12131657) shouldBe 1221321.12131657F
+        Float32.ofInt(1221321) shouldBe 1221321F
+    }
+
+    @Test
+    fun test_is_of_type() {
+        Float32.isOfType(22.0F) shouldBe true
+        Float32.isOfType(24.02) shouldBe false
     }
 }

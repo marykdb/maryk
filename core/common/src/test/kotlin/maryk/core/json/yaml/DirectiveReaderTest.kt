@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.assertEndDocument
 import maryk.core.json.assertInvalidYaml
 import maryk.core.json.assertValue
 import maryk.test.shouldBe
@@ -70,6 +71,29 @@ class DirectiveReaderTest {
             tags["!yaml!"] shouldBe "tag:yaml.org,2002"
             tags["!prefix!"] shouldBe "!my-"
             tags["ignored"] shouldBe null
+        }
+    }
+
+    @Test
+    fun fail_on_duplicate_tag() {
+        val reader = createYamlReader("""
+        |%TAG !yaml! tag:yaml.org,2002
+        |%TAG !yaml! tag:anotheryaml.org,2018
+        |---
+        |test
+        """.trimMargin()) as YamlReaderImpl
+
+        reader.apply {
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun read_only_tag_directive() {
+        createYamlReader("""
+        |%TAG !yaml! tag:yaml.org,2002
+        """.trimMargin()).apply {
+            assertEndDocument()
         }
     }
 }

@@ -50,4 +50,17 @@ internal class SInt8Test {
             bc.reset()
         }
     }
+
+    @Test
+    fun test_of_native_types() {
+        SInt8.ofLong(123) shouldBe 123.toByte()
+        SInt8.ofDouble(12.0) shouldBe 12.toByte()
+        SInt8.ofInt(12) shouldBe 12.toByte()
+    }
+
+    @Test
+    fun test_is_of_type() {
+        SInt8.isOfType(12.toByte()) shouldBe true
+        SInt8.isOfType(1234L) shouldBe false
+    }
 }

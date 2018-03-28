@@ -9,7 +9,7 @@ import maryk.core.json.TokenType
 internal class MapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    val isExplicitMap: Boolean,
+    private val isExplicitMap: Boolean,
     private val indentToAdd: Int = 0
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,

@@ -28,5 +28,5 @@ object SInt32 : NumberDescriptor<Int>(
     override fun ofInt(value: Int) = value
     override fun ofLong(value: Long) = value.toInt()
     override fun createRandom() = Int.random()
-    override fun isOfType(value: Any) = value == Int
+    override fun isOfType(value: Any) = value is Int
 }

@@ -49,4 +49,17 @@ internal class SInt64Test {
             bc.reset()
         }
     }
+
+    @Test
+    fun test_of_native_types() {
+        SInt64.ofLong(123) shouldBe 123L
+        SInt64.ofDouble(12.0) shouldBe 12L
+        SInt64.ofInt(12) shouldBe 12L
+    }
+
+    @Test
+    fun test_is_of_type() {
+        SInt64.isOfType(12L) shouldBe true
+        SInt64.isOfType(1234) shouldBe false
+    }
 }

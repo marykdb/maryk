@@ -11,7 +11,7 @@ internal enum class PlainStyleMode {
 internal class PlainStringReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    startWith: String = "",
+    startWith: String,
     private val mode: PlainStyleMode = PlainStyleMode.NORMAL,
     private var jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader), IsYamlCharWithIndentsReader, IsYamlCharWithChildrenReader

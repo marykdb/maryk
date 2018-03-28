@@ -28,5 +28,5 @@ object SInt64 : NumberDescriptor<Long>(
     override fun ofInt(value: Int) = value.toLong()
     override fun ofLong(value: Long) = value
     override fun createRandom() = Long.random()
-    override fun isOfType(value: Any) = value == Short
+    override fun isOfType(value: Any) = value is Long
 }

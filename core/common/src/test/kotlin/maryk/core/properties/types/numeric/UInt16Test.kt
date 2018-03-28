@@ -55,4 +55,9 @@ internal class UInt16Test {
             bc.reset()
         }
     }
+
+    @Test
+    fun test_int_conversion() {
+        1234.toUInt16().toInt() shouldBe 1234
+    }
 }

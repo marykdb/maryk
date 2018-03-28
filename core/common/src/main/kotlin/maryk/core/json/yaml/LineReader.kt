@@ -11,8 +11,8 @@ import maryk.core.json.ValueType
 internal class LineReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    var startsAtNewLine: Boolean,
-    var isExplicitMap: Boolean = false,
+    private var startsAtNewLine: Boolean,
+    private var isExplicitMap: Boolean = false,
     private var indentToAdd: Int = 0
 ) : YamlTagReader<P>(yamlReader, parentReader, PlainStyleMode.NORMAL),
     IsYamlCharWithIndentsReader,
@@ -119,9 +119,7 @@ internal class LineReader<out P>(
                             this,
                             true
                         )
-                    ) {
-                        this.jsonTokenCreator(it, false, tag)
-                    }
+                    )
                     throw e
                 }
                 // If it turns out to not be an explicit key make it a Plain String reader
@@ -144,18 +142,14 @@ internal class LineReader<out P>(
                     this.currentReader = ExplicitMapKeyReader(
                         this.yamlReader,
                         this.currentReader as P
-                    ) {
-                        this.jsonTokenCreator(it, false, tag)
-                    }
+                    )
                     return it
                 }
 
                 ExplicitMapKeyReader(
                     this.yamlReader,
                     this
-                ) {
-                    this.jsonTokenCreator(it, false, tag)
-                }.let {
+                ).let {
                     this.currentReader = it
                     it.readUntilToken()
                 }

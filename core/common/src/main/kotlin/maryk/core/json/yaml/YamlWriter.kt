@@ -30,15 +30,18 @@ class YamlWriter(
     }
 
     override fun writeStartArray() {
-        if (lastType == JsonType.FIELD_NAME) {
-            writer("\n")
-        } else if (lastType == JsonType.START_ARRAY) {
-            writer("$prefix-\n")
-            prefix += spacing
-        } else if (lastType == JsonType.END_ARRAY) {
-            prefix = prefix.removeSuffix(spacing)
-            writer("$prefix-\n")
-            prefix += spacing
+        when (lastType) {
+            JsonType.FIELD_NAME -> writer("\n")
+            JsonType.START_ARRAY -> {
+                writer("$prefix-\n")
+                prefix += spacing
+            }
+            JsonType.END_ARRAY -> {
+                prefix = prefix.removeSuffix(spacing)
+                writer("$prefix-\n")
+                prefix += spacing
+            }
+            else -> {}
         }
 
         super.writeStartArray()

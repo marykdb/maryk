@@ -202,4 +202,25 @@ class TagReaderTest {
             assertInvalidYaml()
         }
     }
+
+    @Test
+    fun read_tag_as_last() {
+        createYamlReader("""
+        |    - !string
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun fail_on_faulty_tag() {
+        createYamlReader("""
+        |    - !string!wrong!
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
+    }
 }

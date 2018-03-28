@@ -141,6 +141,29 @@ internal class JsonReaderTest {
     }
 
     @Test
+    fun test_invalid_json_fail_message() {
+        var index = 0
+        val input = """{
+        |"test" "
+        |}""".trimMargin()
+
+        val reader = JsonReader { input[index++] }
+        val e = shouldThrow<InvalidJsonContent> {
+            do {
+                reader.nextToken()
+            } while (reader.currentToken !is JsonToken.Stopped)
+        }
+
+        e.lineNumber shouldBe 2
+        e.columnNumber shouldBe 8
+
+        e.message shouldBe """[l: 2, c: 8] Invalid character '"' after FieldName("test")"""
+
+        reader.lineNumber shouldBe 2
+        reader.columnNumber shouldBe 8
+    }
+
+    @Test
     fun testInvalidJsonFail() {
         fun checkFaultyJSON(input: String) {
             var index = 0
@@ -175,7 +198,6 @@ internal class JsonReaderTest {
         checkFaultyJSON("[-007.652]")
         checkFaultyJSON("[5.5E]")
         checkFaultyJSON("[5-3]")
-        checkFaultyJSON("[34234.]")
         checkFaultyJSON("[34234.]")
     }
 
@@ -234,9 +256,9 @@ internal class JsonReaderTest {
 
     @Test
     fun read_double_quote_with_special_chars() {
-        createJsonReader("""["te\"\b\f\n\t\\\/\r'"]""").apply {
+        createJsonReader("""["te\"\b\f\n\t\\\/\r'\x"]""").apply {
             assertStartArray()
-            assertValue("te\"\b\u000C\n\t\\/\r'")
+            assertValue("te\"\b\u000C\n\t\\/\r'\\x")
             assertEndArray()
             assertEndDocument()
         }

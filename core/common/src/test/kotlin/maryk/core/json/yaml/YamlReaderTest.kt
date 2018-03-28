@@ -9,6 +9,7 @@ import maryk.core.json.assertFieldName
 import maryk.core.json.assertStartObject
 import maryk.core.json.assertValue
 import maryk.test.shouldBe
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class YamlReaderTest {
@@ -68,6 +69,14 @@ class YamlReaderTest {
         this.currentToken.apply {
             (this is JsonToken.FieldName) shouldBe true
             (this as JsonToken.FieldName).value shouldBe value
+        }
+    }
+
+    @Test
+    fun fail_on_invalid_URI_tag() {
+        val reader = createYamlReader("") as YamlReaderImpl
+        shouldThrow<InvalidYamlContent> {
+            reader.resolveTag("!", "<wrong>")
         }
     }
 }

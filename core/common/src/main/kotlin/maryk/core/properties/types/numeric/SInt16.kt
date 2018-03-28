@@ -28,5 +28,5 @@ object SInt16 : NumberDescriptor<Short>(
     override fun ofInt(value: Int) = value.toShort()
     override fun ofLong(value: Long) = value.toShort()
     override fun createRandom() = Short.random()
-    override fun isOfType(value: Any) = value == Short
+    override fun isOfType(value: Any) = value is Short
 }

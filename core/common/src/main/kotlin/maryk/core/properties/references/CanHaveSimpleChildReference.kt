@@ -12,5 +12,5 @@ abstract class CanHaveSimpleChildReference<
         out P: IsPropertyReference<*, *>
 > internal constructor(
     definition: D,
-    parentReference: P? = null
+    parentReference: P?
 ) : PropertyReference<T, D, P>(definition, parentReference)

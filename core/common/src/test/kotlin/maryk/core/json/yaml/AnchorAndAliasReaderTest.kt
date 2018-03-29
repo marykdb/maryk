@@ -129,4 +129,15 @@ class AnchorAndAliasReaderTest {
             assertInvalidYaml()
         }
     }
+
+    @Test
+    fun only_anchor() {
+        createYamlReader("""
+        |  - &anchor
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
 }

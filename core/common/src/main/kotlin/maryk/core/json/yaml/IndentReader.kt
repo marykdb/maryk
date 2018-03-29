@@ -7,20 +7,13 @@ import maryk.core.json.TokenType
 internal class IndentReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
-) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
         where P : maryk.core.json.yaml.YamlCharReader,
               P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
               P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
     private var indentCounter = -1
-
-    // Should not be called
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader =
-        this.parentReader.newIndentLevel(indentCount, parentReader, tag)
 
     override fun continueIndentLevel(tag: TokenType?) =
         LineReader(
@@ -99,19 +92,7 @@ internal class IndentReader<out P>(
         }
     }
 
-    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
-
     override fun indentCount() = this.indentCounter
 
     override fun indentCountForChildren() = this.indentCount()
-
-    override fun childIsDoneReading(closeLineReader: Boolean) {
-        this.currentReader = this
-    }
-
-    override fun handleReaderInterrupt(): JsonToken {
-        this.parentReader.childIsDoneReading(false)
-        return parentReader.handleReaderInterrupt()
-    }
 }

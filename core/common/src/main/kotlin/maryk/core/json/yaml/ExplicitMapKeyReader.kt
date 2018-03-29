@@ -13,7 +13,7 @@ private enum class ExplicitMapState {
 internal class ExplicitMapKeyReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
-) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
         where P : YamlCharReader,
@@ -66,14 +66,6 @@ internal class ExplicitMapKeyReader<out P>(
     override fun indentCount() = this.indentCount
 
     override fun indentCountForChildren() = this.indentCount
-
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader =
-        this.parentReader.newIndentLevel(indentCount, parentReader, tag)
-
-    override fun continueIndentLevel(tag: TokenType?) = this.readUntilToken()
 
     override fun endIndentLevel(
         indentCount: Int,
@@ -133,9 +125,6 @@ internal class ExplicitMapKeyReader<out P>(
         }
     }
 
-    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
-
     override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? {
         if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
             this.state = ExplicitMapState.INTERNAL_MAP
@@ -147,10 +136,6 @@ internal class ExplicitMapKeyReader<out P>(
     }
 
     override fun isWithinMap() = false
-
-    override fun childIsDoneReading(closeLineReader: Boolean) {
-        this.currentReader = this
-    }
 
     override fun handleReaderInterrupt() =
         when(this.state) {

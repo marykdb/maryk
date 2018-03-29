@@ -45,6 +45,7 @@ internal class TagReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
+        this.parentReader.childIsDoneReading(false)
         return this.parentReader.handleReaderInterrupt()
     }
 }

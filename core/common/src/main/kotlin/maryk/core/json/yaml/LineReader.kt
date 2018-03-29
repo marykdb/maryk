@@ -287,3 +287,16 @@ internal class LineReader<out P>(
         return this.parentReader.handleReaderInterrupt()
     }
 }
+
+internal fun <P> P.lineReader(parentReader: P, startsAtNewLine: Boolean, isExplicitMap: Boolean = false): LineReader<P>
+        where P : IsYamlCharWithChildrenReader,
+              P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader =
+    LineReader(
+        yamlReader = yamlReader,
+        parentReader = parentReader,
+        startsAtNewLine = startsAtNewLine,
+        isExplicitMap = isExplicitMap
+    ).apply {
+        this.currentReader = this
+    }

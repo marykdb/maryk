@@ -14,7 +14,7 @@ internal class PlainStringReader<out P>(
     startWith: String,
     private val mode: PlainStyleMode = PlainStyleMode.NORMAL,
     private var jsonTokenConstructor: (String?) -> JsonToken
-) : YamlCharWithParentReader<P>(yamlReader, parentReader), IsYamlCharWithIndentsReader, IsYamlCharWithChildrenReader
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader), IsYamlCharWithIndentsReader, IsYamlCharWithChildrenReader
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
@@ -96,17 +96,6 @@ internal class PlainStringReader<out P>(
         read()
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) = this.parentReader.foundMap(isExplicitMap, tag)
-
-    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
-
-    override fun isWithinMap() = this.parentReader.isWithinMap()
-
-    override fun indentCount() = this.parentReader.indentCountForChildren()
-
-    override fun indentCountForChildren() = this.indentCount()
-
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?)
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
@@ -133,10 +122,6 @@ internal class PlainStringReader<out P>(
                 this.createToken()
             }
         }
-    }
-
-    override fun childIsDoneReading(closeLineReader: Boolean) {
-        this.currentReader = this
     }
 
     override fun handleReaderInterrupt(): JsonToken {

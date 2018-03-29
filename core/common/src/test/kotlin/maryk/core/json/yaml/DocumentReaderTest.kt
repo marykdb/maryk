@@ -105,4 +105,88 @@ class DocumentReaderTest {
             assertInvalidYaml()
         }
     }
+
+    @Test
+    fun fail_on_multiple_directives_blocks() {
+        createYamlReader("""
+        |%YAML 1.2
+        |---
+        |%YAML 1.2
+        """.trimMargin()).apply {
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_no_close_of_directive_with_document_indicator() {
+        createYamlReader("""
+        |%YAML 1.2
+        |test
+        """.trimMargin()).apply {
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun read_single_dash() {
+        createYamlReader("""
+        |-
+        """.trimMargin()).apply {
+            assertValue("-")
+        }
+    }
+
+    @Test
+    fun read_double_dash() {
+        createYamlReader("""
+        |-- test
+        """.trimMargin()).apply {
+            assertValue("-- test")
+        }
+    }
+
+    @Test
+    fun read_single_dot_break() {
+        createYamlReader("""
+        |.
+        """.trimMargin()).apply {
+            assertValue(".")
+        }
+    }
+
+    @Test
+    fun read_single_dot() {
+        createYamlReader("""
+        |. test
+        """.trimMargin()).apply {
+            assertValue(". test")
+        }
+    }
+
+    @Test
+    fun read_double_dot() {
+        createYamlReader("""
+        |.. dot
+        """.trimMargin()).apply {
+            assertValue(".. dot")
+        }
+    }
+
+    @Test
+    fun read_double_dot_break() {
+        createYamlReader("""
+        |..
+        """.trimMargin()).apply {
+            assertValue("..")
+        }
+    }
+
+    @Test
+    fun read_end_document() {
+        createYamlReader("""
+        |...
+        """.trimMargin()).apply {
+            assertEndDocument()
+        }
+    }
 }

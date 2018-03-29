@@ -10,7 +10,7 @@ internal class SequenceItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     val indentToAdd: Int = 0
-) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
         where P : YamlCharReader,
@@ -21,7 +21,7 @@ internal class SequenceItemsReader<out P>(
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
-            createLineReader(this, this.lastChar.isLineBreak())
+            this.lineReader(this, this.lastChar.isLineBreak())
 
             this.isStarted = true
             return tag?.let {
@@ -50,16 +50,14 @@ internal class SequenceItemsReader<out P>(
         }
     }
 
-    override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        this.parentReader.checkAndCreateFieldName(fieldName, isPlainStringReader)
-
     override fun isWithinMap() = false
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        this.createLineReader(parentReader, true)
+    override fun <PP> newIndentLevel(indentCount: Int, parentReader: PP, tag: TokenType?): JsonToken
+            where PP : YamlCharReader,
+                  PP : IsYamlCharWithChildrenReader,
+                  PP : IsYamlCharWithIndentsReader {
+        @Suppress("UNCHECKED_CAST")
+        (this as P).lineReader(parentReader as P, true)
         return this.currentReader.readUntilToken(tag)
     }
 
@@ -88,7 +86,8 @@ internal class SequenceItemsReader<out P>(
 
         read()
 
-        return createLineReader(this, false).readUntilToken(tag)
+        return this.lineReader(this, false)
+            .readUntilToken(tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
@@ -131,10 +130,6 @@ internal class SequenceItemsReader<out P>(
         }
     }
 
-    override fun childIsDoneReading(closeLineReader: Boolean) {
-        this.currentReader = this
-    }
-
     override fun handleReaderInterrupt(): JsonToken {
         this.currentReader = this.parentReader
         return JsonToken.EndArray
@@ -143,16 +138,4 @@ internal class SequenceItemsReader<out P>(
     private fun throwSequenceException() {
         throw InvalidYamlContent("Sequence was started on this indentation level, this is not an Sequence entry")
     }
-
-    private fun <P> createLineReader(parentReader: P, startsAtNewLine: Boolean)
-            where P : maryk.core.json.yaml.YamlCharReader,
-                  P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader =
-        LineReader(
-            yamlReader = yamlReader,
-            parentReader = parentReader,
-            startsAtNewLine = startsAtNewLine
-        ).apply {
-            this.currentReader = this
-        }
 }

@@ -11,7 +11,7 @@ internal class MapItemsReader<out P>(
     parentReader: P,
     private val isExplicitMap: Boolean,
     private val indentToAdd: Int = 0
-) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
         where P : YamlCharReader,
@@ -23,7 +23,7 @@ internal class MapItemsReader<out P>(
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
-            createLineReader(this, this.lastChar.isLineBreak())
+            this.lineReader(this, this.lastChar.isLineBreak(), this.isExplicitMap)
 
             this.isStarted = true
             return tag?.let {
@@ -51,12 +51,13 @@ internal class MapItemsReader<out P>(
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
-        this.createLineReader(parentReader, true)
+        @Suppress("UNCHECKED_CAST")
+        (this as P).lineReader(parentReader, true, this.isExplicitMap)
         return this.currentReader.readUntilToken(tag)
     }
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        return createLineReader(this, true).readUntilToken(tag)
+        return lineReader(this, true, this.isExplicitMap).readUntilToken(tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
@@ -98,25 +99,8 @@ internal class MapItemsReader<out P>(
         }
     }
 
-    override fun childIsDoneReading(closeLineReader: Boolean) {
-        this.currentReader = this
-    }
-
     override fun handleReaderInterrupt(): JsonToken {
         this.currentReader = this.parentReader
         return JsonToken.EndObject
     }
-
-    private fun <P> createLineReader(parentReader: P, startsAtNewLine: Boolean)
-            where P : maryk.core.json.yaml.YamlCharReader,
-                  P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-                  P : maryk.core.json.yaml.IsYamlCharWithIndentsReader =
-        LineReader(
-            yamlReader = yamlReader,
-            parentReader = parentReader,
-            startsAtNewLine = startsAtNewLine,
-            isExplicitMap = this.isExplicitMap
-        ).apply {
-            this.currentReader = this
-        }
 }

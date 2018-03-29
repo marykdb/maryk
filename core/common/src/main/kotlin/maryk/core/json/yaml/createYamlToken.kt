@@ -159,13 +159,12 @@ private fun findInt(value: String): JsonToken.Value<Long>? {
 
 private fun findFloat(value: String): JsonToken.Value<Double>? {
     floatRegEx.find(value)?.let {
-        value.replace("_", "").toDoubleOrNull()?.let { double ->
-            return JsonToken.Value(
+        return value.replace("_", "").toDoubleOrNull()?.let { double ->
+            JsonToken.Value(
                 double,
                 ValueType.Float
             )
         }
-
     }
     return null
 }
@@ -191,16 +190,16 @@ private fun findTimestamp(value: String): JsonToken.Value<DateTime>? {
                     it.groups[7]!!.value.toByte(),
                     it.groups[8]!!.value.toByte(),
                     it.groups[10]?.value?.let {
-                        if (it.length < 3) {
-                            var longer = it
-                            (1..3 - it.length).forEach {
-                                longer += "0"
+                        when {
+                            it.length < 3 -> {
+                                var longer = it
+                                (1..3 - it.length).forEach {
+                                    longer += "0"
+                                }
+                                longer
                             }
-                            longer
-                        } else if (it.length == 3) {
-                            it
-                        } else {
-                            it.substring(0, 3)
+                            it.length == 3 -> it
+                            else -> it.substring(0, 3)
                         }
                     }?.toShort() ?: 0
                 )

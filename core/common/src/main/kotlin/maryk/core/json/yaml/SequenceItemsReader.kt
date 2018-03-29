@@ -52,12 +52,12 @@ internal class SequenceItemsReader<out P>(
 
     override fun isWithinMap() = false
 
-    override fun <PP> newIndentLevel(indentCount: Int, parentReader: PP, tag: TokenType?): JsonToken
-            where PP : YamlCharReader,
-                  PP : IsYamlCharWithChildrenReader,
-                  PP : IsYamlCharWithIndentsReader {
+    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
+            where P : YamlCharReader,
+                  P : IsYamlCharWithChildrenReader,
+                  P : IsYamlCharWithIndentsReader {
         @Suppress("UNCHECKED_CAST")
-        (this as P).lineReader(parentReader as P, true)
+        (this as P).lineReader(parentReader, true)
         return this.currentReader.readUntilToken(tag)
     }
 

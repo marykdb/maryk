@@ -120,6 +120,18 @@ class SequenceItemsReaderTest {
     }
 
     @Test
+    fun fail_on_wrong_non_sequence_continuation() {
+        createYamlReader("""
+            | - 'test'
+            | -wrong
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("test")
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
     fun read_embedded_sequence() {
         createYamlReader("""
         |-

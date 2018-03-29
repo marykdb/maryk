@@ -110,8 +110,8 @@ fun IsJsonLikeReader.assertEndDocument() {
     }
 }
 
-fun IsJsonLikeReader.assertInvalidYaml() {
-    shouldThrow<InvalidYamlContent> {
+fun IsJsonLikeReader.assertInvalidYaml(): InvalidYamlContent {
+    return shouldThrow {
         println(this.nextToken())
     }
 }

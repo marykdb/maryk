@@ -4,7 +4,7 @@ import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
 internal enum class PlainStyleMode {
-    NORMAL, FLOW_COLLECTION, FLOW_MAP
+    NORMAL, FLOW_SEQUENCE, FLOW_MAP
 }
 
 /** Plain style string reader */
@@ -68,7 +68,7 @@ internal class PlainStringReader<out P>(
                 }
                 else -> {
                     when(this.mode) {
-                        PlainStyleMode.FLOW_COLLECTION -> when (this.lastChar) {
+                        PlainStyleMode.FLOW_SEQUENCE -> when (this.lastChar) {
                             ',', ']' -> {
                                 this.parentReader.childIsDoneReading(false)
                                 return createToken()
@@ -116,7 +116,7 @@ internal class PlainStringReader<out P>(
         @Suppress("UNCHECKED_CAST")
         return when {
             indentCount == readerIndentCount -> this.createToken()
-            this.mode == PlainStyleMode.FLOW_COLLECTION -> throw InvalidYamlContent("Missing a comma")
+            this.mode == PlainStyleMode.FLOW_SEQUENCE -> throw InvalidYamlContent("Missing a comma")
             this.mode == PlainStyleMode.FLOW_MAP -> throw InvalidYamlContent("Did not close map")
             else -> this.parentReader.endIndentLevel(indentCount, tag) {
                 this.createToken()

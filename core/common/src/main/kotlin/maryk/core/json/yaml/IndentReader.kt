@@ -16,14 +16,8 @@ internal class IndentReader<out P>(
     private var indentCounter = -1
 
     override fun continueIndentLevel(tag: TokenType?) =
-        LineReader(
-            this.yamlReader,
-            this,
-            true
-        ).let {
-            this.currentReader = it
-            it.readUntilToken(tag)
-        }
+        this.lineReader(this, true, false)
+            .readUntilToken(tag)
 
     override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? =
         @Suppress("UNCHECKED_CAST")

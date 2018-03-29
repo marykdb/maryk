@@ -50,9 +50,7 @@ internal class LineReader<out P>(
             '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
             '[' -> this.flowSequenceReader(tag)
             '{' -> this.flowMapReader(tag)
-            ',' -> {
-                throw InvalidYamlContent("Invalid char $lastChar at this position")
-            }
+            ',' -> throw InvalidYamlContent("Invalid char $lastChar at this position")
             '|' -> {
                 read()
                 return LiteralStringReader(
@@ -79,7 +77,7 @@ internal class LineReader<out P>(
             }
             '!' -> this.tagReader()
             '&' -> this.anchorReader()
-            '*' -> this.aliasReader()
+            '*' -> this.aliasReader(PlainStyleMode.NORMAL)
             '@', '`' -> {
                 throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
             }

@@ -11,7 +11,7 @@ import maryk.core.json.assertStartObject
 import maryk.core.json.assertValue
 import kotlin.test.Test
 
-class MappingReaderTest {
+class MapItemsReaderTest {
     @Test
     fun read_simple_mapping() {
         createYamlReader("""

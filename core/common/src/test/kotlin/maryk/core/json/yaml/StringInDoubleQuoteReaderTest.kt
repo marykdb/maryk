@@ -23,8 +23,8 @@ class StringInDoubleQuoteReaderTest {
 
     @Test
     fun read_double_quote_with_special_chars() {
-        createYamlReader(""""te\"\b\f\n\t\\\/\r'"""").apply {
-            assertValue("te\"\b\u000C\n\t\\/\r'")
+        createYamlReader(""""te\"\b\f\n\t\\\/\r'\0\a\v\e\ \N\_\L\P\G"""").apply {
+            assertValue("te\"\b\u000C\n\t\\/\r'\u0000\u0007\u000B\u001B \u0085\u00A0\u2028\u2029\\G")
             assertEndDocument()
         }
     }

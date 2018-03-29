@@ -6,7 +6,8 @@ import maryk.core.json.TokenType
 /** Reads an *alias to return possible anchored tags */
 internal class AliasReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P
+    parentReader: P,
+    private var mode: PlainStyleMode
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
               P : IsYamlCharWithChildrenReader,
@@ -17,7 +18,13 @@ internal class AliasReader<out P>(
     override fun readUntilToken(tag: TokenType?): JsonToken {
         read()
 
-        while(!this.lastChar.isWhitespace()) {
+        val forbiddenChars = when(this.mode) {
+            PlainStyleMode.FLOW_SEQUENCE -> arrayOf(' ', '\r', '\n', '\t', ',', ']')
+            PlainStyleMode.FLOW_MAP -> arrayOf(' ', '\r', '\n', '\t', ',', '}')
+            else -> arrayOf(' ', '\r', '\n', '\t')
+        }
+
+        while(this.lastChar !in forbiddenChars) {
             alias += this.lastChar
             read()
         }
@@ -41,11 +48,11 @@ internal class AliasReader<out P>(
     }
 }
 
-internal fun <P> P.aliasReader()
+internal fun <P> P.aliasReader(mode: PlainStyleMode)
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
               P : IsYamlCharWithIndentsReader =
-    AliasReader(this.yamlReader, this).let {
+    AliasReader(this.yamlReader, this, mode).let {
         this.currentReader = it
         it.readUntilToken()
     }

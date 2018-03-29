@@ -16,7 +16,7 @@ class FlowSequenceReaderTest {
     @Test
     fun read_sequence_items() {
         createYamlReader("""
-            |     - ["test1", "test2", "test3"]
+            |     - ["test1", "test2", 'test3']
         """.trimMargin()).apply {
             assertStartArray()
             assertStartArray()
@@ -24,6 +24,18 @@ class FlowSequenceReaderTest {
             assertValue("test2")
             assertValue("test3")
             assertEndArray()
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+
+    @Test
+    fun read_sequence_items_with_anchor_and_alias() {
+        createYamlReader("[ &anchor ha, *anchor]").apply {
+            assertStartArray()
+            assertValue("ha")
+            assertValue("ha")
             assertEndArray()
             assertEndDocument()
         }
@@ -268,6 +280,65 @@ class FlowSequenceReaderTest {
             assertValue("test")
             assertEndArray()
             assertEndDocument()
+        }
+    }
+
+    @Test
+    fun fail_on_embedded_sequence() {
+        createYamlReader("""["key0", - wrong]""").apply {
+            assertStartArray()
+            assertValue("key0")
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_wrong_sequence_end() {
+        createYamlReader("""["v1"}""").apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_double_explicit() {
+        createYamlReader("[? ? wrong").apply {
+            assertStartArray()
+            assertStartObject()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_invalid_string_types() {
+        createYamlReader("[|").apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
+
+        createYamlReader("[>").apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_reserved_indicators() {
+        createYamlReader("[@").apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
+
+        createYamlReader("[`").apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_value_tag_on_sequence() {
+        createYamlReader("!!str [1, 2]").apply {
+            assertInvalidYaml()
         }
     }
 }

@@ -17,16 +17,33 @@ class FlowMapReaderTest {
     @Test
     fun read_map_items() {
         createYamlReader("""
-        |     - {"key0",key1: "value1", 'key2': 'value2'}
+        |     - {"key0",-key1: "value1", 'key2': 'value2'}
         """.trimMargin()).apply {
             assertStartArray()
             assertStartObject()
             assertFieldName("key0")
             assertValue(null)
-            assertFieldName("key1")
+            assertFieldName("-key1")
             assertValue("value1")
             assertFieldName("key2")
             assertValue("value2")
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun read_map_items_with_anchor_and_alias() {
+        createYamlReader("""
+        |     - {hey: &anchor ha, ho: *anchor}
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("hey")
+            assertValue("ha")
+            assertFieldName("ho")
+            assertValue("ha")
             assertEndObject()
             assertEndArray()
             assertEndDocument()
@@ -48,13 +65,13 @@ class FlowMapReaderTest {
     @Test
     fun read_map_and_sequence_in_map_items() {
         createYamlReader("""
-        |     - {"key0","key1": {e1: v1}, 'key2': [v1, v2]}
+        |     - {"key0",?key1: {e1: v1}, 'key2': [v1, v2]}
         """.trimMargin()).apply {
             assertStartArray()
             assertStartObject()
             assertFieldName("key0")
             assertValue(null)
-            assertFieldName("key1")
+            assertFieldName("?key1")
             assertStartObject()
             assertFieldName("e1")
             assertValue("v1")
@@ -222,7 +239,6 @@ class FlowMapReaderTest {
         }
     }
 
-
     @Test
     fun fail_with_unfinished_map() {
         createYamlReader("""
@@ -273,6 +289,70 @@ class FlowMapReaderTest {
             assertValue("v1")
             assertEndObject()
             assertEndDocument()
+        }
+    }
+
+    @Test
+    fun fail_on_embedded_sequence() {
+        createYamlReader("""- {"key0", - wrong}""").apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("key0")
+            assertValue(null)
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_wrong_sequence_end() {
+        createYamlReader(""" - {key0: "v1"]""").apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("key0")
+            assertValue("v1")
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_double_explicit() {
+        createYamlReader(""" - {? ? wrong""").apply {
+            assertStartArray()
+            assertStartObject()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_invalid_string_types() {
+        createYamlReader("{|").apply {
+            assertStartObject()
+            assertInvalidYaml()
+        }
+
+        createYamlReader("{>").apply {
+            assertStartObject()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_reserved_indicators() {
+        createYamlReader("{@").apply {
+            assertStartObject()
+            assertInvalidYaml()
+        }
+
+        createYamlReader("{`").apply {
+            assertStartObject()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_value_tag_on_map() {
+        createYamlReader("!!str {k: v}").apply {
+            assertInvalidYaml()
         }
     }
 }

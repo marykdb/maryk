@@ -88,7 +88,7 @@ internal class MapItemsReader<out P>(
                 this.yamlReader.pushToken(JsonToken.EndObject)
                 return it()
             }
-            JsonToken.EndArray
+            JsonToken.EndObject
         } else {
             val returnFunction = tokenToReturn?.let {
                 this.yamlReader.pushToken(JsonToken.EndObject)

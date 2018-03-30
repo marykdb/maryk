@@ -76,16 +76,9 @@ internal class LineReader<out P>(
             '!' -> this.tagReader()
             '&' -> this.anchorReader()
             '*' -> this.aliasReader(PlainStyleMode.NORMAL)
-            '@', '`' -> {
-                throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
-            }
-            '%' -> {
-                throw InvalidYamlContent("Directive % indicator not allowed in this position")
-            }
-            ']' -> {
-                read() // Only accept it at end of document where it will fail to read because it failed in array content
-                throw InvalidYamlContent("Invalid char $lastChar at this position")
-            }
+            '@', '`' -> throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
+            '%' -> throw InvalidYamlContent("Directive % indicator not allowed in this position")
+            ']' -> throw InvalidYamlContent("Invalid char $lastChar at this position")
             '-' -> {
                 read()
                 if (this.lastChar.isWhitespace()) {

@@ -159,7 +159,11 @@ internal class DocumentReader(
     }
 
     override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        return readUntilToken(tag)
+        if (this.indentCount == 0) {
+            return readUntilToken(tag)
+        } else {
+            return newIndentLevel(this.indentCount, this, tag)
+        }
     }
 
     override fun endIndentLevel(

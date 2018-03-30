@@ -13,7 +13,7 @@ internal class AliasReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    var alias = ""
+    private var alias = ""
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
         read()
@@ -32,6 +32,7 @@ internal class AliasReader<out P>(
         return pushStoredTokens()
     }
 
+    /** Push all tokens that were saved for alias to yamlreader and return first one immediately */
     private fun pushStoredTokens(): JsonToken {
         val tokens = this.yamlReader.getTokensForAlias(this.alias)
 
@@ -48,6 +49,7 @@ internal class AliasReader<out P>(
     }
 }
 
+/** Creates an alias reader within scope of YamlCharReader with [mode] and returns first found token */
 internal fun <P> P.aliasReader(mode: PlainStyleMode)
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,

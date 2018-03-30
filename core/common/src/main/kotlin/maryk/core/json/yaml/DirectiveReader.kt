@@ -7,7 +7,7 @@ import maryk.core.json.TokenType
 private val yamlRegEx = Regex("^YAML ([0-9]).([0-9]+)$")
 private val tagRegEx = Regex("^TAG (!|!!|![a-zAZ]+!) ([^ ]+)$")
 
-/** Reads comments and returns reading when done */
+/** Reads yaml directives and returns to parent when done */
 internal class DirectiveReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P

@@ -297,7 +297,7 @@ internal class YamlReaderImpl(
     }
 
     fun recordAnchors(anchorReader: AnchorReader<*>) {
-        anchorReader.setTokenDepth(this.tokenDepth)
+        anchorReader.setTokenStartDepth(this.tokenDepth)
         this.anchorReaders.add(anchorReader)
     }
 }

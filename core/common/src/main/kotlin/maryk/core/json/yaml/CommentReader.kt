@@ -4,7 +4,7 @@ import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
-/** Reads comments and returns reading when done */
+/** Reads comments and returns when done reading */
 internal class CommentReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P

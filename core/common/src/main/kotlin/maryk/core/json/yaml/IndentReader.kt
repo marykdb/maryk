@@ -3,7 +3,10 @@ package maryk.core.json.yaml
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
-/** Reads indents on a new line until a char is found */
+/**
+ * Reads indents on a new line until a char is found and then determines to which reader to continue.
+ * It will either start a new indent level on parent, continue on current parent or close the parent
+ */
 internal class IndentReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P

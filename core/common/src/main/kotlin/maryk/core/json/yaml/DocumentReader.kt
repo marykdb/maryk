@@ -5,7 +5,7 @@ import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
 
-/** Read a complete yaml document until end stream or "..." */
+/** Read single or multiple yaml documents until end of stream or "..." */
 internal class DocumentReader(
     yamlReader: YamlReaderImpl
 ): YamlCharReader(yamlReader),
@@ -13,9 +13,7 @@ internal class DocumentReader(
     IsYamlCharWithIndentsReader
 {
     private var finishedWithDirectives: Boolean? = null
-
     private var contentWasFound = false
-
     private var indentCount: Int = 0
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
@@ -191,7 +189,7 @@ internal class DocumentReader(
         return JsonToken.EndDocument
     }
 
-    private fun plainStringReader(char: String): JsonToken {
+    private fun plainStringReader(startWith: String): JsonToken {
         checkAlreadyOnIndent()
 
         val lineReader = LineReader(this.yamlReader, this, true)
@@ -199,7 +197,7 @@ internal class DocumentReader(
         return PlainStringReader(
             this.yamlReader,
             lineReader,
-            char
+            startWith
         ) {
             JsonToken.Value(it, ValueType.String)
         }.let {
@@ -208,12 +206,14 @@ internal class DocumentReader(
         }
     }
 
+    /** Checks if indentation was not reset and thus reading on a lower indent than started */
     private fun checkAlreadyOnIndent() {
         if (this.indentCount == -1) {
             throw InvalidYamlContent("Document should not have a lower indent than started")
         }
     }
 
+    /** Set [indentCount] for document so it can check if next levels don't start lower */
     internal fun setIndent(indentCount: Int) {
         this.indentCount = indentCount
     }

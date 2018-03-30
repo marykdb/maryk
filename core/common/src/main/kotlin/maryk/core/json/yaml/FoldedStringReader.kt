@@ -4,7 +4,7 @@ import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
-/** Literal style string reader */
+/** Folded style string reader */
 internal class FoldedStringReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,

@@ -5,7 +5,6 @@ import maryk.core.extensions.isSpacing
 import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
-import maryk.core.json.ValueType
 
 /** Reads Lines with actual non whitespace chars */
 internal class LineReader<out P>(
@@ -23,7 +22,6 @@ internal class LineReader<out P>(
 {
     private var hasCompletedValueReading = false
     private var mapKeyFound = false
-    private var mapValueFound = false
 
     override fun readUntilToken(tag: TokenType?): JsonToken {
         val indents = if(!this.startsAtNewLine) {
@@ -179,7 +177,6 @@ internal class LineReader<out P>(
 
     private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken {
         if (this.mapKeyFound) {
-            this.mapValueFound = true
             if(this.parentReader is ExplicitMapKeyReader<*>) {
                 this.indentToAdd -= 1
             }
@@ -235,16 +232,6 @@ internal class LineReader<out P>(
         return this.parentReader.foundMap(isExplicitMap, tag)
     }
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        if (mapKeyFound) {
-            mapValueFound = true
-        }
-        return this.parentReader.newIndentLevel(indentCount, parentReader, tag)
-    }
-
     override fun endIndentLevel(
         indentCount: Int,
         tag: TokenType?,
@@ -267,7 +254,6 @@ internal class LineReader<out P>(
         }
 
         if (closeLineReader) {
-            this.mapValueFound = true
             this.parentReader.childIsDoneReading(false)
         } else {
             this.currentReader = this
@@ -275,13 +261,6 @@ internal class LineReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
-        if (this.mapKeyFound && this.isExplicitMap) {
-            if (!this.mapValueFound) {
-                this.mapValueFound = true
-                return JsonToken.Value(null, ValueType.Null)
-            }
-        }
-
         return this.parentReader.handleReaderInterrupt()
     }
 }

@@ -28,6 +28,7 @@ internal class AnchorReader<out P>(
             throw InvalidYamlContent("Name of anchor (&) needs at least 1 character")
         }
 
+        // Pass this anchor reader to the YamlReader so it can start to pass tokens
         this.yamlReader.recordAnchors(this)
 
         this.parentReader.childIsDoneReading(false)
@@ -38,7 +39,7 @@ internal class AnchorReader<out P>(
         return this.parentReader.handleReaderInterrupt()
     }
 
-    /** Records token and triggers [onEnd] if done */
+    /** Records token from yamlReader and triggers [onEnd] if back at starting depth */
     fun recordToken(token: JsonToken, tokenDepth: Int, onEnd: () -> Unit) {
         this.storedValues.add(token)
 
@@ -51,11 +52,13 @@ internal class AnchorReader<out P>(
         }
     }
 
-    fun setTokenDepth(tokenDepth: Int) {
+    /** Set [tokenDepth] on which this token reader started */
+    fun setTokenStartDepth(tokenDepth: Int) {
         this.tokenStartDepth = tokenDepth
     }
 }
 
+/** Constructs an anchor reader within scope of YamlReader and returns first found token */
 internal fun <P> P.anchorReader(): JsonToken
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,

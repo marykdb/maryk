@@ -31,6 +31,11 @@ private val timestampRegex = Regex(
 
 internal typealias JsonTokenCreator = (value: String?, isPlainStringReader: Boolean, tag: TokenType?) -> JsonToken
 
+/**
+ * Creates a FieldName based on [fieldName]
+ * Will return an exception if [fieldName] was already present in [foundFieldNames]
+ * Can create a MergeFieldName if token was << and was read by a PlainStringReader signalled by [isPlainStringReader] = true
+ */
 internal fun checkAndCreateFieldName(foundFieldNames: MutableList<String?>, fieldName: String?, isPlainStringReader: Boolean) =
     if(!foundFieldNames.contains(fieldName)) {
         foundFieldNames += fieldName
@@ -43,6 +48,10 @@ internal fun checkAndCreateFieldName(foundFieldNames: MutableList<String?>, fiel
         throw InvalidYamlContent("Duplicate field name $fieldName in flow map")
     }
 
+/**
+ * Creates a JsonToken.Value by reading [value] and [tag]
+ * If from plain string with [isPlainStringReader] = true and [tag] = false it will try to determine ValueType from contents.
+ */
 internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainStringReader: Boolean): JsonToken.Value<Any?> {
     return tag?.let {
         if (value == null && it != ValueType.Null) {
@@ -102,6 +111,7 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
     }
 }
 
+/** Tries to find infinity value in [value] and returns a Value with infinity if found */
 private fun findInfinity(value: String): JsonToken.Value<Double>? {
     infinityRegEx.find(value)?.let {
         return if(value.startsWith("-")) {
@@ -113,6 +123,7 @@ private fun findInfinity(value: String): JsonToken.Value<Double>? {
     return null
 }
 
+/** Tries to find Integer value in [value] and returns a Value with a Long if found */
 private fun findInt(value: String): JsonToken.Value<Long>? {
     val minus = if (value.startsWith('-')) {
         -1
@@ -157,6 +168,7 @@ private fun findInt(value: String): JsonToken.Value<Long>? {
     return null
 }
 
+/** Tries to find float value in [value] and returns a Double if found */
 private fun findFloat(value: String): JsonToken.Value<Double>? {
     floatRegEx.find(value)?.let {
         return value.replace("_", "").toDoubleOrNull()?.let { double ->
@@ -169,6 +181,7 @@ private fun findFloat(value: String): JsonToken.Value<Double>? {
     return null
 }
 
+/** Tries to find timestamp in [value] and returns a DateTime if found */
 private fun findTimestamp(value: String): JsonToken.Value<DateTime>? {
     timestampRegex.find(value)?.let {
         return if (it.groups[4] == null) {

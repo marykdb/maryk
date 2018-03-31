@@ -13,8 +13,8 @@ class JsonReader(
 ) : IsJsonLikeReader {
     override var currentToken: JsonToken = JsonToken.StartDocument
 
-    var columnNumber = 0
-    var lineNumber = 1
+    override var columnNumber = 0
+    override var lineNumber = 1
 
     private var storedValue: String? = ""
     private val typeStack: MutableList<JsonComplexType> = mutableListOf()

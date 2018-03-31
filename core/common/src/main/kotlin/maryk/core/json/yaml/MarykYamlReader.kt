@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.PropertyDefinitionType
 
 const val maryk2018 = "tag:maryk.io,2018:"
 
+/** Creates a Yaml reader preset to read Maryk */
 @Suppress("FunctionName")
 fun MarykYamlReader(
     reader: () -> Char

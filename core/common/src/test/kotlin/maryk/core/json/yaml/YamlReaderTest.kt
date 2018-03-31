@@ -6,8 +6,10 @@ import maryk.core.json.ValueType
 import maryk.core.json.assertEndDocument
 import maryk.core.json.assertEndObject
 import maryk.core.json.assertFieldName
+import maryk.core.json.assertInvalidYaml
 import maryk.core.json.assertStartObject
 import maryk.core.json.assertValue
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -73,10 +75,64 @@ class YamlReaderTest {
     }
 
     @Test
+    fun read_exception() {
+        createMarykYamlReader("key:\n `wrong").apply {
+            assertStartObject()
+            assertFieldName("key")
+            val a = assertInvalidYaml()
+            a.columnNumber shouldBe 1
+            a.lineNumber shouldBe 2
+            this.columnNumber shouldBe 1
+            this.lineNumber shouldBe 2
+        }
+    }
+
+    @Test
+    fun read_prefix_tag() {
+        val reader = createMarykYamlReader("%TAG !prefix! !Boo\n---") as YamlReaderImpl
+        reader.nextToken()
+        reader.resolveTag("!prefix!", "lean") shouldBe PropertyDefinitionType.Boolean
+    }
+
+    @Test
     fun fail_on_invalid_URI_tag() {
         val reader = createYamlReader("") as YamlReaderImpl
         shouldThrow<InvalidYamlContent> {
             reader.resolveTag("!", "<wrong>")
+        }
+    }
+
+    @Test
+    fun fail_on_unknown_URI_tag() {
+        shouldThrow<InvalidYamlContent> {
+            (createYamlReader("") as YamlReaderImpl)
+                .resolveTag("!", "<tag:unknown.org,2002>")
+        }
+    }
+
+    @Test
+    fun fail_on_unknown_tag() {
+        shouldThrow<InvalidYamlContent> {
+            (createMarykYamlReader("") as YamlReaderImpl)
+                .resolveTag("!", "unknown")
+        }
+    }
+
+    @Test
+    fun fail_on_unknown_default_tag() {
+        shouldThrow<InvalidYamlContent> {
+            (createMarykYamlReader("") as YamlReaderImpl)
+                .resolveTag("!!", "unknown")
+        }
+    }
+
+    @Test
+    fun fail_on_unknown_named_tag() {
+        shouldThrow<InvalidYamlContent> {
+            (createMarykYamlReader("%TAG !known! tag:unknown.org,2002\n---") as YamlReaderImpl).let {
+                it.nextToken()
+                it.resolveTag("!known!", "unknown")
+            }
         }
     }
 }

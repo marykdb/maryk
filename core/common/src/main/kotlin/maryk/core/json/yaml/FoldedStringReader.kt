@@ -5,15 +5,11 @@ import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
 /** Folded style string reader */
-internal class FoldedStringReader<out P>(
+internal class FoldedStringReader(
     yamlReader: YamlReaderImpl,
-    parentReader: P,
+    parentReader: LineReader<*>,
     jsonTokenConstructor: (String?) -> JsonToken
-) : LiteralStringReader<P>(yamlReader, parentReader, jsonTokenConstructor)
-        where P : YamlCharReader,
-              P : IsYamlCharWithChildrenReader,
-              P : IsYamlCharWithIndentsReader
-{
+) : LiteralStringReader(yamlReader, parentReader, jsonTokenConstructor) {
     override fun readUntilToken(tag: TokenType?): JsonToken {
         // Read options and end at first line break
         readStartForOptionsAndReturnIndent("Folded >")

@@ -258,6 +258,11 @@ internal class LineReader<out P>(
     }
 }
 
+/**
+ * Creates a LineReader below [parentReader].
+ * Set [startsAtNewLine] to true if it was started on a new line.
+ * Set [isExplicitMap] to true if LineReader is below explicit map
+ */
 internal fun <P> P.lineReader(parentReader: P, startsAtNewLine: Boolean, isExplicitMap: Boolean = false): LineReader<P>
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,

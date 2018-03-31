@@ -64,8 +64,8 @@ internal class YamlReaderImpl(
     private var tokenDepth = 0
     private var merges = mutableListOf<Merge>()
 
-    var columnNumber = -1
-    var lineNumber = 1
+    override var columnNumber = -1
+    override var lineNumber = 1
 
     private val tagMap: MutableMap<String, Map<String, TokenType>> = mutableMapOf(
         "tag:yaml.org,2002:" to mapOf(

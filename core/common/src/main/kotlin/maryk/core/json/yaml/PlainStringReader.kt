@@ -62,9 +62,9 @@ internal class PlainStringReader<out P>(
                             this.currentReader = it
                             it.readUntilToken()
                         }
-                    } else {
-                        this.storeCharAndProceed()
                     }
+
+                    this.storeCharAndProceed()
                 }
                 else -> {
                     when(this.mode) {
@@ -134,6 +134,13 @@ internal class PlainStringReader<out P>(
     }
 }
 
+/**
+ * Creates a plain string reader and returns first found token.
+ * Set [startWith] to set first characters
+ * Pass [tag] to set type on Value.
+ * [flowMode] determines which characters can stop the reader
+ * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
+ */
 internal fun <P> P.plainStringReader(
     startWith: String,
     tag: TokenType?,

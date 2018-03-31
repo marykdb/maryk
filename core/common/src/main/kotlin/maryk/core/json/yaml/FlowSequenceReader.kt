@@ -199,7 +199,10 @@ internal class FlowSequenceReader<out P>(
     }
 }
 
-/** Creates a FlowSequenceReader within a YamlCharReader with [tag] as typing. Reads until first token and returns it */
+/**
+ * Creates a FlowSequenceReader within a YamlCharReader with [tag] as typing.
+ * Reads until first token and returns it
+ */
 internal fun <P> P.flowSequenceReader(tag: TokenType?): JsonToken
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,

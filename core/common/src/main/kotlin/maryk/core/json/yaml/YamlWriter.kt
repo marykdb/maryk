@@ -93,9 +93,11 @@ class YamlWriter(
         throw IllegalJsonOperation("Cannot checkAndWrite a value outside array or object")
     }
 
-    private fun sanitizeValue(value: String) = if(value.matches(toSanitizeRegex)) {
-        "'$value'"
-    } else {
-        value
-    }
+    /** If value contains yaml incompatible values it will be surrounded by quotes */
+    private fun sanitizeValue(value: String) =
+        if(value.matches(toSanitizeRegex)) {
+            "'$value'"
+        } else {
+            value
+        }
 }

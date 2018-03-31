@@ -12,7 +12,6 @@ internal class TagReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-
     override fun readUntilToken(tag: TokenType?): JsonToken {
         read()
 

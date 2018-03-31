@@ -11,22 +11,14 @@ internal enum class ChompStyle {
 }
 
 /** Literal style string reader */
-internal open class LiteralStringReader<out P>(
+internal open class LiteralStringReader(
     yamlReader: YamlReaderImpl,
-    parentReader: P,
+    parentReader: LineReader<*>,
     private var jsonTokenConstructor: (String?) -> JsonToken
-) : YamlCharWithParentReader<P>(yamlReader, parentReader)
-        where P : YamlCharReader,
-              P : IsYamlCharWithChildrenReader,
-              P : IsYamlCharWithIndentsReader
+) : YamlCharWithParentReader<LineReader<*>>(yamlReader, parentReader)
 {
-    private val parentIndentCount = this.parentReader.let {
-        if (it is LineReader<*>) {
-            (it.parentReader as IsYamlCharWithIndentsReader).indentCount()
-        } else {
-            it.indentCount()
-        }
-    }
+    private val parentIndentCount =
+        (this.parentReader.parentReader as IsYamlCharWithIndentsReader).indentCount()
 
     protected var storedValue: String = ""
     protected var indentCount: Int? = null

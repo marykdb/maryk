@@ -54,6 +54,12 @@ internal interface IsYamlCharWithIndentsReader {
 
 /** An interface for a Yaml char reader with children so children can call it when it is done*/
 internal interface IsYamlCharWithChildrenReader {
+    /**
+     * To be called by a child when it is done reading.
+     * Set [closeLineReader] to true if it is also done reading the line
+     */
     fun childIsDoneReading(closeLineReader: Boolean)
+
+    /** Returns true if parent is or is within map */
     fun isWithinMap(): Boolean
 }

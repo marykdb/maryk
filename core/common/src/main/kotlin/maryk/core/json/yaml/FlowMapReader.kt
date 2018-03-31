@@ -152,7 +152,10 @@ internal class FlowMapReader<out P>(
     }
 }
 
-/** Creates a FlowMapReader within a YamlCharReader with [tag] as typing. Reads until first token and returns it */
+/**
+ * Creates a FlowMapReader within a YamlCharReader with [tag] as typing.
+ * Reads until first token and returns it
+ */
 internal fun <P> P.flowMapReader(tag: TokenType?): JsonToken
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,

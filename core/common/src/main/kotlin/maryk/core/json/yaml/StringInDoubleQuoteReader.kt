@@ -119,6 +119,11 @@ private sealed class SkipCharType {
     }
 }
 
+/**
+ * Creates a double quote reader and returns first found token.
+ * Pass [tag] to set type on Value.
+ * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
+ */
 fun <P> P.doubleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken
             where P : IsYamlCharWithChildrenReader,
                   P : YamlCharReader,

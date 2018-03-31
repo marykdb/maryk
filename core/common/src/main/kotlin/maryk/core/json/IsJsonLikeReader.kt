@@ -57,6 +57,8 @@ sealed class JsonToken(val name: String) {
 /** For JSON like readers to read String based structures. */
 interface IsJsonLikeReader {
     var currentToken: JsonToken
+    var columnNumber: Int
+    var lineNumber: Int
 
     /** Find the next token */
     fun nextToken(): JsonToken

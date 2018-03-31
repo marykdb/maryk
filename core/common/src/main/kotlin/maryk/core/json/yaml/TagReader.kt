@@ -12,7 +12,7 @@ internal class TagReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         read()
 
         var prefix = ""
@@ -39,6 +39,7 @@ internal class TagReader<out P>(
 
         this.parentReader.childIsDoneReading(false)
         return this.parentReader.continueIndentLevel(
+            extraIndent,
             this.yamlReader.resolveTag(prefix, newTag)
         )
     }
@@ -49,11 +50,11 @@ internal class TagReader<out P>(
     }
 }
 
-internal fun <P> P.tagReader()
+internal fun <P> P.tagReader(extraIndent: Int)
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
               P : IsYamlCharWithIndentsReader =
     TagReader(this.yamlReader, this).let {
         this.currentReader = it
-        it.readUntilToken()
+        it.readUntilToken(extraIndent)
     }

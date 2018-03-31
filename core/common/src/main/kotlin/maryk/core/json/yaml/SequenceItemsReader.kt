@@ -19,7 +19,7 @@ internal class SequenceItemsReader<out P>(
 {
     private var isStarted = false
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
             this.lineReader(this, this.lastChar.isLineBreak())
 
@@ -33,20 +33,21 @@ internal class SequenceItemsReader<out P>(
                 yamlReader, this
             ).let {
                 this.currentReader = it
-                it.readUntilToken()
+                it.readUntilToken(0)
             }
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken {
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken {
         @Suppress("UNCHECKED_CAST")
         return MapItemsReader(
             this.yamlReader,
             this.currentReader as P,
-            isExplicitMap
+            isExplicitMap,
+            startedAtIndent
         ).let {
             this.currentReader = it
-            it.readUntilToken(tag)
+            it.readUntilToken(0, tag)
         }
     }
 
@@ -58,10 +59,10 @@ internal class SequenceItemsReader<out P>(
                   P : IsYamlCharWithIndentsReader {
         @Suppress("UNCHECKED_CAST")
         (this as P).lineReader(parentReader, true)
-        return this.currentReader.readUntilToken(tag)
+        return this.currentReader.readUntilToken(0, tag)
     }
 
-    override fun continueIndentLevel(tag: TokenType?): JsonToken {
+    override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         if (this.lastChar != '-') {
             val indentCount = this.indentCount()
             if (this.parentReader.isWithinMap() && this.parentReader.indentCount() == indentCount) {
@@ -80,14 +81,14 @@ internal class SequenceItemsReader<out P>(
                 yamlReader, this
             ).let {
                 this.currentReader = it
-                it.readUntilToken()
+                it.readUntilToken(0)
             }
         }
 
         read()
 
         return this.lineReader(this, false)
-            .readUntilToken(tag)
+            .readUntilToken(0, tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
@@ -108,7 +109,7 @@ internal class SequenceItemsReader<out P>(
                 tokenToReturn()
             } else {
                 this.yamlReader.setUnclaimedIndenting(null)
-                this.continueIndentLevel(null)
+                this.continueIndentLevel(0, null)
             }
         }
 

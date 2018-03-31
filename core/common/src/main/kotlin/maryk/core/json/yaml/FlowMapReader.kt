@@ -20,7 +20,7 @@ internal class FlowMapReader<out P>(
     private var state = FlowMapState.START
     private val fieldNames = mutableListOf<String?>()
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         val stateAtStart = this.state
         if (this.state == FlowMapState.EXPLICIT_KEY) {
             this.state = FlowMapState.KEY
@@ -42,8 +42,8 @@ internal class FlowMapReader<out P>(
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
-                    '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
+                    '\'' -> this.singleQuoteString(tag, 0, this::jsonTokenCreator)
+                    '\"' -> this.doubleQuoteString(tag, 0, this::jsonTokenCreator)
                     '[' -> {
                         this.flowSequenceReader(tag)
                             .let(this::checkComplexFieldAndReturn)
@@ -52,17 +52,17 @@ internal class FlowMapReader<out P>(
                         this.flowMapReader(tag)
                             .let(this::checkComplexFieldAndReturn)
                     }
-                    '!' -> this.tagReader()
-                    '&' -> this.anchorReader()
+                    '!' -> this.tagReader(0)
+                    '&' -> this.anchorReader(extraIndent)
                     '*' -> {
                         this.state = FlowMapState.SEPARATOR
-                        this.aliasReader(PlainStyleMode.FLOW_MAP)
+                        this.aliasReader(PlainStyleMode.FLOW_MAP, extraIndent)
                     }
                     '-' -> {
                         read()
                         if (this.lastChar.isWhitespace()) {
                             throw InvalidYamlContent("Cannot have regular sequence items in a flow map")
-                        } else this.plainStringReader("-", tag, PlainStyleMode.FLOW_MAP, this::jsonTokenCreator)
+                        } else this.plainStringReader("-", tag, PlainStyleMode.FLOW_MAP, 0, this::jsonTokenCreator)
                     }
                     ',' -> {
                         if(this.state != FlowMapState.SEPARATOR) {
@@ -70,11 +70,11 @@ internal class FlowMapReader<out P>(
                         }
 
                         read()
-                        this.readUntilToken()
+                        this.readUntilToken(extraIndent)
                     }
                     ':' -> {
                         read()
-                        this.readUntilToken()
+                        this.readUntilToken(extraIndent)
                     }
                     ']' -> {
                         read() // This should be handled in Array reader. Otherwise incorrect content
@@ -101,11 +101,11 @@ internal class FlowMapReader<out P>(
                         } else if(this.lastChar == ',' || this.lastChar == ':') {
                             this.jsonTokenCreator(null, false, tag)
                         } else {
-                            this.plainStringReader("?", tag, PlainStyleMode.FLOW_MAP, this::jsonTokenCreator)
+                            this.plainStringReader("?", tag, PlainStyleMode.FLOW_MAP, 0, this::jsonTokenCreator)
                         }
                     }
                     '|', '>', '@', '`' -> throw InvalidYamlContent("Unsupported character $lastChar in flow map")
-                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_MAP, this::jsonTokenCreator)
+                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_MAP, 0, this::jsonTokenCreator)
                 }
             }
         }
@@ -113,7 +113,7 @@ internal class FlowMapReader<out P>(
 
     private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?) = when(this.state) {
         FlowMapState.START, FlowMapState.STOP -> throw Exception("Map cannot create tokens in state $state")
-        FlowMapState.EXPLICIT_KEY -> this.readUntilToken()
+        FlowMapState.EXPLICIT_KEY -> this.readUntilToken(0)
         FlowMapState.KEY, FlowMapState.SEPARATOR -> {
             this.state = FlowMapState.VALUE
             this.checkAndCreateFieldName(value, isPlainStringReader)
@@ -128,7 +128,7 @@ internal class FlowMapReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? = null
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? = null
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
@@ -166,6 +166,6 @@ internal fun <P> P.flowMapReader(tag: TokenType?): JsonToken
         parentReader = this
     ).let {
         this.currentReader = it
-        it.readUntilToken(tag)
+        it.readUntilToken(0, tag)
     }
 }

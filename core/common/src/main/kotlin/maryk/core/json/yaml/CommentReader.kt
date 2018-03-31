@@ -13,7 +13,7 @@ internal class CommentReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         while(!this.lastChar.isLineBreak()) {
             read()
         }
@@ -22,7 +22,7 @@ internal class CommentReader<out P>(
         @Suppress("UNCHECKED_CAST")
         return IndentReader(this.yamlReader, this.currentReader as P).let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(0)
         }
     }
 

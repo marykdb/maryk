@@ -23,9 +23,9 @@ internal open class LiteralStringReader(
     protected var storedValue: String = ""
     protected var indentCount: Int? = null
     protected var foundLineBreaks: Int = 0
-    protected var chompStyle: ChompStyle = ChompStyle.CLIP
+    private var chompStyle: ChompStyle = ChompStyle.CLIP
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         // Read options and end at first line break
         readStartForOptionsAndReturnIndent("Literal |")
 

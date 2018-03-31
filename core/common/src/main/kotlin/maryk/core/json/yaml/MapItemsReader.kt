@@ -21,7 +21,7 @@ internal class MapItemsReader<out P>(
     private var isStarted = false
     private val fieldNames = mutableListOf<String?>()
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
             this.lineReader(this, this.lastChar.isLineBreak(), this.isExplicitMap)
 
@@ -35,12 +35,12 @@ internal class MapItemsReader<out P>(
                 yamlReader, this
             ).let {
                 this.currentReader = it
-                it.readUntilToken()
+                it.readUntilToken(extraIndent = 0)
             }
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? = null
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? = null
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
@@ -53,11 +53,11 @@ internal class MapItemsReader<out P>(
                   P : IsYamlCharWithIndentsReader {
         @Suppress("UNCHECKED_CAST")
         (this as P).lineReader(parentReader, true, this.isExplicitMap)
-        return this.currentReader.readUntilToken(tag)
+        return this.currentReader.readUntilToken(0, tag)
     }
 
-    override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        return lineReader(this, true, this.isExplicitMap).readUntilToken(tag)
+    override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
+        return lineReader(this, true, this.isExplicitMap).readUntilToken(extraIndent, tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
@@ -77,7 +77,7 @@ internal class MapItemsReader<out P>(
                 tokenToReturn()
             } else {
                 this.yamlReader.setUnclaimedIndenting(null)
-                this.continueIndentLevel(tag)
+                this.continueIndentLevel(0, tag)
             }
         }
 

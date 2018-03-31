@@ -15,7 +15,7 @@ internal class StringInSingleQuoteReader<out P>(
     private var aQuoteFound = false
     private var storedValue: String? = ""
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         loop@while(true) {
             if(lastChar == '\'') {
                 if (this.aQuoteFound) {
@@ -54,7 +54,7 @@ internal class StringInSingleQuoteReader<out P>(
  * Pass [tag] to set type on Value.
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-fun <P> P.singleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken
+fun <P> P.singleQuoteString(tag: TokenType?, extraIndent: Int, jsonTokenCreator: JsonTokenCreator): JsonToken
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
               P : IsYamlCharWithIndentsReader {
@@ -63,6 +63,6 @@ fun <P> P.singleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator)
         jsonTokenCreator(it, false, tag)
     }).let {
         this.currentReader = it
-        it.readUntilToken(tag)
+        it.readUntilToken(extraIndent, tag)
     }
 }

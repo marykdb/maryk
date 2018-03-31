@@ -18,19 +18,20 @@ internal class IndentReader<out P>(
               P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
     private var indentCounter = -1
 
-    override fun continueIndentLevel(tag: TokenType?) =
+    override fun continueIndentLevel(extraIndent: Int, tag: TokenType?) =
         this.lineReader(this, true, false)
-            .readUntilToken(tag)
+            .readUntilToken(extraIndent, tag)
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? =
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? =
         @Suppress("UNCHECKED_CAST")
         MapItemsReader(
             this.yamlReader,
             this,
-            isExplicitMap
+            isExplicitMap,
+            indentToAdd = startedAtIndent
         ).let {
             this.currentReader = it
-            it.readUntilToken(tag)
+            it.readUntilToken(0, tag)
         }
 
     override fun isWithinMap() = false
@@ -53,9 +54,9 @@ internal class IndentReader<out P>(
                 // found right level so continue
                 this.yamlReader.setUnclaimedIndenting(null)
                 if (it is IndentReader<*>) {
-                    it.continueIndentLevel(null)
+                    it.continueIndentLevel(0, null)
                 } else {
-                    it.readUntilToken()
+                    it.readUntilToken(extraIndent = 0)
                 }
             } else {
                 it.endIndentLevel(indentCount, tag, null)
@@ -63,7 +64,7 @@ internal class IndentReader<out P>(
         }
     }
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 
         if (this.indentCounter == -1) {
@@ -76,7 +77,7 @@ internal class IndentReader<out P>(
 
         val parentIndentCount = this.parentReader.indentCount()
         return when(currentIndentCount) {
-            parentIndentCount -> this.parentReader.continueIndentLevel(tag)
+            parentIndentCount -> this.parentReader.continueIndentLevel(extraIndent, tag)
             in 0 until parentIndentCount -> {
                 this.parentReader.childIsDoneReading(false)
                 this.parentReader.endIndentLevel(currentIndentCount, tag, null)

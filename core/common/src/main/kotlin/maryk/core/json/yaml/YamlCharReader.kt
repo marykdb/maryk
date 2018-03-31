@@ -8,7 +8,7 @@ internal abstract class YamlCharReader(
     internal val yamlReader: YamlReaderImpl
 ) : IsYamlReader by yamlReader {
     /** Reads Yaml until next found Token */
-    abstract fun readUntilToken(tag: TokenType? = null): JsonToken
+    abstract fun readUntilToken(extraIndent: Int, tag: TokenType? = null): JsonToken
     /** Handles reader interuptions */
     abstract fun handleReaderInterrupt(): JsonToken
 }
@@ -30,7 +30,7 @@ internal interface IsYamlCharWithIndentsReader {
     fun indentCountForChildren(): Int
 
     /** Continue on same indent level with this reader */
-    fun continueIndentLevel(tag: TokenType?): JsonToken
+    fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken
 
     /** Continue on a deeper indent level below this reader with [parentReader] */
     fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
@@ -46,7 +46,7 @@ internal interface IsYamlCharWithIndentsReader {
     ): JsonToken
 
     /** Signal reader a map key was found so this indent level expects maps */
-    fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken?
+    fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken?
 
     /** Checks if field name was set or otherwise throws error */
     fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean): JsonToken.FieldName

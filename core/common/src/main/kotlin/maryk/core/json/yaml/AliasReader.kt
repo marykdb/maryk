@@ -15,7 +15,7 @@ internal class AliasReader<out P>(
 {
     private var alias = ""
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         read()
 
         val forbiddenChars = when(this.mode) {
@@ -50,11 +50,11 @@ internal class AliasReader<out P>(
 }
 
 /** Creates an alias reader within scope of YamlCharReader with [mode] and returns first found token */
-internal fun <P> P.aliasReader(mode: PlainStyleMode)
+internal fun <P> P.aliasReader(mode: PlainStyleMode, extraIndent: Int)
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
               P : IsYamlCharWithIndentsReader =
     AliasReader(this.yamlReader, this, mode).let {
         this.currentReader = it
-        it.readUntilToken()
+        it.readUntilToken(extraIndent)
     }

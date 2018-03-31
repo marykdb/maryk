@@ -235,4 +235,24 @@ class MapItemsReaderTest {
             assertEndDocument()
         }
     }
+
+    @Test
+    fun read_indented_map_in_array() {
+        createMarykYamlReader("""
+        |  -        index: 0
+        |           name: string
+        |  - test
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("index")
+            assertValue(0, ValueType.Int)
+            assertFieldName("name")
+            assertValue("string")
+            assertEndObject()
+            assertValue("test")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
 }

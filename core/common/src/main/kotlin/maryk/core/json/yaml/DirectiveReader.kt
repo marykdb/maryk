@@ -16,7 +16,7 @@ internal class DirectiveReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         var foundDirective = ""
         while(!this.lastChar.isLineBreak()) {
             foundDirective += lastChar
@@ -47,7 +47,7 @@ internal class DirectiveReader<out P>(
         }
 
         this.parentReader.childIsDoneReading(false)
-        return this.parentReader.readUntilToken()
+        return this.parentReader.readUntilToken(0)
     }
 
     override fun handleReaderInterrupt(): JsonToken {

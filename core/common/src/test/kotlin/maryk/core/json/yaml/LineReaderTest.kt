@@ -18,14 +18,20 @@ class LineReaderTest {
     @Test
     fun fail_on_directive() {
         createYamlReader("  %test").apply {
-            val e = assertInvalidYaml()
-            println(e)
+            assertInvalidYaml()
         }
     }
 
     @Test
     fun fail_on_end_map() {
         createYamlReader("  ]").apply {
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun fail_on_comma() {
+        createYamlReader("  ,").apply {
             assertInvalidYaml()
         }
     }

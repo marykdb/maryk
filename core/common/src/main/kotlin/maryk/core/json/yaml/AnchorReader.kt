@@ -16,7 +16,7 @@ internal class AnchorReader<out P>(
     private var storedValues = mutableListOf<JsonToken>()
     private var tokenStartDepth: Int? = null
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         read()
 
         while(!this.lastChar.isWhitespace()) {
@@ -32,7 +32,7 @@ internal class AnchorReader<out P>(
         this.yamlReader.recordAnchors(this)
 
         this.parentReader.childIsDoneReading(false)
-        return this.parentReader.continueIndentLevel(null)
+        return this.parentReader.continueIndentLevel(extraIndent, null)
     }
 
     override fun handleReaderInterrupt(): JsonToken {
@@ -59,11 +59,11 @@ internal class AnchorReader<out P>(
 }
 
 /** Constructs an anchor reader within scope of YamlReader and returns first found token */
-internal fun <P> P.anchorReader(): JsonToken
+internal fun <P> P.anchorReader(extraIndent: Int): JsonToken
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
               P : IsYamlCharWithIndentsReader =
     AnchorReader(this.yamlReader, this).let {
         this.currentReader = it
-        it.readUntilToken()
+        it.readUntilToken(extraIndent)
     }

@@ -16,7 +16,7 @@ internal class DocumentReader(
     private var contentWasFound = false
     private var indentCount: Int = 0
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         if(this.lastChar == '\u0000') {
             this.read()
         }
@@ -32,7 +32,7 @@ internal class DocumentReader(
 
                 DirectiveReader(this.yamlReader, this).let {
                     this.currentReader = it
-                    it.readUntilToken()
+                    it.readUntilToken(0)
                 }
             }
             '-' -> {
@@ -58,7 +58,7 @@ internal class DocumentReader(
                                 } else {
                                     // First found document open before content
                                     this.finishedWithDirectives = true
-                                    this.readUntilToken()
+                                    this.readUntilToken(0)
                                 }
                             }
                             else -> plainStringReader("--")
@@ -72,7 +72,7 @@ internal class DocumentReader(
                             parentReader = this
                         ).let {
                             this.currentReader = it
-                            it.readUntilToken(tag)
+                            it.readUntilToken(0, tag)
                         }
                     }
                     else -> plainStringReader("-")
@@ -106,12 +106,12 @@ internal class DocumentReader(
             '#' -> {
                 CommentReader(this.yamlReader, this).let {
                     this.currentReader = it
-                    it.readUntilToken()
+                    it.readUntilToken(0)
                 }
             }
             '\n' -> {
                 read()
-                this.readUntilToken()
+                this.readUntilToken(0)
             }
             ' ' -> {
                 IndentReader(
@@ -119,29 +119,30 @@ internal class DocumentReader(
                     yamlReader = this.yamlReader
                 ).let {
                     this.currentReader = it
-                    it.readUntilToken()
+                    it.readUntilToken(0)
                 }
             } else -> {
                 if (this.finishedWithDirectives == false) {
                     throw InvalidYamlContent("Directives has to end with an start document --- separator")
                 }
                 return this.lineReader(this, true)
-                    .readUntilToken(tag)
+                    .readUntilToken(0, tag)
             }
         }.also {
             this.contentWasFound = true
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken {
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken {
         @Suppress("UNCHECKED_CAST")
         return MapItemsReader(
             this.yamlReader,
             this,
-            isExplicitMap
+            isExplicitMap,
+            indentToAdd = startedAtIndent
         ).let {
             this.currentReader = it
-            it.readUntilToken(tag)
+            it.readUntilToken(0, tag)
         }
     }
 
@@ -155,14 +156,14 @@ internal class DocumentReader(
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
         @Suppress("UNCHECKED_CAST")
-        return (this as P).lineReader(parentReader, true).readUntilToken(tag)
+        return (this as P).lineReader(parentReader, true).readUntilToken(0, tag)
     }
 
-    override fun continueIndentLevel(tag: TokenType?): JsonToken {
-        if (this.indentCount == 0) {
-            return readUntilToken(tag)
+    override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
+        return if (this.indentCount == 0) {
+            readUntilToken(extraIndent, tag)
         } else {
-            return newIndentLevel(this.indentCount, this, tag)
+            newIndentLevel(this.indentCount, this, tag)
         }
     }
 
@@ -206,7 +207,7 @@ internal class DocumentReader(
             JsonToken.Value(it, ValueType.String)
         }.let {
             this.currentReader = it
-            it.readUntilToken()
+            it.readUntilToken(0)
         }
     }
 

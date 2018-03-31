@@ -21,14 +21,14 @@ internal class PlainStringReader<out P>(
 {
     private var storedValue: String = startWith
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         loop@while(true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
                     this.storedValue = this.storedValue.trimEnd()
                     return IndentReader(this.yamlReader, this).let {
                         this.currentReader = it
-                        it.readUntilToken()
+                        it.readUntilToken(0)
                     }
                 }
                 ':' -> {
@@ -44,7 +44,7 @@ internal class PlainStringReader<out P>(
                             }
 
                             // If new map return Object Start and push new token
-                            this.parentReader.foundMap(false, tag)?.let {
+                            this.parentReader.foundMap(false, tag, extraIndent)?.let {
                                 this.yamlReader.pushToken(this.createToken())
                                 return it
                             }
@@ -60,7 +60,7 @@ internal class PlainStringReader<out P>(
                     if (this.storedValue.last() == ' ') {
                         return CommentReader(this.yamlReader, this).let {
                             this.currentReader = it
-                            it.readUntilToken()
+                            it.readUntilToken(0)
                         }
                     }
 
@@ -99,11 +99,11 @@ internal class PlainStringReader<out P>(
     override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?)
             where P : YamlCharReader,
                   P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader = this.continueIndentLevel(tag)
+                  P : IsYamlCharWithIndentsReader = this.continueIndentLevel(0, tag)
 
-    override fun continueIndentLevel(tag: TokenType?): JsonToken {
+    override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         this.storedValue += ' '
-        return this.readUntilToken()
+        return this.readUntilToken(extraIndent)
     }
 
     override fun endIndentLevel(
@@ -145,6 +145,7 @@ internal fun <P> P.plainStringReader(
     startWith: String,
     tag: TokenType?,
     flowMode: PlainStyleMode,
+    extraIndent: Int,
     jsonTokenCreator: JsonTokenCreator
 ) where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
@@ -158,5 +159,5 @@ internal fun <P> P.plainStringReader(
         jsonTokenCreator(it, true, tag)
     }.let {
         this.currentReader = it
-        it.readUntilToken(tag)
+        it.readUntilToken(extraIndent, tag)
     }

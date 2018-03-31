@@ -10,7 +10,7 @@ internal class FoldedStringReader(
     parentReader: LineReader<*>,
     jsonTokenConstructor: (String?) -> JsonToken
 ) : LiteralStringReader(yamlReader, parentReader, jsonTokenConstructor) {
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         // Read options and end at first line break
         readStartForOptionsAndReturnIndent("Folded >")
 

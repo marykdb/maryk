@@ -122,13 +122,13 @@ internal class YamlReaderImpl(
                                 remainder > 0 -> it.endIndentLevel(this.unclaimedIndenting!!, null, null)
                                 remainder == 0 -> {
                                     this.unclaimedIndenting = null
-                                    it.continueIndentLevel(null)
+                                    it.continueIndentLevel(0, null)
                                 }
                                 else -> // Indents are only left over on closing indents so should never be lower
                                     throw InvalidYamlContent("Lower indent found than previous started indents")
                             }
                         } else {
-                            it.readUntilToken()
+                            it.readUntilToken(0)
                         }
                     }
                 }

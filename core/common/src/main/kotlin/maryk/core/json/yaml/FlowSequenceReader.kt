@@ -21,7 +21,7 @@ internal class FlowSequenceReader<out P>(
     private var state = FlowSequenceState.START
     private var cachedCall: (() -> JsonToken)? = null
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         val stateAtStart = this.state
         if (this.state == FlowSequenceState.EXPLICIT_KEY) {
             this.state = FlowSequenceState.KEY
@@ -43,19 +43,19 @@ internal class FlowSequenceReader<out P>(
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
-                    '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
+                    '\'' -> this.singleQuoteString(tag, 0, this::jsonTokenCreator)
+                    '\"' -> this.doubleQuoteString(tag, 0, this::jsonTokenCreator)
                     '{' -> this.flowMapReader(tag).let(this::checkComplexFieldAndReturn)
                     '[' -> this.flowSequenceReader(tag).let(this::checkComplexFieldAndReturn)
-                    '!' -> this.tagReader()
-                    '&' -> this.anchorReader()
-                    '*' -> this.aliasReader(PlainStyleMode.FLOW_SEQUENCE)
+                    '!' -> this.tagReader(0)
+                    '&' -> this.anchorReader(0)
+                    '*' -> this.aliasReader(PlainStyleMode.FLOW_SEQUENCE, 0)
                     '-' -> {
                         read()
                         if (this.lastChar.isWhitespace()) {
                             throw InvalidYamlContent("Expected a comma")
                         } else {
-                            this.plainStringReader("-", tag, PlainStyleMode.FLOW_SEQUENCE, this::jsonTokenCreator)
+                            this.plainStringReader("-", tag, PlainStyleMode.FLOW_SEQUENCE, 0, this::jsonTokenCreator)
                         }
                     }
                     ',' -> {
@@ -65,7 +65,7 @@ internal class FlowSequenceReader<out P>(
 
                         read()
                         return tokenReturner {
-                            this.readUntilToken()
+                            this.readUntilToken(0)
                         }
                     }
                     ':' -> {
@@ -75,7 +75,7 @@ internal class FlowSequenceReader<out P>(
                         }
 
                         return tokenReturner {
-                            this.readUntilToken()
+                            this.readUntilToken(0)
                         }
                     }
                     ']' -> {
@@ -103,11 +103,11 @@ internal class FlowSequenceReader<out P>(
                             this.jsonTokenCreator(null, false, null)
                         } else {
                             this.state = FlowSequenceState.KEY
-                            this.plainStringReader("?", tag, PlainStyleMode.FLOW_SEQUENCE, this::jsonTokenCreator)
+                            this.plainStringReader("?", tag, PlainStyleMode.FLOW_SEQUENCE, 0, this::jsonTokenCreator)
                         }
                     }
                     '|', '>', '@', '`' -> throw InvalidYamlContent("Unsupported character $lastChar in flow array")
-                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_SEQUENCE, this::jsonTokenCreator)
+                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_SEQUENCE, 0, this::jsonTokenCreator)
                 }
             }
         }
@@ -146,7 +146,7 @@ internal class FlowSequenceReader<out P>(
         FlowSequenceState.EXPLICIT_KEY -> this.startObject(tag)
         FlowSequenceState.VALUE_START -> {
             this.cachedCall = { this.jsonTokenCreator(value, isPlainStringReader, tag) }
-            this.readUntilToken()
+            this.readUntilToken(0)
         }
         FlowSequenceState.KEY -> {
             this.state = FlowSequenceState.MAP_VALUE
@@ -169,7 +169,7 @@ internal class FlowSequenceReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?) =
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int) =
         if (this.state == FlowSequenceState.VALUE_START) {
             startObject(tag)
         } else {
@@ -213,6 +213,6 @@ internal fun <P> P.flowSequenceReader(tag: TokenType?): JsonToken
         parentReader = this
     ).let {
         this.currentReader = it
-        it.readUntilToken(tag)
+        it.readUntilToken(0, tag)
     }
 }

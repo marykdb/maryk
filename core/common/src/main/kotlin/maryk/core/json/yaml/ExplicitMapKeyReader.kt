@@ -23,7 +23,7 @@ internal class ExplicitMapKeyReader<out P>(
     private var state: ExplicitMapState? = null
     private var indentCount: Int = 0
 
-    override fun readUntilToken(tag: TokenType?): JsonToken {
+    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         if (this.state == null) {
             this.state = ExplicitMapState.STARTED
 
@@ -48,7 +48,7 @@ internal class ExplicitMapKeyReader<out P>(
             startsAtNewLine = false
         ).let {
             this.currentReader = it
-            it.readUntilToken().let {
+            it.readUntilToken(extraIndent).let {
                 if (this.state == ExplicitMapState.STARTED) {
                     if (it !is JsonToken.FieldName) {
                         this.yamlReader.pushToken(it)
@@ -80,7 +80,7 @@ internal class ExplicitMapKeyReader<out P>(
                 return it()
             }
 
-            return this.continueIndentLevel(tag)
+            return this.continueIndentLevel(0, tag)
         }
 
         this.parentReader.childIsDoneReading(false)
@@ -125,7 +125,7 @@ internal class ExplicitMapKeyReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?): JsonToken? {
+    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? {
         if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
             this.state = ExplicitMapState.INTERNAL_MAP
             this.yamlReader.pushToken(JsonToken.SimpleStartObject)

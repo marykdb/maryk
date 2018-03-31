@@ -259,4 +259,21 @@ class ExplicitMapKeyReaderTest {
             assertEndDocument()
         }
     }
+
+    @Test
+    fun second_be_explicit_key() {
+        createYamlReader("""
+        | k1: v1
+        | ? k2
+        | : v2
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertFieldName("k2")
+            assertValue("v2")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
 }

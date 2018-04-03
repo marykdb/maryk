@@ -52,12 +52,13 @@ internal class MapItemsReader<out P>(
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
         @Suppress("UNCHECKED_CAST")
-        (this as P).lineReader(parentReader, true, this.isExplicitMap)
-        return this.currentReader.readUntilToken(0, tag)
+        return (this as P).lineReader(parentReader, true, this.isExplicitMap)
+            .readUntilToken(0, tag)
     }
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
-        return lineReader(this, true, this.isExplicitMap).readUntilToken(extraIndent, tag)
+        return lineReader(this, true, this.isExplicitMap)
+            .readUntilToken(extraIndent, tag)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd

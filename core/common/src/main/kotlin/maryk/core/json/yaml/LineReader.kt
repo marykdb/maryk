@@ -11,8 +11,7 @@ internal class LineReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     private var startsAtNewLine: Boolean,
-    private var isExplicitMap: Boolean = false,
-    private var indentToAdd: Int = 0
+    private var isExplicitMap: Boolean = false
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -20,6 +19,7 @@ internal class LineReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
+    private var indentToAdd: Int = 0
     private var hasCompletedValueReading = false
     private var mapKeyFound = false
 
@@ -207,13 +207,8 @@ internal class LineReader<out P>(
     }
 
     override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? {
-        if (this.mapKeyFound && !isExplicitMap) {
-            throw InvalidYamlContent("Already found mapping key. No other : allowed")
-        }
-
-        // break off since already processed
         if (this.mapKeyFound) {
-            return null
+            throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
 
         if (isExplicitMap) {
@@ -253,10 +248,6 @@ internal class LineReader<out P>(
         } else {
             this.currentReader = this
         }
-    }
-
-    override fun handleReaderInterrupt(): JsonToken {
-        return this.parentReader.handleReaderInterrupt()
     }
 }
 

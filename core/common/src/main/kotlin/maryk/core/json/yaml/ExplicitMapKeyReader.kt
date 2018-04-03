@@ -125,7 +125,7 @@ internal class ExplicitMapKeyReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? {
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? {
         if (this.state != ExplicitMapState.INTERNAL_MAP && this.state != ExplicitMapState.COMPLEX) {
             this.state = ExplicitMapState.INTERNAL_MAP
             this.yamlReader.pushToken(JsonToken.SimpleStartObject)

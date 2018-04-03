@@ -44,8 +44,8 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int) =
-        this.parentReader.foundMap(isExplicitMap, tag, 0)
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int) =
+        this.parentReader.foundMap(tag, 0)
 
     override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this

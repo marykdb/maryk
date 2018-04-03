@@ -44,7 +44,7 @@ internal class PlainStringReader<out P>(
                             }
 
                             // If new map return Object Start and push new token
-                            this.parentReader.foundMap(false, tag, extraIndent)?.let {
+                            this.parentReader.foundMap(tag, extraIndent)?.let {
                                 this.yamlReader.pushToken(this.createToken())
                                 return it
                             }

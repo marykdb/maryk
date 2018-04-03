@@ -38,12 +38,11 @@ internal class SequenceItemsReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken {
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken {
         @Suppress("UNCHECKED_CAST")
         return MapItemsReader(
             this.yamlReader,
             this.currentReader as P,
-            isExplicitMap,
             startedAtIndent
         ).let {
             this.currentReader = it

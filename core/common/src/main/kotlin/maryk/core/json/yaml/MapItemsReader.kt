@@ -9,7 +9,6 @@ import maryk.core.json.TokenType
 internal class MapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    private val isExplicitMap: Boolean,
     private val indentToAdd: Int = 0
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
@@ -23,7 +22,7 @@ internal class MapItemsReader<out P>(
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
-            this.lineReader(this, this.lastChar.isLineBreak(), this.isExplicitMap)
+            this.lineReader(this, this.lastChar.isLineBreak())
 
             this.isStarted = true
             return tag?.let {
@@ -40,7 +39,7 @@ internal class MapItemsReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? = null
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? = null
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
@@ -52,12 +51,12 @@ internal class MapItemsReader<out P>(
                   P : IsYamlCharWithChildrenReader,
                   P : IsYamlCharWithIndentsReader {
         @Suppress("UNCHECKED_CAST")
-        return (this as P).lineReader(parentReader, true, this.isExplicitMap)
+        return (this as P).lineReader(parentReader, true)
             .readUntilToken(0, tag)
     }
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
-        return lineReader(this, true, this.isExplicitMap)
+        return lineReader(this, true)
             .readUntilToken(extraIndent, tag)
     }
 

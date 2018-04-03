@@ -169,7 +169,7 @@ internal class FlowSequenceReader<out P>(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int) =
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int) =
         if (this.state == FlowSequenceState.VALUE_START) {
             startObject(tag)
         } else {

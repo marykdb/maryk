@@ -46,7 +46,7 @@ internal interface IsYamlCharWithIndentsReader {
     ): JsonToken
 
     /** Signal reader a map key was found so this indent level expects maps */
-    fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken?
+    fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken?
 
     /** Checks if field name was set or otherwise throws error */
     fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean): JsonToken.FieldName

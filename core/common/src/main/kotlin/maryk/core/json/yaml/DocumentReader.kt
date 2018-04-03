@@ -133,12 +133,11 @@ internal class DocumentReader(
         }
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken {
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken {
         @Suppress("UNCHECKED_CAST")
         return MapItemsReader(
             this.yamlReader,
             this,
-            isExplicitMap,
             indentToAdd = startedAtIndent
         ).let {
             this.currentReader = it

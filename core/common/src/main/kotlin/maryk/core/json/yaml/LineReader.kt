@@ -10,8 +10,7 @@ import maryk.core.json.TokenType
 internal class LineReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    private var startsAtNewLine: Boolean,
-    private var isExplicitMap: Boolean = false
+    private var startsAtNewLine: Boolean
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -104,8 +103,7 @@ internal class LineReader<out P>(
                         this.yamlReader,
                         MapItemsReader(
                             this.yamlReader,
-                            this,
-                            true
+                            this
                         )
                     )
                     throw e
@@ -125,7 +123,7 @@ internal class LineReader<out P>(
                     }
                 }
 
-                this.foundMap(true, tag, indents)?.let {
+                this.foundMap(tag, indents)?.let {
                     @Suppress("UNCHECKED_CAST")
                     this.currentReader = ExplicitMapKeyReader(
                         this.yamlReader,
@@ -193,7 +191,7 @@ internal class LineReader<out P>(
                     }
 
                     val fieldName = this.checkAndCreateFieldName(value, isPlainStringReader)
-                    return this.foundMap(this.isExplicitMap, tag, 0)?.let {
+                    return this.foundMap(tag, 0)?.let {
                         this.yamlReader.pushToken(fieldName)
                         it
                     } ?: fieldName
@@ -206,20 +204,16 @@ internal class LineReader<out P>(
         return createYamlValueToken(value, tag, isPlainStringReader)
     }
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? {
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? {
         if (this.mapKeyFound) {
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
-        }
-
-        if (isExplicitMap) {
-            this.isExplicitMap = isExplicitMap
         }
 
         if(this.parentReader is ExplicitMapKeyReader<*>) {
             this.indentToAdd += 1
         }
         this.mapKeyFound = true
-        return this.parentReader.foundMap(isExplicitMap, tag, startedAtIndent)
+        return this.parentReader.foundMap(tag, startedAtIndent)
     }
 
     override fun endIndentLevel(
@@ -254,17 +248,15 @@ internal class LineReader<out P>(
 /**
  * Creates a LineReader below [parentReader].
  * Set [startsAtNewLine] to true if it was started on a new line.
- * Set [isExplicitMap] to true if LineReader is below explicit map
  */
-internal fun <P> P.lineReader(parentReader: P, startsAtNewLine: Boolean, isExplicitMap: Boolean = false): LineReader<P>
+internal fun <P> P.lineReader(parentReader: P, startsAtNewLine: Boolean): LineReader<P>
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
               P : IsYamlCharWithIndentsReader =
     LineReader(
         yamlReader = yamlReader,
         parentReader = parentReader,
-        startsAtNewLine = startsAtNewLine,
-        isExplicitMap = isExplicitMap
+        startsAtNewLine = startsAtNewLine
     ).apply {
         this.currentReader = this
     }

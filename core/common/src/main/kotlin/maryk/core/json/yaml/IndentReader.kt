@@ -19,15 +19,14 @@ internal class IndentReader<out P>(
     private var indentCounter = -1
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?) =
-        this.lineReader(this, true, false)
+        this.lineReader(this, true)
             .readUntilToken(extraIndent, tag)
 
-    override fun foundMap(isExplicitMap: Boolean, tag: TokenType?, startedAtIndent: Int): JsonToken? =
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? =
         @Suppress("UNCHECKED_CAST")
         MapItemsReader(
             this.yamlReader,
             this,
-            isExplicitMap,
             indentToAdd = startedAtIndent
         ).let {
             this.currentReader = it

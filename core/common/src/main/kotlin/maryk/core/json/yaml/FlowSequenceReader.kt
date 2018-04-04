@@ -47,8 +47,8 @@ internal class FlowSequenceReader<out P>(
                     '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
                     '{' -> this.flowMapReader(tag).let(this::checkComplexFieldAndReturn)
                     '[' -> this.flowSequenceReader(tag).let(this::checkComplexFieldAndReturn)
-                    '!' -> this.tagReader { this.continueIndentLevel(extraIndent, it) }
-                    '&' -> this.anchorReader { this.continueIndentLevel(extraIndent, tag) }
+                    '!' -> this.tagReader { this.readUntilToken(extraIndent, it) }
+                    '&' -> this.anchorReader { this.readUntilToken(extraIndent, tag) }
                     '*' -> this.aliasReader(PlainStyleMode.FLOW_SEQUENCE)
                     '-' -> {
                         read()

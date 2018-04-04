@@ -7,9 +7,7 @@ private val yamlRegEx = Regex("^YAML ([0-9]).([0-9]+)$")
 private val tagRegEx = Regex("^TAG (!|!!|![a-zAZ]+!) ([^ ]+)$")
 
 /**
- * Reads YAML directives
- * Pass [tag] to set type on Value.
- * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
+ * Reads YAML directives and fires [onDone] when done
  */
 internal fun YamlCharReader.directiveReader(onDone: () -> JsonToken): JsonToken {
     var foundDirective = ""

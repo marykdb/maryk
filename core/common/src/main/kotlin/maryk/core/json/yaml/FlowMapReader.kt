@@ -52,8 +52,8 @@ internal class FlowMapReader<out P>(
                         this.flowMapReader(tag)
                             .let(this::checkComplexFieldAndReturn)
                     }
-                    '!' -> this.tagReader { this.continueIndentLevel(extraIndent, it) }
-                    '&' -> this.anchorReader { this.continueIndentLevel(extraIndent, tag) }
+                    '!' -> this.tagReader { this.readUntilToken(extraIndent, it) }
+                    '&' -> this.anchorReader { this.readUntilToken(extraIndent, tag) }
                     '*' -> {
                         this.state = FlowMapState.SEPARATOR
                         this.aliasReader(PlainStyleMode.FLOW_MAP)

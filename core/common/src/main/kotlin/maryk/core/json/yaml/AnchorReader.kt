@@ -27,7 +27,7 @@ internal class AnchorRecorder(
     }
 }
 
-/** Reads an anchor */
+/** Reads an anchor and fires [onDone] when done */
 internal fun YamlCharReader.anchorReader(onDone: () -> JsonToken): JsonToken {
     var anchor = ""
     read()

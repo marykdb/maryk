@@ -6,18 +6,22 @@ import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
-/** Reads Strings encoded with "double quotes" */
-internal class StringInDoubleQuoteReader<out P>(
-    yamlReader: YamlReaderImpl,
-    parentReader: P,
-    private val jsonTokenConstructor: (String?) -> JsonToken
-) : YamlCharWithParentReader<P>(yamlReader, parentReader)
-        where P : YamlCharReader,
-              P : IsYamlCharWithChildrenReader
-{
-    private var foundValue: String? = ""
+/**
+ * Reads a double quote string
+ * Pass [tag] to set type on Value.
+ * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
+ */
+internal fun YamlCharReader.doubleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken {
+    var foundValue: String? = ""
 
-    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
+    fun addCharAndResetSkipChar(value: String): SkipCharType {
+        foundValue += value
+        return SkipCharType.None
+    }
+
+    try {
+        read()
+
         var skipChar: SkipCharType = SkipCharType.None
         loop@while(lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
             skipChar = when (skipChar) {
@@ -63,26 +67,18 @@ internal class StringInDoubleQuoteReader<out P>(
             read()
         }
 
-        currentReader = this.parentReader
-
         try {
-            read()
+            read()  // Skip last double quote and if fails just continue since tag is complete
         } catch (e: ExceptionWhileReadingJson) {
-            this.parentReader.childIsDoneReading(false)
+            this.yamlReader.hasException = true
         }
 
-        return this.jsonTokenConstructor(foundValue)
-    }
-
-    private fun addCharAndResetSkipChar(value: String): SkipCharType {
-        foundValue += value
-        return SkipCharType.None
-    }
-
-    override fun handleReaderInterrupt(): JsonToken {
+        return jsonTokenCreator(foundValue, false, tag)
+    } catch (e: ExceptionWhileReadingJson) {
         throw InvalidYamlContent("Double quoted string was never closed")
     }
 }
+
 
 /** Defines type of Char skipping mode */
 private sealed class SkipCharType {
@@ -116,23 +112,5 @@ private sealed class SkipCharType {
         override fun toCharString(): String {
             return fromCodePoint(chars.joinToString(separator = "").toInt(16))
         }
-    }
-}
-
-/**
- * Creates a double quote reader and returns first found token.
- * Pass [tag] to set type on Value.
- * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
- */
-fun <P> P.doubleQuoteString(tag: TokenType?, extraIndent: Int, jsonTokenCreator: JsonTokenCreator): JsonToken
-            where P : IsYamlCharWithChildrenReader,
-                  P : YamlCharReader,
-                  P : IsYamlCharWithIndentsReader {
-    read()
-    return StringInDoubleQuoteReader(this.yamlReader, this, {
-        jsonTokenCreator(it, false, tag)
-    }).let {
-        this.currentReader = it
-        it.readUntilToken(extraIndent, tag)
     }
 }

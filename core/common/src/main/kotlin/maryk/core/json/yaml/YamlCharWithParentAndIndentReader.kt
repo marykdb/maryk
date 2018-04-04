@@ -21,6 +21,7 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
         this.parentReader.newIndentLevel(indentCount, parentReader, tag)
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
+        this.currentReader = this
         return this.readUntilToken(extraIndent, tag)
     }
 
@@ -43,9 +44,6 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
         )
 
     override fun isWithinMap() = this.parentReader.isWithinMap()
-
-    override fun foundMap(tag: TokenType?, startedAtIndent: Int) =
-        this.parentReader.foundMap(tag, 0)
 
     override fun childIsDoneReading(closeLineReader: Boolean) {
         this.currentReader = this

@@ -2,55 +2,44 @@ package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
-import maryk.core.json.TokenType
 
 private val yamlRegEx = Regex("^YAML ([0-9]).([0-9]+)$")
 private val tagRegEx = Regex("^TAG (!|!!|![a-zAZ]+!) ([^ ]+)$")
 
-/** Reads yaml directives and returns to parent when done */
-internal class DirectiveReader<out P>(
-    yamlReader: YamlReaderImpl,
-    parentReader: P
-) : YamlCharWithParentReader<P>(yamlReader, parentReader)
-        where P : YamlCharReader,
-              P : IsYamlCharWithChildrenReader,
-              P : IsYamlCharWithIndentsReader
-{
-    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
-        var foundDirective = ""
-        while(!this.lastChar.isLineBreak()) {
-            foundDirective += lastChar
-            read()
-        }
-        foundDirective = foundDirective.trimEnd()
+/**
+ * Reads YAML directives
+ * Pass [tag] to set type on Value.
+ * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
+ */
+internal fun YamlCharReader.directiveReader(onDone: () -> JsonToken): JsonToken {
+    var foundDirective = ""
+    while(!this.lastChar.isLineBreak()) {
+        foundDirective += lastChar
+        read()
+    }
+    foundDirective = foundDirective.trimEnd()
 
-        yamlRegEx.matchEntire(foundDirective)?.let {
-            it.groups.let {
-                if (this.yamlReader.version != null) {
-                    throw InvalidYamlContent("Cannot declare yaml version twice")
-                }
-                if (it[1]?.value != "1") {
-                    throw InvalidYamlContent("Unsupported Yaml major version")
-                }
-                this.yamlReader.version = "${it[1]?.value}.${it[2]?.value}"
+    yamlRegEx.matchEntire(foundDirective)?.let {
+        it.groups.let {
+            if (this.yamlReader.version != null) {
+                throw InvalidYamlContent("Cannot declare yaml version twice")
             }
-        }
-
-        tagRegEx.matchEntire(foundDirective)?.let {
-            it.groups.let {
-                // Match should always contain 2 values
-                if (it[1]!!.value in this.yamlReader.tags.keys) {
-                    throw InvalidYamlContent("Tag ${it[1]?.value} is already defined")
-                }
-                this.yamlReader.tags[it[1]!!.value] = it[2]!!.value
+            if (it[1]?.value != "1") {
+                throw InvalidYamlContent("Unsupported Yaml major version")
             }
+            this.yamlReader.version = "${it[1]?.value}.${it[2]?.value}"
         }
-
-        this.parentReader.childIsDoneReading(false)
-        return this.parentReader.readUntilToken(0)
     }
 
-    override fun handleReaderInterrupt(): JsonToken {
-        return this.parentReader.handleReaderInterrupt()
+    tagRegEx.matchEntire(foundDirective)?.let {
+        it.groups.let {
+            // Match should always contain 2 values
+            if (it[1]!!.value in this.yamlReader.tags.keys) {
+                throw InvalidYamlContent("Tag ${it[1]?.value} is already defined")
+            }
+            this.yamlReader.tags[it[1]!!.value] = it[2]!!.value
+        }
     }
+
+    return onDone()
 }

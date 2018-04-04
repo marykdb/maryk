@@ -30,9 +30,8 @@ internal class DocumentReader(
                 this.finishedWithDirectives = false
                 this.read()
 
-                DirectiveReader(this.yamlReader, this).let {
-                    this.currentReader = it
-                    it.readUntilToken(0)
+                this.directiveReader {
+                    this.readUntilToken(0, tag)
                 }
             }
             '-' -> {
@@ -82,7 +81,7 @@ internal class DocumentReader(
                 try {
                     this.read()
                 } catch(e: ExceptionWhileReadingJson) {
-                    plainStringReader("")
+                    return plainStringReader("")
                 }
 
                 when(this.lastChar) {
@@ -90,7 +89,7 @@ internal class DocumentReader(
                         try {
                             this.read()
                         } catch(e: ExceptionWhileReadingJson) {
-                            plainStringReader(".")
+                            return plainStringReader(".")
                         }
                         when(this.lastChar) {
                             '.' -> {
@@ -104,9 +103,8 @@ internal class DocumentReader(
                 }
             }
             '#' -> {
-                CommentReader(this.yamlReader, this).let {
-                    this.currentReader = it
-                    it.readUntilToken(0)
+                this.commentReader {
+                    this.readUntilToken(0, tag)
                 }
             }
             '\n' -> {
@@ -198,15 +196,9 @@ internal class DocumentReader(
 
         val lineReader = LineReader(this.yamlReader, this, true)
 
-        return PlainStringReader(
-            this.yamlReader,
-            lineReader,
-            startWith
-        ) {
-            JsonToken.Value(it, ValueType.String)
-        }.let {
-            this.currentReader = it
-            it.readUntilToken(0)
+        @Suppress("UNCHECKED_CAST")
+        return lineReader.plainStringReader(startWith, null, PlainStyleMode.NORMAL, 0) { value, _, _ ->
+            JsonToken.Value(value, ValueType.String)
         }
     }
 

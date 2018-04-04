@@ -1,68 +1,47 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 
-/** Last char is already at '. Read until next ' */
-internal class StringInSingleQuoteReader<out P>(
-    yamlReader: YamlReaderImpl,
-    parentReader: P,
-    private val jsonTokenConstructor: (String?) -> JsonToken
-) : YamlCharWithParentReader<P>(yamlReader, parentReader)
-        where P : YamlCharReader,
-              P : IsYamlCharWithChildrenReader
-{
-    private var aQuoteFound = false
-    private var storedValue: String? = ""
+/**
+ * Reads a single quoted string.
+ * Pass [tag] to set type on Value.
+ * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
+ */
+internal fun YamlCharReader.singleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken {
+    var aQuoteFound = false
+    var storedValue: String? = ""
 
-    override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
-        loop@while(true) {
-            if(lastChar == '\'') {
-                if (this.aQuoteFound) {
-                    this.storedValue += lastChar
-                    this.aQuoteFound = false
+    try {
+        read() // skip starting quote
+
+        loop@ while (true) {
+            if (lastChar == '\'') {
+                if (aQuoteFound) {
+                    storedValue += lastChar
+                    aQuoteFound = false
                 } else {
-                    this.aQuoteFound = true
+                    aQuoteFound = true
                 }
             } else {
-                if (this.aQuoteFound) {
+                if (aQuoteFound) {
                     break@loop
                 } else {
-                    this.storedValue += lastChar
+                    storedValue += lastChar
                 }
             }
             read()
         }
 
-        this.parentReader.childIsDoneReading(false)
+        return jsonTokenCreator(storedValue, false, tag)
+    } catch (e: ExceptionWhileReadingJson) {
+        this.yamlReader.hasException = true
 
-        return this.jsonTokenConstructor(storedValue)
-    }
-
-    override fun handleReaderInterrupt(): JsonToken {
-        if (this.aQuoteFound) {
-            this.parentReader.childIsDoneReading(false)
-            return this.jsonTokenConstructor(storedValue)
+        if (aQuoteFound) {
+            return jsonTokenCreator(storedValue, false, tag)
         } else {
             throw InvalidYamlContent("Single quoted string was never closed")
         }
-    }
-}
-
-/**
- * Creates a single quote reader and returns first found token.
- * Pass [tag] to set type on Value.
- * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
- */
-fun <P> P.singleQuoteString(tag: TokenType?, extraIndent: Int, jsonTokenCreator: JsonTokenCreator): JsonToken
-        where P : IsYamlCharWithChildrenReader,
-              P : YamlCharReader,
-              P : IsYamlCharWithIndentsReader {
-    read()
-    return StringInSingleQuoteReader(this.yamlReader, this, {
-        jsonTokenCreator(it, false, tag)
-    }).let {
-        this.currentReader = it
-        it.readUntilToken(extraIndent, tag)
     }
 }

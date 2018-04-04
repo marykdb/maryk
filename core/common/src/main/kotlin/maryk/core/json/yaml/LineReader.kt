@@ -19,7 +19,6 @@ internal class LineReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var indentToAdd: Int = 0
-    private var hasCompletedValueReading = false
     private var mapKeyFound = false
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
@@ -36,17 +35,14 @@ internal class LineReader<out P>(
         return when(this.lastChar) {
             '\n', '\r' -> {
                 read()
-                if (this.hasCompletedValueReading) {
-                    this.parentReader.childIsDoneReading(false)
-                }
                 @Suppress("UNCHECKED_CAST")
                 IndentReader(this.yamlReader, this.currentReader as P).let {
                     this.currentReader = it
                     it.readUntilToken(0, tag)
                 }
             }
-            '\'' -> this.singleQuoteString(tag, indents, this::jsonTokenCreator)
-            '\"' -> this.doubleQuoteString(tag, indents, this::jsonTokenCreator)
+            '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
+            '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
             '[' -> this.flowSequenceReader(tag)
             '{' -> this.flowMapReader(tag)
             ',' -> throw InvalidYamlContent("Invalid char $lastChar at this position")
@@ -74,9 +70,9 @@ internal class LineReader<out P>(
                     it.readUntilToken(0)
                 }
             }
-            '!' -> this.tagReader(indents)
-            '&' -> this.anchorReader(extraIndent)
-            '*' -> this.aliasReader(PlainStyleMode.NORMAL, extraIndent)
+            '!' -> this.tagReader { this.continueIndentLevel(extraIndent, it) }
+            '&' -> this.anchorReader { this.continueIndentLevel(extraIndent, tag) }
+            '*' -> this.aliasReader(PlainStyleMode.NORMAL)
             '@', '`' -> throw InvalidYamlContent("Reserved indicators for future use and not supported by this reader")
             '%' -> throw InvalidYamlContent("Directive % indicator not allowed in this position")
             ']' -> throw InvalidYamlContent("Invalid char $lastChar at this position")
@@ -111,16 +107,13 @@ internal class LineReader<out P>(
                 // If it turns out to not be an explicit key make it a Plain String reader
                 if (!this.lastChar.isWhitespace()) {
                     @Suppress("UNCHECKED_CAST")
-                    return PlainStringReader(
-                        this.yamlReader,
-                        this.currentReader as P,
-                        "?"
-                    ) {
-                        this.jsonTokenCreator(it, true, tag)
-                    }.let {
-                        this.currentReader = it
-                        it.readUntilToken(indents)
-                    }
+                    return (this.currentReader as P).plainStringReader(
+                        "?",
+                        tag,
+                        PlainStyleMode.NORMAL,
+                        indents,
+                        this::jsonTokenCreator
+                    )
                 }
 
                 this.foundMap(tag, indents)?.let {
@@ -150,9 +143,8 @@ internal class LineReader<out P>(
                 }
             }
             '#' -> {
-                CommentReader(this.yamlReader, this).let {
-                    this.currentReader = it
-                    it.readUntilToken(0)
+                this.commentReader {
+                    this.readUntilToken(0, tag)
                 }
             }
             else -> this.plainStringReader("", tag, PlainStyleMode.NORMAL, indents, this::jsonTokenCreator)
@@ -230,13 +222,6 @@ internal class LineReader<out P>(
     override fun indentCountForChildren() = this.indentCount()
 
     override fun childIsDoneReading(closeLineReader: Boolean) {
-        when (this.currentReader) {
-            is StringInSingleQuoteReader<*>, is StringInDoubleQuoteReader<*> -> {
-                this.hasCompletedValueReading = true
-            }
-            else -> {}
-        }
-
         if (closeLineReader) {
             this.parentReader.childIsDoneReading(false)
         } else {

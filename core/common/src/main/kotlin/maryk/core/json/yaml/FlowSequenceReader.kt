@@ -43,13 +43,13 @@ internal class FlowSequenceReader<out P>(
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString(tag, 0, this::jsonTokenCreator)
-                    '\"' -> this.doubleQuoteString(tag, 0, this::jsonTokenCreator)
+                    '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
+                    '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
                     '{' -> this.flowMapReader(tag).let(this::checkComplexFieldAndReturn)
                     '[' -> this.flowSequenceReader(tag).let(this::checkComplexFieldAndReturn)
-                    '!' -> this.tagReader(0)
-                    '&' -> this.anchorReader(0)
-                    '*' -> this.aliasReader(PlainStyleMode.FLOW_SEQUENCE, 0)
+                    '!' -> this.tagReader { this.continueIndentLevel(extraIndent, it) }
+                    '&' -> this.anchorReader { this.continueIndentLevel(extraIndent, tag) }
+                    '*' -> this.aliasReader(PlainStyleMode.FLOW_SEQUENCE)
                     '-' -> {
                         read()
                         if (this.lastChar.isWhitespace()) {

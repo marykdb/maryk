@@ -3,7 +3,6 @@ package maryk.core.json.yaml
 import maryk.core.extensions.isLineBreak
 import maryk.core.json.ArrayType
 import maryk.core.json.ExceptionWhileReadingJson
-import maryk.core.json.InvalidJsonContent
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.JsonToken
 import maryk.core.json.MapType
@@ -52,11 +51,11 @@ internal class YamlReaderImpl(
     override var currentReader: YamlCharReader = DocumentReader(this)
 
     private var unclaimedIndenting: Int? = null
-    private var hasException: Boolean = false
+    internal var hasException: Boolean = false
     internal val tags: MutableMap<String, String> = mutableMapOf()
 
-    private val anchorReaders = mutableListOf<AnchorReader<*>>()
-    private val anchorReadersToRemove = mutableListOf<AnchorReader<*>>()
+    private val anchorReaders = mutableListOf<AnchorRecorder>()
+    private val anchorReadersToRemove = mutableListOf<AnchorRecorder>()
 
     private val tokenStack = mutableListOf<JsonToken>()
     private val storedAnchors = mutableMapOf<String, Array<JsonToken>>()
@@ -174,7 +173,8 @@ internal class YamlReaderImpl(
             }
 
             for (it in this.anchorReaders) {
-                it.recordToken(currentToken, this.tokenDepth) {
+                it.recordToken(currentToken, this.tokenDepth) { anchor, tokens ->
+                    this.storedAnchors[anchor.trim()] = tokens
                     this.anchorReadersToRemove.add(it)
                 }
             }
@@ -283,10 +283,6 @@ internal class YamlReaderImpl(
         this.tokenStack.add(token)
     }
 
-    fun storeTokensForAnchor(anchor: String, tokens: Array<JsonToken>) {
-        this.storedAnchors[anchor.trim()] = tokens
-    }
-
     fun getTokensForAlias(alias: String): Array<JsonToken> {
         val trimmedAlias = alias.trim()
         if (trimmedAlias.isEmpty()) {
@@ -296,7 +292,7 @@ internal class YamlReaderImpl(
         return this.storedAnchors[trimmedAlias] ?: throw InvalidYamlContent("Unknown alias *$trimmedAlias")
     }
 
-    fun recordAnchors(anchorReader: AnchorReader<*>) {
+    fun recordAnchors(anchorReader: AnchorRecorder) {
         anchorReader.setTokenStartDepth(this.tokenDepth)
         this.anchorReaders.add(anchorReader)
     }
@@ -322,8 +318,3 @@ private class Merge(
         }
     }
 }
-
-/** Exception for invalid Yaml */
-class InvalidYamlContent internal constructor(
-    description: String
-): InvalidJsonContent(description)

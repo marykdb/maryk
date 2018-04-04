@@ -42,8 +42,8 @@ internal class FlowMapReader<out P>(
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString(tag, 0, this::jsonTokenCreator)
-                    '\"' -> this.doubleQuoteString(tag, 0, this::jsonTokenCreator)
+                    '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
+                    '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
                     '[' -> {
                         this.flowSequenceReader(tag)
                             .let(this::checkComplexFieldAndReturn)
@@ -52,11 +52,11 @@ internal class FlowMapReader<out P>(
                         this.flowMapReader(tag)
                             .let(this::checkComplexFieldAndReturn)
                     }
-                    '!' -> this.tagReader(0)
-                    '&' -> this.anchorReader(extraIndent)
+                    '!' -> this.tagReader { this.continueIndentLevel(extraIndent, it) }
+                    '&' -> this.anchorReader { this.continueIndentLevel(extraIndent, tag) }
                     '*' -> {
                         this.state = FlowMapState.SEPARATOR
-                        this.aliasReader(PlainStyleMode.FLOW_MAP, extraIndent)
+                        this.aliasReader(PlainStyleMode.FLOW_MAP)
                     }
                     '-' -> {
                         read()

@@ -16,51 +16,6 @@ internal class IndentReader<out P>(
               P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
     private var indentCounter = -1
 
-    override fun continueIndentLevel(extraIndent: Int, tag: TokenType?) =
-        this.lineReader(this, true)
-            .readUntilToken(extraIndent, tag)
-
-    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? =
-        @Suppress("UNCHECKED_CAST")
-        MapItemsReader(
-            this.yamlReader,
-            this,
-            indentToAdd = startedAtIndent
-        ).let {
-            this.currentReader = it
-            it.readUntilToken(0, tag)
-        }
-
-    override fun isWithinMap() = false
-
-    override fun endIndentLevel(
-        indentCount: Int,
-        tag: TokenType?,
-        tokenToReturn: (() -> JsonToken)?
-    ): JsonToken {
-        this.parentReader.childIsDoneReading(true)
-
-        tokenToReturn?.let {
-            this.yamlReader.setUnclaimedIndenting(indentCount)
-            return it()
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        (this.currentReader as P).let {
-            return if (it.indentCount() == indentCount) {
-                // found right level so continue
-                this.yamlReader.setUnclaimedIndenting(null)
-                if (it is IndentReader<*>) {
-                    it.continueIndentLevel(0, null)
-                } else {
-                    it.readUntilToken(extraIndent = 0)
-                }
-            } else {
-                it.endIndentLevel(indentCount, tag, null)
-            }
-        }
-    }
-
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 
@@ -90,4 +45,49 @@ internal class IndentReader<out P>(
     override fun indentCount() = this.indentCounter
 
     override fun indentCountForChildren() = this.indentCount()
+
+    override fun continueIndentLevel(extraIndent: Int, tag: TokenType?) =
+        this.lineReader(this, true)
+            .readUntilToken(extraIndent, tag)
+
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ): JsonToken {
+        this.parentReader.childIsDoneReading(true)
+
+        tokenToReturn?.let {
+            this.yamlReader.setUnclaimedIndenting(indentCount)
+            return it()
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        (this.currentReader as P).let {
+            return if (it.indentCount() == indentCount) {
+                // found right level so continue
+                this.yamlReader.setUnclaimedIndenting(null)
+                if (it is IndentReader<*>) {
+                    it.continueIndentLevel(0, null)
+                } else {
+                    it.readUntilToken(extraIndent = 0)
+                }
+            } else {
+                it.endIndentLevel(indentCount, tag, null)
+            }
+        }
+    }
+
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? =
+        @Suppress("UNCHECKED_CAST")
+        MapItemsReader(
+            this.yamlReader,
+            this,
+            indentToAdd = startedAtIndent
+        ).let {
+            this.currentReader = it
+            it.readUntilToken(0, tag)
+        }
+
+    override fun isWithinMap() = false
 }

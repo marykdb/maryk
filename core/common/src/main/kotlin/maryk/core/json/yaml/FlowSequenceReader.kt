@@ -102,7 +102,6 @@ internal class FlowSequenceReader<out P>(
                             this.state = FlowSequenceState.EXPLICIT_KEY
                             this.jsonTokenCreator(null, false, null)
                         } else {
-                            this.state = FlowSequenceState.KEY
                             this.plainStringReader("?", tag, PlainStyleMode.FLOW_SEQUENCE, 0, this::jsonTokenCreator)
                         }
                     }

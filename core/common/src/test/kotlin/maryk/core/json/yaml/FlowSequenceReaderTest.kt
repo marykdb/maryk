@@ -44,13 +44,14 @@ class FlowSequenceReaderTest {
     @Test
     fun read_sequence_items_plain() {
         createYamlReader("""
-            |     - [test1, test2, test3]
+            |     - [test1, test2, test3, ?test4]
         """.trimMargin()).apply {
             assertStartArray()
             assertStartArray()
             assertValue("test1")
             assertValue("test2")
             assertValue("test3")
+            assertValue("?test4")
             assertEndArray()
             assertEndArray()
             assertEndDocument()

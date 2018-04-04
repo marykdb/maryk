@@ -10,9 +10,7 @@ import maryk.core.json.TokenType
 internal class IndentReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
-) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
-    IsYamlCharWithIndentsReader,
-    IsYamlCharWithChildrenReader
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : maryk.core.json.yaml.YamlCharReader,
               P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
               P : maryk.core.json.yaml.IsYamlCharWithIndentsReader {
@@ -82,7 +80,7 @@ internal class IndentReader<out P>(
                 this.parentReader.endIndentLevel(currentIndentCount, tag, null)
             }
             else -> if (currentIndentCount == this.indentCounter){
-                this.parentReader.newIndentLevel(currentIndentCount, this, tag)
+                this.continueIndentLevel(0, tag)
             } else {
                 throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
             }

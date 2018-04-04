@@ -13,13 +13,6 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
         where P : IsYamlCharWithChildrenReader,
               P : YamlCharReader,
               P : IsYamlCharWithIndentsReader {
-
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader =
-        this.parentReader.newIndentLevel(indentCount, parentReader, tag)
-
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         this.currentReader = this
         return this.readUntilToken(extraIndent, tag)

@@ -52,15 +52,6 @@ internal class SequenceItemsReader<out P>(
 
     override fun isWithinMap() = false
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        @Suppress("UNCHECKED_CAST")
-        (this as P).lineReader(parentReader, true)
-        return this.currentReader.readUntilToken(0, tag)
-    }
-
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         if (this.lastChar != '-') {
             val indentCount = this.indentCount()

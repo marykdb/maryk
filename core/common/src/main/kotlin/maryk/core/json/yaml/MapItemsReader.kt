@@ -46,15 +46,6 @@ internal class MapItemsReader<out P>(
 
     override fun isWithinMap() = true
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        @Suppress("UNCHECKED_CAST")
-        return (this as P).lineReader(parentReader, true)
-            .readUntilToken(0, tag)
-    }
-
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         return lineReader(this, true)
             .readUntilToken(extraIndent, tag)

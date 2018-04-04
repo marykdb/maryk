@@ -148,19 +148,12 @@ internal class DocumentReader(
 
     override fun isWithinMap() = false
 
-    override fun <P> newIndentLevel(indentCount: Int, parentReader: P, tag: TokenType?): JsonToken
-            where P : YamlCharReader,
-                  P : IsYamlCharWithChildrenReader,
-                  P : IsYamlCharWithIndentsReader {
-        @Suppress("UNCHECKED_CAST")
-        return (this as P).lineReader(parentReader, true).readUntilToken(0, tag)
-    }
-
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (this.indentCount == 0) {
             readUntilToken(extraIndent, tag)
         } else {
-            newIndentLevel(this.indentCount, this, tag)
+            this.lineReader(this, true)
+                .readUntilToken(0, tag)
         }
     }
 

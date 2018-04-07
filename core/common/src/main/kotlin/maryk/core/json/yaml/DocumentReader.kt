@@ -132,7 +132,6 @@ internal class DocumentReader(
     }
 
     override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken {
-        @Suppress("UNCHECKED_CAST")
         return MapItemsReader(
             this.yamlReader,
             this,

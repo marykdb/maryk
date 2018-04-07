@@ -29,11 +29,8 @@ internal class SequenceItemsReader<out P>(
                 JsonToken.StartArray(sequenceType)
             } ?: JsonToken.SimpleStartArray
         } else {
-            IndentReader(
-                yamlReader, this
-            ).let {
-                this.currentReader = it
-                it.readUntilToken(0)
+            this.newLineReader(true, tag, extraIndent) { value, isPlainString, tagg ->
+                createYamlValueToken(value, tagg, isPlainString)
             }
         }
     }
@@ -54,7 +51,8 @@ internal class SequenceItemsReader<out P>(
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         if (this.lastChar != '-') {
-            val indentCount = this.indentCount()
+            val correction = if(this.parentReader.isWithinMap()) -1 else 0
+            val indentCount = this.indentCount() + correction
             if (this.parentReader.isWithinMap() && this.parentReader.indentCount() == indentCount) {
                 this.yamlReader.setUnclaimedIndenting(indentCount)
                 this.parentReader.childIsDoneReading(false)
@@ -77,8 +75,9 @@ internal class SequenceItemsReader<out P>(
 
         read()
 
-        return this.lineReader(this, false)
-            .readUntilToken(0, tag)
+        return this.newLineReader(false, tag, 0) { value, isPlainString, tagg ->
+            createYamlValueToken(value, tagg, isPlainString)
+        }
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd

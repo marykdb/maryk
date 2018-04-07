@@ -1,15 +1,20 @@
 package maryk.core.json.yaml
 
 import maryk.core.extensions.isLineBreak
+import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 import maryk.core.json.MapType
 import maryk.core.json.TokenType
+
+private enum class MapState {
+    NEW_PAIR, KEY_FOUND
+}
 
 /** Reader for Map Items */
 internal class MapItemsReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    private val indentToAdd: Int = 0
+    private var indentToAdd: Int = 0
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
     IsYamlCharWithIndentsReader,
     IsYamlCharWithChildrenReader
@@ -17,7 +22,9 @@ internal class MapItemsReader<out P>(
               P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
+    private var state: MapState = MapState.KEY_FOUND
     private var isStarted = false
+
     private val fieldNames = mutableListOf<String?>()
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
@@ -30,16 +37,35 @@ internal class MapItemsReader<out P>(
                 JsonToken.StartObject(mapType)
             } ?: JsonToken.SimpleStartObject
         } else {
-            IndentReader(
-                yamlReader, this
-            ).let {
-                this.currentReader = it
-                it.readUntilToken(extraIndent = 0)
-            }
+            this.newLineReader(true, tag, extraIndent, this::jsonTokenCreator)
+//            IndentReader(
+//                yamlReader, this
+//            ).let {
+//                this.currentReader = it
+//                it.readUntilToken(extraIndent = 0)
+//            }
         }
     }
 
-    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? = null
+    override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? {
+        if (startedAtIndent > 0) {
+            return MapItemsReader(
+                this.yamlReader,
+                this,
+                indentToAdd = startedAtIndent
+            ).let {
+                this.currentReader = it
+                it.readUntilToken(0, tag)
+            }
+        }
+
+        if (this.state == MapState.KEY_FOUND) {
+            throw InvalidYamlContent("Already found mapping key. No other : allowed")
+        }
+        this.state = MapState.KEY_FOUND
+        println("🔑 ${this.state}")
+        return null
+    }
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         checkAndCreateFieldName(this.fieldNames, fieldName, isPlainStringReader)
@@ -47,8 +73,51 @@ internal class MapItemsReader<out P>(
     override fun isWithinMap() = true
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
-        return lineReader(this, true)
-            .readUntilToken(extraIndent, tag)
+        this.currentReader = this
+        this.state = MapState.NEW_PAIR
+        println("🆕 ${this.state}")
+
+        return this.newLineReader(true, tag, extraIndent, this::jsonTokenCreator)
+//        return lineReader(this, true)
+//            .readUntilToken(extraIndent, tag)
+    }
+
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken {
+        if (this.state == MapState.KEY_FOUND) {
+            if(this.parentReader is ExplicitMapKeyReader<*>) {
+//                this.indentToAdd -= 1
+            }
+            this.state = MapState.NEW_PAIR
+            return createYamlValueToken(value, tag, isPlainStringReader)
+        }
+
+        while (this.lastChar.isSpacing()) {
+            read()
+        }
+
+        if (this.parentReader is ExplicitMapKeyReader<*> && this.currentReader != this) {
+            return this.checkAndCreateFieldName(value, isPlainStringReader)
+        } else if (this.lastChar == ':' && !this.yamlReader.hasUnclaimedIndenting()) {
+            read()
+            if (this.lastChar.isWhitespace()) {
+                if (this.lastChar.isLineBreak()) {
+                    IndentReader(this.yamlReader, this).let {
+                        this.currentReader = it
+                    }
+                }
+
+                val fieldName = this.checkAndCreateFieldName(value, isPlainStringReader)
+                return this.foundMap(tag, 0)?.let {
+                    this.yamlReader.pushToken(fieldName)
+                    it
+                } ?: fieldName
+            } else {
+                throw InvalidYamlContent("There should be whitespace after :")
+            }
+        }
+
+        this.state = MapState.NEW_PAIR
+        return createYamlValueToken(value, tag, isPlainStringReader)
     }
 
     override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd

@@ -255,4 +255,15 @@ class MapItemsReaderTest {
             assertEndDocument()
         }
     }
+
+    @Test
+    fun fail_on_double_key() {
+        createMarykYamlReader("""
+        |  index: 0: 0
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("index")
+            assertInvalidYaml()
+        }
+    }
 }

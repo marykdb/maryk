@@ -34,8 +34,8 @@ internal class IndentReader<out P>(
                 this.parentReader.childIsDoneReading(false)
                 this.parentReader.endIndentLevel(currentIndentCount, tag, null)
             }
-            else -> if (currentIndentCount == this.indentCounter){
-                this.continueIndentLevel(0, tag)
+            else -> if (currentIndentCount >= this.indentCounter){
+                this.continueIndentLevel(currentIndentCount - this.indentCounter, tag)
             } else {
                 throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
             }

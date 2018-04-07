@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ValueType
 import maryk.core.json.assertEndArray
 import maryk.core.json.assertEndComplexFieldName
 import maryk.core.json.assertEndDocument
@@ -9,6 +10,7 @@ import maryk.core.json.assertStartArray
 import maryk.core.json.assertStartComplexFieldName
 import maryk.core.json.assertStartObject
 import maryk.core.json.assertValue
+import maryk.core.properties.definitions.PropertyDefinitionType
 import kotlin.test.Test
 
 class ExplicitMapKeyReaderTest {
@@ -272,6 +274,49 @@ class ExplicitMapKeyReaderTest {
             assertValue("v1")
             assertFieldName("k2")
             assertValue("v2")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun read_properties() {
+        createMarykYamlReader("""
+        |properties:
+        | ? 0: string
+        | : !String
+        |   indexed: false
+        |   regEx: ha.*
+        | ? 1: model
+        | : !SubModel
+        |   dataModel: SubMarykObject
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("properties")
+            assertStartObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("0")
+            assertValue("string")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertStartObject(PropertyDefinitionType.String)
+            assertFieldName("indexed")
+            assertValue(false, ValueType.Bool)
+            assertFieldName("regEx")
+            assertValue("ha.*")
+            assertEndObject()
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("1")
+            assertValue("model")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertStartObject(PropertyDefinitionType.SubModel)
+            assertFieldName("dataModel")
+            assertValue("SubMarykObject")
+            assertEndObject()
+            assertEndObject()
             assertEndObject()
             assertEndDocument()
         }

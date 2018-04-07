@@ -29,7 +29,7 @@ internal class MapItemsReader<out P>(
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (!this.isStarted) {
-            this.lineReader(this, this.lastChar.isLineBreak())
+//            this.lineReader(this, this.lastChar.isLineBreak())
 
             this.isStarted = true
             return tag?.let {
@@ -37,18 +37,24 @@ internal class MapItemsReader<out P>(
                 JsonToken.StartObject(mapType)
             } ?: JsonToken.SimpleStartObject
         } else {
-            this.newLineReader(true, tag, extraIndent, this::jsonTokenCreator)
-//            IndentReader(
-//                yamlReader, this
-//            ).let {
-//                this.currentReader = it
-//                it.readUntilToken(extraIndent = 0)
-//            }
+            if (this.lastChar.isLineBreak()) {
+                val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
+                val readerIndentCount = this.indentCount()
+                if (currentIndentCount < readerIndentCount) {
+                    return this.endIndentLevel(currentIndentCount, tag, null)
+                } else if (currentIndentCount == readerIndentCount) {
+                    this.continueIndentLevel(extraIndent, tag)
+                } else {
+                    this.newLineReader(true, tag, currentIndentCount - readerIndentCount, this::jsonTokenCreator)
+                }
+            } else {
+                this.newLineReader(this.lastChar.isLineBreak(), tag, extraIndent, this::jsonTokenCreator)
+            }
         }
     }
 
     override fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken? {
-        if (startedAtIndent > 0) {
+        if (startedAtIndent > 1) {
             return MapItemsReader(
                 this.yamlReader,
                 this,
@@ -62,6 +68,7 @@ internal class MapItemsReader<out P>(
         if (this.state == MapState.KEY_FOUND) {
             throw InvalidYamlContent("Already found mapping key. No other : allowed")
         }
+
         this.state = MapState.KEY_FOUND
         println("🔑 ${this.state}")
         return null
@@ -78,8 +85,6 @@ internal class MapItemsReader<out P>(
         println("🆕 ${this.state}")
 
         return this.newLineReader(true, tag, extraIndent, this::jsonTokenCreator)
-//        return lineReader(this, true)
-//            .readUntilToken(extraIndent, tag)
     }
 
     private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?): JsonToken {
@@ -120,9 +125,9 @@ internal class MapItemsReader<out P>(
         return createYamlValueToken(value, tag, isPlainStringReader)
     }
 
-    override fun indentCount() = this.parentReader.indentCountForChildren() + this.indentToAdd
+    override fun indentCount(): Int = this.indentToAdd + if(this.parentReader is MapItemsReader<*>) this.parentReader.indentCount() else this.parentReader.indentCountForChildren()
 
-    override fun indentCountForChildren() = this.indentCount() + 1
+    override fun indentCountForChildren() = this.indentCount() + if(this.state == MapState.KEY_FOUND) 1 else 0
 
     override fun endIndentLevel(
         indentCount: Int,

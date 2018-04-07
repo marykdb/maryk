@@ -106,29 +106,28 @@ internal class YamlReaderImpl(
                 } else if (this.hasException) {
                     this.currentReader.handleReaderInterrupt()
                 } else {
-                    this.currentReader.let {
-                        if (this.unclaimedIndenting != null && it is IsYamlCharWithIndentsReader) {
-                            // Skip stray comments and read until first relevant character
-                            if (this.lastChar == '#') {
-                                while (!this.lastChar.isLineBreak()) {
-                                    read()
-                                }
-                                this.unclaimedIndenting = skipEmptyLinesAndCommentsAndCountIndents()
+                    val reader = this.currentReader
+                    if (this.unclaimedIndenting != null && reader is IsYamlCharWithIndentsReader) {
+                        // Skip stray comments and read until first relevant character
+                        if (this.lastChar == '#') {
+                            while (!this.lastChar.isLineBreak()) {
+                                read()
                             }
-
-                            val remainder = it.indentCount() - this.unclaimedIndenting!!
-                            when {
-                                remainder > 0 -> it.endIndentLevel(this.unclaimedIndenting!!, null, null)
-                                remainder == 0 -> {
-                                    this.unclaimedIndenting = null
-                                    it.continueIndentLevel(0, null)
-                                }
-                                else -> // Indents are only left over on closing indents so should never be lower
-                                    throw InvalidYamlContent("Lower indent found than previous started indents")
-                            }
-                        } else {
-                            it.readUntilToken(0)
+                            this.unclaimedIndenting = skipEmptyLinesAndCommentsAndCountIndents()
                         }
+
+                        val remainder = reader.indentCount() - this.unclaimedIndenting!!
+                        when {
+                            remainder > 0 -> reader.endIndentLevel(this.unclaimedIndenting!!, null, null)
+                            remainder == 0 -> {
+                                this.unclaimedIndenting = null
+                                reader.continueIndentLevel(0, null)
+                            }
+                            else -> // Indents are only left over on closing indents so should never be lower
+                                throw InvalidYamlContent("Lower indent found than previous started indents")
+                        }
+                    } else {
+                        reader.readUntilToken(0)
                     }
                 }
             } catch (e: ExceptionWhileReadingJson) {

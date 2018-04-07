@@ -41,15 +41,16 @@ internal fun <P> P.plainStringReader(
                 '\n', '\r' -> {
                     storedValue = storedValue.trimEnd()
 
-                    val indentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
-                    val currentIndentCount = this.indentCountForChildren()
-                    if (indentCount < currentIndentCount) {
+                    val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
+                    val readerIndentCount = this.indentCountForChildren()
+                    if (currentIndentCount < readerIndentCount) {
                         @Suppress("UNCHECKED_CAST")
                         return when {
-                            indentCount == currentIndentCount -> createToken()
+                            readerIndentCount == currentIndentCount -> createToken()
                             flowMode == PlainStyleMode.FLOW_SEQUENCE -> throw InvalidYamlContent("Missing a comma")
                             flowMode == PlainStyleMode.FLOW_MAP -> throw InvalidYamlContent("Did not close map")
-                            else -> this.endIndentLevel(indentCount, tag) {
+//                            readerIndentCount == this.indentCount() -> this.readUntilToken(0, tag)
+                            else -> this.endIndentLevel(currentIndentCount, tag) {
                                 createToken()
                             }
                         }

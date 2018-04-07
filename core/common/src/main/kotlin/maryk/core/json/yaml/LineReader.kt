@@ -268,9 +268,7 @@ internal fun <P> P.newLineReader(startsAtNewLine: Boolean, tag: TokenType?, extr
     }
 
     val indents = if (!startsAtNewLine) {
-        skipWhiteSpace().let {
-            if (it == 1) 0 else it
-        }
+        skipWhiteSpace()
     } else {
 //        startsAtNewLine = false
         skipWhiteSpace()
@@ -281,11 +279,11 @@ internal fun <P> P.newLineReader(startsAtNewLine: Boolean, tag: TokenType?, extr
         '\n', '\r' -> {
             read()
             val indentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
-            val currentIndentCount = this.indentCountForChildren()
+            val currentIndentCount = this.indentCount()
             if (indentCount < currentIndentCount) {
                 return this.endIndentLevel(indentCount, tag, null)
             } else {
-                this.newLineReader(true, tag, indentCount - currentIndentCount, jsonTokenCreator)
+                this.newLineReader(true, tag, this.indentCount() - indentCount, jsonTokenCreator)
             }
         }
         '\'' -> this.singleQuoteString(tag, jsonTokenCreator)

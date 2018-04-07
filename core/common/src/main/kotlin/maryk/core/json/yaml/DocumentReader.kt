@@ -123,8 +123,9 @@ internal class DocumentReader(
                 if (this.finishedWithDirectives == false) {
                     throw InvalidYamlContent("Directives has to end with an start document --- separator")
                 }
-                return this.lineReader(this, true)
-                    .readUntilToken(0, tag)
+                return this.newLineReader(true, tag, 0) { value, isPlainString, tagg ->
+                    createYamlValueToken(value, tagg, isPlainString)
+                }
             }
         }.also {
             this.contentWasFound = true

@@ -126,7 +126,7 @@ internal class ExplicitMapKeyReader(
         return null
     }
 
-    internal fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndent: Int): JsonToken {
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndent: Int): JsonToken {
         while (this.lastChar.isSpacing()) {
             read()
         }

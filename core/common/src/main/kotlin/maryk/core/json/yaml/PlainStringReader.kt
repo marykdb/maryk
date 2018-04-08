@@ -46,14 +46,8 @@ internal fun <P> P.plainStringReader(
                     val readerIndentCount = this.indentCount() + extraIndent + if (this is MapItemsReader<*>) 1 else 0
 
                     if (currentIndentCount < readerIndentCount) {
-                        @Suppress("UNCHECKED_CAST")
-                        return when {
-                            readerIndentCount == currentIndentCount -> createToken()
-                            flowMode == PlainStyleMode.FLOW_SEQUENCE -> throw InvalidYamlContent("Missing a comma")
-                            flowMode == PlainStyleMode.FLOW_MAP -> throw InvalidYamlContent("Did not close map")
-                            else -> this.endIndentLevel(currentIndentCount, tag) {
-                                createToken()
-                            }
+                        return this.endIndentLevel(currentIndentCount, tag) {
+                            createToken()
                         }
                     } else {
                         storedValue += ' '

@@ -111,9 +111,7 @@ internal class MapItemsReader<out P>(
             read()
         }
 
-        if (this.parentReader is ExplicitMapKeyReader && this.currentReader != this) {
-            return this.checkAndCreateFieldName(value, isPlainStringReader)
-        } else if (this.lastChar == ':' && !this.yamlReader.hasUnclaimedIndenting()) {
+        if (this.lastChar == ':' && !this.yamlReader.hasUnclaimedIndenting()) {
             read()
             if (this.lastChar.isWhitespace()) {
                 if (!this.lastChar.isLineBreak()) {
@@ -131,10 +129,10 @@ internal class MapItemsReader<out P>(
             }
         } else if (this.state == MapState.KEY_FOUND) {
             return createYamlValueToken(value, tag, isPlainStringReader)
+        } else {
+            this.yamlReader.pushToken(createYamlValueToken(null, ValueType.Null, false))
+            return this.checkAndCreateFieldName(value, isPlainStringReader)
         }
-
-        this.yamlReader.pushToken(createYamlValueToken(null, ValueType.Null, false))
-        return this.checkAndCreateFieldName(value, isPlainStringReader)
     }
 
     override fun indentCount(): Int = this.indentToAdd + this.parentReader.indentCount()

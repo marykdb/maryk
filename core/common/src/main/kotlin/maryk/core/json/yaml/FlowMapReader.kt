@@ -12,7 +12,7 @@ private enum class FlowMapState {
 internal class FlowMapReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    val indentToAdd: Int
+    private val indentToAdd: Int
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
               P : IsYamlCharWithIndentsReader
@@ -110,6 +110,13 @@ internal class FlowMapReader<out P>(
             }
         }
     }
+
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ) =
+        throw InvalidYamlContent("Did not close map")
 
     private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndent: Int) = when(this.state) {
         FlowMapState.START, FlowMapState.STOP -> throw Exception("Map cannot create tokens in state $state")

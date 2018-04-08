@@ -100,13 +100,14 @@ internal class SequenceItemsReader<out P>(
         if (indentCount == this.indentCount()) {
             // this reader should handle the read
             this.currentReader = this
-            return if (tokenToReturn != null) {
+
+            tokenToReturn?.let {
                 this.yamlReader.setUnclaimedIndenting(indentCount)
-                tokenToReturn()
-            } else {
-                this.yamlReader.setUnclaimedIndenting(null)
-                this.continueIndentLevel(0, null)
+                return it()
             }
+
+            this.yamlReader.setUnclaimedIndenting(null)
+            this.continueIndentLevel(0, null)
         }
 
         return if (indentToAdd > 0) {

@@ -153,7 +153,7 @@ internal class DocumentReader(
     }
 
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
-        throw InvalidYamlContent("FieldNames are only allowed within maps")
+        throw Exception("FieldNames are only allowed within maps")
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (this.indentCount == 0) {

@@ -16,13 +16,6 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
         return this.readUntilToken(extraIndent, tag)
     }
 
-    override fun endIndentLevel(
-        indentCount: Int,
-        tag: TokenType?,
-        tokenToReturn: (() -> JsonToken)?
-    ) =
-        this.readUntilToken(0, tag)
-
     override fun indentCount() = this.parentReader.indentCount()
 
     @Suppress("UNCHECKED_CAST")
@@ -31,9 +24,4 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
             fieldName,
             isPlainStringReader
         )
-
-    override fun handleReaderInterrupt(): JsonToken {
-        this.currentReader = this.parentReader
-        return parentReader.handleReaderInterrupt()
-    }
 }

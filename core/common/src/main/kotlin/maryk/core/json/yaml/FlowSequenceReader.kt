@@ -13,7 +13,7 @@ private enum class FlowSequenceState {
 internal class FlowSequenceReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
-    val indentToAdd: Int
+    private val indentToAdd: Int
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
               P : IsYamlCharWithIndentsReader
@@ -88,7 +88,7 @@ internal class FlowSequenceReader<out P>(
                     }
                     '}' -> {
                         read() // This should be handled in Map reader. Otherwise incorrect content
-                        throw Exception("Invalid char $lastChar at this position")
+                        throw InvalidYamlContent("Invalid char $lastChar at this position")
                     }
                     '?' -> {
                         read()
@@ -111,6 +111,13 @@ internal class FlowSequenceReader<out P>(
             }
         }
     }
+
+    override fun endIndentLevel(
+        indentCount: Int,
+        tag: TokenType?,
+        tokenToReturn: (() -> JsonToken)?
+    ) =
+        throw InvalidYamlContent("Missing a comma")
 
     private fun checkComplexFieldAndReturn(jsonToken: JsonToken): JsonToken {
         if (this.state == FlowSequenceState.KEY) {

@@ -53,14 +53,14 @@ internal class Float32Test {
 
     @Test
     fun test_of_native_types() {
-        Float32.ofLong(21312321) shouldBe 21312321F
-        Float32.ofDouble(1221321.12131657) shouldBe 1221321.12131657F
+        Float32.ofLong(2131232) shouldBe 2131232F
+        Float32.ofDouble(12213.121) shouldBe 12213.121F
         Float32.ofInt(1221321) shouldBe 1221321F
     }
 
     @Test
     fun test_is_of_type() {
         Float32.isOfType(22.0F) shouldBe true
-        Float32.isOfType(24.02) shouldBe false
+        Float32.isOfType(24L) shouldBe false
     }
 }

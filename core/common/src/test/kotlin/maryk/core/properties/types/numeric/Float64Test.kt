@@ -61,6 +61,6 @@ internal class Float64Test {
     @Test
     fun test_is_of_type() {
         Float64.isOfType(22.02) shouldBe true
-        Float64.isOfType(24.02F) shouldBe false
+        Float64.isOfType(24L) shouldBe false
     }
 }

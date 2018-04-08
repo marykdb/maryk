@@ -8,10 +8,8 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
     yamlReader: YamlReaderImpl,
     parentReader: P
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader),
-    IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
-        where P : IsYamlCharWithChildrenReader,
-              P : YamlCharReader,
+        where P : YamlCharReader,
               P : IsYamlCharWithIndentsReader {
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         this.currentReader = this
@@ -25,9 +23,7 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
     ) =
         this.readUntilToken(0, tag)
 
-    override fun indentCount() = this.parentReader.indentCountForChildren()
-
-    override fun indentCountForChildren() = this.parentReader.indentCountForChildren()
+    override fun indentCount() = this.parentReader.indentCount()
 
     @Suppress("UNCHECKED_CAST")
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
@@ -36,14 +32,8 @@ internal abstract class YamlCharWithParentAndIndentReader<out P>(
             isPlainStringReader
         )
 
-    override fun isWithinMap() = this.parentReader.isWithinMap()
-
-    override fun childIsDoneReading(closeLineReader: Boolean) {
-        this.currentReader = this
-    }
-
     override fun handleReaderInterrupt(): JsonToken {
-        this.parentReader.childIsDoneReading(false)
+        this.currentReader = this.parentReader
         return parentReader.handleReaderInterrupt()
     }
 }

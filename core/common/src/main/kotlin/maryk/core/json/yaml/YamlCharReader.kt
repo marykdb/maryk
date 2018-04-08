@@ -14,20 +14,15 @@ internal abstract class YamlCharReader(
 }
 
 /** Yaml Character reader which is a child to a parent reader */
-internal abstract class YamlCharWithParentReader<out P>(
+internal abstract class YamlCharWithParentReader<out P: YamlCharReader>(
     yamlReader: YamlReaderImpl,
     val parentReader: P
 ) : YamlCharReader(yamlReader)
-        where P : IsYamlCharWithChildrenReader,
-              P : YamlCharReader
 
 /** Yaml char reader which is aware of indentation */
 internal interface IsYamlCharWithIndentsReader {
     /** Indent count for this object */
     fun indentCount(): Int
-
-    /** Indent count from perspective of children. Sometimes they need to indent a bit more */
-    fun indentCountForChildren(): Int
 
     /** Continue on same indent level with this reader */
     fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken
@@ -42,18 +37,6 @@ internal interface IsYamlCharWithIndentsReader {
     /** Signal reader a map key was found so this indent level expects maps */
     fun foundMap(tag: TokenType?, startedAtIndent: Int): JsonToken?
 
-    /** Checks if field name was set or otherwise throws error */
+    /** Checks if field name was set and creates it or otherwise throws error */
     fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean): JsonToken.FieldName
-}
-
-/** An interface for a Yaml char reader with children so children can call it when it is done*/
-internal interface IsYamlCharWithChildrenReader {
-    /**
-     * To be called by a child when it is done reading.
-     * Set [closeLineReader] to true if it is also done reading the line
-     */
-    fun childIsDoneReading(closeLineReader: Boolean)
-
-    /** Returns true if parent is or is within map */
-    fun isWithinMap(): Boolean
 }

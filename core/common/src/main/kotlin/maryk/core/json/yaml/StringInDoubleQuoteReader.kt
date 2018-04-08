@@ -11,7 +11,7 @@ import maryk.core.json.TokenType
  * Pass [tag] to set type on Value.
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-internal fun YamlCharReader.doubleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken {
+internal fun YamlCharReader.doubleQuoteString(tag: TokenType?, indentAtStart: Int, jsonTokenCreator: JsonTokenCreator): JsonToken {
     var foundValue: String? = ""
 
     fun addCharAndResetSkipChar(value: String): SkipCharType {
@@ -73,7 +73,7 @@ internal fun YamlCharReader.doubleQuoteString(tag: TokenType?, jsonTokenCreator:
             this.yamlReader.hasException = true
         }
 
-        return jsonTokenCreator(foundValue, false, tag)
+        return jsonTokenCreator(foundValue, false, tag, indentAtStart)
     } catch (e: ExceptionWhileReadingJson) {
         throw InvalidYamlContent("Double quoted string was never closed")
     }

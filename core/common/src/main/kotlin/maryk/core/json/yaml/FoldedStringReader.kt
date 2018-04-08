@@ -10,8 +10,7 @@ internal class FoldedStringReader<P>(
     parentReader: P,
     jsonTokenConstructor: (String?) -> JsonToken
 ) : LiteralStringReader<P>(yamlReader, parentReader, jsonTokenConstructor)
-        where P : IsYamlCharWithChildrenReader,
-              P : YamlCharReader,
+        where P : YamlCharReader,
               P : IsYamlCharWithIndentsReader
 {
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {

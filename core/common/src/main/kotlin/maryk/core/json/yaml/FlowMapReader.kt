@@ -11,10 +11,10 @@ private enum class FlowMapState {
 /** Reader for flow Map Items {key1: value1, key2: value2} */
 internal class FlowMapReader<out P>(
     yamlReader: YamlReaderImpl,
-    parentReader: P
+    parentReader: P,
+    val indentToAdd: Int
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader)
         where P : YamlCharReader,
-              P : IsYamlCharWithChildrenReader,
               P : IsYamlCharWithIndentsReader
 {
     private var state = FlowMapState.START
@@ -35,21 +35,21 @@ internal class FlowMapReader<out P>(
                     } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
                 } ?: JsonToken.SimpleStartObject
             }
-            FlowMapState.COMPLEX_KEY -> this.jsonTokenCreator(null, false, tag)
+            FlowMapState.COMPLEX_KEY -> this.jsonTokenCreator(null, false, tag, extraIndent)
             else -> {
                 while(this.lastChar.isWhitespace()) {
                     read()
                 }
 
                 return when(this.lastChar) {
-                    '\'' -> this.singleQuoteString(tag, this::jsonTokenCreator)
-                    '\"' -> this.doubleQuoteString(tag, this::jsonTokenCreator)
+                    '\'' -> this.singleQuoteString(tag, extraIndent, this::jsonTokenCreator)
+                    '\"' -> this.doubleQuoteString(tag, extraIndent, this::jsonTokenCreator)
                     '[' -> {
-                        this.flowSequenceReader(tag)
+                        this.flowSequenceReader(tag, 0)
                             .let(this::checkComplexFieldAndReturn)
                     }
                     '{' -> {
-                        this.flowMapReader(tag)
+                        this.flowMapReader(tag, 0)
                             .let(this::checkComplexFieldAndReturn)
                     }
                     '!' -> this.tagReader { this.readUntilToken(extraIndent, it) }
@@ -66,7 +66,7 @@ internal class FlowMapReader<out P>(
                     }
                     ',' -> {
                         if(this.state != FlowMapState.SEPARATOR) {
-                            return this.jsonTokenCreator(null, false, tag)
+                            return this.jsonTokenCreator(null, false, tag, extraIndent)
                         }
 
                         read()
@@ -82,12 +82,12 @@ internal class FlowMapReader<out P>(
                     }
                     '}' -> {
                         if(this.state != FlowMapState.SEPARATOR) {
-                            return this.jsonTokenCreator(null, false, tag)
+                            return this.jsonTokenCreator(null, false, tag, extraIndent)
                         }
                         this.state = FlowMapState.STOP
 
                         read()
-                        this.parentReader.childIsDoneReading(true)
+                        this.currentReader = this.parentReader
                         JsonToken.EndObject
                     }
                     '?' -> {
@@ -97,21 +97,21 @@ internal class FlowMapReader<out P>(
                                 throw InvalidYamlContent("Cannot have two ? explicit keys in a row")
                             }
                             this.state = FlowMapState.EXPLICIT_KEY
-                            this.jsonTokenCreator(null, false, tag)
+                            this.jsonTokenCreator(null, false, tag, extraIndent)
                         } else if(this.lastChar == ',' || this.lastChar == ':') {
-                            this.jsonTokenCreator(null, false, tag)
+                            this.jsonTokenCreator(null, false, tag, extraIndent)
                         } else {
                             this.plainStringReader("?", tag, PlainStyleMode.FLOW_MAP, 0, this::jsonTokenCreator)
                         }
                     }
                     '|', '>', '@', '`' -> throw InvalidYamlContent("Unsupported character $lastChar in flow map")
-                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_MAP, 0, this::jsonTokenCreator)
+                    else -> this.plainStringReader("", tag, PlainStyleMode.FLOW_MAP, indentToAdd, this::jsonTokenCreator)
                 }
             }
         }
     }
 
-    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?) = when(this.state) {
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, @Suppress("UNUSED_PARAMETER") extraIndent: Int) = when(this.state) {
         FlowMapState.START, FlowMapState.STOP -> throw Exception("Map cannot create tokens in state $state")
         FlowMapState.EXPLICIT_KEY -> this.readUntilToken(0)
         FlowMapState.KEY, FlowMapState.SEPARATOR -> {
@@ -147,7 +147,7 @@ internal class FlowMapReader<out P>(
         if (this.state != FlowMapState.STOP) {
             throw InvalidYamlContent("Maps started with { should always end with a }")
         }
-        this.parentReader.childIsDoneReading(true)
+        this.currentReader = this.parentReader
         return JsonToken.EndObject
     }
 }
@@ -156,14 +156,14 @@ internal class FlowMapReader<out P>(
  * Creates a FlowMapReader within a YamlCharReader with [tag] as typing.
  * Reads until first token and returns it
  */
-internal fun <P> P.flowMapReader(tag: TokenType?): JsonToken
-        where P : IsYamlCharWithChildrenReader,
-              P : YamlCharReader,
+internal fun <P> P.flowMapReader(tag: TokenType?, indentToAdd: Int): JsonToken
+        where P : YamlCharReader,
               P : IsYamlCharWithIndentsReader {
     read()
     return FlowMapReader(
         yamlReader = this.yamlReader,
-        parentReader = this
+        parentReader = this,
+        indentToAdd = indentToAdd
     ).let {
         this.currentReader = it
         it.readUntilToken(0, tag)

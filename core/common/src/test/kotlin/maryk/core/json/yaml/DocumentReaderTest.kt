@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ValueType
 import maryk.core.json.assertEndDocument
 import maryk.core.json.assertEndObject
 import maryk.core.json.assertFieldName
@@ -61,6 +62,8 @@ class DocumentReaderTest {
         """.trimMargin()).apply {
             assertStartObject()
             assertFieldName("k1")
+            assertValue(1, ValueType.Int)
+            assertEndObject()
             assertInvalidYaml()
         }
     }
@@ -76,6 +79,8 @@ class DocumentReaderTest {
         """.trimMargin()).apply {
             assertStartObject()
             assertFieldName("k1")
+            assertValue(1, ValueType.Int)
+            assertEndObject()
             assertInvalidYaml()
         }
     }
@@ -88,6 +93,8 @@ class DocumentReaderTest {
         """.trimMargin()).apply {
             assertStartObject()
             assertFieldName("k1")
+            assertValue(1, ValueType.Int)
+            assertEndObject()
             assertInvalidYaml()
         }
     }

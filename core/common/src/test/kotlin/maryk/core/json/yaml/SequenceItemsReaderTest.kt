@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.json.ValueType
 import maryk.core.json.assertEndArray
 import maryk.core.json.assertEndDocument
 import maryk.core.json.assertEndObject
@@ -115,6 +116,7 @@ class SequenceItemsReaderTest {
         """.trimMargin()).apply {
             assertStartArray()
             assertValue("test")
+            assertEndArray()
             assertInvalidYaml()
         }
     }
@@ -178,6 +180,28 @@ class SequenceItemsReaderTest {
             assertEndArray()
             assertEndArray()
             assertEndObject()
+        }
+    }
+
+    @Test
+    fun read_map_inside_sequence() {
+        createYamlReader("""
+        | - Number
+        | - indexed: false
+        |   searchable: true
+        |   required: false
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("Number")
+            assertStartObject()
+            assertFieldName("indexed")
+            assertValue(false, ValueType.Bool)
+            assertFieldName("searchable")
+            assertValue(true, ValueType.Bool)
+            assertFieldName("required")
+            assertValue(false, ValueType.Bool)
+            assertEndObject()
+            assertEndArray()
         }
     }
 }

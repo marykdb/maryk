@@ -16,15 +16,10 @@ internal open class LiteralStringReader<P>(
     parentReader: P,
     private var jsonTokenConstructor: (String?) -> JsonToken
 ) : YamlCharWithParentReader<P>(yamlReader, parentReader)
-        where P : maryk.core.json.yaml.IsYamlCharWithChildrenReader,
-              P : maryk.core.json.yaml.YamlCharReader,
-              P : maryk.core.json.yaml.IsYamlCharWithIndentsReader
+        where P : YamlCharReader,
+              P : IsYamlCharWithIndentsReader
 {
-    private val parentIndentCount = if(this.parentReader is LineReader<*>) {
-        (this.parentReader.parentReader as IsYamlCharWithIndentsReader).indentCount()
-    } else {
-        this.parentReader.indentCount()
-    }
+    private val parentIndentCount = this.parentReader.indentCount()
 
     protected var storedValue: String = ""
     protected var indentCount: Int? = null
@@ -165,7 +160,7 @@ internal open class LiteralStringReader<P>(
             }
         }
 
-        this.parentReader.childIsDoneReading(false)
+        this.currentReader = this.parentReader
 
         return this.jsonTokenConstructor(this.storedValue)
     }

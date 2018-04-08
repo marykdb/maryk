@@ -9,10 +9,10 @@ import maryk.core.json.ValueType
 internal class DocumentReader(
     yamlReader: YamlReaderImpl
 ): YamlCharReader(yamlReader),
-    IsYamlCharWithChildrenReader,
     IsYamlCharWithIndentsReader
 {
     private var finishedWithDirectives: Boolean? = null
+    private var firstDocumentContentWasFound = false
     private var contentWasFound = false
     private var indentCount: Int = 0
 
@@ -51,7 +51,8 @@ internal class DocumentReader(
                         when(this.lastChar) {
                             '-' -> {
                                 read()
-                                return if (this.contentWasFound) {
+                                return if (this.firstDocumentContentWasFound) {
+                                    this.contentWasFound = false
                                     this.indentCount = 0
                                     JsonToken.StartDocument
                                 } else {
@@ -112,22 +113,30 @@ internal class DocumentReader(
                 this.readUntilToken(0)
             }
             ' ' -> {
-                IndentReader(
-                    parentReader = this,
-                    yamlReader = this.yamlReader
-                ).let {
-                    this.currentReader = it
-                    it.readUntilToken(0)
+                val indentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
+
+                if (this.indentCount <= 0 && !this.contentWasFound) {
+                    this.indentCount = indentCount
+                }
+                if (indentCount != this.indentCount) {
+                    throw InvalidYamlContent("Cannot have a new indent level which is lower than current")
+                } else {
+                    this.selectReaderAndRead(true, tag, 0)  { value, isPlainString, tagg, _ ->
+                        createYamlValueToken(value, tagg, isPlainString)
+                    }
                 }
             } else -> {
                 if (this.finishedWithDirectives == false) {
                     throw InvalidYamlContent("Directives has to end with an start document --- separator")
                 }
-                return this.newLineReader(true, tag, 0) { value, isPlainString, tagg ->
+                this.checkAlreadyOnIndent()
+
+                return this.selectReaderAndRead(true, tag, 0) { value, isPlainString, tagg, _ ->
                     createYamlValueToken(value, tagg, isPlainString)
                 }
             }
         }.also {
+            this.firstDocumentContentWasFound = true
             this.contentWasFound = true
         }
     }
@@ -146,14 +155,13 @@ internal class DocumentReader(
     override fun checkAndCreateFieldName(fieldName: String?, isPlainStringReader: Boolean) =
         throw InvalidYamlContent("FieldNames are only allowed within maps")
 
-    override fun isWithinMap() = false
-
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         return if (this.indentCount == 0) {
             readUntilToken(extraIndent, tag)
         } else {
-            this.lineReader(this, true)
-                .readUntilToken(0, tag)
+            this.selectReaderAndRead(true, tag, extraIndent) { value, isPlainString, tagg, _ ->
+                createYamlValueToken(value, tagg, isPlainString)
+            }
         }
     }
 
@@ -162,23 +170,17 @@ internal class DocumentReader(
         tag: TokenType?,
         tokenToReturn: (() -> JsonToken)?
     ): JsonToken {
-        if (indentCount == 0
-            && tokenToReturn != null
-            && (this.lastChar == '-' || this.lastChar == '.')
-        ) {
-            this.indentCount = -1 // fail indents
-            return tokenToReturn()
+        tokenToReturn?.let {
+            this.yamlReader.setUnclaimedIndenting(indentCount)
+            return it()
         }
-        throw InvalidYamlContent("Document should not have a lower indent than started")
+        if (indentCount < this.indentCount && indentCount > 0) {
+            throw InvalidYamlContent("Document should not have a lower indent than started")
+        }
+        return readUntilToken(indentCount, tag)
     }
 
     override fun indentCount() = this.indentCount
-
-    override fun indentCountForChildren() = this.indentCount()
-
-    override fun childIsDoneReading(closeLineReader: Boolean) {
-        this.currentReader = this
-    }
 
     override fun handleReaderInterrupt(): JsonToken {
         return JsonToken.EndDocument
@@ -187,23 +189,16 @@ internal class DocumentReader(
     private fun plainStringReader(startWith: String): JsonToken {
         checkAlreadyOnIndent()
 
-        val lineReader = LineReader(this.yamlReader, this, true)
-
         @Suppress("UNCHECKED_CAST")
-        return lineReader.plainStringReader(startWith, null, PlainStyleMode.NORMAL, 0) { value, _, _ ->
+        return this.plainStringReader(startWith, null, PlainStyleMode.NORMAL, 0) { value, _, _, _ ->
             JsonToken.Value(value, ValueType.String)
         }
     }
 
     /** Checks if indentation was not reset and thus reading on a lower indent than started */
     private fun checkAlreadyOnIndent() {
-        if (this.indentCount == -1) {
+        if (this.indentCount > 0 && this.contentWasFound) {
             throw InvalidYamlContent("Document should not have a lower indent than started")
         }
-    }
-
-    /** Set [indentCount] for document so it can check if next levels don't start lower */
-    internal fun setIndent(indentCount: Int) {
-        this.indentCount = indentCount
     }
 }

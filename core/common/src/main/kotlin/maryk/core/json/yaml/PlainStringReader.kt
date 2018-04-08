@@ -1,5 +1,6 @@
 package maryk.core.json.yaml
 
+import maryk.core.extensions.isLineBreak
 import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
@@ -32,7 +33,7 @@ internal fun <P> P.plainStringReader(
     }
 
     fun createToken(): JsonToken {
-        return jsonTokenCreator(storedValue.trim(), true, tag)
+        return jsonTokenCreator(storedValue.trim(), true, tag, extraIndent)
     }
 
     try {
@@ -42,14 +43,14 @@ internal fun <P> P.plainStringReader(
                     storedValue = storedValue.trimEnd()
 
                     val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
-                    val readerIndentCount = this.indentCountForChildren()
+                    val readerIndentCount = this.indentCount() + extraIndent + if (this is MapItemsReader<*>) 1 else 0
+
                     if (currentIndentCount < readerIndentCount) {
                         @Suppress("UNCHECKED_CAST")
                         return when {
                             readerIndentCount == currentIndentCount -> createToken()
                             flowMode == PlainStyleMode.FLOW_SEQUENCE -> throw InvalidYamlContent("Missing a comma")
                             flowMode == PlainStyleMode.FLOW_MAP -> throw InvalidYamlContent("Did not close map")
-//                            readerIndentCount == this.indentCount() -> this.readUntilToken(0, tag)
                             else -> this.endIndentLevel(currentIndentCount, tag) {
                                 createToken()
                             }
@@ -63,6 +64,10 @@ internal fun <P> P.plainStringReader(
                     if (this.lastChar.isWhitespace()) {
                         // Only override token creators with non flow maps
                         if (flowMode != PlainStyleMode.FLOW_MAP) {
+                            if (!this.lastChar.isLineBreak()) {
+                                read()
+                            }
+
                             // If new map return Object Start and push new token
                             this.foundMap(tag, extraIndent)?.let {
                                 @Suppress("UNCHECKED_CAST")

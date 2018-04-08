@@ -49,6 +49,7 @@ class PlainStringReaderTest {
             |  test
             | test
         """.trimMargin()).apply {
+            assertValue("test")
             assertInvalidYaml()
         }
     }

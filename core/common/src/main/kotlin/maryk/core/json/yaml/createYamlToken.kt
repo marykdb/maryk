@@ -29,7 +29,7 @@ private val timestampRegex = Regex(
         "(([ \\t]*)Z|([-+][0-9][0-9])?(:([0-9][0-9]))?)?)?$"  // time zone
 )
 
-internal typealias JsonTokenCreator = (value: String?, isPlainStringReader: Boolean, tag: TokenType?) -> JsonToken
+internal typealias JsonTokenCreator = (value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndentAtStart: Int) -> JsonToken
 
 /**
  * Creates a FieldName based on [fieldName]

@@ -9,7 +9,7 @@ import maryk.core.json.TokenType
  * Pass [tag] to set type on Value.
  * [jsonTokenCreator] creates the right jsonToken. Could be field name or value.
  */
-internal fun YamlCharReader.singleQuoteString(tag: TokenType?, jsonTokenCreator: JsonTokenCreator): JsonToken {
+internal fun YamlCharReader.singleQuoteString(tag: TokenType?, extraIndentAtStart: Int, jsonTokenCreator: JsonTokenCreator): JsonToken {
     var aQuoteFound = false
     var storedValue: String? = ""
 
@@ -34,12 +34,12 @@ internal fun YamlCharReader.singleQuoteString(tag: TokenType?, jsonTokenCreator:
             read()
         }
 
-        return jsonTokenCreator(storedValue, false, tag)
+        return jsonTokenCreator(storedValue, false, tag, extraIndentAtStart)
     } catch (e: ExceptionWhileReadingJson) {
         this.yamlReader.hasException = true
 
         if (aQuoteFound) {
-            return jsonTokenCreator(storedValue, false, tag)
+            return jsonTokenCreator(storedValue, false, tag, extraIndentAtStart)
         } else {
             throw InvalidYamlContent("Single quoted string was never closed")
         }

@@ -1,0 +1,21 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+apply {
+    plugin("kotlin-platform-jvm")
+}
+
+dependencies {
+    compile("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+
+    expectedBy(project(":test-common"))
+    compile("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+    compile("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
+    compile("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+}
+
+tasks.withType(KotlinCompile) {
+    kotlinOptions {
+        allWarningsAsErrors = true
+        jvmTarget = "1.8"
+    }
+}

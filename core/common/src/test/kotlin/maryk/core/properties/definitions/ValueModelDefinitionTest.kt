@@ -82,11 +82,13 @@ internal class ValueModelDefinitionTest {
             bool = true
         ))
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = TestValueObject(
-                int = 1000,
-                dateTime = DateTime.nowUTC(),
-                bool = true
-            ))
+            def.validateWithRef(
+                newValue = TestValueObject(
+                    int = 1000,
+                    dateTime = DateTime.nowUTC(),
+                    bool = true
+                )
+            )
         }
 
         e.exceptions.size shouldBe 1

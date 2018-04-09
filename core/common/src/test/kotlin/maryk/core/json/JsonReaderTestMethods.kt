@@ -1,7 +1,7 @@
 package maryk.core.json
 
-import maryk.core.extensions.toHex
 import maryk.core.json.yaml.InvalidYamlContent
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.fail

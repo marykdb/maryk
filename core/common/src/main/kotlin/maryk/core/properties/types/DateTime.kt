@@ -3,8 +3,8 @@ package maryk.core.properties.types
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.properties.exceptions.ParseException
-import maryk.core.time.Instant
+import maryk.lib.exceptions.ParseException
+import maryk.lib.time.Instant
 import kotlin.math.floor
 
 /** Date and Time object. */
@@ -112,7 +112,8 @@ data class DateTime(
                     Date.parse(date),
                     Time.parse(time)
                 )
-            } catch (e: Throwable) { throw ParseException(value, e) }
+            } catch (e: Throwable) { throw ParseException(value, e)
+            }
         }
     }
 }

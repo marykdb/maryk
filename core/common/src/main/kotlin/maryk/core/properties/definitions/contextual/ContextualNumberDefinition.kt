@@ -8,7 +8,6 @@ import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.fromNativeType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor
@@ -17,6 +16,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.lib.exceptions.ParseException
 
 /**
  * Definition for Number properties which are based on a context from [contextualResolver] which can be set by a property

@@ -7,8 +7,8 @@ import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.random
 import maryk.core.protobuf.WireType
+import maryk.lib.extensions.random
 
 object SInt32 : NumberDescriptor<Int>(
     size = 4,

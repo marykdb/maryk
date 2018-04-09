@@ -4,8 +4,8 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidSizeException
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
+import maryk.lib.exceptions.ParseException
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -42,10 +42,10 @@ internal class FlexBytesDefinitionTest {
         def.validateWithRef(newValue = Bytes(ByteArray(10, { 0x00.toByte() } )))
 
         shouldThrow<InvalidSizeException> {
-            def.validateWithRef(newValue = Bytes(ByteArray(1, { 0x00.toByte() } )))
+            def.validateWithRef(newValue = Bytes(ByteArray(1, { 0x00.toByte() })))
         }
         shouldThrow<InvalidSizeException> {
-            def.validateWithRef(newValue = Bytes(ByteArray(20, { 0x00.toByte() } )))
+            def.validateWithRef(newValue = Bytes(ByteArray(20, { 0x00.toByte() })))
         }
     }
 

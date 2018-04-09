@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.key
 import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.toHex
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -15,6 +14,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import kotlin.test.Test
 

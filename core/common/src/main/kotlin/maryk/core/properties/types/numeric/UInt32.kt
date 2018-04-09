@@ -5,8 +5,8 @@ import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.random
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.random
 
 /** Base class for 32 bit/4 byte unsigned integers */
 class UInt32 internal constructor(number: Int): UInt<Int>(number) {

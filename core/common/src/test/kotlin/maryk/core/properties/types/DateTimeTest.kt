@@ -89,7 +89,7 @@ internal class DateTimeTest {
     @Test
     fun testWrongByteSizeError() {
         shouldThrow<IllegalArgumentException> {
-            DateTime.fromByteReader(22){
+            DateTime.fromByteReader(22) {
                 1
             }
         }

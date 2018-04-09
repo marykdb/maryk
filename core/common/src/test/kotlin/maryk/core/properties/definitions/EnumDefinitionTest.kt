@@ -3,12 +3,12 @@ package maryk.core.properties.definitions
 import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

@@ -3,9 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.lib.exceptions.ParseException
 
 /**
  * Interface to define this is a serializable property definition of [T]

@@ -5,10 +5,10 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.initByteArrayByHex
-import maryk.core.extensions.random
-import maryk.core.extensions.toHex
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.initByteArrayByHex
+import maryk.lib.extensions.random
+import maryk.lib.extensions.toHex
 
 /** Base class for 64 bit/8 byte unsigned integers */
 class UInt64 internal constructor(number: Long): UInt<Long>(number) {

@@ -2,9 +2,9 @@ package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.extensions.zeroFill
-import maryk.core.properties.exceptions.ParseException
-import maryk.core.time.Instant
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.zeroFill
+import maryk.lib.time.Instant
 import kotlin.math.floor
 
 enum class TimePrecision(override val index: Int): IndexedEnum<TimePrecision> {

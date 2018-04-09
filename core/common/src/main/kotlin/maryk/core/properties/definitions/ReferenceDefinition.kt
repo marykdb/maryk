@@ -7,11 +7,11 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
 import maryk.core.query.DataModelContext
+import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(

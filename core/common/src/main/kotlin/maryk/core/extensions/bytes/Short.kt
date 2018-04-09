@@ -1,6 +1,6 @@
 package maryk.core.extensions.bytes
 
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 

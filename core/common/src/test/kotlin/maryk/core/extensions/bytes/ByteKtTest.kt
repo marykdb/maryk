@@ -1,8 +1,8 @@
 package maryk.core.extensions.bytes
 
-import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

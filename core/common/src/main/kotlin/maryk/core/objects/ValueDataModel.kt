@@ -1,10 +1,10 @@
 package maryk.core.objects
 
-import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
+import maryk.lib.bytes.Base64
 
 /**
  * DataModel of type [DO] for objects that can be encoded in fixed length width.

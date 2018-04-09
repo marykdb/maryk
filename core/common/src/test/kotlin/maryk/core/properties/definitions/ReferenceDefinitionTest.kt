@@ -6,9 +6,9 @@ import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelContext
+import maryk.lib.exceptions.ParseException
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

@@ -5,9 +5,9 @@ import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonToken
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.lib.exceptions.ParseException
 
 /**
  * Abstract Property Definition to define properties of type [T].

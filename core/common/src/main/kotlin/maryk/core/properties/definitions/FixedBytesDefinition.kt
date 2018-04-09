@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions
 
-import maryk.core.extensions.randomBytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType
+import maryk.lib.extensions.randomBytes
 
 /** Definition for a bytes array with fixed length */
 data class FixedBytesDefinition(

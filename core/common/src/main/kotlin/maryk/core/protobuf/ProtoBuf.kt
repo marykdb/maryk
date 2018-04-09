@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.SEVEN_BYTES
 import maryk.core.extensions.bytes.SIGN_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
 import kotlin.experimental.and
 import kotlin.experimental.xor
 

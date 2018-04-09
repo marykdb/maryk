@@ -5,8 +5,8 @@ import maryk.core.extensions.bytes.initByte
 import maryk.core.extensions.bytes.initByteByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.random
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.random
 
 /** Base class for 8 bit/1 byte unsigned integers */
 class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {

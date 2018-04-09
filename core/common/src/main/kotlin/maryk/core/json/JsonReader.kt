@@ -1,9 +1,8 @@
 package maryk.core.json
 
-import maryk.core.extensions.HEX_CHARS
-import maryk.core.extensions.digitChars
-import maryk.core.extensions.isDigit
-import maryk.core.extensions.isLineBreak
+import maryk.lib.extensions.HEX_CHARS
+import maryk.lib.extensions.isDigit
+import maryk.lib.extensions.isLineBreak
 
 private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartDocument)
 
@@ -178,16 +177,21 @@ class JsonReader(
     }
 
     private fun readValue(currentTokenCreator: (value: Any?) -> JsonToken) {
-        when (lastChar) {
+        when (this.lastChar) {
             '{' -> startObject()
             '[' -> startArray()
             '"' -> readStringValue(currentTokenCreator)
             '-' -> readNumber(true, currentTokenCreator)
-            in digitChars -> readNumber(false, currentTokenCreator)
             'n' -> readNullValue(currentTokenCreator)
             't' -> readTrue(currentTokenCreator)
             'f' -> readFalse(currentTokenCreator)
-            else -> throwJsonException()
+            else -> {
+                if (this.lastChar.isDigit()) {
+                    readNumber(false, currentTokenCreator)
+                } else {
+                    throwJsonException()
+                }
+            }
         }
     }
 

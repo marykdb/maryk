@@ -1,7 +1,7 @@
 package maryk.core.properties.types
 
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

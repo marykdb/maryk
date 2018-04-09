@@ -1,8 +1,8 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isLineBreak
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.lib.extensions.isLineBreak
 
 /** Folded style string reader */
 internal class FoldedStringReader<P>(

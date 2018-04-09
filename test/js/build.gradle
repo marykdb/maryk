@@ -1,0 +1,14 @@
+apply {
+    plugin("kotlin-platform-js")
+}
+
+dependencies {
+    expectedBy(project(":test-common"))
+    compile("org.jetbrains.kotlin:kotlin-stdlib-js:$kotlinVersion")
+    compile("org.jetbrains.kotlin:kotlin-test-js:$kotlinVersion")
+}
+
+[compileKotlin2Js, compileTestKotlin2Js]*.configure {
+    kotlinOptions.moduleKind = "commonjs"
+    kotlinOptions.sourceMap = true
+}

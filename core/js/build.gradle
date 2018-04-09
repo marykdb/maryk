@@ -7,11 +7,11 @@ apply {
     plugin("com.moowork.node")
 }
 
-
 dependencies {
     expectedBy(project(":core-common"))
-    compile("org.jetbrains.kotlin:kotlin-stdlib-js:$kotlinVersion")
-    testCompile("org.jetbrains.kotlin:kotlin-test-js:$kotlinVersion")
+    compile(project(":lib-js"))
+
+    testCompile(project(":test-js"))
 }
 
 [compileKotlin2Js, compileTestKotlin2Js]*.configure {

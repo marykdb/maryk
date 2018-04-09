@@ -1,6 +1,5 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isLineBreak
 import maryk.core.json.ArrayType
 import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.IsJsonLikeReader
@@ -9,6 +8,7 @@ import maryk.core.json.MapType
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
 import maryk.core.properties.types.DateTime
+import maryk.lib.extensions.isLineBreak
 
 @Suppress("FunctionName")
 fun YamlReader(

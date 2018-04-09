@@ -1,9 +1,9 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isLineBreak
 import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.lib.extensions.isLineBreak
 
 internal enum class PlainStyleMode {
     NORMAL, FLOW_SEQUENCE, FLOW_MAP

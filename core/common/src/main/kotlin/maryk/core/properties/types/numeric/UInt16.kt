@@ -5,8 +5,8 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.extensions.random
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.random
 
 /** Base class for 16 bit/2 byte unsigned integers */
 class UInt16 internal constructor(number: Short): UInt<Short>(number) {

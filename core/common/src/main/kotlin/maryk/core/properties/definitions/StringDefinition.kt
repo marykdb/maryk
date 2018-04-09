@@ -1,8 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.bytes.calculateUTF8ByteLength
-import maryk.core.bytes.initString
-import maryk.core.bytes.writeUTF8Bytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
@@ -11,6 +8,9 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WireType
+import maryk.lib.bytes.calculateUTF8ByteLength
+import maryk.lib.bytes.initString
+import maryk.lib.bytes.writeUTF8Bytes
 
 /** Definition for String properties */
 data class StringDefinition(

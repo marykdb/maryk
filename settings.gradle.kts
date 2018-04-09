@@ -1,10 +1,20 @@
-include(":core-common")
-project(":core-common").projectDir = file("core/common")
+fun includeMultiPlatformProjects(vararg names: String) {
+    for (name in names) {
+        includeProject(name, "common")
+        includeProject(name, "jvm")
+        includeProject(name, "js")
+    }
+}
 
-include(":core-jvm")
-project(":core-jvm").projectDir = file("core/jvm")
+fun includeProject(name: String, platform: String) {
+    include(":$name-$platform")
+    project(":$name-$platform").projectDir = file("$name/$platform")
+}
 
-include(":core-js")
-project(":core-js").projectDir = file("core/js")
+includeMultiPlatformProjects(
+    "lib",
+    "core",
+    "test"
+)
 
 rootProject.name = "maryk"

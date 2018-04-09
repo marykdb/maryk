@@ -1,10 +1,10 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.digitCharsWithoutZero
-import maryk.core.extensions.isLineBreak
-import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.lib.extensions.isLineBreak
+import maryk.lib.extensions.isNonZeroDigit
+import maryk.lib.extensions.isSpacing
 
 internal enum class ChompStyle {
     STRIP, CLIP, KEEP
@@ -72,20 +72,20 @@ internal open class LiteralStringReader<P>(
 
     protected fun readStartForOptionsAndReturnIndent(description: String) {
         options@while (true) {
-            when (this.lastChar) {
-                in digitCharsWithoutZero -> {
+            when {
+                this.lastChar.isNonZeroDigit() -> {
                     if(this.indentCount != null) {
                         throw InvalidYamlContent("Cannot define indentation twice")
                     }
                     this.indentCount = this.lastChar.toString().toInt() + this.parentIndentCount
                 }
-                '+' -> {
+                this.lastChar == '+' -> {
                     if(this.chompStyle != ChompStyle.CLIP) {
                         throw InvalidYamlContent("Cannot define chomping twice")
                     }
                     this.chompStyle = ChompStyle.KEEP
                 }
-                '-' -> {
+                this.lastChar == '-' -> {
                     if(this.chompStyle != ChompStyle.CLIP) {
                         throw InvalidYamlContent("Cannot define chomping twice")
                     }

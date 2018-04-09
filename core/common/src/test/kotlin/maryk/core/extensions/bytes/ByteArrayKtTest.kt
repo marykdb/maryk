@@ -1,8 +1,8 @@
 package maryk.core.extensions.bytes
 
-import maryk.core.bytes.Base64
-import maryk.core.extensions.compare.compareTo
 import maryk.core.properties.ByteCollector
+import maryk.lib.bytes.Base64
+import maryk.lib.extensions.compare.compareTo
 import maryk.test.shouldBe
 import kotlin.test.Test
 

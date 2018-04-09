@@ -1,9 +1,9 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isLineBreak
 import maryk.core.json.ArrayType
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.lib.extensions.isLineBreak
 
 /** Reader for Sequence Items */
 internal class SequenceItemsReader<out P>(

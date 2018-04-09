@@ -6,7 +6,6 @@ import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor
@@ -14,6 +13,7 @@ import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.WriteCacheReader
+import maryk.lib.exceptions.ParseException
 
 /** Definition for Number properties */
 data class NumberDefinition<T: Comparable<T>>(

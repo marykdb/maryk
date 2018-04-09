@@ -3,8 +3,7 @@ apply {
 }
 
 dependencies {
-    compile("org.jetbrains.kotlin:kotlin-stdlib-common:$kotlinVersion")
+    compile(project(":lib-common"))
 
-    testCompile("org.jetbrains.kotlin:kotlin-test-annotations-common:$kotlinVersion")
-    testCompile("org.jetbrains.kotlin:kotlin-test-common:$kotlinVersion")
+    compile(project(":test-common"))
 }

@@ -1,9 +1,9 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isSpacing
 import maryk.core.json.ExceptionWhileReadingJson
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
+import maryk.lib.extensions.isSpacing
 
 /**
  * Reads until is clear what is next token, selects relevant reader and continues reading.

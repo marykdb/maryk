@@ -1,6 +1,6 @@
 package maryk.core.properties.types
 
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.exceptions.ParseException
 
 abstract class IsTemporal<T> : Comparable<T> {}
 

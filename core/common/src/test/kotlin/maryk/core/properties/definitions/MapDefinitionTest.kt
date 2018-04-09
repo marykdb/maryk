@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollector
@@ -15,6 +14,7 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -68,31 +68,37 @@ internal class MapDefinitionTest {
         ))
 
         shouldThrow<TooLittleItemsException> {
-            def.validateWithRef(newValue = mapOf(
-                1 to "#one"
-            ))
+            def.validateWithRef(
+                newValue = mapOf(
+                    1 to "#one"
+                )
+            )
         }
 
         shouldThrow<TooMuchItemsException> {
-            def.validateWithRef(newValue = mapOf(
-                12 to "#twelve",
-                30 to "#thirty",
-                100 to "#hundred",
-                1000 to "#thousand",
-                0 to "#zero"
-            ))
+            def.validateWithRef(
+                newValue = mapOf(
+                    12 to "#twelve",
+                    30 to "#thirty",
+                    100 to "#hundred",
+                    1000 to "#thousand",
+                    0 to "#zero"
+                )
+            )
         }
     }
 
     @Test
     fun validate_map_content() {
         val e = shouldThrow<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = mapOf(
-                12 to "#twelve",
-                30 to "WRONG",
-                1001 to "#thousandone",
-                3000 to "#threethousand"
-            ))
+            def.validateWithRef(
+                newValue = mapOf(
+                    12 to "#twelve",
+                    30 to "WRONG",
+                    1001 to "#thousandone",
+                    3000 to "#threethousand"
+                )
+            )
         }
         e.exceptions.size shouldBe 3
 

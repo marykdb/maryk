@@ -1,8 +1,5 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.bytes.calculateUTF8ByteLength
-import maryk.core.bytes.initString
-import maryk.core.bytes.writeUTF8Bytes
 import maryk.core.json.IsJsonLikeReader
 import maryk.core.json.IsJsonLikeWriter
 import maryk.core.json.JsonToken
@@ -10,10 +7,13 @@ import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.lib.bytes.calculateUTF8ByteLength
+import maryk.lib.bytes.initString
+import maryk.lib.bytes.writeUTF8Bytes
+import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(

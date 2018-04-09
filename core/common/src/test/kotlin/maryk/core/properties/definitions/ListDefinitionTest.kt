@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollector
@@ -18,6 +17,7 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

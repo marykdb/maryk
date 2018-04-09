@@ -2,8 +2,8 @@ package maryk.core.properties.types.numeric
 
 import maryk.core.extensions.bytes.initDouble
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.extensions.random
 import maryk.core.protobuf.WireType
+import maryk.lib.extensions.random
 
 object Float64 : NumberDescriptor<Double>(
     size = 8,

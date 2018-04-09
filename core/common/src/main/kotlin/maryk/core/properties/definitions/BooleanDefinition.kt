@@ -5,8 +5,8 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.json.IsJsonLikeWriter
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.WireType
+import maryk.lib.exceptions.ParseException
 
 /** Definition for Boolean properties */
 data class BooleanDefinition(

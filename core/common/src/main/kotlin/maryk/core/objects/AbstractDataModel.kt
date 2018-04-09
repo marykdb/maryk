@@ -15,7 +15,6 @@ import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
@@ -23,6 +22,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.lib.exceptions.ParseException
 
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for

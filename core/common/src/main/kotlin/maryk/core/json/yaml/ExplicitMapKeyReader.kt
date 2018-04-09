@@ -1,10 +1,10 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isLineBreak
-import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
+import maryk.lib.extensions.isLineBreak
+import maryk.lib.extensions.isSpacing
 
 private enum class ExplicitMapState {
     STARTED, INTERNAL_MAP, COMPLEX, SIMPLE, INTERRUPT_VALUE, EMPTY_KEY_VALUE

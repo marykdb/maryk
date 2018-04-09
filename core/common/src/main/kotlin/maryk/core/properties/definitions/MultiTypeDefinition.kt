@@ -12,7 +12,6 @@ import maryk.core.json.JsonWriter
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.TypedValue
@@ -22,6 +21,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.lib.exceptions.ParseException
 
 /**
  * Definition for objects which can be of multiple defined types.

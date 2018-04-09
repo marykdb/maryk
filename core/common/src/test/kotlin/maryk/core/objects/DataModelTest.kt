@@ -6,8 +6,6 @@ import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.initByteArrayByHex
-import maryk.core.extensions.toHex
 import maryk.core.json.JsonReader
 import maryk.core.json.JsonWriter
 import maryk.core.json.yaml.YamlWriter
@@ -25,6 +23,8 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelContext
+import maryk.lib.extensions.initByteArrayByHex
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -212,10 +212,12 @@ internal class DataModelTest {
     @Test
     fun fail_validation_with_incorrect_values_in_map() {
         val e = shouldThrow<ValidationUmbrellaException> {
-            TestMarykObject.validate(mapOf(
-                0 to "wrong",
-                1 to 999
-            ))
+            TestMarykObject.validate(
+                mapOf(
+                    0 to "wrong",
+                    1 to 999
+                )
+            )
         }
 
         e.exceptions.size shouldBe 2

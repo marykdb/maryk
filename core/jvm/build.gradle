@@ -5,11 +5,10 @@ apply {
 }
 
 dependencies {
-    compile("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
     expectedBy(project(":core-common"))
-    testCompile("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
-    testCompile("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
-    testCompile("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+    compile(project(":lib-jvm"))
+
+    testCompile(project(":test-jvm"))
 }
 
 tasks.withType(KotlinCompile) {

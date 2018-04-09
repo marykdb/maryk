@@ -2,8 +2,8 @@ package maryk.core.properties.references
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
+import maryk.lib.exceptions.ParseException
 
 /**
  * Reference to a Set property of type [T] defined by [propertyDefinition] and context [CX]

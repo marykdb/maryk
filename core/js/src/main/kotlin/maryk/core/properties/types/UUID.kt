@@ -1,6 +1,6 @@
 package maryk.core.properties.types
 
-import maryk.core.extensions.randomBytes
+import maryk.lib.extensions.randomBytes
 import kotlin.experimental.and
 import kotlin.experimental.or
 

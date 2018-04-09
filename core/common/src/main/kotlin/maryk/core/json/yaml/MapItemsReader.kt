@@ -1,11 +1,11 @@
 package maryk.core.json.yaml
 
-import maryk.core.extensions.isLineBreak
-import maryk.core.extensions.isSpacing
 import maryk.core.json.JsonToken
 import maryk.core.json.MapType
 import maryk.core.json.TokenType
 import maryk.core.json.ValueType
+import maryk.lib.extensions.isLineBreak
+import maryk.lib.extensions.isSpacing
 
 private enum class MapState {
     NEW_PAIR, KEY_FOUND, VALUE_FOUND

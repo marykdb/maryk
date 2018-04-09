@@ -1,12 +1,12 @@
 package maryk.core.properties.references
 
 import maryk.TestMarykObject
-import maryk.core.extensions.toHex
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.protobuf.WriteCache
+import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldNotBe
 import kotlin.test.Test

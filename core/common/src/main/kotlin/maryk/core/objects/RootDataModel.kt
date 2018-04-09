@@ -1,6 +1,5 @@
 package maryk.core.objects
 
-import maryk.core.bytes.Base64
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.properties.definitions.FixedBytesProperty
@@ -15,10 +14,11 @@ import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.lib.bytes.Base64
+import maryk.lib.exceptions.ParseException
 
 fun definitions(vararg keys: FixedBytesProperty<*>) = arrayOf(*keys)
 

@@ -1,15 +1,15 @@
 package maryk.core.properties.types
 
-import maryk.core.bytes.Base64
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.extensions.compare.compareTo
-import maryk.core.extensions.initByteArrayByHex
-import maryk.core.extensions.toHex
-import maryk.core.properties.exceptions.ParseException
+import maryk.lib.bytes.Base64
+import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.initByteArrayByHex
+import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.toHex
 
 /**
- * Represents a ByteArray which is comparable
+ * Represents a initByteArrayByHex which is comparable
  */
 open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
     val size = bytes.size
@@ -47,7 +47,8 @@ abstract class BytesDescriptor<out T>{
         this.construct(
                 Base64.decode(base64)
         )
-    } catch (e: Throwable) { throw ParseException(base64) }
+    } catch (e: Throwable) { throw ParseException(base64)
+    }
 
     internal fun fromByteReader(length: Int, reader: () -> Byte): T = this.construct(
         initByteArray(length, reader)

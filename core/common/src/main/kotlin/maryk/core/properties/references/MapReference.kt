@@ -3,8 +3,8 @@ package maryk.core.properties.references
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.ParseException
 import maryk.core.protobuf.ProtoBuf
+import maryk.lib.exceptions.ParseException
 
 /**
  * Reference to a map with key [K] and value [V] and context [CX]

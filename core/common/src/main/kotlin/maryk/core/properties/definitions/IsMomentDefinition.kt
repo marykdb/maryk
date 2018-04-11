@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.types.IsTemporal
+import maryk.lib.time.IsTemporal
 
 /** Definition for Moment properties of [T] which can be set to now */
 interface IsMomentDefinition<T: IsTemporal<T>> : IsComparableDefinition<T, IsPropertyContext> {

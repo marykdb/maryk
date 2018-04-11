@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.json.IsJsonLikeWriter
+import maryk.json.IsJsonLikeWriter
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WireType

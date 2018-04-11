@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.json.MapType
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
@@ -12,6 +11,7 @@ import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnum
+import maryk.json.MapType
 
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(

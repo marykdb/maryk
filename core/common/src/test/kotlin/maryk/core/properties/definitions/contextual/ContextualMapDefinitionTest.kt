@@ -1,17 +1,17 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.TestMarykObject
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.Time
+import maryk.lib.time.Time
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelPropertyContext
+import maryk.json.JsonReader
+import maryk.json.JsonWriter
 import maryk.test.shouldBe
 import kotlin.test.Test
 

@@ -5,10 +5,13 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.types.Time
 import maryk.core.properties.types.TimePrecision
+import maryk.core.properties.types.byteSize
+import maryk.core.properties.types.fromByteReader
+import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
+import maryk.lib.time.Time
 
 /** Definition for Time properties */
 data class TimeDefinition(
@@ -35,6 +38,8 @@ data class TimeDefinition(
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         Time.fromByteReader(length, reader)
 
+    override fun writeStorageBytes(value: Time, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
+
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = when(this.precision) {
         TimePrecision.SECONDS -> Time.ofSecondOfDay(initIntByVar(reader))
         TimePrecision.MILLIS -> Time.ofMilliOfDay(initIntByVar(reader))
@@ -55,12 +60,10 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = Time.parse(string)
 
-    override fun fromNativeType(value: Any) = if (value is Long) {
-        Time.ofSecondOfDay(value.toInt())
-    } else if (value is Int) {
-        Time.ofSecondOfDay(value)
-    } else {
-        value as? Time
+    override fun fromNativeType(value: Any) = when (value) {
+        is Long -> Time.ofSecondOfDay(value.toInt())
+        is Int -> Time.ofSecondOfDay(value)
+        else -> value as? Time
     }
 
     internal object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(

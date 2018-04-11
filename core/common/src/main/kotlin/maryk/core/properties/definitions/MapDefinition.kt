@@ -2,9 +2,9 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonToken
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper

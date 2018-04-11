@@ -6,6 +6,8 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Date
+import maryk.core.properties.types.fromByteReader
+import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 

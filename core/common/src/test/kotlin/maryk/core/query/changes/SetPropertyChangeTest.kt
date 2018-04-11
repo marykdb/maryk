@@ -5,7 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.Date
+import maryk.lib.time.Date
 import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 

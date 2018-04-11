@@ -1,0 +1,9 @@
+apply {
+    plugin("kotlin-platform-common")
+}
+
+dependencies {
+    compile(project(":lib-common"))
+
+    compile(project(":test-common"))
+}

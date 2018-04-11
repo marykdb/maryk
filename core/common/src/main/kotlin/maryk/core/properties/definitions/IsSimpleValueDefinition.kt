@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonToken
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -61,12 +61,13 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
     override fun readJson(reader: IsJsonLikeReader, context: CX?): T = reader.currentToken.let { value ->
         when (value) {
             is JsonToken.Value<*> -> {
-                when (value.value) {
+                val jsonValue = value.value
+                when (jsonValue) {
                     null -> throw ParseException("JSON value cannot be null")
-                    is String -> this.fromString(value.value, context)
+                    is String -> this.fromString(jsonValue, context)
                     else -> {
-                        this.fromNativeType(value.value)
-                                ?: throw ParseException("Unknown type for value ${value.value}")
+                        this.fromNativeType(jsonValue)
+                                ?: throw ParseException("Unknown type for value ${jsonValue}")
                     }
                 }
             }

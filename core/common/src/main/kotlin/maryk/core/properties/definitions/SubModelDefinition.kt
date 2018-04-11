@@ -2,9 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonReader
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.DataModel
@@ -18,6 +15,10 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.DataModelContext
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonReader
+import maryk.json.JsonWriter
 
 /** Definition for sub model properties to [dataModel] of type [DM] returning dataObject of [DO] */
 class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
@@ -40,7 +41,7 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
 
     override fun asString(value: DO, context: CXI?): String {
         var string = ""
-        this.writeJsonValue(value, maryk.core.json.JsonWriter {
+        this.writeJsonValue(value, JsonWriter {
             string += it
         }, context)
         return string

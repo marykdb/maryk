@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.DateTime
+import maryk.lib.time.DateTime
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
 

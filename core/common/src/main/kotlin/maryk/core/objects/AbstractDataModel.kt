@@ -1,10 +1,6 @@
 package maryk.core.objects
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.json.IllegalJsonOperation
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonToken
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
@@ -22,6 +18,10 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IllegalJsonOperation
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -141,9 +141,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             val token = reader.currentToken
             when (token) {
                 is JsonToken.FieldName -> {
-                    if (token.value == null) { throw ParseException("Empty field name not allowed in JSON") }
+                    val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                    val definition = properties.getDefinition(token.value)
+                    val definition = properties.getDefinition(value)
                     if (definition == null) {
                         reader.skipUntilNextField()
                         continue@walker

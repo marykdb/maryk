@@ -13,6 +13,8 @@ fun includeProject(name: String, platform: String) {
 
 includeMultiPlatformProjects(
     "lib",
+    "json",
+    "yaml",
     "core",
     "test"
 )

@@ -1,8 +1,8 @@
 package maryk.core.objects
 
 import maryk.TestMarykObject
-import maryk.core.properties.types.Date
-import maryk.core.properties.types.Time
+import maryk.lib.time.Date
+import maryk.lib.time.Time
 import maryk.test.shouldBe
 import kotlin.test.Test
 

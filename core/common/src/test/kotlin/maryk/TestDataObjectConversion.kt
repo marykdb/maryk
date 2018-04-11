@@ -1,15 +1,15 @@
 package maryk
 
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
-import maryk.core.json.yaml.MarykYamlReader
-import maryk.core.json.yaml.YamlWriter
 import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.protobuf.WriteCache
+import maryk.core.yaml.MarykYamlReader
+import maryk.json.JsonReader
+import maryk.json.JsonWriter
 import maryk.test.shouldBe
+import maryk.yaml.YamlWriter
 
 fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
     value: T,

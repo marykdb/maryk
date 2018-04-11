@@ -6,27 +6,27 @@ import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
-import maryk.core.json.yaml.YamlWriter
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.types.Date
-import maryk.core.properties.types.DateTime
+import maryk.lib.time.Date
+import maryk.lib.time.DateTime
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.Time
+import maryk.lib.time.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelContext
+import maryk.json.JsonReader
+import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
+import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
 private val testObject = TestMarykObject(

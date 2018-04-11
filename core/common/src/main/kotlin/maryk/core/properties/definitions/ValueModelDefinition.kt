@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext

@@ -1,8 +1,5 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonToken
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -11,6 +8,9 @@ import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject from a context resolved from [contextualResolver] */
@@ -34,9 +34,10 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
         when(it) {
             is JsonToken.Value<*> -> {
-                when (it.value) {
+                val jsonValue = it.value
+                when (jsonValue) {
                     null -> throw ParseException("Reference cannot be null in JSON")
-                    is String -> contextualResolver(context).get(it.value)
+                    is String -> contextualResolver(context).get(jsonValue)
                     else -> throw ParseException("Reference has to be a String")
                 }
             }

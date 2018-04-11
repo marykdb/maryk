@@ -4,11 +4,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonToken
-import maryk.core.json.JsonWriter
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -21,6 +16,11 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonReader
+import maryk.json.JsonToken
+import maryk.json.JsonWriter
 import maryk.lib.exceptions.ParseException
 
 /**

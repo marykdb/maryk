@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable

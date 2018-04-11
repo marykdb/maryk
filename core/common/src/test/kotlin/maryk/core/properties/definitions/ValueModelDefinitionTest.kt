@@ -6,9 +6,9 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.types.Date
-import maryk.core.properties.types.DateTime
-import maryk.core.properties.types.Time
+import maryk.lib.time.Date
+import maryk.lib.time.DateTime
+import maryk.lib.time.Time
 import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow

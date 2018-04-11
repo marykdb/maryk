@@ -1,6 +1,7 @@
 package maryk.core.properties.types
 
 import maryk.TestValueObject
+import maryk.lib.time.Time
 import maryk.test.shouldBe
 import kotlin.test.Test
 

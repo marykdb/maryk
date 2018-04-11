@@ -7,6 +7,9 @@ import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
+import maryk.core.properties.types.byteSize
+import maryk.core.properties.types.fromByteReader
+import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 
@@ -35,6 +38,8 @@ data class DateTimeDefinition(
     override fun createNow() = DateTime.nowUTC()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = DateTime.fromByteReader(length, reader)
+
+    override fun writeStorageBytes(value: DateTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = when(this.precision) {
         TimePrecision.SECONDS -> DateTime.ofEpochSecond(initLongByVar(reader))

@@ -1,8 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.TestMarykObject
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
@@ -11,6 +9,8 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelPropertyContext
+import maryk.json.JsonReader
+import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import kotlin.test.Test

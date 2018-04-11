@@ -1,9 +1,5 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.json.IsJsonLikeReader
-import maryk.core.json.IsJsonLikeWriter
-import maryk.core.json.JsonReader
-import maryk.core.json.JsonWriter
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -12,6 +8,10 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonReader
+import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(

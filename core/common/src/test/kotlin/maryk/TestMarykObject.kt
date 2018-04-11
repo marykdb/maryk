@@ -18,15 +18,15 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
-import maryk.core.properties.types.Date
-import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
+import maryk.lib.time.Date
+import maryk.lib.time.DateTime
+import maryk.lib.time.Time
 
 enum class Option(
     override val index: Int

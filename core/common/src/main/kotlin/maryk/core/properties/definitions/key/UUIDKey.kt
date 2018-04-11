@@ -6,7 +6,7 @@ import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.generateUUID
+import maryk.lib.uuid.generateUUID
 
 /** A key with a Universally Unique ID */
 object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {

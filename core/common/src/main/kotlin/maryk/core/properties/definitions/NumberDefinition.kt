@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.json.IsJsonLikeWriter
+import maryk.json.IsJsonLikeWriter
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition

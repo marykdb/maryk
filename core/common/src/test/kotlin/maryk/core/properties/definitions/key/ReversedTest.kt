@@ -8,7 +8,7 @@ import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.DateTime
+import maryk.lib.time.DateTime
 import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test

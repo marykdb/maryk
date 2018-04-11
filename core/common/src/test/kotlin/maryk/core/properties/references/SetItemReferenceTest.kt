@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.TestMarykObject
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.types.Date
+import maryk.lib.time.Date
 import maryk.core.protobuf.WriteCache
 import maryk.test.shouldBe
 import kotlin.test.Test

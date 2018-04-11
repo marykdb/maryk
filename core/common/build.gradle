@@ -4,6 +4,7 @@ apply {
 
 dependencies {
     compile(project(":lib-common"))
+    compile(project(":yaml-common"))
 
     compile(project(":test-common"))
 }

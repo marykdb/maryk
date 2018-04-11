@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
@@ -84,7 +85,12 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         val definition = this.definitionMap[value.type] as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("No def found for index ${value.type.name}")
 
-        writer.writeStartArray(definition is IsSimpleValueDefinition<*,*>)
+        val renderCompact = definition is IsValueDefinition<*,*>
+                && definition !is SubModelDefinition<*, *, *, *, *>
+                && definition !is ValueModelDefinition<*, *>
+                && definition !is ContextualSubModelDefinition<*>
+
+        writer.writeStartArray(renderCompact)
         writer.writeString(value.type.name)
 
         definition.writeJsonValue(value.value, writer, context)

@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.TooLittleItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
@@ -66,7 +67,9 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
-        val renderCompact = valueDefinition is IsSimpleValueDefinition<*, *>
+        val renderCompact = valueDefinition !is SubModelDefinition<*, *, *, *, *>
+                && valueDefinition !is ValueModelDefinition<*, *>
+                && valueDefinition !is ContextualSubModelDefinition<*>
                 && value.size < 5
 
         writer.writeStartArray(renderCompact)

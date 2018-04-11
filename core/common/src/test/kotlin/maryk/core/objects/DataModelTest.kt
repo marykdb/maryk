@@ -12,10 +12,7 @@ import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrappe
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.lib.time.Date
-import maryk.lib.time.DateTime
 import maryk.core.properties.types.Key
-import maryk.lib.time.Time
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
@@ -24,6 +21,9 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
+import maryk.lib.time.Date
+import maryk.lib.time.DateTime
+import maryk.lib.time.Time
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter
@@ -121,15 +121,8 @@ double: 3.555
 dateTime: '2017-12-04T12:13'
 bool: true
 enum: V0
-list:
-- 34
-- 2352
-- 3423
-- 766
-set:
-- 2017-12-05
-- 2016-03-02
-- 1981-12-05
+list: [34, 2352, 3423, 766]
+set: [2017-12-05, 2016-03-02, 1981-12-05]
 map:
   12:55: yes
   10:03: ahum
@@ -142,10 +135,7 @@ subModel:
 multi:
 - V2
 - value: subInMulti!
-listOfString:
-- test1
-- another test
-- 🤗
+listOfString: [test1, another test, 🤗]
 """
 
 // Test if unknown values will be skipped

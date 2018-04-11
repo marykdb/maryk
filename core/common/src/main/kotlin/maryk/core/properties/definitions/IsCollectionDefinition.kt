@@ -2,9 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.json.IsJsonLikeReader
-import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.TooLittleItemsException
@@ -17,6 +14,9 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -66,7 +66,10 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
-        writer.writeStartArray()
+        val renderCompact = valueDefinition is IsSimpleValueDefinition<*, *>
+                && value.size < 5
+
+        writer.writeStartArray(renderCompact)
         for (it in value) {
             valueDefinition.writeJsonValue(it, writer, context)
         }

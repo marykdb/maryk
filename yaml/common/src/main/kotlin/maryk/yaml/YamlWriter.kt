@@ -71,7 +71,13 @@ class YamlWriter(
     override fun writeStartArray(isCompact: Boolean) {
         if (!this.lastIsCompact) {
             when (lastType) {
-                JsonType.FIELD_NAME -> writer("\n")
+                JsonType.FIELD_NAME -> {
+                    if (!isCompact) {
+                        writer("\n")
+                    } else {
+                        writer(" ")
+                    }
+                }
                 JsonType.START_ARRAY -> {
                     writer("$prefixToWrite- ")
                     this.prefixWasWritten = true

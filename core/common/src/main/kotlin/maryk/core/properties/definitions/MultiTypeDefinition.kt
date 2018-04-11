@@ -80,11 +80,12 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     override fun writeJsonValue(value: TypedValue<E, Any>, writer: IsJsonLikeWriter, context: CX?) {
-        writer.writeStartArray()
-        writer.writeString(value.type.name)
         @Suppress("UNCHECKED_CAST")
         val definition = this.definitionMap[value.type] as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("No def found for index ${value.type.name}")
+
+        writer.writeStartArray(definition is IsSimpleValueDefinition<*,*>)
+        writer.writeString(value.type.name)
 
         definition.writeJsonValue(value.value, writer, context)
         writer.writeEndArray()

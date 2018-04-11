@@ -2,13 +2,19 @@ package maryk.json
 
 /** A writer which handles JSON like data */
 interface IsJsonLikeWriter {
-    /** Write Object start */
-    fun writeStartObject()
+    /**
+     * Write Object start
+     * Set [isCompact] to true for a more compact representation
+     */
+    fun writeStartObject(isCompact: Boolean = false)
     /** Write Object end */
     fun writeEndObject()
 
-    /** Write Array start */
-    fun writeStartArray()
+    /**
+     * Write Array start
+     * Set [isCompact] to true for a more compact representation
+     */
+    fun writeStartArray(isCompact: Boolean = false)
     /** Write Array end */
     fun writeEndArray()
 

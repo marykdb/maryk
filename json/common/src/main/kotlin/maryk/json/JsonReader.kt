@@ -6,6 +6,11 @@ import maryk.lib.extensions.isLineBreak
 
 private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartDocument)
 
+/** Describes JSON complex types */
+private enum class JsonComplexType {
+    OBJECT, ARRAY
+}
+
 /** Reads JSON from the supplied [reader] */
 class JsonReader(
     private val reader: () -> Char

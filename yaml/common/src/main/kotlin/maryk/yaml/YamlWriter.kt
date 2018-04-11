@@ -2,7 +2,7 @@ package maryk.yaml
 
 import maryk.json.AbstractJsonLikeWriter
 import maryk.json.IllegalJsonOperation
-import maryk.json.JsonComplexType
+import maryk.json.JsonEmbedType
 import maryk.json.JsonType
 
 /** A Yaml writer which writes to [writer] */
@@ -13,60 +13,126 @@ class YamlWriter(
     private var prefix: String = ""
     private val toSanitizeRegex = Regex(".*[#:\n]+.*")
     private val arraySpacing: String = "-${spacing.removeSuffix(" ")}"
+    private var prefixWasWritten = false
+    private var compactStartedAtLevel: Int? = null
 
-    override fun writeStartObject() {
-        if (lastType == JsonType.FIELD_NAME) {
-            writer("\n")
+    private val prefixToWrite: String
+        get() = if (this.prefixWasWritten) {
+            this.prefixWasWritten = false
+            ""
+        } else prefix
+
+    private val lastIsCompact: Boolean get() {
+        this.compactStartedAtLevel?.let {
+            if (this.typeStack.size < it) {
+                this.compactStartedAtLevel = null
+            } else return true
         }
-        super.writeStartObject()
-        if (typeStack.size > 1) {
-            prefix += spacing
+
+        return this.typeStack.lastOrNull()?.isSimple ?: false
+    }
+
+    override fun writeStartObject(isCompact: Boolean) {
+        if (isCompact || this.lastIsCompact) {
+            if (lastType == JsonType.FIELD_NAME) {
+                writer(" ")
+            }
+            writer("{")
+
+            super.writeStartObject(isCompact)
+
+            this.compactStartedAtLevel = this.typeStack.size
+        } else {
+            if (lastType == JsonType.FIELD_NAME) {
+                writer("\n")
+            }
+
+            super.writeStartObject(isCompact)
+
+            if (typeStack.size > 1) {
+                prefix += spacing
+            }
         }
     }
 
     override fun writeEndObject() {
-        super.writeEndObject()
-        prefix = prefix.removeSuffix(spacing)
+        if (this.lastIsCompact) {
+            writer("}")
+            super.writeEndObject()
+            if (!this.lastIsCompact) {
+                writer("\n")
+            }
+        } else {
+            super.writeEndObject()
+            prefix = prefix.removeSuffix(spacing)
+        }
     }
 
-    override fun writeStartArray() {
-        when (lastType) {
-            JsonType.FIELD_NAME -> writer("\n")
-            JsonType.START_ARRAY -> {
-                writer("$prefix-\n")
-                prefix += spacing
+    override fun writeStartArray(isCompact: Boolean) {
+        if (!this.lastIsCompact) {
+            when (lastType) {
+                JsonType.FIELD_NAME -> writer("\n")
+                JsonType.START_ARRAY -> {
+                    writer("$prefixToWrite- ")
+                    this.prefixWasWritten = true
+                    prefix += spacing
+                }
+                JsonType.END_ARRAY -> {
+                    prefix = prefix.removeSuffix(spacing)
+                    writer("$prefixToWrite- ")
+                    this.prefixWasWritten = true
+                    prefix += spacing
+                }
+                else -> {}
             }
-            JsonType.END_ARRAY -> {
-                prefix = prefix.removeSuffix(spacing)
-                writer("$prefix-\n")
-                prefix += spacing
-            }
-            else -> {}
+        } else if (lastType != JsonType.START_ARRAY && lastType != JsonType.FIELD_NAME) {
+            writer(",")
         }
 
-        super.writeStartArray()
+        if (isCompact || this.lastIsCompact) {
+            writer("[")
+            this.compactStartedAtLevel = this.typeStack.size + 1 // is written later so + 1
+            this.prefixWasWritten = false
+        }
+
+        super.writeStartArray(isCompact)
     }
 
     override fun writeEndArray() {
-        if (lastType == JsonType.END_ARRAY) {
-            prefix = prefix.removeSuffix(spacing)
+        if (this.lastIsCompact) {
+            writer("]")
+            super.writeEndArray()
+            if (!this.lastIsCompact) {
+                writer("\n")
+            }
+        } else {
+            if (lastType == JsonType.END_ARRAY) {
+                prefix = prefix.removeSuffix(spacing)
+            }
+            super.writeEndArray()
         }
-
-        super.writeEndArray()
     }
 
     /** Writes the field [name] for an object */
     override fun writeFieldName(name: String) {
         val lastType = this.lastType
-        super.writeFieldName(name)
-        if (lastType == JsonType.START_OBJ
-            && typeStack.size > 1
-            && typeStack[typeStack.size - 2] == JsonComplexType.ARRAY
-        ) {
-            writer("${prefix.removeSuffix(spacing)}$arraySpacing$name:")
+
+        if (this.lastIsCompact) {
+            if (lastType != JsonType.START_OBJ) {
+                writer(", ")
+            }
+            writer("$name:")
         } else {
-            writer("$prefix$name:")
+            if (lastType == JsonType.START_OBJ
+                && typeStack.size > 1
+                && typeStack[typeStack.size - 2] is JsonEmbedType.Array
+            ) {
+                writer("${prefixToWrite.removeSuffix(spacing)}$arraySpacing$name:")
+            } else {
+                writer("$prefixToWrite$name:")
+            }
         }
+        super.writeFieldName(name)
     }
 
     /** Writes a string [value] including quotes */
@@ -77,16 +143,28 @@ class YamlWriter(
         val valueToWrite = this.sanitizeValue(value)
 
         when(typeStack.last()) {
-            JsonComplexType.OBJECT -> {
+            is JsonEmbedType.Object -> {
                 if (lastType == JsonType.FIELD_NAME) {
                     writer(" ")
                 }
                 super.checkObjectOperation()
-                writer("$valueToWrite\n")
+                if (this.lastIsCompact) {
+                    writer(valueToWrite)
+                } else {
+                    writer("$valueToWrite\n")
+                }
             }
-            JsonComplexType.ARRAY -> {
+            is JsonEmbedType.Array -> {
+                if (this.lastIsCompact) {
+                    if (lastType == JsonType.ARRAY_VALUE) {
+                        writer(", ")
+                    }
+                    writer(valueToWrite)
+                } else {
+                    writer("$prefixToWrite$arraySpacing$valueToWrite\n")
+                }
+
                 super.checkArrayOperation()
-                writer("$prefix$arraySpacing$valueToWrite\n")
             }
         }
     } else {

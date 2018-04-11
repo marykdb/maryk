@@ -5,13 +5,19 @@ enum class JsonType {
     START, START_OBJ, END_OBJ, FIELD_NAME, OBJ_VALUE, START_ARRAY, END_ARRAY, ARRAY_VALUE
 }
 
+/** Describes JSON complex types */
+sealed class JsonEmbedType(val isSimple: Boolean) {
+    class Object(isSimple: Boolean): JsonEmbedType(isSimple)
+    class Array(isSimple: Boolean): JsonEmbedType(isSimple)
+}
+
 /** Class to implement code which is generic among JSON like writers */
 abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     protected var lastType: JsonType = JsonType.START
-    protected var typeStack: MutableList<JsonComplexType> = mutableListOf()
+    protected var typeStack: MutableList<JsonEmbedType> = mutableListOf()
 
-    override fun writeStartObject() {
-        typeStack.add(JsonComplexType.OBJECT)
+    override fun writeStartObject(isCompact: Boolean) {
+        typeStack.add(JsonEmbedType.Object(isCompact))
         checkTypeIsAllowed(
             JsonType.START_OBJ,
             arrayOf(JsonType.START, JsonType.FIELD_NAME, JsonType.ARRAY_VALUE, JsonType.START_ARRAY, JsonType.END_OBJ)
@@ -19,7 +25,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     }
 
     override fun writeEndObject() {
-        if(typeStack.isEmpty() || typeStack.last() != JsonComplexType.OBJECT) {
+        if(typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Object) {
             throw IllegalJsonOperation("There is no object to close")
         }
         typeStack.removeAt(typeStack.lastIndex)
@@ -29,8 +35,8 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         )
     }
 
-    override fun writeStartArray() {
-        typeStack.add(JsonComplexType.ARRAY)
+    override fun writeStartArray(isCompact: Boolean) {
+        typeStack.add(JsonEmbedType.Array(isCompact))
         checkTypeIsAllowed(
             JsonType.START_ARRAY,
             arrayOf(JsonType.START, JsonType.FIELD_NAME, JsonType.START_ARRAY, JsonType.END_ARRAY)
@@ -38,7 +44,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     }
 
     override fun writeEndArray() {
-        if(typeStack.isEmpty() || typeStack.last() != JsonComplexType.ARRAY) {
+        if(typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Array) {
             throw IllegalJsonOperation("Json: There is no array to close")
         }
         typeStack.removeAt(typeStack.lastIndex)

@@ -5,15 +5,15 @@ class JsonWriter(
     private val pretty: Boolean = false,
     private val writer: (String) -> Unit
 ) : AbstractJsonLikeWriter() {
-    override fun writeStartObject() {
+    override fun writeStartObject(isCompact: Boolean) {
         if(lastType != JsonType.START_ARRAY
             && !typeStack.isEmpty()
-            && typeStack.last() == JsonComplexType.ARRAY
+            && typeStack.last() is JsonEmbedType.Array
         ) {
             writer(",")
             if (pretty) { writer(" ") }
         }
-        super.writeStartObject()
+        super.writeStartObject(isCompact)
         writer("{")
         makePretty()
     }
@@ -24,15 +24,15 @@ class JsonWriter(
         writer("}")
     }
 
-    override fun writeStartArray() {
+    override fun writeStartArray(isCompact: Boolean) {
         if(lastType != JsonType.START_ARRAY
             && !typeStack.isEmpty()
-            && typeStack.last() == JsonComplexType.ARRAY
+            && typeStack.last() is JsonEmbedType.Array
         ) {
             writer(",")
             if (pretty) { writer(" ") }
         }
-        super.writeStartArray()
+        super.writeStartArray(isCompact)
         writer("[")
     }
 
@@ -58,11 +58,11 @@ class JsonWriter(
     /** Writes a value excluding quotes */
     override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
         when(typeStack.last()) {
-            JsonComplexType.OBJECT -> {
+            is JsonEmbedType.Object -> {
                 super.checkObjectOperation()
                 writer(value)
             }
-            JsonComplexType.ARRAY -> {
+            is JsonEmbedType.Array -> {
                 if(lastType != JsonType.START_ARRAY) {
                     writer(",")
                     if (pretty) { writer(" ") }
@@ -79,7 +79,7 @@ class JsonWriter(
         if (pretty) {
             writer("\n")
             for (it in typeStack) {
-                if(it == JsonComplexType.OBJECT) { writer("\t") }
+                if(it is JsonEmbedType.Object) { writer("\t") }
             }
         }
     }

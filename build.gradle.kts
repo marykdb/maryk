@@ -10,13 +10,12 @@ buildscript {
     }
 }
 
-val group by project
-val version by project
+// For JS projects
+plugins {
+    id("com.moowork.node").version("1.2.0")
+}
 
 allprojects {
-    group = group
-    version = version
-
     repositories {
         jcenter()
     }

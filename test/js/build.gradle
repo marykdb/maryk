@@ -4,7 +4,6 @@ apply {
 
 dependencies {
     expectedBy(project(":test-common"))
-    compile("org.jetbrains.kotlin:kotlin-stdlib-js:$kotlinVersion")
     compile("org.jetbrains.kotlin:kotlin-test-js:$kotlinVersion")
 }
 

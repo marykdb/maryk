@@ -1,0 +1,48 @@
+ext.initJS = {
+    apply {
+        plugin("kotlin-platform-js")
+        plugin("com.moowork.node")
+    }
+
+    dependencies {
+        compile("org.jetbrains.kotlin:kotlin-stdlib-js:$kotlinVersion")
+
+        testCompile(project(":test-js"))
+    }
+}
+
+rootProject.ext.nodeIsAdded = false
+
+ext.setupJS = {
+    node {
+        download = true
+    }
+
+    task installMocha(type: NpmTask) {
+        args = ['install', 'mocha']
+    }
+
+    [compileKotlin2Js, compileTestKotlin2Js]*.configure {
+        kotlinOptions.moduleKind = "commonjs"
+        kotlinOptions.sourceMap = true
+    }
+
+    task populateNodeModules(type: Copy, dependsOn: compileKotlin2Js) {
+        from compileKotlin2Js.destinationDir
+
+        configurations.testCompile.each {
+            from(zipTree(it.absolutePath).matching { include '*.js' })
+        }
+
+        into("${buildDir}/node_modules")
+    }
+
+    task prepareForMocha(dependsOn: [compileTestKotlin2Js, populateNodeModules])
+
+    task runMocha(type: NodeTask, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
+        script = file('node_modules/.bin/mocha')
+        args = [compileTestKotlin2Js.outputFile]
+    }
+
+    test.dependsOn runMocha
+}

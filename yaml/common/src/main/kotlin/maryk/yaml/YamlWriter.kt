@@ -34,7 +34,7 @@ class YamlWriter(
 
     override fun writeStartObject(isCompact: Boolean) {
         if (isCompact || this.lastIsCompact) {
-            if (lastType == JsonType.FIELD_NAME) {
+            if (this.lastType == JsonType.FIELD_NAME || this.lastType == JsonType.TAG) {
                 writer(" ")
             }
             writer("{")
@@ -43,7 +43,7 @@ class YamlWriter(
 
             this.compactStartedAtLevel = this.typeStack.size
         } else {
-            if (lastType == JsonType.FIELD_NAME) {
+            if (lastType == JsonType.FIELD_NAME || lastType == JsonType.TAG) {
                 writer("\n")
             }
 
@@ -71,7 +71,7 @@ class YamlWriter(
     override fun writeStartArray(isCompact: Boolean) {
         if (!this.lastIsCompact) {
             when (lastType) {
-                JsonType.FIELD_NAME -> {
+                JsonType.FIELD_NAME, JsonType.TAG -> {
                     if (!isCompact) {
                         writer("\n")
                     } else {
@@ -147,13 +147,18 @@ class YamlWriter(
     /** Writes a [value] excluding quotes */
     override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
         val valueToWrite = this.sanitizeValue(value)
+        val lastTypeBeforeOperation = this.lastType
+
+        if (lastTypeBeforeOperation == JsonType.TAG) {
+            writer(" ")
+        }
 
         when(typeStack.last()) {
             is JsonEmbedType.Object -> {
-                if (lastType == JsonType.FIELD_NAME) {
+                super.checkObjectValueAllowed()
+                if (lastTypeBeforeOperation == JsonType.FIELD_NAME) {
                     writer(" ")
                 }
-                super.checkObjectOperation()
                 if (this.lastIsCompact) {
                     writer(valueToWrite)
                 } else {
@@ -161,20 +166,53 @@ class YamlWriter(
                 }
             }
             is JsonEmbedType.Array -> {
+                super.checkArrayValueAllowed()
                 if (this.lastIsCompact) {
-                    if (lastType == JsonType.ARRAY_VALUE) {
+                    if (lastTypeBeforeOperation == JsonType.ARRAY_VALUE) {
                         writer(", ")
                     }
                     writer(valueToWrite)
                 } else {
-                    writer("$prefixToWrite$arraySpacing$valueToWrite\n")
+                    if (lastTypeBeforeOperation == JsonType.TAG) {
+                        writer("$valueToWrite\n")
+                    } else {
+                        writer("$prefixToWrite$arraySpacing$valueToWrite\n")
+                    }
                 }
-
-                super.checkArrayOperation()
             }
         }
     } else {
         throw IllegalJsonOperation("Cannot checkAndWrite a value outside array or object")
+    }
+
+    /** Writes a [tag] to YAML output */
+    fun writeTag(tag: String) {
+        if (this.lastType == JsonType.FIELD_NAME) {
+            writer(" ")
+        }
+
+        val lastTypeBeforeCheck = this.lastType
+
+        checkTagAllowed()
+
+        if (!this.lastIsCompact && (lastTypeBeforeCheck == JsonType.START_ARRAY || lastTypeBeforeCheck == JsonType.ARRAY_VALUE)) {
+            writer("$prefixToWrite$arraySpacing$tag")
+        } else {
+            writer(tag)
+        }
+    }
+
+    protected fun checkTagAllowed() {
+        checkTypeIsAllowed(
+            JsonType.TAG,
+            arrayOf(
+                JsonType.START,
+                JsonType.FIELD_NAME,
+                JsonType.ARRAY_VALUE,
+                JsonType.START_ARRAY,
+                JsonType.COMPLEX_FIELD_NAME_START
+            )
+        )
     }
 
     /** If value contains yaml incompatible values it will be surrounded by quotes */

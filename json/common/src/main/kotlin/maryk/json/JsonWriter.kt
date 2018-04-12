@@ -59,7 +59,7 @@ class JsonWriter(
     override fun writeValue(value: String) = if (!typeStack.isEmpty()) {
         when(typeStack.last()) {
             is JsonEmbedType.Object -> {
-                super.checkObjectOperation()
+                super.checkObjectValueAllowed()
                 writer(value)
             }
             is JsonEmbedType.Array -> {
@@ -67,7 +67,7 @@ class JsonWriter(
                     writer(",")
                     if (pretty) { writer(" ") }
                 }
-                super.checkArrayOperation()
+                super.checkArrayValueAllowed()
                 writer(value)
             }
         }

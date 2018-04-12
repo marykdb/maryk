@@ -2,7 +2,17 @@ package maryk.json
 
 /** Describes JSON elements that can be written */
 enum class JsonType {
-    START, START_OBJ, END_OBJ, FIELD_NAME, OBJ_VALUE, START_ARRAY, END_ARRAY, ARRAY_VALUE
+    START,
+    START_OBJ,
+    END_OBJ,
+    FIELD_NAME,
+    OBJ_VALUE,
+    START_ARRAY,
+    END_ARRAY,
+    ARRAY_VALUE,
+    TAG, // Only available in YAML
+    COMPLEX_FIELD_NAME_START, // Only available in YAML
+    COMPLEX_FIELD_NAME_END, // Only available in YAML
 }
 
 /** Describes JSON complex types */
@@ -20,7 +30,15 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         typeStack.add(JsonEmbedType.Object(isCompact))
         checkTypeIsAllowed(
             JsonType.START_OBJ,
-            arrayOf(JsonType.START, JsonType.FIELD_NAME, JsonType.ARRAY_VALUE, JsonType.START_ARRAY, JsonType.END_OBJ)
+            arrayOf(
+                JsonType.START,
+                JsonType.FIELD_NAME,
+                JsonType.ARRAY_VALUE,
+                JsonType.START_ARRAY,
+                JsonType.END_OBJ,
+                JsonType.TAG,
+                JsonType.COMPLEX_FIELD_NAME_START
+            )
         )
     }
 
@@ -39,7 +57,14 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         typeStack.add(JsonEmbedType.Array(isCompact))
         checkTypeIsAllowed(
             JsonType.START_ARRAY,
-            arrayOf(JsonType.START, JsonType.FIELD_NAME, JsonType.START_ARRAY, JsonType.END_ARRAY)
+            arrayOf(
+                JsonType.START,
+                JsonType.FIELD_NAME,
+                JsonType.START_ARRAY,
+                JsonType.END_ARRAY,
+                JsonType.TAG,
+                JsonType.COMPLEX_FIELD_NAME_START
+            )
         )
     }
 
@@ -61,24 +86,26 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         )
     }
 
-    internal fun checkTypeIsAllowed(type: JsonType, allowed: Array<JsonType>){
+    protected fun checkTypeIsAllowed(type: JsonType, allowed: Array<JsonType>){
         if (lastType !in allowed) {
             throw IllegalJsonOperation("Json: $type not allowed after $lastType")
         }
         lastType = type
     }
 
-    protected fun checkObjectOperation() {
+    /** For writing values in Objects */
+    protected fun checkObjectValueAllowed() {
         checkTypeIsAllowed(
             JsonType.OBJ_VALUE,
-            arrayOf(JsonType.FIELD_NAME)
+            arrayOf(JsonType.FIELD_NAME, JsonType.TAG, JsonType.COMPLEX_FIELD_NAME_END)
         )
     }
 
-    protected fun checkArrayOperation() {
+    /** For writing values in Arrays */
+    protected fun checkArrayValueAllowed() {
         checkTypeIsAllowed(
             JsonType.ARRAY_VALUE,
-            arrayOf(JsonType.START_ARRAY, JsonType.ARRAY_VALUE)
+            arrayOf(JsonType.START_ARRAY, JsonType.ARRAY_VALUE, JsonType.TAG)
         )
     }
 }

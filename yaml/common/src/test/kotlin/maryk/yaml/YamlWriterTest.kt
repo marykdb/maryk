@@ -5,15 +5,6 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-private const val YAML_OUTPUT = """- 1
-- '#Test'
-- 3.5
-- true
-- test: false
-  test2: value
-- another: yes
-"""
-
 internal class YamlWriterTest {
     @Test
     fun write_expected_YAML() {
@@ -39,7 +30,15 @@ internal class YamlWriterTest {
             writeEndArray()
         }
 
-        output shouldBe YAML_OUTPUT
+        output shouldBe """
+        |- 1
+        |- '#Test'
+        |- 3.5
+        |- true
+        |- test: false
+        |  test2: value
+        |- another: yes
+        |""".trimMargin()
     }
 
     @Test
@@ -202,7 +201,59 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun not_start_with_unallowed_JSON_types() {
+    fun write_YAML_with_tags() {
+        var output = ""
+        YamlWriter {
+                string: String -> output += string
+        }.apply {
+            writeTag("!!omap")
+            writeStartObject()
+            writeFieldName("t1")
+            writeTag("!!str")
+            writeValue("true")
+            writeFieldName("t2")
+            writeTag("!!set")
+            writeStartArray()
+            writeTag("!!int")
+            writeValue("30")
+            writeEndArray()
+            writeFieldName("t3")
+            writeTag("!!omap")
+            writeStartObject()
+            writeFieldName("a1")
+            writeValue("1")
+            writeEndObject()
+            writeFieldName("t4")
+            writeTag("!!omap")
+            writeStartObject(true)
+            writeFieldName("a1")
+            writeTag("!!int")
+            writeValue("1")
+            writeEndObject()
+            writeFieldName("t5")
+            writeTag("!!set")
+            writeStartArray(true)
+            writeTag("!!int")
+            writeValue("30")
+            writeEndArray()
+            writeEndObject()
+        }
+
+        output shouldBe """
+        |!!omap
+        |t1: !!str true
+        |t2: !!set
+        |- !!int 30
+        |t3: !!omap
+        |  a1: 1
+        |t4: !!omap {a1: !!int 1}
+        |t5: !!set [!!int 30]
+        |""".trimMargin()
+    }
+
+
+    @Test
+    fun not_start_with_unallowed_YAML_types() {
         var output = ""
 
         YamlWriter {

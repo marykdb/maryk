@@ -14,7 +14,7 @@ internal class YamlWriterTest {
         }.apply {
             writeStartArray()
             writeValue("1")
-            writeString("#Test")
+            writeString("#Test's")
             writeValue("3.5")
             writeValue("true")
             writeStartObject()
@@ -32,7 +32,7 @@ internal class YamlWriterTest {
 
         output shouldBe """
         |- 1
-        |- '#Test'
+        |- '#Test''s'
         |- 3.5
         |- true
         |- test: false
@@ -250,7 +250,6 @@ internal class YamlWriterTest {
         |t5: !!set [!!int 30]
         |""".trimMargin()
     }
-
 
     @Test
     fun not_start_with_unallowed_YAML_types() {

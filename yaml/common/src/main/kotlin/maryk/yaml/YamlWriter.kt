@@ -218,7 +218,7 @@ class YamlWriter(
     /** If value contains yaml incompatible values it will be surrounded by quotes */
     private fun sanitizeValue(value: String) =
         if(value.matches(toSanitizeRegex)) {
-            "'$value'"
+            "'${value.replace("'", "''")}'"
         } else {
             value
         }

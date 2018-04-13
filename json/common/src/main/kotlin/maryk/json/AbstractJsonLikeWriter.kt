@@ -19,6 +19,7 @@ enum class JsonType {
 sealed class JsonEmbedType(val isSimple: Boolean) {
     class Object(isSimple: Boolean): JsonEmbedType(isSimple)
     class Array(isSimple: Boolean): JsonEmbedType(isSimple)
+    object ComplexField: JsonEmbedType(false)
 }
 
 /** Class to implement code which is generic among JSON like writers */
@@ -88,7 +89,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
 
     protected fun checkTypeIsAllowed(type: JsonType, allowed: Array<JsonType>){
         if (lastType !in allowed) {
-            throw IllegalJsonOperation("Json: $type not allowed after $lastType")
+            throw IllegalJsonOperation("Type $type not allowed after $lastType")
         }
         lastType = type
     }

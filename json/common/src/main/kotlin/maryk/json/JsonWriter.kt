@@ -70,6 +70,9 @@ class JsonWriter(
                 super.checkArrayValueAllowed()
                 writer(value)
             }
+            is JsonEmbedType.ComplexField -> {
+                throw Exception("Complex fields are not possible in JSON")
+            }
         }
     } else {
         throw IllegalJsonOperation("Cannot checkTypeIsAllowed a value outside array or object")

@@ -10,7 +10,7 @@ internal class YamlWriterTest {
     fun write_expected_YAML() {
         var output = ""
         YamlWriter {
-            string: String -> output += string
+            output += it
         }.apply {
             writeStartArray()
             writeValue("1")
@@ -45,7 +45,7 @@ internal class YamlWriterTest {
     fun write_YAML_in_map_embedded_in_map() {
         var output = ""
         YamlWriter {
-            string: String -> output += string
+            output += it
         }.apply {
             writeStartObject()
             writeFieldName("t1")
@@ -104,8 +104,9 @@ internal class YamlWriterTest {
     @Test
     fun write_YAML_in_simple_embedded_maps() {
         var output = ""
-        val writer = { string: String -> output += string }
-        YamlWriter(writer = writer).apply {
+        YamlWriter {
+            output += it
+        }.apply {
             writeStartObject(true)
             writeFieldName("t1")
             writeStartObject()
@@ -204,7 +205,7 @@ internal class YamlWriterTest {
     fun write_YAML_with_tags() {
         var output = ""
         YamlWriter {
-                string: String -> output += string
+            output += it
         }.apply {
             writeTag("!!omap")
             writeStartObject()
@@ -248,6 +249,45 @@ internal class YamlWriterTest {
         |  a1: 1
         |t4: !!omap {a1: !!int 1}
         |t5: !!set [!!int 30]
+        |""".trimMargin()
+    }
+
+    @Test
+    fun write_YAML_with_complex_fields() {
+        var output = ""
+        YamlWriter {
+            output += it
+        }.apply {
+            writeStartArray()
+            writeStartObject()
+            writeStartComplexField()
+            writeStartArray()
+            writeValue("a1")
+            writeValue("a2")
+            writeEndArray()
+            writeEndComplexField()
+            writeValue("value 1")
+            writeStartComplexField()
+            writeStartObject()
+            writeFieldName("f1")
+            writeValue("v1")
+            writeFieldName("f2")
+            writeValue("v2")
+            writeEndObject()
+            writeEndComplexField()
+            writeTag("!tag")
+            writeValue("value 2")
+            writeEndObject()
+            writeEndArray()
+        }
+
+        output shouldBe """
+        |- ? - a1
+        |    - a2
+        |  : value 1
+        |  ? f1: v1
+        |    f2: v2
+        |  : !tag value 2
         |""".trimMargin()
     }
 

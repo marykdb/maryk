@@ -47,9 +47,17 @@ class YamlWriter(
                 writer("\n")
             }
 
+            // If starting object within array then add array field
+            if (this.typeStack.last() is JsonEmbedType.Array) {
+                writer("$prefixToWrite$arraySpacing")
+                this.prefixWasWritten = true
+            }
+
+            val lastEmbedType= this.typeStack.last()
+
             super.writeStartObject(isCompact)
 
-            if (typeStack.size > 1) {
+            if (typeStack.size > 1 && lastEmbedType !== JsonEmbedType.ComplexField) {
                 prefix += spacing
             }
         }
@@ -64,7 +72,9 @@ class YamlWriter(
             }
         } else {
             super.writeEndObject()
-            prefix = prefix.removeSuffix(spacing)
+            if (this.typeStack.last() !== JsonEmbedType.ComplexField) {
+                prefix = prefix.removeSuffix(spacing)
+            }
         }
     }
 
@@ -129,6 +139,7 @@ class YamlWriter(
             }
             writer("$name:")
         } else {
+            // If starting object within array then add array field
             if (lastType == JsonType.START_OBJ
                 && typeStack.size > 1
                 && typeStack[typeStack.size - 2] is JsonEmbedType.Array
@@ -159,9 +170,11 @@ class YamlWriter(
                 if (lastTypeBeforeOperation == JsonType.FIELD_NAME) {
                     writer(" ")
                 }
+
                 if (this.lastIsCompact) {
                     writer(valueToWrite)
                 } else {
+                    this.prefixWasWritten = false
                     writer("$valueToWrite\n")
                 }
             }
@@ -179,6 +192,9 @@ class YamlWriter(
                         writer("$prefixToWrite$arraySpacing$valueToWrite\n")
                     }
                 }
+            }
+            is JsonEmbedType.ComplexField -> {
+                throw IllegalJsonOperation("Complex fields cannot contain values directly, start an array or object before adding them")
             }
         }
     } else {
@@ -202,6 +218,30 @@ class YamlWriter(
         }
     }
 
+    fun writeStartComplexField() {
+        writer("$prefixToWrite? ")
+        lastType = JsonType.COMPLEX_FIELD_NAME_START
+        prefixWasWritten = true
+
+        typeStack.add(JsonEmbedType.ComplexField)
+
+        prefix += spacing
+    }
+
+    fun writeEndComplexField() {
+        lastType = JsonType.COMPLEX_FIELD_NAME_END
+
+        prefix = prefix.removeSuffix(spacing)
+
+        if(typeStack.isEmpty() || typeStack.last() !== JsonEmbedType.ComplexField) {
+            throw IllegalJsonOperation("There is no complex field to close")
+        }
+        typeStack.removeAt(typeStack.lastIndex)
+
+        writer("$prefixToWrite: ")
+        this.prefixWasWritten = true
+    }
+
     protected fun checkTagAllowed() {
         checkTypeIsAllowed(
             JsonType.TAG,
@@ -210,8 +250,23 @@ class YamlWriter(
                 JsonType.FIELD_NAME,
                 JsonType.ARRAY_VALUE,
                 JsonType.START_ARRAY,
-                JsonType.COMPLEX_FIELD_NAME_START
+                JsonType.COMPLEX_FIELD_NAME_START,
+                JsonType.COMPLEX_FIELD_NAME_END
             )
+        )
+    }
+
+    protected fun checkComplexFieldNameStartAllowed() {
+        checkTypeIsAllowed(
+            JsonType.TAG,
+            arrayOf(JsonType.FIELD_NAME, JsonType.ARRAY_VALUE, JsonType.START_ARRAY, JsonType.COMPLEX_FIELD_NAME_START)
+        )
+    }
+
+    protected fun checkComplexFieldNameEndAllowed() {
+        checkTypeIsAllowed(
+            JsonType.TAG,
+            arrayOf(JsonType.END_OBJ, JsonType.END_ARRAY, JsonType.OBJ_VALUE)
         )
     }
 

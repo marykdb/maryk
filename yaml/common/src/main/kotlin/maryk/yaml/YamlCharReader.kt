@@ -6,7 +6,7 @@ import maryk.json.TokenType
 /** Yaml Character reader which uses the state in YamlReader to read until next token */
 internal abstract class YamlCharReader(
     internal val yamlReader: YamlReaderImpl
-) : IsYamlReader by yamlReader {
+) : IsInternalYamlReader by yamlReader {
     /** Reads Yaml until next found Token */
     abstract fun readUntilToken(extraIndent: Int, tag: TokenType? = null): JsonToken
     /** Handles reader interuptions */

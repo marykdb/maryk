@@ -64,7 +64,8 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
                 JsonType.START_ARRAY,
                 JsonType.END_ARRAY,
                 JsonType.TAG,
-                JsonType.COMPLEX_FIELD_NAME_START
+                JsonType.COMPLEX_FIELD_NAME_START,
+                JsonType.COMPLEX_FIELD_NAME_END
             )
         )
     }

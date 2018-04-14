@@ -15,11 +15,14 @@ fun YamlReader(
     defaultTag: String? = null,
     tagMap: Map<String, Map<String, TokenType>>? = null,
     reader: () -> Char
-) : IsJsonLikeReader =
+) : IsYamlReader =
     YamlReaderImpl(defaultTag, tagMap, reader)
 
+/** Interface to determine object is a yaml reader */
+interface IsYamlReader: IsJsonLikeReader
+
 /** Internal interface for the Yaml Reader functionality */
-internal interface IsYamlReader {
+internal interface IsInternalYamlReader {
     /** Is last character which was read */
     val lastChar: Char
     /** Holds the current char reader */
@@ -62,7 +65,7 @@ internal class YamlReaderImpl(
     private val defaultTag: String?,
     tagMap: Map<String, Map<String, TokenType>>?,
     private val reader: () -> Char
-) : IsJsonLikeReader, IsYamlReader {
+) : IsJsonLikeReader, IsInternalYamlReader, IsYamlReader {
     var version: String? = null
 
     override var currentToken: JsonToken = JsonToken.StartDocument

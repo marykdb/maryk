@@ -17,6 +17,12 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
+import maryk.lib.exceptions.ParseException
+import maryk.yaml.IsYamlReader
+import maryk.yaml.YamlWriter
 
 /** A collection of Property Definitions which can be used to model a DataModel */
 abstract class PropertyDefinitions<DO: Any>(
@@ -237,6 +243,43 @@ internal data class PropertyDefinitionsCollectionDefinition(
     override fun newMutableCollection(context: DataModelContext?): MutableCollection<IsPropertyDefinitionWrapper<Any, IsPropertyContext, Any>> {
         return MutablePropertyDefinitions<Any>().apply {
             capturer(context, this)
+        }
+    }
+
+    /**
+     * Overridden to render definitions list in YAML as objects
+     */
+    override fun writeJsonValue(
+        value: PropertyDefinitions<Any>,
+        writer: IsJsonLikeWriter,
+        context: DataModelContext?
+    ) {
+        if (writer is YamlWriter) {
+            writer.writeStartObject()
+            for (it in value) {
+                valueDefinition.writeJsonValue(it, writer, context)
+            }
+            writer.writeEndObject()
+        } else {
+            super.writeJsonValue(value, writer, context)
+        }
+    }
+
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelContext?): PropertyDefinitions<Any> {
+        if (reader is IsYamlReader) {
+            if (reader.currentToken !is JsonToken.StartObject) {
+                throw ParseException("Property definitions should be an Object")
+            }
+            val collection = newMutableCollection(context) as MutablePropertyDefinitions<Any>
+
+            while (reader.nextToken() !== JsonToken.EndObject) {
+                collection.add(
+                    valueDefinition.readJson(reader, context)
+                )
+            }
+            return collection
+        } else {
+            return super.readJson(reader, context)
         }
     }
 }

@@ -93,7 +93,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Write an [obj] of this DataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
+    open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (def in this.properties) {
             val name = def.name
@@ -110,7 +110,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Write an [map] with values for this DataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX? = null) {
+    open fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
             val def = properties.getDefinition(key) ?: continue
@@ -126,7 +126,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Read JSON from [reader] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    fun readJson(reader: IsJsonLikeReader, context: CX? = null): Map<Int, Any> {
+    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): Map<Int, Any> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

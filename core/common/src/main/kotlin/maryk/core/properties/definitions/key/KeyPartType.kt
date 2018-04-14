@@ -13,14 +13,14 @@ enum class KeyPartType(
     override val index: Int
 ): IndexedEnum<KeyPartType> {
     UUID(0),
-    Reference(1),
+    Ref(1),
     TypeId(2),
     Reversed(3)
 }
 
 internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DataModelContext>>(
     KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),
-    KeyPartType.Reference to ContextualPropertyReferenceDefinition(
+    KeyPartType.Ref to ContextualPropertyReferenceDefinition(
         contextualResolver = {
             it?.propertyDefinitions ?: throw ContextNotFoundException()
         }

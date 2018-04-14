@@ -20,6 +20,13 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.DataModelContext
+import maryk.json.IllegalJsonOperation
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
+import maryk.yaml.IsYamlReader
+import maryk.yaml.YamlWriter
 
 /**
  * Wraps a Property Definition of type [T] to give it more context [CX] about
@@ -56,34 +63,31 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
         this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
 
     companion object {
-        private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) {
+        private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) =
             definitions.add(0, "index", NumberDefinition(type = UInt32)) {
                 getter(it).toUInt32()
             }
-        }
 
-        private fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
+        private fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) =
             definitions.add(1, "name", StringDefinition(), getter)
-        }
 
-        private fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) {
+        private fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) =
             definitions.add(2, "definition", MultiTypeDefinition(
                 definitionMap = mapOfPropertyDefSubModelDefinitions
             )) {
                 val def = getter(it) as IsTransportablePropertyDefinitionType
                 TypedValue(def.propertyDefinitionType, def)
             }
-        }
+    }
+
+    private object Properties: PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>>() {
+        val index = IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *>::index)
+        val name = IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *>::name)
+        val definition = IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *>::definition)
     }
 
     object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>>>(
-        properties = object : PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>>() {
-            init {
-                IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *>::index)
-                IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *>::name)
-                IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *>::definition)
-            }
-        }
+        properties = Properties
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>): IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any> {
@@ -96,6 +100,85 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
                 typedDefinition.value,
                 { _: Any -> null }
             ) ?: throw DefNotFoundException("Property type $type not found")
+        }
+
+        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+            // When writing YAML, use YAML optimized format with complex field names
+            if (writer is YamlWriter) {
+                @Suppress("UNCHECKED_CAST")
+                val typedDefinition = map[Properties.definition.index] as TypedValue<PropertyDefinitionType, Any>?
+                        ?: throw Exception("No type defined at ${Properties.definition.index} in map")
+
+                writeYaml(
+                    writer,
+                    map[Properties.index.index] as Int,
+                    map[Properties.name.index] as String,
+                    typedDefinition,
+                    context
+                )
+            } else {
+                super.writeJson(map, writer, context)
+            }
+        }
+
+        override fun writeJson(
+            obj: IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>,
+            writer: IsJsonLikeWriter,
+            context: IsPropertyContext?
+        ) {
+            // When writing YAML, use YAML optimized format with complex field names
+            if (writer is YamlWriter) {
+                val typedDefinition = Properties.definition.getter(obj)
+                        ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
+
+                writeYaml(writer, obj.index, obj.name, typedDefinition, context)
+            } else {
+                super.writeJson(obj, writer, context)
+            }
+        }
+
+        private fun writeYaml(
+            writer: YamlWriter,
+            index: Int,
+            name: String,
+            typedDefinition: TypedValue<PropertyDefinitionType, Any>,
+            context: IsPropertyContext?
+        ) {
+            writer.writeStartComplexField()
+            writer.writeStartObject()
+            writer.writeFieldName(index.toString())
+            writer.writeValue(name)
+            writer.writeEndObject()
+            writer.writeEndComplexField()
+
+            Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext)
+        }
+
+        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): Map<Int, Any> {
+            // When reading YAML, use YAML optimized format with complex field names
+            if (reader is IsYamlReader) {
+                val valueMap: MutableMap<Int, Any> = mutableMapOf()
+                reader.apply {
+                    if (currentToken != JsonToken.StartComplexFieldName) throw IllegalJsonOperation("Expected complex field name with ?")
+                    if (nextToken() !is JsonToken.StartObject) throw IllegalJsonOperation("Expected object within complex field name")
+
+                    val index = (nextToken() as? JsonToken.FieldName)?.value?.toInt()?.toUInt32()
+                            ?: throw IllegalJsonOperation("Expected index integer as field name")
+                    valueMap[Properties.index.index] = index
+
+                    (nextToken() as? JsonToken.Value<*>) ?: throw IllegalJsonOperation("Expected property name")
+                    valueMap[Properties.name.index] = Properties.name.readJson(reader, context)
+
+                    if (nextToken() != JsonToken.EndObject) throw IllegalJsonOperation("Expected object within complex field name")
+                    if (nextToken() != JsonToken.EndComplexFieldName) throw IllegalJsonOperation("Expected end of complex field name")
+
+                    nextToken() // Move to next value
+                    valueMap.put(Properties.definition.index, Properties.definition.readJson(reader, context as DataModelContext))
+                }
+                return valueMap
+            } else {
+                return super.readJson(reader, context)
+            }
         }
     }
 }

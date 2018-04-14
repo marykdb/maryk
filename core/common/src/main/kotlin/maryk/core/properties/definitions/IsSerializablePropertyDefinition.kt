@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions
 
-import maryk.json.IsJsonLikeReader
-import maryk.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 
 /**

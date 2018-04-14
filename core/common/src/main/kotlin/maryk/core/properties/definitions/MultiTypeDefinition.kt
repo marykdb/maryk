@@ -99,18 +99,16 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, Any> {
         reader.nextToken().let {
-            if(it !is JsonToken.Value<*>) {
+            if (it !is JsonToken.Value<*>) {
                 throw ParseException("Expected a value at start")
             }
 
             val type = this.typeByName[it.value] ?: throw ParseException("Invalid multi type name ${it.value}")
-
-            reader.nextToken()
             val definition = this.definitionMap[type]
                     ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
 
+            reader.nextToken()
             val value = definition.readJson(reader, context)
-
             reader.nextToken() // skip end object
 
             return TypedValue(type, value)

@@ -11,11 +11,11 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
-import maryk.lib.time.DateTime
-import maryk.lib.time.Time
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelContext
+import maryk.lib.time.DateTime
+import maryk.lib.time.Time
 import maryk.test.shouldBe
 import kotlin.test.Test
 

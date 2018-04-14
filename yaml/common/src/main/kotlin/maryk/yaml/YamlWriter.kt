@@ -45,6 +45,7 @@ class YamlWriter(
         } else {
             if (lastType == JsonType.FIELD_NAME || lastType == JsonType.TAG) {
                 writer("\n")
+                this.prefixWasWritten = false
             }
 
             val lastEmbedType= this.typeStack.lastOrNull()
@@ -84,6 +85,7 @@ class YamlWriter(
                 JsonType.FIELD_NAME, JsonType.TAG -> {
                     if (!isCompact) {
                         writer("\n")
+                        this.prefixWasWritten = false
                     } else {
                         writer(" ")
                     }
@@ -213,17 +215,28 @@ class YamlWriter(
             )
         )
 
-        if (!this.lastIsCompact && (lastTypeBeforeCheck == JsonType.START_ARRAY || lastTypeBeforeCheck == JsonType.ARRAY_VALUE)) {
-            writer("$prefixToWrite$arraySpacing$tag")
+        if (!this.lastIsCompact) {
+            if (lastTypeBeforeCheck == JsonType.START_ARRAY || lastTypeBeforeCheck == JsonType.ARRAY_VALUE) {
+                writer("$prefixToWrite$arraySpacing$tag")
+            } else {
+                writer(tag)
+            }
         } else {
-            writer(tag)
+            if (!this.typeStack.isEmpty()
+                && lastTypeBeforeCheck != JsonType.START_ARRAY
+                && this.typeStack.last() is JsonEmbedType.Array
+            ) {
+                writer(", $tag")
+            } else {
+                writer(tag)
+            }
         }
     }
 
     fun writeStartComplexField() {
         checkTypeIsAllowed(
             JsonType.COMPLEX_FIELD_NAME_START,
-            arrayOf(JsonType.START_OBJ, JsonType.OBJ_VALUE)
+            arrayOf(JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_OBJ, JsonType.END_ARRAY)
         )
 
         writer("$prefixToWrite? ")

@@ -70,6 +70,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         val renderCompact = valueDefinition !is SubModelDefinition<*, *, *, *, *>
                 && valueDefinition !is ValueModelDefinition<*, *>
                 && valueDefinition !is ContextualSubModelDefinition<*>
+                && valueDefinition !is MultiTypeDefinition<*, *>
                 && value.size < 5
 
         writer.writeStartArray(renderCompact)

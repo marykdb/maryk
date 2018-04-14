@@ -47,17 +47,17 @@ class YamlWriter(
                 writer("\n")
             }
 
+            val lastEmbedType= this.typeStack.lastOrNull()
+
             // If starting object within array then add array field
-            if (this.typeStack.last() is JsonEmbedType.Array) {
+            if (lastEmbedType != null && lastEmbedType is JsonEmbedType.Array) {
                 writer("$prefixToWrite$arraySpacing")
                 this.prefixWasWritten = true
             }
 
-            val lastEmbedType= this.typeStack.last()
-
             super.writeStartObject(isCompact)
 
-            if (typeStack.size > 1 && lastEmbedType !== JsonEmbedType.ComplexField) {
+            if (lastEmbedType != null && lastEmbedType != JsonEmbedType.ComplexField) {
                 prefix += spacing
             }
         }
@@ -72,7 +72,7 @@ class YamlWriter(
             }
         } else {
             super.writeEndObject()
-            if (this.typeStack.last() !== JsonEmbedType.ComplexField) {
+            if (!this.typeStack.isEmpty() && this.typeStack.last() !== JsonEmbedType.ComplexField) {
                 prefix = prefix.removeSuffix(spacing)
             }
         }
@@ -139,15 +139,7 @@ class YamlWriter(
             }
             writer("$name:")
         } else {
-            // If starting object within array then add array field
-            if (lastType == JsonType.START_OBJ
-                && typeStack.size > 1
-                && typeStack[typeStack.size - 2] is JsonEmbedType.Array
-            ) {
-                writer("${prefixToWrite.removeSuffix(spacing)}$arraySpacing$name:")
-            } else {
-                writer("$prefixToWrite$name:")
-            }
+            writer("$prefixToWrite$name:")
         }
         super.writeFieldName(name)
     }
@@ -209,40 +201,6 @@ class YamlWriter(
 
         val lastTypeBeforeCheck = this.lastType
 
-        checkTagAllowed()
-
-        if (!this.lastIsCompact && (lastTypeBeforeCheck == JsonType.START_ARRAY || lastTypeBeforeCheck == JsonType.ARRAY_VALUE)) {
-            writer("$prefixToWrite$arraySpacing$tag")
-        } else {
-            writer(tag)
-        }
-    }
-
-    fun writeStartComplexField() {
-        writer("$prefixToWrite? ")
-        lastType = JsonType.COMPLEX_FIELD_NAME_START
-        prefixWasWritten = true
-
-        typeStack.add(JsonEmbedType.ComplexField)
-
-        prefix += spacing
-    }
-
-    fun writeEndComplexField() {
-        lastType = JsonType.COMPLEX_FIELD_NAME_END
-
-        prefix = prefix.removeSuffix(spacing)
-
-        if(typeStack.isEmpty() || typeStack.last() !== JsonEmbedType.ComplexField) {
-            throw IllegalJsonOperation("There is no complex field to close")
-        }
-        typeStack.removeAt(typeStack.lastIndex)
-
-        writer("$prefixToWrite: ")
-        this.prefixWasWritten = true
-    }
-
-    protected fun checkTagAllowed() {
         checkTypeIsAllowed(
             JsonType.TAG,
             arrayOf(
@@ -254,20 +212,43 @@ class YamlWriter(
                 JsonType.COMPLEX_FIELD_NAME_END
             )
         )
+
+        if (!this.lastIsCompact && (lastTypeBeforeCheck == JsonType.START_ARRAY || lastTypeBeforeCheck == JsonType.ARRAY_VALUE)) {
+            writer("$prefixToWrite$arraySpacing$tag")
+        } else {
+            writer(tag)
+        }
     }
 
-    protected fun checkComplexFieldNameStartAllowed() {
+    fun writeStartComplexField() {
         checkTypeIsAllowed(
-            JsonType.TAG,
-            arrayOf(JsonType.FIELD_NAME, JsonType.ARRAY_VALUE, JsonType.START_ARRAY, JsonType.COMPLEX_FIELD_NAME_START)
+            JsonType.COMPLEX_FIELD_NAME_START,
+            arrayOf(JsonType.START_OBJ, JsonType.OBJ_VALUE)
         )
+
+        writer("$prefixToWrite? ")
+        prefixWasWritten = true
+
+        typeStack.add(JsonEmbedType.ComplexField)
+
+        prefix += spacing
     }
 
-    protected fun checkComplexFieldNameEndAllowed() {
+    fun writeEndComplexField() {
         checkTypeIsAllowed(
-            JsonType.TAG,
+            JsonType.COMPLEX_FIELD_NAME_END,
             arrayOf(JsonType.END_OBJ, JsonType.END_ARRAY, JsonType.OBJ_VALUE)
         )
+
+        prefix = prefix.removeSuffix(spacing)
+
+        if(typeStack.isEmpty() || typeStack.last() !== JsonEmbedType.ComplexField) {
+            throw IllegalJsonOperation("There is no complex field to close")
+        }
+        typeStack.removeAt(typeStack.lastIndex)
+
+        writer("$prefixToWrite: ")
+        this.prefixWasWritten = true
     }
 
     /** If value contains yaml incompatible values it will be surrounded by quotes */

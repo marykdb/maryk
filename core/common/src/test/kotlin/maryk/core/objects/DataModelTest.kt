@@ -86,58 +86,6 @@ private val testMap = listOf(
 
 private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"subModel\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
-private const val PRETTY_JSON = """{
-	"string": "hay",
-	"int": 4,
-	"uint": 32,
-	"double": "3.555",
-	"dateTime": "2017-12-04T12:13",
-	"bool": true,
-	"enum": "V0",
-	"list": [34, 2352, 3423, 766],
-	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-	"map": {
-		"12:55": "yes",
-		"10:03": "ahum"
-	},
-	"valueObject": {
-		"int": 6,
-		"dateTime": "2017-04-01T12:55",
-		"bool": true
-	},
-	"subModel": {
-		"value": "test"
-	},
-	"multi": ["V2", {
-		"value": "subInMulti!"
-	}],
-	"listOfString": ["test1", "another test", "🤗"]
-}"""
-
-private const val YAML = """string: hay
-int: 4
-uint: 32
-double: 3.555
-dateTime: '2017-12-04T12:13'
-bool: true
-enum: V0
-list: [34, 2352, 3423, 766]
-set: [2017-12-05, 2016-03-02, 1981-12-05]
-map:
-  12:55: yes
-  10:03: ahum
-valueObject:
-  int: 6
-  dateTime: '2017-04-01T12:55'
-  bool: true
-subModel:
-  value: test
-multi:
-- V2
-- value: subInMulti!
-listOfString: [test1, another test, 🤗]
-"""
-
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
 	"string": "hay",
@@ -255,18 +203,86 @@ internal class DataModelTest {
     @Test
     fun write_into_a_JSON_object() {
         var output = ""
-        val writer = { string: String -> output += string }
-
-        mapOf(
-            JSON to JsonWriter(writer = writer),
-            PRETTY_JSON to JsonWriter(pretty = true, writer = writer),
-            YAML to YamlWriter(writer = writer)
-        ).forEach { (result, generator) ->
-            TestMarykObject.writeJson(testExtendedObject, generator)
-
-            output shouldBe result
-            output = ""
+        val writer = JsonWriter {
+            output += it
         }
+
+        TestMarykObject.writeJson(testExtendedObject, writer)
+
+        output shouldBe JSON
+    }
+
+    @Test
+    fun write_into_a_pretty_JSON_object() {
+        var output = ""
+        val writer = JsonWriter(pretty = true) {
+            output += it
+        }
+
+        TestMarykObject.writeJson(testExtendedObject, writer)
+
+        output shouldBe """{
+        |	"string": "hay",
+        |	"int": 4,
+        |	"uint": 32,
+        |	"double": "3.555",
+        |	"dateTime": "2017-12-04T12:13",
+        |	"bool": true,
+        |	"enum": "V0",
+        |	"list": [34, 2352, 3423, 766],
+        |	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+        |	"map": {
+        |		"12:55": "yes",
+        |		"10:03": "ahum"
+        |	},
+        |	"valueObject": {
+        |		"int": 6,
+        |		"dateTime": "2017-04-01T12:55",
+        |		"bool": true
+        |	},
+        |	"subModel": {
+        |		"value": "test"
+        |	},
+        |	"multi": ["V2", {
+        |		"value": "subInMulti!"
+        |	}],
+        |	"listOfString": ["test1", "another test", "🤗"]
+        |}""".trimMargin()
+    }
+
+    @Test
+    fun write_into_a_YAML_object() {
+        var output = ""
+        val writer = YamlWriter {
+            output += it
+        }
+
+        TestMarykObject.writeJson(testExtendedObject, writer)
+
+        output shouldBe """
+        |string: hay
+        |int: 4
+        |uint: 32
+        |double: 3.555
+        |dateTime: '2017-12-04T12:13'
+        |bool: true
+        |enum: V0
+        |list: [34, 2352, 3423, 766]
+        |set: [2017-12-05, 2016-03-02, 1981-12-05]
+        |map:
+        |  12:55: yes
+        |  10:03: ahum
+        |valueObject:
+        |  int: 6
+        |  dateTime: '2017-04-01T12:55'
+        |  bool: true
+        |subModel:
+        |  value: test
+        |multi:
+        |- V2
+        |- value: subInMulti!
+        |listOfString: [test1, another test, 🤗]
+        |""".trimMargin()
     }
 
     @Test

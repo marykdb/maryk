@@ -70,6 +70,7 @@ class YamlWriter(
             super.writeEndObject()
             if (!this.lastIsCompact) {
                 writer("\n")
+                this.prefixWasWritten = false
             }
         } else {
             super.writeEndObject()
@@ -82,7 +83,7 @@ class YamlWriter(
     override fun writeStartArray(isCompact: Boolean) {
         if (!this.lastIsCompact) {
             when (lastType) {
-                JsonType.FIELD_NAME, JsonType.TAG -> {
+                JsonType.FIELD_NAME, JsonType.TAG, JsonType.COMPLEX_FIELD_NAME_END -> {
                     if (!isCompact) {
                         writer("\n")
                         this.prefixWasWritten = false
@@ -122,6 +123,7 @@ class YamlWriter(
             super.writeEndArray()
             if (!this.lastIsCompact) {
                 writer("\n")
+                this.prefixWasWritten = false
             }
         } else {
             if (lastType == JsonType.END_ARRAY) {
@@ -168,8 +170,8 @@ class YamlWriter(
                 if (this.lastIsCompact) {
                     writer(valueToWrite)
                 } else {
-                    this.prefixWasWritten = false
                     writer("$valueToWrite\n")
+                    this.prefixWasWritten = false
                 }
             }
             is JsonEmbedType.Array -> {
@@ -185,6 +187,7 @@ class YamlWriter(
                     } else {
                         writer("$prefixToWrite$arraySpacing$valueToWrite\n")
                     }
+                    this.prefixWasWritten = false
                 }
             }
             is JsonEmbedType.ComplexField -> {

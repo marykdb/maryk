@@ -260,6 +260,7 @@ internal class YamlWriterTest {
         }.apply {
             writeStartArray()
             writeStartObject()
+
             writeStartComplexField()
             writeStartArray()
             writeValue("a1")
@@ -267,6 +268,7 @@ internal class YamlWriterTest {
             writeEndArray()
             writeEndComplexField()
             writeValue("value 1")
+
             writeStartComplexField()
             writeStartObject()
             writeFieldName("f1")
@@ -277,6 +279,33 @@ internal class YamlWriterTest {
             writeEndComplexField()
             writeTag("!tag")
             writeValue("value 2")
+
+            writeStartComplexField()
+            writeStartObject(true)
+            writeFieldName("f1")
+            writeValue("v1")
+            writeFieldName("f2")
+            writeValue("v2")
+            writeEndObject()
+            writeEndComplexField()
+            writeStartArray()
+            writeValue("a1")
+            writeValue("a2")
+            writeEndArray()
+
+            writeStartComplexField()
+            writeStartArray(true)
+            writeValue("a1")
+            writeValue("a2")
+            writeEndArray()
+            writeEndComplexField()
+            writeStartObject()
+            writeFieldName("f1")
+            writeValue("v1")
+            writeFieldName("f2")
+            writeValue("v2")
+            writeEndObject()
+
             writeEndObject()
             writeEndArray()
         }
@@ -288,6 +317,13 @@ internal class YamlWriterTest {
         |  ? f1: v1
         |    f2: v2
         |  : !tag value 2
+        |  ? {f1: v1, f2: v2}
+        |  :
+        |  - a1
+        |  - a2
+        |  ? [a1, a2]
+        |  : f1: v1
+        |    f2: v2
         |""".trimMargin()
     }
 

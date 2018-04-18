@@ -3,8 +3,10 @@ package maryk.json
 interface TokenType
 @Suppress("unused")
 interface ValueType<out T: Any?> : TokenType {
+    interface IsNullValueType: ValueType<Nothing>
+
     object String: ValueType<String>
-    object Null: ValueType<Nothing>
+    object Null: IsNullValueType
     object Bool: ValueType<Boolean>
     object Int: ValueType<Long>
     object Float: ValueType<Double>
@@ -37,10 +39,11 @@ sealed class JsonToken(val name: String) {
     object EndComplexFieldName : JsonToken("EndComplexFieldName")
 
     object ObjectSeparator : JsonToken("ObjectSeparator")
-    class Value<out T: Any?>(
+    open class Value<out T: Any?>(
         val value: T,
         override val type: ValueType<T>
     ) : JsonToken("Value"), TokenWithType
+    object NullValue: Value<Nothing?>(null, ValueType.Null)
 
     open class StartArray(override val type: ArrayType) : JsonToken("StartArray"), TokenWithType
     object SimpleStartArray : StartArray(type = ArrayType.Sequence)

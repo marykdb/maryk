@@ -2,7 +2,6 @@ package maryk.yaml
 
 import maryk.json.JsonToken
 import maryk.json.TokenType
-import maryk.json.ValueType
 import maryk.lib.extensions.isLineBreak
 import maryk.lib.extensions.isSpacing
 
@@ -107,7 +106,7 @@ internal class ExplicitMapKeyReader(
                     }
                 }
 
-                val value = JsonToken.Value(null, ValueType.Null)
+                val value = JsonToken.NullValue
                 this.yamlReader.pushToken(value)
                 this.parentReader.setState(value)
                 this.parentReader.checkAndCreateFieldName(null, false)
@@ -174,7 +173,7 @@ internal class ExplicitMapKeyReader(
             }
             ExplicitMapState.INTERRUPT_VALUE -> {
                 this.currentReader = this.parentReader
-                JsonToken.Value(null, ValueType.Null)
+                JsonToken.NullValue
             }
         }
 }

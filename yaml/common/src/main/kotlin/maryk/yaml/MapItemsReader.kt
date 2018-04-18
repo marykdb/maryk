@@ -53,7 +53,7 @@ internal class MapItemsReader<out P>(
                         ) {
                             this.yamlReader.pushToken(it)
                             this.state = MapState.NEW_PAIR
-                            return JsonToken.Value(null, ValueType.Null)
+                            return JsonToken.NullValue
                         } else {
                             this.setState(it)
                         }
@@ -115,7 +115,7 @@ internal class MapItemsReader<out P>(
         }
     }
 
-    internal fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndent: Int): JsonToken {
+    private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndent: Int): JsonToken {
         while (this.lastChar.isSpacing()) {
             read()
         }

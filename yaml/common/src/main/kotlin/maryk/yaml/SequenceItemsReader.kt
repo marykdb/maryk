@@ -3,6 +3,7 @@ package maryk.yaml
 import maryk.json.ArrayType
 import maryk.json.JsonToken
 import maryk.json.TokenType
+import maryk.json.ValueType
 import maryk.lib.extensions.isLineBreak
 
 /** Reader for Sequence Items */
@@ -16,6 +17,7 @@ internal class SequenceItemsReader<out P>(
               P : IsYamlCharWithIndentsReader
 {
     private var isStarted: Boolean? = null
+    private var expectValueAfter: JsonToken? = null
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         return when(this.isStarted) {
@@ -29,8 +31,11 @@ internal class SequenceItemsReader<out P>(
             }
             false -> {
                 this.isStarted = true
+                this.expectValueAfter = this.yamlReader.currentToken
                 this.selectReaderAndRead(this.lastChar.isLineBreak(), tag, 1) { value, isPlainString, tagg, _ ->
                     createYamlValueToken(value, tagg, isPlainString)
+                }.also {
+                    this.expectValueAfter = null
                 }
             }
             else -> {
@@ -45,6 +50,8 @@ internal class SequenceItemsReader<out P>(
                     else -> // Deeper value
                         this.selectReaderAndRead(isLineBreak, tag, currentIndentCount - this.indentCount()) { value, isPlainString, tagg, _ ->
                             createYamlValueToken(value, tagg, isPlainString)
+                        }.also {
+                            this.expectValueAfter = this.yamlReader.currentToken
                         }
                 }
             }
@@ -64,29 +71,44 @@ internal class SequenceItemsReader<out P>(
     }
 
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
+        if (this.expectValueAfter == this.yamlReader.currentToken && extraIndent == 0) {
+            this.yamlReader.setUnclaimedIndenting(this.indentCount())
+            return returnExpectedNullValue(tag)
+        }
+
         if (this.lastChar != '-') {
             val indentCount = this.indentCount()
             if (this.parentReader is MapItemsReader<*> && this.parentReader.indentCount() == indentCount) {
                 this.yamlReader.setUnclaimedIndenting(indentCount)
                 this.currentReader = this.parentReader
+                if (this.expectValueAfter != null) {
+                    this.yamlReader.pushToken(JsonToken.EndArray)
+                    return JsonToken.NullValue
+                }
                 return JsonToken.EndArray
             }
             throwSequenceException()
         }
+        this.expectValueAfter = this.yamlReader.currentToken
         read()
         if (!this.lastChar.isWhitespace()) {
             throwSequenceException()
         }
+
         if (this.lastChar.isLineBreak()) {
             return this.readIndentsAndContinue(tag) {
                 this.selectReaderAndRead(true, tag, it) { value, isPlainString, tagg, _ ->
                     createYamlValueToken(value, tagg, isPlainString)
+                }.also {
+                    this.expectValueAfter = null
                 }
             }
         }
 
         return this.selectReaderAndRead(false, tag, 1 + extraIndent) { value, isPlainString, tagg, _ ->
             createYamlValueToken(value, tagg, isPlainString)
+        }.also {
+            this.expectValueAfter = null
         }
     }
 
@@ -117,19 +139,46 @@ internal class SequenceItemsReader<out P>(
                 this.yamlReader.pushToken(JsonToken.EndArray)
                 return it()
             }
+
+            if (this.expectValueAfter == this.yamlReader.currentToken) {
+                this.yamlReader.pushToken(JsonToken.EndArray)
+                return returnExpectedNullValue(tag)
+            }
+
             JsonToken.EndArray
         } else {
             val returnFunction = tokenToReturn?.let {
                 this.yamlReader.pushToken(JsonToken.EndArray)
                 it
-            } ?: { JsonToken.EndArray }
+            } ?: {
+                if (this.expectValueAfter == this.yamlReader.currentToken) {
+                    this.yamlReader.pushToken(JsonToken.EndArray)
+                    returnExpectedNullValue(tag)
+                } else {
+                    JsonToken.EndArray
+                }
+            }
 
             this.currentReader = this.parentReader
             this.parentReader.endIndentLevel(indentCount, tag, returnFunction)
         }
     }
 
+    private fun returnExpectedNullValue(tag: TokenType?): JsonToken {
+        this.expectValueAfter = null
+        @Suppress("UNCHECKED_CAST")
+        return (tag as ValueType<Nothing?>?)?.let {
+            JsonToken.Value(null, it)
+        } ?: JsonToken.NullValue
+    }
+
     override fun handleReaderInterrupt(): JsonToken {
+        if (this.expectValueAfter == this.yamlReader.currentToken) {
+            this.yamlReader.hasException
+            this.expectValueAfter = null
+            return JsonToken.NullValue
+        }
+
         this.currentReader = this.parentReader
         return JsonToken.EndArray
     }

@@ -92,22 +92,17 @@ internal fun <P> P.plainStringReader(
                 }
                 else -> {
                     when (flowMode) {
-                        PlainStyleMode.FLOW_SEQUENCE -> when (this.lastChar) {
-                            ',', ']' -> {
+                        PlainStyleMode.FLOW_SEQUENCE -> {
+                            if (this.lastChar == ',' || this.lastChar == ']') {
                                 return createToken()
                             }
-                            else -> {
-                            }
                         }
-                        PlainStyleMode.FLOW_MAP -> when (this.lastChar) {
-                            ',', '}' -> {
+                        PlainStyleMode.FLOW_MAP -> {
+                            if (this.lastChar == ',' || this.lastChar == '}') {
                                 return createToken()
                             }
-                            else -> {
-                            }
                         }
-                        else -> {
-                        }
+                        else -> {}
                     }
 
                     storeCharAndProceed()

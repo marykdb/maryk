@@ -200,6 +200,7 @@ class TagReaderTest {
         |    - !string
         """.trimMargin()).apply {
             assertStartArray()
+            assertValue(null, ValueType.Null)
             assertEndArray()
             assertEndDocument()
         }

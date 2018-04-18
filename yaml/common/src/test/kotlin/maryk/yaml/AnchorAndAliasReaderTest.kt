@@ -126,6 +126,7 @@ class AnchorAndAliasReaderTest {
         |  - &anchor
         """.trimMargin()).apply {
             assertStartArray()
+            assertValue(null, ValueType.Null)
             assertEndArray()
             assertEndDocument()
         }

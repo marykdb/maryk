@@ -196,4 +196,31 @@ class SequenceItemsReaderTest {
             assertEndArray()
         }
     }
+
+    @Test
+    fun read_null_values() {
+        createYamlReader("""
+        |    - !!null
+        |    - a
+        |    - ~
+        |    - b
+        |    - null
+        |    - c
+        |    - !!null null
+        |    - d
+        |    -
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue(null, ValueType.Null)
+            assertValue("a")
+            assertValue(null, ValueType.Null)
+            assertValue("b")
+            assertValue(null, ValueType.Null)
+            assertValue("c")
+            assertValue(null, ValueType.Null)
+            assertValue("d")
+            assertValue(null, ValueType.Null)
+            assertEndArray()
+        }
+    }
 }

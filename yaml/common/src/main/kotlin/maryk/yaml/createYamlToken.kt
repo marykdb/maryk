@@ -66,8 +66,8 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
                 in falseValues -> JsonToken.Value(false, it)
                 else -> throw InvalidYamlContent("Unknown !!bool value $value")
             }
-            is ValueType.Null -> when(value) {
-                null, in nullValues -> JsonToken.Value(null, it)
+            is ValueType.IsNullValueType -> when(value) {
+                null, in nullValues -> JsonToken.NullValue
                 else -> throw InvalidYamlContent("Unknown !!null value $value")
             }
             is ValueType.Float -> when(value) {
@@ -89,11 +89,11 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
             else -> JsonToken.Value(value, it)
         }
     } ?: if (value == null) {
-        JsonToken.Value(null, ValueType.Null)
+        JsonToken.NullValue
     } else {
         if (isPlainStringReader) {
             return when (value) {
-                in nullValues -> JsonToken.Value(null, ValueType.Null)
+                in nullValues -> JsonToken.NullValue
                 in trueValues -> JsonToken.Value(true, ValueType.Bool)
                 in falseValues -> JsonToken.Value(false, ValueType.Bool)
                 in nanValues -> JsonToken.Value(Double.NaN, ValueType.Float)

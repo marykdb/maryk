@@ -2,12 +2,14 @@ package maryk.yaml
 
 import maryk.json.IsJsonLikeReader
 import maryk.json.MapType
+import maryk.json.ValueType
 
 /** Indexed type of property definitions */
 sealed class TestType: MapType {
     object Foo: MapType
     object Bar: MapType
     object Test: MapType
+    object Value: ValueType<Any>
 }
 
 const val defaultTag = "tag:test,2018:"
@@ -23,7 +25,8 @@ fun createYamlReader(yaml: String): IsJsonLikeReader {
             defaultTag to mapOf(
                 "Foo" to TestType.Foo,
                 "Bar" to TestType.Bar,
-                "Test" to TestType.Test
+                "Test" to TestType.Test,
+                "Value" to TestType.Value
             )
         ),
         allowUnknownTags = false

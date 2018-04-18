@@ -107,7 +107,7 @@ class JsonReader(
 
     private fun constructJsonValueToken(it: Any?) =
             when (it) {
-                null -> JsonToken.Value(null, ValueType.Null)
+                null -> JsonToken.NullValue
                 is Boolean -> JsonToken.Value(it, ValueType.Bool)
                 is String -> JsonToken.Value(it, ValueType.String)
                 is Double -> JsonToken.Value(it, ValueType.Float)

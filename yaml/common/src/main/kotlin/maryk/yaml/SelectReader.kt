@@ -29,6 +29,8 @@ internal fun <P> P.selectReaderAndRead(startsAtNewLine: Boolean, tag: TokenType?
             val currentIndentCount = this.indentCount()
             if (indentCount < currentIndentCount) {
                 return this.endIndentLevel(indentCount, tag, null)
+            } else if (indentCount == currentIndentCount) {
+                return this.continueIndentLevel(0, tag)
             } else {
                 this.selectReaderAndRead(true, tag, indentCount - currentIndentCount, jsonTokenCreator)
             }

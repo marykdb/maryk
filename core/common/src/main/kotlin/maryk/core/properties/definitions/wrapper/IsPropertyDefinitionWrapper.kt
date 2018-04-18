@@ -140,15 +140,15 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): Map<Int, Any> {
             // When reading YAML, use YAML optimized format with complex field names
-            if (reader is IsYamlReader) {
+            return if (reader is IsYamlReader) {
                 val valueMap: MutableMap<Int, Any> = mutableMapOf()
 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext)
 
-                return valueMap
+                valueMap
             } else {
-                return super.readJson(reader, context)
+                super.readJson(reader, context)
             }
         }
     }

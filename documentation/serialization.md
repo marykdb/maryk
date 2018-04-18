@@ -24,7 +24,7 @@ properties:
     required: true
     final: true
     unique: true
-  ? 1: int
+  ? 1: email
   : !String
     required: true
     unique: true

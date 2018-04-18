@@ -71,7 +71,7 @@ interface IsJsonLikeReader {
     fun nextToken(): JsonToken
 
     /** Skips all JSON values until a next value at same level is discovered */
-    fun skipUntilNextField()
+    fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)? = null)
 }
 
 /** Exception during reading of JSON */

@@ -2,6 +2,7 @@ package maryk.core.objects
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -14,11 +15,18 @@ import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DataModelContext
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
+import maryk.json.PresetJsonTokenReader
 import maryk.lib.bytes.Base64
 import maryk.lib.exceptions.ParseException
+import maryk.yaml.IsYamlReader
 
 fun definitions(vararg keys: FixedBytesProperty<*>) = arrayOf(*keys)
 
@@ -116,28 +124,31 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
-        properties = object : PropertyDefinitions<RootDataModel<*, *>>() {
-            init {
-                AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
-                    it.name
-                }
-                AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
-                add(2, "key", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfKeyPartDefinitions
-                    )
-                )) {
-                    it.key.keyDefinitions.map {
-                        val def: Any = when(it) {
-                            is FixedBytesPropertyDefinitionWrapper<*, *, *, *> -> it.getRef()
-                            else -> it
-                        }
-                        TypedValue(it.keyPartType, def)
-                    }
-                }
+    private object RootModelProperties: PropertyDefinitions<RootDataModel<*, *>>() {
+        init {
+            AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
+                it.name
             }
         }
+        val properties = AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
+        val key = add(2, "key", ListDefinition(
+            valueDefinition = MultiTypeDefinition(
+                definitionMap = mapOfKeyPartDefinitions
+            )
+        )) {
+            it.key.keyDefinitions.map {
+                val def: Any = when(it) {
+                    is FixedBytesPropertyDefinitionWrapper<*, *, *, *> -> it.getRef()
+                    else -> it
+                }
+                TypedValue(it.keyPartType, def)
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
+        properties = RootModelProperties
     ) {
         override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
             name = map[0] as String,
@@ -152,6 +163,111 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             override fun invoke(map: Map<Int, *>): Any {
                 return object : Any(){}
             }
+        }
+
+        /**
+         * Overridden to handle earlier definition of keys compared to Properties
+         */
+        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+            writer.writeStartObject()
+            for ((key, value) in map) {
+                if (key == RootModelProperties.properties.index) continue // skip properties to write last
+
+                val def = properties.getDefinition(key) ?: continue
+                this.writeJsonValue(def, writer, value, context)
+            }
+            // Write properties last
+            map[RootModelProperties.properties.index]?.let {
+                this.writeJsonValue(
+                    RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, IsPropertyContext, RootDataModel<*, *>>,
+                    writer,
+                    it,
+                    context
+                )
+            }
+
+            writer.writeEndObject()
+        }
+
+        /**
+         * Overridden to handle earlier definition of keys compared to Properties
+         */
+        override fun writeJson(obj: RootDataModel<*, *>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+            writer.writeStartObject()
+            for (def in this.properties) {
+                if (def == RootModelProperties.properties) continue // skip properties to write last
+
+                val value = def.getter(obj) ?: continue
+                this.writeJsonValue(def, writer, value, context)
+            }
+            this.writeJsonValue(
+                RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, IsPropertyContext, RootDataModel<*, *>>,
+                writer,
+                obj.properties,
+                context
+            )
+            writer.writeEndObject()
+        }
+
+        /**
+         * Overridden to handle earlier definition of keys compared to Properties
+         */
+        override fun walkJsonToRead(
+            reader: IsJsonLikeReader,
+            valueMap: MutableMap<Int, Any>,
+            context: IsPropertyContext?
+        ) {
+            var keyDefinitionsToProcessLater: List<JsonToken>? = null
+            var propertiesAreProcessed = false
+
+            walker@ do {
+                val token = reader.currentToken
+                when (token) {
+                    is JsonToken.FieldName -> {
+                        val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
+
+                        val definition = properties.getDefinition(value)
+                        if (definition == null) {
+                            reader.skipUntilNextField()
+                            continue@walker
+                        } else {
+                            if (definition == RootModelProperties.properties) {
+                                propertiesAreProcessed = true
+                            } else if (!propertiesAreProcessed && definition == RootModelProperties.key) {
+                                val collectedTokens = mutableListOf<JsonToken>()
+
+                                reader.skipUntilNextField {
+                                    collectedTokens.add(it)
+                                }
+
+                                keyDefinitionsToProcessLater = collectedTokens
+                                continue@walker
+                            }
+
+                            reader.nextToken()
+
+                            valueMap[definition.index] = definition.definition.readJson(reader, context)
+                        }
+                    }
+                    else -> break@walker
+                }
+                reader.nextToken()
+            } while (token !is JsonToken.Stopped)
+
+            keyDefinitionsToProcessLater?.let {
+                val lateReader = if (reader is IsYamlReader) {
+                    it.map { reader.pushToken(it) }
+                    reader.pushToken(reader.currentToken)
+                    reader.nextToken()
+                    reader
+                } else {
+                    PresetJsonTokenReader(it)
+                }
+
+                valueMap[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DataModelContext?)
+            }
+
+            super.walkJsonToRead(reader, valueMap, context)
         }
     }
 }

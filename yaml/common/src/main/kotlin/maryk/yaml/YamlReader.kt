@@ -23,7 +23,10 @@ fun YamlReader(
     YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, reader)
 
 /** Interface to determine object is a yaml reader */
-interface IsYamlReader: IsJsonLikeReader
+interface IsYamlReader: IsJsonLikeReader {
+    /** Add token to stack to return first */
+    fun pushToken(token: JsonToken)
+}
 
 /** Internal interface for the Yaml Reader functionality */
 internal interface IsInternalYamlReader {
@@ -213,10 +216,11 @@ internal class YamlReaderImpl(
         return currentIndentCount
     }
 
-    override fun skipUntilNextField() {
+    override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = this.tokenDepth
         do {
             nextToken()
+            handleSkipToken?.invoke(this.currentToken)
         } while (
             !(currentToken is JsonToken.FieldName && this.tokenDepth <= startDepth)
             && currentToken !is JsonToken.Stopped
@@ -287,7 +291,7 @@ internal class YamlReaderImpl(
         }
     }
 
-    fun pushToken(token: JsonToken) {
+    override fun pushToken(token: JsonToken) {
         this.tokenStack.add(token)
     }
 

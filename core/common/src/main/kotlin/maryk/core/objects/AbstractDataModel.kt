@@ -96,12 +96,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (def in this.properties) {
-            val name = def.name
             val value = def.getter(obj) ?: continue
-
-            writer.writeFieldName(name)
-
-            def.definition.writeJsonValue(value, writer, context)
+            writeJsonValue(def, writer, value, context)
         }
         writer.writeEndObject()
     }
@@ -114,12 +110,19 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         writer.writeStartObject()
         for ((key, value) in map) {
             val def = properties.getDefinition(key) ?: continue
-            val name = def.name
-
-            writer.writeFieldName(name)
-            def.definition.writeJsonValue(value, writer, context)
+            writeJsonValue(def, writer, value, context)
         }
         writer.writeEndObject()
+    }
+
+    internal fun writeJsonValue(
+        def: IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>,
+        writer: IsJsonLikeWriter,
+        value: Any,
+        context: CX?
+    ) {
+        writer.writeFieldName(def.name)
+        def.definition.writeJsonValue(value, writer, context)
     }
 
     /**
@@ -137,6 +140,16 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
         reader.nextToken()
+        walkJsonToRead(reader, valueMap, context)
+
+        return valueMap
+    }
+
+    internal open fun walkJsonToRead(
+        reader: IsJsonLikeReader,
+        valueMap: MutableMap<Int, Any>,
+        context: CX?
+    ) {
         walker@ do {
             val token = reader.currentToken
             when (token) {
@@ -157,8 +170,6 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             }
             reader.nextToken()
         } while (token !is JsonToken.Stopped)
-
-        return valueMap
     }
 
     /**
@@ -327,20 +338,20 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             definitions.add(0, "name", StringDefinition(), getter)
         }
 
-        internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addProperties(definitions: PropertyDefinitions<DO>) {
-            definitions.addSingle(
-                PropertyDefinitionsCollectionDefinitionWrapper(1, "properties", PropertyDefinitionsCollectionDefinition(
-                    capturer = { context, propDefs ->
-                        context?.apply {
-                            this.propertyDefinitions = propDefs
-                        } ?: ContextNotFoundException()
-                    }
-                )) {
-                    @Suppress("UNCHECKED_CAST")
-                    it.properties as PropertyDefinitions<Any>
+        internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addProperties(definitions: PropertyDefinitions<DO>): PropertyDefinitionsCollectionDefinitionWrapper<DO> {
+            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DO>(1, "properties", PropertyDefinitionsCollectionDefinition(
+                capturer = { context, propDefs ->
+                    context?.apply {
+                        this.propertyDefinitions = propDefs
+                    } ?: ContextNotFoundException()
                 }
-            )
+            )) {
+                @Suppress("UNCHECKED_CAST")
+                it.properties as PropertyDefinitions<Any>
+            }
 
+            definitions.addSingle(wrapper)
+            return wrapper
         }
     }
 }

@@ -7,7 +7,7 @@ import maryk.lib.extensions.isLineBreak
 private val skipArray = arrayOf(JsonToken.ObjectSeparator, JsonToken.ArraySeparator, JsonToken.StartDocument)
 
 /** Describes JSON complex types */
-private enum class JsonComplexType {
+internal enum class JsonComplexType {
     OBJECT, ARRAY
 }
 
@@ -115,10 +115,11 @@ class JsonReader(
                 else -> JsonToken.Value(it.toString(), ValueType.String)
             }
 
-    override fun skipUntilNextField() {
+    override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = typeStack.count()
         do {
             nextToken()
+            handleSkipToken?.invoke(this.currentToken)
         } while (
             !(currentToken is JsonToken.FieldName && this.typeStack.count() <= startDepth)
             && currentToken !is JsonToken.Stopped

@@ -91,10 +91,10 @@ abstract class PropertyDefinitions<DO: Any>(
     }
 
     /** Add list property [definition] with [name] and [index] and value [getter] */
-    fun <T: Any> add(
+    fun <T: Any, CX: IsPropertyContext> add(
         index: Int,
         name: String,
-        definition: ListDefinition<T, *>,
+        definition: ListDefinition<T, CX>,
         getter: (DO) -> List<T>? = { null }
     ) = ListPropertyDefinitionWrapper(index, name, definition, getter).apply {
         addSingle(this)

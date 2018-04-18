@@ -36,10 +36,10 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
     dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
     context: CXI? = null,
     checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
-) {
+): String {
     var output = ""
 
-    val writer = JsonWriter {
+    val writer = JsonWriter(pretty = true) {
         output += it
     }
 
@@ -52,6 +52,8 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
     val converted = dataModel.readJsonToObject(reader, newContext)
 
     checker(converted, value)
+
+    return output
 }
 
 fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
@@ -59,7 +61,7 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
     dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
     context: CXI? = null,
     checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
-) {
+): String {
     var output = ""
 
     val writer = YamlWriter {
@@ -81,4 +83,6 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
     val converted = dataModel.readJsonToObject(reader, newContext)
 
     checker(converted, value)
+
+    return output
 }

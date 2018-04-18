@@ -7,20 +7,32 @@ import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.query.DataModelContext
+import maryk.json.TokenType
+import maryk.json.ValueType
 
 /** Indexed type of property definitions */
-enum class KeyPartType(
+sealed class KeyPartType(
+    override val name: String,
     override val index: Int
-): IndexedEnum<KeyPartType> {
-    UUID(0),
-    Ref(1),
-    TypeId(2),
-    Reversed(3)
+): IndexedEnum<KeyPartType>, TokenType {
+    override fun compareTo(other: KeyPartType) =
+        this.index.compareTo(other.index)
+
+    object UUID: KeyPartType("UUID", 0), ValueType.IsNullValueType
+    object Reference: KeyPartType("Ref", 1), ValueType<String>
+    object TypeId: KeyPartType("TypeId", 2), ValueType<String>
+    object Reversed: KeyPartType("Reversed", 3), ValueType<String>
+
+    companion object {
+        internal val values = lazy {
+            arrayOf<KeyPartType>(UUID, Reference, TypeId, Reversed)
+        }
+    }
 }
 
 internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DataModelContext>>(
     KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),
-    KeyPartType.Ref to ContextualPropertyReferenceDefinition(
+    KeyPartType.Reference to ContextualPropertyReferenceDefinition(
         contextualResolver = {
             it?.propertyDefinitions ?: throw ContextNotFoundException()
         }

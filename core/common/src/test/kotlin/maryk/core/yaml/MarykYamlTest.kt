@@ -1,6 +1,7 @@
 package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType
+import maryk.core.properties.definitions.key.KeyPartType
 import maryk.json.IsJsonLikeReader
 import maryk.json.JsonToken
 import maryk.test.shouldBe
@@ -32,6 +33,8 @@ class MarykYamlTest{
         createMarykYamlModelReader("""
         |    - !Boolean { k1: v1 }
         |    - !String { k2: v2 }
+        |    - !UUID
+        |    - !Ref test
         """.trimMargin()).apply {
             shouldBeOfType<JsonToken.StartArray>(nextToken())
 
@@ -64,6 +67,20 @@ class MarykYamlTest{
             shouldBeOfType<JsonToken.EndObject>(
                 nextToken()
             )
+
+            shouldBeOfType<JsonToken.Value<*>>(
+                nextToken()
+            ).also {
+                it.type shouldBe KeyPartType.UUID
+                it.value shouldBe null
+            }
+
+            shouldBeOfType<JsonToken.Value<*>>(
+                nextToken()
+            ).also {
+                it.type shouldBe KeyPartType.Reference
+                it.value shouldBe "test"
+            }
 
             shouldBeOfType<JsonToken.EndArray>(nextToken())
             shouldBeOfType<JsonToken.EndDocument>(nextToken())

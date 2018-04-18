@@ -24,7 +24,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, ou
     IsValuePropertyDefinitionWrapper<T, CX, DO>,
     FixedBytesProperty<T>()
 {
-    override val keyPartType = KeyPartType.Ref
+    override val keyPartType = KeyPartType.Reference
 
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         ValueWithFixedBytesPropertyReference(this, parentRef)

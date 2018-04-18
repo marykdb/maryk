@@ -1,7 +1,9 @@
 package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType
+import maryk.core.properties.definitions.key.KeyPartType
 import maryk.json.IsJsonLikeReader
+import maryk.json.TokenType
 import maryk.yaml.YamlReader
 
 const val maryk2018 = "tag:maryk.io,2018:"
@@ -32,6 +34,10 @@ fun MarykYamlReader(
         reader = reader
     )
 
-val marykTypeMap: Map<String, PropertyDefinitionType> = PropertyDefinitionType.values().map {
-    it.name to it
-}.toMap()
+val marykTypeMap: Map<String, TokenType> = arrayOf<Pair<String, TokenType>>()
+    .plus(
+        PropertyDefinitionType.values().map { it.name to it }
+    )
+    .plus(
+        KeyPartType.values.value.map { it.name to it }
+    ).toMap()

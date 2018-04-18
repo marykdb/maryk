@@ -278,9 +278,8 @@ internal class DataModelTest {
         |  bool: true
         |subModel:
         |  value: test
-        |multi:
-        |- V2
-        |- value: subInMulti!
+        |multi: !V2
+        |  value: subInMulti!
         |listOfString: [test1, another test, 🤗]
         |""".trimMargin()
     }

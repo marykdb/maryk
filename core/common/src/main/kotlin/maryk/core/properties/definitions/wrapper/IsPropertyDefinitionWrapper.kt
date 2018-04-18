@@ -21,10 +21,10 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.DataModelContext
-import maryk.json.IllegalJsonOperation
+import maryk.core.yaml.readNamedIndexField
+import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonToken
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
@@ -109,13 +109,12 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
                 val typedDefinition = map[Properties.definition.index] as TypedValue<PropertyDefinitionType, Any>?
                         ?: throw Exception("No type defined at ${Properties.definition.index} in map")
 
-                writeYaml(
-                    writer,
-                    map[Properties.index.index] as Int,
+                writer.writeNamedIndexField(
                     map[Properties.name.index] as String,
-                    typedDefinition,
-                    context
+                    map[Properties.index.index] as Int
                 )
+
+                Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext)
             } else {
                 super.writeJson(map, writer, context)
             }
@@ -131,50 +130,22 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
                 val typedDefinition = Properties.definition.getter(obj)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
-                writeYaml(writer, obj.index, obj.name, typedDefinition, context)
+                writer.writeNamedIndexField(obj.name, obj.index)
+
+                Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext)
             } else {
                 super.writeJson(obj, writer, context)
             }
-        }
-
-        private fun writeYaml(
-            writer: YamlWriter,
-            index: Int,
-            name: String,
-            typedDefinition: TypedValue<PropertyDefinitionType, Any>,
-            context: IsPropertyContext?
-        ) {
-            writer.writeStartComplexField()
-            writer.writeStartObject()
-            writer.writeFieldName(index.toString())
-            writer.writeValue(name)
-            writer.writeEndObject()
-            writer.writeEndComplexField()
-
-            Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext)
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): Map<Int, Any> {
             // When reading YAML, use YAML optimized format with complex field names
             if (reader is IsYamlReader) {
                 val valueMap: MutableMap<Int, Any> = mutableMapOf()
-                reader.apply {
-                    if (currentToken != JsonToken.StartComplexFieldName) throw IllegalJsonOperation("Expected complex field name with ?")
-                    if (nextToken() !is JsonToken.StartObject) throw IllegalJsonOperation("Expected object within complex field name")
 
-                    val index = (nextToken() as? JsonToken.FieldName)?.value?.toInt()?.toUInt32()
-                            ?: throw IllegalJsonOperation("Expected index integer as field name")
-                    valueMap[Properties.index.index] = index
+                reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
+                valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext)
 
-                    (nextToken() as? JsonToken.Value<*>) ?: throw IllegalJsonOperation("Expected property name")
-                    valueMap[Properties.name.index] = Properties.name.readJson(reader, context)
-
-                    if (nextToken() != JsonToken.EndObject) throw IllegalJsonOperation("Expected object within complex field name")
-                    if (nextToken() != JsonToken.EndComplexFieldName) throw IllegalJsonOperation("Expected end of complex field name")
-
-                    nextToken() // Move to next value
-                    valueMap.put(Properties.definition.index, Properties.definition.readJson(reader, context as DataModelContext))
-                }
                 return valueMap
             } else {
                 return super.readJson(reader, context)

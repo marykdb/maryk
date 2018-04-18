@@ -258,4 +258,23 @@ class MapItemsReaderTest {
             assertInvalidYaml()
         }
     }
+
+    @Test
+    fun null_values() {
+        createYamlReader("""
+        |  key1:
+        |  key2:
+        |  - true
+        """.trimMargin()).apply {
+            assertStartObject()
+            assertFieldName("key1")
+            assertValue(null, ValueType.Null)
+            assertFieldName("key2")
+            assertStartArray()
+            assertValue(true, ValueType.Bool)
+            assertEndArray()
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
 }

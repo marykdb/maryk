@@ -6,9 +6,9 @@ import maryk.yaml.YamlReader
 
 const val maryk2018 = "tag:maryk.io,2018:"
 
-/** Creates a Yaml reader preset to read Maryk */
+/** Creates a Yaml reader preset to read Maryk Models */
 @Suppress("FunctionName")
-fun MarykYamlReader(
+fun MarykYamlModelReader(
     reader: () -> Char
 ) : IsJsonLikeReader =
     YamlReader(
@@ -16,6 +16,19 @@ fun MarykYamlReader(
         tagMap = mapOf(
             maryk2018 to marykTypeMap
         ),
+        allowUnknownTags = false,
+        reader = reader
+    )
+
+/** Creates a Yaml reader preset to read Maryk */
+@Suppress("FunctionName")
+fun MarykYamlReader(
+    reader: () -> Char
+) : IsJsonLikeReader =
+    YamlReader(
+        defaultTag = maryk2018,
+        tagMap = mapOf(maryk2018 to mapOf()),
+        allowUnknownTags = true,
         reader = reader
     )
 

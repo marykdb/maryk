@@ -7,13 +7,13 @@ import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
-fun createMarykYamlReader(yaml: String): IsJsonLikeReader {
+fun createMarykYamlModelReader(yaml: String): IsJsonLikeReader {
     val input = yaml
     var index = 0
 
     var alreadyRead = ""
 
-    return MarykYamlReader {
+    return MarykYamlModelReader {
         val b = input[index].also {
             // JS platform returns a 0 control char when nothing can be read
             if (it == '\u0000') {
@@ -26,12 +26,10 @@ fun createMarykYamlReader(yaml: String): IsJsonLikeReader {
     }
 }
 
-
-
 class MarykYamlTest{
     @Test
     fun read_maryk_tags() {
-        createMarykYamlReader("""
+        createMarykYamlModelReader("""
         |    - !Boolean { k1: v1 }
         |    - !String { k2: v2 }
         """.trimMargin()).apply {

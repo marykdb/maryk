@@ -19,10 +19,14 @@ interface MapType : TokenType {
     object Pairs: MapType
 }
 
+interface TokenWithType {
+    val type: TokenType
+}
+
 sealed class JsonToken(val name: String) {
     object StartDocument : JsonToken("StartDocument")
 
-    open class StartObject(val type: MapType) : JsonToken("StartObject")
+    open class StartObject(override val type: MapType) : JsonToken("StartObject"), TokenWithType
     object SimpleStartObject : StartObject(MapType.Map)
 
     object EndObject : JsonToken("EndObject")
@@ -33,9 +37,12 @@ sealed class JsonToken(val name: String) {
     object EndComplexFieldName : JsonToken("EndComplexFieldName")
 
     object ObjectSeparator : JsonToken("ObjectSeparator")
-    class Value<out T: Any?>(val value: T, val type: ValueType<T>) : JsonToken("Value")
+    class Value<out T: Any?>(
+        val value: T,
+        override val type: ValueType<T>
+    ) : JsonToken("Value"), TokenWithType
 
-    open class StartArray(val type: ArrayType) : JsonToken("StartArray")
+    open class StartArray(override val type: ArrayType) : JsonToken("StartArray"), TokenWithType
     object SimpleStartArray : StartArray(type = ArrayType.Sequence)
 
     object ArraySeparator : JsonToken("ArraySeparator")

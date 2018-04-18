@@ -47,7 +47,16 @@ internal class MapItemsReader<out P>(
                         this.state = MapState.NEW_PAIR
                     }
                     this.selectReaderAndRead(true, tag, currentIndentCount - readerIndentCount, this::jsonTokenCreator).also {
-                        this.setState(it)
+                        if (currentIndentCount == readerIndentCount
+                            && this.state == MapState.KEY_FOUND
+                            && it !is JsonToken.StartArray
+                        ) {
+                            this.yamlReader.pushToken(it)
+                            this.state = MapState.NEW_PAIR
+                            return JsonToken.Value(null, ValueType.Null)
+                        } else {
+                            this.setState(it)
+                        }
                     }
                 }
             } else {

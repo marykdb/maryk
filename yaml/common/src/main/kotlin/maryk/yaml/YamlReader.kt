@@ -10,13 +10,17 @@ import maryk.json.ValueType
 import maryk.lib.extensions.isLineBreak
 import maryk.lib.time.DateTime
 
+/** Unknown tag name to reader, pass allowUnknownTags true in YamlReader to get them */
+class UnknownYamlTag(val name: String): MapType, ValueType<Nothing>, ArrayType
+
 @Suppress("FunctionName")
 fun YamlReader(
     defaultTag: String? = null,
     tagMap: Map<String, Map<String, TokenType>>? = null,
+    allowUnknownTags: Boolean,
     reader: () -> Char
 ) : IsYamlReader =
-    YamlReaderImpl(defaultTag, tagMap, reader)
+    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, reader)
 
 /** Interface to determine object is a yaml reader */
 interface IsYamlReader: IsJsonLikeReader
@@ -64,6 +68,7 @@ private val yamlTagMap = mapOf(
 internal class YamlReaderImpl(
     private val defaultTag: String?,
     tagMap: Map<String, Map<String, TokenType>>?,
+    private val allowUnknownTags: Boolean,
     private val reader: () -> Char
 ) : IsJsonLikeReader, IsInternalYamlReader, IsYamlReader {
     var version: String? = null
@@ -270,7 +275,9 @@ internal class YamlReaderImpl(
             }
             prefix == "!" && !this.defaultTag.isNullOrEmpty() -> {
                 this.tagMap[this.defaultTag]?.get(tag)
-                        ?: throw InvalidYamlContent("Unknown tag $prefix$tag")
+                    ?: if (this.allowUnknownTags) {
+                        UnknownYamlTag(tag)
+                    } else throw InvalidYamlContent("Unknown tag $prefix$tag")
             }
             prefix == "!!" -> {
                 this.tagMap["tag:yaml.org,2002:"]?.get(tag)

@@ -34,7 +34,10 @@ class YamlWriter(
 
     override fun writeStartObject(isCompact: Boolean) {
         if (isCompact || this.lastIsCompact) {
-            if (this.lastType == JsonType.FIELD_NAME || this.lastType == JsonType.TAG) {
+            if (this.lastType == JsonType.FIELD_NAME
+                || this.lastType == JsonType.TAG
+                || this.lastType == JsonType.COMPLEX_FIELD_NAME_END
+            ) {
                 writer(" ")
             }
             writer("{")
@@ -46,6 +49,8 @@ class YamlWriter(
             if (lastType == JsonType.FIELD_NAME || lastType == JsonType.TAG) {
                 writer("\n")
                 this.prefixWasWritten = false
+            } else if (lastType == JsonType.COMPLEX_FIELD_NAME_END) {
+                writer(" ")
             }
 
             val lastEmbedType= this.typeStack.lastOrNull()
@@ -156,7 +161,7 @@ class YamlWriter(
         val valueToWrite = this.sanitizeValue(value)
         val lastTypeBeforeOperation = this.lastType
 
-        if (lastTypeBeforeOperation == JsonType.TAG) {
+        if (lastTypeBeforeOperation == JsonType.TAG || lastTypeBeforeOperation == JsonType.COMPLEX_FIELD_NAME_END) {
             writer(" ")
         }
 
@@ -200,7 +205,7 @@ class YamlWriter(
 
     /** Writes a [tag] to YAML output */
     fun writeTag(tag: String) {
-        if (this.lastType == JsonType.FIELD_NAME) {
+        if (this.lastType == JsonType.FIELD_NAME || this.lastType == JsonType.COMPLEX_FIELD_NAME_END) {
             writer(" ")
         }
 
@@ -239,7 +244,7 @@ class YamlWriter(
     fun writeStartComplexField() {
         checkTypeIsAllowed(
             JsonType.COMPLEX_FIELD_NAME_START,
-            arrayOf(JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_OBJ, JsonType.END_ARRAY)
+            arrayOf(JsonType.START_OBJ, JsonType.START_ARRAY, JsonType.OBJ_VALUE, JsonType.END_OBJ, JsonType.END_ARRAY)
         )
 
         writer("$prefixToWrite? ")
@@ -263,7 +268,7 @@ class YamlWriter(
         }
         typeStack.removeAt(typeStack.lastIndex)
 
-        writer("$prefixToWrite: ")
+        writer("$prefixToWrite:")
         this.prefixWasWritten = true
     }
 

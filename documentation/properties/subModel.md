@@ -23,8 +23,6 @@ A property which contains another DataModel as embedded object. See
 **Example of a kotlin SubModel definition**
 ```kotlin
 val def = SubModelDefinition(
-    name = "address",
-    index = 0,
     required = false,
     final = true,
     dataModel = Address

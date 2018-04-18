@@ -30,8 +30,6 @@ in seconds and milliseconds.
 **Example of a kotlin String definition**
 ```kotlin
 val def = TimeDefinition(
-    name = "meetingTime",
-    index = 0,
     required = false,
     final = true,
     unique = true,

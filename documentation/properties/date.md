@@ -29,8 +29,6 @@ year is unsigned so it can contain negative dates
 **Example of a kotlin Date definition**
 ```kotlin
 val def = DateDefinition(
-    name = "dateOfBirth",
-    index = 0,
     required = false,
     final = true,
     unique = true,

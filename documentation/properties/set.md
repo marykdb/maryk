@@ -27,8 +27,6 @@ Property definitions need to be required and values can thus not be null.
 **Example of a kotlin Set definition**
 ```kotlin
 val def = SetDefinition(
-    name = "setOfNames",
-    index = 0,
     required = true,
     final = true,
     valueDefinition = StringDefinition()

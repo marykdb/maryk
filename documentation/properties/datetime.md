@@ -29,8 +29,6 @@ A DateTime Property which can be used to represent the time in a date plus time.
 **Example of a kotlin DateTime definition**
 ```kotlin
 val def = DateTimeDefinition(
-    name = "meetingDateTime",
-    index = 0,
     required = false,
     final = true,
     unique = true,

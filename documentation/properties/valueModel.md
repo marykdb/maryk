@@ -28,8 +28,6 @@ This makes them usable as map keys and list/set items.
 **Example of a kotlin ValueModel definition**
 ```kotlin
 val def = ValueModelDefinition(
-    name = "personRoleInPeriod",
-    index = 0,
     required = false,
     final = true,
     dataModel = PersonRoleInPeriod

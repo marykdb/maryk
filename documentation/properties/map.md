@@ -31,8 +31,6 @@ be null.
 **Example of a kotlin Map definition**
 ```kotlin
 val def = MapDefinition(
-    name = "mapOfIntString",
-    index = 0,
     required = false,
     final = true,
     keyDefinition = NumberDefinition(type = UInt32),

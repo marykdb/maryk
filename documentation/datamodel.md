@@ -2,8 +2,8 @@
 DataModels describe the structure of the data. They contain 
 [property definitions](properties/properties.md) which describe what type of data the 
 property contains, how it is validated and other properties that are relevant to the 
-storage. DataObjects are created from DataModels which can also validate or serialize
-them.  
+storage. Data Objects are created from DataModels which can also validate or serialize
+these data objects.  
 
 ## Properties are identified by an index
 To keep data transport and storage optimal all properties are required to
@@ -19,34 +19,39 @@ can be instantiated. The data class itself should be immutable. The companion ob
 contains methods to validate the model. Because this model is a RootDataModel it also
 contains methods to generate a key.
 
-**Maryk Yaml Description:**
+**Maryk Model YAML:**
 ```yaml
 properties:
-  0 = firstName:
-    type: String
-  1 = lastName:
-    type: String
-  2 = dateOfBirth:
-    type: Date
+  ? 0: firstName
+  : !String
+  ? 1: lastName
+  : !String
+  ? 2: dateOfBirth
+  : !Date
 ```
 
-**Kotlin implementation.** Can be generated from Maryk Yaml Description
+**Kotlin implementation.** Can be generated from Maryk Model YAML
 ```kotlin
 data class Person(
-            val firstName: String,
-            val lastName: String,
-            val dateOfBirth: Date
+    val firstName: String,
+    val lastName: String,
+    val dateOfBirth: Date
 ){
-    object Properties {
-        val firstName = StringDefinition(name = "firstName", index = 0)
-        val lastName = StringDefinition(name = "lastName", index = 1)
-        val dateOfBirth = DateDefinition(name = "dateOfBirth", index = 2)
+    object Properties: PropertyDefinitions<Person>() {
+        val firstName = add(0, "firstname", StringDefinition(), MarykObject::firstName)
+        val lastName = add(1, "lastName", StringDefinition(), MarykObject::lastName)
+        val dateOfBirth = add(2, "dateOfBirth", DateDefinition(), MarykObject::dateOfBirth)
     }
-    companion object: RootDataModel<Person>(definitions = listOf(
-            Def(Properties.firstName, MarykObject::firstName)
-            Def(Properties.lastName, MarykObject::lastName)
-            Def(Properties.dateOfBirth, MarykObject::dateOfBirth)
-    ))
+    companion object: RootDataModel<Person>(
+        properties = Properties
+    ){ 
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: Map<Int, *>) = Person(
+            firstName = map[0] as String,
+            lastName = map[1] as String,
+            dateOfBirth = map[2] as Date
+        )
+    }
 }
 ```
 
@@ -58,7 +63,7 @@ it shows how to create a new key representing .
 val johnSmith = Person(
     firstName = "John",
     lastName = "Smith",
-    dateOfBirth = Date(year=2017, month=12, day=5)
+    dateOfBirth = Date(2017, 12, 5)
 )
 
 // Will throw a PropertyValidationUmbrellaException if invalid
@@ -79,14 +84,14 @@ A generic DataModel extends from DataModel class. In Yaml you add ```embeddable 
 ** Maryk Yaml example **
 
 ```yaml
-// Address.model.yml
-properties
-  0 = streetName:
-    type: String
-  1 = city:
-    type: String
-  2 = zipCode:
-    type: String
+name: Address
+properties:
+  ? 0: streetName
+  : !String
+  ? 1: city
+  : !String
+  ? 2: zipCode
+  : !String
 ```
 
 ## RootDataModel
@@ -115,16 +120,18 @@ this would make them lose their fixed amount of bytes.
  
 **Maryk Yaml Description:**
 ```yaml
-// PersonRoleInPeriod.model.yml
+name: PersonRoleInPeriod
 properties:
-  0 = person:
-    type: Key<Person>
-  1 = role:
-    type: Enum<Role>
-  2 = startDate:
-    type: Date
-  3 = endDate:
-    type: Date
+  ? 0: person
+  : !Reference
+    dataModel: Person
+  ? 1: role
+  : !Enum
+    dataModel: Role
+  ? 2: startDate
+  : !Date
+  ? 3: endDate:
+  : !Date
 ```
  
 ```yaml
@@ -144,27 +151,22 @@ enum class Role(override val index: Int): IndexedEnum<Option> {
 
  
 data class PersonRoleInPeriod(
-        val person: Person,
-        val role: Role,
-        val startDate: Date,
-        val endDate: Date
+    val person: Person,
+    val role: Role,
+    val startDate: Date,
+    val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
     object Properties {
-        val person = ReferenceDefinition(name = "person", index = 0, dataModel = Person)
-        val role = EnumProperty(name = "role", index = 1, values = Role.values())
-        val startDate = DateDefinition(name = "startDate", index = 2)
-        val endDate = DateDefinition(name = "endDate", index = 2)
+        val person = add(0, "person", ReferenceDefinition(dataModel = Person), PersonRoleInPeriod::person)
+        val role = add(1, "role", EnumProperty(values = Role.values()), PersonRoleInPeriod::role)
+        val startDate = add(2, "startDate", DateDefinition(), PersonRoleInPeriod::startDate)
+        val endDate = add(3, "endDate". DateDefinition(), PersonRoleInPeriod::endDate)
     }
 
     companion object: ValueDataModel<TestValueObject>(
-            definitions = listOf(
-                    Def(Properties.person, TestValueObject::person),
-                    Def(Properties.role, TestValueObject::role),
-                    Def(Properties.startDate, TestValueObject::startDate),
-                    Def(Properties.endDate, TestValueObject::endDate)
-            )
+        properties = Properties
     ) {
-        override fun construct(values: Map<Int, Any>) = TestValueObject(
+        override fun invoke(values: Map<Int, Any>) = TestValueObject(
             person = values[0] as Key<Person>,
             role = values[1] as Role,
             startDate = values[2] as Date,
@@ -192,37 +194,30 @@ data class Event ...
 data class Advertisement ...
 
 data class TimelineItem(
-            val item: TypedValue,
-            val dateOfPosting: DateTime
+    val dateOfPosting: DateTime,
+    val item: TypedValue
 ){
-    object Properties {
-        val dateOfPosting = DateTimeDefinition(
-            name = "dateOfPosting",
-            index = 0,
-            required = true,
+    object Properties: PropertyDefinitions<TimelineItem>() {
+        val dateOfPosting = add(0, "dateOfPosting", DateTimeDefinition(
             final = true,
             precision = TimePrecision.SECONDS
-        )
-        val item = MultiTypeDefinition(
-            name = "item",
-            index = 1,
-            required = true,
+        ), TimelineItem::dateOfPosting)
+        
+        val item = add(1, "item", MultiTypeDefinition(
             final = true,
             typeMap = mapOf(
                 0 to SubModelDefinition(dataModel = Post),
                 1 to SubModelDefinition(dataModel = Event),
                 2 to SubModelDefinition(dataModel = Advertisement)
             )
-        )
+        ), TimeLineItem::item)
     }
     companion object: RootDataModel<TimelineItem>(
         keyDefinitions = definitions(
             Reversed(Properties.dateOfPosting),
             TypeId(Properties.item)
         ),
-        definitions = listOf(
-            Def(Properties.item, MarykObject::item)
-        )
+        properties = Properties
     )
 }
 ```

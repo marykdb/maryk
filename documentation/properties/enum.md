@@ -1,7 +1,7 @@
 # Enum
 Contains an enumaration value. Is limited to one of the values in an enum
 
-- Maryk Yaml Definition: **Enum<Name>**
+- Maryk Yaml Definition: **Enum**
 - Kotlin Definition : **EnumDefinition**
 - Kotlin Value: **IndexedEnum**
 
@@ -30,8 +30,6 @@ enum class Role(override val index: Int): IndexedEnum<Option> {
 }
 
 val def = EnumDefinition<Role>(
-    name = "role",
-    index = 0,
     required = true,
     final = true,
     unique = true,

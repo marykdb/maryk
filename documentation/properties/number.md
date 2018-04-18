@@ -1,4 +1,4 @@
-#Number
+# Number
 Used to store numbers in specific formats. Signed floats and signed and 
 unsigned integers are available.
 
@@ -60,8 +60,6 @@ Int16 | Int32 | Int64 | Float32 | Float64**
 **Example of a kotlin Number definition**
 ```kotlin
 val def = NumberDefinition(
-    name = "counter",
-    index = 0,
     type = UInt32,
     required = true,
     final = true,

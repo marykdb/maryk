@@ -27,8 +27,6 @@ Defines a property of a fixed bytes length.
 **Example of a kotlin Fixed Bytes definition**
 ```kotlin
 val def = FixedBytesDefinition(
-    name = "encodedValue",
-    index = 0,
     required = false,
     final = true,
     unique = true,

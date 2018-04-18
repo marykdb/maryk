@@ -28,8 +28,6 @@ Basic String property to represent text.
 **Example of a kotlin String definition**
 ```kotlin
 val def = StringDefinition(
-    name = "test",
-    index = 0,
     required = true,
     final = true,
     unique = true,

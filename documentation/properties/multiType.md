@@ -41,8 +41,6 @@ val stringDef = StringDefinition(
 )
 
 val def = MultiTypeDefinition(
-    name = "logItem",
-    index = 0,
     required = true,
     final = true,
     unique = true,

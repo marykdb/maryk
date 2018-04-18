@@ -26,8 +26,6 @@ Boolean true or false.
 **Example of a kotlin Boolean definition**
 ```kotlin
 val def = BooleanDefinition(
-    name = "editable",
-    index = 0,
     required = true,
     final = false,
     unique = true,

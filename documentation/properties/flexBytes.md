@@ -23,8 +23,6 @@ Defines a property of a flexible bytes length.
 **Example of a kotlin Flex Bytes definition**
 ```kotlin
 val def = FlexBytesDefinition(
-    name = "encodedValue",
-    index = 0,
     required = false,
     final = true,
     unique = true,

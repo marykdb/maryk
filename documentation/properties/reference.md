@@ -1,7 +1,7 @@
 # Reference
 Property representing a Reference to another DataObject.
 
-- Maryk Yaml Definition: **Key<T>** In which T is the DataModel name
+- Maryk Yaml Definition: **Reference**
 - Kotlin Definition : **ReferenceDefinition<T>** In which T is the DataModel name
 - Kotlin Value : **Key<T>** In which T is the DataModel
 
@@ -27,8 +27,6 @@ Property representing a Reference to another DataObject.
 **Example of a kotlin Reference definition**
 ```kotlin
 val def = ReferenceDefinition(
-    name = "person",
-    index = 0,
     required = true,
     final = true,
     unique = true,

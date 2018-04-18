@@ -67,15 +67,14 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
-        val renderCompact = valueDefinition !is SubModelDefinition<*, *, *, *, *>
-                && valueDefinition !is ValueModelDefinition<*, *>
-                && valueDefinition !is ContextualSubModelDefinition<*>
-                && valueDefinition !is MultiTypeDefinition<*, *>
+        val renderCompact = this.valueDefinition !is SubModelDefinition<*, *, *, *, *>
+                && this.valueDefinition !is ValueModelDefinition<*, *>
+                && this.valueDefinition !is ContextualSubModelDefinition<*>
+                && this.valueDefinition !is MultiTypeDefinition<*, *>
                 && value.size < 5
-
         writer.writeStartArray(renderCompact)
         for (it in value) {
-            valueDefinition.writeJsonValue(it, writer, context)
+            this.valueDefinition.writeJsonValue(it, writer, context)
         }
         writer.writeEndArray()
     }

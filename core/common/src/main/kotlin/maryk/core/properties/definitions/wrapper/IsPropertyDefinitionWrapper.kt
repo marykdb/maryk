@@ -102,24 +102,6 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
             ) ?: throw DefNotFoundException("Property type $type not found")
         }
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
-            // When writing YAML, use YAML optimized format with complex field names
-            if (writer is YamlWriter) {
-                @Suppress("UNCHECKED_CAST")
-                val typedDefinition = map[Properties.definition.index] as TypedValue<PropertyDefinitionType, Any>?
-                        ?: throw Exception("No type defined at ${Properties.definition.index} in map")
-
-                writer.writeNamedIndexField(
-                    map[Properties.name.index] as String,
-                    map[Properties.index.index] as Int
-                )
-
-                Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext)
-            } else {
-                super.writeJson(map, writer, context)
-            }
-        }
-
         override fun writeJson(
             obj: IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>,
             writer: IsJsonLikeWriter,

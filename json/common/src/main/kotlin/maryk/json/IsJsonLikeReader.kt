@@ -59,7 +59,7 @@ sealed class JsonToken(val name: String) {
         this is Value<*> -> this.value.let {
             "$name(${this.value})"
         }
-        this is FieldName -> "$name(\"${this.value}\")"
+        this is FieldName -> "$name(${this.value})"
         else -> name
     }
 }

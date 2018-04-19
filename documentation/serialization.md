@@ -10,7 +10,7 @@ functionalities on top of JSON like anchors/aliases, complex field names, commen
 support to make it the ideal sharable way to define model definitions, queries, and 
 data objects.
 
-Maryk includes its own streaming [YAML library](../json/README.md) to ensure the same
+Maryk includes its own streaming [YAML library](../yaml/README.md) to ensure the same
 functionality on all platforms within Maryk code.
 
 Example DataModel definition

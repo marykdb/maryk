@@ -157,7 +157,7 @@ internal class JsonReaderTest {
         e.lineNumber shouldBe 2
         e.columnNumber shouldBe 8
 
-        e.message shouldBe """[l: 2, c: 8] Invalid character '"' after FieldName("test")"""
+        e.message shouldBe """[l: 2, c: 8] Invalid character '"' after FieldName(test)"""
 
         reader.lineNumber shouldBe 2
         reader.columnNumber shouldBe 8

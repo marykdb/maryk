@@ -92,6 +92,7 @@ Each time it finds a token it writes it to the public property `currentToken` an
 the value. The first `currentToken` is always `JsonToken.StartDocument`
 
 Returnable tokens:
+
 - `JsonToken.StartDocument` - `currentToken` starts with this value
 - `JsonToken.EndDocument` - if last object or array was closed
 - `JsonToken.StartObject` - when a start of object was read: '{'
@@ -104,6 +105,7 @@ Returnable tokens:
 
 
 Exception tokens:
+
 - `JsonToken.Stopped` - When reader was actively stopped by end of document, Suspended or more
 - `JsonToken.Suspended` - When reader was cut off early and has nothing more to read. Extends Stopped.
 - `JsonToken.JsonException` - When reader encountered an Exception while reading. This exception 

@@ -26,6 +26,26 @@ interface IsJsonLikeWriter {
 
     /** Writes a [value] excluding quotes */
     fun writeValue(value: String)
+
+    /** Writes a [boolean] */
+    fun writeBoolean(boolean: Boolean) {
+        this.writeValue(boolean.toString())
+    }
+
+    /** Writes an [int] */
+    fun writeInt(int: Int) {
+        this.writeValue(int.toString())
+    }
+
+    /** Writes a [float] */
+    fun writeFloat(float: Float) {
+        this.writeValue(float.toString())
+    }
+
+    /** Writes a [null] */
+    fun writeNull() {
+        this.writeValue("null")
+    }
 }
 
 /** Exception for invalid JSON */

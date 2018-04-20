@@ -2,10 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
-import maryk.json.IsJsonLikeWriter
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WireType
+import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Boolean properties */
@@ -40,9 +40,7 @@ data class BooleanDefinition(
     override fun fromNativeType(value: Any) = value as? Boolean
 
     override fun writeJsonValue(value: Boolean, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
-        writer.writeValue(
-            this.asString(value)
-        )
+        writer.writeBoolean(value)
     }
 
     internal object Model : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(

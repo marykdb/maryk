@@ -14,7 +14,7 @@ internal class JsonWriterTest {
 
         writeJson(generator)
 
-        output shouldBe """[1,"#Test",3.5,true,{"test":false,"test2":"value"},{"another":"yes"}]"""
+        output shouldBe """[1,"#Test",3.5,true,{"test":false,"test2":"value"},{"another":"yes","null":null}]"""
     }
 
     @Test
@@ -30,25 +30,28 @@ internal class JsonWriterTest {
                         |	"test": false,
                         |	"test2": "value"
                         |}, {
-                        |	"another": "yes"
+                        |	"another": "yes",
+                        |	"null": null
                         |}]""".trimMargin()
     }
 
     private fun writeJson(writer: IsJsonLikeWriter) {
         writer.writeStartArray()
-        writer.writeValue("1")
+        writer.writeInt(1)
         writer.writeString("#Test")
-        writer.writeValue("3.5")
+        writer.writeFloat(3.5f)
         writer.writeValue("true")
         writer.writeStartObject()
         writer.writeFieldName("test")
-        writer.writeValue("false")
+        writer.writeBoolean(false)
         writer.writeFieldName("test2")
         writer.writeString("value")
         writer.writeEndObject()
         writer.writeStartObject()
         writer.writeFieldName("another")
         writer.writeString("yes")
+        writer.writeFieldName("null")
+        writer.writeNull()
         writer.writeEndObject()
         writer.writeEndArray()
     }

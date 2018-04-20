@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.json.IsJsonLikeWriter
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
@@ -13,6 +12,7 @@ import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.WriteCacheReader
+import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Number properties */

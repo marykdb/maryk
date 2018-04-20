@@ -6,7 +6,9 @@ A streaming JSON library written in Kotlin for JS and JVM platforms
 
 ### Constructing a writer
 
-The `JsonWriter` constructor takes 2 properties: 
+The [`JsonWriter`]((common/src/main/kotlin/maryk/json/JsonWriter.kt)) constructor takes 
+2 properties:
+ 
 - `pretty` - Default is `false`. If set to `true` the writer will add whitespace
   for easier readability.
 - `writer` - A function which consumes a `String` to be added to output.
@@ -20,9 +22,10 @@ val jsonWriter = JsonWriter(pretty = true) {
 }
 ```
 
-### Writing JSON
+### Writing with the JsonWriter
 
-The JsonWriter has a few methods to write JSON constructions to the output
+The [`JsonWriter`](common/src/main/kotlin/maryk/json/JsonWriter.kt) has a few 
+methods to write JSON constructions to the output
 
 - `writeStartObject()` - writes a `{`
 - `writeEndObject()` - writes a `}`
@@ -30,8 +33,12 @@ The JsonWriter has a few methods to write JSON constructions to the output
 - `writeEndArray()` - writes a `]`
 - `writeFieldName(name: String)` - Field for an object. Adds `:` at the end.
 - `writeString(value: String)` - Adds `"` around a String value for arrays or object
-- `writeValue(value: String)` - Value in object or array. Could be any valid JSON value 
-  like numbers, booleans or null. 
+- `writeInt(int: Int)` - writes an integer
+- `writeFloat(float: Float)` - writes a float
+- `writeBoolean(boolean: Boolean)` - writes a boolean
+- `writeNull()` - writes a null value
+- `writeValue(value: String)` - Value in object or array. The Json writer writes it
+  as a string without quotes.
 
 Example of writing to above defined `jsonWriter`
 ```kotlin
@@ -39,7 +46,7 @@ jsonWriter.writeStartObject()
 jsonWriter.writeFieldName("name")
 jsonWriter.writeString("John Smith")
 jsonWriter.writeFieldName("age")
-jsonWriter.writeValue(32)
+jsonWriter.writeInt(32)
 jsonWriter.writeEndObject()
 ```
 
@@ -55,7 +62,7 @@ JsonWriter(
     writeFieldName("name")
     writeString("John Smith")
     writeFieldName("age")
-    writeValue(32)
+    writeInt(32)
     writeEndObject()
 }
 ```
@@ -68,12 +75,12 @@ Result:
 }
 ```
 
-### Reading JSON
+## Reading JSON
 
-To read JSON values you need to construct a `JsonReader` which can then read the JSON for 
-found tokens which represents JSON elements. `JsonReader` only takes a `reader` which is 
-a function to return 1 char at a time. This way any outputStream implementation or String
-reader from any framework can be used.
+To read JSON values you need to construct a [`JsonReader`]((common/src/main/kotlin/maryk/json/JsonReader.kt))
+which can then read the JSON for found tokens which represents JSON elements. `JsonReader`
+only takes a `reader` which is a function to return 1 char at a time. This way any 
+outputStream implementation or String reader from any framework can be used.
 
 Constructing a reader to read JSON from a simple String:
 ```kotlin
@@ -106,9 +113,10 @@ Returnable tokens:
 
 Exception tokens:
 
-- `JsonToken.Stopped` - When reader was actively stopped by end of document, Suspended or more
-- `JsonToken.Suspended` - When reader was cut off early and has nothing more to read. Extends Stopped.
-- `JsonToken.JsonException` - When reader encountered an Exception while reading. This exception 
+- `JsonToken.Stopped` - When reader was actively stopped by end of document, suspended or more. All tokens
+  that stop the reader extend from `JsonToken.Stopped`.
+- `JsonToken.Suspended` - Extends Stopped. When reader was cut off early and has nothing more to read. 
+- `JsonToken.JsonException` - Extends Stopped. When reader encountered an Exception while reading. This exception 
   was thrown earlier by `nextToken()`
 
 Example
@@ -125,7 +133,7 @@ JsonReader { input[index++] }.apply {
 }
 ```
 
-Outputs:
+Output:
 ```text
 StartDocument
 StartObject
@@ -136,3 +144,18 @@ Value(32)
 EndObject
 EndDocument
 ```
+
+##### Line and Column numbers
+
+It is possible to access the current line and column number of the reader by accessing 
+`lineNumber` and `columnNumber`. This way it is possible to see where the tokens started 
+and ended.
+
+#### Skipping fields
+
+Within objects it is possible to skip fields despite how complex the value is. Even if
+they are multi layered arrays and objects `skipUntilNextField()` will skip until the next
+field name. `skipUntilNextField()` takes one argument in the form of a function which
+consumes any skipped JsonToken. It is possible to collect those tokens in a 
+[`PresetJsonTokenReader`](common/src/main/kotlin/maryk/json/PresetJsonTokenReader.kt) to 
+later parse them.

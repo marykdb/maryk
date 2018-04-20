@@ -6,7 +6,7 @@ A streaming JSON library written in Kotlin for JS and JVM platforms
 
 ### Constructing a writer
 
-The [`JsonWriter`]((common/src/main/kotlin/maryk/json/JsonWriter.kt)) constructor takes 
+The [`JsonWriter`](common/src/main/kotlin/maryk/json/JsonWriter.kt) constructor takes 
 2 properties:
  
 - `pretty` - Default is `false`. If set to `true` the writer will add whitespace
@@ -77,7 +77,7 @@ Result:
 
 ## Reading JSON
 
-To read JSON values you need to construct a [`JsonReader`]((common/src/main/kotlin/maryk/json/JsonReader.kt))
+To read JSON values you need to construct a [`JsonReader`](common/src/main/kotlin/maryk/json/JsonReader.kt)
 which can then read the JSON for found tokens which represents JSON elements. `JsonReader`
 only takes a `reader` which is a function to return 1 char at a time. This way any 
 outputStream implementation or String reader from any framework can be used.

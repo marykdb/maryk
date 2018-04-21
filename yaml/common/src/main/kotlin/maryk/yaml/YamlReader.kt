@@ -17,7 +17,7 @@ class UnknownYamlTag(val name: String): MapType, ValueType<Nothing>, ArrayType
 fun YamlReader(
     defaultTag: String? = null,
     tagMap: Map<String, Map<String, TokenType>>? = null,
-    allowUnknownTags: Boolean,
+    allowUnknownTags: Boolean = false,
     reader: () -> Char
 ) : IsYamlReader =
     YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, reader)
@@ -98,7 +98,7 @@ internal class YamlReaderImpl(
     override var lineNumber = 1
 
     private val tagMap: Map<String, Map<String, TokenType>> = tagMap?.let {
-        if (!tagMap.contains(defaultTag)) {
+        if (defaultTag != null && !tagMap.contains(defaultTag)) {
             throw Exception("Default tag should be defined in tag map")
         }
         yamlTagMap.plus(tagMap)

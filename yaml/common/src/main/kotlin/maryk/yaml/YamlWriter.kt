@@ -7,12 +7,13 @@ import maryk.json.JsonType
 
 /** A Yaml writer which writes to [writer] */
 class YamlWriter(
-    private val spacing: String = "  ",
     private val writer: (String) -> Unit
 ) : AbstractJsonLikeWriter() {
-    private var prefix: String = ""
+    private val spacing: String = "  "
+    private val arraySpacing: String = "- "
     private val toSanitizeRegex = Regex(".*[#:\n]+.*")
-    private val arraySpacing: String = "-${spacing.removeSuffix(" ")}"
+
+    private var prefix: String = ""
     private var prefixWasWritten = false
     private var compactStartedAtLevel: Int? = null
 

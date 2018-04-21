@@ -28,7 +28,7 @@ class YamlReaderTest {
         |  8: v8
         """.trimMargin()
 
-        createYamlReader(input).apply {
+        createSimpleYamlReader(input).apply {
             assertStartObject()
 
             assertFieldName("1")

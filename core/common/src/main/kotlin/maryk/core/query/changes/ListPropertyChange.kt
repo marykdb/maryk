@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -25,7 +26,7 @@ fun <T:Any> IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>.change(
     addValuesToEnd: List<T>? = null,
     addValuesAtIndex: Map<Int, T>? = null,
     deleteValues: List<T>? = null,
-    deleteAtIndex: List<Int>? = null,
+    deleteAtIndex: Set<Int>? = null,
     valueToCompare: List<T>? = null
 ) = ListPropertyChange(this, addValuesToEnd, addValuesAtIndex, deleteValues, deleteAtIndex, valueToCompare)
 
@@ -39,7 +40,7 @@ data class ListPropertyChange<T: Any> internal constructor(
     val addValuesToEnd: List<T>? = null,
     val addValuesAtIndex: Map<Int, T>? = null,
     val deleteValues: List<T>? = null,
-    val deleteAtIndex: List<Int>? = null,
+    val deleteAtIndex: Set<Int>? = null,
     override val valueToCompare: List<T>? = null
 ) : IsPropertyOperation<List<T>> {
     override val changeType = ChangeType.LIST_CHANGE
@@ -69,7 +70,7 @@ data class ListPropertyChange<T: Any> internal constructor(
 
                 add(4, "deleteValues", valueListDefinition, ListPropertyChange<*>::deleteValues)
 
-                add(5, "deleteAtIndex", ListDefinition(
+                add(5, "deleteAtIndex", SetDefinition(
                     required = false,
                     valueDefinition = NumberDefinition(type = SInt32)
                 ), ListPropertyChange<*>::deleteAtIndex)
@@ -83,7 +84,7 @@ data class ListPropertyChange<T: Any> internal constructor(
             addValuesToEnd = map[2] as List<Any>?,
             addValuesAtIndex = map[3] as Map<Int, Any>?,
             deleteValues = map[4] as List<Any>?,
-            deleteAtIndex = map[5] as List<Int>?
+            deleteAtIndex = map[5] as Set<Int>?
         )
     }
 }

@@ -12,7 +12,7 @@ class ListPropertyChangeTest {
     private val listPropertyChange = TestMarykObject.ref { listOfString }.change(
         addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
         addValuesToEnd = listOf("four", "five"),
-        deleteAtIndex = listOf(0, 1),
+        deleteAtIndex = setOf(0, 1),
         deleteValues = listOf("three"),
         valueToCompare = listOf("one", "two", "three")
     )

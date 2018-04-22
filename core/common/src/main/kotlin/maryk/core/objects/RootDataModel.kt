@@ -73,7 +73,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         }
 
         /** Get Key by [bytes] array */
-        fun get(bytes: ByteArray): Key<DO> {
+        operator fun invoke(bytes: ByteArray): Key<DO> {
             if (bytes.size != this.size) {
                 throw ParseException("Invalid byte length for key")
             }
@@ -81,7 +81,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         }
 
         /** Get Key by [base64] bytes as string representation */
-        fun get(base64: String): Key<DO> = this.get(Base64.decode(base64))
+        operator fun invoke(base64: String): Key<DO> = this(Base64.decode(base64))
 
         /** Get Key by byte [reader] */
         internal fun get(reader: () -> Byte): Key<DO> = Key(
@@ -89,7 +89,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         )
 
         /** Get Key based on [dataObject] */
-        fun getKey(dataObject: DO): Key<DO> {
+        operator fun invoke(dataObject: DO): Key<DO> {
             val bytes = ByteArray(this.size)
             var index = 0
             for (it in keyDefinitions) {

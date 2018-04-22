@@ -7,12 +7,17 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.query.changes.DataObjectChange
 
+/**
+ * Creates a request to change DataObjects with [objectChanges] in a Store.
+ */
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.change(vararg objectChanges: DataObjectChange<DO>) =
+    ChangeRequest(this, objectChanges.toList())
+
 /** A Request to change DataObjects for [dataModel] with [objectChanges] */
-data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>>(
+data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     val objectChanges: List<DataObjectChange<DO>>
 ) : IsObjectRequest<DO, DM> {
-    constructor(dataModel: DM, vararg objectChange: DataObjectChange<DO>) : this(dataModel, objectChange.toList())
 
     internal companion object: QueryDataModel<ChangeRequest<*, *>>(
         properties = object : PropertyDefinitions<ChangeRequest<*, *>>() {

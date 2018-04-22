@@ -50,7 +50,7 @@ internal class TypeIdTest {
             multi = TypedValue(Option.V1, true)
         )
 
-        val key = MarykObject.key.getKey(obj)
+        val key = MarykObject.key(obj)
         key.bytes.toHex() shouldBe "0001"
 
         val keyDef = MarykObject.key.keyDefinitions[0]

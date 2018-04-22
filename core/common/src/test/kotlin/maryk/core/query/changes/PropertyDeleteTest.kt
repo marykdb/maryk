@@ -9,10 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class PropertyDeleteTest {
-    private val propertyDelete = PropertyDelete(
-        reference = SimpleMarykObject.ref { value },
-        valueToCompare = "test"
-    )
+    private val propertyDelete = SimpleMarykObject.ref { value }.delete(valueToCompare = "test")
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

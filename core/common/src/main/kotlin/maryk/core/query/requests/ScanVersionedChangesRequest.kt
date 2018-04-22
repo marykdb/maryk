@@ -13,12 +13,30 @@ import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
+ * Creates a request to scan DataObjects by key from [startKey] until [limit]
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanVersionedChanges(
+    startKey: Key<DO>,
+    filter: IsFilter? = null,
+    order: Order? = null,
+    limit: UInt32 = 100.toUInt32(),
+    fromVersion: UInt64,
+    toVersion: UInt64? = null,
+    maxVersions: UInt32 = 1000.toUInt32(),
+    filterSoftDeleted: Boolean = true
+) =
+    ScanVersionedChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, maxVersions, filterSoftDeleted)
+
+/**
  * A Request to scan DataObjects by key from [startKey] until [limit] for specific [dataModel]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
+data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DO>,
     override val filter: IsFilter? = null,
@@ -26,7 +44,7 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
     override val limit: UInt32 = 100.toUInt32(),
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
-    override val maxVersions: UInt32 = 100.toUInt32(),
+    override val maxVersions: UInt32 = 1000.toUInt32(),
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
     internal companion object: QueryDataModel<ScanVersionedChangesRequest<*, *>>(

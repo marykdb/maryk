@@ -10,17 +10,15 @@ import maryk.core.query.filters.Exists
 import kotlin.test.Test
 
 class GetRequestTest {
-    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
-    private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
+    private val key1 = SimpleMarykObject.key(SimpleMarykObject("test1"))
+    private val key2 = SimpleMarykObject.key(SimpleMarykObject("test2"))
 
-    private val getRequest = GetRequest(
-        SimpleMarykObject,
+    private val getRequest = SimpleMarykObject.get(
         key1,
         key2
     )
 
-    private val getMaxRequest = GetRequest(
-        SimpleMarykObject,
+    private val getMaxRequest = SimpleMarykObject.get(
         key1,
         key2,
         filter = Exists(SimpleMarykObject.ref { value }),

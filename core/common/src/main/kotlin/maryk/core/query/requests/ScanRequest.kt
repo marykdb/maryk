@@ -13,12 +13,27 @@ import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
+ * Creates a Request to scan DataObjects by key from [startKey] until [limit]
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scan(
+    startKey: Key<DO>,
+    filter: IsFilter? = null,
+    order: Order? = null,
+    limit: UInt32 = 100.toUInt32(),
+    toVersion: UInt64? = null,
+    filterSoftDeleted: Boolean = true
+) =
+    ScanRequest(this, startKey, filter, order, limit, toVersion, filterSoftDeleted)
+
+/**
  * A Request to scan DataObjects by key from [startKey] until [limit]
  * for specific [dataModel]
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanRequest<DO: Any, out DM: RootDataModel<DO, *>>(
+data class ScanRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DO>,
     override val filter: IsFilter? = null,

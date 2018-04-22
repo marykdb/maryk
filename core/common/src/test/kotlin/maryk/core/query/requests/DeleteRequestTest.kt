@@ -7,11 +7,10 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class DeleteRequestTest {
-    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
-    private val key2 = SimpleMarykObject.key.getKey(SimpleMarykObject("test2"))
+    private val key1 = SimpleMarykObject.key(SimpleMarykObject("test1"))
+    private val key2 = SimpleMarykObject.key(SimpleMarykObject("test2"))
 
-    private val deleteRequest = DeleteRequest(
-        SimpleMarykObject,
+    private val deleteRequest = SimpleMarykObject.delete(
         key1,
         key2,
         hardDelete = true

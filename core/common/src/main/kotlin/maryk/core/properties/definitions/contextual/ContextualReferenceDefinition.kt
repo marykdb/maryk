@@ -24,7 +24,7 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     override val wireType = WireType.LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(context).get(string)
+        contextualResolver(context)(string)
 
     override fun asString(value: Key<*>, context: CX?): String = value.toString()
 
@@ -37,7 +37,7 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
                 val jsonValue = it.value
                 when (jsonValue) {
                     null -> throw ParseException("Reference cannot be null in JSON")
-                    is String -> contextualResolver(context).get(jsonValue)
+                    is String -> contextualResolver(context)(jsonValue)
                     else -> throw ParseException("Reference has to be a String")
                 }
             }

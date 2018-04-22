@@ -32,7 +32,7 @@ internal class UUIDKeyTest {
     fun testKey(){
         val obj = MarykObject("test")
 
-        val key = MarykObject.key.getKey(obj)
+        val key = MarykObject.key(obj)
         key.bytes.size shouldBe 16
 
         val keyDef = MarykObject.key.keyDefinitions[0]

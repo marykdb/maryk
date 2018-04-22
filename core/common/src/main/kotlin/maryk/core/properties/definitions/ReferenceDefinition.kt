@@ -44,12 +44,12 @@ class ReferenceDefinition<DO: Any>(
     override fun calculateTransportByteLength(value: Key<DO>) = this.byteSize
 
     override fun fromString(string: String) = try {
-        dataModel.key.get(string)
+        dataModel.key(string)
     } catch (e: Throwable) { throw ParseException(string, e) }
 
     override fun fromNativeType(value: Any) =
         if(value is ByteArray && value.size == this.byteSize){
-            dataModel.key.get(value)
+            dataModel.key(value)
         } else {
             null
         }

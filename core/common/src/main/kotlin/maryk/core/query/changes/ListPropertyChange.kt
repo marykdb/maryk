@@ -17,11 +17,24 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.DataModelPropertyContext
 
 /**
+ * Changes for a list property containing values of type [T]
+ * Options are to [addValuesToEnd], [addValuesAtIndex], [deleteValues] and/or [deleteAtIndex]
+ * Optionally compares against [valueToCompare] and will only change value if values match
+ */
+fun <T:Any> IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>.change(
+    addValuesToEnd: List<T>? = null,
+    addValuesAtIndex: Map<Int, T>? = null,
+    deleteValues: List<T>? = null,
+    deleteAtIndex: List<Int>? = null,
+    valueToCompare: List<T>? = null
+) = ListPropertyChange(this, addValuesToEnd, addValuesAtIndex, deleteValues, deleteAtIndex, valueToCompare)
+
+/**
  * Changes for a list property containing values of type [T] referred by [reference]
  * Options are to [addValuesToEnd], [addValuesAtIndex], [deleteValues] and/or [deleteAtIndex]
  * Optionally compares against [valueToCompare] and will only change value if values match
  */
-data class ListPropertyChange<T: Any>(
+data class ListPropertyChange<T: Any> internal constructor(
     override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>,
     val addValuesToEnd: List<T>? = null,
     val addValuesAtIndex: Map<Int, T>? = null,

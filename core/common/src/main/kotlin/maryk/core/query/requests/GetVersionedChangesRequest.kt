@@ -13,32 +13,38 @@ import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
+ * Creates a request to get DataObject of type [DO] its versioned changes by value [keys]
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.getVersionedChanges(
+    vararg keys: Key<DO>,
+    filter: IsFilter? = null,
+    order: Order? = null,
+    fromVersion: UInt64,
+    toVersion: UInt64? = null,
+    maxVersions: UInt32 = 1000.toUInt32(),
+    filterSoftDeleted: Boolean = true
+) =
+    GetVersionedChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, maxVersions, filterSoftDeleted)
+
+/**
  * A Request to get DataObject of type [DO] its versioned changes by value [keys] for specific [dataModel] of type [DM]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
+data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DO>>,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
-    override val toVersion: UInt64? = null,
     override val fromVersion: UInt64,
-    override val maxVersions: UInt32 = 100.toUInt32(),
+    override val toVersion: UInt64? = null,
+    override val maxVersions: UInt32 = 1000.toUInt32(),
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
-    constructor(
-        dataModel: DM,
-        vararg key: Key<DO>,
-        filter: IsFilter? = null,
-        order: Order? = null,
-        toVersion: UInt64? = null,
-        fromVersion: UInt64,
-        maxVersions: UInt32 = 100.toUInt32(),
-        filterSoftDeleted: Boolean = true
-    ) : this(dataModel, key.toList(), filter, order, toVersion, fromVersion, maxVersions, filterSoftDeleted)
-
     internal companion object: QueryDataModel<GetVersionedChangesRequest<*, *>>(
         properties = object : PropertyDefinitions<GetVersionedChangesRequest<*, *>>() {
             init {

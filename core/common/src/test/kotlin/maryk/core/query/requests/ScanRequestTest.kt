@@ -12,15 +12,13 @@ import maryk.core.query.filters.Exists
 import kotlin.test.Test
 
 class ScanRequestTest {
-    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
+    private val key1 = SimpleMarykObject.key(SimpleMarykObject("test1"))
 
-    private val scanRequest = ScanRequest(
-        SimpleMarykObject,
+    private val scanRequest = SimpleMarykObject.scan(
         startKey = key1
     )
 
-    private val scanMaxRequest = ScanRequest(
-        SimpleMarykObject,
+    private val scanMaxRequest = SimpleMarykObject.scan(
         startKey = key1,
         filter = Exists(SubMarykObject.ref { value }),
         order = Order(SubMarykObject.ref { value }),

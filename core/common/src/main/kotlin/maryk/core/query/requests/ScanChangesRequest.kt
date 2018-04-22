@@ -13,13 +13,30 @@ import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
+ * Creates a request to scan DataObjects by key from [startKey] [fromVersion] until [limit]
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanChanges(
+    startKey: Key<DO>,
+    filter: IsFilter? = null,
+    order: Order? = null,
+    limit: UInt32 = 100.toUInt32(),
+    fromVersion: UInt64,
+    toVersion: UInt64? = null,
+    filterSoftDeleted: Boolean = true
+) =
+    ScanChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, filterSoftDeleted)
+
+/**
  * A Request to scan DataObjects by key from [startKey] [fromVersion] until [limit]
  * for specific [dataModel]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
+data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DO>,
     override val filter: IsFilter? = null,

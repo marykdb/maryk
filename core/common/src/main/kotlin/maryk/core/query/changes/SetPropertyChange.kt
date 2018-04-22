@@ -15,10 +15,20 @@ import maryk.core.properties.references.SetReference
 import maryk.core.query.DataModelPropertyContext
 
 /**
+ * Changes for a set property of [T] referred with [addValues] and [deleteValues]
+ * If [valueToCompare] is defined operation will only complete if they both are equal
+ */
+fun <T:Any> IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>>.change(
+    addValues: Set<T>? = null,
+    deleteValues: Set<T>? = null,
+    valueToCompare: Set<T>? = null
+) = SetPropertyChange(this, addValues, deleteValues, valueToCompare)
+
+/**
  * Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues]
  * If [valueToCompare] is defined operation will only complete if they both are equal
  */
-data class SetPropertyChange<T: Any>(
+data class SetPropertyChange<T: Any> internal constructor(
     override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>>,
     val addValues: Set<T>? = null,
     val deleteValues: Set<T>? = null,

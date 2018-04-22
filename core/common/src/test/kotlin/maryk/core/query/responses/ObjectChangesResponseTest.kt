@@ -5,23 +5,21 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.changes.DataObjectChange
-import maryk.core.query.changes.PropertyChange
-import maryk.core.query.changes.PropertyDelete
+import maryk.core.query.changes.change
+import maryk.core.query.changes.delete
 import kotlin.test.Test
 
 class ObjectChangesResponseTest {
     private val value = SimpleMarykObject(value = "haha1")
 
-    private val key = SimpleMarykObject.key.getKey(this.value)
+    private val key = SimpleMarykObject.key(this.value)
 
     private val objectChangesResponse = ObjectChangesResponse(
         SimpleMarykObject,
         listOf(
-            DataObjectChange(
-                key,
-                PropertyChange(SimpleMarykObject.ref { value }, "hoho"),
-                PropertyDelete(SimpleMarykObject.ref { value }),
+            key.change(
+                SimpleMarykObject.ref { value }.change("hoho"),
+                SimpleMarykObject.ref { value }.delete(),
                 lastVersion = 14141L.toUInt64()
             )
         )

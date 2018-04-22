@@ -8,8 +8,8 @@ import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.lib.time.DateTime
 import maryk.core.query.DataModelContext
+import maryk.lib.time.DateTime
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -50,7 +50,7 @@ internal class ReversedTest {
             dateTime = dt
         )
 
-        val key = MarykObject.key.getKey(obj)
+        val key = MarykObject.key(obj)
 
         @Suppress("UNCHECKED_CAST")
         with(MarykObject.key.keyDefinitions[1] as Reversed<DateTime>) {

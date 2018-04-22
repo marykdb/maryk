@@ -18,7 +18,7 @@ import kotlin.test.Test
 class ChangeResponseTest {
     private val value = SimpleMarykObject(value = "haha1")
 
-    private val key = SimpleMarykObject.key.getKey(this.value)
+    private val key = SimpleMarykObject.key(this.value)
 
     private val changeResponse = ChangeResponse(
         SimpleMarykObject,

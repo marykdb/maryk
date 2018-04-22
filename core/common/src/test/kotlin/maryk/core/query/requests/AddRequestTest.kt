@@ -7,8 +7,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class AddRequestTest {
-    private val addRequest = AddRequest(
-        SimpleMarykObject,
+    private val addRequest = SimpleMarykObject.add(
         SimpleMarykObject(value = "haha1"),
         SimpleMarykObject(value = "haha2")
     )

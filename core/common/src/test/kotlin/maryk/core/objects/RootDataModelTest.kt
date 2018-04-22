@@ -22,7 +22,7 @@ import kotlin.test.Test
 internal class RootDataModelTest {
     @Test
     fun testKey() {
-        TestMarykObject.key.getKey(
+        TestMarykObject.key(
             TestMarykObject(
                 string = "name",
                 int = 5123123,

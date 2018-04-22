@@ -297,7 +297,7 @@ internal class DataModelTest {
             4 to DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
             5 to true,
             6 to Option.V2,
-            13 to TestMarykObject.key.get(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
+            13 to TestMarykObject.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
         )
 
         bc.reserve(

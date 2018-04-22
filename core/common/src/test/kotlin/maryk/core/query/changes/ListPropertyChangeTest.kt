@@ -9,8 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class ListPropertyChangeTest {
-    private val listPropertyChange = ListPropertyChange(
-        reference = TestMarykObject.ref { listOfString },
+    private val listPropertyChange = TestMarykObject.ref { listOfString }.change(
         addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
         addValuesToEnd = listOf("four", "five"),
         deleteAtIndex = listOf(0, 1),

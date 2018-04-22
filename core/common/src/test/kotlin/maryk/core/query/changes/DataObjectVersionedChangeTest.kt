@@ -11,7 +11,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class DataObjectVersionedChangeTest {
-    private val key1 = TestMarykObject.key.get(
+    private val key1 = TestMarykObject.key(
         byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
@@ -24,17 +24,17 @@ class DataObjectVersionedChangeTest {
                 219674127L.toUInt64(),
                 listOf(
                     ObjectSoftDeleteChange(true),
-                    ListPropertyChange(TestMarykObject.ref { list }),
-                    SetPropertyChange(TestMarykObject.ref { set }),
-                    MapPropertyChange(TestMarykObject.ref { map })
+                    TestMarykObject.ref { list }.change(),
+                    TestMarykObject.ref { set }.change(),
+                    TestMarykObject.ref { map }.change()
                 )
             ),
             VersionedChanges(
                 319674127L.toUInt64(),
                 listOf(
-                    PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
-                    PropertyDelete(SubMarykObject.ref(subModel) { value }),
-                    PropertyCheck(SubMarykObject.ref(subModel) { value })
+                    SubMarykObject.ref(subModel) { value }.change("new"),
+                    SubMarykObject.ref(subModel) { value }.delete(),
+                    SubMarykObject.ref(subModel) { value }.check("current")
                 )
             )
         )

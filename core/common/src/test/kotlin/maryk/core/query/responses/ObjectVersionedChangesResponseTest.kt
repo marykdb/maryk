@@ -9,18 +9,15 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.changes.DataObjectVersionedChange
-import maryk.core.query.changes.ListPropertyChange
-import maryk.core.query.changes.MapPropertyChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
-import maryk.core.query.changes.PropertyChange
-import maryk.core.query.changes.PropertyCheck
-import maryk.core.query.changes.PropertyDelete
-import maryk.core.query.changes.SetPropertyChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.changes.change
+import maryk.core.query.changes.check
+import maryk.core.query.changes.delete
 import kotlin.test.Test
 
 class ObjectVersionedChangesResponseTest {
-    private val key = TestMarykObject.key.get(
+    private val key = TestMarykObject.key(
         byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
@@ -36,17 +33,17 @@ class ObjectVersionedChangesResponseTest {
                         219674127L.toUInt64(),
                         listOf(
                             ObjectSoftDeleteChange(true),
-                            ListPropertyChange(TestMarykObject.ref { list }),
-                            SetPropertyChange(TestMarykObject.ref { set }),
-                            MapPropertyChange(TestMarykObject.ref { map })
+                            TestMarykObject.ref { list }.change(),
+                            TestMarykObject.ref { set }.change(),
+                            TestMarykObject.ref { map }.change()
                         )
                     ),
                     VersionedChanges(
                         319674127L.toUInt64(),
                         listOf(
-                            PropertyChange(SubMarykObject.ref(subModel) { value }, "new"),
-                            PropertyDelete(SubMarykObject.ref(subModel) { value }),
-                            PropertyCheck(SubMarykObject.ref(subModel) { value })
+                            SubMarykObject.ref(subModel) { value }.change("new"),
+                            SubMarykObject.ref(subModel) { value }.delete(),
+                            SubMarykObject.ref(subModel) { value }.check("current")
                         )
                     )
                 )

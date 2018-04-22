@@ -11,16 +11,14 @@ import maryk.core.query.filters.Exists
 import kotlin.test.Test
 
 class ScanVersionedChangesRequestTest {
-    private val key1 = SimpleMarykObject.key.getKey(SimpleMarykObject("test1"))
+    private val key1 = SimpleMarykObject.key(SimpleMarykObject("test1"))
 
-    private val scanVersionedChangesRequest = ScanVersionedChangesRequest(
-        SimpleMarykObject,
+    private val scanVersionedChangesRequest = SimpleMarykObject.scanVersionedChanges(
         startKey = key1,
         fromVersion = 1234L.toUInt64()
     )
 
-    private val scanVersionedChangesMaxRequest = ScanVersionedChangesRequest(
-        SimpleMarykObject,
+    private val scanVersionedChangesMaxRequest = SimpleMarykObject.scanVersionedChanges(
         startKey = key1,
         filter = Exists(SimpleMarykObject.ref { value }),
         order = Order(SimpleMarykObject.ref { value }),

@@ -8,13 +8,15 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.query.DataModelPropertyContext
 
+/** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.add(vararg objectToAdd: DO) =
+    AddRequest(this, objectToAdd.toList())
+
 /** A Request to add [objectsToAdd] to [dataModel] */
-data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>>(
+data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     val objectsToAdd: List<DO>
 ) : IsObjectRequest<DO, DM> {
-    constructor(dataModel: DM, vararg objectToAdd: DO) : this(dataModel, objectToAdd.toList())
-
     internal companion object: QueryDataModel<AddRequest<*, *>>(
         properties = object : PropertyDefinitions<AddRequest<*, *>>() {
             init {

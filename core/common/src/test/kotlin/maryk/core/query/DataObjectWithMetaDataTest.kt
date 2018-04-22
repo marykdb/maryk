@@ -6,9 +6,9 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.lib.time.DateTime
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
+import maryk.lib.time.DateTime
 import kotlin.test.Test
 
 class DataObjectWithMetaDataTest {
@@ -22,7 +22,7 @@ class DataObjectWithMetaDataTest {
         dateTime = DateTime(2017, 12, 5, 1, 33, 55)
     )
 
-    private val key1 = TestMarykObject.key.getKey(this.value)
+    private val key1 = TestMarykObject.key(this.value)
 
     private val dataObjectWithMetaData = DataObjectWithMetaData(
         key1,

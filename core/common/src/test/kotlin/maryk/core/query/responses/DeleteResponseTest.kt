@@ -14,7 +14,7 @@ import kotlin.test.Test
 class DeleteResponseTest {
     private val value = SimpleMarykObject(value = "haha1")
 
-    private val key = SimpleMarykObject.key.getKey(this.value)
+    private val key = SimpleMarykObject.key(this.value)
 
     private val deleteResponse = DeleteResponse(
         SimpleMarykObject,

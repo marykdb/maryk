@@ -11,12 +11,28 @@ import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
- * A Request to get changes on [dataModel] by [keys]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * Creates a Request to get changes by [keys] from a store
+ * It will only fetch the changes [fromVersion] (Inclusive).
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.getChanges(
+    vararg keys: Key<DO>,
+    filter: IsFilter? = null,
+    order: Order? = null,
+    fromVersion: UInt64,
+    toVersion: UInt64? = null,
+    filterSoftDeleted: Boolean = true
+) =
+    GetChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, filterSoftDeleted)
+
+/**
+ * A Request to get changes on [dataModel] by [keys]
+ * It will only fetch the changes [fromVersion] (Inclusive).
+ * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
+ * Results can be ordered with an [order]
+ */
+data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DO>>,
     override val filter: IsFilter? = null,
@@ -25,16 +41,6 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>>(
     override val toVersion: UInt64? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DO, DM>, IsChangesRequest<DO, DM> {
-    constructor(
-        dataModel: DM,
-        vararg key: Key<DO>,
-        filter: IsFilter? = null,
-        order: Order? = null,
-        fromVersion: UInt64,
-        toVersion: UInt64? = null,
-        filterSoftDeleted: Boolean = true
-    ) : this(dataModel, key.toList(), filter, order, fromVersion, toVersion, filterSoftDeleted)
-
     internal companion object: QueryDataModel<GetChangesRequest<*, *>>(
         properties = object : PropertyDefinitions<GetChangesRequest<*, *>>() {
             init {

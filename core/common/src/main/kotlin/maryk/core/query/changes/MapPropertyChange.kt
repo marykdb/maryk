@@ -14,12 +14,18 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.query.DataModelPropertyContext
 
+fun <K: Any, V: Any> IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *>>.change(
+    valuesToAdd: Map<K, V>? = null,
+    keysToDelete: Set<K>? = null,
+    valueToCompare: Map<K, V>? = null
+) = MapPropertyChange(this, valuesToAdd, keysToDelete, valueToCompare)
+
 /**
  * Changes for a map property containing keys [K] and values [V] referred by [reference]
  * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
  * Optionally compares against [valueToCompare] and will only succeed if values match
  */
-data class MapPropertyChange<K: Any, V: Any>(
+data class MapPropertyChange<K: Any, V: Any> internal constructor(
     override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *>>,
     val valuesToAdd: Map<K, V>? = null,
     val keysToDelete: Set<K>? = null,

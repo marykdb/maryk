@@ -13,19 +13,21 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.DataModelPropertyContext
 
 /**
+ * Creates a DataObjectChange which contains [changes] until [lastVersion] for a specific DataObject
+ */
+fun <DO:Any> Key<DO>.change(
+    vararg change: IsChange,
+    lastVersion: UInt64? = null
+) = DataObjectChange(this, change.toList(), lastVersion)
+
+/**
  * Contains [changes] until [lastVersion] for a specific DataObject by [key]
  */
-data class DataObjectChange<out DO: Any>(
+data class DataObjectChange<out DO: Any> internal constructor(
     val key: Key<DO>,
     val changes: List<IsChange>,
     val lastVersion: UInt64? = null
 ) {
-    constructor(
-        key: Key<DO>,
-        vararg change: IsChange,
-        lastVersion: UInt64? = null
-    ) : this(key, change.toList(), lastVersion)
-
     internal companion object: QueryDataModel<DataObjectChange<*>>(
         properties = object : PropertyDefinitions<DataObjectChange<*>>() {
             init {

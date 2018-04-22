@@ -7,7 +7,7 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.changes.PropertyChange
+import maryk.core.query.changes.change
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.AuthFail
@@ -18,14 +18,14 @@ import kotlin.test.Test
 class AddResponseTest {
     private val value = SimpleMarykObject(value = "haha1")
 
-    private val key = SimpleMarykObject.key.getKey(this.value)
+    private val key = SimpleMarykObject.key(this.value)
 
     private val addResponse = AddResponse(
         SimpleMarykObject,
         listOf(
             AddSuccess(
                 key, 32352L.toUInt64(), listOf(
-                    PropertyChange(SimpleMarykObject.ref{ value }, "new")
+                    SimpleMarykObject.ref{ value }.change("new")
                 )
             ),
             AlreadyExists(key),

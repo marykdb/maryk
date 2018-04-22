@@ -10,8 +10,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class PropertyChangeTest {
-    private val valueChange = PropertyChange(
-        reference = SimpleMarykObject.ref { value },
+    private val valueChange = SimpleMarykObject.ref { value }.change(
         newValue = "test",
         valueToCompare = "old"
     )

@@ -33,6 +33,35 @@ val def = ListDefinition(
 )
 ```
 
+## Operations
+List can be applied with List operations through `ListPropertyChange` to check
+or change their contents. It can be defined with a set with `addValuesToEnd` or 
+a list with `deleteValues`. It can also operate with the value index by
+ a map with `addValuesAtIndex` or a list with `deleteAtIndex`. 
+
+The current value can be compared against `valueToCompare`
+
+Kotlin example on a model with a list containing strings.
+```kotlin
+Model.ref { listOfStrings }.change(
+    addValuesToEnd: listOf("three", "four"),
+    deleteValues: listOf("one", "two"),
+    valueToCompare: listOf("one", "two")
+)
+```
+
+Kotlin example with indexed operations on a model with a list containing strings.
+```kotlin
+Model.ref { listOfStrings }.change(
+    addValuesAtIndex: map(
+        0 to "three", 
+        0 to "four"
+    ),
+    deleteAtIndex: setOf(1, 2),
+    valueToCompare: listOf("one", "two")
+)
+```
+
 ## Storage Byte representation
 Depends on the specific implementation. The values are stored in their representative
 byte representation.

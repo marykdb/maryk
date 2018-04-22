@@ -33,6 +33,20 @@ val def = SetDefinition(
 )
 ```
 
+## Operations
+Set can be applied with Set operations through `SetPropertyChange` to check
+or change the contents. It can be defined with a set with `addValues` or a set with 
+`deleteValues`. The current value can be compared against `valueToCompare`
+
+Kotlin example on a model with a set containing strings.
+```kotlin
+Model.ref { setOfStrings }.change(
+    addValues: setOf("three", "four"),
+    deleteValues: setOf("one", "two"),
+    valueToCompare: mapOf("one", "two")
+)
+```
+
 ## Byte representation
 Depends on the specific implementation. The values are stored in their representative byte 
 representation.

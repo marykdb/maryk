@@ -20,7 +20,6 @@ be null.
 - Minimum size
 - Maximum size
 
-
 ## Data options
 - index - Position in DataModel 
 - indexed - Default false
@@ -35,6 +34,26 @@ val def = MapDefinition(
     final = true,
     keyDefinition = NumberDefinition(type = UInt32),
     valueDefinition = StringDefinition()
+)
+```
+
+## Operations
+Maps can be applied with Map operations through `MapPropertyChange` to check
+or change the contents. It can be defined with a map with `valuesToAdd` or a set of 
+`keysToDelete`. The current value can be compared against `valueToCompare`
+
+Kotlin example on a model with a map containing integers mapped to strings.
+```kotlin
+Model.ref { mapOfIntToString }.change(
+    valuesToAdd: mapOf(
+        3 to "three",
+        4 to "four"
+    ),
+    keysToDelete: setOf(1, 2),
+    valueToCompare: mapOf(
+        1 to "one",
+        2 to "two"
+    )
 )
 ```
 

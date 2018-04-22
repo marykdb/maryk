@@ -38,6 +38,11 @@ and stored.
 - MapValue - true for properties which can be used as a value within a Map
 - List - true for properties which can be used within a List
 
+## Operations
+
+Properties can be checked or changed with operations like change, delete or
+check. Read more in the [operations documentation](operations.md)
+
 ## Validation
 
 All property definitions contain ways to add validations. These validations

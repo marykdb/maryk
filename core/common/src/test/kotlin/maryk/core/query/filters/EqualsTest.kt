@@ -9,10 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class EqualsTest {
-    private val equals = Equals(
-        reference = SimpleMarykObject.ref { value },
-        value = "test"
-    )
+    private val equals = SimpleMarykObject.ref { value } equals "test"
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

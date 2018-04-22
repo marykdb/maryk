@@ -6,8 +6,13 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
+/** Compares given [value] of type [T] against referenced value */
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.equals(
+    value: T
+) = Equals(this, value)
+
 /** Compares given [value] of type [T] against referenced value [reference] */
-data class Equals<T: Any>(
+data class Equals<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
     override val value: T
 ) : IsPropertyComparison<T> {

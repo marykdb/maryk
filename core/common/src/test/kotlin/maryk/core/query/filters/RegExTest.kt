@@ -9,10 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class RegExTest {
-    private val regEx = RegEx(
-        reference = SimpleMarykObject.ref { value },
-        regEx = ".*"
-    )
+    private val regEx = SimpleMarykObject.ref { value } matchesRegEx ".*"
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

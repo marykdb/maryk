@@ -9,9 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class ExistsTest {
-    private val exists = Exists(
-        reference = SimpleMarykObject.ref { value }
-    )
+    private val exists = SimpleMarykObject.ref { value }.exists()
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

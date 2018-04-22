@@ -9,10 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class ValueInTest {
-    private val valueIn = ValueIn(
-        reference = SimpleMarykObject.ref { value },
-        values = setOf("t1", "t2", "t3")
-    )
+    private val valueIn = SimpleMarykObject.ref { value } valueIsIn setOf("t1", "t2", "t3")
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

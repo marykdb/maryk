@@ -10,8 +10,8 @@ import kotlin.test.Test
 
 class OrTest {
     private val or = Or(
-        Exists(SimpleMarykObject.ref { value }),
-        Equals(SimpleMarykObject.ref { value }, "hoi")
+        SimpleMarykObject.ref { value }.exists(),
+        SimpleMarykObject.ref { value } equals "hoi"
     )
 
     @Suppress("UNCHECKED_CAST")

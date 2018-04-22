@@ -9,10 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class GreaterThanTest {
-    private val greaterThan = GreaterThan(
-        reference = SimpleMarykObject.ref { value },
-        value = "test"
-    )
+    private val greaterThan = SimpleMarykObject.ref { value } greaterThan "test"
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

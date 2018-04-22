@@ -6,7 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.Order
-import maryk.core.query.filters.Exists
+import maryk.core.query.filters.exists
 import kotlin.test.Test
 
 class GetChangesRequestTest {
@@ -23,7 +23,7 @@ class GetChangesRequestTest {
     private val getChangesMaxRequest = SimpleMarykObject.getChanges(
         key1,
         key2,
-        filter = Exists(SimpleMarykObject.ref { value }),
+        filter = SimpleMarykObject.ref { value }.exists(),
         order = Order(SimpleMarykObject.ref { value }),
         fromVersion = 1234L.toUInt64(),
         toVersion = 3456L.toUInt64(),

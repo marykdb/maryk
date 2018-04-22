@@ -9,10 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class PrefixTest {
-    private val prefix = Prefix(
-        reference = SimpleMarykObject.ref { value },
-        prefix = "te"
-    )
+    private val prefix = SimpleMarykObject.ref { value } isPrefixedBy "te"
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

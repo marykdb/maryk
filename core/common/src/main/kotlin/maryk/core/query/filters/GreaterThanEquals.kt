@@ -6,6 +6,11 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
+/** Referenced value should be greater than or equal given [value] of type [T] */
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.greaterThanEquals(
+    value: T
+) = GreaterThanEquals(this, value)
+
 /** Referenced value [reference] should be greater than or equal given [value] of type [T] */
 data class GreaterThanEquals<T: Any>(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,

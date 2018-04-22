@@ -9,10 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class LessThanTest {
-    private val lessThen = LessThan(
-        reference = SimpleMarykObject.ref { value },
-        value = "test"
-    )
+    private val lessThen = SimpleMarykObject.ref { value } lessThan "test"
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

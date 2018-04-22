@@ -7,6 +7,11 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
+/** Compares given [prefix] string against referenced property */
+infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>.isPrefixedBy(
+    prefix: String
+) = Prefix(this, prefix)
+
 /** Compares given [prefix] string against referenced property [reference] */
 data class Prefix(
     override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,

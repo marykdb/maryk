@@ -1,7 +1,10 @@
 ## Serializing Maryk DataObjects
 
-Maryk DataObjects can be serialized into three different formats: ProtoBuf, JSON
-and YAML.
+Maryk DataObjects can be serialized into three different formats: [YAML](#yaml), [JSON](#json)
+and [ProtoBuf](#protobuf).
+
+ProtoBuf is the preferred small format. YAML is preferred if humans need to be able to read and edit it.
+JSON is preferred if it is needed to be parsed by external libraries.
 
 ### YAML
 YAML was designed as a format which is easy to be edited and read by humans. It
@@ -77,14 +80,14 @@ Example DataModel definition in JSON
     "definition": ["String", {
       "required": true,
       "final": true,
-      "unique": true,
+      "unique": true
     }]
   }, {
     "index": 1,
     "name": "email",
     "definition": ["String", {
       "required": true,
-      "unique": true,
+      "unique": true
     }]
   }]
 }
@@ -102,13 +105,13 @@ Example User object
 Serializing a User to JSON
 ```kotlin
 val user: User // instance of a user
-val jsonWriter: JsonWriter // instance of YAML writer
+val jsonWriter: JsonWriter // instance of JSON writer
 
 User.writeJson(user, jsonWriter)
 
 ```
 
-Serializing a User from YAML
+Serializing a User from JSON
 ```kotlin
 val jsonReader: JsonReader // instance of JSON reader
 
@@ -139,7 +142,7 @@ val byteLength = User.calculateProtoBufLength(user, cache)
 User.writeProtoBuf(user, cache, byteWriter)
 ```
 
-Serializing a User from YAML
+Serializing a User from ProtoBuf
 ```kotlin
 val jsonReader: JsonReader // instance of JSON reader
 

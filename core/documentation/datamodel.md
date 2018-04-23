@@ -71,7 +71,7 @@ val johnSmith = Person(
 Person.validate(johnSmith) 
 
 // Because no key definition was defined this model will return a UUID based key
-val key = Person.key.getKey(johnSmith)
+val key = Person.key(johnSmith)
 ```
 
 ## A generic DataModel

@@ -10,8 +10,8 @@ scan or delete objects.
 
 ### Add
 
-With [`AddRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/AddRequest.kt) objects can be 
-added to a store. When applied it will deliver an [`AddResponse`](../core/common/src/main/kotlin/maryk/core/query/responses/AddResponse.kt)
+With [`AddRequest`](../common/src/main/kotlin/maryk/core/query/requests/AddRequest.kt) objects can be 
+added to a store. When applied it will deliver an [`AddResponse`](../common/src/main/kotlin/maryk/core/query/responses/AddResponse.kt)
 with a status on each object to add.
 
 Example:
@@ -30,8 +30,8 @@ val addRequest = Person.add(
 
 ### Change
 
-With [`ChangeRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/ChangeRequest.kt) objects can be 
-changed in a store. When applied it will deliver an [`ChangeResponse`](../core/common/src/main/kotlin/maryk/core/query/responses/ChangeResponse.kt)
+With [`ChangeRequest`](../common/src/main/kotlin/maryk/core/query/requests/ChangeRequest.kt) objects can be 
+changed in a store. When applied it will deliver an [`ChangeResponse`](../common/src/main/kotlin/maryk/core/query/responses/ChangeResponse.kt)
 with a status on each change.
 
 Refer to [property operations](properties/operations.md) to see how to apply
@@ -73,12 +73,12 @@ val changeRequest = Person.run {
 ```
 
 ### Delete
-With [`DeleteRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/DeleteRequest.kt)
+With [`DeleteRequest`](../common/src/main/kotlin/maryk/core/query/requests/DeleteRequest.kt)
 objects can be deleted inside a store. The objects can be deleted by passing 
 a list of object [`keys`](key.md). Objects can either be hard or soft deleted.
 With a hard delete the data is certainly gone, and with soft delete (Default) it is
 still in the store but not viewable unless specifically requested.
-When applied it will deliver an [`DeleteResponse`](../core/common/src/main/kotlin/maryk/core/query/responses/DeleteResponse.kt)
+When applied it will deliver an [`DeleteResponse`](../common/src/main/kotlin/maryk/core/query/responses/DeleteResponse.kt)
 with a status on each delete.
 
 ```kotlin
@@ -93,7 +93,7 @@ val changeRequest = Person.delete(
 ```
 
 ### Get 
-With [`GetRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/GetRequest.kt)
+With [`GetRequest`](../common/src/main/kotlin/maryk/core/query/requests/GetRequest.kt)
 multiple specific objects can be queried by their [key](key.md). It is possible to
 filter the results with [filters](filters.md), order the results or to include
 soft deleted results by passing `filterSoftDeleted=false`. 
@@ -101,8 +101,8 @@ soft deleted results by passing `filterSoftDeleted=false`.
 It is also possible to view the objects at a certain version with `toVersion`
 if the store supports viewing past versions.
 
-When applied it will deliver an [`ObjectsResponse`](../core/common/src/main/kotlin/maryk/core/query/responses/ObjectsResponse.kt)
-with a list with [`DataObjectWithMetaData`](../core/common/src/main/kotlin/maryk/core/query/DataObjectWithMetaData.kt)
+When applied it will deliver an [`ObjectsResponse`](../common/src/main/kotlin/maryk/core/query/responses/ObjectsResponse.kt)
+with a list with [`DataObjectWithMetaData`](../common/src/main/kotlin/maryk/core/query/DataObjectWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 
 ```kotlin
@@ -136,7 +136,7 @@ val getRequest = Person.run{
 ```
 
 ### Scan
-With [`ScanRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/ScanRequest.kt)
+With [`ScanRequest`](../common/src/main/kotlin/maryk/core/query/requests/ScanRequest.kt)
 multiple objects can be queried by passing a startKey to scan from and filters on key parts to end it.
 It is possible to filter the results with [filters](filters.md), order or limit the results (default= 100).
 It is also possible to include soft deleted results by passing `filterSoftDeleted=false`.
@@ -144,8 +144,8 @@ It is also possible to include soft deleted results by passing `filterSoftDelete
 It is also possible to view the objects at a certain version with `toVersion`
 if the store supports viewing past versions.
 
-When applied it will deliver an [`ObjectsResponse`](../core/common/src/main/kotlin/maryk/core/query/responses/ObjectsResponse.kt)
-with a list with [`DataObjectWithMetaData`](../core/common/src/main/kotlin/maryk/core/query/DataObjectWithMetaData.kt)
+When applied it will deliver an [`ObjectsResponse`](../common/src/main/kotlin/maryk/core/query/responses/ObjectsResponse.kt)
+with a list with [`DataObjectWithMetaData`](../common/src/main/kotlin/maryk/core/query/DataObjectWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 
 ```kotlin
@@ -174,13 +174,13 @@ val scanRequest = Logs.run {
 
 ### Scan/Get Changes
 In stores which support it, it is possible to request all the changes with 
-[`GetChangesRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/GetChangesRequest.kt)
-or [`ScanChangesRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/ScanChangesRequest.kt)
+[`GetChangesRequest`](../common/src/main/kotlin/maryk/core/query/requests/GetChangesRequest.kt)
+or [`ScanChangesRequest`](../common/src/main/kotlin/maryk/core/query/requests/ScanChangesRequest.kt)
 by defining the `fromVersion` parameter. For the rest this call is the same
 as [`GetRequest`](#get) / [`ScanRequest`](#scan)
 
-When applied it will deliver an [`ObjectChangesResponse`](../core/common/src/main/kotlin/maryk/core/query/responses/ObjectChangesResponse.kt)
-with a list with [`DataObjectChange`](../core/common/src/main/kotlin/maryk/core/query/changes/DataObjectChange.kt)
+When applied it will deliver an [`ObjectChangesResponse`](../common/src/main/kotlin/maryk/core/query/responses/ObjectChangesResponse.kt)
+with a list with [`DataObjectChange`](../common/src/main/kotlin/maryk/core/query/changes/DataObjectChange.kt)
 containing the `key`, the `lastVersion` and a list of `changes`.
 
 Get with all options
@@ -222,14 +222,14 @@ val scanRequest = Logs.scanChanges(
 ### Scan/Get Versioned Changes
 In stores which support it, it is possible to request all the changes ordered
 by version with 
-[`GetVersionedChangesRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/GetVersionedChangesRequest.kt).
-or [`ScanVersionedChangesRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/ScanVersionedChangesRequest.kt).
+[`GetVersionedChangesRequest`](../common/src/main/kotlin/maryk/core/query/requests/GetVersionedChangesRequest.kt).
+or [`ScanVersionedChangesRequest`](../common/src/main/kotlin/maryk/core/query/requests/ScanVersionedChangesRequest.kt).
 `maxVersions` (default=1000) can be used to control how many versions are returned
 at maximum.  
 For the rest this call is the same as [`GetChangesRequest`/`ScanChangesRequest`](#scan/get-changes)
 
-When applied it will deliver an [`ObjectVersionedChangesResponse`](../core/common/src/main/kotlin/maryk/core/query/responses/ObjectVersionedChangesResponse.kt)
-with a list with [`DataObjectVersionedChange`](../core/common/src/main/kotlin/maryk/core/query/changes/DataObjectVersionedChange.kt)
+When applied it will deliver an [`ObjectVersionedChangesResponse`](../common/src/main/kotlin/maryk/core/query/responses/ObjectVersionedChangesResponse.kt)
+with a list with [`DataObjectVersionedChange`](../common/src/main/kotlin/maryk/core/query/changes/DataObjectVersionedChange.kt)
 containing the `key` and `changes` with a list of objects containing the version and changes.
 
 Get versioned changes with all options

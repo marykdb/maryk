@@ -10,7 +10,7 @@ functionalities on top of JSON like anchors/aliases, complex field names, commen
 support to make it the ideal sharable way to define model definitions, queries, and 
 data objects.
 
-Maryk includes its own streaming [YAML library](../yaml/README.md) to ensure the same
+Maryk includes its own streaming [YAML library](../../yaml/README.md) to ensure the same
 functionality on all platforms within Maryk code.
 
 Example DataModel definition
@@ -37,7 +37,7 @@ easily debug and to easily share data with third parties not using Maryk. JSON c
 outputted in pretty mode which includes more whitespace to further enhance readability. 
 The JSON is read in a streaming way for quicker results and less memory consumption.
 
-Maryk includes its own streaming [JSON library](../json/README.md) to ensure the same 
+Maryk includes its own streaming [JSON library](../../json/README.md) to ensure the same 
 functionality on all platforms within Maryk code.
 
 Example DataModel definition in JSON

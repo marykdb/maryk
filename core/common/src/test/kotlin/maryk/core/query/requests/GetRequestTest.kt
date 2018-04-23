@@ -5,7 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.Order
+import maryk.core.query.descending
 import maryk.core.query.filters.exists
 import kotlin.test.Test
 
@@ -18,14 +18,16 @@ class GetRequestTest {
         key2
     )
 
-    private val getMaxRequest = SimpleMarykObject.get(
-        key1,
-        key2,
-        filter = SimpleMarykObject.ref { value }.exists(),
-        order = Order(SimpleMarykObject.ref { value }),
-        toVersion = 333L.toUInt64(),
-        filterSoftDeleted = true
-    )
+    private val getMaxRequest = SimpleMarykObject.run {
+        get(
+            key1,
+            key2,
+            filter = ref { value }.exists(),
+            order = ref { value }.descending(),
+            toVersion = 333L.toUInt64(),
+            filterSoftDeleted = true
+        )
+    }
 
     private val context = DataModelPropertyContext(mapOf(
         SimpleMarykObject.name to SimpleMarykObject

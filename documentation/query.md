@@ -53,6 +53,25 @@ val changeRequest = Person.change(
 )
 ```
 
+Simplify references with Kotlin `run{}`:
+```kotlin
+val person1Key // Containing the key of person 1 to change
+val person2Key // Containing the key of person 2 to change
+
+val changeRequest = Person.run {
+  change(
+      person1Key.change(
+          ref { firstName }.check("Jane"),
+          ref { lastName }.change("Doe")
+      ),
+      person2Key.change(
+          ref { lastName }.change("Smith")
+      )
+  )
+}
+
+```
+
 ### Delete
 With [`DeleteRequest`](../core/common/src/main/kotlin/maryk/core/query/requests/DeleteRequest.kt)
 objects can be deleted inside a store. The objects can be deleted by passing 
@@ -101,17 +120,19 @@ With all options
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
 
-val getRequest = Person.get(
-    person1Key,
-    person2Key,
-    filter = And(
-        Person.ref { firstName } equals "Clark",
-        Person.ref { lastName } equals "Kent"
-    ),
-    order = Direction.DESC,
-    toVersion = 2L,
-    filterSoftDeleted = false    
-)
+val getRequest = Person.run{
+  get(
+      person1Key,
+      person2Key,
+      filter = And(
+          ref { firstName } equals "Clark",
+          ref { lastName } equals "Kent"
+      ),
+      order = ref { lastName }.ascending(),
+      toVersion = 2L,
+      filterSoftDeleted = false    
+  )
+}
 ```
 
 ### Scan
@@ -139,14 +160,16 @@ With all options
 ```kotlin
 val timedKey // Key which start at certain time
 
-val scanRequest = Logs.scan(
-    startKey = timedKey,
-    limit = 50,
-    filter = Logs.ref { severity } greaterThanOrEquals Severity.ERROR,
-    order = Direction.DESC,
-    toVersion = 2L,
-    filterSoftDeleted = false    
-)
+val scanRequest = Logs.run {
+    scan(
+        startKey = timedKey,
+        limit = 50,
+        filter = ref { severity } greaterThanOrEquals Severity.ERROR,
+        order = ref { timeStamp }.descending(),
+        toVersion = 2L,
+        filterSoftDeleted = false
+    )
+}
 ```
 
 ### Scan/Get Changes
@@ -165,18 +188,20 @@ Get with all options
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
 
-val getRequest = Person.getChanges(
-    person1Key,
-    person2Key,
-    filter = And(
-        Person.ref { firstName } equals "Clark",
-        Person.ref { lastName } equals "Kent"
-    ),
-    order = Direction.DESC,
-    fromVersion = 1000L,
-    toVersion = 2000L,
-    filterSoftDeleted = false    
-)
+val getRequest = Person.run {
+    getChanges(
+        person1Key,
+        person2Key,
+        filter = And(
+            ref { firstName } equals "Clark",
+            ref { lastName } equals "Kent"
+        ),
+        order = ref { lastName }.ascending(),
+        fromVersion = 1000L,
+        toVersion = 2000L,
+        filterSoftDeleted = false    
+    )
+}
 ```
 
 Scan with all options
@@ -187,7 +212,7 @@ val scanRequest = Logs.scanChanges(
     startKey = timedKey,
     limit = 50,
     filter = Logs.ref { severity } greaterThanOrEquals Severity.ERROR,
-    order = Direction.DESC,
+    order = ref { timeStamp }.descending(),
     fromVersion = 1000L,
     toVersion = 2000L,
     filterSoftDeleted = false    
@@ -212,19 +237,21 @@ Get versioned changes with all options
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
 
-val getRequest = Person.getVersionedChanges(
-    person1Key,
-    person2Key,
-    filter = And(
-        Person.ref { firstName } equals "Clark",
-        Person.ref { lastName } equals "Kent"
-    ),
-    order = Direction.DESC,
-    fromVersion = 1000L,
-    toVersion = 2000L,
-    maxVersions = 100,
-    filterSoftDeleted = false    
-)
+val getRequest = Person.run {
+    getVersionedChanges(
+        person1Key,
+        person2Key,
+        filter = And(
+            ref { firstName } equals "Clark",
+            ref { lastName } equals "Kent"
+        ),
+        order = ref { lastName }.ascending(),
+        fromVersion = 1000L,
+        toVersion = 2000L,
+        maxVersions = 100,
+        filterSoftDeleted = false    
+    )
+}
 ```
 
 Scan versioned changes with all options
@@ -235,7 +262,7 @@ val scanRequest = Logs.scanVersionedChanges(
     startKey = timedKey,
     limit = 50,
     filter = Logs.ref { severity } greaterThanOrEquals Severity.ERROR,
-    order = Direction.DESC,
+    order = ref { timeStamp }.descending(),
     fromVersion = 1000L,
     toVersion = 2000L,
     maxVersions = 100,

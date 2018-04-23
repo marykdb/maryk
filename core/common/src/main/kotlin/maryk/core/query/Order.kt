@@ -13,10 +13,16 @@ enum class Direction(override val index: Int) : IndexedEnum<Direction> {
     ASC(0), DESC(1)
 }
 
+/** Descending ordering of property */
+fun IsPropertyReference<*, *>.descending() = Order(this, Direction.DESC)
+
+/** Ascending ordering of property */
+fun IsPropertyReference<*, *>.ascending() = Order(this, Direction.ASC)
+
 /**
  * To define the order of results of property referred to [propertyReference] into [direction]
  */
-data class Order(
+data class Order internal constructor(
     val propertyReference: IsPropertyReference<*, *>,
     val direction: Direction = Direction.ASC
 ) {

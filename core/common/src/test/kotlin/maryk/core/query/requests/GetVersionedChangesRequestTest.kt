@@ -6,7 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.Order
+import maryk.core.query.descending
 import maryk.core.query.filters.exists
 import kotlin.test.Test
 
@@ -20,16 +20,18 @@ class GetVersionedChangesRequestTest {
         fromVersion = 1234L.toUInt64()
     )
 
-    private val getVersionedChangesMaxRequest = SimpleMarykObject.getVersionedChanges(
-        key1,
-        key2,
-        filter = SimpleMarykObject.ref { value }.exists(),
-        order = Order(SimpleMarykObject.ref { value }),
-        fromVersion = 1234L.toUInt64(),
-        toVersion = 12345L.toUInt64(),
-        maxVersions = 5.toUInt32(),
-        filterSoftDeleted = true
-    )
+    private val getVersionedChangesMaxRequest = SimpleMarykObject.run {
+        getVersionedChanges(
+            key1,
+            key2,
+            filter = ref { value }.exists(),
+            order = ref { value }.descending(),
+            fromVersion = 1234L.toUInt64(),
+            toVersion = 12345L.toUInt64(),
+            maxVersions = 5.toUInt32(),
+            filterSoftDeleted = true
+        )
+    }
 
     private val context = DataModelPropertyContext(mapOf(
         SimpleMarykObject.name to SimpleMarykObject

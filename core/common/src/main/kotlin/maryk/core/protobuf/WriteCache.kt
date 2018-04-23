@@ -2,6 +2,9 @@ package maryk.core.protobuf
 
 import maryk.core.properties.IsPropertyContext
 
+/**
+ * Cache to store calculated lengths and contexts in for later ProtoBuf writing phase
+ */
 class WriteCache : WriteCacheReader, WriteCacheWriter {
     private val lengths = mutableListOf<ByteLengthContainer>()
     private var lengthCacheIndex = 0

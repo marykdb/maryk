@@ -30,6 +30,32 @@ properties:
     unique: true
 ```
 
+Example User object
+```yaml
+username: john.smith
+email: john.smith@gmail.com
+```
+
+Serializing a User to YAML
+```kotlin
+val user: User // instance of a user
+val yamlWriter: YamlWriter // instance of YAML writer
+
+User.writeJson(user, yamlWriter)
+
+```
+
+Serializing a User from YAML
+```kotlin
+val yamlReader: YamlReader // instance of YAML reader
+
+val user: User = User.readJsonToObject(yamlReader)
+
+// It is also possible to get only a map of index:value pairs.
+// This is useful if there is not a generated model.
+val valuesInMap: Map<Int, Any> = User.readJson(yamlReader)
+```
+
 ### JSON
 JSON has the advantage of being a widely adopted human readable format which is easily
 parsable by many libraries on all platforms. For this reason it was included to more 
@@ -64,7 +90,65 @@ Example DataModel definition in JSON
 }
 ```
 
+
+Example User object
+```json
+{
+  "username": "john.smith",
+  "email": "john.smith@gmail.com"
+}
+```
+
+Serializing a User to JSON
+```kotlin
+val user: User // instance of a user
+val jsonWriter: JsonWriter // instance of YAML writer
+
+User.writeJson(user, jsonWriter)
+
+```
+
+Serializing a User from YAML
+```kotlin
+val jsonReader: JsonReader // instance of JSON reader
+
+val user: User = User.readJsonToObject(reader)
+
+// It is also possible to get only a map of index:value pairs.
+// This is useful if there is not a generated model.
+val valuesInMap: Map<Int, Any> = User.readJson(reader)
+```
+
 ### ProtoBuf
 ProtoBuf was chosen because it is a widely adopted and very efficient byte
 serialization format. The bytes can be read and written in a streaming way for 
 faster parsing and less memory usage. [Read more here.](protobuf.md)
+
+Serializing a User to ProtoBuf
+```kotlin
+val user: User // instance of a user
+val byteWriter: (Byte) -> Unit // instance of byte writer writer
+
+val cache = WriteCache()
+
+// Calculate first total byte length to write
+val byteLength = User.calculateProtoBufLength(user, cache)
+
+// Reserve space on your byte writer.
+
+User.writeProtoBuf(user, cache, byteWriter)
+```
+
+Serializing a User from YAML
+```kotlin
+val jsonReader: JsonReader // instance of JSON reader
+
+val byteReader: () -> Byte 
+val byteLength: Int // Amount of bytes to read, was probably in request
+
+val user = User.readProtoBufToObject(byteLength, byteReader)
+
+// It is also possible to get only a map of index:value pairs.
+// This is useful if there is not a generated model.
+val valuesInMap: Map<Int, Any> = User.readProtoBuf(byteLength, byteReader)
+```

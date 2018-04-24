@@ -11,25 +11,24 @@ can store submodels of the different types in the same property.
 It is also possible to store the type in the key so you can quickly filter all the events, posts
 or photos. 
 
-- Maryk Yaml Definition: **MultiType**
-- Kotlin Definition : **MultiTypeDefinition**
-- Kotlin Value: **TypedValue**
+- Maryk Yaml Definition: `MultiType`
+- Kotlin Definition: `MultiTypeDefinition`
+- Kotlin Value: `TypedValue`
 
 ## Usage options
 - Value
 
 ## Validation Options
-- Required
-- Final
-- Unique
+- `required` - default true
+- `final` - default false
+- `unique` - default false
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
-- typeMap - Map which maps shorts to a property definition
+- `indexed` - default false
+- `searchable` - default true
+- `definitionMap` - Map which maps shorts to a property definition
 
-**Example of a kotlin Multi type definition**
+**Example of a Kotlin Multi type property definition**
 ```kotlin
 val intDef = NumberDefinition<Int>(
     name = "int",
@@ -40,15 +39,34 @@ val stringDef = StringDefinition(
     name = "string"
 )
 
+enum class MultiType(
+    override val index: Int
+): IndexedEnum<Option> {
+    ByString(0), ByInt(1)
+}
+
 val def = MultiTypeDefinition(
     required = true,
     final = true,
     unique = true,
     typeMap = mapOf(
-            0 to stringDef,
-            1 to intDef
+        MultiType.ByString to StringDefinition(),
+        MultiType.ByInt to NumberDefinition(type = Int32)
     )
 )
+```
+
+**Example of a YAML MultiType property definition**
+```yaml
+!MultiType
+  required: false
+  final: true
+  definitionMap:
+  ? 0: ByString
+  : !String
+  ? 1: ByInt
+  : !Number
+    type: SINT32
 ```
 
 ## Storage Byte representation
@@ -57,8 +75,8 @@ native form.
 
 ## Transport Byte representation
 The multitype is encoded as an embedded object within a length delimited tag/value. It then 
-contains 2 tag/value pairs with the first one with tag=1 being the type index encoded in VarInt and 
-secondly a tag=2 with the value itself. 
+contains 2 tag/value pairs with the first one with `tag=1` being the type index encoded in VarInt and 
+secondly a `tag=2` with the value itself. 
 
 ## String representation
-TypeID as a UInt16 encoded to string.
+TypeID as a `UInt16` encoded to string.

@@ -1,41 +1,42 @@
 # Boolean
 Boolean true or false.
 
-- Maryk Yaml Definition: **Boolean**
-- Kotlin Definition : **BooleanDefinition**
-- Kotlin Value: **Boolean**
+- Maryk Yaml Definition: `Boolean`
+- Kotlin Definition: `BooleanDefinition`
+- Kotlin Value: `Boolean`
 
 ## Usage options
 - Value
-- Map Key
-- Map Value
+- Map Key or Value
 - Inside List/Set
 
 ## Validation Options
-- Required
-- Final
-- Unique
-- Minimum value
-- Maximum value
+- `required` - default true
+- `final` - default false
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
+- `indexed` - default false
+- `searchable` - default true
 
-**Example of a kotlin Boolean definition**
+**Example of a Kotlin Boolean property definition**
 ```kotlin
 val def = BooleanDefinition(
+    indexed = true,
+    searchable = true,
     required = true,
-    final = false,
-    unique = true,
-    minValue = false,
-    maxValue = true
+    final = false
 )
 ```
 
+**Example of a YAML Boolean property definition**
+```yaml
+!Boolean
+  required: false
+  final: true
+```
+
 ## Storage and Transport Byte representation
-0b0000 for false 0b0001 for true
+`0b0000` for false `0b0001` for true
 
 ## String representation
-"true" or "false"
+`true` or `false`

@@ -5,32 +5,41 @@ no order.
 See [properties page](../properties.md) to see which property types it can contain.
 Property definitions need to be required and values can thus not be null.
 
-- Maryk Yaml Definition: **Set**
-- Kotlin Definition : **SetDefinition<T>** T is for type of value definition
-- Kotlin Value: **Set**
+- Maryk Yaml Definition: `Set`
+- Kotlin Definition: `SetDefinition<T>` T is for type of value definition
+- Kotlin Value: `Set`
 
 ## Usage options
 - Value
 
 ## Validation Options
-- Required
-- Final
-- Minimum size
-- Maximum size
+- `required` - default true
+- `final` - default false
+- `minSize` - default unset. Minimum size of set
+- `maxSize` - default unset. Maximum size of set
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
-- valueDefinition
+- `indexed` - default false
+- `searchable` - default true
+- `valueDefinition` - definition of values contained
 
-**Example of a kotlin Set definition**
+**Example of a Kotlin Set property definition**
 ```kotlin
 val def = SetDefinition(
     required = true,
     final = true,
     valueDefinition = StringDefinition()
 )
+```
+
+**Example of a YAML Set property definition**
+```yaml
+!Set
+  valueDefinition: !String
+  required: false
+  final: true
+  minSize: 1
+  maxSize: 10
 ```
 
 ## Operations
@@ -60,8 +69,8 @@ the value as their normal transport byte representation.
 ### Tag value pairs
 ``` T V  T V  T V  T V  T V ```
 
-- T = Tag + wiretype
-- V = Value encoded as LENGTH_DELIMITED or START_GROUP (Until end group)
+- `T` = Tag + wiretype
+- `V` = Value encoded as LENGTH_DELIMITED or START_GROUP (Until end group)
  
 In Packed encoding multiple values are encoded with one tag representing the specific 
 set and a Length Delimiter. This is only available and is automatically applied for values
@@ -70,6 +79,6 @@ of BIT_32, BIT_64 or VAR_INT wiretype encoding since the sizes of each item are 
 ### Packed encoding
 ``` T L V V V V V ```
 
-- T = Tag + wiretype of Length Delimited
-- L = VarInt with Length
-- V = Value encoded as  BIT_32, BIT_64 or VAR_INT
+- `T` = Tag + wiretype of Length Delimited
+- `L` = VarInt with Length
+- `V` = Value encoded as  BIT_32, BIT_64 or VAR_INT

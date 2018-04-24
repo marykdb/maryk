@@ -1,9 +1,9 @@
 # String
 Basic String property to represent text.
 
-- Maryk Yaml Definition: **String**
-- Kotlin Definition : **StringDefinition**
-- Kotlin Value : **String**
+- Maryk Yaml Definition: `String`
+- Kotlin Definition: `StringDefinition`
+- Kotlin Value : `String`
 
 ## Usage options
 - Value
@@ -11,21 +11,20 @@ Basic String property to represent text.
 - Inside List/Set
 
 ## Validation Options
-- Required
-- Final
-- Unique
-- RegEx - Regular expression to exactly match
-- Minimum size - The min length of the string
-- Maximum size - The max length of the string
-- Minimum value - The min value (Sort start value)
-- Maximum value - The max value (Sort end value)
+- `required` - default true
+- `final` - default false
+- `unique` - default false
+- `regEx` - Regular expression to match complete value against
+- `minSize` - The minimum length of the string. Default unset.
+- `maxSize` - The maximum length of the string. Default unset.
+- `minValue` - default false. Minimum value (Sort start value)
+- `maxValue` - default false. Maximum value (Sort end value)
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
+- `indexed` - default false
+- `searchable` - default true
 
-**Example of a kotlin String definition**
+**Example of a Kotlin String property definition**
 ```kotlin
 val def = StringDefinition(
     required = true,
@@ -35,8 +34,21 @@ val def = StringDefinition(
     maxSize = 6,
     minValue = "aab",
     maxValue = "ddda",
-    regEx = "^[abcd]{3,4}$"
+    regEx = "[abcd]{3,4}"
 )
+```
+
+**Example of a YAML String property definition**
+```yaml
+!String
+  required: false
+  unique: false
+  final: true
+  minSize: 3
+  maxSize: 6
+  minValue: aab
+  maxValue: ddda
+  regEx: [abcd]{3,4}
 ```
 
 ## Storage/Transport Byte representation

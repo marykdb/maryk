@@ -2,62 +2,59 @@
 Used to store numbers in specific formats. Signed floats and signed and 
 unsigned integers are available.
 
-- Kotlin Definition : **NumberDefinition**
-- Kotlin Value: **UInt8 | UInt16 | UInt32 | UInt64 | Byte | 
-                Short | Int | Long | Float | Double**
-- Maryk Yaml Definition: **UInt8 | UInt16 | UInt32 | UInt64 | Int8 | 
-Int16 | Int32 | Int64 | Float32 | Float64**
+- Kotlin Definition: `NumberDefinition`
+- Kotlin Value: `UInt8` | `UInt16` | `UInt32` | `UInt64` | `Byte` | 
+                `Short` | `Int` | `Long` | `Float` | `Double`
+- Maryk Yaml Definition: `UInt8` | `UInt16` | `UInt32` | `UInt64` | `Int8` | 
+`Int16` | `Int32` | `Int64` | `Float32` | `Float64`
 
 ## Types
 
 ### Unsigned Integers
-- **UInt8** - 8 bit Unsigned Integer 
-    * Range: 0..255
-- **UInt16** - 16 bit Unsigned Integer 
-    * Range: 0..65536
-- **UInt32** - 32 bit Unsigned Integer 
-    * Range: 0..4294967296
-- **UInt64** - 64 bit Unsigned Integer 
-    * Range: 0..18446744073709551615
+- `UInt8` - 8 bit Unsigned Integer 
+    * Range: `0..255`
+- `UInt16` - 16 bit Unsigned Integer 
+    * Range: `0..65536`
+- `UInt32` - 32 bit Unsigned Integer 
+    * Range: `0..4294967296`
+- `UInt64` - 64 bit Unsigned Integer 
+    * Range: `0..18446744073709551615`
 
 ### Signed Integers
-- **SInt8** - 8 bit Signed Integer 
-    * Range: -128..127
-- **SInt16** - 16 bit Signed Integer 
-    * Range: -32768..32767
-- **SInt32** - 32 bit signed Integer 
-    * Range: -2147483648..2147483647
-- **SInt64** - 64 bit Signed Integer 
-    * Range: -9223372036854775808..9223372036854775807
+- `SInt8` - 8 bit Signed Integer 
+    * Range: `-128..127`
+- `SInt16` - 16 bit Signed Integer 
+    * Range: `-32768..32767`
+- `SInt32` - 32 bit signed Integer 
+    * Range: `-2147483648..2147483647`
+- `SInt64` - 64 bit Signed Integer 
+    * Range: `-9223372036854775808..9223372036854775807`
 
 ### Signed Floats
-- **Float32** - 32 bit single precision signed floating point 
-    * Range: -Infinity..Infinity
-- **Float64** - 64 bit double precision signed floating point 
-    * Range: -Infinity..Infinity
+- `Float32` - 32 bit single precision signed floating point 
+    * Range: `-Infinity..Infinity`
+- `Float64` - 64 bit double precision signed floating point 
+    * Range: -`Infinity..Infinity`
 
 ## Usage options
 - Value
-- Map Key
-- Map Value
+- Map key or value
 - Inside List/Set
 
 ## Validation Options
-- Required
-- Final
-- Unique
-- RegEx - Regular expression to exactly match
-- Minimum value
-- Maximum value
-- Random value
+- `required` - default true
+- `final` - default false
+- `unique` - default false
+- `minValue` - default false. Minimum value
+- `maxValue` - default false. Maximum value
+- `random` - default false. Random value
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
-- type - type of number. See Types above.
+- `indexed` - default false
+- `searchable` - default true
+- `type` - [type of number](#types). 
 
-**Example of a kotlin Number definition**
+**Example of a Kotlin Number property definition**
 ```kotlin
 val def = NumberDefinition(
     type = UInt32,
@@ -69,6 +66,19 @@ val def = NumberDefinition(
     random = true
 )
 ```
+
+**Example of a YAML Number property definition**
+```yaml
+!Number
+  type: UINT32
+  required: false
+  unique: false
+  final: true
+  random: true
+  minValue: 32
+  maxValue: 1000000
+```
+
 
 ## Storage Byte representation
 All numbers are encoded to a fixed length byte format fitting their type. 
@@ -96,10 +106,10 @@ Examples:
 ## Transport Byte representation
 The numbers are differently encoded depending on their type.
 
- - **UInt8** **UInt16** **UInt32** **UInt64** Encoded as VarInt as unsigned
+ - `UInt8` `UInt16` `UInt32` `UInt64` Encoded as VarInt as unsigned
  number.
- - **SInt8** **SInt16** **SInt32** **SInt64** Encoded as VarInt zigzaging
+ - `SInt8` `SInt16` `SInt32` `SInt64` Encoded as VarInt zigzaging
  between positive and negative numbers. This means 0 as 0, -1 as 1, 1 as 2,
  -2 as 3 etc. This way small positive and negative numbers take less space
- - **Float32** Encoded as 64-bit
- - **Float64** Encoded as 32-bit
+ - `Float32` Encoded as 64-bit
+ - `Float64` Encoded as 32-bit

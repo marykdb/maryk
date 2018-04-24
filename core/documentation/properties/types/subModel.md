@@ -2,31 +2,38 @@
 A property which contains another DataModel as embedded object. See 
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
-- Maryk Yaml Definition: **Model<T>** T is name of model
-- Kotlin Definition : **SubModelDefinition<T>** T is for the name of DataModel
-- Kotlin Value: **T** T stands for the DataModel data class 
+- Maryk Yaml Definition: `SubModel` T is name of model
+- Kotlin Definition: `SubModelDefinition<T>` T is for the name of DataModel
+- Kotlin Value: `T` T stands for the DataModel data class 
 
 ## Usage options
 - Value
 - Map value
 
 ## Validation Options
-- Required
-- Final
+- `required` - default true
+- `final` - default false
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
-- dataModel - Refers to DataModel to be embedded
+- `indexed` - default false
+- `searchable` - default true
+- `dataModel` - Refers to DataModel to be embedded
 
-**Example of a kotlin SubModel definition**
+**Example of a Kotlin SubModel property definition**
 ```kotlin
 val def = SubModelDefinition(
     required = false,
     final = true,
     dataModel = Address
 )
+```
+
+**Example of a YAML SubModel property definition**
+```yaml
+!SubModel
+  dataModel: Address
+  required: false
+  final: true
 ```
 
 ## Transport Byte representation

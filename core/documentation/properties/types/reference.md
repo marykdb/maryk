@@ -1,30 +1,28 @@
 # Reference
 Property representing a Reference to another DataObject.
 
-- Maryk Yaml Definition: **Reference**
-- Kotlin Definition : **ReferenceDefinition<T>** In which T is the DataModel name
-- Kotlin Value : **Key<T>** In which T is the DataModel
+- Maryk Yaml Definition: `Reference`
+- Kotlin Definition: `ReferenceDefinition<T>` In which T is the DataModel name
+- Kotlin Value : `Key<T>` In which T is the DataModel
 
 ## Usage options
 - Value
-- Map Key
-- Map Value
+- Map key or value
 - Inside List/Set
 
 ## Validation Options
-- Required
-- Final
-- Unique
-- Minimum value
-- Maximum value
+- `required` - default true
+- `final` - default false
+- `unique` - default false
+- `minValue` - default false. Minimum value
+- `maxValue` - default false. Maximum value
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
-- dataModel - Model of DataObjects to be referred to
+- `indexed` - default false
+- `searchable` - default true
+- `dataModel` - Model of DataObjects to be referred to
 
-**Example of a kotlin Reference definition**
+**Example of a Kotlin Reference property definition**
 ```kotlin
 val def = ReferenceDefinition(
     required = true,
@@ -32,6 +30,14 @@ val def = ReferenceDefinition(
     unique = true,
     dataModel = Person
 )
+```
+
+**Example of a YAML Reference property definition**
+```yaml
+!Reference
+  dataModel: Person
+  required: false
+  final: true
 ```
 
 ## Storage/Transport Byte representation

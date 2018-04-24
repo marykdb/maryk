@@ -5,33 +5,39 @@ A property which contains another DataModel as a value. See
 ValueDataModel objects are stored and transported as fixed length byte objects.
 This makes them usable as map keys and list/set items.
 
-- Maryk Yaml Definition: **Value<T>** T is name of model
-- Kotlin Definition : **ValueModelDefinition<T>** T is for the name of DataModel
-- Kotlin Value: **T** T stands for the data class which extends ValueDataModel 
+- Maryk Yaml Definition: `ValueModel`
+- Kotlin Definition: `ValueModelDefinition<T>` T is for the name of DataModel
+- Kotlin Value: `T` T stands for the data class which extends ValueDataModel 
 
 ## Usage options
 - Value
-- Map key
-- Map value
+- Map key or value
 - Inside List/Set
 
 ## Validation Options
-- Required
-- Final
+- `required` - default true
+- `final` - default false
 
 ## Data options
-- index - Position in DataModel 
-- indexed - Default false
-- searchable - Default true
-- dataModel - Refers to DataModel to be used as value
+- `indexed` - default false
+- `searchable` - default true
+- `dataModel` - Refers to DataModel to be used as value
 
-**Example of a kotlin ValueModel definition**
+**Example of a Kotlin ValueModel property definition**
 ```kotlin
 val def = ValueModelDefinition(
     required = false,
     final = true,
     dataModel = PersonRoleInPeriod
 )
+```
+
+**Example of a YAML ValueModel property definition**
+```yaml
+!ValueModel
+  dataModel: PersonRoleInPeriod
+  required: false
+  final: true
 ```
 
 ## Storage/Transport Byte representation

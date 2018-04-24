@@ -23,6 +23,8 @@ Defines a property of a fixed bytes length.
 - `searchable` - default true
 - `byteSize` - fixed bytes size
 
+## Examples
+
 **Example of a Kotlin Fixed Bytes property definition**
 ```kotlin
 val def = FixedBytesDefinition(

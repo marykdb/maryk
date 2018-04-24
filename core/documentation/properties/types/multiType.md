@@ -28,6 +28,8 @@ or photos.
 - `searchable` - default true
 - `definitionMap` - Map which maps shorts to a property definition
 
+## Examples
+
 **Example of a Kotlin Multi type property definition**
 ```kotlin
 val intDef = NumberDefinition<Int>(

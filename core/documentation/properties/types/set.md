@@ -32,6 +32,8 @@ val def = SetDefinition(
 )
 ```
 
+## Examples
+
 **Example of a YAML Set property definition**
 ```yaml
 !Set

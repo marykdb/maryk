@@ -23,6 +23,8 @@ year is unsigned so it can contain negative dates
 - `indexed` - default false
 - `searchable` - default true
 
+## Examples
+
 **Example of a Kotlin Date property definition**
 ```kotlin
 val def = DateDefinition(

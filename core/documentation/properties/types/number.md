@@ -54,6 +54,8 @@ unsigned integers are available.
 - `searchable` - default true
 - `type` - [type of number](#types). 
 
+## Examples
+
 **Example of a Kotlin Number property definition**
 ```kotlin
 val def = NumberDefinition(

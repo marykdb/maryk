@@ -22,6 +22,8 @@ Property representing a Reference to another DataObject.
 - `searchable` - default true
 - `dataModel` - Model of DataObjects to be referred to
 
+## Examples
+
 **Example of a Kotlin Reference property definition**
 ```kotlin
 val def = ReferenceDefinition(

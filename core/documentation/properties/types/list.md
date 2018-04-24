@@ -23,6 +23,8 @@ Property definitions need to be required and values can thus not be null.
 - `searchable` - default true
 - `valueDefinition` - definition of values contained
 
+## Examples
+
 **Example of a Kotlin List property definition**
 ```kotlin
 val def = ListDefinition(

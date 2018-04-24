@@ -22,6 +22,8 @@ Contains an enumaration value. Is limited to one of the values in an enum
 - `searchable` - default true
 - `values` - defines the values the enum can contain
 
+## Examples
+
 **Example of a Kotlin Enum property definition**
 ```kotlin
 enum class Role(override val index: Int): IndexedEnum<Option> {

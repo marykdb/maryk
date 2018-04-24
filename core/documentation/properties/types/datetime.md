@@ -24,6 +24,8 @@ A DateTime Property which can be used to represent the time in a date plus time.
 - `precision` - The precision to which the time is stored and transported. 
   `SECONDS` (default) or `MILLIS`. This value cannot be changed after storing first data.
 
+## Examples
+
 **Example of a Kotlin DateTime property definition**
 ```kotlin
 val def = DateTimeDefinition(

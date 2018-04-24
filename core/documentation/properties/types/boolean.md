@@ -18,6 +18,8 @@ Boolean true or false.
 - `indexed` - default false
 - `searchable` - default true
 
+## Examples
+
 **Example of a Kotlin Boolean property definition**
 ```kotlin
 val def = BooleanDefinition(

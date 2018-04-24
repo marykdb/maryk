@@ -23,6 +23,8 @@ Defines a property of a flexible bytes length.
 - `indexed` - default false
 - `searchable` - default true
 
+## Examples
+
 **Example of a Kotlin Flex Bytes property definition**
 ```kotlin
 val def = FlexBytesDefinition(

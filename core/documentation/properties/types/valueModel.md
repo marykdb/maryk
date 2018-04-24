@@ -23,6 +23,8 @@ This makes them usable as map keys and list/set items.
 - `searchable` - default true
 - `dataModel` - Refers to DataModel to be used as value
 
+## Examples
+
 **Example of a Kotlin ValueModel property definition**
 ```kotlin
 val def = ValueModelDefinition(

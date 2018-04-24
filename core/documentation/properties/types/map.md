@@ -26,6 +26,8 @@ be null.
 - `keyDefinition` - definition of keys contained in map
 - `valueDefinition` - definition of values contained in map
 
+## Examples
+
 **Example of a Kotlin Map property definition**
 ```kotlin
 val def = MapDefinition(

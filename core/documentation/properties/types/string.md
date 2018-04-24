@@ -24,6 +24,8 @@ Basic String property to represent text.
 - `indexed` - default false
 - `searchable` - default true
 
+## Examples
+
 **Example of a Kotlin String property definition**
 ```kotlin
 val def = StringDefinition(

@@ -19,6 +19,8 @@ A property which contains another DataModel as embedded object. See
 - `searchable` - default true
 - `dataModel` - Refers to DataModel to be embedded
 
+## Examples
+
 **Example of a Kotlin SubModel property definition**
 ```kotlin
 val def = SubModelDefinition(

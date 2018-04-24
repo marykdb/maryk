@@ -15,8 +15,6 @@ fetches.
 This list is expanded as more functionality is ported and lands
 
 ## Projects
-
-### Core
 All core projects are multi-platform kotlin projects and support JS and JVM
 
 - [core](core/README.md) - Contains the core of Maryk like models, properties, queries,

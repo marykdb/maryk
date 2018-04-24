@@ -1,6 +1,6 @@
 # Value Property
 A property which contains another DataModel as a value. See 
-[DataModels](../datamodel.md) for more details on how to define DataModels.
+[DataModels](../../datamodel.md) for more details on how to define DataModels.
 
 ValueDataModel objects are stored and transported as fixed length byte objects.
 This makes them usable as map keys and list/set items.

@@ -21,6 +21,7 @@ contains methods to generate a key.
 
 **Maryk Model YAML:**
 ```yaml
+name: Person
 properties:
   ? 0: firstName
   : !String

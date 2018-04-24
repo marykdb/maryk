@@ -2,7 +2,7 @@
 A property to contain a set of items. An item can only be added once and it contains 
 no order.
 
-See [properties page](properties.md) to see which property types it can contain.
+See [properties page](../properties.md) to see which property types it can contain.
 Property definitions need to be required and values can thus not be null.
 
 - Maryk Yaml Definition: **Set**

@@ -43,6 +43,6 @@ Person.ref { firstName }.delete(valueToCompare = "Janice")
 
 ## Changes on Map, List and Set properties
 
-[`Map`](map.md#operations), [`List`](list.md#operations) and 
-[`Set`](set.md#operations) properties can also be changed. How that is done 
+[`Map`](types/map.md#operations), [`List`](types/list.md#operations) and 
+[`Set`](types/set.md#operations) properties can also be changed. How that is done 
 is described in their own documentation.

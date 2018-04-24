@@ -21,7 +21,7 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykObject { subModel { marykModel { list at 5 } } }.completeName shouldBe "subModel.marykModel.list.@5"
         TestMarykObject { subModel { marykModel { set at Date(2017, 12, 5) } } }.completeName shouldBe "subModel.marykModel.set.\$2017-12-05"
 
-        TestMarykObject { subModel { marykModel { map key Time(12, 23) } } }.completeName shouldBe "subModel.marykModel.map.\$12:23"
+        TestMarykObject { subModel { marykModel { map key Time(12, 23) } } }.completeName shouldBe """subModel.marykModel.map.$12:23"""
         TestMarykObject { subModel { marykModel { map at Time(12, 23) } } }.completeName shouldBe "subModel.marykModel.map.@12:23"
     }
 }

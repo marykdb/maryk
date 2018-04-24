@@ -6,7 +6,8 @@ and [`Or`](#or) filters. The filter can also be reversed with a [`Not`](#not)
 filter
 
 ## Reference Filters
-These filters operate on a property and is triggered from a property reference.
+These filters operate on a property and is triggered from a 
+[property reference](properties/references.md).
 
 ### Exists
 Checks if a value exists

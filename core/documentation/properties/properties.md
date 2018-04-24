@@ -1,30 +1,30 @@
 # Properties
 
 All [DataModels](../datamodel.md) define their structure by properties. Properties 
-have a type like [Boolean](boolean.md), [Date](date.md), [String](string.md), 
-[Enum](enum.md) and contain further properties that define how they are validated 
+have a type like [Boolean](types/boolean.md), [Date](types/date.md), [String](types/string.md), 
+[Enum](types/enum.md) and contain further properties that define how they are validated 
 and stored.
 
 ## Types of properties
 
-|Type                       |Keyable |MapKey |MapValue |List   |Indexable   |
-|:--------------------------|:------:|:-----:|:-------:|:-----:|:----------:|
-|[String](string.md)        |false   |false  |true     |true   |true        |
-|[Boolean](boolean.md)      |true    |true   |true     |true   |true        |
-|[Number](number.md)*       |true    |true   |true     |true   |true        |
-|[Enum](enum.md)            |true    |true   |true     |true   |true        |
-|[Date](date.md)            |true    |true   |true     |true   |true        |
-|[Time](time.md)            |true    |true   |true     |true   |true        |
-|[DateTime](datetime.md)    |true    |true   |true     |true   |true        |
-|[Reference](reference.md)  |true    |true   |true     |true   |true        |
-|[FixedBytes](fixedBytes.md)|true    |true   |true     |true   |true        |
-|[FlexBytes](flexBytes.md)  |false   |false  |true     |true   |true        |
-|[MultiType](multiType.md)  |typeId**|false  |false    |false  |true        |
-|[List](list.md)            |false   |false  |false    |false  |true        |
-|[Set](set.md)              |false   |false  |false    |false  |true        |
-|[Map](map.md)              |false   |false  |false    |false  |key only    |
-|[SubModel](subModel.md)    |false   |false  |true     |false  |subProp only|
-|[ValueModel](valueModel.md)|false   |true   |true     |true   |true        |
+|Type                             |Keyable |MapKey |MapValue |List   |Indexable   |
+|:--------------------------------|:------:|:-----:|:-------:|:-----:|:----------:|
+|[String](types/string.md)        |false   |false  |true     |true   |true        |
+|[Boolean](types/boolean.md)      |true    |true   |true     |true   |true        |
+|[Number](types/number.md)*       |true    |true   |true     |true   |true        |
+|[Enum](types/enum.md)            |true    |true   |true     |true   |true        |
+|[Date](types/date.md)            |true    |true   |true     |true   |true        |
+|[Time](types/time.md)            |true    |true   |true     |true   |true        |
+|[DateTime](types/datetime.md)    |true    |true   |true     |true   |true        |
+|[Reference](types/reference.md)  |true    |true   |true     |true   |true        |
+|[FixedBytes](types/fixedBytes.md)|true    |true   |true     |true   |true        |
+|[FlexBytes](types/flexBytes.md)  |false   |false  |true     |true   |true        |
+|[MultiType](types/multiType.md)  |typeId**|false  |false    |false  |true        |
+|[List](types/list.md)            |false   |false  |false    |false  |true        |
+|[Set](types/set.md)              |false   |false  |false    |false  |true        |
+|[Map](types/map.md)              |false   |false  |false    |false  |key only    |
+|[SubModel](types/subModel.md)    |false   |false  |true     |false  |subProp only|
+|[ValueModel](types/valueModel.md)|false   |true   |true     |true   |true        |
 
 \* All numeric properties like Int8/16/32/64, UInt8/16/32/64, Float, Double 
 
@@ -42,6 +42,11 @@ and stored.
 
 Properties can be checked or changed with operations like change, delete or
 check. Read more in the [operations documentation](operations.md)
+
+## References
+For filters, order and validation exceptions it is needed to refer
+to which property to operate on/report on. To refer you use 
+[`property references`](references.md)
 
 ## Validation
 

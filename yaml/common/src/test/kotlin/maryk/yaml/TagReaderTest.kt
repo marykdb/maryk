@@ -32,6 +32,10 @@ class TagReaderTest {
         |    k11:
         |       b1: 1
         |    k12: !!pairs {test: !!str true}
+        |    k13: !!omap
+        |    k14: !!set
+        |    k15: !!str
+        |    k16: close
         """.trimMargin()).apply {
             assertStartObject()
             assertFieldName("k1")
@@ -81,6 +85,16 @@ class TagReaderTest {
             assertFieldName("test")
             assertValue("true", ValueType.String)
             assertEndObject()
+            assertFieldName("k13")
+            assertStartObject(MapType.OrderedMap)
+            assertEndObject()
+            assertFieldName("k14")
+            assertStartArray(ArrayType.Set)
+            assertEndArray()
+            assertFieldName("k15")
+            assertValue(null, ValueType.Null)
+            assertFieldName("k16")
+            assertValue("close")
             assertEndObject()
             assertEndDocument()
         }
@@ -93,7 +107,9 @@ class TagReaderTest {
         |---
         |   {
         |    k2: !!str v2, k3: !test!bool true,
-        |    k4: !<tag:yaml.org,2002:float> 1.4665 }
+        |    k4: !<tag:yaml.org,2002:float> 1.4665,
+        |     k5: !Bar, k6: !!set, k7: !!str
+        |    }
         """.trimMargin()).apply {
             assertStartObject()
             assertFieldName("k2")
@@ -102,6 +118,14 @@ class TagReaderTest {
             assertValue(true, ValueType.Bool)
             assertFieldName("k4")
             assertValue(1.4665, ValueType.Float)
+            assertFieldName("k5")
+            assertStartObject(TestType.Bar)
+            assertEndObject()
+            assertFieldName("k6")
+            assertStartArray(ArrayType.Set)
+            assertEndArray()
+            assertFieldName("k7")
+            assertValue(null, ValueType.Null)
             assertEndObject()
             assertEndDocument()
         }
@@ -115,6 +139,9 @@ class TagReaderTest {
         |    - !Bar { k: v }
         |    - !!str v2
         |    - !test!bool true
+        |    - !Bar
+        |    - !!set
+        |    - !!str
         |    - !<tag:yaml.org,2002:str> v4
         """.trimMargin()).apply {
             assertStartArray()
@@ -124,6 +151,13 @@ class TagReaderTest {
             assertEndObject()
             assertValue("v2", ValueType.String)
             assertValue(true, ValueType.Bool)
+
+            assertStartObject(TestType.Bar)
+            assertEndObject()
+            assertStartArray(ArrayType.Set)
+            assertEndArray()
+            assertValue(null, ValueType.Null)
+
             assertValue("v4", ValueType.String)
             assertEndArray()
             assertEndDocument()
@@ -137,7 +171,8 @@ class TagReaderTest {
         |---
         |    [ !Test { k: v },
         |     !!str v2,
-        |     !test!bool true, !<tag:yaml.org,2002:str> v4, !!set [a1, a2], !Foo s: m, !Bar ? v]
+        |     !test!bool true, !<tag:yaml.org,2002:str> v4, !!set [a1, a2], !Foo s: m, !Bar ? v
+        |     ]
         """.trimMargin()).apply {
             assertStartArray()
             assertStartObject(TestType.Test)
@@ -165,7 +200,29 @@ class TagReaderTest {
     }
 
     @Test
-    fun read_maryk_tags() {
+    fun read_empty_tags_in_flow_sequence() {
+        createYamlReader("""
+        |%TAG !test! tag:yaml.org,2002:
+        |---
+        |    [
+        |       test,
+        |     !!omap, !!set, !!str
+        |     ]
+        """.trimMargin()).apply {
+            assertStartArray()
+            assertValue("test")
+            assertStartObject(MapType.OrderedMap)
+            assertEndObject()
+            assertStartArray(ArrayType.Set)
+            assertEndArray()
+            assertValue(null, ValueType.Null)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun read_custom_tags() {
         createYamlReader("""
         |    - !Foo { k1: v1 }
         |    - !Bar { k2: v2 }
@@ -197,7 +254,7 @@ class TagReaderTest {
     @Test
     fun read_tag_as_last() {
         createYamlReader("""
-        |    - !string
+        |    - !!str
         """.trimMargin()).apply {
             assertStartArray()
             assertValue(null, ValueType.Null)

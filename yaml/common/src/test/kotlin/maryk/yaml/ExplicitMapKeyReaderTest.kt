@@ -1,5 +1,7 @@
 package maryk.yaml
 
+import maryk.json.ArrayType
+import maryk.json.MapType
 import maryk.json.ValueType
 import kotlin.test.Test
 
@@ -114,6 +116,60 @@ class ExplicitMapKeyReaderTest {
             assertEndObject()
             assertEndComplexFieldName()
             assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun map_in_key_indicator_with_value_and_only_tag() {
+        createYamlReader("""
+        | ? k1: v1
+        | : !!omap
+        | ? k2: v2
+        | : !!set
+        | ? k3: v3
+        | : !!str
+        | ? k4: v4
+        | : !!pairs
+        """.trimMargin()).apply {
+            assertStartObject()
+
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue("v1")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertStartObject(MapType.OrderedMap)
+            assertEndObject()
+
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k2")
+            assertValue("v2")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertStartArray(ArrayType.Set)
+            assertEndArray()
+
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k3")
+            assertValue("v3")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertValue(null, ValueType.Null)
+
+            assertStartComplexFieldName()
+            assertStartObject()
+            assertFieldName("k4")
+            assertValue("v4")
+            assertEndObject()
+            assertEndComplexFieldName()
+            assertStartObject(MapType.Pairs)
+            assertEndObject()
+
             assertEndObject()
             assertEndDocument()
         }

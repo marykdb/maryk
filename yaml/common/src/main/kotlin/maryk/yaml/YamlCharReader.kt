@@ -9,7 +9,7 @@ internal abstract class YamlCharReader(
 ) : IsInternalYamlReader by yamlReader {
     /** Reads Yaml until next found Token */
     abstract fun readUntilToken(extraIndent: Int, tag: TokenType? = null): JsonToken
-    /** Handles reader interuptions */
+    /** Handles reader interruptions */
     abstract fun handleReaderInterrupt(): JsonToken
 }
 

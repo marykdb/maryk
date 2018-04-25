@@ -1,5 +1,6 @@
 package maryk.yaml
 
+import maryk.json.ArrayType
 import maryk.json.JsonToken
 import maryk.json.MapType
 import maryk.json.TokenType
@@ -47,16 +48,7 @@ internal class MapItemsReader<out P>(
                         this.state = MapState.NEW_PAIR
                     }
                     this.selectReaderAndRead(true, tag, currentIndentCount - readerIndentCount, this::jsonTokenCreator).also {
-                        if (currentIndentCount == readerIndentCount
-                            && this.state == MapState.KEY_FOUND
-                            && it !is JsonToken.StartArray
-                        ) {
-                            this.yamlReader.pushToken(it)
-                            this.state = MapState.NEW_PAIR
-                            return JsonToken.NullValue
-                        } else {
-                            this.setState(it)
-                        }
+                        return checkAndSetState(currentIndentCount == readerIndentCount, tag, it)
                     }
                 }
             } else {
@@ -72,7 +64,7 @@ internal class MapItemsReader<out P>(
             return
         }
 
-        if (it is JsonToken.FieldName) {
+        if (it is JsonToken.FieldName || it == JsonToken.StartComplexFieldName) {
             if (this.state == MapState.KEY_FOUND) {
                 throw InvalidYamlContent("Already found mapping key. No other : allowed")
             }
@@ -107,11 +99,8 @@ internal class MapItemsReader<out P>(
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         this.stateWasSetOnRead = false
         this.currentReader = this
-        if (this.state == MapState.VALUE_FOUND) {
-            this.state = MapState.NEW_PAIR
-        }
         return this.selectReaderAndRead(true, tag, extraIndent, this::jsonTokenCreator).also {
-            setState(it)
+            return checkAndSetState(extraIndent == 0, tag, it)
         }
     }
 
@@ -178,6 +167,56 @@ internal class MapItemsReader<out P>(
             } ?: { JsonToken.EndObject }
 
             this.parentReader.endIndentLevel(indentCount, tag, returnFunction)
+        }
+    }
+
+    private fun checkAndSetState(
+        onZeroExtraIndent: Boolean,
+        tag: TokenType?,
+        it: JsonToken
+    ): JsonToken {
+        if (this.stateWasSetOnRead) {
+            return it
+        }
+
+        if (onZeroExtraIndent
+            && this.state == MapState.KEY_FOUND
+            && it !is JsonToken.StartArray
+            && it !is JsonToken.Value<*>
+        ) {
+            this.state = MapState.VALUE_FOUND
+            this.setState(it)
+
+            this.stateWasSetOnRead = true
+
+            return if(this.state == MapState.KEY_FOUND) {
+                when (tag) {
+                    is MapType -> {
+                        this.yamlReader.pushTokenAsFirst(it)
+                        this.yamlReader.pushTokenAsFirst(JsonToken.EndObject)
+                        JsonToken.StartObject(tag)
+                    }
+                    is ArrayType -> {
+                        this.yamlReader.pushTokenAsFirst(it)
+                        this.yamlReader.pushTokenAsFirst(JsonToken.EndArray)
+                        JsonToken.StartArray(tag)
+                    }
+                    is ValueType.IsNullValueType -> {
+                        this.yamlReader.pushTokenAsFirst(it)
+                        JsonToken.Value(null, tag)
+                    }
+                    else -> {
+                        this.yamlReader.pushTokenAsFirst(it)
+                        JsonToken.NullValue
+                    }
+                }
+            } else {
+                it
+            }
+        } else {
+            this.state = MapState.NEW_PAIR
+            this.setState(it)
+            return it
         }
     }
 

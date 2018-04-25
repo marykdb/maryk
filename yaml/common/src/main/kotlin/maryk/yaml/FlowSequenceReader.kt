@@ -4,9 +4,19 @@ import maryk.json.ArrayType
 import maryk.json.JsonToken
 import maryk.json.MapType
 import maryk.json.TokenType
+import maryk.json.ValueType
 
 private enum class FlowSequenceState {
-    START, VALUE_START, EXPLICIT_KEY, COMPLEX_KEY, MAP_VALUE_AFTER_COMPLEX_KEY, KEY, VALUE, MAP_VALUE, MAP_END, STOP
+    START,
+    VALUE_START,
+    EXPLICIT_KEY,
+    COMPLEX_KEY,
+    MAP_VALUE_AFTER_COMPLEX_KEY,
+    KEY,
+    VALUE,
+    MAP_VALUE,
+    MAP_END,
+    STOP
 }
 
 /** Reader for flow sequences [item1, item2, item3] */
@@ -64,7 +74,7 @@ internal class FlowSequenceReader<out P>(
                         }
 
                         read()
-                        return tokenReturner {
+                        return tokenReturner(tag) {
                             this.readUntilToken(0)
                         }
                     }
@@ -74,12 +84,12 @@ internal class FlowSequenceReader<out P>(
                             this.state = FlowSequenceState.KEY
                         }
 
-                        return tokenReturner {
+                        return tokenReturner(tag) {
                             this.readUntilToken(0)
                         }
                     }
                     ']' -> {
-                        tokenReturner {
+                        tokenReturner(tag) {
                             this.state = FlowSequenceState.STOP
                             read()
                             this.currentReader = this.parentReader
@@ -128,7 +138,7 @@ internal class FlowSequenceReader<out P>(
         return jsonToken
     }
 
-    private fun tokenReturner(doIfNoToken: () -> JsonToken): JsonToken {
+    private fun tokenReturner(tag: TokenType?, doIfNoToken: () -> JsonToken): JsonToken {
         this.cachedCall?.let {
             this.cachedCall = null
             if (this.state == FlowSequenceState.VALUE_START) {
@@ -143,7 +153,23 @@ internal class FlowSequenceReader<out P>(
         } else if (this.state == FlowSequenceState.KEY || this.state == FlowSequenceState.MAP_VALUE) {
             this.jsonTokenCreator(null, false, null, 0)
         } else {
-            doIfNoToken()
+            if (this.state == FlowSequenceState.VALUE_START) {
+                when (tag) {
+                    null -> doIfNoToken()
+                    is MapType -> {
+                        this.yamlReader.pushToken(JsonToken.EndObject)
+                        JsonToken.StartObject(tag)
+                    }
+                    is ArrayType -> {
+                        this.yamlReader.pushToken(JsonToken.EndArray)
+                        JsonToken.StartArray(tag)
+                    }
+                    is ValueType.IsNullValueType -> JsonToken.Value(null, tag)
+                    else -> JsonToken.NullValue
+                }
+            } else {
+                doIfNoToken()
+            }
         }
     }
 

@@ -1,7 +1,11 @@
 package maryk.yaml
 
+import maryk.json.ArrayType
+import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
+import maryk.json.MapType
 import maryk.json.TokenType
+import maryk.json.ValueType
 
 /** Reads tags */
 internal fun YamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): JsonToken {
@@ -9,25 +13,65 @@ internal fun YamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): Js
 
     var prefix = ""
     var newTag = ""
+    var foundUrlTag = false
 
-    while (!this.lastChar.isWhitespace()) {
-        if (this.lastChar == '!') {
-            // Double !!
-            if (prefix.isEmpty()) {
-                prefix = "!$newTag!"
-                newTag = ""
-            } else {
-                throw InvalidYamlContent("Invalid tag $newTag")
+    try {
+        while (!this.lastChar.isWhitespace() && (foundUrlTag || this.lastChar != ',')) {
+            if (this.lastChar == '<' && newTag.isEmpty()) {
+                foundUrlTag = true
             }
-        } else {
-            newTag += this.lastChar
+
+            if (this.lastChar == '!') {
+                // Double !!
+                if (prefix.isEmpty()) {
+                    prefix = "!$newTag!"
+                    newTag = ""
+                } else {
+                    throw InvalidYamlContent("Invalid tag $newTag")
+                }
+            } else {
+                newTag += this.lastChar
+            }
+            read()
         }
-        read()
+    } catch (e: ExceptionWhileReadingJson) {
+        this.yamlReader.hasException = true
     }
+
+    if(foundUrlTag && newTag.last() != '>') {
+        throw InvalidYamlContent("Yaml URL tag should always end with '>'")
+    }
+
     // Single !
     if (prefix.isEmpty()) {
         prefix = "!"
     }
 
-    return onDone(this.yamlReader.resolveTag(prefix, newTag))
+    val tag = this.yamlReader.resolveTag(prefix, newTag)
+
+    // Handle exception by creating fitting placeholder tag
+    if (this.yamlReader.hasException) {
+        return createTokensFittingTag(tag)
+    }
+    try {
+        return onDone(tag)
+    } catch (e: ExceptionWhileReadingJson) {
+        this.yamlReader.hasException = true
+        return createTokensFittingTag(tag)
+    }
+}
+
+private fun YamlCharReader.createTokensFittingTag(tag: TokenType): JsonToken {
+    return when (tag) {
+        is MapType -> {
+            this.yamlReader.pushToken(JsonToken.EndObject)
+            JsonToken.StartObject(tag)
+        }
+        is ArrayType -> {
+            this.yamlReader.pushToken(JsonToken.EndArray)
+            JsonToken.StartArray(tag)
+        }
+        is ValueType.IsNullValueType -> JsonToken.Value(null, tag)
+        else -> JsonToken.NullValue
+    }
 }

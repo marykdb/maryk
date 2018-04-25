@@ -88,7 +88,7 @@ internal class YamlReaderImpl(
     private val anchorReaders = mutableListOf<AnchorRecorder>()
     private val anchorReadersToRemove = mutableListOf<AnchorRecorder>()
 
-    private val tokenStack = mutableListOf<JsonToken>()
+    internal val tokenStack = mutableListOf<JsonToken>()
     private val storedAnchors = mutableMapOf<String, Array<JsonToken>>()
 
     private var tokenDepth = 0
@@ -293,6 +293,10 @@ internal class YamlReaderImpl(
 
     override fun pushToken(token: JsonToken) {
         this.tokenStack.add(token)
+    }
+
+    fun pushTokenAsFirst(token: JsonToken) {
+        this.tokenStack.add(0, token)
     }
 
     fun getTokensForAlias(alias: String): Array<JsonToken> {

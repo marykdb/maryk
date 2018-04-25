@@ -61,14 +61,14 @@ internal fun YamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): Js
     }
 }
 
-private fun YamlCharReader.createTokensFittingTag(tag: TokenType): JsonToken {
+internal fun YamlCharReader.createTokensFittingTag(tag: TokenType?): JsonToken {
     return when (tag) {
         is MapType -> {
-            this.yamlReader.pushToken(JsonToken.EndObject)
+            this.yamlReader.pushTokenAsFirst(JsonToken.EndObject)
             JsonToken.StartObject(tag)
         }
         is ArrayType -> {
-            this.yamlReader.pushToken(JsonToken.EndArray)
+            this.yamlReader.pushTokenAsFirst(JsonToken.EndArray)
             JsonToken.StartArray(tag)
         }
         is ValueType.IsNullValueType -> JsonToken.Value(null, tag)

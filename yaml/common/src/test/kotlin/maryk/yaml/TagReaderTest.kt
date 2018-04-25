@@ -35,7 +35,9 @@ class TagReaderTest {
         |    k13: !!omap
         |    k14: !!set
         |    k15: !!str
-        |    k16: close
+        |    k16:
+        |      sub: !!pairs
+        |    k17: close
         """.trimMargin()).apply {
             assertStartObject()
             assertFieldName("k1")
@@ -94,6 +96,12 @@ class TagReaderTest {
             assertFieldName("k15")
             assertValue(null, ValueType.Null)
             assertFieldName("k16")
+            assertStartObject()
+            assertFieldName("sub")
+            assertStartObject(MapType.Pairs)
+            assertEndObject()
+            assertEndObject()
+            assertFieldName("k17")
             assertValue("close")
             assertEndObject()
             assertEndDocument()

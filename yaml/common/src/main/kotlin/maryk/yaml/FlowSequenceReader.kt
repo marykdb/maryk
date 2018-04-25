@@ -4,7 +4,6 @@ import maryk.json.ArrayType
 import maryk.json.JsonToken
 import maryk.json.MapType
 import maryk.json.TokenType
-import maryk.json.ValueType
 
 private enum class FlowSequenceState {
     START,
@@ -154,19 +153,11 @@ internal class FlowSequenceReader<out P>(
             this.jsonTokenCreator(null, false, null, 0)
         } else {
             if (this.state == FlowSequenceState.VALUE_START) {
-                when (tag) {
-                    null -> doIfNoToken()
-                    is MapType -> {
-                        this.yamlReader.pushToken(JsonToken.EndObject)
-                        JsonToken.StartObject(tag)
-                    }
-                    is ArrayType -> {
-                        this.yamlReader.pushToken(JsonToken.EndArray)
-                        JsonToken.StartArray(tag)
-                    }
-                    is ValueType.IsNullValueType -> JsonToken.Value(null, tag)
-                    else -> JsonToken.NullValue
+                if (tag == null) {
+                    return doIfNoToken()
                 }
+
+                this.createTokensFittingTag(tag)
             } else {
                 doIfNoToken()
             }

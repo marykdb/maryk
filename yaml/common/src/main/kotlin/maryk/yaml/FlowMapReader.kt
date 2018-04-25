@@ -1,10 +1,8 @@
 package maryk.yaml
 
-import maryk.json.ArrayType
 import maryk.json.JsonToken
 import maryk.json.MapType
 import maryk.json.TokenType
-import maryk.json.ValueType
 
 private enum class FlowMapState {
     START, EXPLICIT_KEY, KEY, COMPLEX_KEY, VALUE, SEPARATOR, STOP
@@ -135,19 +133,7 @@ internal class FlowMapReader<out P>(
             this.state = FlowMapState.SEPARATOR
 
             if (value == null) {
-                val token: JsonToken = when (tag) {
-                    is MapType -> {
-                        this.yamlReader.pushToken(JsonToken.EndObject)
-                        JsonToken.StartObject(tag)
-                    }
-                    is ArrayType -> {
-                        this.yamlReader.pushToken(JsonToken.EndArray)
-                        JsonToken.StartArray(tag)
-                    }
-                    is ValueType.IsNullValueType -> JsonToken.Value(null, tag)
-                    else -> JsonToken.NullValue
-                }
-                token
+                this.createTokensFittingTag(tag)
             } else {
                 createYamlValueToken(value, tag, isPlainStringReader)
             }

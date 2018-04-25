@@ -2,9 +2,7 @@ package maryk.yaml
 
 import maryk.json.ArrayType
 import maryk.json.JsonToken
-import maryk.json.MapType
 import maryk.json.TokenType
-import maryk.json.ValueType
 import maryk.lib.extensions.isLineBreak
 
 /** Reader for Sequence Items */
@@ -168,19 +166,7 @@ internal class SequenceItemsReader<out P>(
     private fun returnExpectedNullValue(tag: TokenType?): JsonToken {
         this.expectValueAfter = null
 
-        return when (tag) {
-            null -> JsonToken.NullValue
-            is MapType -> {
-                this.yamlReader.pushToken(JsonToken.EndObject)
-                JsonToken.StartObject(tag)
-            }
-            is ArrayType -> {
-                this.yamlReader.pushToken(JsonToken.EndArray)
-                JsonToken.StartArray(tag)
-            }
-            is ValueType.IsNullValueType -> JsonToken.Value(null, tag)
-            else -> JsonToken.NullValue
-        }
+        return this.createTokensFittingTag(tag)
     }
 
     override fun handleReaderInterrupt(): JsonToken {

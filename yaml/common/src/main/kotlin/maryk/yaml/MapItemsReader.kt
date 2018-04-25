@@ -1,6 +1,5 @@
 package maryk.yaml
 
-import maryk.json.ArrayType
 import maryk.json.JsonToken
 import maryk.json.MapType
 import maryk.json.TokenType
@@ -152,6 +151,16 @@ internal class MapItemsReader<out P>(
             }
         }
 
+        // Return tag placeholders if tag was encountered
+        if (tag != null) {
+            this.yamlReader.setUnclaimedIndenting(indentCount)
+            tokenToReturn?.let {
+                this.yamlReader.pushTokenAsFirst(it())
+            }
+
+            return this.createTokensFittingTag(tag)
+        }
+
         this.currentReader = this.parentReader
         return if (indentToAdd > 0) {
             this.yamlReader.setUnclaimedIndenting(indentCount)
@@ -190,26 +199,8 @@ internal class MapItemsReader<out P>(
             this.stateWasSetOnRead = true
 
             return if(this.state == MapState.KEY_FOUND) {
-                when (tag) {
-                    is MapType -> {
-                        this.yamlReader.pushTokenAsFirst(it)
-                        this.yamlReader.pushTokenAsFirst(JsonToken.EndObject)
-                        JsonToken.StartObject(tag)
-                    }
-                    is ArrayType -> {
-                        this.yamlReader.pushTokenAsFirst(it)
-                        this.yamlReader.pushTokenAsFirst(JsonToken.EndArray)
-                        JsonToken.StartArray(tag)
-                    }
-                    is ValueType.IsNullValueType -> {
-                        this.yamlReader.pushTokenAsFirst(it)
-                        JsonToken.Value(null, tag)
-                    }
-                    else -> {
-                        this.yamlReader.pushTokenAsFirst(it)
-                        JsonToken.NullValue
-                    }
-                }
+                this.yamlReader.pushTokenAsFirst(it)
+                this.createTokensFittingTag(tag)
             } else {
                 it
             }

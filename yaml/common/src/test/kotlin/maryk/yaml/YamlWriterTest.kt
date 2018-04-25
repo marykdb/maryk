@@ -253,6 +253,38 @@ internal class YamlWriterTest {
     }
 
     @Test
+    fun write_YAML_with_tags_in_array() {
+        var output = ""
+        YamlWriter {
+            output += it
+        }.apply {
+            writeStartObject()
+            writeFieldName("key")
+            writeStartArray()
+            writeTag("!Foo")
+            writeStartObject()
+            writeFieldName("k1")
+            writeValue("30")
+            writeEndObject()
+            writeTag("!Bar")
+            writeStartObject()
+            writeFieldName("k2")
+            writeValue("40")
+            writeEndObject()
+            writeEndArray()
+            writeEndObject()
+        }
+
+        output shouldBe """
+        |key:
+        |- !Foo
+        |  k1: 30
+        |- !Bar
+        |  k2: 40
+        |""".trimMargin()
+    }
+
+    @Test
     fun write_YAML_with_complex_fields() {
         var output = ""
         YamlWriter {

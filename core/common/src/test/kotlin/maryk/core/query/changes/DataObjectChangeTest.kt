@@ -4,10 +4,12 @@ import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DataObjectChangeTest {
@@ -37,12 +39,37 @@ class DataObjectChangeTest {
     )
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.dataObjectChange, DataObjectChange, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.dataObjectChange, DataObjectChange, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.dataObjectChange, DataObjectChange, this.context) shouldBe """
+        |key: AAACKwEBAQAC
+        |changes:
+        |- !Change
+        |  reference: subModel.value
+        |  newValue: new
+        |- !Delete
+        |  reference: subModel.value
+        |- !Check
+        |  reference: subModel.value
+        |  valueToCompare: current
+        |- !ObjectDelete
+        |  isDeleted: true
+        |- !ListChange
+        |  reference: list
+        |- !SetChange
+        |  reference: set
+        |- !MapChange
+        |  reference: map
+        |lastVersion: 0x0000000000003039
+        |""".trimMargin()
     }
 }

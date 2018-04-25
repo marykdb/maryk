@@ -47,6 +47,7 @@ class YamlWriter(
 
             this.compactStartedAtLevel = this.typeStack.size
         } else {
+            val prefixWasWrittenBefore = this.prefixWasWritten
             if (lastType == JsonType.FIELD_NAME || lastType == JsonType.TAG) {
                 writer("\n")
                 this.prefixWasWritten = false
@@ -57,7 +58,7 @@ class YamlWriter(
             val lastEmbedType= this.typeStack.lastOrNull()
 
             // If starting object within array then add array field
-            if (lastEmbedType != null && lastEmbedType is JsonEmbedType.Array) {
+            if (lastEmbedType != null && lastEmbedType is JsonEmbedType.Array && !prefixWasWrittenBefore) {
                 writer("$prefixToWrite$arraySpacing")
                 this.prefixWasWritten = true
             }
@@ -226,8 +227,9 @@ class YamlWriter(
         )
 
         if (!this.lastIsCompact) {
-            if (lastTypeBeforeCheck == JsonType.START_ARRAY || lastTypeBeforeCheck == JsonType.ARRAY_VALUE) {
+            if (this.typeStack.lastOrNull() is JsonEmbedType.Array) {
                 writer("$prefixToWrite$arraySpacing$tag")
+                this.prefixWasWritten = true
             } else {
                 writer(tag)
             }

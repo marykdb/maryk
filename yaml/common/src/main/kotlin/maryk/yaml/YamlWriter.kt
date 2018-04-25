@@ -219,6 +219,7 @@ class YamlWriter(
                 JsonType.FIELD_NAME,
                 JsonType.ARRAY_VALUE,
                 JsonType.START_ARRAY,
+                JsonType.END_OBJ,
                 JsonType.COMPLEX_FIELD_NAME_START,
                 JsonType.COMPLEX_FIELD_NAME_END
             )

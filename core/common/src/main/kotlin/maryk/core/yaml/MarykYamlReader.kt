@@ -29,7 +29,7 @@ fun MarykYamlReader(
 ) : IsJsonLikeReader =
     YamlReader(
         defaultTag = maryk2018,
-        tagMap = mapOf(maryk2018 to mapOf()),
+        tagMap = mapOf(maryk2018 to marykTypeMap),
         allowUnknownTags = true,
         reader = reader
     )

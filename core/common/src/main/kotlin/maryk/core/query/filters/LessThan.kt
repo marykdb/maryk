@@ -16,7 +16,7 @@ data class LessThan<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
     override val value: T
 ) : IsPropertyComparison<T> {
-    override val filterType = FilterType.LESS_THAN
+    override val filterType = FilterType.LessThan
 
     internal companion object: QueryDataModel<LessThan<*>>(
         properties = object : PropertyDefinitions<LessThan<*>>() {

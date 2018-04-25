@@ -21,7 +21,7 @@ data class ValueIn<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
     val values: Set<T>
 ) : IsPropertyCheck<T> {
-    override val filterType = FilterType.VALUE_IN
+    override val filterType = FilterType.ValueIn
 
     internal companion object: QueryDataModel<ValueIn<*>>(
         properties = object : PropertyDefinitions<ValueIn<*>>() {

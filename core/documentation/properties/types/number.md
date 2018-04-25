@@ -72,7 +72,7 @@ val def = NumberDefinition(
 **Example of a YAML Number property definition**
 ```yaml
 !Number
-  type: UINT32
+  type: UInt32
   required: false
   unique: false
   final: true

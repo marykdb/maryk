@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 data class ObjectSoftDeleteChange(
     val isDeleted: Boolean
 ) : IsChange {
-    override val changeType = ChangeType.OBJECT_DELETE
+    override val changeType = ChangeType.ObjectDelete
 
     internal companion object: QueryDataModel<ObjectSoftDeleteChange>(
         properties = object : PropertyDefinitions<ObjectSoftDeleteChange>() {

@@ -120,7 +120,7 @@ internal class RootDataModelTest {
         |			"required": true,
         |			"final": false,
         |			"unique": false,
-        |			"type": "SINT32",
+        |			"type": "SInt32",
         |			"maxValue": 6,
         |			"random": false
         |		}]
@@ -133,7 +133,7 @@ internal class RootDataModelTest {
         |			"required": true,
         |			"final": true,
         |			"unique": false,
-        |			"type": "UINT32",
+        |			"type": "UInt32",
         |			"random": false
         |		}]
         |	}, {
@@ -145,7 +145,7 @@ internal class RootDataModelTest {
         |			"required": true,
         |			"final": false,
         |			"unique": false,
-        |			"type": "FLOAT64",
+        |			"type": "Float64",
         |			"random": false
         |		}]
         |	}, {
@@ -198,7 +198,7 @@ internal class RootDataModelTest {
         |				"required": true,
         |				"final": false,
         |				"unique": false,
-        |				"type": "SINT32",
+        |				"type": "SInt32",
         |				"random": false
         |			}]
         |		}]
@@ -292,7 +292,7 @@ internal class RootDataModelTest {
         |					"required": true,
         |					"final": false,
         |					"unique": false,
-        |					"type": "SINT32",
+        |					"type": "SInt32",
         |					"random": false
         |				}]
         |			}, {
@@ -378,7 +378,7 @@ internal class RootDataModelTest {
         |    required: true
         |    final: false
         |    unique: false
-        |    type: SINT32
+        |    type: SInt32
         |    maxValue: 6
         |    random: false
         |  ? 2: uint
@@ -388,7 +388,7 @@ internal class RootDataModelTest {
         |    required: true
         |    final: true
         |    unique: false
-        |    type: UINT32
+        |    type: UInt32
         |    random: false
         |  ? 3: double
         |  : !Number
@@ -397,7 +397,7 @@ internal class RootDataModelTest {
         |    required: true
         |    final: false
         |    unique: false
-        |    type: FLOAT64
+        |    type: Float64
         |    random: false
         |  ? 4: dateTime
         |  : !DateTime
@@ -437,7 +437,7 @@ internal class RootDataModelTest {
         |      required: true
         |      final: false
         |      unique: false
-        |      type: SINT32
+        |      type: SInt32
         |      random: false
         |  ? 8: set
         |  : !Set
@@ -508,7 +508,7 @@ internal class RootDataModelTest {
         |        required: true
         |        final: false
         |        unique: false
-        |        type: SINT32
+        |        type: SInt32
         |        random: false
         |      ? 2: V2
         |      : !SubModel
@@ -558,7 +558,7 @@ internal class RootDataModelTest {
         |  : !String
         |  ? 1: int
         |  : !Number
-        |    type: SINT32
+        |    type: SInt32
         |  ? 2: date
         |  : !Date
         |  ? 3: time

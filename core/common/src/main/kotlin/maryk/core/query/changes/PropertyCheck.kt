@@ -24,7 +24,7 @@ data class PropertyCheck<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsPropertyDefinition<T>>,
     override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
-    override val changeType = ChangeType.PROP_CHECK
+    override val changeType = ChangeType.Check
 
     internal companion object: QueryDataModel<PropertyCheck<*>>(
         properties = object : PropertyDefinitions<PropertyCheck<*>>() {

@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
@@ -67,7 +67,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         if (newValue != null) {
             val mapSize = newValue.size
             if (isSizeToSmall(mapSize)) {
-                throw TooLittleItemsException(refGetter(), mapSize, this.minSize!!)
+                throw NotEnoughItemsException(refGetter(), mapSize, this.minSize!!)
             }
             if (isSizeToBig(mapSize)) {
                 throw TooMuchItemsException(refGetter(), mapSize, this.maxSize!!)

@@ -61,7 +61,7 @@ internal val mapOfValidationExceptionDefinitions = mapOf(
     ValidationExceptionType.INVALID_VALUE to SubModelDefinition(dataModel = { InvalidValueException }),
     ValidationExceptionType.OUT_OF_RANGE to SubModelDefinition(dataModel = { OutOfRangeException }),
     ValidationExceptionType.REQUIRED to SubModelDefinition(dataModel = { RequiredException }),
-    ValidationExceptionType.TOO_LITTLE_ITEMS to SubModelDefinition(dataModel = { TooLittleItemsException }),
+    ValidationExceptionType.NOT_ENOUGH_ITEMS to SubModelDefinition(dataModel = { NotEnoughItemsException }),
     ValidationExceptionType.TOO_MUCH_ITEMS to SubModelDefinition(dataModel = { TooMuchItemsException }),
     ValidationExceptionType.UMBRELLA to SubModelDefinition(dataModel = { ValidationUmbrellaException })
 )

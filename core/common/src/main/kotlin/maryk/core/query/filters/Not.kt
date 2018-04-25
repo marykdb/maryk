@@ -9,7 +9,7 @@ import maryk.core.properties.types.TypedValue
 data class Not(
     val filter: IsFilter
 ) : IsFilter {
-    override val filterType = FilterType.NOT
+    override val filterType = FilterType.Not
 
     internal companion object: QueryDataModel<Not>(
         properties = object : PropertyDefinitions<Not>() {

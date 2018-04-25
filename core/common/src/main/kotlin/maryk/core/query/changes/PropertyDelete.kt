@@ -24,7 +24,7 @@ data class PropertyDelete<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsPropertyDefinition<T>>,
     override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
-    override val changeType = ChangeType.PROP_DELETE
+    override val changeType = ChangeType.Delete
 
     internal companion object: QueryDataModel<PropertyDelete<*>>(
         properties = object : PropertyDefinitions<PropertyDelete<*>>() {

@@ -16,7 +16,7 @@ data class LessThanEquals<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
     override val value: T
 ) : IsPropertyComparison<T> {
-    override val filterType = FilterType.LESS_THAN_EQUALS
+    override val filterType = FilterType.LessThanEquals
 
     internal companion object: QueryDataModel<LessThanEquals<*>>(
         properties = object : PropertyDefinitions<LessThanEquals<*>>() {

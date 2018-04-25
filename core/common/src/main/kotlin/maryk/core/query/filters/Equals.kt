@@ -16,7 +16,7 @@ data class Equals<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
     override val value: T
 ) : IsPropertyComparison<T> {
-    override val filterType = FilterType.EQUALS
+    override val filterType = FilterType.Equals
 
     internal companion object: QueryDataModel<Equals<*>>(
         properties = object : PropertyDefinitions<Equals<*>>() {

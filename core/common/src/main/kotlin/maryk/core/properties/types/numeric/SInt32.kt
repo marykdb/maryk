@@ -13,7 +13,7 @@ import maryk.lib.extensions.random
 object SInt32 : NumberDescriptor<Int>(
     size = 4,
     wireType = WireType.VAR_INT,
-    type = NumberType.SINT32
+    type = NumberType.SInt32
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Int = initInt(reader)
     override fun writeStorageBytes(value: Int, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

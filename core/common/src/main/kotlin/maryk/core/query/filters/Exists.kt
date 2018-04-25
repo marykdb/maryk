@@ -14,7 +14,7 @@ fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsProper
 data class Exists<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>
 ) : IsPropertyCheck<T> {
-    override val filterType = FilterType.EXISTS
+    override val filterType = FilterType.Exists
 
     internal companion object: QueryDataModel<Exists<*>>(
         properties = object : PropertyDefinitions<Exists<*>>() {

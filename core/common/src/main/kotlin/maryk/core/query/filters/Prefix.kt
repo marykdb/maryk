@@ -17,7 +17,7 @@ data class Prefix(
     override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
     val prefix: String
 ) : IsPropertyCheck<String> {
-    override val filterType = FilterType.PREFIX
+    override val filterType = FilterType.Prefix
 
     internal companion object: QueryDataModel<Prefix>(
         properties = object : PropertyDefinitions<Prefix>() {

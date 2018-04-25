@@ -16,7 +16,7 @@ data class GreaterThan<T: Any>(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
     override val value: T
 ) : IsPropertyComparison<T> {
-    override val filterType = FilterType.GREATER_THAN
+    override val filterType = FilterType.GreaterThan
 
     internal companion object: QueryDataModel<GreaterThan<*>>(
         properties = object : PropertyDefinitions<GreaterThan<*>>() {

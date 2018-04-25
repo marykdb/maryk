@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
@@ -37,7 +37,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         if (newValue != null) {
             val size = newValue.size
             if (isSizeToSmall(size)) {
-                throw TooLittleItemsException(refGetter(), size, this.minSize!!)
+                throw NotEnoughItemsException(refGetter(), size, this.minSize!!)
             }
             if (isSizeToBig(size)) {
                 throw TooMuchItemsException(refGetter(), size, this.maxSize!!)

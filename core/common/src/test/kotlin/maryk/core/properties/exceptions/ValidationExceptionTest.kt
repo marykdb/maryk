@@ -20,7 +20,7 @@ class ValidationExceptionTest {
         ValidationUmbrellaException(
             ref,
             listOf(
-                TooLittleItemsException(ref, 2, 3),
+                NotEnoughItemsException(ref, 2, 3),
                 TooMuchItemsException(ref, 10, 3)
             )
         )

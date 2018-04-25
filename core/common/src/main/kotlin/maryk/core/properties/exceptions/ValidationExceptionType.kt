@@ -11,7 +11,7 @@ enum class ValidationExceptionType(
     INVALID_SIZE(2),
     OUT_OF_RANGE(3),
     REQUIRED(4),
-    TOO_LITTLE_ITEMS(5),
+    NOT_ENOUGH_ITEMS(5),
     TOO_MUCH_ITEMS(6),
     UMBRELLA(7)
 }

@@ -8,7 +8,7 @@ import maryk.lib.extensions.random
 object Float32 : NumberDescriptor<Float>(
     size = 4,
     wireType = WireType.BIT_32,
-    type = NumberType.FLOAT32
+    type = NumberType.Float32
 ) {
     override fun fromStorageByteReader(length: Int, reader: () -> Byte): Float = initFloat(reader)
     override fun writeStorageBytes(value: Float, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)

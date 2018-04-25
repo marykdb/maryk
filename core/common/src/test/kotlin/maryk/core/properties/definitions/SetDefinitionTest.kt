@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.RequiredException
-import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
@@ -55,7 +55,7 @@ internal class SetDefinitionTest {
         def.validateWithRef(newValue = setOf("T", "T2", "T3"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4"))
 
-        shouldThrow<TooLittleItemsException> {
+        shouldThrow<NotEnoughItemsException> {
             def.validateWithRef(newValue = setOf("T"))
         }
 

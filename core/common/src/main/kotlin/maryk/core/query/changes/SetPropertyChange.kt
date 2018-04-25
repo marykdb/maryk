@@ -34,7 +34,7 @@ data class SetPropertyChange<T: Any> internal constructor(
     val deleteValues: Set<T>? = null,
     override val valueToCompare: Set<T>? = null
 ) : IsPropertyOperation<Set<T>> {
-    override val changeType = ChangeType.SET_CHANGE
+    override val changeType = ChangeType.SetChange
 
     internal companion object: QueryDataModel<SetPropertyChange<out Any>>(
         properties = object : PropertyDefinitions<SetPropertyChange<*>>() {

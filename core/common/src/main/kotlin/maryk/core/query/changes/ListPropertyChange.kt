@@ -43,7 +43,7 @@ data class ListPropertyChange<T: Any> internal constructor(
     val deleteAtIndex: Set<Int>? = null,
     override val valueToCompare: List<T>? = null
 ) : IsPropertyOperation<List<T>> {
-    override val changeType = ChangeType.LIST_CHANGE
+    override val changeType = ChangeType.ListChange
 
     internal companion object: QueryDataModel<ListPropertyChange<*>>(
         properties = object : PropertyDefinitions<ListPropertyChange<*>>() {

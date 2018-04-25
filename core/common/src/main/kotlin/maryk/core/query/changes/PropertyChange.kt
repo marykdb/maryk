@@ -28,7 +28,7 @@ data class PropertyChange<T: Any> internal constructor(
     val newValue: T,
     override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {
-    override val changeType = ChangeType.PROP_CHANGE
+    override val changeType = ChangeType.Change
 
     internal companion object: QueryDataModel<PropertyChange<*>>(
         properties = object : PropertyDefinitions<PropertyChange<*>>() {

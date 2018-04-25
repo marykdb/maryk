@@ -31,7 +31,7 @@ data class MapPropertyChange<K: Any, V: Any> internal constructor(
     val keysToDelete: Set<K>? = null,
     override val valueToCompare: Map<K, V>? = null
 ) : IsPropertyOperation<Map<K, V>> {
-    override val changeType = ChangeType.MAP_CHANGE
+    override val changeType = ChangeType.MapChange
 
     internal object Properties : PropertyDefinitions<MapPropertyChange<out Any, out Any>>() {
         @Suppress("UNCHECKED_CAST")

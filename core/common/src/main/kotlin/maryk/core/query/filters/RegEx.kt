@@ -17,7 +17,7 @@ data class RegEx(
     override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
     val regEx: String
 ) : IsPropertyCheck<String> {
-    override val filterType = FilterType.REGEX
+    override val filterType = FilterType.RegEx
 
     internal companion object: QueryDataModel<RegEx>(
         properties = object : PropertyDefinitions<RegEx>() {

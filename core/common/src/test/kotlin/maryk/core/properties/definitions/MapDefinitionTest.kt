@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
-import maryk.core.properties.exceptions.TooLittleItemsException
+import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
@@ -67,7 +67,7 @@ internal class MapDefinitionTest {
             1000 to "#thousand"
         ))
 
-        shouldThrow<TooLittleItemsException> {
+        shouldThrow<NotEnoughItemsException> {
             def.validateWithRef(
                 newValue = mapOf(
                     1 to "#one"

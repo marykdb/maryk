@@ -19,7 +19,7 @@ class UInt32 internal constructor(number: Int): UInt<Int>(number) {
         size = 4,
         MIN_VALUE = UInt32(Int.MIN_VALUE),
         MAX_VALUE = UInt32(Int.MAX_VALUE),
-        type = NumberType.UINT32
+        type = NumberType.UInt32
     ) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt32(initInt(reader))
         override fun writeStorageBytes(value: UInt32, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)

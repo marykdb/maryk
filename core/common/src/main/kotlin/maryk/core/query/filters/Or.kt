@@ -6,11 +6,11 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 
-/** Does an OR comparison against given [filters]. If one returns true the entire result will be true. */
+/** Does an Or comparison against given [filters]. If one returns true the entire result will be true. */
 data class Or(
     val filters: List<IsFilter>
 ) : IsFilter {
-    override val filterType = FilterType.OR
+    override val filterType = FilterType.Or
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 

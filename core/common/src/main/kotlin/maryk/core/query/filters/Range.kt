@@ -35,7 +35,7 @@ data class Range<T: Any> internal constructor(
     val inclusiveFrom: Boolean = true,
     val inclusiveTo: Boolean = true
 ) : IsPropertyCheck<T> {
-    override val filterType = FilterType.RANGE
+    override val filterType = FilterType.Range
 
     internal companion object: QueryDataModel<Range<*>>(
         properties = object : PropertyDefinitions<Range<*>>() {

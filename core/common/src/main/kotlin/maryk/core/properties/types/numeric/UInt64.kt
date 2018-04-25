@@ -28,7 +28,7 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
         size = 8,
         MIN_VALUE = UInt64(Long.MIN_VALUE),
         MAX_VALUE = UInt64(Long.MAX_VALUE),
-        type = NumberType.UINT64
+        type = NumberType.UInt64
     ) {
         override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt64(initLong(reader))
         override fun writeStorageBytes(value: UInt64, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)

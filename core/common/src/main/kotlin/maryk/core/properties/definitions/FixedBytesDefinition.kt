@@ -61,14 +61,14 @@ data class FixedBytesDefinition(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = FixedBytesDefinition(
-            indexed = map[0] as Boolean,
-            searchable = map[1] as Boolean,
-            required = map[2] as Boolean,
-            final = map[3] as Boolean,
-            unique = map[4] as Boolean,
+            indexed = map[0] as Boolean? ?: false,
+            searchable = map[1] as Boolean? ?: true,
+            required = map[2] as Boolean? ?: true,
+            final = map[3] as Boolean? ?: false,
+            unique = map[4] as Boolean? ?: false,
             minValue = map[5] as Bytes?,
             maxValue = map[6] as Bytes?,
-            random = map[7] as Boolean,
+            random = map[7] as Boolean? ?: false,
             byteSize = (map[8] as UInt32).toInt()
         )
     }

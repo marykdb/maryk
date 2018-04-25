@@ -231,10 +231,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MultiTypeDefinition(
-            indexed = map[0] as Boolean,
-            searchable = map[1] as Boolean,
-            required = map[2] as Boolean,
-            final = map[3] as Boolean,
+            indexed = map[0] as Boolean? ?: false,
+            searchable = map[1] as Boolean? ?: true,
+            required = map[2] as Boolean? ?: true,
+            final = map[3] as Boolean? ?: false,
             definitionMap = convertMultiTypeDescriptors(map[4])
         )
     }

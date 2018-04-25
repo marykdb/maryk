@@ -106,15 +106,15 @@ data class NumberDefinition<T: Comparable<T>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = NumberDefinition(
-            indexed = map[0] as Boolean,
-            searchable = map[1] as Boolean,
-            required = map[2] as Boolean,
-            final = map[3] as Boolean,
-            unique = map[4] as Boolean,
+            indexed = map[0] as Boolean? ?: false,
+            searchable = map[1] as Boolean? ?: true,
+            required = map[2] as Boolean? ?: true,
+            final = map[3] as Boolean? ?: false,
+            unique = map[4] as Boolean? ?: false,
             type = (map[5] as NumberType).descriptor() as NumberDescriptor<Comparable<Any>>,
             minValue = map[6] as Comparable<Any>?,
             maxValue = map[7] as Comparable<Any>?,
-            random = map[8] as Boolean
+            random = map[8] as Boolean? ?: false
         )
     }
 }

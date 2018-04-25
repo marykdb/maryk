@@ -64,10 +64,10 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = SetDefinition(
-            indexed = map[0] as Boolean,
-            searchable = map[1] as Boolean,
-            required = map[2] as Boolean,
-            final = map[3] as Boolean,
+            indexed = map[0] as Boolean? ?: false,
+            searchable = map[1] as Boolean? ?: true,
+            required = map[2] as Boolean? ?: true,
+            final = map[3] as Boolean? ?: false,
             minSize = (map[4] as UInt32?)?.toInt(),
             maxSize = (map[5] as UInt32?)?.toInt(),
             valueDefinition = (map[6] as TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>).value

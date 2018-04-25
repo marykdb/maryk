@@ -3,8 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.json.IsJsonLikeReader
-import maryk.json.IsJsonLikeWriter
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
@@ -16,6 +14,8 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType
 import maryk.core.query.DataModelContext
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
 
 /** Definition for value model properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
 data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO, PropertyDefinitions<DO>>>(
@@ -113,11 +113,11 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValueModelDefinition(
-            indexed = map[0] as Boolean,
-            searchable = map[1] as Boolean,
-            required = map[2] as Boolean,
-            final = map[3] as Boolean,
-            unique = map[4] as Boolean,
+            indexed = map[0] as Boolean? ?: false,
+            searchable = map[1] as Boolean? ?: true,
+            required = map[2] as Boolean? ?: true,
+            final = map[3] as Boolean? ?: false,
+            unique = map[4] as Boolean? ?: false,
             minValue = (map[5] as Bytes?)?.let { ValueDataObject(it.bytes) },
             maxValue = (map[6] as Bytes?)?.let { ValueDataObject(it.bytes) },
             dataModel = map[7] as ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>

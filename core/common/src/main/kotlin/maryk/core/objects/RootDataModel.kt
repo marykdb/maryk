@@ -153,12 +153,12 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
             name = map[0] as String,
             properties = map[1] as PropertyDefinitions<Any>,
-            keyDefinitions = (map[2] as List<TypedValue<PropertyDefinitionType, *>>).map {
+            keyDefinitions = (map[2] as? List<TypedValue<PropertyDefinitionType, *>>)?.map {
                 when(it.value) {
                     is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
                     else -> it.value as FixedBytesProperty<*>
                 }
-            }.toTypedArray()
+            }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<FixedBytesProperty<out Any>>
         ){
             override fun invoke(map: Map<Int, *>): Any {
                 return object : Any(){}

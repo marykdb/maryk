@@ -130,11 +130,11 @@ class EnumDefinition<E : IndexedEnum<E>>(
             }.toMap()
 
             return EnumDefinition(
-                indexed = map[0] as Boolean,
-                searchable = map[1] as Boolean,
-                required = map[2] as Boolean,
-                final = map[3] as Boolean,
-                unique = map[4] as Boolean,
+                indexed = map[0] as Boolean? ?: false,
+                searchable = map[1] as Boolean? ?: true,
+                required = map[2] as Boolean? ?: true,
+                final = map[3] as Boolean? ?: false,
+                unique = map[4] as Boolean? ?: false,
                 minValue = map[5]?.let{
                     valueMap[map[5] as UInt32] as IndexedEnum<Any>
                 },

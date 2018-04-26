@@ -6,10 +6,12 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Date
+import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
+import maryk.lib.time.Time
 
 /** Definition for Date properties */
 data class DateDefinition(
@@ -49,7 +51,11 @@ data class DateDefinition(
 
     override fun fromString(string: String) = Date.parse(string)
 
-    override fun fromNativeType(value: Any) = value as? Date
+    override fun fromNativeType(value: Any) = when {
+        value is Date -> value
+        value is DateTime && value.time == Time.MIN -> value.date
+        else -> null
+    }
 
     internal object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
         properties = object : PropertyDefinitions<DateDefinition>() {

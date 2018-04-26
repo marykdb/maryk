@@ -3,9 +3,11 @@ package maryk.core.query.changes
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ListPropertyChangeTest {
@@ -26,12 +28,26 @@ class ListPropertyChangeTest {
     )
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.listPropertyChange, ListPropertyChange, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.listPropertyChange, ListPropertyChange, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.listPropertyChange, ListPropertyChange, this.context) shouldBe """
+        |reference: listOfString
+        |valueToCompare: [one, two, three]
+        |addValuesToEnd: [four, five]
+        |addValuesAtIndex:
+        |  2: a
+        |  3: abc
+        |deleteValues: [three]
+        |deleteAtIndex: [0, 1]
+        |""".trimMargin()
     }
 }

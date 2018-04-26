@@ -3,15 +3,17 @@ package maryk.core.query.requests
 import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.ascending
 import maryk.core.query.filters.exists
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class GetChangesRequestTest {
-    private val key1 = SimpleMarykObject.key(SimpleMarykObject("test1"))
-    private val key2 = SimpleMarykObject.key(SimpleMarykObject("test2"))
+    private val key1 = SimpleMarykObject.key("uBu6L+ARRCgpUuyks8f73g")
+    private val key2 = SimpleMarykObject.key("CXTD69pnTdsytwq0yxPryA")
 
     private val getChangesRequest = SimpleMarykObject.getChanges(
         key1,
@@ -37,14 +39,40 @@ class GetChangesRequestTest {
     ))
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.getChangesRequest, GetChangesRequest, this.context)
         checkProtoBufConversion(this.getChangesMaxRequest, GetChangesRequest, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.getChangesRequest, GetChangesRequest, this.context)
         checkJsonConversion(this.getChangesMaxRequest, GetChangesRequest, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.getChangesRequest, GetChangesRequest, this.context) shouldBe """
+        dataModel: SimpleMarykObject
+        keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
+        toVersion: 0x0000000000000d80
+        filterSoftDeleted: true
+        fromVersion: 0x00000000000004d2
+
+        """.trimIndent()
+
+        checkYamlConversion(this.getChangesMaxRequest, GetChangesRequest, this.context) shouldBe """
+        dataModel: SimpleMarykObject
+        keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
+        filter: !Exists
+          reference: value
+        order:
+          propertyReference: value
+          direction: ASC
+        toVersion: 0x0000000000000d80
+        filterSoftDeleted: true
+        fromVersion: 0x00000000000004d2
+
+        """.trimIndent()
     }
 }

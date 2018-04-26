@@ -35,12 +35,12 @@ class ValidationExceptionTest {
     )
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.validationUmbrellaException, ValidationUmbrellaException, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.validationUmbrellaException, ValidationUmbrellaException, this.context)
     }
 }

@@ -4,9 +4,11 @@ import maryk.SimpleMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class RangeTest {
@@ -36,22 +38,46 @@ class RangeTest {
     )
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.range, Range, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.range, Range, this.context)
     }
 
     @Test
-    fun testProtoBufConversion2() {
+    fun convert_to_ProtoBuf_and_back2() {
         checkProtoBufConversion(this.range2, Range, this.context2)
     }
 
     @Test
-    fun testJsonConversion2() {
+    fun convert_to_JSON_and_back2() {
         checkJsonConversion(this.range2, Range, this.context2)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.range, Range, this.context) shouldBe """
+        reference: int
+        from: 2
+        to: 6
+        inclusiveFrom: true
+        inclusiveTo: true
+
+        """.trimIndent()
+    }
+
+    @Test
+    fun convert_to_YAML_and_back2() {
+        checkYamlConversion(this.range2, Range, this.context2) shouldBe """
+        reference: value
+        from: test
+        to: test999
+        inclusiveFrom: true
+        inclusiveTo: false
+
+        """.trimIndent()
     }
 }

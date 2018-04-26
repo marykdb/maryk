@@ -11,7 +11,7 @@ class ListItemReferenceTest {
     val cache = WriteCache()
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
 
         bc.reserve(

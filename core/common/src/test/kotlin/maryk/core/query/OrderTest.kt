@@ -3,6 +3,7 @@ package maryk.core.query
 import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.test.shouldBe
@@ -29,13 +30,22 @@ class OrderTest {
     }
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.order, Order, this.context, ::compareRequest)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.order, Order, this.context, ::compareRequest)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.order, Order, this.context) shouldBe """
+        propertyReference: value
+        direction: ASC
+
+        """.trimIndent()
     }
 
     private fun compareRequest(converted: Order, original: Order) {

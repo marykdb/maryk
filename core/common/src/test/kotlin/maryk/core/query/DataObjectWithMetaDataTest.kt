@@ -4,11 +4,13 @@ import maryk.Option
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.lib.time.DateTime
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DataObjectWithMetaDataTest {
@@ -41,12 +43,31 @@ class DataObjectWithMetaDataTest {
     )
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, this.context) shouldBe """
+        key: AAACKwEBAQAC
+        dataObject:
+          string: name
+          int: 5123123
+          uint: 555
+          double: 6.33
+          dateTime: '2017-12-05T01:33:55'
+          bool: true
+          enum: V2
+        firstVersion: 0x000000000000000c
+        lastVersion: 0x0000000000003039
+        isDeleted: false
+
+        """.trimIndent()
     }
 }

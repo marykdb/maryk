@@ -13,7 +13,7 @@ class MapReferenceTest {
     private val valReference = TestMarykObject { map at Time(15, 22, 55) }
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 

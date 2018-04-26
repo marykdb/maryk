@@ -3,10 +3,12 @@ package maryk.core.query.changes
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.lib.time.Date
 import maryk.core.query.DataModelPropertyContext
+import maryk.lib.time.Date
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class SetPropertyChangeTest {
@@ -33,12 +35,22 @@ class SetPropertyChangeTest {
     )
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.setPropertyChange, SetPropertyChange, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.setPropertyChange, SetPropertyChange, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.setPropertyChange, SetPropertyChange, this.context) shouldBe """
+        |reference: set
+        |valueToCompare: [2016-05-15, 2017-06-16, 2018-07-17]
+        |addValues: [2014-04-14, 2013-03-13]
+        |deleteValues: [2018-07-17]
+        |""".trimMargin()
     }
 }

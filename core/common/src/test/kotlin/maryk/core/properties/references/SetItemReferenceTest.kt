@@ -11,7 +11,7 @@ class SetItemReferenceTest {
     val reference = TestMarykObject.Properties.set.getItemRef(Date(2001, 4, 2))
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 

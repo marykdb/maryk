@@ -3,15 +3,17 @@ package maryk.core.query.requests
 import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
 import maryk.core.query.filters.exists
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ScanVersionedChangesRequestTest {
-    private val key1 = SimpleMarykObject.key(SimpleMarykObject("test1"))
+    private val key1 = SimpleMarykObject.key("Zk6m4QpZQegUg5s13JVYlQ")
 
     private val scanVersionedChangesRequest = SimpleMarykObject.scanVersionedChanges(
         startKey = key1,
@@ -35,14 +37,43 @@ class ScanVersionedChangesRequestTest {
     ))
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.scanVersionedChangesRequest, ScanVersionedChangesRequest, this.context)
         checkProtoBufConversion(this.scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.scanVersionedChangesRequest, ScanVersionedChangesRequest, this.context)
         checkJsonConversion(this.scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.scanVersionedChangesRequest, ScanVersionedChangesRequest, this.context) shouldBe """
+        dataModel: SimpleMarykObject
+        startKey: Zk6m4QpZQegUg5s13JVYlQ
+        filterSoftDeleted: true
+        limit: 100
+        fromVersion: 0x00000000000004d2
+        maxVersions: 1000
+
+        """.trimIndent()
+
+        checkYamlConversion(this.scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, this.context) shouldBe """
+        dataModel: SimpleMarykObject
+        startKey: Zk6m4QpZQegUg5s13JVYlQ
+        filter: !Exists
+          reference: value
+        order:
+          propertyReference: value
+          direction: DESC
+        toVersion: 0x0000000000000929
+        filterSoftDeleted: true
+        limit: 300
+        fromVersion: 0x00000000000004d2
+        maxVersions: 10
+
+        """.trimIndent()
     }
 }

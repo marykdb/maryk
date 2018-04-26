@@ -4,10 +4,12 @@ import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DataObjectVersionedChangeTest {
@@ -50,12 +52,40 @@ class DataObjectVersionedChangeTest {
     )
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, this.context) shouldBe """
+        |key: AAACKwEBAQAC
+        |changes:
+        |- version: 0x000000000d17f60f
+        |  changes:
+        |  - !ObjectDelete
+        |    isDeleted: true
+        |  - !ListChange
+        |    reference: list
+        |  - !SetChange
+        |    reference: set
+        |  - !MapChange
+        |    reference: map
+        |- version: 0x00000000130dd70f
+        |  changes:
+        |  - !Change
+        |    reference: subModel.value
+        |    newValue: new
+        |  - !Delete
+        |    reference: subModel.value
+        |  - !Check
+        |    reference: subModel.value
+        |    valueToCompare: current
+        |""".trimMargin()
     }
 }

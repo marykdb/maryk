@@ -3,15 +3,17 @@ package maryk.core.query.requests
 import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
 import maryk.core.query.filters.exists
+import maryk.test.shouldBe
 import kotlin.test.Test
 
 class GetRequestTest {
-    private val key1 = SimpleMarykObject.key(SimpleMarykObject("test1"))
-    private val key2 = SimpleMarykObject.key(SimpleMarykObject("test2"))
+    private val key1 = SimpleMarykObject.key("dR9gVdRcSPw2molM1AiOng")
+    private val key2 = SimpleMarykObject.key("Vc4WgX/mQHYCSEoLtfLSUQ")
 
     private val getRequest = SimpleMarykObject.get(
         key1,
@@ -34,14 +36,37 @@ class GetRequestTest {
     ))
 
     @Test
-    fun testProtoBufConversion() {
+    fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.getRequest, GetRequest, this.context)
         checkProtoBufConversion(this.getMaxRequest, GetRequest, this.context)
     }
 
     @Test
-    fun testJsonConversion() {
+    fun convert_to_JSON_and_back() {
         checkJsonConversion(this.getRequest, GetRequest, this.context)
         checkJsonConversion(this.getMaxRequest, GetRequest, this.context)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.getRequest, GetRequest, this.context) shouldBe """
+        dataModel: SimpleMarykObject
+        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+        filterSoftDeleted: true
+
+        """.trimIndent()
+
+        checkYamlConversion(this.getMaxRequest, GetRequest, this.context) shouldBe """
+        dataModel: SimpleMarykObject
+        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+        filter: !Exists
+          reference: value
+        order:
+          propertyReference: value
+          direction: DESC
+        toVersion: 0x000000000000014d
+        filterSoftDeleted: true
+
+        """.trimIndent()
     }
 }

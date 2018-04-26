@@ -81,6 +81,11 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     /** Read Collection from JSON [reader] within optional [context] */
     override fun readJson(reader: IsJsonLikeReader, context: CX?): C {
+        if (reader.currentToken == JsonToken.NullValue) {
+            @Suppress("UNCHECKED_CAST")
+            return newMutableCollection(context) as C
+        }
+
         if (reader.currentToken !is JsonToken.StartArray) {
             throw ParseException("JSON value should be an Array")
         }

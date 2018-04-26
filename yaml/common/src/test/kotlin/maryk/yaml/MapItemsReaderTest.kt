@@ -229,6 +229,27 @@ class MapItemsReaderTest {
     }
 
     @Test
+    fun read_map_with_null_value_in_array() {
+        createYamlReader("""
+        - k1:
+        - k2:
+
+        """.trimIndent()).apply {
+            assertStartArray()
+            assertStartObject()
+            assertFieldName("k1")
+            assertValue(null, ValueType.Null)
+            assertEndObject()
+            assertStartObject()
+            assertFieldName("k2")
+            assertValue(null, ValueType.Null)
+            assertEndObject()
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun read_indented_map_in_array() {
         createYamlReader("""
         |  -        index: 0

@@ -161,6 +161,13 @@ internal class MapItemsReader<out P>(
             return this.createTokensFittingTag(tag)
         }
 
+        if (this.state == MapState.KEY_FOUND) {
+            // Return null value if no value was returned yet
+            this.state = MapState.VALUE_FOUND
+            this.yamlReader.setUnclaimedIndenting(indentCount)
+            return JsonToken.NullValue
+        }
+
         this.currentReader = this.parentReader
         return if (indentToAdd > 0) {
             this.yamlReader.setUnclaimedIndenting(indentCount)
@@ -212,6 +219,12 @@ internal class MapItemsReader<out P>(
     }
 
     override fun handleReaderInterrupt(): JsonToken {
+        if (this.state == MapState.KEY_FOUND) {
+            // Return null value if no value was returned yet
+            this.state = MapState.VALUE_FOUND
+            return JsonToken.NullValue
+        }
+
         this.currentReader = this.parentReader
         return JsonToken.EndObject
     }

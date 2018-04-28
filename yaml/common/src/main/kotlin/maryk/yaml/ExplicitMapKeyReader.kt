@@ -6,7 +6,7 @@ import maryk.lib.extensions.isLineBreak
 import maryk.lib.extensions.isSpacing
 
 private enum class ExplicitMapState {
-    STARTED, INTERNAL_MAP, COMPLEX, SIMPLE, INTERRUPT_VALUE, EMPTY_KEY_VALUE
+    STARTED, INTERNAL_MAP, COMPLEX, SIMPLE, EMPTY_KEY_VALUE
 }
 
 /** Reads Explicit map keys started with ? */
@@ -111,7 +111,6 @@ internal class ExplicitMapKeyReader(
                 this.parentReader.setState(value)
                 this.parentReader.checkAndCreateFieldName(null, false)
             }
-            ExplicitMapState.INTERRUPT_VALUE -> throw Exception("Should only happen on interrupts")
         }
     }
 
@@ -160,7 +159,7 @@ internal class ExplicitMapKeyReader(
                 JsonToken.SimpleStartObject
             }
             ExplicitMapState.COMPLEX -> {
-                this.state = ExplicitMapState.INTERRUPT_VALUE
+                this.currentReader = this.parentReader
                 JsonToken.EndComplexFieldName
             }
             ExplicitMapState.INTERNAL_MAP -> {
@@ -168,12 +167,8 @@ internal class ExplicitMapKeyReader(
                 JsonToken.EndObject
             }
             ExplicitMapState.EMPTY_KEY_VALUE, ExplicitMapState.STARTED, ExplicitMapState.SIMPLE -> {
-                this.state = ExplicitMapState.INTERRUPT_VALUE
-                JsonToken.FieldName(null)
-            }
-            ExplicitMapState.INTERRUPT_VALUE -> {
                 this.currentReader = this.parentReader
-                JsonToken.NullValue
+                JsonToken.FieldName(null)
             }
         }
 }

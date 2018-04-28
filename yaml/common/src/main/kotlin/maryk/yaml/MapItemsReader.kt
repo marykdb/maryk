@@ -161,7 +161,7 @@ internal class MapItemsReader<out P>(
             return this.createTokensFittingTag(tag)
         }
 
-        if (this.state == MapState.KEY_FOUND) {
+        if (this.state == MapState.KEY_FOUND && tokenToReturn == null) {
             // Return null value if no value was returned yet
             this.state = MapState.VALUE_FOUND
             this.yamlReader.setUnclaimedIndenting(indentCount)

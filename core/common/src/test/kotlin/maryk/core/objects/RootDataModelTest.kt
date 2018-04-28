@@ -548,7 +548,6 @@ internal class RootDataModelTest {
         |""".trimMargin()
     }
 
-
     @Test
     fun convert_basic_definition_from_YAML() {
         val simpleYaml = """
@@ -706,8 +705,6 @@ internal class RootDataModelTest {
                 it.definition shouldBe BooleanDefinition()
             }
         }
-
-
     }
 
     private fun compareDataModels(converted: RootDataModel<out Any, out PropertyDefinitions<out Any>>, original: RootDataModel<out Any, out PropertyDefinitions<out Any>>) {

@@ -69,8 +69,8 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal co
             filter = (map[2] as TypedValue<FilterType, IsFilter>?)?.value,
             order = map[3] as Order?,
             toVersion = map[4] as UInt64?,
-            filterSoftDeleted = map[5] as Boolean,
-            limit = map[6] as UInt32,
+            filterSoftDeleted = map[5] as Boolean? ?: true,
+            limit = map[6] as UInt32? ?: 100.toUInt32(),
             fromVersion = map[7] as UInt64
         )
     }

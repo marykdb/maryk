@@ -163,6 +163,13 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                     } else {
                         reader.nextToken()
 
+                        // Skip null values
+                        val valueToken = reader.currentToken as? JsonToken.Value<*>
+                        if (valueToken != null && valueToken.value == null) {
+                            reader.nextToken()
+                            continue@walker
+                        }
+
                         valueMap[definition.index] = definition.definition.readJson(reader, context)
                     }
                 }

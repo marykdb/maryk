@@ -50,7 +50,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
         override fun invoke(map: Map<Int, *>) = DeleteRequest(
             dataModel = map[0] as RootDataModel<Any, *>,
             objectsToDelete = map[1] as List<Key<Any>>,
-            hardDelete = map[2] as Boolean
+            hardDelete = map[2] as Boolean? ?: false
         )
     }
 }

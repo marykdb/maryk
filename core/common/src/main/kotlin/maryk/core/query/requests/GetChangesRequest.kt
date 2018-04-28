@@ -63,7 +63,7 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
             filter = (map[2] as TypedValue<FilterType, IsFilter>?)?.value,
             order = map[3] as Order?,
             toVersion = map[4] as UInt64?,
-            filterSoftDeleted = map[5] as Boolean,
+            filterSoftDeleted = map[5] as Boolean? ?: true,
             fromVersion = map[6] as UInt64
         )
     }

@@ -8,7 +8,7 @@ import maryk.core.properties.references.IsPropertyReference
 
 /** Checks if value exists */
 fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.exists() =
-        Exists<T>(this)
+        Exists(this)
 
 /** Checks if [reference] to value of type [T] exists */
 data class Exists<T: Any> internal constructor(

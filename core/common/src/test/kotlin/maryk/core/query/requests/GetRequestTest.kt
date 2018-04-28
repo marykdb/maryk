@@ -8,6 +8,7 @@ import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
 import maryk.core.query.filters.exists
+import maryk.core.yaml.MarykYamlReader
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -68,5 +69,30 @@ class GetRequestTest {
         filterSoftDeleted: true
 
         """.trimIndent()
+    }
+
+    @Test
+    fun convert_basic_definition_from_YAML() {
+        val simpleYaml = """
+        dataModel: SimpleMarykObject
+        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+        filter:
+
+        """.trimIndent()
+
+        var index = 0
+
+        val reader = MarykYamlReader {
+            simpleYaml[index++].also {
+                if (it == '\u0000') {
+                    throw Throwable("0 char encountered")
+                }
+            }
+        }
+
+        GetRequest.readJsonToObject(reader, this.context).apply {
+            dataModel shouldBe SimpleMarykObject
+            filter shouldBe null
+        }
     }
 }

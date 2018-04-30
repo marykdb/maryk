@@ -17,7 +17,8 @@ Contains an enumaration value. Is limited to one of the values in an enum
 - `minValue` - default false. Minimum value
 - `maxValue` - default false. Maximum value
 
-## Data options
+## Other options
+- `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
 - `values` - defines the values the enum can contain
@@ -35,6 +36,7 @@ val def = EnumDefinition(
     required = true,
     final = true,
     unique = true,
+    default = Role.User,
     minValue = Role.Admin,
     maxValue = Role.User
 )
@@ -50,6 +52,7 @@ val def = EnumDefinition(
   required: false
   unique: false
   final: true
+  default: User
   minValue: Admin
   maxValue: User
 ```

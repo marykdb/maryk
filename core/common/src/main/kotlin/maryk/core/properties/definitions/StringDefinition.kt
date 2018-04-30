@@ -21,6 +21,7 @@ data class StringDefinition(
     override val unique: Boolean = false,
     override val minValue: String? = null,
     override val maxValue: String? = null,
+    override val default: String? = null,
     override val minSize: Int? = null,
     override val maxSize: Int? = null,
     val regEx: String? = null
@@ -28,7 +29,8 @@ data class StringDefinition(
     IsComparableDefinition<String, IsPropertyContext>,
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<String>
 {
     override val propertyDefinitionType = PropertyDefinitionType.String
     override val wireType = WireType.LENGTH_DELIMITED
@@ -75,7 +77,7 @@ data class StringDefinition(
         }
     }
 
-    internal object Model : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
+    object Model : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
         properties = object : PropertyDefinitions<StringDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)
@@ -85,9 +87,10 @@ data class StringDefinition(
                 IsComparableDefinition.addUnique(this, StringDefinition::unique)
                 add(5, "minValue", StringDefinition(), StringDefinition::minValue)
                 add(6, "maxValue", StringDefinition(), StringDefinition::maxValue)
-                HasSizeDefinition.addMinSize(7, this) { it.minSize?.toUInt32() }
-                HasSizeDefinition.addMaxSize(8, this) { it.maxSize?.toUInt32() }
-                add(9, "regEx", StringDefinition(), StringDefinition::regEx)
+                add(7, "default", StringDefinition(), StringDefinition::default)
+                HasSizeDefinition.addMinSize(8, this) { it.minSize?.toUInt32() }
+                HasSizeDefinition.addMaxSize(9, this) { it.maxSize?.toUInt32() }
+                add(10, "regEx", StringDefinition(), StringDefinition::regEx)
             }
         }
     ) {
@@ -99,9 +102,10 @@ data class StringDefinition(
             unique = map[4] as Boolean? ?: false,
             minValue = map[5] as String?,
             maxValue = map[6] as String?,
-            minSize = (map[7] as UInt32?)?.toInt(),
-            maxSize = (map[8] as UInt32?)?.toInt(),
-            regEx = map[9] as String?
+            default = map[7] as String?,
+            minSize = (map[8] as UInt32?)?.toInt(),
+            maxSize = (map[9] as UInt32?)?.toInt(),
+            regEx = map[10] as String?
         )
     }
 }

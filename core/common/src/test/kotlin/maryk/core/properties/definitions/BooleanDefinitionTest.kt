@@ -17,7 +17,8 @@ internal class BooleanDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false
+        searchable = false,
+        default = true
     )
 
     @Test

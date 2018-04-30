@@ -11,8 +11,8 @@ interface IsMomentDefinition<T: IsTemporal<T>> : IsComparableDefinition<T, IsPro
     fun createNow(): T
 
     companion object {
-        internal fun <DO : Any> addFillWithNow(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(7, "fillWithNow", BooleanDefinition(), getter)
+        internal fun <DO : Any> addFillWithNow(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+            definitions.add(index, "fillWithNow", BooleanDefinition(default = false), getter)
         }
     }
 }

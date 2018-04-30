@@ -14,7 +14,7 @@ A property which contains another DataModel as embedded object. See
 - `required` - default true
 - `final` - default false
 
-## Data options
+## Other options
 - `indexed` - default false
 - `searchable` - default true
 - `dataModel` - Refers to DataModel to be embedded

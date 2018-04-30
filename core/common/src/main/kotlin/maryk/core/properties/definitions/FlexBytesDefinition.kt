@@ -18,13 +18,15 @@ data class FlexBytesDefinition(
     override val unique: Boolean = false,
     override val minValue: Bytes? = null,
     override val maxValue: Bytes? = null,
+    override val default: Bytes? = null,
     override val minSize: Int? = null,
     override val maxSize: Int? = null
 ):
     IsComparableDefinition<Bytes, IsPropertyContext>,
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<Bytes>
 {
     override val propertyDefinitionType = PropertyDefinitionType.FlexBytes
     override val wireType = WireType.LENGTH_DELIMITED
@@ -56,7 +58,7 @@ data class FlexBytesDefinition(
         }
     }
 
-    internal object Model : SimpleDataModel<FlexBytesDefinition, PropertyDefinitions<FlexBytesDefinition>>(
+    object Model : SimpleDataModel<FlexBytesDefinition, PropertyDefinitions<FlexBytesDefinition>>(
         properties = object : PropertyDefinitions<FlexBytesDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, FlexBytesDefinition::indexed)
@@ -66,8 +68,9 @@ data class FlexBytesDefinition(
                 IsComparableDefinition.addUnique(this, FlexBytesDefinition::unique)
                 add(5, "minValue", FlexBytesDefinition(), FlexBytesDefinition::minValue)
                 add(6, "maxValue", FlexBytesDefinition(), FlexBytesDefinition::maxValue)
-                HasSizeDefinition.addMinSize(7, this) { it.minSize?.toUInt32() }
-                HasSizeDefinition.addMaxSize(8, this) { it.maxSize?.toUInt32() }
+                add(7, "default", FlexBytesDefinition(), FlexBytesDefinition::default)
+                HasSizeDefinition.addMinSize(8, this) { it.minSize?.toUInt32() }
+                HasSizeDefinition.addMaxSize(9, this) { it.maxSize?.toUInt32() }
             }
         }
     ) {
@@ -79,8 +82,9 @@ data class FlexBytesDefinition(
             unique = map[4] as Boolean? ?: false,
             minValue = map[5] as Bytes?,
             maxValue = map[6] as Bytes?,
-            minSize = (map[7] as UInt32?)?.toInt(),
-            maxSize = (map[8] as UInt32?)?.toInt()
+            default = map[7] as Bytes?,
+            minSize = (map[8] as UInt32?)?.toInt(),
+            maxSize = (map[9] as UInt32?)?.toInt()
         )
     }
 }

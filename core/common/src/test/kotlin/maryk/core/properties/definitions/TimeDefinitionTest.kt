@@ -39,7 +39,8 @@ internal class TimeDefinitionTest {
         minValue = Time.MIN,
         maxValue = Time.MAX_IN_MILLIS,
         fillWithNow = true,
-        precision = TimePrecision.MILLIS
+        precision = TimePrecision.MILLIS,
+        default = Time(12, 13, 14)
     )
 
     @Test

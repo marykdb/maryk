@@ -24,12 +24,14 @@ data class NumberDefinition<T: Comparable<T>>(
     override val unique: Boolean = false,
     override val minValue: T? = null,
     override val maxValue: T? = null,
+    override val default: T? = null,
     override val random: Boolean = false,
     val type: NumberDescriptor<T>
 ):
     IsNumericDefinition<T>,
     IsSerializableFixedBytesEncodable<T, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<T>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Number
     override val wireType = type.wireType
@@ -68,7 +70,7 @@ data class NumberDefinition<T: Comparable<T>>(
         else -> super.writeJsonValue(value, writer, context)
     }
 
-    internal object Model : ContextualDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
+    object Model : ContextualDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
         contextTransformer = { NumericContext },
         properties = object : PropertyDefinitions<NumberDefinition<*>>() {
             init {
@@ -100,7 +102,13 @@ data class NumberDefinition<T: Comparable<T>>(
                     @Suppress("UNCHECKED_CAST")
                     it.maxValue as Comparable<Any>?
                 }
-                IsNumericDefinition.addRandom(8,this, NumberDefinition<*>::random)
+                add(8, "default", ContextualNumberDefinition<NumericContext>(required = false) {
+                    it?.numberType ?: throw ContextNotFoundException()
+                }) {
+                    @Suppress("UNCHECKED_CAST")
+                    it.default as Comparable<Any>?
+                }
+                IsNumericDefinition.addRandom(9,this, NumberDefinition<*>::random)
             }
         }
     ) {
@@ -114,12 +122,13 @@ data class NumberDefinition<T: Comparable<T>>(
             type = (map[5] as NumberType).descriptor() as NumberDescriptor<Comparable<Any>>,
             minValue = map[6] as Comparable<Any>?,
             maxValue = map[7] as Comparable<Any>?,
-            random = map[8] as Boolean? ?: false
+            default = map[8] as Comparable<Any>?,
+            random = map[9] as Boolean? ?: false
         )
     }
 }
 
-internal object NumericContext : IsPropertyContext {
+object NumericContext : IsPropertyContext {
     var numberType: NumberDescriptor<Comparable<Any>>? = null
 }
 

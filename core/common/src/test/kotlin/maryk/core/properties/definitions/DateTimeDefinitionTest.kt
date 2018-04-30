@@ -36,7 +36,8 @@ internal class DateTimeDefinitionTest {
         fillWithNow = true,
         precision = TimePrecision.MILLIS,
         minValue = DateTime.MIN,
-        maxValue = DateTime.MAX_IN_MILLIS
+        maxValue = DateTime.MAX_IN_MILLIS,
+        default = DateTime(1971, 1, 12, 13, 34, 22)
     )
 
     @Test

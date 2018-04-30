@@ -14,7 +14,8 @@ Boolean true or false.
 - `required` - default true
 - `final` - default false
 
-## Data options
+## Other options
+- `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
 
@@ -26,7 +27,8 @@ val def = BooleanDefinition(
     indexed = true,
     searchable = true,
     required = true,
-    final = false
+    final = false,
+    default = true
 )
 ```
 
@@ -35,6 +37,7 @@ val def = BooleanDefinition(
 !Boolean
   required: false
   final: true
+  default: true
 ```
 
 ## Storage and Transport Byte representation

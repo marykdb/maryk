@@ -97,256 +97,256 @@ internal class RootDataModelTest {
             DataModelContext(),
             ::compareDataModels
         ) shouldBe """
-        |{
-        |	"name": "TestMarykObject",
-        |	"key": [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]],
-        |	"properties": [{
-        |		"index": 0,
-        |		"name": "string",
-        |		"definition": ["String", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": true,
-        |			"final": false,
-        |			"unique": false,
-        |			"regEx": "ha.*"
-        |		}]
-        |	}, {
-        |		"index": 1,
-        |		"name": "int",
-        |		"definition": ["Number", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": true,
-        |			"final": false,
-        |			"unique": false,
-        |			"type": "SInt32",
-        |			"maxValue": 6,
-        |			"random": false
-        |		}]
-        |	}, {
-        |		"index": 2,
-        |		"name": "uint",
-        |		"definition": ["Number", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": true,
-        |			"final": true,
-        |			"unique": false,
-        |			"type": "UInt32",
-        |			"random": false
-        |		}]
-        |	}, {
-        |		"index": 3,
-        |		"name": "double",
-        |		"definition": ["Number", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": true,
-        |			"final": false,
-        |			"unique": false,
-        |			"type": "Float64",
-        |			"random": false
-        |		}]
-        |	}, {
-        |		"index": 4,
-        |		"name": "dateTime",
-        |		"definition": ["DateTime", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": true,
-        |			"final": false,
-        |			"unique": false,
-        |			"fillWithNow": false,
-        |			"precision": "SECONDS"
-        |		}]
-        |	}, {
-        |		"index": 5,
-        |		"name": "bool",
-        |		"definition": ["Boolean", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": true,
-        |			"final": true
-        |		}]
-        |	}, {
-        |		"index": 6,
-        |		"name": "enum",
-        |		"definition": ["Enum", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": true,
-        |			"final": true,
-        |			"unique": false,
-        |			"values": {
-        |				"0": "V0",
-        |				"1": "V1",
-        |				"2": "V2"
-        |			}
-        |		}]
-        |	}, {
-        |		"index": 7,
-        |		"name": "list",
-        |		"definition": ["List", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"valueDefinition": ["Number", {
-        |				"indexed": false,
-        |				"searchable": true,
-        |				"required": true,
-        |				"final": false,
-        |				"unique": false,
-        |				"type": "SInt32",
-        |				"random": false
-        |			}]
-        |		}]
-        |	}, {
-        |		"index": 8,
-        |		"name": "set",
-        |		"definition": ["Set", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"valueDefinition": ["Date", {
-        |				"indexed": false,
-        |				"searchable": true,
-        |				"required": true,
-        |				"final": false,
-        |				"unique": false,
-        |				"fillWithNow": false
-        |			}]
-        |		}]
-        |	}, {
-        |		"index": 9,
-        |		"name": "map",
-        |		"definition": ["Map", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"keyDefinition": ["Time", {
-        |				"indexed": false,
-        |				"searchable": true,
-        |				"required": true,
-        |				"final": false,
-        |				"unique": false,
-        |				"fillWithNow": false,
-        |				"precision": "SECONDS"
-        |			}],
-        |			"valueDefinition": ["String", {
-        |				"indexed": false,
-        |				"searchable": true,
-        |				"required": true,
-        |				"final": false,
-        |				"unique": false
-        |			}]
-        |		}]
-        |	}, {
-        |		"index": 10,
-        |		"name": "valueObject",
-        |		"definition": ["ValueModel", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"unique": false,
-        |			"dataModel": "TestValueObject"
-        |		}]
-        |	}, {
-        |		"index": 11,
-        |		"name": "subModel",
-        |		"definition": ["SubModel", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"dataModel": "SubMarykObject"
-        |		}]
-        |	}, {
-        |		"index": 12,
-        |		"name": "multi",
-        |		"definition": ["MultiType", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"definitionMap": [{
-        |				"index": 0,
-        |				"name": "V0",
-        |				"definition": ["String", {
-        |					"indexed": false,
-        |					"searchable": true,
-        |					"required": true,
-        |					"final": false,
-        |					"unique": false
-        |				}]
-        |			}, {
-        |				"index": 1,
-        |				"name": "V1",
-        |				"definition": ["Number", {
-        |					"indexed": false,
-        |					"searchable": true,
-        |					"required": true,
-        |					"final": false,
-        |					"unique": false,
-        |					"type": "SInt32",
-        |					"random": false
-        |				}]
-        |			}, {
-        |				"index": 2,
-        |				"name": "V2",
-        |				"definition": ["SubModel", {
-        |					"indexed": false,
-        |					"searchable": true,
-        |					"required": true,
-        |					"final": false,
-        |					"dataModel": "SubMarykObject"
-        |				}]
-        |			}]
-        |		}]
-        |	}, {
-        |		"index": 13,
-        |		"name": "reference",
-        |		"definition": ["Reference", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"unique": false,
-        |			"dataModel": "TestMarykObject"
-        |		}]
-        |	}, {
-        |		"index": 14,
-        |		"name": "listOfString",
-        |		"definition": ["List", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"valueDefinition": ["String", {
-        |				"indexed": false,
-        |				"searchable": true,
-        |				"required": true,
-        |				"final": false,
-        |				"unique": false
-        |			}]
-        |		}]
-        |	}, {
-        |		"index": 15,
-        |		"name": "selfReference",
-        |		"definition": ["Reference", {
-        |			"indexed": false,
-        |			"searchable": true,
-        |			"required": false,
-        |			"final": false,
-        |			"unique": false,
-        |			"dataModel": "TestMarykObject"
-        |		}]
-        |	}]
-        |}""".trimMargin()
+        {
+        	"name": "TestMarykObject",
+        	"key": [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]],
+        	"properties": [{
+        		"index": 0,
+        		"name": "string",
+        		"definition": ["String", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": true,
+        			"final": false,
+        			"unique": false,
+        			"regEx": "ha.*"
+        		}]
+        	}, {
+        		"index": 1,
+        		"name": "int",
+        		"definition": ["Number", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": true,
+        			"final": false,
+        			"unique": false,
+        			"type": "SInt32",
+        			"maxValue": 6,
+        			"random": false
+        		}]
+        	}, {
+        		"index": 2,
+        		"name": "uint",
+        		"definition": ["Number", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": true,
+        			"final": true,
+        			"unique": false,
+        			"type": "UInt32",
+        			"random": false
+        		}]
+        	}, {
+        		"index": 3,
+        		"name": "double",
+        		"definition": ["Number", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": true,
+        			"final": false,
+        			"unique": false,
+        			"type": "Float64",
+        			"random": false
+        		}]
+        	}, {
+        		"index": 4,
+        		"name": "dateTime",
+        		"definition": ["DateTime", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": true,
+        			"final": false,
+        			"unique": false,
+        			"precision": "SECONDS",
+        			"fillWithNow": false
+        		}]
+        	}, {
+        		"index": 5,
+        		"name": "bool",
+        		"definition": ["Boolean", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": true,
+        			"final": true
+        		}]
+        	}, {
+        		"index": 6,
+        		"name": "enum",
+        		"definition": ["Enum", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": true,
+        			"final": true,
+        			"unique": false,
+        			"values": {
+        				"0": "V0",
+        				"1": "V1",
+        				"2": "V2"
+        			}
+        		}]
+        	}, {
+        		"index": 7,
+        		"name": "list",
+        		"definition": ["List", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"valueDefinition": ["Number", {
+        				"indexed": false,
+        				"searchable": true,
+        				"required": true,
+        				"final": false,
+        				"unique": false,
+        				"type": "SInt32",
+        				"random": false
+        			}]
+        		}]
+        	}, {
+        		"index": 8,
+        		"name": "set",
+        		"definition": ["Set", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"valueDefinition": ["Date", {
+        				"indexed": false,
+        				"searchable": true,
+        				"required": true,
+        				"final": false,
+        				"unique": false,
+        				"fillWithNow": false
+        			}]
+        		}]
+        	}, {
+        		"index": 9,
+        		"name": "map",
+        		"definition": ["Map", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"keyDefinition": ["Time", {
+        				"indexed": false,
+        				"searchable": true,
+        				"required": true,
+        				"final": false,
+        				"unique": false,
+        				"precision": "SECONDS",
+        				"fillWithNow": false
+        			}],
+        			"valueDefinition": ["String", {
+        				"indexed": false,
+        				"searchable": true,
+        				"required": true,
+        				"final": false,
+        				"unique": false
+        			}]
+        		}]
+        	}, {
+        		"index": 10,
+        		"name": "valueObject",
+        		"definition": ["ValueModel", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"unique": false,
+        			"dataModel": "TestValueObject"
+        		}]
+        	}, {
+        		"index": 11,
+        		"name": "subModel",
+        		"definition": ["SubModel", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"dataModel": "SubMarykObject"
+        		}]
+        	}, {
+        		"index": 12,
+        		"name": "multi",
+        		"definition": ["MultiType", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"definitionMap": [{
+        				"index": 0,
+        				"name": "V0",
+        				"definition": ["String", {
+        					"indexed": false,
+        					"searchable": true,
+        					"required": true,
+        					"final": false,
+        					"unique": false
+        				}]
+        			}, {
+        				"index": 1,
+        				"name": "V1",
+        				"definition": ["Number", {
+        					"indexed": false,
+        					"searchable": true,
+        					"required": true,
+        					"final": false,
+        					"unique": false,
+        					"type": "SInt32",
+        					"random": false
+        				}]
+        			}, {
+        				"index": 2,
+        				"name": "V2",
+        				"definition": ["SubModel", {
+        					"indexed": false,
+        					"searchable": true,
+        					"required": true,
+        					"final": false,
+        					"dataModel": "SubMarykObject"
+        				}]
+        			}]
+        		}]
+        	}, {
+        		"index": 13,
+        		"name": "reference",
+        		"definition": ["Reference", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"unique": false,
+        			"dataModel": "TestMarykObject"
+        		}]
+        	}, {
+        		"index": 14,
+        		"name": "listOfString",
+        		"definition": ["List", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"valueDefinition": ["String", {
+        				"indexed": false,
+        				"searchable": true,
+        				"required": true,
+        				"final": false,
+        				"unique": false
+        			}]
+        		}]
+        	}, {
+        		"index": 15,
+        		"name": "selfReference",
+        		"definition": ["Reference", {
+        			"indexed": false,
+        			"searchable": true,
+        			"required": false,
+        			"final": false,
+        			"unique": false,
+        			"dataModel": "TestMarykObject"
+        		}]
+        	}]
+        }""".trimIndent()
     }
 
     @Test
@@ -357,195 +357,196 @@ internal class RootDataModelTest {
             DataModelContext(),
             ::compareDataModels
         ) shouldBe """
-        |name: TestMarykObject
-        |key:
-        |- !Ref uint
-        |- !Ref bool
-        |- !Ref enum
-        |properties:
-        |  ? 0: string
-        |  : !String
-        |    indexed: false
-        |    searchable: true
-        |    required: true
-        |    final: false
-        |    unique: false
-        |    regEx: ha.*
-        |  ? 1: int
-        |  : !Number
-        |    indexed: false
-        |    searchable: true
-        |    required: true
-        |    final: false
-        |    unique: false
-        |    type: SInt32
-        |    maxValue: 6
-        |    random: false
-        |  ? 2: uint
-        |  : !Number
-        |    indexed: false
-        |    searchable: true
-        |    required: true
-        |    final: true
-        |    unique: false
-        |    type: UInt32
-        |    random: false
-        |  ? 3: double
-        |  : !Number
-        |    indexed: false
-        |    searchable: true
-        |    required: true
-        |    final: false
-        |    unique: false
-        |    type: Float64
-        |    random: false
-        |  ? 4: dateTime
-        |  : !DateTime
-        |    indexed: false
-        |    searchable: true
-        |    required: true
-        |    final: false
-        |    unique: false
-        |    fillWithNow: false
-        |    precision: SECONDS
-        |  ? 5: bool
-        |  : !Boolean
-        |    indexed: false
-        |    searchable: true
-        |    required: true
-        |    final: true
-        |  ? 6: enum
-        |  : !Enum
-        |    indexed: false
-        |    searchable: true
-        |    required: true
-        |    final: true
-        |    unique: false
-        |    values:
-        |      0: V0
-        |      1: V1
-        |      2: V2
-        |  ? 7: list
-        |  : !List
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    valueDefinition: !Number
-        |      indexed: false
-        |      searchable: true
-        |      required: true
-        |      final: false
-        |      unique: false
-        |      type: SInt32
-        |      random: false
-        |  ? 8: set
-        |  : !Set
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    valueDefinition: !Date
-        |      indexed: false
-        |      searchable: true
-        |      required: true
-        |      final: false
-        |      unique: false
-        |      fillWithNow: false
-        |  ? 9: map
-        |  : !Map
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    keyDefinition: !Time
-        |      indexed: false
-        |      searchable: true
-        |      required: true
-        |      final: false
-        |      unique: false
-        |      fillWithNow: false
-        |      precision: SECONDS
-        |    valueDefinition: !String
-        |      indexed: false
-        |      searchable: true
-        |      required: true
-        |      final: false
-        |      unique: false
-        |  ? 10: valueObject
-        |  : !ValueModel
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    unique: false
-        |    dataModel: TestValueObject
-        |  ? 11: subModel
-        |  : !SubModel
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    dataModel: SubMarykObject
-        |  ? 12: multi
-        |  : !MultiType
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    definitionMap:
-        |      ? 0: V0
-        |      : !String
-        |        indexed: false
-        |        searchable: true
-        |        required: true
-        |        final: false
-        |        unique: false
-        |      ? 1: V1
-        |      : !Number
-        |        indexed: false
-        |        searchable: true
-        |        required: true
-        |        final: false
-        |        unique: false
-        |        type: SInt32
-        |        random: false
-        |      ? 2: V2
-        |      : !SubModel
-        |        indexed: false
-        |        searchable: true
-        |        required: true
-        |        final: false
-        |        dataModel: SubMarykObject
-        |  ? 13: reference
-        |  : !Reference
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    unique: false
-        |    dataModel: TestMarykObject
-        |  ? 14: listOfString
-        |  : !List
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    valueDefinition: !String
-        |      indexed: false
-        |      searchable: true
-        |      required: true
-        |      final: false
-        |      unique: false
-        |  ? 15: selfReference
-        |  : !Reference
-        |    indexed: false
-        |    searchable: true
-        |    required: false
-        |    final: false
-        |    unique: false
-        |    dataModel: TestMarykObject
-        |""".trimMargin()
+        name: TestMarykObject
+        key:
+        - !Ref uint
+        - !Ref bool
+        - !Ref enum
+        properties:
+          ? 0: string
+          : !String
+            indexed: false
+            searchable: true
+            required: true
+            final: false
+            unique: false
+            regEx: ha.*
+          ? 1: int
+          : !Number
+            indexed: false
+            searchable: true
+            required: true
+            final: false
+            unique: false
+            type: SInt32
+            maxValue: 6
+            random: false
+          ? 2: uint
+          : !Number
+            indexed: false
+            searchable: true
+            required: true
+            final: true
+            unique: false
+            type: UInt32
+            random: false
+          ? 3: double
+          : !Number
+            indexed: false
+            searchable: true
+            required: true
+            final: false
+            unique: false
+            type: Float64
+            random: false
+          ? 4: dateTime
+          : !DateTime
+            indexed: false
+            searchable: true
+            required: true
+            final: false
+            unique: false
+            precision: SECONDS
+            fillWithNow: false
+          ? 5: bool
+          : !Boolean
+            indexed: false
+            searchable: true
+            required: true
+            final: true
+          ? 6: enum
+          : !Enum
+            indexed: false
+            searchable: true
+            required: true
+            final: true
+            unique: false
+            values:
+              0: V0
+              1: V1
+              2: V2
+          ? 7: list
+          : !List
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            valueDefinition: !Number
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              random: false
+          ? 8: set
+          : !Set
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            valueDefinition: !Date
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              fillWithNow: false
+          ? 9: map
+          : !Map
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            keyDefinition: !Time
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              precision: SECONDS
+              fillWithNow: false
+            valueDefinition: !String
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+          ? 10: valueObject
+          : !ValueModel
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            unique: false
+            dataModel: TestValueObject
+          ? 11: subModel
+          : !SubModel
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            dataModel: SubMarykObject
+          ? 12: multi
+          : !MultiType
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            definitionMap:
+              ? 0: V0
+              : !String
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                unique: false
+              ? 1: V1
+              : !Number
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                unique: false
+                type: SInt32
+                random: false
+              ? 2: V2
+              : !SubModel
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                dataModel: SubMarykObject
+          ? 13: reference
+          : !Reference
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            unique: false
+            dataModel: TestMarykObject
+          ? 14: listOfString
+          : !List
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            valueDefinition: !String
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+          ? 15: selfReference
+          : !Reference
+            indexed: false
+            searchable: true
+            required: false
+            final: false
+            unique: false
+            dataModel: TestMarykObject
+
+        """.trimIndent()
     }
 
     @Test

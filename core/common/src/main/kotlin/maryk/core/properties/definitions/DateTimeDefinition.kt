@@ -22,14 +22,16 @@ data class DateTimeDefinition(
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
+    override val precision: TimePrecision = TimePrecision.SECONDS,
     override val minValue: DateTime? = null,
     override val maxValue: DateTime? = null,
-    override val fillWithNow: Boolean = false,
-    override val precision: TimePrecision = TimePrecision.SECONDS
+    override val default: DateTime? = null,
+    override val fillWithNow: Boolean = false
 ) :
     IsTimeDefinition<DateTime>,
     IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<DateTime>
 {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime
     override val wireType = WireType.VAR_INT
@@ -63,7 +65,7 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? DateTime
 
-    internal object Model : SimpleDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>>(
+    object Model : SimpleDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>>(
         properties = object : PropertyDefinitions<DateTimeDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, DateTimeDefinition::indexed)
@@ -71,10 +73,11 @@ data class DateTimeDefinition(
                 IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
                 IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
                 IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
-                add(5, "minValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::minValue)
-                add(6, "maxValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::maxValue)
-                IsMomentDefinition.addFillWithNow(this, DateTimeDefinition::fillWithNow)
-                IsTimeDefinition.addPrecision(this, DateTimeDefinition::precision)
+                IsTimeDefinition.addPrecision(5, this, DateTimeDefinition::precision)
+                add(6, "minValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::minValue)
+                add(7, "maxValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::maxValue)
+                add(8, "default", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::default)
+                IsMomentDefinition.addFillWithNow(9, this, DateTimeDefinition::fillWithNow)
             }
         }
     ) {
@@ -84,10 +87,11 @@ data class DateTimeDefinition(
             required = map[2] as Boolean? ?: true,
             final = map[3] as Boolean? ?: false,
             unique = map[4] as Boolean? ?: false,
-            minValue = map[5] as DateTime?,
-            maxValue = map[6] as DateTime?,
-            fillWithNow = map[7] as Boolean? ?: false,
-            precision = map[8] as? TimePrecision ?: TimePrecision.SECONDS
+            precision = map[5] as? TimePrecision ?: TimePrecision.SECONDS,
+            minValue = map[6] as DateTime?,
+            maxValue = map[7] as DateTime?,
+            default = map[8] as DateTime?,
+            fillWithNow = map[9] as Boolean? ?: false
         )
     }
 }

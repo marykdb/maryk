@@ -19,7 +19,8 @@ year is unsigned so it can contain negative dates
 - `maxValue` - default unset. Maximum value
 - `fillWithNow` - default false. If true it will set the date with the current UTC date
 
-## Data options
+## Other options
+- `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
 
@@ -31,6 +32,7 @@ val def = DateDefinition(
     required = false,
     final = true,
     unique = true,
+    default = Date(2018, 4, 30),
     minValue = Date(1900, 1, 1),
     maxValue = Date(2100, 1, 1),
     fillWithNow = true
@@ -43,6 +45,7 @@ val def = DateDefinition(
   required: false
   unique: false
   final: true
+  default: 2018-04-30
   minValue: 1900-01-01
   maxValue: 2100-01-01
   fillWithNow: true

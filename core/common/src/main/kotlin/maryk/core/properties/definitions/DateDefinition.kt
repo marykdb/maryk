@@ -22,11 +22,13 @@ data class DateDefinition(
     override val unique: Boolean = false,
     override val minValue: Date? = null,
     override val maxValue: Date? = null,
+    override val default: Date? = null,
     override val fillWithNow: Boolean = false
 ) :
     IsMomentDefinition<Date>,
     IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<Date>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = WireType.VAR_INT
@@ -57,7 +59,7 @@ data class DateDefinition(
         else -> null
     }
 
-    internal object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
+    object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
         properties = object : PropertyDefinitions<DateDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)
@@ -67,7 +69,8 @@ data class DateDefinition(
                 IsComparableDefinition.addUnique(this, DateDefinition::unique)
                 add(5, "minValue", DateDefinition(), DateDefinition::minValue)
                 add(6, "maxValue", DateDefinition(), DateDefinition::maxValue)
-                IsMomentDefinition.addFillWithNow(this, DateDefinition::fillWithNow)
+                add(7, "default", DateDefinition(), DateDefinition::default)
+                IsMomentDefinition.addFillWithNow(8, this, DateDefinition::fillWithNow)
             }
         }
     ) {
@@ -79,7 +82,8 @@ data class DateDefinition(
             unique = map[4] as Boolean? ?: false,
             minValue = map[5] as Date?,
             maxValue = map[6] as Date?,
-            fillWithNow = map[7] as Boolean? ?: false
+            default = map[7] as Date?,
+            fillWithNow = map[8] as Boolean? ?: false
         )
     }
 }

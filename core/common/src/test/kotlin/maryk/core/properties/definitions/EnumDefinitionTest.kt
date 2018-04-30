@@ -31,7 +31,8 @@ internal class EnumDefinitionTest {
         unique = true,
         minValue = Option.V0,
         maxValue = Option.V2,
-        values = Option.values()
+        values = Option.values(),
+        default = Option.V1
     )
 
     @Test

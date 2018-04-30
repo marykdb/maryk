@@ -31,7 +31,8 @@ internal class FlexBytesDefinitionTest {
         minValue = Bytes.ofHex("0000000000"),
         maxValue = Bytes.ofHex("AAAAAAAAAA"),
         minSize = 4,
-        maxSize = 10
+        maxSize = 10,
+        default = Bytes.ofHex("0000000001")
     )
 
     @Test

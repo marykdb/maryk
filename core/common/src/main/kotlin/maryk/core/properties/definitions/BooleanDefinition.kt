@@ -13,11 +13,13 @@ data class BooleanDefinition(
     override val indexed: Boolean = false,
     override val searchable: Boolean = true,
     override val required: Boolean = true,
-    override val final: Boolean = false
+    override val final: Boolean = false,
+    override val default: Boolean? = null
 ):
     IsSimpleValueDefinition<Boolean, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<Boolean>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Boolean
     override val wireType = WireType.VAR_INT
@@ -43,13 +45,14 @@ data class BooleanDefinition(
         writer.writeBoolean(value)
     }
 
-    internal object Model : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
+    object Model : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
         properties = object : PropertyDefinitions<BooleanDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)
                 IsPropertyDefinition.addSearchable(this, BooleanDefinition::searchable)
                 IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
                 IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
+                add(4, "default", BooleanDefinition(), BooleanDefinition::default)
             }
         }
     ) {
@@ -57,7 +60,8 @@ data class BooleanDefinition(
             indexed = map[0] as Boolean? ?: false,
             searchable = map[1] as Boolean? ?: true,
             required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false
+            final = map[3] as Boolean? ?: false,
+            default = map[4] as Boolean?
         )
     }
 }

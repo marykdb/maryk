@@ -16,12 +16,14 @@ data class FixedBytesDefinition(
     override val unique: Boolean = false,
     override val minValue: Bytes? = null,
     override val maxValue: Bytes? = null,
+    override val default: Bytes? = null,
     override val random: Boolean = false,
     override val byteSize: Int
 ):
     IsNumericDefinition<Bytes>,
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<Bytes>
 {
     override val propertyDefinitionType = PropertyDefinitionType.FixedBytes
     override val wireType = WireType.LENGTH_DELIMITED
@@ -45,7 +47,7 @@ data class FixedBytesDefinition(
             value as? Bytes
         }
 
-    internal object Model : SimpleDataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
+    object Model : SimpleDataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
         properties = object : PropertyDefinitions<FixedBytesDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, FixedBytesDefinition::indexed)
@@ -55,8 +57,9 @@ data class FixedBytesDefinition(
                 IsComparableDefinition.addUnique(this, FixedBytesDefinition::unique)
                 add(5, "minValue", FlexBytesDefinition(), FixedBytesDefinition::minValue)
                 add(6, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
-                IsNumericDefinition.addRandom(7, this, FixedBytesDefinition::random)
-                IsFixedBytesEncodable.addByteSize(8, this, FixedBytesDefinition::byteSize)
+                add(7, "default", FlexBytesDefinition(), FixedBytesDefinition::default)
+                IsNumericDefinition.addRandom(8, this, FixedBytesDefinition::random)
+                IsFixedBytesEncodable.addByteSize(9, this, FixedBytesDefinition::byteSize)
             }
         }
     ) {
@@ -68,8 +71,9 @@ data class FixedBytesDefinition(
             unique = map[4] as Boolean? ?: false,
             minValue = map[5] as Bytes?,
             maxValue = map[6] as Bytes?,
-            random = map[7] as Boolean? ?: false,
-            byteSize = (map[8] as UInt32).toInt()
+            default = map[7] as Bytes?,
+            random = map[8] as Boolean? ?: false,
+            byteSize = (map[9] as UInt32).toInt()
         )
     }
 }

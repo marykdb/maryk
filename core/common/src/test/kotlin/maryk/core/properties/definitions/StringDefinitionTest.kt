@@ -41,6 +41,7 @@ internal class StringDefinitionTest {
         unique = true,
         minSize = 3,
         maxSize = 6,
+        default = "aaa",
         regEx = "^[abcd]{3,4}$",
         minValue = "aaa",
         maxValue = "zzzzz"

@@ -19,7 +19,8 @@ in seconds and milliseconds.
 - `maxValue` - default false. Maximum value
 - `fillWithNow` - default false. If true it will set the time with the current UTC time
 
-## Data options
+## Other options
+- `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
 - `precision` - The precision to which the time is stored and transported. 
@@ -33,6 +34,7 @@ val def = TimeDefinition(
     required = false,
     final = true,
     unique = true,
+    default = Time(12, 0),
     minValue = Time(8, 30),
     maxValue = Time(18, 0),
     precision = TimePrecision.MILLIS,
@@ -47,6 +49,7 @@ val def = TimeDefinition(
   required: false
   unique: false
   final: true
+  default: 12:00:00
   minValue: 08:00:00
   maxValue: 17:59:59
   fillWithNow: true

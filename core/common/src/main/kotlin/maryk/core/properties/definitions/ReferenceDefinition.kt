@@ -22,11 +22,13 @@ class ReferenceDefinition<DO: Any>(
     override val unique: Boolean = false,
     override val minValue: Key<DO>? = null,
     override val maxValue: Key<DO>? = null,
+    override val default: Key<DO>? = null,
     dataModel: () -> RootDataModel<DO, *>
 ):
     IsComparableDefinition<Key<DO>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<Key<DO>>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = WireType.LENGTH_DELIMITED
@@ -65,6 +67,7 @@ class ReferenceDefinition<DO: Any>(
         if (unique != other.unique) return false
         if (minValue != other.minValue) return false
         if (maxValue != other.maxValue) return false
+        if (default != other.default) return false
         if (dataModel.name != other.dataModel.name) return false
 
         return true
@@ -78,11 +81,12 @@ class ReferenceDefinition<DO: Any>(
         result = 31 * result + unique.hashCode()
         result = 31 * result + (minValue?.hashCode() ?: 0)
         result = 31 * result + (maxValue?.hashCode() ?: 0)
+        result = 31 * result + (default?.hashCode() ?: 0)
         result = 31 * result + dataModel.name.hashCode()
         return result
     }
 
-    internal object Model : DefinitionDataModel<ReferenceDefinition<*>>(
+    object Model : DefinitionDataModel<ReferenceDefinition<*>>(
         properties = object : PropertyDefinitions<ReferenceDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ReferenceDefinition<*>::indexed)
@@ -92,7 +96,8 @@ class ReferenceDefinition<DO: Any>(
                 IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
                 add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
                 add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
-                add(7, "dataModel", ContextCaptureDefinition(
+                add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
+                add(8, "dataModel", ContextCaptureDefinition(
                     definition = ContextualModelReferenceDefinition<DataModelContext>(
                         contextualResolver = { context, name ->
                             context?.let {
@@ -121,9 +126,10 @@ class ReferenceDefinition<DO: Any>(
             unique = map[4] as Boolean? ?: false,
             minValue = (map[5] as Bytes?)?.let { Key<Any>(it.bytes) },
             maxValue = (map[6] as Bytes?)?.let { Key<Any>(it.bytes) },
+            default = (map[7] as Bytes?)?.let { Key<Any>(it.bytes) },
             dataModel = {
                 @Suppress("UNCHECKED_CAST")
-                map[7] as RootDataModel<Any, PropertyDefinitions<Any>>
+                map[8] as RootDataModel<Any, PropertyDefinitions<Any>>
             }
         )
     }

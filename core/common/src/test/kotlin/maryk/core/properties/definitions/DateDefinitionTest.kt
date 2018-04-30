@@ -4,8 +4,8 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
-import maryk.lib.time.Date
 import maryk.lib.exceptions.ParseException
+import maryk.lib.time.Date
 import maryk.lib.time.Instant
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -27,7 +27,8 @@ internal class DateDefinitionTest {
         unique = true,
         fillWithNow = true,
         maxValue = Date.MAX,
-        minValue = Date.MIN
+        minValue = Date.MIN,
+        default = Date(1970, 12, 1)
     )
 
     @Test

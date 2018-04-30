@@ -22,12 +22,14 @@ data class TimeDefinition(
     override val unique: Boolean = false,
     override val minValue: Time? = null,
     override val maxValue: Time? = null,
+    override val default: Time? = null,
     override val fillWithNow: Boolean = false,
     override val precision: TimePrecision = TimePrecision.SECONDS
 ) :
     IsTimeDefinition<Time>,
     IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<Time>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = WireType.VAR_INT
@@ -66,7 +68,7 @@ data class TimeDefinition(
         else -> value as? Time
     }
 
-    internal object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
+    object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
         properties = object : PropertyDefinitions<TimeDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)
@@ -74,10 +76,11 @@ data class TimeDefinition(
                 IsPropertyDefinition.addRequired(this, TimeDefinition::required)
                 IsPropertyDefinition.addFinal(this, TimeDefinition::final)
                 IsComparableDefinition.addUnique(this, TimeDefinition::unique)
-                add(5, "minValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::minValue)
-                add(6, "maxValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::maxValue)
-                IsMomentDefinition.addFillWithNow(this, TimeDefinition::fillWithNow)
-                IsTimeDefinition.addPrecision(this, TimeDefinition::precision)
+                IsTimeDefinition.addPrecision(5,this, TimeDefinition::precision)
+                add(6, "minValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::minValue)
+                add(7, "maxValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::maxValue)
+                add(8, "default", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::default)
+                IsMomentDefinition.addFillWithNow(9, this, TimeDefinition::fillWithNow)
             }
         }
     ) {
@@ -87,10 +90,11 @@ data class TimeDefinition(
             required = map[2] as Boolean? ?: true,
             final = map[3] as Boolean? ?: false,
             unique = map[4] as Boolean? ?: false,
-            minValue = map[5] as Time?,
-            maxValue = map[6] as Time?,
-            fillWithNow = map[7] as Boolean? ?: false,
-            precision = map[8] as? TimePrecision ?: TimePrecision.SECONDS
+            precision = map[5] as? TimePrecision ?: TimePrecision.SECONDS,
+            minValue = map[6] as Time?,
+            maxValue = map[7] as Time?,
+            default = map[8] as Time?,
+            fillWithNow = map[9] as Boolean? ?: false
         )
     }
 }

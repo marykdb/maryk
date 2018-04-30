@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
  * Use it to create a context on starting an action which needs a context.
  * This context is cached if it is needed to read multiple times
  */
-internal abstract class ContextualDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
+abstract class ContextualDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
     properties: P,
     private val contextTransformer: (CXI?) -> CX?
 ) : AbstractDataModel<DO, P, CXI, CX>(properties) {

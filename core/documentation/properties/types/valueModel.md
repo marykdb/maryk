@@ -18,7 +18,7 @@ This makes them usable as map keys and list/set items.
 - `required` - default true
 - `final` - default false
 
-## Data options
+## Other options
 - `indexed` - default false
 - `searchable` - default true
 - `dataModel` - Refers to DataModel to be used as value

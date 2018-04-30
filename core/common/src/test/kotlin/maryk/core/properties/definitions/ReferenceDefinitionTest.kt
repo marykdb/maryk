@@ -31,7 +31,8 @@ internal class ReferenceDefinitionTest {
         unique = true,
         minValue = refToTest[0],
         maxValue = refToTest[1],
-        dataModel = { TestMarykObject }
+        dataModel = { TestMarykObject },
+        default = Key(ByteArray(9, { 1 }))
     )
 
     @Test

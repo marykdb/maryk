@@ -33,19 +33,19 @@ interface IsPropertyDefinition<T: Any> {
 
     companion object {
         internal fun <DO:Any> addIndexed(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(0, "indexed", BooleanDefinition(), getter)
+            definitions.add(0, "indexed", BooleanDefinition(default = false), getter)
         }
 
         internal fun <DO:Any> addSearchable(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(1, "searchable", BooleanDefinition(), getter)
+            definitions.add(1, "searchable", BooleanDefinition(default = true), getter)
         }
 
         internal fun <DO:Any> addRequired(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(2, "required", BooleanDefinition(), getter)
+            definitions.add(2, "required", BooleanDefinition(default = true), getter)
         }
 
         internal fun <DO:Any> addFinal(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(3, "final", BooleanDefinition(), getter)
+            definitions.add(3, "final", BooleanDefinition(default = false), getter)
         }
     }
 }

@@ -29,7 +29,8 @@ internal class NumberDefinitionTest {
         unique = true,
         minValue = 3254765,
         maxValue = 92763478,
-        random = true
+        random = true,
+        default = 4444444
     )
 
     private val defFloat32 = NumberDefinition(

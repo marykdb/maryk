@@ -19,7 +19,8 @@ Defines a property of a flexible bytes length.
 - `minValue` - default false. Minimum value (Sort start value)
 - `maxValue` - default false. Maximum value (Sort end value)
 
-## Data options
+## Other options
+- `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
 
@@ -34,6 +35,7 @@ val def = FlexBytesDefinition(
     random = true,
     minSize = 2,
     maxSize = 5,
+    default = Bytes.ofHex("1111"),
     minValue = Bytes.ofHex("0000"),
     maxValue = Bytes.ofHex("FFFFFFFFFF")
 )
@@ -48,6 +50,7 @@ val def = FlexBytesDefinition(
   final: true
   minSize: 1
   maxSize: 6
+  default: BB # Base64 value
   minValue: AA # Base64 value
   maxValue: //////////8 # Base64 value
   random: true

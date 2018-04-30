@@ -23,7 +23,7 @@ or photos.
 - `final` - default false
 - `unique` - default false
 
-## Data options
+## Other options
 - `indexed` - default false
 - `searchable` - default true
 - `definitionMap` - Map which maps shorts to a property definition

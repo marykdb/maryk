@@ -20,7 +20,7 @@ be null.
 - `minSize` - default unset. Minimum size of map
 - `maxSize` - default unset. Maximum size of map
 
-## Data options
+## Other options
 - `indexed` - default false
 - `searchable` - default true
 - `keyDefinition` - definition of keys contained in map

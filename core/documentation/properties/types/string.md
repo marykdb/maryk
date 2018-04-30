@@ -14,13 +14,14 @@ Basic String property to represent text.
 - `required` - default true
 - `final` - default false
 - `unique` - default false
-- `regEx` - Regular expression to match complete value against
-- `minSize` - The minimum length of the string. Default unset.
-- `maxSize` - The maximum length of the string. Default unset.
+- `regEx` - regular expression to match complete value against
+- `minSize` - minimum length of the string. Default unset.
+- `maxSize` - maximum length of the string. Default unset.
 - `minValue` - default false. Minimum value (Sort start value)
 - `maxValue` - default false. Maximum value (Sort end value)
 
-## Data options
+## Other options
+- `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
 
@@ -34,6 +35,7 @@ val def = StringDefinition(
     unique = true,
     minSize = 3,
     maxSize = 6,
+    default = "baa",
     minValue = "aab",
     maxValue = "ddda",
     regEx = "[abcd]{3,4}"
@@ -48,6 +50,7 @@ val def = StringDefinition(
   final: true
   minSize: 3
   maxSize: 6
+  default: baa
   minValue: aab
   maxValue: ddda
   regEx: [abcd]{3,4}

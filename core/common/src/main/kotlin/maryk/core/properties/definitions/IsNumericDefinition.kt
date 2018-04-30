@@ -15,7 +15,7 @@ interface IsNumericDefinition<T: Comparable<T>> : IsComparableDefinition<T, IsPr
 
     companion object {
         internal fun <DO:Any> addRandom(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(index, "random", BooleanDefinition(), getter)
+            definitions.add(index, "random", BooleanDefinition(default = false), getter)
         }
     }
 }

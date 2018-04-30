@@ -18,7 +18,7 @@ Property definitions need to be required and values can thus not be null.
 - `minSize` - default unset. Minimum size of set
 - `maxSize` - default unset. Maximum size of set
 
-## Data options
+## Other options
 - `indexed` - default false
 - `searchable` - default true
 - `valueDefinition` - definition of values contained

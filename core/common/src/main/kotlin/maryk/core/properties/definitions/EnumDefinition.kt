@@ -23,11 +23,13 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override val unique: Boolean = false,
     override val minValue: E? = null,
     override val maxValue: E? = null,
+    override val default: E? = null,
     val values: Array<E>
 ) :
     IsComparableDefinition<E, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType,
+    IsWithDefaultDefinition<E>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Enum
     override val wireType = WireType.VAR_INT
@@ -80,6 +82,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         if (unique != other.unique) return false
         if (minValue != other.minValue && minValue?.index != other.minValue?.index) return false
         if (maxValue != other.maxValue && maxValue?.index != other.maxValue?.index) return false
+        if (default != other.default && default?.index != other.default?.index) return false
         if (!areEnumsEqual(values, other.values)) return false
         if (wireType != other.wireType) return false
         if (byteSize != other.byteSize) return false
@@ -96,13 +99,14 @@ class EnumDefinition<E : IndexedEnum<E>>(
         result = 31 * result + unique.hashCode()
         result = 31 * result + (minValue?.index?.hashCode() ?: 0)
         result = 31 * result + (maxValue?.index?.hashCode() ?: 0)
+        result = 31 * result + (default?.index?.hashCode() ?: 0)
         result = 31 * result + enumsHashCode(values)
         result = 31 * result + wireType.hashCode()
         result = 31 * result + byteSize
         return result
     }
 
-    internal object Model : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
+    object Model : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
         properties = object : PropertyDefinitions<EnumDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)
@@ -116,7 +120,10 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 add(6, "maxValue", NumberDefinition(type = UInt32)) {
                     it.maxValue?.index?.toUInt32()
                 }
-                add(7, "values", MapDefinition(
+                add(7, "default", NumberDefinition(type = UInt32)) {
+                    it.default?.index?.toUInt32()
+                }
+                add(8, "values", MapDefinition(
                     keyDefinition = NumberDefinition(type = UInt32),
                     valueDefinition = StringDefinition()
                 )) { it.values.map { Pair(it.index.toUInt32(), it.name) }.toMap() }
@@ -125,7 +132,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>): EnumDefinition<IndexedEnum<Any>> {
-            val valueMap = (map[7] as Map<UInt32, String>).map {
+            val valueMap = (map[8] as Map<UInt32, String>).map {
                 Pair(it.key, IndexedEnum(it.key.toInt(), it.value))
             }.toMap()
 
@@ -140,6 +147,9 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 },
                 maxValue = map[6]?.let{
                     valueMap[map[6] as UInt32] as IndexedEnum<Any>
+                },
+                default = map[7]?.let{
+                    valueMap[map[7] as UInt32] as IndexedEnum<Any>
                 },
                 values = valueMap.values.toTypedArray() as Array<IndexedEnum<Any>>
             )

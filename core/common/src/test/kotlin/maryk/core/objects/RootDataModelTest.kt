@@ -109,6 +109,7 @@ internal class RootDataModelTest {
         			"required": true,
         			"final": false,
         			"unique": false,
+        			"default": "haha",
         			"regEx": "ha.*"
         		}]
         	}, {
@@ -178,6 +179,7 @@ internal class RootDataModelTest {
         			"required": true,
         			"final": true,
         			"unique": false,
+        			"default": 0,
         			"values": {
         				"0": "V0",
         				"1": "V1",
@@ -370,6 +372,7 @@ internal class RootDataModelTest {
             required: true
             final: false
             unique: false
+            default: haha
             regEx: ha.*
           ? 1: int
           : !Number
@@ -421,6 +424,7 @@ internal class RootDataModelTest {
             required: true
             final: true
             unique: false
+            default: 0
             values:
               0: V0
               1: V1

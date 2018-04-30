@@ -56,6 +56,7 @@ data class TestMarykObject(
         val string = add(
             index = 0, name = "string",
             definition = StringDefinition(
+                default = "haha",
                 regEx = "ha.*"
             ),
             getter = TestMarykObject::string
@@ -103,6 +104,7 @@ data class TestMarykObject(
             index = 6, name = "enum",
             definition = EnumDefinition(
                 values = Option.values(),
+                default = Option.V0,
                 final = true
             ),
             getter = TestMarykObject::enum

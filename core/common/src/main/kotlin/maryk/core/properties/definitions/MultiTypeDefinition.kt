@@ -41,7 +41,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 ) :
     IsValueDefinition<TypedValue<E, Any>, CX>,
     IsSerializableFlexBytesEncodable<TypedValue<E, Any>, CX>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType<TypedValue<E, Any>>
 {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED

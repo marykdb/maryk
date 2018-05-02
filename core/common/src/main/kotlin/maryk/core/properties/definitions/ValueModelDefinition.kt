@@ -30,7 +30,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
 ) :
     IsComparableDefinition<DO, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType<DO>
 {
     override val propertyDefinitionType = PropertyDefinitionType.ValueModel
     override val wireType = WireType.LENGTH_DELIMITED

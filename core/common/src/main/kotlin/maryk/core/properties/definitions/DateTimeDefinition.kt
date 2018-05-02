@@ -30,7 +30,7 @@ data class DateTimeDefinition(
 ) :
     IsTimeDefinition<DateTime>,
     IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<DateTime>,
     IsWithDefaultDefinition<DateTime>
 {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime

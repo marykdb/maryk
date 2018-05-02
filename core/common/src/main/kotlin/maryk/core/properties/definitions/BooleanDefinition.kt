@@ -18,7 +18,7 @@ data class BooleanDefinition(
 ):
     IsSimpleValueDefinition<Boolean, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<Boolean>,
     IsWithDefaultDefinition<Boolean>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Boolean

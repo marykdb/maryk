@@ -23,8 +23,11 @@ import maryk.lib.exceptions.ParseException
 /**
  * Interface to define a Collection [C] containing [T] with context [CX]
  */
-interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext, out ST: IsValueDefinition<T, CX>>
-    : IsByteTransportableCollection<T, C, CX>, HasSizeDefinition, IsTransportablePropertyDefinitionType {
+interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext, out ST: IsValueDefinition<T, CX>>:
+    IsByteTransportableCollection<T, C, CX>,
+    HasSizeDefinition,
+    IsTransportablePropertyDefinitionType<C>
+{
     val valueDefinition: ST
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
@@ -32,7 +35,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
 
     override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?) {
-        super.validateWithRef(previousValue, newValue, refGetter)
+        super<IsByteTransportableCollection>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
             val size = newValue.size

@@ -28,7 +28,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
 ) :
     IsComparableDefinition<E, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<E>,
     IsWithDefaultDefinition<E>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Enum

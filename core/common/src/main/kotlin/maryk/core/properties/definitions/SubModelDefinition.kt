@@ -31,7 +31,7 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
     IsValueDefinition<DO, CXI>,
     IsSerializableFlexBytesEncodable<DO, CXI>,
     IsSubModelDefinition<DO, CXI>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType<DO>
 {
     override val propertyDefinitionType = PropertyDefinitionType.SubModel
     override val wireType = WireType.LENGTH_DELIMITED

@@ -56,7 +56,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                 add(6, "valueDefinition", MultiTypeDefinition(
                     definitionMap = mapOfPropertyDefSubModelDefinitions
                 )) {
-                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
+                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
                     TypedValue(defType.propertyDefinitionType, it.valueDefinition)
                 }
             }

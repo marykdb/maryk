@@ -27,7 +27,7 @@ class ReferenceDefinition<DO: Any>(
 ):
     IsComparableDefinition<Key<DO>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<Key<DO>>,
     IsWithDefaultDefinition<Key<DO>>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Reference

@@ -75,7 +75,7 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
             definitions.add(2, "definition", MultiTypeDefinition(
                 definitionMap = mapOfPropertyDefSubModelDefinitions
             )) {
-                val def = getter(it) as IsTransportablePropertyDefinitionType
+                val def = getter(it) as IsTransportablePropertyDefinitionType<*>
                 TypedValue(def.propertyDefinitionType, def)
             }
     }

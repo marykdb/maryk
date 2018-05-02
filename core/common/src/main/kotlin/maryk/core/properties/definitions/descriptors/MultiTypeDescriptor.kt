@@ -49,7 +49,7 @@ private data class MultiTypeDescriptor(
             definitionMap = mapOfPropertyDefSubModelDefinitions
         )
         ) {
-            val defType = it.definition as IsTransportablePropertyDefinitionType
+            val defType = it.definition as IsTransportablePropertyDefinitionType<*>
             TypedValue(defType.propertyDefinitionType, defType)
         }
     }

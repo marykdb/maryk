@@ -352,7 +352,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             return default
         } else {
             val name = this@AbstractDataModel.properties.getDefinition(index)!!.name
-            val definition = this@AbstractDataModel.properties.getDefinition(index)!!.definition as IsTransportablePropertyDefinitionType
+            val definition = this@AbstractDataModel.properties.getDefinition(index)!!.definition as IsTransportablePropertyDefinitionType<*>
             throw ParseException("Property '$name' with value '$value' should be of type ${definition.propertyDefinitionType.name}")
         }
     }

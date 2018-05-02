@@ -27,7 +27,7 @@ data class DateDefinition(
 ) :
     IsMomentDefinition<Date>,
     IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<Date>,
     IsWithDefaultDefinition<Date>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Date

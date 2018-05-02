@@ -28,7 +28,7 @@ data class TimeDefinition(
 ) :
     IsTimeDefinition<Time>,
     IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<Time>,
     IsWithDefaultDefinition<Time>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Time

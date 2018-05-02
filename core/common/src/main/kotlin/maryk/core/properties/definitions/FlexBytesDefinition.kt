@@ -25,7 +25,7 @@ data class FlexBytesDefinition(
     IsComparableDefinition<Bytes, IsPropertyContext>,
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<Bytes>,
     IsWithDefaultDefinition<Bytes>
 {
     override val propertyDefinitionType = PropertyDefinitionType.FlexBytes

@@ -29,7 +29,7 @@ data class StringDefinition(
     IsComparableDefinition<String, IsPropertyContext>,
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType,
+    IsTransportablePropertyDefinitionType<String>,
     IsWithDefaultDefinition<String>
 {
     override val propertyDefinitionType = PropertyDefinitionType.String

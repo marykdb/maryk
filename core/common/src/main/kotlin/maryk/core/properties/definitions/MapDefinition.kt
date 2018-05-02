@@ -40,7 +40,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     HasSizeDefinition,
     IsByteTransportableMap<K, V, CX>,
     IsMapDefinition<K, V, CX>,
-    IsTransportablePropertyDefinitionType
+    IsTransportablePropertyDefinitionType<Map<K, V>>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Map
 
@@ -189,13 +189,13 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                 add(6, "keyDefinition", MultiTypeDefinition(
                     definitionMap = mapOfPropertyDefSubModelDefinitions
                 )) {
-                    val defType = it.keyDefinition as IsTransportablePropertyDefinitionType
+                    val defType = it.keyDefinition as IsTransportablePropertyDefinitionType<*>
                     TypedValue(defType.propertyDefinitionType, it.keyDefinition)
                 }
                 add(7, "valueDefinition", MultiTypeDefinition(
                     definitionMap = mapOfPropertyDefSubModelDefinitions
                 )) {
-                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType
+                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
                     TypedValue(defType.propertyDefinitionType, it.valueDefinition)
                 }
             }

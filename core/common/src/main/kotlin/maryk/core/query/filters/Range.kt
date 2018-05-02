@@ -62,13 +62,12 @@ data class Range<T: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Range(
-            reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
-            from = map[1] as Any,
-            to = map[2] as Any,
-            inclusiveFrom = map[3] as Boolean,
-            inclusiveTo = map[4] as Boolean
+            reference = map(0),
+            from = map(1),
+            to = map(2),
+            inclusiveFrom = map(3),
+            inclusiveTo = map(4)
         )
     }
 }

@@ -19,6 +19,6 @@ data class RequestFail<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = RequestFail<Any>(map[0] as String)
+        override fun invoke(map: Map<Int, *>) = RequestFail<Any>(map(0))
     }
 }

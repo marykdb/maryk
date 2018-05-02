@@ -5,7 +5,6 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
@@ -61,12 +60,12 @@ data class SetPropertyChange<T: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = SetPropertyChange(
-            reference = map[0] as IsPropertyReference<Set<Any>, IsValueDefinition<Set<Any>, IsPropertyContext>>,
-            valueToCompare = map[1] as Set<Any>?,
-            addValues = map[2] as Set<Any>?,
-            deleteValues = map[3] as Set<Any>?
+        @Suppress("RemoveExplicitTypeArguments")
+        override fun invoke(map: Map<Int, *>) = SetPropertyChange<Any>(
+            reference = map(0),
+            valueToCompare = map(1),
+            addValues = map(2),
+            deleteValues = map(3)
         )
     }
 }

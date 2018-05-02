@@ -75,15 +75,15 @@ data class DateDefinition(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = DateDefinition(
-            indexed = map[0] as? Boolean  ?: false,
-            searchable = map[1] as Boolean? ?: true,
-            required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false,
-            unique = map[4] as Boolean? ?: false,
-            minValue = map[5] as Date?,
-            maxValue = map[6] as Date?,
-            default = map[7] as Date?,
-            fillWithNow = map[8] as Boolean? ?: false
+            indexed = map(0, false),
+            searchable = map(1, true),
+            required = map(2, true),
+            final = map(3, false),
+            unique = map(4, false),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            fillWithNow = map(8, false)
         )
     }
 }

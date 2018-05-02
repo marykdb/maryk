@@ -22,10 +22,9 @@ data class ChangeResponse<DO: Any, out DM: RootDataModel<DO, *>>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ChangeResponse(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            statuses = (map[1] as List<TypedValue<StatusType, IsChangeResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+            dataModel = map(0),
+            statuses = map<List<TypedValue<StatusType, IsChangeResponseStatus<Any>>>?>(1)?.map { it.value } ?: emptyList()
         )
     }
 }

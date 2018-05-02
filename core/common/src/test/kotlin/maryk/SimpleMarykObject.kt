@@ -21,7 +21,7 @@ data class SimpleMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = SimpleMarykObject(
-            value = map[0] as String
+            value = map(0, "haha")
         )
     }
 }

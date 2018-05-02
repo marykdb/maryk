@@ -24,10 +24,9 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO, *>>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ObjectsResponse(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            objects = map[1] as List<DataObjectWithMetaData<Any>>
+            dataModel = map<RootDataModel<Any, *>>(0),
+            objects = map(1)
         )
     }
 }

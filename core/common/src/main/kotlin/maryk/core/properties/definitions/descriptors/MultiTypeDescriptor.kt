@@ -57,11 +57,10 @@ private data class MultiTypeDescriptor(
     internal object Model : SimpleDataModel<MultiTypeDescriptor, PropertyDefinitions<MultiTypeDescriptor>>(
         properties = Properties
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = MultiTypeDescriptor(
-            index = (map[0] as UInt32).toInt(),
-            name = map[1] as String,
-            definition = (map[2] as TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>).value
+            index = map<UInt32>(0).toInt(),
+            name = map(1),
+            definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(2).value
         )
 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): Map<Int, Any> {

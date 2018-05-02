@@ -22,10 +22,9 @@ data class DeleteResponse<DO: Any, out DM: RootDataModel<DO, *>>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DeleteResponse(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            statuses = (map[1] as List<TypedValue<StatusType, IsDeleteResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+            dataModel = map(0),
+            statuses = map<List<TypedValue<StatusType, IsDeleteResponseStatus<Any>>>?>(1)?.map { it.value } ?: emptyList()
         )
     }
 }

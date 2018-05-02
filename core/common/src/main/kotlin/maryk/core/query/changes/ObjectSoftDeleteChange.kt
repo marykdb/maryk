@@ -18,7 +18,7 @@ data class ObjectSoftDeleteChange(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = ObjectSoftDeleteChange(
-            isDeleted = map[0] as Boolean
+            isDeleted = map(0)
         )
     }
 }

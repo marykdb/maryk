@@ -27,10 +27,9 @@ data class Prefix(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Prefix(
-            reference = map[0] as IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
-            prefix = map[1] as String
+            reference = map(0),
+            prefix = map(1)
         )
     }
 }

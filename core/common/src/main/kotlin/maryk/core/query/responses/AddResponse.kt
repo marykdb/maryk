@@ -22,10 +22,9 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO, *>> constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddResponse(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            statuses = (map[1] as List<TypedValue<StatusType, IsAddResponseStatus<Any>>>?)?.map { it.value } ?: emptyList()
+            dataModel = map(0),
+            statuses = map<List<TypedValue<StatusType, IsAddResponseStatus<Any>>>?>(1)?.map { it.value } ?: emptyList()
         )
     }
 }

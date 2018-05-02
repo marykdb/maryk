@@ -119,18 +119,15 @@ class ReferenceDefinition<DO: Any>(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = ReferenceDefinition(
-            indexed = map[0] as Boolean? ?: false,
-            searchable = map[1] as Boolean? ?: true,
-            required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false,
-            unique = map[4] as Boolean? ?: false,
-            minValue = (map[5] as Bytes?)?.let { Key<Any>(it.bytes) },
-            maxValue = (map[6] as Bytes?)?.let { Key<Any>(it.bytes) },
-            default = (map[7] as Bytes?)?.let { Key<Any>(it.bytes) },
-            dataModel = {
-                @Suppress("UNCHECKED_CAST")
-                map[8] as RootDataModel<Any, PropertyDefinitions<Any>>
-            }
+            indexed = map(0, false),
+            searchable = map(1, true),
+            required = map(2, true),
+            final = map(3, false),
+            unique = map(4, false),
+            minValue = map<Bytes?>(5)?.let { Key<Any>(it.bytes) },
+            maxValue = map<Bytes?>(6)?.let { Key<Any>(it.bytes) },
+            default = map<Bytes?>(7)?.let { Key<Any>(it.bytes) },
+            dataModel = { map(8) }
         )
     }
 }

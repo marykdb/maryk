@@ -18,9 +18,8 @@ data class Success<DO: Any>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Success<Any>(
-            version = map[0] as UInt64
+            version = map(0)
         )
     }
 }

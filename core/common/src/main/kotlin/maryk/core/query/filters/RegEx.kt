@@ -28,10 +28,9 @@ data class RegEx(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = RegEx(
-            reference = map[0] as IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
-            regEx = map[1] as String
+            reference = map(0),
+            regEx = map(1)
         )
     }
 }

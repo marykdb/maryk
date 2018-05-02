@@ -151,9 +151,9 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         properties = RootModelProperties
     ) {
         override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
-            name = map[0] as String,
-            properties = map[1] as PropertyDefinitions<Any>,
-            keyDefinitions = (map[2] as? List<TypedValue<PropertyDefinitionType, *>>)?.map {
+            name = map(0),
+            properties = map(1),
+            keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(2))?.map {
                 when(it.value) {
                     is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
                     else -> it.value as FixedBytesProperty<*>

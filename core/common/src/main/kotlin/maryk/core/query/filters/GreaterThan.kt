@@ -26,10 +26,9 @@ data class GreaterThan<T: Any>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = GreaterThan(
-            reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
-            value = map[1] as Any
+            reference = map(0),
+            value = map(1)
         )
     }
 }

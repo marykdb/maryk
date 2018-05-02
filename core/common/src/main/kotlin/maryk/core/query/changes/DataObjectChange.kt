@@ -51,11 +51,10 @@ data class DataObjectChange<out DO: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DataObjectChange(
-            key = map[0] as Key<Any>,
-            changes = (map[1] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList(),
-            lastVersion = map[2] as UInt64?
+            key = map(0),
+            changes = map<List<TypedValue<ChangeType, IsChange>>?>(1)?.map { it.value } ?: emptyList(),
+            lastVersion = map(2)
         )
     }
 }

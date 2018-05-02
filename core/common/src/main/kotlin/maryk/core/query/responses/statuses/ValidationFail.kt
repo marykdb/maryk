@@ -31,9 +31,8 @@ data class ValidationFail<DO: Any>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValidationFail<Any>(
-            exceptions = (map[0] as List<TypedValue<ValidationExceptionType, ValidationException>>?)?.map { it.value } ?: emptyList()
+            exceptions = map<List<TypedValue<ValidationExceptionType, ValidationException>>?>(0)?.map { it.value } ?: emptyList()
         )
     }
 }

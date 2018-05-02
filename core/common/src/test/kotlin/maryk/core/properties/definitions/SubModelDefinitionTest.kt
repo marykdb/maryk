@@ -30,7 +30,7 @@ internal class SubModelDefinitionTest {
             properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                map[0] as String
+                map(0)
             )
         }
     }

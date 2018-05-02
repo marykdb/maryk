@@ -36,13 +36,12 @@ data class DataObjectWithMetaData<out DO: Any>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = DataObjectWithMetaData(
-            key = map[0] as Key<Any>,
-            dataObject = map[1] as Any,
-            firstVersion = map[2] as UInt64,
-            lastVersion = map[3] as UInt64,
-            isDeleted = map[4] as Boolean
+            key = map(0),
+            dataObject = map(1),
+            firstVersion = map(2),
+            lastVersion = map(3),
+            isDeleted = map(4)
         )
     }
 }

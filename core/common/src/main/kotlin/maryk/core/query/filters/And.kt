@@ -25,9 +25,8 @@ data class And(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = And(
-            filters = (map[0] as List<TypedValue<FilterType, IsFilter>>).map { it.value }
+            filters = map<List<TypedValue<FilterType, IsFilter>>>(0).map { it.value }
         )
     }
 }

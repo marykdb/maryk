@@ -31,10 +31,9 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ChangeRequest(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            objectChanges = map[1] as List<DataObjectChange<Any>>
+            dataModel = map<RootDataModel<Any, *>>(0),
+            objectChanges = map(1)
         )
     }
 }

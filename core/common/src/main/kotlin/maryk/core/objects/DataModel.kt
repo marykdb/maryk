@@ -23,10 +23,9 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : DataModel<Any, PropertyDefinitions<Any>>(
-            name = map[0] as String,
-            properties = map[1] as PropertyDefinitions<Any>
+            name = map(0),
+            properties = map(1)
         ){
             override fun invoke(map: Map<Int, *>): Any {
                 return object : Any(){}

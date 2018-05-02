@@ -41,10 +41,9 @@ data class Order internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Order(
-            propertyReference = map[0] as IsPropertyReference<*, *>,
-            direction = map[1] as Direction
+            propertyReference = map(0),
+            direction = map(1)
         )
     }
 }

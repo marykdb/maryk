@@ -24,10 +24,9 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO, *>>
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ObjectVersionedChangesResponse(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            changes = map[1] as List<DataObjectVersionedChange<Any>>
+            dataModel = map<RootDataModel<Any, *>>(0),
+            changes = map(1)
         )
     }
 }

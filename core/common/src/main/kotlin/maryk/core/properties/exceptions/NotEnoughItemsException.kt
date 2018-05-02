@@ -30,9 +30,9 @@ data class NotEnoughItemsException internal constructor(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = NotEnoughItemsException(
-            reference = map[0] as IsPropertyReference<*, *>,
-            size = map[1] as Int,
-            minSize = map[2] as Int
+            reference = map(0),
+            size = map(1),
+            minSize = map(2)
         )
     }
 }

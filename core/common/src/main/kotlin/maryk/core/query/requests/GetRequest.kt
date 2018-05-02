@@ -51,14 +51,13 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = GetRequest(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            keys = map[1] as List<Key<Any>>,
-            filter = (map[2] as TypedValue<FilterType, IsFilter>?)?.value,
-            order = map[3] as Order?,
-            toVersion = map[4] as UInt64?,
-            filterSoftDeleted = map[5] as Boolean? ?: true
+            dataModel = map<RootDataModel<Any, *>>(0),
+            keys = map(1),
+            filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
+            order = map(3),
+            toVersion = map(4),
+            filterSoftDeleted = map(5, true)
         )
     }
 }

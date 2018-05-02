@@ -77,14 +77,14 @@ data class ListPropertyChange<T: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = ListPropertyChange(
-            reference = map[0] as ListReference<Any, IsPropertyContext>,
-            valueToCompare = map[1] as List<Any>?,
-            addValuesToEnd = map[2] as List<Any>?,
-            addValuesAtIndex = map[3] as Map<Int, Any>?,
-            deleteValues = map[4] as List<Any>?,
-            deleteAtIndex = map[5] as Set<Int>?
+        @Suppress("RemoveExplicitTypeArguments")
+        override fun invoke(map: Map<Int, *>) = ListPropertyChange<Any>(
+            reference = map(0),
+            valueToCompare = map(1),
+            addValuesToEnd = map(2),
+            addValuesAtIndex = map(3),
+            deleteValues = map(4),
+            deleteAtIndex = map(5)
         )
     }
 }

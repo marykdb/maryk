@@ -33,10 +33,10 @@ data class DataObjectVersionedChange<out DO: Any>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
+        @Suppress("RemoveExplicitTypeArguments")
         override fun invoke(map: Map<Int, *>) = DataObjectVersionedChange(
-            key = map[0] as Key<Any>,
-            changes = (map[1] as List<VersionedChanges>?) ?: emptyList()
+            key = map(0),
+            changes = map<List<VersionedChanges>?>(1) ?: emptyList()
         )
     }
 }

@@ -40,10 +40,9 @@ data class ValueIn<T: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValueIn(
-            reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
-            values = map[1] as Set<Any>
+            reference = map(0),
+            values = map(1)
         )
     }
 }

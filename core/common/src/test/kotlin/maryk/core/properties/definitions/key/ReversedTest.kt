@@ -35,8 +35,8 @@ internal class ReversedTest {
             properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                map[0] as Boolean,
-                map[1] as DateTime
+                map(0),
+                map(1)
             )
         }
     }

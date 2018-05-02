@@ -23,7 +23,7 @@ internal class UUIDKeyTest {
             properties = Properties
         ) {
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                map[0] as String
+                value = map(0)
             )
         }
     }

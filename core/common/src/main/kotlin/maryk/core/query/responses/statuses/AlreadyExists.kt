@@ -18,7 +18,7 @@ data class AlreadyExists<DO: Any>(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = AlreadyExists(
-            key = map[0] as Key<Any>
+            key = map(0)
         )
     }
 }

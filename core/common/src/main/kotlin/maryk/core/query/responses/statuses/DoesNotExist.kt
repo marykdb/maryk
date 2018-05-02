@@ -18,7 +18,7 @@ data class DoesNotExist<DO: Any>(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = DoesNotExist(
-            key = map[0] as Key<Any>
+            key = map(0)
         )
     }
 }

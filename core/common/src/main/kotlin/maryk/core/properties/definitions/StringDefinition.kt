@@ -95,17 +95,17 @@ data class StringDefinition(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = StringDefinition(
-            indexed = map[0] as Boolean? ?: false,
-            searchable = map[1] as Boolean? ?: true,
-            required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false,
-            unique = map[4] as Boolean? ?: false,
-            minValue = map[5] as String?,
-            maxValue = map[6] as String?,
-            default = map[7] as String?,
-            minSize = (map[8] as UInt32?)?.toInt(),
-            maxSize = (map[9] as UInt32?)?.toInt(),
-            regEx = map[10] as String?
+            indexed = map(0, false),
+            searchable = map(1, true),
+            required = map(2, true),
+            final = map(3, false),
+            unique = map(4, false),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            minSize = map<UInt32?>(8)?.toInt(),
+            maxSize = map<UInt32?>(9)?.toInt(),
+            regEx = map(10)
         )
     }
 }

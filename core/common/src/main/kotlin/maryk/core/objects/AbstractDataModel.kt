@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinitionWrapper
@@ -339,6 +340,22 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     /** Transform [context] into context specific to DataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")
     internal open fun transformContext(context: CXI?): CX?  = context as CX?
+
+    /**
+     * Utility method to check and map a value to a constructor property
+     */
+    protected inline operator fun <reified T> Map<Int, *>.invoke(index: Int, default: T? = null): T {
+        val value = this[index]
+        return if (value is T) {
+            value
+        } else if (value == null && default != null) {
+            return default
+        } else {
+            val name = this@AbstractDataModel.properties.getDefinition(index)!!.name
+            val definition = this@AbstractDataModel.properties.getDefinition(index)!!.definition as IsTransportablePropertyDefinitionType
+            throw ParseException("Property '$name' with value '$value' should be of type ${definition.propertyDefinitionType.name}")
+        }
+    }
 
     internal companion object {
         internal fun <DO: DataModel<out Any, PropertyDefinitions<out Any>>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {

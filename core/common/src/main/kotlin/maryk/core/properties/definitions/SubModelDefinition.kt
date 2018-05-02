@@ -155,13 +155,12 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         }
     ) {
         override fun invoke(map: Map<Int, *>) = SubModelDefinition(
-            indexed = map[0] as Boolean? ?: false,
-            searchable = map[1] as Boolean? ?: true,
-            required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false,
+            indexed = map(0, false),
+            searchable = map(1, true),
+            required = map(2, true),
+            final = map(3, false),
             dataModel = {
-                @Suppress("UNCHECKED_CAST")
-                map[4] as DataModel<Any, PropertyDefinitions<Any>>
+                map<DataModel<Any, PropertyDefinitions<Any>>>(4)
             }
         )
     }

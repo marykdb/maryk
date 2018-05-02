@@ -75,16 +75,16 @@ data class FlexBytesDefinition(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = FlexBytesDefinition(
-            indexed = map[0] as Boolean? ?: false,
-            searchable = map[1] as Boolean? ?: true,
-            required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false,
-            unique = map[4] as Boolean? ?: false,
-            minValue = map[5] as Bytes?,
-            maxValue = map[6] as Bytes?,
-            default = map[7] as Bytes?,
-            minSize = (map[8] as UInt32?)?.toInt(),
-            maxSize = (map[9] as UInt32?)?.toInt()
+            indexed = map(0, false),
+            searchable = map(1, true),
+            required = map(2, true),
+            final = map(3, false),
+            unique = map(4, false),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            minSize = map<UInt32?>(8)?.toInt(),
+            maxSize = map<UInt32?>(9)?.toInt()
         )
     }
 }

@@ -20,9 +20,8 @@ data class Not(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Not(
-            filter = (map[0] as TypedValue<FilterType, IsFilter>).value
+            filter = map<TypedValue<FilterType, IsFilter>>(0).value
         )
     }
 }

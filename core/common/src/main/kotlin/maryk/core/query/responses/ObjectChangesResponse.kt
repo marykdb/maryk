@@ -24,10 +24,9 @@ data class ObjectChangesResponse<DO: Any, out DM: RootDataModel<DO, *>>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ObjectChangesResponse(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            changes = map[1] as List<DataObjectChange<Any>>
+            dataModel = map<RootDataModel<Any, *>>(0),
+            changes = map(1)
         )
     }
 }

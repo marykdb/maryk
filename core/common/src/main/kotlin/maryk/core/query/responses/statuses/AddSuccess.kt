@@ -33,11 +33,10 @@ data class AddSuccess<DO: Any>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddSuccess(
-            key = map[0] as Key<Any>,
-            version = map[1] as UInt64,
-            changes = (map[2] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList()
+            key = map(0),
+            version = map(1),
+            changes = map<List<TypedValue<ChangeType, IsChange>>?>(2)?.map { it.value } ?: emptyList()
         )
     }
 }

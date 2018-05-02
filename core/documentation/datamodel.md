@@ -46,11 +46,10 @@ data class Person(
     companion object: RootDataModel<Person>(
         properties = Properties
     ){ 
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Person(
-            firstName = map[0] as String,
-            lastName = map[1] as String,
-            dateOfBirth = map[2] as Date
+            firstName = map(0),
+            lastName = map(1),
+            dateOfBirth = map(2)
         )
     }
 }
@@ -167,11 +166,11 @@ data class PersonRoleInPeriod(
     companion object: ValueDataModel<TestValueObject>(
         properties = Properties
     ) {
-        override fun invoke(values: Map<Int, Any>) = TestValueObject(
-            person = values[0] as Key<Person>,
-            role = values[1] as Role,
-            startDate = values[2] as Date,
-            endDate = values[3] as Date
+        override fun invoke(map: Map<Int, Any>) = TestValueObject(
+            person = map(0),
+            role = map(1),
+            startDate = map(2),
+            endDate = map(3)
         )
     }
 }
@@ -219,6 +218,11 @@ data class TimelineItem(
             TypeId(Properties.item)
         ),
         properties = Properties
-    )
+    ) {
+        override fun invoke(map: Map<Int, Any>) = TimelineItem(
+            dateOfPosting = map(0),
+            item = map(1)
+        )
+    }
 }
 ```

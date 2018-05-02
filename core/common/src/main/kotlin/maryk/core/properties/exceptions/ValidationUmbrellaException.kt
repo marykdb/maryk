@@ -33,10 +33,9 @@ data class ValidationUmbrellaException internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
-            reference = map[0] as IsPropertyReference<*, *>?,
-            exceptions = (map[1] as List<TypedValue<ValidationExceptionType, ValidationException>>?)?.map { it.value } ?: emptyList()
+            reference = map(0),
+            exceptions = map<List<TypedValue<ValidationExceptionType, ValidationException>>?>(1)?.map { it.value } ?: emptyList()
         )
     }
 }

@@ -27,9 +27,8 @@ data class Or(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = Or(
-            filters = (map[0] as List<TypedValue<FilterType, IsFilter>>).map { it.value }
+            filters = map<List<TypedValue<FilterType, IsFilter>>>(0).map { it.value }
         )
     }
 }

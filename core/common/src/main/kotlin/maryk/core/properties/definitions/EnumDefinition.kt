@@ -130,26 +130,27 @@ class EnumDefinition<E : IndexedEnum<E>>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
+
         override fun invoke(map: Map<Int, *>): EnumDefinition<IndexedEnum<Any>> {
-            val valueMap = (map[8] as Map<UInt32, String>).map {
+            val valueMap = map<Map<UInt32, String>>(8).map {
                 Pair(it.key, IndexedEnum(it.key.toInt(), it.value))
             }.toMap()
 
+            @Suppress("UNCHECKED_CAST")
             return EnumDefinition(
-                indexed = map[0] as Boolean? ?: false,
-                searchable = map[1] as Boolean? ?: true,
-                required = map[2] as Boolean? ?: true,
-                final = map[3] as Boolean? ?: false,
-                unique = map[4] as Boolean? ?: false,
-                minValue = map[5]?.let{
-                    valueMap[map[5] as UInt32] as IndexedEnum<Any>
+                indexed = map(0, false),
+                searchable = map(1, true),
+                required = map(2, true),
+                final = map(3, false),
+                unique = map(4, false),
+                minValue = map<UInt32?>(5)?.let{
+                    valueMap[it] as IndexedEnum<Any>
                 },
-                maxValue = map[6]?.let{
-                    valueMap[map[6] as UInt32] as IndexedEnum<Any>
+                maxValue = map<UInt32?>(6)?.let{
+                    valueMap[it] as IndexedEnum<Any>
                 },
-                default = map[7]?.let{
-                    valueMap[map[7] as UInt32] as IndexedEnum<Any>
+                default = map<UInt32?>(7)?.let{
+                    valueMap[it] as IndexedEnum<Any>
                 },
                 values = valueMap.values.toTypedArray() as Array<IndexedEnum<Any>>
             )

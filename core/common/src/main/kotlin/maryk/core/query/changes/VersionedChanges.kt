@@ -30,10 +30,9 @@ data class VersionedChanges(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = VersionedChanges(
-            version = map[0] as UInt64,
-            changes = (map[1] as List<TypedValue<ChangeType, IsChange>>?)?.map { it.value } ?: emptyList()
+            version = map(0),
+            changes = map<List<TypedValue<ChangeType, IsChange>>?>(1)?.map { it.value } ?: emptyList()
         )
     }
 }

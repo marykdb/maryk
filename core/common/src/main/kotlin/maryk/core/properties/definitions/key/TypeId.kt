@@ -55,9 +55,8 @@ data class TypeId<E: IndexedEnum<E>>(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = TypeId(
-            multiTypeReference = map[0] as ValuePropertyReference<TypedValue<IndexedEnum<Any>, *>, IsPropertyDefinitionWrapper<TypedValue<IndexedEnum<Any>, *>, IsPropertyContext, *>, *>
+        override fun invoke(map: Map<Int, *>) = TypeId<IndexedEnum<Any>>(
+            multiTypeReference = map(0)
         )
     }
 }

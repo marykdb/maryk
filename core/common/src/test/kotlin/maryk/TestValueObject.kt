@@ -5,9 +5,9 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.lib.time.DateTime
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
+import maryk.lib.time.DateTime
 
 data class TestValueObject(
     val int: Int,
@@ -30,9 +30,9 @@ data class TestValueObject(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = TestValueObject(
-            int = map[0] as Int,
-            dateTime = map[1] as DateTime,
-            bool = map[2] as Boolean
+            int = map(0),
+            dateTime = map(1),
+            bool = map(2)
         )
     }
 }

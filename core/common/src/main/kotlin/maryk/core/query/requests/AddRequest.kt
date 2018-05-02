@@ -31,10 +31,9 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = AddRequest(
-            dataModel = map[0] as RootDataModel<Any, *>,
-            objectsToAdd = map[1] as List<Any>
+            dataModel = map<RootDataModel<Any, *>>(0),
+            objectsToAdd = map(1)
         )
     }
 }

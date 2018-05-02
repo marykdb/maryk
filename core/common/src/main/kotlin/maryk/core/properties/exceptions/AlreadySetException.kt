@@ -24,7 +24,7 @@ data class AlreadySetException internal constructor(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = AlreadySetException(
-            reference = map[0] as IsPropertyReference<*, *>
+            reference = map(0)
         )
     }
 }

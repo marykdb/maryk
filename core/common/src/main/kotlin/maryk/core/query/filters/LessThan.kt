@@ -26,10 +26,9 @@ data class LessThan<T: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = LessThan(
-            reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>,
-            value = map[1] as Any
+            reference = map(0),
+            value = map(1)
         )
     }
 }

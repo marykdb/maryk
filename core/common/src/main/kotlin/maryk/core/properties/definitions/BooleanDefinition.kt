@@ -57,11 +57,11 @@ data class BooleanDefinition(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = BooleanDefinition(
-            indexed = map[0] as Boolean? ?: false,
-            searchable = map[1] as Boolean? ?: true,
-            required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false,
-            default = map[4] as Boolean?
+            indexed = map(0, false),
+            searchable = map(1, true),
+            required = map(2, true),
+            final = map(3, false),
+            default = map(4)
         )
     }
 }

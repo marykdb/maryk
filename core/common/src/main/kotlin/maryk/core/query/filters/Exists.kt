@@ -23,9 +23,8 @@ data class Exists<T: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = Exists(
-            reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, *>>
+        override fun invoke(map: Map<Int, *>) = Exists<Any>(
+            reference = map(0)
         )
     }
 }

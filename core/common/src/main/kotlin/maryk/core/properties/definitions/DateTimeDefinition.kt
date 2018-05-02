@@ -82,16 +82,16 @@ data class DateTimeDefinition(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = DateTimeDefinition(
-            indexed = map[0] as Boolean? ?: false,
-            searchable = map[1] as Boolean? ?: true,
-            required = map[2] as Boolean? ?: true,
-            final = map[3] as Boolean? ?: false,
-            unique = map[4] as Boolean? ?: false,
-            precision = map[5] as? TimePrecision ?: TimePrecision.SECONDS,
-            minValue = map[6] as DateTime?,
-            maxValue = map[7] as DateTime?,
-            default = map[8] as DateTime?,
-            fillWithNow = map[9] as Boolean? ?: false
+            indexed = map(0, false),
+            searchable = map(1, true),
+            required = map(2, true),
+            final = map(3, false),
+            unique = map(4, false),
+            precision = map(5, TimePrecision.SECONDS),
+            minValue = map(6),
+            maxValue = map(7),
+            default = map(8),
+            fillWithNow = map(9, false)
         )
     }
 }

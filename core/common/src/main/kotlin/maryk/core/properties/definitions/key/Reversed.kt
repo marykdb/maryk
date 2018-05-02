@@ -48,8 +48,8 @@ data class Reversed<T: Any>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = Reversed(
-            reference = map[0] as ValueWithFixedBytesPropertyReference<Any, FixedBytesPropertyDefinitionWrapper<Any, *, *, *>, *>
+        override fun invoke(map: Map<Int, *>) = Reversed<Any>(
+            reference = map(0)
         )
     }
 }

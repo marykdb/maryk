@@ -46,11 +46,10 @@ data class PropertyChange<T: Any> internal constructor(
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = PropertyChange(
-            reference = map[0] as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, IsPropertyContext, Any>>,
-            valueToCompare = map[1],
-            newValue = map[2] as Any
+            reference = map(0),
+            valueToCompare = map(1),
+            newValue = map(2)
         )
     }
 }

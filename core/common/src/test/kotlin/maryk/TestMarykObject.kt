@@ -210,23 +210,22 @@ data class TestMarykObject(
         ),
         properties = Properties
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = TestMarykObject(
-            string = map[0] as String,
-            int = map[1] as Int,
-            uint = map[2] as UInt32,
-            double = map[3] as Double,
-            dateTime = map[4] as DateTime,
-            bool = map[5] as Boolean?,
-            enum = map[6] as Option,
-            list = map[7] as List<Int>?,
-            set = map[8] as Set<Date>?,
-            map = map[9] as Map<Time, String>?,
-            valueObject = map[10] as TestValueObject?,
-            subModel = map[11] as SubMarykObject?,
-            multi = map[12] as TypedValue<Option, *>?,
-            reference = map[13] as Key<TestMarykObject>?,
-            listOfString = map[14] as List<String>?
+            string = map(0, "haha"),
+            int = map(1),
+            uint = map(2),
+            double = map(3),
+            dateTime = map(4),
+            bool = map(5),
+            enum = map(6, Option.V0),
+            list = map(7),
+            set = map(8),
+            map = map(9),
+            valueObject = map(10),
+            subModel = map(11),
+            multi = map(12),
+            reference = map(13),
+            listOfString = map(14)
         )
     }
 }
@@ -264,9 +263,9 @@ data class SubMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = SubMarykObject(
-            map[0] as String,
-            map[1] as SubMarykObject?,
-            map[2] as TestMarykObject?
+            value = map(0),
+            model = map(1),
+            marykModel = map(2)
         )
     }
 }

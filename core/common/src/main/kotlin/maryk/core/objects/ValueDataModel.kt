@@ -78,10 +78,9 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
             }
         }
     ) {
-        @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
-            name = map[0] as String,
-            properties = map[1] as PropertyDefinitions<ValueDataObject>
+            name = map(0),
+            properties = map(1)
         ){
             override fun invoke(map: Map<Int, *>): ValueDataObject {
                 return object : ValueDataObject(ByteArray(0)){}

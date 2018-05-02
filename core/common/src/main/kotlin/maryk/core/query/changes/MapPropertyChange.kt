@@ -77,11 +77,11 @@ data class MapPropertyChange<K: Any, V: Any> internal constructor(
         }
     ) {
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = MapPropertyChange(
-            reference = map[0] as IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *>>,
-            valueToCompare = map[1] as Map<Any, Any>?,
-            valuesToAdd = map[2] as Map<Any, Any>?,
-            keysToDelete = map[3] as Set<Any>?
+        override fun invoke(map: Map<Int, *>) = MapPropertyChange<Any, Any>(
+            reference = map(0),
+            valueToCompare = map(1),
+            valuesToAdd = map(2),
+            keysToDelete = map(3)
         )
     }
 }

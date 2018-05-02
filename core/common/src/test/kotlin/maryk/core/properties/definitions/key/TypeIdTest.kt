@@ -37,9 +37,8 @@ internal class TypeIdTest {
             ),
             properties = Properties
         ) {
-            @Suppress("UNCHECKED_CAST")
             override fun invoke(map: Map<Int, *>) = MarykObject(
-                map[0] as TypedValue<Option, *>
+                map(0)
             )
         }
     }

@@ -30,9 +30,9 @@ data class TooMuchItemsException internal constructor(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = TooMuchItemsException(
-            reference = map[0] as IsPropertyReference<*, *>,
-            size = map[1] as Int,
-            maxSize = map[2] as Int
+            reference = map(0),
+            size = map(1),
+            maxSize = map(2)
         )
     }
 }

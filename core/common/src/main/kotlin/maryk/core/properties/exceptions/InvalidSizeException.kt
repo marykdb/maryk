@@ -32,10 +32,10 @@ data class InvalidSizeException internal constructor(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = InvalidSizeException(
-            reference = map[0] as IsPropertyReference<*, *>,
-            value = map[1] as String,
-            min = map[2] as Int?,
-            max = map[3] as Int?
+            reference = map(0),
+            value = map(1),
+            min = map(2),
+            max = map(3)
         )
     }
 }

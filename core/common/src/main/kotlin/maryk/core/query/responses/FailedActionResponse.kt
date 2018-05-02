@@ -30,8 +30,8 @@ data class FailedActionResponse(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = FailedActionResponse(
-            message = map[0] as String,
-            failType = map[1] as FailType
+            message = map(0),
+            failType = map(1)
         )
     }
 }

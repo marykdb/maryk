@@ -24,7 +24,7 @@ data class InvalidValueException internal constructor(
     ) {
         override fun invoke(map: Map<Int, *>) = InvalidValueException(
             reference = map[0] as IsPropertyReference<*, *>,
-            value = map[1] as String
+            value = map(1)
         )
     }
 }

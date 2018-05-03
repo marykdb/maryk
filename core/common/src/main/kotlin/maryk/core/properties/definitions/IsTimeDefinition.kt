@@ -16,7 +16,7 @@ interface IsTimeDefinition<T : IsTime<T>> : IsMomentDefinition<T>, IsSerializabl
                 index,
                 "precision",
                 EnumDefinition(
-                    values = TimePrecision.values(),
+                    enum = TimePrecision,
                     default = TimePrecision.SECONDS
                 ),
                 getter

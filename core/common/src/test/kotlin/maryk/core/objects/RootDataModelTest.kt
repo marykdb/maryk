@@ -180,6 +180,7 @@ internal class RootDataModelTest {
         			"final": true,
         			"unique": false,
         			"default": 0,
+        			"name": "Option",
         			"values": {
         				"0": "V0",
         				"1": "V1",
@@ -425,6 +426,7 @@ internal class RootDataModelTest {
             final: true
             unique: false
             default: 0
+            name: Option
             values:
               0: V0
               1: V1
@@ -571,6 +573,7 @@ internal class RootDataModelTest {
         |  : !DateTime
         |  ? 5: options
         |  : !Enum
+        |    name: Option
         |    values:
         |      0: V0
         |      1: V1
@@ -649,7 +652,7 @@ internal class RootDataModelTest {
             }
             properties.getDefinition("options")!!.let {
                 it.index shouldBe 5
-                it.definition shouldBe EnumDefinition(values = Option.values())
+                it.definition shouldBe EnumDefinition(enum = Option)
             }
             properties.getDefinition("fixed")!!.let {
                 it.index shouldBe 6

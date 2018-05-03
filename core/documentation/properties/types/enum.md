@@ -21,18 +21,20 @@ Contains an enumaration value. Is limited to one of the values in an enum
 - `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
-- `values` - defines the values the enum can contain
+- `enum` - defines the enum can contain
 
 ## Examples
 
 **Example of a Kotlin Enum property definition**
 ```kotlin
 enum class Role(override val index: Int): IndexedEnum<Option> {
-    Admin(0), Moderator(1), User(2)
+    Admin(0), Moderator(1), User(2);
+    
+    companion object: IndexedEnumDefinition<Role>("Role", Role.values())
 }
 
 val def = EnumDefinition(
-    values = Role.values(),
+    enum = Role,
     required = true,
     final = true,
     unique = true,
@@ -45,6 +47,7 @@ val def = EnumDefinition(
 **Example of a YAML Enum property definition**
 ```yaml
 !Enum
+  name: Role
   values:
     0: Admin
     1: Moderator

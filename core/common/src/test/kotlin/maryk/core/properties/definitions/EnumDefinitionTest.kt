@@ -20,7 +20,7 @@ internal class EnumDefinitionTest {
     )
 
     val def = EnumDefinition(
-        values = Option.values()
+        enum = Option
     )
 
     val defMaxDefined = EnumDefinition(
@@ -31,7 +31,7 @@ internal class EnumDefinitionTest {
         unique = true,
         minValue = Option.V0,
         maxValue = Option.V2,
-        values = Option.values(),
+        enum = Option,
         default = Option.V1
     )
 

@@ -8,6 +8,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WireType
@@ -24,7 +25,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override val minValue: E? = null,
     override val maxValue: E? = null,
     override val default: E? = null,
-    val values: Array<E>
+    val enum: IndexedEnumDefinition<E>
 ) :
     IsComparableDefinition<E, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
@@ -36,11 +37,11 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override val byteSize = 2
 
     private val valueByString: Map<String, E> by lazy {
-        values.associate { Pair(it.name, it) }
+        enum.values.associate { Pair(it.name, it) }
     }
 
     private val valueByIndex: Map<Int, E> by lazy {
-        values.associate { Pair(it.index, it) }
+        enum.values.associate { Pair(it.index, it) }
     }
 
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
@@ -68,7 +69,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override fun fromString(string: String) =
         valueByString[string] ?: throw ParseException(string)
 
-    override fun fromNativeType(value: Any) = null
+    override fun fromNativeType(value: Any): E? = null
 
     /** Override equals to handle enum values comparison */
     override fun equals(other: Any?): Boolean {
@@ -83,7 +84,8 @@ class EnumDefinition<E : IndexedEnum<E>>(
         if (minValue != other.minValue && minValue?.index != other.minValue?.index) return false
         if (maxValue != other.maxValue && maxValue?.index != other.maxValue?.index) return false
         if (default != other.default && default?.index != other.default?.index) return false
-        if (!areEnumsEqual(values, other.values)) return false
+        if (enum.name != other.enum.name) return false
+        if (!areEnumsEqual(enum.values, other.enum.values)) return false
         if (wireType != other.wireType) return false
         if (byteSize != other.byteSize) return false
 
@@ -100,7 +102,8 @@ class EnumDefinition<E : IndexedEnum<E>>(
         result = 31 * result + (minValue?.index?.hashCode() ?: 0)
         result = 31 * result + (maxValue?.index?.hashCode() ?: 0)
         result = 31 * result + (default?.index?.hashCode() ?: 0)
-        result = 31 * result + enumsHashCode(values)
+        result = 31 * result + enum.name.hashCode()
+        result = 31 * result + enumsHashCode(enum.values)
         result = 31 * result + wireType.hashCode()
         result = 31 * result + byteSize
         return result
@@ -123,18 +126,22 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 add(7, "default", NumberDefinition(type = UInt32)) {
                     it.default?.index?.toUInt32()
                 }
-                add(8, "values", MapDefinition(
+                add(8, "name", StringDefinition()) { it.enum.name }
+                add(9, "values", MapDefinition(
                     keyDefinition = NumberDefinition(type = UInt32),
                     valueDefinition = StringDefinition()
-                )) { it.values.map { Pair(it.index.toUInt32(), it.name) }.toMap() }
+                )) { it.enum.values.map { Pair(it.index.toUInt32(), it.name) }.toMap() }
             }
         }
     ) {
 
         override fun invoke(map: Map<Int, *>): EnumDefinition<IndexedEnum<Any>> {
-            val valueMap = map<Map<UInt32, String>>(8).map {
+            val valueMap = map<Map<UInt32, String>>(9).map {
                 Pair(it.key, IndexedEnum(it.key.toInt(), it.value))
             }.toMap()
+
+            @Suppress("UNCHECKED_CAST")
+            val values = valueMap.values.toTypedArray() as Array<IndexedEnum<Any>>
 
             @Suppress("UNCHECKED_CAST")
             return EnumDefinition(
@@ -152,7 +159,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 default = map<UInt32?>(7)?.let{
                     valueMap[it] as IndexedEnum<Any>
                 },
-                values = valueMap.values.toTypedArray() as Array<IndexedEnum<Any>>
+                enum = IndexedEnumDefinition(map(8), values)
             )
         }
     }

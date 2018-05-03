@@ -5,7 +5,11 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.lib.time.Time
 
 enum class TimePrecision(override val index: Int): IndexedEnum<TimePrecision> {
-    SECONDS(0), MILLIS(1)
+    SECONDS(0), MILLIS(1);
+
+    companion object: IndexedEnumDefinition<TimePrecision>(
+        "TimePrecision", TimePrecision.values()
+    )
 }
 
 internal fun Time.writeBytes(precision: TimePrecision, writer: (byte: Byte) -> Unit) {

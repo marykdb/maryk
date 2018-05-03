@@ -20,3 +20,8 @@ interface IndexedEnum<in E>: Comparable<E>{
         }
     }
 }
+
+open class IndexedEnumDefinition<E>(
+    val name: String,
+    val values: Array<E>
+)

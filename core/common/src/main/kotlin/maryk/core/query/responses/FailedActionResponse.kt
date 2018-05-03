@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 
 /** Types of failures */
 enum class FailType(
@@ -13,7 +14,9 @@ enum class FailType(
     CONNECTION(0), // Problems with Connection at the server
     STORE_STATE(1), // Problems with the state of the store
     REQUEST(2), // Problems with the request content
-    AUTH(3) // Problems with the Authentication
+    AUTH(3); // Problems with the Authentication
+
+    companion object: IndexedEnumDefinition<FailType>("FailType", FailType.values())
 }
 
 /** Response with [message] and [failType] for failed actions. */
@@ -25,7 +28,7 @@ data class FailedActionResponse(
         properties = object : PropertyDefinitions<FailedActionResponse>() {
             init {
                 add(0, "message", StringDefinition(), FailedActionResponse::message)
-                add(1, "failType", EnumDefinition(values = FailType.values()), FailedActionResponse::failType)
+                add(1, "failType", EnumDefinition(enum = FailType), FailedActionResponse::failType)
             }
         }
     ) {

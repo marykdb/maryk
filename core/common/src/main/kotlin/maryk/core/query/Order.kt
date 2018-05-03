@@ -7,10 +7,13 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 
 /** Direction Enumeration */
 enum class Direction(override val index: Int) : IndexedEnum<Direction> {
-    ASC(0), DESC(1)
+    ASC(0), DESC(1);
+
+    companion object: IndexedEnumDefinition<Direction>("Direction", Direction.values())
 }
 
 /** Descending ordering of property */
@@ -36,7 +39,7 @@ data class Order internal constructor(
                 ), Order::propertyReference)
 
                 add(1, "direction", EnumDefinition(
-                    values = Direction.values()
+                    enum = Direction
                 ), Order::direction)
             }
         }

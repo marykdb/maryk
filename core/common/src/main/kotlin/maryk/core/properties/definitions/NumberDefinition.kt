@@ -80,7 +80,7 @@ data class NumberDefinition<T: Comparable<T>>(
                 IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
                 add(5, "type", ContextCaptureDefinition(
-                    definition = EnumDefinition(values = NumberType.values()),
+                    definition = EnumDefinition(enum = NumberType),
                     capturer = { context: NumericContext?, value ->
                         context?.apply {
                             @Suppress("UNCHECKED_CAST")

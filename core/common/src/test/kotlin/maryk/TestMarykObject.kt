@@ -19,6 +19,7 @@ import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -31,7 +32,9 @@ import maryk.lib.time.Time
 enum class Option(
     override val index: Int
 ): IndexedEnum<Option> {
-    V0(0), V1(1), V2(2)
+    V0(0), V1(1), V2(2);
+
+    companion object: IndexedEnumDefinition<Option>("Option", Option.values())
 }
 
 data class TestMarykObject(
@@ -103,7 +106,7 @@ data class TestMarykObject(
         val enum = add(
             index = 6, name = "enum",
             definition = EnumDefinition(
-                values = Option.values(),
+                enum = Option,
                 default = Option.V0,
                 final = true
             ),

@@ -20,19 +20,22 @@ data class VersionedChanges(
                     type = UInt64
                 ), VersionedChanges::version)
 
-                add(1, "changes", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfChangeDefinitions
-                    )
-                )) {
-                    it.changes.map { TypedValue(it.changeType, it) }
-                }
+                add(1, "changes",
+                    ListDefinition(
+                        valueDefinition = MultiTypeDefinition(
+                            definitionMap = mapOfChangeDefinitions
+                        )
+                    ),
+                    getter = VersionedChanges::changes,
+                    toSerializable = { TypedValue(it.changeType, it) },
+                    fromSerializable = { it.value as IsChange }
+                )
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = VersionedChanges(
             version = map(0),
-            changes = map<List<TypedValue<ChangeType, IsChange>>?>(1)?.map { it.value } ?: emptyList()
+            changes = map(1, emptyList())
         )
     }
 }

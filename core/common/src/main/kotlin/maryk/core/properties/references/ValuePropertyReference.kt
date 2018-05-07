@@ -12,7 +12,8 @@ import maryk.core.protobuf.WriteCacheWriter
  */
 open class ValuePropertyReference<
         T: Any,
-        out D : IsPropertyDefinitionWrapper<T, *, *>,
+        TO: Any,
+        out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
         out P: IsPropertyReference<*, *>
 > internal constructor(
         propertyDefinition: D,

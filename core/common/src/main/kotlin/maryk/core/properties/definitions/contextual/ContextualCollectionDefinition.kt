@@ -1,7 +1,5 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.json.IsJsonLikeReader
-import maryk.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -9,6 +7,8 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific property value definition based on context from [contextualResolver] */
 internal class ContextualCollectionDefinition<in CX: IsPropertyContext>(
@@ -28,9 +28,9 @@ internal class ContextualCollectionDefinition<in CX: IsPropertyContext>(
     override fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
         contextualResolver(context).readPackedCollectionTransportBytes(length, reader, context)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun newMutableCollection(context: CX?) =
         contextualResolver(context).newMutableCollection(context)

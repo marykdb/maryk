@@ -13,7 +13,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.DataModelPropertyContext
 
 /**
- * Creates a DataObjectChange which contains [changes] until [lastVersion] for a specific DataObject
+ * Creates a DataObjectChange which contains [change] until [lastVersion] for a specific DataObject
  */
 fun <DO:Any> Key<DO>.change(
     vararg change: IsChange,
@@ -37,13 +37,16 @@ data class DataObjectChange<out DO: Any> internal constructor(
                     }
                 ), DataObjectChange<*>::key)
 
-                add(1, "changes", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfChangeDefinitions
-                    )
-                )) {
-                    it.changes.map { TypedValue(it.changeType, it) }
-                }
+                add(1, "changes",
+                    ListDefinition(
+                        valueDefinition = MultiTypeDefinition(
+                            definitionMap = mapOfChangeDefinitions
+                        )
+                    ),
+                    getter = DataObjectChange<*>::changes,
+                    toSerializable = { TypedValue(it.changeType, it) },
+                    fromSerializable = { it.value as IsChange }
+                )
 
                 add(2, "lastVersion", NumberDefinition(
                     type = UInt64
@@ -53,7 +56,7 @@ data class DataObjectChange<out DO: Any> internal constructor(
     ) {
         override fun invoke(map: Map<Int, *>) = DataObjectChange(
             key = map(0),
-            changes = map<List<TypedValue<ChangeType, IsChange>>?>(1)?.map { it.value } ?: emptyList(),
+            changes = map(1, emptyList()),
             lastVersion = map(2)
         )
     }

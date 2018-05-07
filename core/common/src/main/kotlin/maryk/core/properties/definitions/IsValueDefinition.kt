@@ -60,9 +60,9 @@ interface IsValueDefinition<T: Any, in CX: IsPropertyContext> : IsSubDefinition<
     /** Writes value to bytes with [writer] and [context] for transportation */
     fun writeTransportBytes(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     /**
      * Get value from a [string]

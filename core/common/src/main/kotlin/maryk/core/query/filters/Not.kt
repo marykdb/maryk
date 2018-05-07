@@ -14,9 +14,12 @@ data class Not(
     internal companion object: QueryDataModel<Not>(
         properties = object : PropertyDefinitions<Not>() {
             init {
-                add(0, "filter", MultiTypeDefinition(
-                    definitionMap = mapOfFilterDefinitions
-                )) { not: Not -> TypedValue(not.filter.filterType, not.filter)}
+                add(0, "filter",
+                    MultiTypeDefinition(
+                        definitionMap = mapOfFilterDefinitions
+                    ),
+                    getter = { TypedValue(it.filter.filterType, it.filter) }
+                )
             }
         }
     ) {

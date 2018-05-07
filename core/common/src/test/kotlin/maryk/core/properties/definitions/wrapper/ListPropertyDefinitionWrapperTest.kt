@@ -13,7 +13,7 @@ class ListPropertyDefinitionWrapperTest {
         definition = ListDefinition(
             valueDefinition = StringDefinition()
         ),
-        getter = { _: Any -> null }
+        getter = { _: Any -> listOf<Nothing>() }
     )
 
     @Test

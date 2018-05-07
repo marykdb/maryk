@@ -30,9 +30,9 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 {
     val valueDefinition: ST
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?) {
         super<IsByteTransportableCollection>.validateWithRef(previousValue, newValue, refGetter)

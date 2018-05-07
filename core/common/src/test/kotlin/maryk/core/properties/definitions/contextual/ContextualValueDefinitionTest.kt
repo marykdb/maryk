@@ -32,7 +32,7 @@ class ContextualValueDefinitionTest {
             SubMarykObject.name to SubMarykObject
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>,
-        reference = TestMarykObject.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+        reference = TestMarykObject.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>
     )
 
     @Test

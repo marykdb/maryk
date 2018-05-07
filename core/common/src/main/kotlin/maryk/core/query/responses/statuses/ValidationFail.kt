@@ -5,7 +5,6 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationException
-import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.mapOfValidationExceptionDefinitions
 import maryk.core.properties.types.TypedValue
@@ -21,18 +20,21 @@ data class ValidationFail<DO: Any>(
     internal companion object: QueryDataModel<ValidationFail<*>>(
         properties = object : PropertyDefinitions<ValidationFail<*>>() {
             init {
-                add(0, "exceptions", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfValidationExceptionDefinitions
-                    )
-                )) {
-                    it.exceptions.map { TypedValue(it.validationExceptionType, it) }
-                }
+                add(0, "exceptions",
+                    ListDefinition(
+                        valueDefinition = MultiTypeDefinition(
+                            definitionMap = mapOfValidationExceptionDefinitions
+                        )
+                    ),
+                    getter = ValidationFail<*>::exceptions,
+                    toSerializable = { TypedValue(it.validationExceptionType, it) },
+                    fromSerializable = { it.value as ValidationException }
+                )
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = ValidationFail<Any>(
-            exceptions = map<List<TypedValue<ValidationExceptionType, ValidationException>>?>(0)?.map { it.value } ?: emptyList()
+            exceptions = map(0, emptyList())
         )
     }
 }

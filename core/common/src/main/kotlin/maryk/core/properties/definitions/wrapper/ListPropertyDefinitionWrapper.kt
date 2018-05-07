@@ -15,17 +15,27 @@ import maryk.core.properties.references.ListReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class ListPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: Any> internal constructor(
+data class ListPropertyDefinitionWrapper<T: Any, TO: Any, CX: IsPropertyContext, in DO: Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: ListDefinition<T, CX>,
-    override val getter: (DO) -> List<T>?
+    override val getter: (DO) -> List<TO>?,
+    override val toSerializable: (List<TO>?) -> List<T>? = {
+        @Suppress("UNCHECKED_CAST")
+        it as List<T>?
+    },
+    override val fromSerializable: (List<T>?) -> List<TO>? = {
+        @Suppress("UNCHECKED_CAST")
+        it as List<TO>?
+    }
 ) :
     IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> by definition,
-    IsPropertyDefinitionWrapper<List<T>, CX, DO>
+    IsPropertyDefinitionWrapper<List<T>, List<TO>, CX, DO>
 {
+
+    @Suppress("UNCHECKED_CAST")
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
-        ListReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
+        ListReference(this as ListPropertyDefinitionWrapper<T, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
     fun getItemRef(index: Int, parentRef: IsPropertyReference<*, *>? = null) =

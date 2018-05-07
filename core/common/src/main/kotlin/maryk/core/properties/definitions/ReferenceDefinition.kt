@@ -97,24 +97,25 @@ class ReferenceDefinition<DO: Any>(
                 add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
                 add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
                 add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
-                add(8, "dataModel", ContextCaptureDefinition(
-                    definition = ContextualModelReferenceDefinition<DataModelContext>(
-                        contextualResolver = { context, name ->
-                            context?.let {
-                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
-                            } ?: throw ContextNotFoundException()
+                add(8, "dataModel",
+                    ContextCaptureDefinition(
+                        definition = ContextualModelReferenceDefinition<DataModelContext>(
+                            contextualResolver = { context, name ->
+                                context?.let {
+                                    it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                } ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        capturer = { context, dataModel ->
+                            context?.apply {
+                                if (!this.dataModels.containsKey(dataModel.name)) {
+                                    this.dataModels[dataModel.name] = dataModel
+                                }
+                            } ?: ContextNotFoundException()
                         }
                     ),
-                    capturer = { context, dataModel ->
-                        context?.apply {
-                            if (!this.dataModels.containsKey(dataModel.name)) {
-                                this.dataModels[dataModel.name] = dataModel
-                            }
-                        } ?: ContextNotFoundException()
-                    }
-                )) {
-                    it.dataModel
-                }
+                    getter = ReferenceDefinition<*>::dataModel
+                )
             }
         }
     ) {

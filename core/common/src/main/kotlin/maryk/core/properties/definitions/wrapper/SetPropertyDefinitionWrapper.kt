@@ -22,8 +22,11 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
     override val getter: (DO) -> Set<T>?
 ) :
     IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,
-    IsPropertyDefinitionWrapper<Set<T>, CX, DO>
+    IsPropertyDefinitionWrapper<Set<T>, Set<T>, CX, DO>
 {
+    override val toSerializable: (Set<T>?) -> Set<T>? = { it }
+    override val fromSerializable: (Set<T>?) -> Set<T>? = { it }
+
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 

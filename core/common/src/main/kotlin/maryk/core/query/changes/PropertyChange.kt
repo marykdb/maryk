@@ -14,7 +14,7 @@ import maryk.core.query.DataModelPropertyContext
  * Change value to [newValue] for property of type [T]
  * Optionally compares against [valueToCompare] and will only change value if values match
  */
-fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.change(
+fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.change(
     newValue: T,
     valueToCompare: T? = null
 ) = PropertyChange(this, newValue, valueToCompare)
@@ -24,7 +24,7 @@ fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropert
  * Optionally compares against [valueToCompare] and will only change value if values match
  */
 data class PropertyChange<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     val newValue: T,
     override val valueToCompare: T? = null
 ) : IsPropertyOperation<T> {

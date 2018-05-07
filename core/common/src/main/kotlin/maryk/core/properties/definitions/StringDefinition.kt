@@ -5,8 +5,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WireType
 import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.bytes.initString
@@ -88,8 +86,8 @@ data class StringDefinition(
                 add(5, "minValue", StringDefinition(), StringDefinition::minValue)
                 add(6, "maxValue", StringDefinition(), StringDefinition::maxValue)
                 add(7, "default", StringDefinition(), StringDefinition::default)
-                HasSizeDefinition.addMinSize(8, this) { it.minSize?.toUInt32() }
-                HasSizeDefinition.addMaxSize(9, this) { it.maxSize?.toUInt32() }
+                HasSizeDefinition.addMinSize(8, this, StringDefinition::minSize)
+                HasSizeDefinition.addMaxSize(9, this, StringDefinition::maxSize)
                 add(10, "regEx", StringDefinition(), StringDefinition::regEx)
             }
         }
@@ -103,8 +101,8 @@ data class StringDefinition(
             minValue = map(5),
             maxValue = map(6),
             default = map(7),
-            minSize = map<UInt32?>(8)?.toInt(),
-            maxSize = map<UInt32?>(9)?.toInt(),
+            minSize = map(8),
+            maxSize = map(9),
             regEx = map(10)
         )
     }

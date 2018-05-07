@@ -11,7 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
  * Delete of a property of type [T]
  * Optionally compares against [valueToCompare] and will only delete if matches
  */
-fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.delete(
+fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.delete(
     valueToCompare: T? = null
 ) = PropertyDelete(this, valueToCompare)
 

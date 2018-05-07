@@ -29,7 +29,7 @@ interface IsPropertyOperation<T: Any> : IsChange {
                 ) { context, value ->
                     context?.apply {
                         @Suppress("UNCHECKED_CAST")
-                        reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                        reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<* ,*, *, *, *>>
                     } ?: throw ContextNotFoundException()
                 },
                 getter

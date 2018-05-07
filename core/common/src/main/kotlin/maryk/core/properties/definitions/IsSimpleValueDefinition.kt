@@ -67,7 +67,7 @@ interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDef
                     is String -> this.fromString(jsonValue, context)
                     else -> {
                         this.fromNativeType(jsonValue)
-                                ?: throw ParseException("Unknown type for value ${jsonValue}")
+                                ?: throw ParseException("Unknown type for value $jsonValue")
                     }
                 }
             }

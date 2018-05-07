@@ -49,9 +49,9 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
 
     override fun fromString(string: String) = this.dataModel.fromString(string)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.properties.getDefinition(name)
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(name)
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.properties.getDefinition(index)
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
@@ -84,30 +84,37 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *>::final)
                 IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *>::unique)
-                add(5, "minValue", FlexBytesDefinition()) {
-                    it.minValue?._bytes?.let { Bytes(it) }
-                }
-                add(6, "maxValue", FlexBytesDefinition()) {
-                    it.maxValue?._bytes?.let { Bytes(it) }
-                }
-                add(7, "dataModel", ContextCaptureDefinition(
-                    definition = ContextualModelReferenceDefinition<DataModelContext>(
-                        contextualResolver = { context, name ->
+                add(5, "minValue",
+                    FlexBytesDefinition(),
+                    ValueModelDefinition<*, *>::minValue,
+                    { it?._bytes?.let { Bytes(it) } },
+                    { it?.let { ValueDataObject(it.bytes) } }
+                )
+                add(6, "maxValue",
+                    FlexBytesDefinition(),
+                    ValueModelDefinition<*, *>::maxValue,
+                    { it?._bytes?.let { Bytes(it) } },
+                    { it?.let { ValueDataObject(it.bytes) } }
+                )
+                add(7, "dataModel",
+                    ContextCaptureDefinition(
+                        definition = ContextualModelReferenceDefinition<DataModelContext>(
+                            contextualResolver = { context, name ->
+                                context?.let {
+                                    it.dataModels[name] ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
+                                } ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        capturer = { context, dataModel ->
                             context?.let {
-                                it.dataModels[name] ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
+                                if (!it.dataModels.containsKey(dataModel.name)) {
+                                    it.dataModels[dataModel.name] = dataModel
+                                }
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    capturer = { context, dataModel ->
-                        context?.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel
-                            }
-                        } ?: throw ContextNotFoundException()
-                    }
-                )) {
-                    it.dataModel
-                }
+                    ValueModelDefinition<*, *>::dataModel
+                )
             }
         }
     ) {
@@ -117,8 +124,8 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
             required = map(2, true),
             final = map(3, false),
             unique = map(4, false),
-            minValue = map<Bytes?>(5)?.let { ValueDataObject(it.bytes) },
-            maxValue = map<Bytes?>(6)?.let { ValueDataObject(it.bytes) },
+            minValue = map(5),
+            maxValue = map(6),
             dataModel = map(7)
         )
     }

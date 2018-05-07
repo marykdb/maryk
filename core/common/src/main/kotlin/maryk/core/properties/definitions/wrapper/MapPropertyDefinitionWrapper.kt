@@ -22,8 +22,11 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, i
     override val getter: (DO) -> Map<K, V>?
 ) :
     IsMapDefinition<K, V, CX> by definition,
-    IsPropertyDefinitionWrapper<Map<K,V>, CX, DO>
+    IsPropertyDefinitionWrapper<Map<K,V>, Map<K,V>, CX, DO>
 {
+    override val toSerializable: (Map<K,V>?) -> Map<K,V>? = { it }
+    override val fromSerializable: (Map<K,V>?) -> Map<K,V>? = { it }
+
     override fun getRef(parentRef: IsPropertyReference<*, *>?): MapReference<K, V, CX> =
         MapReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 

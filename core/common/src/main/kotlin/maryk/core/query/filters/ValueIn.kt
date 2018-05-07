@@ -12,13 +12,13 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
 /** Checks if reference exists in set with [values] of type [T] */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.valueIsIn(
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.valueIsIn(
     values: Set<T>
 ) = ValueIn(this, values)
 
 /** Checks if [reference] exists in set with [values] of type [T] */
 data class ValueIn<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     val values: Set<T>
 ) : IsPropertyCheck<T> {
     override val filterType = FilterType.ValueIn

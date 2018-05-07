@@ -32,11 +32,17 @@ import maryk.yaml.YamlWriter
  * Wraps a Property Definition of type [T] to give it more context [CX] about
  * DataObject [DO] which contains this Definition.
  */
-interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : IsSerializablePropertyDefinition<T, CX> {
+interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, in DO> : IsSerializablePropertyDefinition<T, CX> {
     val index: Int
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
-    val getter: (DO) -> T?
+    val getter: (DO) -> TO?
+    val toSerializable: (TO?) -> T?
+    val fromSerializable: (T?) -> TO?
+
+    fun getPropertyAndSerialize(dataObject: DO): T? {
+        return this.toSerializable(this.getter(dataObject))
+    }
 
     /** Get a reference to this definition inside [parentRef] */
     fun getRef(parentRef: IsPropertyReference<*, *>? = null): IsPropertyReference<T, *>
@@ -64,38 +70,39 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
 
     companion object {
         private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) =
-            definitions.add(0, "index", NumberDefinition(type = UInt32)) {
-                getter(it).toUInt32()
-            }
+            definitions.add(0, "index", NumberDefinition(type = UInt32), getter, { it?.toUInt32() }, { it?.toInt() })
 
         private fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) =
             definitions.add(1, "name", StringDefinition(), getter)
 
         private fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) =
-            definitions.add(2, "definition", MultiTypeDefinition(
-                definitionMap = mapOfPropertyDefSubModelDefinitions
-            )) {
-                val def = getter(it) as IsTransportablePropertyDefinitionType<*>
-                TypedValue(def.propertyDefinitionType, def)
-            }
+            definitions.add(2, "definition",
+                MultiTypeDefinition(
+                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                ),
+                getter = {
+                    val def = getter(it) as IsTransportablePropertyDefinitionType<*>
+                    TypedValue(def.propertyDefinitionType, def)
+                }
+            )
     }
 
-    private object Properties: PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>>() {
-        val index = IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *>::index)
-        val name = IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *>::name)
-        val definition = IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *>::definition)
+    private object Properties: PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
+        val index = IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *, *>::index)
+        val name = IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *, *>::name)
+        val definition = IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *, *>::definition)
     }
 
-    object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>>>(
+    object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>): IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any> {
+        override fun invoke(map: Map<Int, *>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
                 map<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(2)
             val type = typedDefinition.type
 
             return mapOfPropertyDefWrappers[type]?.invoke(
-                map<UInt32>(0).toInt(),
+                map(0),
                 map(1),
                 typedDefinition.value,
                 { _: Any -> null }
@@ -103,13 +110,13 @@ interface IsPropertyDefinitionWrapper<T: Any, in CX:IsPropertyContext, in DO> : 
         }
 
         override fun writeJson(
-            obj: IsPropertyDefinitionWrapper<out Any, IsPropertyContext, Any>,
+            obj: IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>,
             writer: IsJsonLikeWriter,
             context: IsPropertyContext?
         ) {
             // When writing YAML, use YAML optimized format with complex field names
             if (writer is YamlWriter) {
-                val typedDefinition = Properties.definition.getter(obj)
+                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index)

@@ -52,9 +52,9 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.properties.getDefinition(name)
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(name)
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = dataModel.properties.getDefinition(index)
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         super<IsValueDefinition>.validateWithRef(previousValue, newValue, refGetter)
@@ -133,24 +133,27 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                 IsPropertyDefinition.addSearchable(this, SubModelDefinition<*, *, *, *, *>::searchable)
                 IsPropertyDefinition.addRequired(this, SubModelDefinition<*, *, *, *, *>::required)
                 IsPropertyDefinition.addFinal(this, SubModelDefinition<*, *, *, *, *>::final)
-                add(4, "dataModel", ContextCaptureDefinition(
-                    definition = ContextualModelReferenceDefinition<DataModelContext>(
-                        contextualResolver = { context, name ->
-                            context?.let{
-                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                add(4, "dataModel",
+                    ContextCaptureDefinition(
+                        definition = ContextualModelReferenceDefinition<DataModelContext>(
+                            contextualResolver = { context, name ->
+                                context?.let{
+                                    it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                } ?: throw ContextNotFoundException()
+                            }
+                        ),
+                        capturer = { context, dataModel ->
+                            context?.let {
+                                if (!it.dataModels.containsKey(dataModel.name)) {
+                                    it.dataModels[dataModel.name] = dataModel
+                                }
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    capturer = { context, dataModel ->
-                        context?.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel
-                            }
-                        } ?: throw ContextNotFoundException()
+                    getter = {
+                        it.dataModel as DataModel<*, *>
                     }
-                )) {
-                    it.dataModel as DataModel<*, *>
-                }
+                )
             }
         }
     ) {

@@ -42,23 +42,26 @@ private data class MultiTypeDescriptor(
     val definition: IsSubDefinition<out Any, IsPropertyContext>
 ) {
     private object Properties: PropertyDefinitions<MultiTypeDescriptor>() {
-        val index = add(0, "index", NumberDefinition(type = UInt32)) { it.index.toUInt32() }
-        val name = add(1, "name", StringDefinition()) { it.name }
+        val index = add(0, "index", NumberDefinition(type = UInt32), MultiTypeDescriptor::index, { it?.toUInt32() }, { it?.toInt() })
+        val name = add(1, "name", StringDefinition(), MultiTypeDescriptor::name)
 
-        val definition = add(2, "definition",  MultiTypeDefinition(
-            definitionMap = mapOfPropertyDefSubModelDefinitions
+        val definition = add(
+            2, "definition",
+            MultiTypeDefinition(
+                definitionMap = mapOfPropertyDefSubModelDefinitions
+            ),
+            getter = {
+                val defType = it.definition as IsTransportablePropertyDefinitionType<*>
+                TypedValue(defType.propertyDefinitionType, defType)
+            }
         )
-        ) {
-            val defType = it.definition as IsTransportablePropertyDefinitionType<*>
-            TypedValue(defType.propertyDefinitionType, defType)
-        }
     }
 
     internal object Model : SimpleDataModel<MultiTypeDescriptor, PropertyDefinitions<MultiTypeDescriptor>>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = MultiTypeDescriptor(
-            index = map<UInt32>(0).toInt(),
+            index = map(0),
             name = map(1),
             definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(2).value
         )
@@ -79,7 +82,7 @@ private data class MultiTypeDescriptor(
         override fun writeJson(obj: MultiTypeDescriptor, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             // When writing YAML, use YAML optimized format with complex field names
             if (writer is YamlWriter) {
-                val typedDefinition = Properties.definition.getter(obj)
+                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index)
@@ -169,8 +172,10 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val getter: (MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>) -> List<MultiTypeDescriptor>?
 ) :
     IsCollectionDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, IsPropertyContext, IsValueDefinition<MultiTypeDescriptor, IsPropertyContext>> by definition,
-    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, IsPropertyContext, MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>
+    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, IsPropertyContext, MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>
 {
+    override val toSerializable: (List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>? = { it }
+    override val fromSerializable: (List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>? = { it }
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         ValuePropertyReference(this, parentRef)
 }
@@ -197,7 +202,7 @@ internal fun PropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropert
         }.toList()
     }.apply {
         @Suppress("UNCHECKED_CAST")
-        addSingle(this as IsPropertyDefinitionWrapper<out Any, *, MultiTypeDefinition<*, *>>)
+        addSingle(this as IsPropertyDefinitionWrapper<out Any, *, *, MultiTypeDefinition<*, *>>)
     }
 }
 

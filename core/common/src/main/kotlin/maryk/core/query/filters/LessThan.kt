@@ -7,13 +7,13 @@ import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrappe
 import maryk.core.properties.references.IsPropertyReference
 
 /** Referenced value should be less than and not equalgiven [value] of type [T] */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.lessThan(
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.lessThan(
     value: T
 ) = LessThan(this, value)
 
 /** Referenced value [reference] should be less than and not equal given [value] of type [T] */
 data class LessThan<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     override val value: T
 ) : IsPropertyComparison<T> {
     override val filterType = FilterType.LessThan

@@ -6,8 +6,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 
 /** Definition for Set property */
 data class SetDefinition<T: Any, CX: IsPropertyContext>(
@@ -51,14 +49,17 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                 IsPropertyDefinition.addSearchable(this, SetDefinition<*, *>::searchable)
                 IsPropertyDefinition.addRequired(this, SetDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, SetDefinition<*, *>::final)
-                HasSizeDefinition.addMinSize(4, this) { it.minSize?.toUInt32() }
-                HasSizeDefinition.addMaxSize(5, this) { it.maxSize?.toUInt32() }
-                add(6, "valueDefinition", MultiTypeDefinition(
-                    definitionMap = mapOfPropertyDefSubModelDefinitions
-                )) {
-                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
-                    TypedValue(defType.propertyDefinitionType, it.valueDefinition)
-                }
+                HasSizeDefinition.addMinSize(4, this, SetDefinition<*, *>::minSize)
+                HasSizeDefinition.addMaxSize(5, this, SetDefinition<*, *>::maxSize)
+                add(6, "valueDefinition",
+                    MultiTypeDefinition(
+                        definitionMap = mapOfPropertyDefSubModelDefinitions
+                    ),
+                    getter = {
+                        val defType = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, it.valueDefinition)
+                    }
+                )
             }
         }
     ) {
@@ -67,8 +68,8 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
             searchable = map(1, true),
             required = map(2, true),
             final = map(3, false),
-            minSize = map<UInt32?>(4)?.toInt(),
-            maxSize = map<UInt32?>(5)?.toInt(),
+            minSize = map(4),
+            maxSize = map(5),
             valueDefinition = map<TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>>(6).value
         )
     }

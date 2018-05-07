@@ -54,7 +54,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
      * Optionally pass an already resolved [parent]
      */
-    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *>> ref(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, propertyDefinitionGetter: P.()-> W): IsPropertyReference<T, W> {
+    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, propertyDefinitionGetter: P.()-> W): IsPropertyReference<T, W> {
         @Suppress("UNCHECKED_CAST")
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
     }
@@ -64,7 +64,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             for (it in this.properties) {
                 try {
                     it.validate(
-                        newValue = it.getter(dataObject),
+                        newValue = it.getPropertyAndSerialize(dataObject),
                         parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
@@ -97,7 +97,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (def in this.properties) {
-            val value = def.getter(obj) ?: continue
+            val value = def.getPropertyAndSerialize(obj) ?: continue
             writeJsonValue(def, writer, value, context)
         }
         writer.writeEndObject()
@@ -117,7 +117,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     }
 
     internal fun writeJsonValue(
-        def: IsPropertyDefinitionWrapper<Any, IsPropertyContext, DO>,
+        def: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         writer: IsJsonLikeWriter,
         value: Any,
         context: CX?
@@ -208,7 +208,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (def in this.properties) {
-            val value = def.getter(dataObject) ?: continue
+            val value = def.getPropertyAndSerialize(dataObject) ?: continue
             totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
         }
         return totalByteLength
@@ -233,7 +233,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (def in this.properties) {
-            val value = def.getter(dataObject) ?: continue
+            val value = def.getPropertyAndSerialize(dataObject) ?: continue
             def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
         }
     }
@@ -346,15 +346,46 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     protected inline operator fun <reified T> Map<Int, *>.invoke(index: Int, default: T? = null): T {
         val value = this[index]
-        return if (value is T) {
-            value
-        } else if (value == null && default != null) {
+
+        if (value == null && default != null) {
             return default
-        } else {
-            val name = this@AbstractDataModel.properties.getDefinition(index)!!.name
-            val definition = this@AbstractDataModel.properties.getDefinition(index)!!.definition as IsTransportablePropertyDefinitionType<*>
-            throw ParseException("Property '$name' with value '$value' should be of type ${definition.propertyDefinitionType.name}")
         }
+
+        val valueDef = this@AbstractDataModel.properties.getDefinition(index)
+        val transformedValue = valueDef!!.fromSerializable(value)
+
+        return if (transformedValue is T) {
+            transformedValue
+        } else if (value != null && transformedValue == null) {
+            value as T
+        } else {
+            throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
+        }
+    }
+
+    /**
+     * Utility method to check and map a value to a constructor property
+     */
+    protected inline fun <reified T, reified TI> Map<Int, *>.transform(index: Int, transform: (TI) -> T, default: T? = null): T {
+        val value: Any? = this[index]
+
+        if (value !is TI?) {
+            val valueDef = this@AbstractDataModel.properties.getDefinition(index)!!
+            throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
+        }
+
+        if (value == null) {
+            return if (default != null) {
+                default
+            } else if (value !is TI) {
+                val valueDef = this@AbstractDataModel.properties.getDefinition(index)!!
+                throw ParseException("Property '${valueDef.name}' with value '$value' cannot be null")
+            } else {
+                value
+            }
+        }
+
+        return transform(value as TI)
     }
 
     internal companion object {

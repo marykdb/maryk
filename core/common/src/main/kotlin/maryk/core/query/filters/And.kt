@@ -17,16 +17,21 @@ data class And(
     internal companion object: QueryDataModel<And>(
         properties = object : PropertyDefinitions<And>() {
             init {
-                add(0, "filters", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfFilterDefinitions
-                    )
-                )) { it.filters.map { TypedValue(it.filterType, it) } }
+                add(0, "filters",
+                    ListDefinition(
+                        valueDefinition = MultiTypeDefinition(
+                            definitionMap = mapOfFilterDefinitions
+                        )
+                    ),
+                    getter = And::filters,
+                    toSerializable = { TypedValue(it.filterType, it) },
+                    fromSerializable = { it.value as IsFilter }
+                )
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = And(
-            filters = map<List<TypedValue<FilterType, IsFilter>>>(0).map { it.value }
+            filters = map<List<IsFilter>>(0)
         )
     }
 }

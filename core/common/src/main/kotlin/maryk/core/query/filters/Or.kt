@@ -17,18 +17,21 @@ data class Or(
     internal companion object: QueryDataModel<Or>(
         properties = object : PropertyDefinitions<Or>() {
             init {
-                add(0, "filters", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfFilterDefinitions
-                    )
-                )) {
-                    it.filters.map { TypedValue(it.filterType, it) }
-                }
+                add(0, "filters",
+                    ListDefinition(
+                        valueDefinition = MultiTypeDefinition(
+                            definitionMap = mapOfFilterDefinitions
+                        )
+                    ),
+                    getter = Or::filters,
+                    toSerializable = { TypedValue(it.filterType, it) },
+                    fromSerializable = { it.value as IsFilter }
+                )
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = Or(
-            filters = map<List<TypedValue<FilterType, IsFilter>>>(0).map { it.value }
+            filters = map<List<IsFilter>>(0)
         )
     }
 }

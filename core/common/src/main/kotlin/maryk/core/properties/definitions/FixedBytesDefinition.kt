@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Bytes
-import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType
 import maryk.lib.extensions.randomBytes
 
@@ -73,7 +72,7 @@ data class FixedBytesDefinition(
             maxValue = map(6),
             default = map(7),
             random = map(8, false),
-            byteSize = map<UInt32>(9).toInt()
+            byteSize = map(9)
         )
     }
 }

@@ -26,10 +26,10 @@ interface IsPropertyDefinition<T: Any> {
     }
 
     /** To get embedded properties by [name] */
-    fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>?
+    fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>?
 
     /** To get embedded properties by [index] */
-    fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>?
+    fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>?
 
     companion object {
         internal fun <DO:Any> addIndexed(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {

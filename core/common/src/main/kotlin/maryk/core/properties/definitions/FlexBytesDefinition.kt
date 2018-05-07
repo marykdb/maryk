@@ -5,8 +5,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
-import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WireType
 
 /** Definition for a bytes array with fixed length */
@@ -69,8 +67,8 @@ data class FlexBytesDefinition(
                 add(5, "minValue", FlexBytesDefinition(), FlexBytesDefinition::minValue)
                 add(6, "maxValue", FlexBytesDefinition(), FlexBytesDefinition::maxValue)
                 add(7, "default", FlexBytesDefinition(), FlexBytesDefinition::default)
-                HasSizeDefinition.addMinSize(8, this) { it.minSize?.toUInt32() }
-                HasSizeDefinition.addMaxSize(9, this) { it.maxSize?.toUInt32() }
+                HasSizeDefinition.addMinSize(8, this, FlexBytesDefinition::minSize)
+                HasSizeDefinition.addMaxSize(9, this, FlexBytesDefinition::maxSize)
             }
         }
     ) {
@@ -83,8 +81,8 @@ data class FlexBytesDefinition(
             minValue = map(5),
             maxValue = map(6),
             default = map(7),
-            minSize = map<UInt32?>(8)?.toInt(),
-            maxSize = map<UInt32?>(9)?.toInt()
+            minSize = map(8),
+            maxSize = map(9)
         )
     }
 }

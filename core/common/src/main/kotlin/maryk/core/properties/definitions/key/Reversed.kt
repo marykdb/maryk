@@ -15,14 +15,14 @@ import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
-    val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *>, *>
+    val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>, *>
 ) : FixedBytesProperty<T>() {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
     override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO) = this.reference.propertyDefinition.getValue(dataModel, dataObject)
 
     /** Convenience constructor to pass [definition] */
-    constructor(definition: FixedBytesPropertyDefinitionWrapper<T, *, *, *>) : this(definition.getRef())
+    constructor(definition: FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>) : this(definition.getRef())
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
         this.reference.propertyDefinition.writeStorageBytes(value, {
@@ -36,15 +36,18 @@ data class Reversed<T: Any>(
         })
     }
 
-    @Suppress("UNCHECKED_CAST")
     internal object Model : DefinitionDataModel<Reversed<out Any>>(
         properties = object : PropertyDefinitions<Reversed<out Any>>() {
             init {
-                add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
-                    contextualResolver = { it?.propertyDefinitions ?: throw ContextNotFoundException() }
-                )) {
-                    it.reference as IsPropertyReference<Any, *>
-                }
+                add(0, "multiTypeDefinition",
+                    ContextualPropertyReferenceDefinition<DataModelContext>(
+                        contextualResolver = { it?.propertyDefinitions ?: throw ContextNotFoundException() }
+                    ),
+                    getter = {
+                        @Suppress("UNCHECKED_CAST")
+                        it.reference as IsPropertyReference<Any, *>
+                    }
+                )
             }
         }
     ) {

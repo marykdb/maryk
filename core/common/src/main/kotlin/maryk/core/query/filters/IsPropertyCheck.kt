@@ -5,14 +5,14 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
 /** Check of property of type [T] */
 interface IsPropertyCheck<T: Any> : IsFilter {
-    val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>
+    val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>
 
     companion object {
         internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
@@ -27,7 +27,7 @@ interface IsPropertyCheck<T: Any> : IsFilter {
                 ) { context, value ->
                     context?.apply {
                         @Suppress("UNCHECKED_CAST")
-                        reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *>>
+                        reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>
                     } ?: ContextNotFoundException()
                 },
                 getter = getter

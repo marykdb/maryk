@@ -8,13 +8,13 @@ import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrappe
 import maryk.core.properties.references.IsPropertyReference
 
 /** Compares given regular expression [regEx] against referenced property */
-infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>.matchesRegEx(
+infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *, IsPropertyContext, *>>.matchesRegEx(
     regEx: String
 ) = RegEx(this, regEx)
 
 /** Compares given regular expression [regEx] against referenced property [reference] */
 data class RegEx(
-    override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *, IsPropertyContext, *>>,
     val regEx: String
 ) : IsPropertyCheck<String> {
     override val filterType = FilterType.RegEx

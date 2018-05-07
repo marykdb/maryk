@@ -10,14 +10,22 @@ import maryk.core.properties.references.ValuePropertyReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class PropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DO: Any> internal constructor(
+data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DO: Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: D,
-    override val getter: (DO) -> T?
+    override val getter: (DO) -> TO?,
+    override val toSerializable: (TO?) -> T? = {
+        @Suppress("UNCHECKED_CAST")
+        it as T?
+    },
+    override val fromSerializable: (T?) -> TO? = {
+        @Suppress("UNCHECKED_CAST")
+        it as TO?
+    }
 ) :
     IsSerializableFlexBytesEncodable<T, CX> by definition,
-    IsValuePropertyDefinitionWrapper<T, CX, DO>
+    IsValuePropertyDefinitionWrapper<T, TO, CX, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         ValuePropertyReference(this, parentRef)

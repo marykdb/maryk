@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *, *>, original: IsPropertyDefinitionWrapper<*, *, *>) {
+fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *, *, *>, original: IsPropertyDefinitionWrapper<*, *, *, *>) {
     converted.index shouldBe original.index
     converted.name shouldBe original.name
     converted.definition shouldBe original.definition

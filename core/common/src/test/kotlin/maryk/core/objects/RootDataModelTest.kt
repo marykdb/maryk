@@ -726,8 +726,8 @@ internal class RootDataModelTest {
 
         converted.key.keyDefinitions.zip(original.key.keyDefinitions).forEach { (converted, original) ->
             when(converted) {
-                is IsPropertyDefinitionWrapper<*, *, *> -> {
-                    comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *>)
+                is IsPropertyDefinitionWrapper<*, *, *, *> -> {
+                    comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *, *>)
                 }
                 else -> converted shouldBe original
             }

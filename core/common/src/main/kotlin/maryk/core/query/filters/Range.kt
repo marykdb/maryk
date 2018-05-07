@@ -12,12 +12,12 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
 /** Checks if reference is within given [range] */
-infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.inRange(
+infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.inRange(
     range: ClosedRange<T>
 ) = Range(this, range.start, range.endInclusive, true, true)
 
 /** Checks if reference is within given [range] */
-fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.inRange(
+fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.inRange(
     from: T,
     to: T,
     inclusiveFrom: Boolean,
@@ -29,7 +29,7 @@ fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsProper
  * With [inclusiveFrom] and [inclusiveTo] set to true (default) it will search the range including [from] or [to]
  */
 data class Range<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     val from: T,
     val to: T,
     val inclusiveFrom: Boolean = true,

@@ -79,35 +79,47 @@ data class NumberDefinition<T: Comparable<T>>(
                 IsPropertyDefinition.addRequired(this, NumberDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
-                add(5, "type", ContextCaptureDefinition(
-                    definition = EnumDefinition(enum = NumberType),
-                    capturer = { context: NumericContext?, value ->
-                        context?.apply {
-                            @Suppress("UNCHECKED_CAST")
-                            numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
-                        } ?: throw ContextNotFoundException()
+                add(5, "type",
+                    ContextCaptureDefinition(
+                        definition = EnumDefinition(enum = NumberType),
+                        capturer = { context: NumericContext?, value ->
+                            context?.apply {
+                                @Suppress("UNCHECKED_CAST")
+                                numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
+                            } ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    getter = {
+                        it.type.type
                     }
-                )) {
-                    it.type.type
-                }
-                add(6, "minValue", ContextualNumberDefinition<NumericContext>(required = false) {
-                    it?.numberType ?: throw ContextNotFoundException()
-                }) {
-                    @Suppress("UNCHECKED_CAST")
-                    it.minValue as Comparable<Any>?
-                }
-                add(7, "maxValue", ContextualNumberDefinition<NumericContext>(required = false) {
-                    it?.numberType ?: throw ContextNotFoundException()
-                }) {
-                    @Suppress("UNCHECKED_CAST")
-                    it.maxValue as Comparable<Any>?
-                }
-                add(8, "default", ContextualNumberDefinition<NumericContext>(required = false) {
-                    it?.numberType ?: throw ContextNotFoundException()
-                }) {
-                    @Suppress("UNCHECKED_CAST")
-                    it.default as Comparable<Any>?
-                }
+                )
+                add(6, "minValue",
+                    ContextualNumberDefinition<NumericContext>(required = false) {
+                        it?.numberType ?: throw ContextNotFoundException()
+                    },
+                    getter = {
+                        @Suppress("UNCHECKED_CAST")
+                        it.minValue as Comparable<Any>?
+                    }
+                )
+                add(7, "maxValue",
+                    ContextualNumberDefinition<NumericContext>(required = false) {
+                        it?.numberType ?: throw ContextNotFoundException()
+                    },
+                    getter = {
+                        @Suppress("UNCHECKED_CAST")
+                        it.maxValue as Comparable<Any>?
+                    }
+                )
+                add(8, "default",
+                    ContextualNumberDefinition<NumericContext>(required = false) {
+                        it?.numberType ?: throw ContextNotFoundException()
+                    },
+                    getter = {
+                        @Suppress("UNCHECKED_CAST")
+                        it.default as Comparable<Any>?
+                    }
+                )
                 IsNumericDefinition.addRandom(9,this, NumberDefinition<*>::random)
             }
         }

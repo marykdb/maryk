@@ -1,13 +1,13 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.json.IsJsonLikeReader
-import maryk.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific map property value definition based on context from [contextualResolver] */
 internal class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
@@ -18,9 +18,9 @@ internal class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>
     override val searchable = false
     override val final = true
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?) =
         contextualResolver(context).writeJsonValue(value, writer, context)

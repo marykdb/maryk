@@ -40,7 +40,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
                             it?.dataModel?.key ?: throw ContextNotFoundException()
                         }
                     )
-                ),DeleteRequest<*, *>::objectsToDelete)
+                ), DeleteRequest<*, *>::objectsToDelete)
 
                 add(2, "hardDelete", BooleanDefinition(), DeleteRequest<*,*>::hardDelete)
             }

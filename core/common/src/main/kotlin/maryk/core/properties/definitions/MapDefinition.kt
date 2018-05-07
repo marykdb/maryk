@@ -14,8 +14,6 @@ import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -49,9 +47,9 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         require(valueDefinition.required, { "Definition for value should be required on map" })
     }
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *>? = null
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     /** Get a reference to a specific map [key] on [parentMap] */
     fun getKeyRef(key: K, parentMap: MapReference<K, V, CX>?) =
@@ -113,7 +111,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         }
         val map: MutableMap<K, V> = mutableMapOf()
 
-        while (reader.nextToken() !is JsonToken.EndObject) {
+        while (reader.nextToken() !== JsonToken.EndObject) {
             reader.currentToken.apply {
                 if (this is JsonToken.FieldName) {
                     val key = this.value?.let {
@@ -184,20 +182,30 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                 IsPropertyDefinition.addSearchable(this, MapDefinition<*, *, *>::searchable)
                 IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
                 IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
-                HasSizeDefinition.addMinSize(4, this) { it.minSize?.toUInt32() }
-                HasSizeDefinition.addMaxSize(5, this) { it.maxSize?.toUInt32() }
-                add(6, "keyDefinition", MultiTypeDefinition(
-                    definitionMap = mapOfPropertyDefSubModelDefinitions
-                )) {
-                    val defType = it.keyDefinition as IsTransportablePropertyDefinitionType<*>
-                    TypedValue(defType.propertyDefinitionType, it.keyDefinition)
-                }
-                add(7, "valueDefinition", MultiTypeDefinition(
-                    definitionMap = mapOfPropertyDefSubModelDefinitions
-                )) {
-                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
-                    TypedValue(defType.propertyDefinitionType, it.valueDefinition)
-                }
+                HasSizeDefinition.addMinSize(4, this, MapDefinition<*, *, *>::minSize)
+                HasSizeDefinition.addMaxSize(5, this, MapDefinition<*, *, *>::maxSize)
+                add(6, "keyDefinition",
+                    MultiTypeDefinition(definitionMap = mapOfPropertyDefSubModelDefinitions),
+                    getter = MapDefinition<*, *, *>::keyDefinition,
+                    toSerializable = {
+                        val defType = it!! as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, it)
+                    },
+                    fromSerializable = {
+                        it?.value as IsSimpleValueDefinition<*, *>?
+                    }
+                )
+                add(7, "valueDefinition",
+                    MultiTypeDefinition(definitionMap = mapOfPropertyDefSubModelDefinitions),
+                    getter = MapDefinition<*, *, *>::valueDefinition,
+                    toSerializable = {
+                        val defType = it!! as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, it)
+                    },
+                    fromSerializable = {
+                        it?.value as IsValueDefinition<*, *>?
+                    }
+                )
             }
         }
     ) {
@@ -206,10 +214,10 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             searchable = map(1, true),
             required = map(2, true),
             final = map(3, false),
-            minSize = map<UInt32?>(4)?.toInt(),
-            maxSize = map<UInt32?>(5)?.toInt(),
-            keyDefinition = map<TypedValue<PropertyDefinitionType, IsSimpleValueDefinition<*, *>>>(6).value,
-            valueDefinition = map<TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>>(7).value
+            minSize = map(4),
+            maxSize = map(5),
+            keyDefinition = map<IsSimpleValueDefinition<*, *>>(6),
+            valueDefinition = map<IsValueDefinition<*, *>>(7)
         )
     }
 }

@@ -23,11 +23,14 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
         properties = object : PropertyDefinitions<ChangeRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, ChangeRequest<*, *>::dataModel)
-                add(1, "objectChanges", ListDefinition(
-                    valueDefinition = SubModelDefinition(
-                        dataModel = { DataObjectChange }
-                    )
-                ), ChangeRequest<*, *>::objectChanges)
+                add(1, "objectChanges",
+                    ListDefinition(
+                        valueDefinition = SubModelDefinition(
+                            dataModel = { DataObjectChange }
+                        )
+                    ),
+                    getter = ChangeRequest<*, *>::objectChanges
+                );
             }
         }
     ) {

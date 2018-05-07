@@ -23,19 +23,22 @@ data class ValidationUmbrellaException internal constructor(
         properties = object : PropertyDefinitions<ValidationUmbrellaException>() {
             init {
                 ValidationException.addReference(this, ValidationUmbrellaException::reference)
-                add(1, "exceptions", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfValidationExceptionDefinitions
-                    )
-                )) {
-                    it.exceptions.map { TypedValue(it.validationExceptionType, it) }
-                }
+                add(1, "exceptions",
+                    ListDefinition(
+                        valueDefinition = MultiTypeDefinition(
+                            definitionMap = mapOfValidationExceptionDefinitions
+                        )
+                    ),
+                    getter = ValidationUmbrellaException::exceptions,
+                    toSerializable = { TypedValue(it.validationExceptionType, it) },
+                    fromSerializable = { it.value as ValidationException }
+                )
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
             reference = map(0),
-            exceptions = map<List<TypedValue<ValidationExceptionType, ValidationException>>?>(1)?.map { it.value } ?: emptyList()
+            exceptions = map(1, emptyList())
         )
     }
 }
@@ -47,7 +50,7 @@ private fun createReason(reference: IsPropertyReference<*, *>?, exceptions: List
     for (it in exceptions) {
         messages += "\t${it.message?.replace("\n", "\n\t")}\n"
     }
-    return messages + "]"
+    return "$messages]"
 }
 
 /** Convenience method to create a new ValidationUmbrellaException */

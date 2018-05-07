@@ -8,7 +8,6 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.query.changes.ChangeType
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
 
@@ -25,18 +24,23 @@ data class AddSuccess<DO: Any>(
             init {
                 IsResponseStatus.addKey(this, AddSuccess<*>::key)
                 add(1,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
-                add(2,"changes", ListDefinition(
-                    valueDefinition = MultiTypeDefinition(
-                        definitionMap = mapOfChangeDefinitions
-                    )
-                )) { it.changes.map { TypedValue(it.changeType, it) } }
+                add(2,"changes",
+                    ListDefinition(
+                        valueDefinition = MultiTypeDefinition(
+                            definitionMap = mapOfChangeDefinitions
+                        )
+                    ),
+                    getter = maryk.core.query.responses.statuses.AddSuccess<*>::changes,
+                    toSerializable = { TypedValue(it.changeType, it) },
+                    fromSerializable = { it.value as IsChange }
+                )
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = AddSuccess(
             key = map(0),
             version = map(1),
-            changes = map<List<TypedValue<ChangeType, IsChange>>?>(2)?.map { it.value } ?: emptyList()
+            changes = map(2, emptyList())
         )
     }
 }

@@ -6,8 +6,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 
 /** Definition for List property */
 data class ListDefinition<T: Any, CX: IsPropertyContext>(
@@ -47,14 +45,21 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                 IsPropertyDefinition.addSearchable(this, ListDefinition<*, *>::searchable)
                 IsPropertyDefinition.addRequired(this, ListDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, ListDefinition<*, *>::final)
-                HasSizeDefinition.addMinSize(4, this) { it.minSize?.toUInt32() }
-                HasSizeDefinition.addMaxSize(5, this) { it.maxSize?.toUInt32() }
-                add(6, "valueDefinition", MultiTypeDefinition(
-                    definitionMap = mapOfPropertyDefSubModelDefinitions
-                )) {
-                    val defType = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
-                    TypedValue(defType.propertyDefinitionType, it.valueDefinition)
-                }
+                HasSizeDefinition.addMinSize(4, this, ListDefinition<*, *>::minSize)
+                HasSizeDefinition.addMaxSize(5, this, ListDefinition<*, *>::maxSize)
+                add(6, "valueDefinition",
+                    MultiTypeDefinition(
+                        definitionMap = mapOfPropertyDefSubModelDefinitions
+                    ),
+                    getter = ListDefinition<*, *>::valueDefinition,
+                    toSerializable = {
+                        val defType = it!! as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, it)
+                    },
+                    fromSerializable = { it ->
+                        it?.value as IsValueDefinition<*, *>
+                    }
+                )
             }
         }
     ) {
@@ -63,9 +68,9 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
             searchable = map(1, true),
             required = map(2, true),
             final = map(3, false),
-            minSize = map<UInt32?>(4)?.toInt(),
-            maxSize = map<UInt32?>(5)?.toInt(),
-            valueDefinition = map<TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>>(6).value
+            minSize = map(4),
+            maxSize = map(5),
+            valueDefinition = map<IsValueDefinition<*, *>>(6)
         )
     }
 }

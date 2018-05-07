@@ -14,5 +14,5 @@ import maryk.core.properties.references.IsPropertyReference
 internal class DataModelPropertyContext(
     internal val dataModels: Map<String, DataModel<*, *>>,
     internal var dataModel: RootDataModel<Any, PropertyDefinitions<Any>>? = null,
-    internal var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *>>? = null
+    internal var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>? = null
 ) : IsPropertyContext

@@ -13,15 +13,23 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class FixedBytesPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DO: Any> internal constructor(
+data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, out D: IsSerializableFixedBytesEncodable<T, CX>, in DO: Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: D,
-    override val getter: (DO) -> T?
+    override val getter: (DO) -> TO?,
+    override val toSerializable: (TO?) -> T? = {
+        @Suppress("UNCHECKED_CAST")
+        it as T?
+    },
+    override val fromSerializable: (T?) -> TO? = {
+        @Suppress("UNCHECKED_CAST")
+        it as TO?
+    }
 ) :
     IsSerializableFixedBytesEncodable<T, CX> by definition,
-    IsPropertyDefinitionWrapper<T, CX, DO>,
-    IsValuePropertyDefinitionWrapper<T, CX, DO>,
+    IsPropertyDefinitionWrapper<T, TO, CX, DO>,
+    IsValuePropertyDefinitionWrapper<T, TO, CX, DO>,
     FixedBytesProperty<T>()
 {
     override val keyPartType = KeyPartType.Reference

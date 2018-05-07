@@ -53,7 +53,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
 
             for (it in keyDefinitions) {
                 when {
-                    it is FixedBytesPropertyDefinitionWrapper<*, *, *, *>
+                    it is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *>
                             && it.definition is IsValueDefinition<*, *>-> {
                         checkDefinition(it.name, it.definition as IsValueDefinition<*, *>)
                     }
@@ -138,7 +138,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         )) {
             it.key.keyDefinitions.map {
                 val def: Any = when(it) {
-                    is FixedBytesPropertyDefinitionWrapper<*, *, *, *> -> it.getRef()
+                    is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *> -> it.getRef()
                     else -> it
                 }
                 TypedValue(it.keyPartType, def)
@@ -179,7 +179,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             // Write properties last
             map[RootModelProperties.properties.index]?.let {
                 this.writeJsonValue(
-                    RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, IsPropertyContext, RootDataModel<*, *>>,
+                    RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootDataModel<*, *>>,
                     writer,
                     it,
                     context
@@ -197,11 +197,11 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             for (def in this.properties) {
                 if (def == RootModelProperties.properties) continue // skip properties to write last
 
-                val value = def.getter(obj) ?: continue
+                val value = def.getPropertyAndSerialize(obj) ?: continue
                 this.writeJsonValue(def, writer, value, context)
             }
             this.writeJsonValue(
-                RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, IsPropertyContext, RootDataModel<*, *>>,
+                RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootDataModel<*, *>>,
                 writer,
                 obj.properties,
                 context

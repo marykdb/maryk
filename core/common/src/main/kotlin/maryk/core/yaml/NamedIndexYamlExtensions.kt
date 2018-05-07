@@ -28,8 +28,8 @@ internal fun YamlWriter.writeNamedIndexField(name: String, index: Int) {
  */
 internal fun <DO: Any> IsYamlReader.readNamedIndexField(
     valueMap: MutableMap<Int, Any>,
-    nameDescriptor: PropertyDefinitionWrapper<String, IsPropertyContext, StringDefinition, DO>,
-    indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt32, IsPropertyContext, NumberDefinition<UInt32>, DO>
+    nameDescriptor: PropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,
+    indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt32, *, IsPropertyContext, NumberDefinition<UInt32>, DO>
 ) {
     if (currentToken != JsonToken.StartComplexFieldName || nextToken() !is JsonToken.StartObject) {
         throw IllegalJsonOperation("Expected named index like '? [0: name]'")

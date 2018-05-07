@@ -30,8 +30,11 @@ data class SubModelPropertyDefinitionWrapper<
     override val getter: (DO) -> SDO?
 ) :
     IsSubModelDefinition<SDO, CXI> by definition,
-    IsPropertyDefinitionWrapper<SDO, CXI, DO>
+    IsPropertyDefinitionWrapper<SDO, SDO, CXI, DO>
 {
+    override val toSerializable: (SDO?) -> SDO? = { it }
+    override val fromSerializable: (SDO?) -> SDO? = { it }
+
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         SubModelPropertyRef(
             this,
@@ -41,7 +44,7 @@ data class SubModelPropertyDefinitionWrapper<
         )
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *>> ref(
+    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
         propertyDefinitionGetter: P.()-> W
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W> =
         { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }

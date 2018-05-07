@@ -13,7 +13,7 @@ import maryk.core.protobuf.WriteCacheWriter
  */
 open class ValueWithFixedBytesPropertyReference<
         T: Any,
-        out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *>,
+        out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>,
         out P: IsPropertyReference<*, *>
 > internal constructor(
     propertyDefinition: D,

@@ -12,7 +12,7 @@ import maryk.lib.exceptions.ParseException
 open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition: SetPropertyDefinitionWrapper<T, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
-) : ValuePropertyReference<Set<T>, SetPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+) : ValuePropertyReference<Set<T>, Set<T>, SetPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T> {

@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.toUInt32
 
 /**
  * Interface which defines definition has min and max size definitions
@@ -23,12 +24,34 @@ interface HasSizeDefinition {
     } ?: false
 
     companion object {
-        internal fun <DO: Any> addMinSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
-            definitions.add(index, "minSize", NumberDefinition(type = UInt32), getter)
+        internal fun <DO: Any> addMinSize(
+            index: Int,
+            definitions: PropertyDefinitions<DO>,
+            getter: (DO) -> Int?
+        ) {
+            definitions.add(
+                index = index,
+                name = "minSize",
+                definition = NumberDefinition(type = UInt32),
+                getter = getter,
+                toSerializable = { it?.toUInt32() },
+                fromSerializable = { it?.toInt() }
+            )
         }
 
-        internal fun <DO: Any> addMaxSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
-            definitions.add(index, "maxSize", NumberDefinition(type = UInt32), getter)
+        internal fun <DO: Any> addMaxSize(
+            index: Int,
+            definitions: PropertyDefinitions<DO>,
+            getter: (DO) -> Int?
+        ) {
+            definitions.add(
+                index = index,
+                name = "maxSize",
+                definition = NumberDefinition(type = UInt32),
+                getter = getter,
+                toSerializable = { it?.toUInt32() },
+                fromSerializable = { it?.toInt() }
+            )
         }
     }
 }

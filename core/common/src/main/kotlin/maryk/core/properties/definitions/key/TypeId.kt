@@ -21,12 +21,12 @@ import maryk.core.query.DataModelContext
  * With this key part it is possible to query all objects which contain a property of a certain type
  */
 data class TypeId<E: IndexedEnum<E>>(
-    val multiTypeReference: ValuePropertyReference<TypedValue<E, *>, IsPropertyDefinitionWrapper<TypedValue<E, *>, IsPropertyContext, *>, *>
+    val multiTypeReference: ValuePropertyReference<TypedValue<E, *>, TypedValue<E, *>, IsPropertyDefinitionWrapper<TypedValue<E, *>, TypedValue<E, *>, IsPropertyContext, *>, *>
 ) : FixedBytesProperty<Int>() {
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
 
-    constructor(multiTypeDefinition: PropertyDefinitionWrapper<TypedValue<E, *>, IsPropertyContext, *, *>) : this(multiTypeReference = multiTypeDefinition.getRef())
+    constructor(multiTypeDefinition: PropertyDefinitionWrapper<TypedValue<E, *>, TypedValue<E, *>, IsPropertyContext, *, *>) : this(multiTypeReference = multiTypeDefinition.getRef())
 
     override fun <T : Any> getValue(dataModel: IsDataModel<T>, dataObject: T): Int {
         val multiType = dataModel.properties.getPropertyGetter(
@@ -45,13 +45,14 @@ data class TypeId<E: IndexedEnum<E>>(
     internal object Model : DefinitionDataModel<TypeId<*>>(
         properties = object : PropertyDefinitions<TypeId<*>>() {
             init {
-                add(0, "multiTypeDefinition", ContextualPropertyReferenceDefinition<DataModelContext>(
-                    contextualResolver = {
-                        it?.propertyDefinitions ?: throw ContextNotFoundException()
-                    }
-                )) {
-                    it.multiTypeReference
-                }
+                add(0, "multiTypeDefinition",
+                    ContextualPropertyReferenceDefinition<DataModelContext>(
+                        contextualResolver = {
+                            it?.propertyDefinitions ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    getter = TypeId<*>::multiTypeReference
+                )
             }
         }
     ) {

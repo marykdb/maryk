@@ -11,7 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
  * Value check for a property of type [T]
  * Optionally compares against [valueToCompare] and will only succeed if values match
  */
-fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, IsPropertyContext, *>>.check(
+fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.check(
     valueToCompare: T? = null
 ) = PropertyCheck(this, valueToCompare)
 

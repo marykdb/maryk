@@ -8,9 +8,9 @@ import maryk.lib.exceptions.ParseException
 
 /** Reference to a List property of type [T] and context [CX] */
 open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
-    propertyDefinition: ListPropertyDefinitionWrapper<T, CX, *>,
+    propertyDefinition: ListPropertyDefinitionWrapper<T, Any, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
-) : ValuePropertyReference<List<T>, ListPropertyDefinitionWrapper<T, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+) : ValuePropertyReference<List<T>, List<Any>, ListPropertyDefinitionWrapper<T, Any, CX, *>, CanHaveComplexChildReference<*, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T> {

@@ -117,16 +117,10 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 IsPropertyDefinition.addRequired(this, EnumDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, EnumDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
-                add(5, "minValue", NumberDefinition(type = UInt32)) {
-                    it.minValue?.index?.toUInt32()
-                }
-                add(6, "maxValue", NumberDefinition(type = UInt32)) {
-                    it.maxValue?.index?.toUInt32()
-                }
-                add(7, "default", NumberDefinition(type = UInt32)) {
-                    it.default?.index?.toUInt32()
-                }
-                add(8, "name", StringDefinition()) { it.enum.name }
+                add(5, "minValue", NumberDefinition(type = UInt32), EnumDefinition<*>::minValue, { it?.index?.toUInt32() }, { null })
+                add(6, "maxValue", NumberDefinition(type = UInt32), EnumDefinition<*>::maxValue, { it?.index?.toUInt32() }, { null })
+                add(7, "default", NumberDefinition(type = UInt32), EnumDefinition<*>::default, { it?.index?.toUInt32() }, { null })
+                add(8, "name", StringDefinition(), EnumDefinition<*>::enum, { it?.name }, { null })
                 add(9, "values", MapDefinition(
                     keyDefinition = NumberDefinition(type = UInt32),
                     valueDefinition = StringDefinition()
@@ -150,15 +144,15 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 required = map(2, true),
                 final = map(3, false),
                 unique = map(4, false),
-                minValue = map<UInt32?>(5)?.let{
+                minValue = map.transform(5, { it: UInt32? ->
                     valueMap[it] as IndexedEnum<Any>
-                },
-                maxValue = map<UInt32?>(6)?.let{
+                }),
+                maxValue = map.transform(6, { it: UInt32? ->
                     valueMap[it] as IndexedEnum<Any>
-                },
-                default = map<UInt32?>(7)?.let{
+                }),
+                default = map.transform(7, { it: UInt32? ->
                     valueMap[it] as IndexedEnum<Any>
-                },
+                }),
                 enum = IndexedEnumDefinition(map(8), values)
             )
         }

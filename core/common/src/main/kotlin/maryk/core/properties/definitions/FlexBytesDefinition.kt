@@ -37,7 +37,7 @@ data class FlexBytesDefinition(
 
     override fun calculateTransportByteLength(value: Bytes) = value.size
 
-    override fun fromString(string: String) = Bytes.ofBase64String(string)
+    override fun fromString(string: String) = Bytes(string)
 
     override fun fromNativeType(value: Any) =
         if(value is ByteArray){

@@ -4,8 +4,8 @@ import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.writeBytes
 import maryk.lib.bytes.Base64
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 
 /**
@@ -13,6 +13,14 @@ import maryk.lib.extensions.toHex
  */
 open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
     val size = bytes.size
+
+    constructor(base64: String): this(
+        try {
+            Base64.decode(base64)
+        } catch (e: Throwable) {
+            throw ParseException(base64)
+        }
+    )
 
     private val hashCode by lazy { bytes.contentHashCode() }
 
@@ -34,29 +42,22 @@ open class Bytes(val bytes: ByteArray): Comparable<Bytes> {
 
     fun toHex() = this.bytes.toHex()
 
-    internal companion object: BytesDescriptor<Bytes>() {
-        override fun construct(bytes: ByteArray) = Bytes(bytes)
+    companion object: BytesDescriptor<Bytes>() {
+        override fun invoke(bytes: ByteArray) = Bytes(bytes)
     }
 }
 
 /**
  * Generic bytes class to help constructing bytes from different sources
  */
-abstract class BytesDescriptor<out T>{
-    fun ofBase64String(base64: String) = try {
-        this.construct(
-                Base64.decode(base64)
-        )
-    } catch (e: Throwable) { throw ParseException(base64)
-    }
-
-    internal fun fromByteReader(length: Int, reader: () -> Byte): T = this.construct(
+abstract class BytesDescriptor<T>{
+    internal fun fromByteReader(length: Int, reader: () -> Byte) = this(
         initByteArray(length, reader)
     )
 
-    fun ofHex(hex: String) = this.construct(
+    fun ofHex(hex: String) = this(
         initByteArrayByHex(hex)
     )
 
-    internal abstract fun construct(bytes: ByteArray): T
+    abstract operator fun invoke(bytes: ByteArray): T
 }

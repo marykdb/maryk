@@ -8,26 +8,26 @@ import kotlin.test.Test
 
 internal class BytesTest {
     private val bytesToTest = arrayOf(
-        Bytes.ofBase64String("////////"),
-        Bytes.ofBase64String("AAAAAAA"),
-        Bytes.ofBase64String("iIiIiIiI")
+        Bytes("////////"),
+        Bytes("AAAAAAA"),
+        Bytes("iIiIiIiI")
     )
 
     @Test
     fun testCompare() {
-        Bytes.ofBase64String("//").compareTo(
-            Bytes.ofBase64String("//")
+        Bytes("//").compareTo(
+            Bytes("//")
         ) shouldBe 0
 
-        Bytes.ofBase64String("AAAA").compareTo(
-            Bytes.ofBase64String("BBBBBB")
+        Bytes("AAAA").compareTo(
+            Bytes("BBBBBB")
         ) shouldBe -4
     }
 
     @Test
     fun hashcode() {
-        Bytes.ofBase64String("//").hashCode() shouldBe 30
-        Bytes.ofBase64String("AAAA").hashCode() shouldBe 29791
+        Bytes("//").hashCode() shouldBe 30
+        Bytes("AAAA").hashCode() shouldBe 29791
     }
 
     @Test
@@ -50,7 +50,7 @@ internal class BytesTest {
     @Test
     fun testStringConversion() {
         for (it in bytesToTest) {
-            Bytes.ofBase64String(
+            Bytes(
                 it.toString()
             ) shouldBe it
         }
@@ -68,7 +68,7 @@ internal class BytesTest {
     @Test
     fun testStringConversionExceptions() {
         shouldThrow<ParseException> {
-            Bytes.ofBase64String("wrong±")
+            Bytes("wrong±")
         }
     }
 }

@@ -217,7 +217,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         return result
     }
 
-    internal object Model : SimpleDataModel<MultiTypeDefinition<*, *>, PropertyDefinitions<MultiTypeDefinition<*, *>>>(
+    object Model : SimpleDataModel<MultiTypeDefinition<*, *>, PropertyDefinitions<MultiTypeDefinition<*, *>>>(
         properties = object : PropertyDefinitions<MultiTypeDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*, *>::indexed)

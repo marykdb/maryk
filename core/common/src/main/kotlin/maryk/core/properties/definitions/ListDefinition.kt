@@ -38,7 +38,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    internal object Model : SimpleDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>>(
+    object Model : SimpleDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>>(
         properties = object : PropertyDefinitions<ListDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)

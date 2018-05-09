@@ -76,7 +76,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
             }
         } else { null }
 
-    internal object Model : DefinitionDataModel<ValueModelDefinition<*, *>>(
+    object Model : DefinitionDataModel<ValueModelDefinition<*, *>>(
         properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *>::indexed)

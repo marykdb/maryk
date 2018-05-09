@@ -126,7 +126,7 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         return result
     }
 
-    internal object Model : DefinitionDataModel<SubModelDefinition<*, *, *, *, *>>(
+    object Model : DefinitionDataModel<SubModelDefinition<*, *, *, *, *>>(
         properties = object : PropertyDefinitions<SubModelDefinition<*, *, *, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SubModelDefinition<*, *, *, *, *>::indexed)

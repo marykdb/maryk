@@ -55,9 +55,13 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                     MultiTypeDefinition(
                         definitionMap = mapOfPropertyDefSubModelDefinitions
                     ),
-                    getter = {
-                        val defType = it.valueDefinition as IsTransportablePropertyDefinitionType<*>
-                        TypedValue(defType.propertyDefinitionType, it.valueDefinition)
+                    getter = SetDefinition<*, *>::valueDefinition,
+                    toSerializable = {
+                        val defType = it!! as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, it)
+                    },
+                    fromSerializable = { it ->
+                        it?.value as IsValueDefinition<*, *>
                     }
                 )
             }
@@ -70,7 +74,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
             final = map(3, false),
             minSize = map(4),
             maxSize = map(5),
-            valueDefinition = map<TypedValue<PropertyDefinitionType, IsValueDefinition<*, *>>>(6).value
+            valueDefinition = map<IsValueDefinition<*, *>>(6)
         )
     }
 }

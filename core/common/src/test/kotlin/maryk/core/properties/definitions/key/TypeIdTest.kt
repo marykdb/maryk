@@ -58,7 +58,7 @@ internal class TypeIdTest {
 
         (keyDef is TypeId<*>) shouldBe true
         val specificDef = keyDef as TypeId<*>
-        specificDef.multiTypeReference shouldBe MarykObject.Properties.multi.getRef()
+        specificDef.reference shouldBe MarykObject.Properties.multi.getRef()
 
         specificDef.getValue(MarykObject, obj) shouldBe 1
 

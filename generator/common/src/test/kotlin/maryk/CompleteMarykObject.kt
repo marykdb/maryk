@@ -1,6 +1,7 @@
 package maryk
 
 import maryk.core.objects.RootDataModel
+import maryk.core.objects.definitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -20,6 +21,9 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.key.Reversed
+import maryk.core.properties.definitions.key.TypeId
+import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
@@ -49,7 +53,10 @@ data class CompleteMarykObject(
     val list: List<String>,
     val set: Set<Int>,
     val map: Map<Date, Int>,
-    val multi: TypedValue<MarykEnum, *>
+    val multi: TypedValue<MarykEnum, *>,
+    val booleanForKey: Boolean,
+    val dateForKey: Date,
+    val multiForKey: TypedValue<MarykEnum, *>
 ) {
     object Properties: PropertyDefinitions<CompleteMarykObject>() {
         val string = add(
@@ -289,10 +296,41 @@ data class CompleteMarykObject(
             ),
             getter = CompleteMarykObject::multi
         )
+        val booleanForKey = add(
+            index = 16, name = "booleanForKey",
+            definition = BooleanDefinition(final = true),
+            getter = CompleteMarykObject::booleanForKey
+        )
+        val dateForKey = add(
+            index = 17, name = "dateForKey",
+            definition = DateDefinition(final = true),
+            getter = CompleteMarykObject::dateForKey
+        )
+        val multiForKey = add(
+            index = 18, name = "multiForKey",
+            definition = MultiTypeDefinition(
+                required = true,
+                final = true,
+                typeEnum = MarykEnum,
+                definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(
+                    MarykEnum.O1 to StringDefinition(
+                        regEx = "hi.*"
+                    ),
+                    MarykEnum.O2 to BooleanDefinition()
+                )
+            ),
+            getter = CompleteMarykObject::multiForKey
+        )
     }
 
     companion object: RootDataModel<CompleteMarykObject, Properties>(
         name = "CompleteMarykObject",
+        keyDefinitions = definitions(
+            UUIDKey,
+            TypeId(Properties.multiForKey.getRef()),
+            Properties.booleanForKey,
+            Reversed(Properties.dateForKey.getRef())
+        ),
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = CompleteMarykObject(
@@ -311,7 +349,10 @@ data class CompleteMarykObject(
             list = map(12),
             set = map(13),
             map = map(14),
-            multi = map(15)
+            multi = map(15),
+            booleanForKey = map(16),
+            dateForKey = map(17),
+            multiForKey = map(18)
         )
     }
 }

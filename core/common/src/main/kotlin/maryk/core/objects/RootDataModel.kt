@@ -64,7 +64,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                         checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                     }
                     it is TypeId<*> -> {
-                        val reference = it.multiTypeReference
+                        val reference = it.reference
                         checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                     }
                 }

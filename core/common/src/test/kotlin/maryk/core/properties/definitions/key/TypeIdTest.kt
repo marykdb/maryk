@@ -24,6 +24,7 @@ internal class TypeIdTest {
     ){
         object Properties : PropertyDefinitions<MarykObject>() {
             val multi = add(0, "multi", MultiTypeDefinition(
+                final = true,
                 typeEnum = Option,
                 definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
                     Option.V0 to StringDefinition(),

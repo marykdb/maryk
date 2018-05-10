@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.definitions.key.Reversed
+import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
@@ -60,6 +61,10 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                     }
                     it is Reversed<out Any> -> {
                         val reference = it.reference as ValueWithFixedBytesPropertyReference<out Any, *, *>
+                        checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
+                    }
+                    it is TypeId<*> -> {
+                        val reference = it.multiTypeReference
                         checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                     }
                 }

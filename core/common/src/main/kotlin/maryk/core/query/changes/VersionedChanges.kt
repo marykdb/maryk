@@ -23,6 +23,7 @@ data class VersionedChanges(
                 add(1, "changes",
                     ListDefinition(
                         valueDefinition = MultiTypeDefinition(
+                            typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
                         )
                     ),

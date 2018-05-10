@@ -34,7 +34,7 @@ enum class Option(
 ): IndexedEnum<Option> {
     V0(0), V1(1), V2(2);
 
-    companion object: IndexedEnumDefinition<Option>("Option", Option.values())
+    companion object: IndexedEnumDefinition<Option>("Option", Option::values)
 }
 
 data class TestMarykObject(
@@ -165,6 +165,7 @@ data class TestMarykObject(
             index = 12, name = "multi",
             definition = MultiTypeDefinition<Option, IsPropertyContext>(
                 required = false,
+                typeEnum = Option,
                 definitionMap = mapOf(
                     Option.V0 to StringDefinition(),
                     Option.V1 to NumberDefinition(type = SInt32),

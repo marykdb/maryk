@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.mapOfValidationExceptionDefinitions
 import maryk.core.properties.types.TypedValue
@@ -23,6 +24,7 @@ data class ValidationFail<DO: Any>(
                 add(0, "exceptions",
                     ListDefinition(
                         valueDefinition = MultiTypeDefinition(
+                            typeEnum = ValidationExceptionType,
                             definitionMap = mapOfValidationExceptionDefinitions
                         )
                     ),

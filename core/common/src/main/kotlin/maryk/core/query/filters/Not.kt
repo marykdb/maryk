@@ -16,6 +16,7 @@ data class Not(
             init {
                 add(0, "filter",
                     MultiTypeDefinition(
+                        typeEnum = FilterType,
                         definitionMap = mapOfFilterDefinitions
                     ),
                     getter = { TypedValue(it.filter.filterType, it.filter) }

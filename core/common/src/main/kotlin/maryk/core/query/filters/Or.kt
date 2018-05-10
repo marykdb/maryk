@@ -20,6 +20,7 @@ data class Or(
                 add(0, "filters",
                     ListDefinition(
                         valueDefinition = MultiTypeDefinition(
+                            typeEnum = FilterType,
                             definitionMap = mapOfFilterDefinitions
                         )
                     ),

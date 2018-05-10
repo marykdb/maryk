@@ -18,5 +18,5 @@ enum class NumberType(
     Float32(8, { maryk.core.properties.types.numeric.Float32 }),
     Float64(9, { maryk.core.properties.types.numeric.Float64 });
 
-    companion object: IndexedEnumDefinition<NumberType>("NumberType", NumberType.values())
+    companion object: IndexedEnumDefinition<NumberType>("NumberType", NumberType::values)
 }

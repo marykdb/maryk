@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.query.changes.ChangeType
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
 
@@ -27,6 +28,7 @@ data class AddSuccess<DO: Any>(
                 add(2,"changes",
                     ListDefinition(
                         valueDefinition = MultiTypeDefinition(
+                            typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
                         )
                     ),

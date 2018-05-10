@@ -185,7 +185,10 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMinSize(4, this, MapDefinition<*, *, *>::minSize)
                 HasSizeDefinition.addMaxSize(5, this, MapDefinition<*, *, *>::maxSize)
                 add(6, "keyDefinition",
-                    MultiTypeDefinition(definitionMap = mapOfPropertyDefSubModelDefinitions),
+                    MultiTypeDefinition(
+                        typeEnum = PropertyDefinitionType,
+                        definitionMap = mapOfPropertyDefSubModelDefinitions
+                    ),
                     getter = MapDefinition<*, *, *>::keyDefinition,
                     toSerializable = {
                         val defType = it!! as IsTransportablePropertyDefinitionType<*>
@@ -196,7 +199,10 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     }
                 )
                 add(7, "valueDefinition",
-                    MultiTypeDefinition(definitionMap = mapOfPropertyDefSubModelDefinitions),
+                    MultiTypeDefinition(
+                        typeEnum = PropertyDefinitionType,
+                        definitionMap = mapOfPropertyDefSubModelDefinitions
+                    ),
                     getter = MapDefinition<*, *, *>::valueDefinition,
                     toSerializable = {
                         val defType = it!! as IsTransportablePropertyDefinitionType<*>

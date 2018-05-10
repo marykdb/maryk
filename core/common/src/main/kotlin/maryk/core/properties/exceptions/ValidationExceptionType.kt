@@ -1,6 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 
 /** Indexed type of changes */
 enum class ValidationExceptionType(
@@ -13,5 +14,9 @@ enum class ValidationExceptionType(
     REQUIRED(4),
     NOT_ENOUGH_ITEMS(5),
     TOO_MUCH_ITEMS(6),
-    UMBRELLA(7)
+    UMBRELLA(7);
+
+    companion object: IndexedEnumDefinition<ValidationExceptionType>(
+        "ValidationExceptionType", ValidationExceptionType::values
+    )
 }

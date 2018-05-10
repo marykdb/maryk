@@ -49,6 +49,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMaxSize(5, this, ListDefinition<*, *>::maxSize)
                 add(6, "valueDefinition",
                     MultiTypeDefinition(
+                        typeEnum = PropertyDefinitionType,
                         definitionMap = mapOfPropertyDefSubModelDefinitions
                     ),
                     getter = ListDefinition<*, *>::valueDefinition,

@@ -78,6 +78,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         private fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) =
             definitions.add(2, "definition",
                 MultiTypeDefinition(
+                    typeEnum = PropertyDefinitionType,
                     definitionMap = mapOfPropertyDefSubModelDefinitions
                 ),
                 getter = {

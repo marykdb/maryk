@@ -40,6 +40,7 @@ data class DataObjectChange<out DO: Any> internal constructor(
                 add(1, "changes",
                     ListDefinition(
                         valueDefinition = MultiTypeDefinition(
+                            typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
                         )
                     ),

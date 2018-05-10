@@ -37,11 +37,11 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override val byteSize = 2
 
     private val valueByString: Map<String, E> by lazy {
-        enum.values.associate { Pair(it.name, it) }
+        enum.values().associate { Pair(it.name, it) }
     }
 
     private val valueByIndex: Map<Int, E> by lazy {
-        enum.values.associate { Pair(it.index, it) }
+        enum.values().associate { Pair(it.index, it) }
     }
 
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
@@ -85,7 +85,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         if (maxValue != other.maxValue && maxValue?.index != other.maxValue?.index) return false
         if (default != other.default && default?.index != other.default?.index) return false
         if (enum.name != other.enum.name) return false
-        if (!areEnumsEqual(enum.values, other.enum.values)) return false
+        if (!areEnumsEqual(enum.values(), other.enum.values())) return false
         if (wireType != other.wireType) return false
         if (byteSize != other.byteSize) return false
 
@@ -103,7 +103,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         result = 31 * result + (maxValue?.index?.hashCode() ?: 0)
         result = 31 * result + (default?.index?.hashCode() ?: 0)
         result = 31 * result + enum.name.hashCode()
-        result = 31 * result + enumsHashCode(enum.values)
+        result = 31 * result + enumsHashCode(enum.values())
         result = 31 * result + wireType.hashCode()
         result = 31 * result + byteSize
         return result
@@ -124,7 +124,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 add(9, "values", MapDefinition(
                     keyDefinition = NumberDefinition(type = UInt32),
                     valueDefinition = StringDefinition()
-                )) { it.enum.values.map { Pair(it.index.toUInt32(), it.name) }.toMap() }
+                )) { it.enum.values().map { Pair(it.index.toUInt32(), it.name) }.toMap() }
             }
         }
     ) {
@@ -153,7 +153,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 default = map.transform(7, { it: UInt32? ->
                     valueMap[it] as IndexedEnum<Any>
                 }),
-                enum = IndexedEnumDefinition(map(8), values)
+                enum = IndexedEnumDefinition(map(8), { values })
             )
         }
     }

@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.query.DataModelContext
 import maryk.json.TokenType
 import maryk.json.ValueType
@@ -23,12 +24,12 @@ sealed class KeyPartType(
     object TypeId: KeyPartType("TypeId", 2), ValueType<String>
     object Reversed: KeyPartType("Reversed", 3), ValueType<String>
 
-    companion object {
-        internal val values = lazy {
-            arrayOf<KeyPartType>(UUID, Reference, TypeId, Reversed)
-        }
-    }
+    companion object: IndexedEnumDefinition<KeyPartType>(
+        "KeyPartType", { keyPartValues }
+    )
 }
+
+val keyPartValues = arrayOf<KeyPartType>(KeyPartType.UUID, KeyPartType.Reference, KeyPartType.TypeId, KeyPartType.Reversed)
 
 internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DataModelContext>>(
     KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),

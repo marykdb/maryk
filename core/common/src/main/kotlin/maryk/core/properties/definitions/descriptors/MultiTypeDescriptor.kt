@@ -48,6 +48,7 @@ private data class MultiTypeDescriptor(
         val definition = add(
             2, "definition",
             MultiTypeDefinition(
+                typeEnum = PropertyDefinitionType,
                 definitionMap = mapOfPropertyDefSubModelDefinitions
             ),
             getter = {

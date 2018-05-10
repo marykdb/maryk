@@ -13,7 +13,7 @@ import maryk.core.properties.types.IndexedEnumDefinition
 enum class Direction(override val index: Int) : IndexedEnum<Direction> {
     ASC(0), DESC(1);
 
-    companion object: IndexedEnumDefinition<Direction>("Direction", Direction.values())
+    companion object: IndexedEnumDefinition<Direction>("Direction", Direction::values)
 }
 
 /** Descending ordering of property */

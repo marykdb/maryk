@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.json.MapType
 
 /** Indexed type of property definitions */
@@ -32,7 +33,9 @@ enum class PropertyDefinitionType(
     String(12),
     SubModel(13),
     Time(14),
-    ValueModel(15)
+    ValueModel(15);
+
+    companion object: IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
 }
 
 internal val mapOfPropertyDefSubModelDefinitions = mapOf(

@@ -8,7 +8,7 @@ enum class TimePrecision(override val index: Int): IndexedEnum<TimePrecision> {
     SECONDS(0), MILLIS(1);
 
     companion object: IndexedEnumDefinition<TimePrecision>(
-        "TimePrecision", TimePrecision.values()
+        "TimePrecision", TimePrecision::values
     )
 }
 

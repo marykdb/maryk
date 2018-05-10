@@ -52,6 +52,7 @@ private val dataModel = ContextCaptureDefinition(
 
 private val listOfStatuses = ListDefinition(
     valueDefinition = MultiTypeDefinition(
+        typeEnum = StatusType,
         definitionMap = mapOf(
             StatusType.SUCCESS to SubModelDefinition(dataModel = {  Success } ),
             StatusType.ADD_SUCCESS to SubModelDefinition(dataModel = {  AddSuccess } ),

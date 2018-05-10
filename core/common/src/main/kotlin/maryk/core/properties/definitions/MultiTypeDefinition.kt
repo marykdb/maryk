@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -37,6 +38,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
+    val typeEnum: IndexedEnumDefinition<E>,
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 ) :
     IsValueDefinition<TypedValue<E, Any>, CX>,
@@ -225,16 +227,34 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                 IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
 
-                this.addDescriptorPropertyWrapperWrapper(4, "definitionMap")
+                add(4, "typeEnum",
+                    StringDefinition(),
+                    getter = MultiTypeDefinition<*, *>::typeEnum,
+                    toSerializable = { it?.name },
+                    fromSerializable = { null }
+                )
+
+                this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = MultiTypeDefinition(
-            indexed = map(0, false),
-            searchable = map(1, true),
-            required = map(2, true),
-            final = map(3, false),
-            definitionMap = convertMultiTypeDescriptors(map(4))
-        )
+        override fun invoke(map: Map<Int, *>): MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext> {
+            val definitionMap = convertMultiTypeDescriptors(map(5))
+
+            val typeOptions = definitionMap.keys.toTypedArray()
+
+            val typeEnum = IndexedEnumDefinition(
+                map(4), { typeOptions }
+            )
+
+            return MultiTypeDefinition(
+                indexed = map(0, false),
+                searchable = map(1, true),
+                required = map(2, true),
+                final = map(3, false),
+                typeEnum = typeEnum,
+                definitionMap = definitionMap
+            )
+        }
     }
 }

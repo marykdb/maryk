@@ -53,6 +53,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMaxSize(5, this, SetDefinition<*, *>::maxSize)
                 add(6, "valueDefinition",
                     MultiTypeDefinition(
+                        typeEnum = PropertyDefinitionType,
                         definitionMap = mapOfPropertyDefSubModelDefinitions
                     ),
                     getter = SetDefinition<*, *>::valueDefinition,

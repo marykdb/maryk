@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
@@ -133,6 +134,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         val properties = AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
         val key = add(2, "key", ListDefinition(
             valueDefinition = MultiTypeDefinition(
+                typeEnum = KeyPartType,
                 definitionMap = mapOfKeyPartDefinitions
             )
         )) {

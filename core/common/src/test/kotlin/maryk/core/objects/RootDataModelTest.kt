@@ -276,6 +276,7 @@ internal class RootDataModelTest {
         			"searchable": true,
         			"required": false,
         			"final": false,
+        			"typeEnum": "Option",
         			"definitionMap": [{
         				"index": 0,
         				"name": "V0",
@@ -499,6 +500,7 @@ internal class RootDataModelTest {
             searchable: true
             required: false
             final: false
+            typeEnum: Option
             definitionMap:
               ? 0: V0
               : !String
@@ -604,6 +606,7 @@ internal class RootDataModelTest {
         |    dataModel: TestMarykObject
         |  ? 14: multi
         |  : !MultiType
+        |    typeEnum: Option
         |    definitionMap:
         |      ? 0: V0
         |      : !String
@@ -702,6 +705,7 @@ internal class RootDataModelTest {
             properties.getDefinition("multi")!!.let {
                 it.index shouldBe 14
                 it.definition shouldBe MultiTypeDefinition<Option, IsPropertyContext>(
+                    typeEnum = Option,
                     definitionMap = mapOf(
                         Option.V0 to StringDefinition(),
                         Option.V1 to BooleanDefinition()

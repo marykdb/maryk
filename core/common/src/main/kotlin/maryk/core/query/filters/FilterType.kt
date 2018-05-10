@@ -1,6 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 
 /** Indexed type of changes */
 enum class FilterType(
@@ -18,5 +19,9 @@ enum class FilterType(
     Prefix(9),
     Range(10),
     RegEx(11),
-    ValueIn(12)
+    ValueIn(12);
+
+    companion object: IndexedEnumDefinition<FilterType>(
+        "FilterType", FilterType::values
+    )
 }

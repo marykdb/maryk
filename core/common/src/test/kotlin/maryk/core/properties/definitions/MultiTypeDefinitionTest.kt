@@ -25,6 +25,7 @@ internal class MultiTypeDefinitionTest {
     )
 
     val def = MultiTypeDefinition<Option, IsPropertyContext>(
+        typeEnum = Option,
         definitionMap = mapOf(
             Option.V0 to stringDef,
             Option.V1 to intDef
@@ -36,6 +37,7 @@ internal class MultiTypeDefinitionTest {
         searchable = false,
         final = true,
         required = false,
+        typeEnum = Option,
         definitionMap = mapOf(
             Option.V0 to stringDef,
             Option.V1 to intDef

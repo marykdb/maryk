@@ -1,6 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.types.IndexedEnumDefinition
 
 /** Indexed type of changes */
 enum class ChangeType(
@@ -12,5 +13,9 @@ enum class ChangeType(
     ObjectDelete(3),
     ListChange(4),
     SetChange(5),
-    MapChange(6)
+    MapChange(6);
+
+    companion object: IndexedEnumDefinition<ChangeType>(
+        "ChangeType", ChangeType::values
+    )
 }

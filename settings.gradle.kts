@@ -16,7 +16,8 @@ includeMultiPlatformProjects(
     "json",
     "yaml",
     "core",
-    "test"
+    "test",
+    "generator"
 )
 
 rootProject.name = "maryk"

@@ -1,0 +1,12 @@
+apply {
+    from("../../js.gradle")
+}
+
+initJS()
+
+dependencies {
+    expectedBy(project(":generator-common"))
+    compile(project(":core-js"))
+}
+
+setupJS()

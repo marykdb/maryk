@@ -1,11 +1,12 @@
 package maryk
+
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.Date
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
+import maryk.lib.time.Date
 
 data class ValueMarykObject(
     val int: Int = 5,
@@ -13,7 +14,7 @@ data class ValueMarykObject(
 ): ValueDataObject(toBytes(int, date)) {
     object Properties: PropertyDefinitions<ValueMarykObject>() {
         val int = add(
-            index = 0, name = "value",
+            index = 0, name = "int",
             definition = NumberDefinition(
                 type = SInt32,
                 default = 5

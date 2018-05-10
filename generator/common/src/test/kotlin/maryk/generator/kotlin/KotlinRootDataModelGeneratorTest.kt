@@ -5,17 +5,17 @@ import maryk.SimpleMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class KotlinGeneratorTest {
+class KotlinRootDataModelGeneratorTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        SimpleMarykObject.generateKotlin("maryk.test") {
+        SimpleMarykObject.generateKotlin("maryk") {
             output += it
         }
 
         output shouldBe """
-        package maryk.test
+        package maryk
 
         import maryk.core.objects.RootDataModel
         import maryk.core.properties.definitions.PropertyDefinitions
@@ -51,12 +51,12 @@ class KotlinGeneratorTest {
     fun generate_kotlin_for_complete_model(){
         var output = ""
 
-        CompleteMarykObject.generateKotlin("maryk.test") {
+        CompleteMarykObject.generateKotlin("maryk") {
             output += it
         }
 
         output shouldBe """
-        package maryk.test
+        package maryk
 
         import maryk.core.objects.RootDataModel
         import maryk.core.properties.definitions.BooleanDefinition

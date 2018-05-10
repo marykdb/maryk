@@ -43,6 +43,12 @@ private val uInt8Imports = arrayOf("maryk.core.properties.types.numeric.UInt8")
 private val uInt16Imports = arrayOf("maryk.core.properties.types.numeric.UInt16")
 private val uInt32Imports = arrayOf("maryk.core.properties.types.numeric.UInt32")
 private val uInt64Imports = arrayOf("maryk.core.properties.types.numeric.UInt64")
+private val sInt8Imports = arrayOf("maryk.core.properties.types.numeric.SInt8")
+private val sInt16Imports = arrayOf("maryk.core.properties.types.numeric.SInt16")
+private val sInt32Imports = arrayOf("maryk.core.properties.types.numeric.SInt32")
+private val sInt64Imports = arrayOf("maryk.core.properties.types.numeric.SInt64")
+private val float32Imports = arrayOf("maryk.core.properties.types.numeric.Float32")
+private val float64Imports = arrayOf("maryk.core.properties.types.numeric.Float64")
 
 @Suppress("UNCHECKED_CAST")
 private val definitionNamesMap = mapOf(
@@ -183,7 +189,12 @@ private val definitionNamesMap = mapOf(
                 NumberType.UInt16 -> uInt16Imports
                 NumberType.UInt32 -> uInt32Imports
                 NumberType.UInt64 -> uInt64Imports
-                else -> null
+                NumberType.SInt8 -> sInt8Imports
+                NumberType.SInt16 -> sInt16Imports
+                NumberType.SInt32 -> sInt32Imports
+                NumberType.SInt64 -> sInt64Imports
+                NumberType.Float32 -> float32Imports
+                NumberType.Float64 -> float64Imports
             }
         },
         definitionModel = NumberDefinition.Model as IsDataModel<NumberDefinition<Comparable<Any>>>

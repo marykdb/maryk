@@ -34,20 +34,12 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(pa
     val imports = """
     package $packageName
 
-    ${generateDefinitionImports(
+    ${generateImports(
         importsToAdd
     ).prependIndent().trimStart()}
     """.trimIndent()
 
     writer("$imports\n$code")
-}
-
-private fun generateDefinitionImports(imports: Set<String>): String {
-    var allImports = ""
-    for (it in imports.sorted()) {
-        allImports += "import $it\n"
-    }
-    return allImports
 }
 
 private fun List<KotlinForProperty>.generateInvokesForProperties(): String {

@@ -21,8 +21,6 @@ import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.Bytes
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
@@ -33,21 +31,13 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
-enum class Option(
-    override val index: Int
-): IndexedEnum<Option> {
-    O1(1), O2(2), O3(3);
 
-    companion object: IndexedEnumDefinition<Option>(
-        "Option", Option::values
-    )
-}
 
 data class CompleteMarykObject(
     val string: String = "string",
     val number: UInt32 = 42.toUInt32(),
     val boolean: Boolean = true,
-    val enum: Option = Option.O1,
+    val enum: MarykEnum = MarykEnum.O1,
     val date: Date = Date(2018, 5, 2),
     val dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
     val time: Time = Time(10, 11, 12),
@@ -59,7 +49,7 @@ data class CompleteMarykObject(
     val list: List<String>,
     val set: Set<Int>,
     val map: Map<Date, Int>,
-    val multi: TypedValue<Option, *>
+    val multi: TypedValue<MarykEnum, *>
 ) {
     object Properties: PropertyDefinitions<CompleteMarykObject>() {
         val string = add(
@@ -113,10 +103,10 @@ data class CompleteMarykObject(
                 required = false,
                 final = true,
                 unique = true,
-                minValue = Option.O1,
-                maxValue = Option.O3,
-                default = Option.O1,
-                enum = Option
+                minValue = MarykEnum.O1,
+                maxValue = MarykEnum.O3,
+                default = MarykEnum.O1,
+                enum = MarykEnum
             ),
             getter = CompleteMarykObject::enum
         )
@@ -289,12 +279,12 @@ data class CompleteMarykObject(
                 searchable = false,
                 required = false,
                 final = true,
-                typeEnum = Option,
-                definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
-                    Option.O1 to StringDefinition(
+                typeEnum = MarykEnum,
+                definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(
+                    MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
-                    Option.O2 to BooleanDefinition()
+                    MarykEnum.O2 to BooleanDefinition()
                 )
             ),
             getter = CompleteMarykObject::multi
@@ -309,7 +299,7 @@ data class CompleteMarykObject(
             string = map(0),
             number = map(1),
             boolean = map(2, true),
-            enum = map(3, Option.O1),
+            enum = map(3, MarykEnum.O1),
             date = map(4, Date(2018, 5, 2)),
             dateTime = map(5, DateTime(2018, 5, 2, 10, 11, 12)),
             time = map(6, Time(10, 11, 12)),

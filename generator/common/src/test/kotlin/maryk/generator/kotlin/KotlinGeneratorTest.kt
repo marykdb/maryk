@@ -89,7 +89,7 @@ class KotlinGeneratorTest {
             val string: String = "string",
             val number: UInt32 = 42.toUInt32(),
             val boolean: Boolean = true,
-            val enum: Option = Option.O1,
+            val enum: MarykEnum = MarykEnum.O1,
             val date: Date = Date(2018, 5, 2),
             val dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
             val time: Time = Time(10, 11, 12),
@@ -101,7 +101,7 @@ class KotlinGeneratorTest {
             val list: List<String>,
             val set: Set<Int>,
             val map: Map<Date, Int>,
-            val multi: TypedValue<Option, *>
+            val multi: TypedValue<MarykEnum, *>
         ) {
             object Properties: PropertyDefinitions<CompleteMarykObject>() {
                 val string = add(
@@ -155,11 +155,11 @@ class KotlinGeneratorTest {
                         required = false,
                         final = true,
                         unique = true,
-                        minValue = Option.O1,
-                        maxValue = Option.O3,
-                        default = Option.O1,
-                        name = Option,
-                        values = Option.values()
+                        minValue = MarykEnum.O1,
+                        maxValue = MarykEnum.O3,
+                        default = MarykEnum.O1,
+                        name = MarykEnum,
+                        values = MarykEnum.values()
                     ),
                     getter = CompleteMarykObject::enum
                 )
@@ -332,12 +332,12 @@ class KotlinGeneratorTest {
                         searchable = false,
                         required = false,
                         final = true,
-                        typeEnum = Option,
-                        definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
-                            Option.O1 to StringDefinition(
+                        typeEnum = MarykEnum,
+                        definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(
+                            MarykEnum.O1 to StringDefinition(
                                 regEx = "hi.*"
                             ),
-                            Option.O2 to BooleanDefinition()
+                            MarykEnum.O2 to BooleanDefinition()
                         )
                     ),
                     getter = CompleteMarykObject::multi
@@ -352,7 +352,7 @@ class KotlinGeneratorTest {
                     string = map(0, "string"),
                     number = map(1, 42.toUInt32()),
                     boolean = map(2, true),
-                    enum = map(3, Option.O1),
+                    enum = map(3, MarykEnum.O1),
                     date = map(4, Date(2018, 5, 2)),
                     dateTime = map(5, DateTime(2018, 5, 2, 10, 11, 12)),
                     time = map(6, Time(10, 11, 12)),

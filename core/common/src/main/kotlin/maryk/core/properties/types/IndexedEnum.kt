@@ -1,5 +1,7 @@
 package maryk.core.properties.types
 
+import maryk.core.objects.MarykPrimitive
+
 interface IndexedEnum<in E>: Comparable<E>{
     val index: Int
     val indexAsShortToStore: Short get() = (this.index + Short.MIN_VALUE).toShort()
@@ -24,4 +26,4 @@ interface IndexedEnum<in E>: Comparable<E>{
 open class IndexedEnumDefinition<E>(
     val name: String,
     val values: () -> Array<E>
-)
+): MarykPrimitive

@@ -12,7 +12,7 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
     properties: P
 ) : SimpleDataModel<DO, P>(
     properties
-) {
+), MarykPrimitive {
     internal object Model : DefinitionDataModel<DataModel<*, *>>(
         properties = object : PropertyDefinitions<DataModel<out Any, PropertyDefinitions<out Any>>>() {
             init {

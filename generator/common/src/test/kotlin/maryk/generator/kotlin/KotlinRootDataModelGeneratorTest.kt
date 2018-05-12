@@ -83,8 +83,8 @@ data class CompleteMarykObject(
     val reference: Key<SimpleMarykObject> = Key("AAECAw"),
     val subModel: SimpleMarykObject,
     val valueModel: ValueMarykObject,
-    val list: List<String>,
-    val set: Set<Int>,
+    val list: List<String> = listOf("ha1", "ha2", "ha3"),
+    val set: Set<Int> = setOf(1, 2, 3),
     val map: Map<Date, Int>,
     val multi: TypedValue<MarykEnum, *>,
     val booleanForKey: Boolean,
@@ -278,7 +278,8 @@ data class CompleteMarykObject(
                 maxSize = 5,
                 valueDefinition = StringDefinition(
                     regEx = "ha.*"
-                )
+                ),
+                default = listOf("ha1", "ha2", "ha3")
             ),
             getter = CompleteMarykObject::list
         )
@@ -293,7 +294,8 @@ data class CompleteMarykObject(
                 maxSize = 5,
                 valueDefinition = NumberDefinition(
                     type = SInt32
-                )
+                ),
+                default = setOf(1, 2, 3)
             ),
             getter = CompleteMarykObject::set
         )
@@ -383,8 +385,8 @@ data class CompleteMarykObject(
             reference = map(9, Key("AAECAw")),
             subModel = map(10),
             valueModel = map(11),
-            list = map(12),
-            set = map(13),
+            list = map(12, listOf("ha1", "ha2", "ha3")),
+            set = map(13, setOf(1, 2, 3)),
             map = map(14),
             multi = map(15),
             booleanForKey = map(16),

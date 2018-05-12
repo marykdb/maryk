@@ -1,11 +1,15 @@
 package maryk.core.properties.definitions
 
-import maryk.core.objects.SimpleDataModel
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DataModelContext
 
 /** Definition for List property */
 data class ListDefinition<T: Any, CX: IsPropertyContext>(
@@ -15,8 +19,9 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     override val final: Boolean = false,
     override val minSize: Int? = null,
     override val maxSize: Int? = null,
-    override val valueDefinition: IsValueDefinition<T, CX>
-) : IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> {
+    override val valueDefinition: IsValueDefinition<T, CX>,
+    override val default: List<T>? = null
+) : IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>>, IsWithDefaultDefinition<List<T>> {
     override val propertyDefinitionType = PropertyDefinitionType.List
 
     init {
@@ -38,7 +43,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : SimpleDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>>(
+    object Model : ContextualDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>, DataModelContext, ValueDefinitionContext>(
+        contextTransformer = { it: DataModelContext? -> ValueDefinitionContext(it) },
         properties = object : PropertyDefinitions<ListDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
@@ -48,19 +54,38 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMinSize(4, this, ListDefinition<*, *>::minSize)
                 HasSizeDefinition.addMaxSize(5, this, ListDefinition<*, *>::maxSize)
                 add(6, "valueDefinition",
-                    MultiTypeDefinition(
-                        typeEnum = PropertyDefinitionType,
-                        definitionMap = mapOfPropertyDefSubModelDefinitions
+                    ContextCaptureDefinition(
+                        contextTransformer = { it?.dataModelContext },
+                        definition = MultiTypeDefinition(
+                            typeEnum = PropertyDefinitionType,
+                            definitionMap = mapOfPropertyDefSubModelDefinitions
+                        ),
+                        capturer = { context: ValueDefinitionContext?, value ->
+                            context?.apply {
+                                @Suppress("UNCHECKED_CAST")
+                                valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
+                            } ?: throw ContextNotFoundException()
+                        }
                     ),
                     getter = ListDefinition<*, *>::valueDefinition,
                     toSerializable = {
                         val defType = it!! as IsTransportablePropertyDefinitionType<*>
                         TypedValue(defType.propertyDefinitionType, it)
                     },
-                    fromSerializable = { it ->
-                        it?.value as IsValueDefinition<*, *>
+                    fromSerializable = {
+                        @Suppress("UNCHECKED_CAST")
+                        it?.value as IsValueDefinition<Any, DataModelContext>?
                     }
                 )
+                @Suppress("UNCHECKED_CAST")
+                add(7, "default", ContextualCollectionDefinition(
+                    required = false,
+                    contextualResolver = { context: ValueDefinitionContext? ->
+                        context?.valueDefinion?.let {
+                            ListDefinition(valueDefinition = it) as IsByteTransportableCollection<Any, Collection<Any>, ValueDefinitionContext>
+                        } ?: throw ContextNotFoundException()
+                    }
+                ), ListDefinition<*, *>::default)
             }
         }
     ) {
@@ -71,7 +96,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
             final = map(3, false),
             minSize = map(4),
             maxSize = map(5),
-            valueDefinition = map<IsValueDefinition<*, *>>(6)
+            valueDefinition = map<IsValueDefinition<*, *>>(6),
+            default = map(7)
         )
     }
 }

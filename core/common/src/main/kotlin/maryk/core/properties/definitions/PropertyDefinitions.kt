@@ -14,8 +14,6 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -161,28 +159,6 @@ abstract class PropertyDefinitions<DO: Any>(
         definition: MapDefinition<K, V, CX>,
         getter: (DO) -> Map<K, V>? = { null }
     ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
-        addSingle(this)
-    }
-
-    /** Add multi type property [definition] with [name] and [index] and value [getter] */
-    internal fun <E: IndexedEnum<E>, TO: Any, CX: IsPropertyContext> add(
-        index: Int,
-        name: String,
-        definition: MultiTypeDefinition<E, CX>,
-        getter: (DO) -> TO? = { null },
-        toSerializable: (TO?) -> TypedValue<E, *>?,
-        fromSerializable: (TypedValue<E, *>?) -> TO?
-    ) = PropertyDefinitionWrapper(index, name, definition, getter, toSerializable, fromSerializable).apply {
-        addSingle(this)
-    }
-
-    /** Add multi type property [definition] with [name] and [index] and value [getter] */
-    fun <E: IndexedEnum<E>, CX: IsPropertyContext> add(
-        index: Int,
-        name: String,
-        definition: MultiTypeDefinition<E, CX>,
-        getter: (DO) -> TypedValue<E, *>? = { null }
-    ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
         addSingle(this)
     }
 

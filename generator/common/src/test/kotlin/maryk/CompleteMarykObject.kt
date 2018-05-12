@@ -244,7 +244,8 @@ data class CompleteMarykObject(
                 maxSize = 5,
                 valueDefinition = StringDefinition(
                     regEx = "ha.*"
-                )
+                ),
+                default = listOf("ha1", "ha2", "ha3")
             ),
             getter = CompleteMarykObject::list
         )
@@ -259,7 +260,8 @@ data class CompleteMarykObject(
                 maxSize = 5,
                 valueDefinition = NumberDefinition(
                     type = SInt32
-                )
+                ),
+                default = setOf(1, 2, 3)
             ),
             getter = CompleteMarykObject::set
         )

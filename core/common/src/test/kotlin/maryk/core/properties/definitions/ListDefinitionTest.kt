@@ -4,8 +4,8 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
-import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.NotEnoughItemsException
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.Float32
@@ -40,7 +40,8 @@ internal class ListDefinitionTest {
         required = false,
         minSize = 2,
         maxSize = 4,
-        valueDefinition = subDef
+        valueDefinition = subDef,
+        default = listOf("Tic", "Tac", "Toe")
     )
 
     private val defVarInt = ListDefinition(

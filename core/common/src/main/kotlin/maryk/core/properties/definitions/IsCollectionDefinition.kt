@@ -15,6 +15,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -167,4 +168,10 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         @Suppress("UNCHECKED_CAST")
         return collection as C
     }
+}
+
+class ValueDefinitionContext(
+    val dataModelContext: DataModelContext?
+) : IsPropertyContext {
+    var valueDefinion: IsValueDefinition<Any, DataModelContext>? = null
 }

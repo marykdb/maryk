@@ -18,7 +18,7 @@ import maryk.core.properties.types.numeric.UInt8
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
-internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: Any, addImport: (String) -> Unit) = when(value) {
+internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: Any, addImport: (String) -> Unit): String = when(value) {
     is String -> """"$value""""
     is TimePrecision -> {
         addImport("maryk.core.properties.types.TimePrecision")
@@ -82,6 +82,34 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
             (value as IsTransportablePropertyDefinitionType<Any>).getKotlinDescriptor()
 
         kotlinDescriptor.definitionToKotlin(value, addImport).trimStart()
+    }
+    is Set<*> -> {
+        @Suppress("UNCHECKED_CAST")
+        val setValues = value as Set<Any>
+        val kotlinStringValues = mutableSetOf<String>()
+
+        for (v in setValues) {
+            @Suppress("UNCHECKED_CAST")
+            kotlinStringValues.add(
+                generateKotlinValue(definition, v, addImport)
+            )
+        }
+
+        "setOf(${kotlinStringValues.joinToString(", ")})"
+    }
+    is List<*> -> {
+        @Suppress("UNCHECKED_CAST")
+        val listValues = value as List<Any>
+        val kotlinStringValues = mutableListOf<String>()
+
+        for (v in listValues) {
+            @Suppress("UNCHECKED_CAST")
+            kotlinStringValues.add(
+                generateKotlinValue(definition, v, addImport)
+            )
+        }
+
+        "listOf(${kotlinStringValues.joinToString(", ")})"
     }
     else -> "$value"
 }

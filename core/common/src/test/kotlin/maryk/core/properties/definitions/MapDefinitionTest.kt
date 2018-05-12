@@ -4,8 +4,8 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
-import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.NotEnoughItemsException
+import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
@@ -44,7 +44,11 @@ internal class MapDefinitionTest {
         minSize = 2,
         maxSize = 4,
         keyDefinition = intDef,
-        valueDefinition = stringDef
+        valueDefinition = stringDef,
+        default = mapOf(
+            4 to "four",
+            5 to "five"
+        )
     )
 
     private val value = mapOf(

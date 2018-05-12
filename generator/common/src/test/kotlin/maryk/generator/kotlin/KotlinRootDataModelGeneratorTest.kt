@@ -85,7 +85,7 @@ data class CompleteMarykObject(
     val valueModel: ValueMarykObject,
     val list: List<String> = listOf("ha1", "ha2", "ha3"),
     val set: Set<Int> = setOf(1, 2, 3),
-    val map: Map<Date, Int>,
+    val map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
     val multi: TypedValue<MarykEnum, *>,
     val booleanForKey: Boolean,
     val dateForKey: Date,
@@ -311,7 +311,8 @@ data class CompleteMarykObject(
                 keyDefinition = DateDefinition(),
                 valueDefinition = NumberDefinition(
                     type = SInt32
-                )
+                ),
+                default = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)
             ),
             getter = CompleteMarykObject::map
         )
@@ -387,7 +388,7 @@ data class CompleteMarykObject(
             valueModel = map(11),
             list = map(12, listOf("ha1", "ha2", "ha3")),
             set = map(13, setOf(1, 2, 3)),
-            map = map(14),
+            map = map(14, mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)),
             multi = map(15),
             booleanForKey = map(16),
             dateForKey = map(17),

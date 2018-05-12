@@ -111,5 +111,19 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
 
         "listOf(${kotlinStringValues.joinToString(", ")})"
     }
+    is Map<*, *> -> {
+        @Suppress("UNCHECKED_CAST")
+        val mapValues = value as Map<Any, Any>
+        val kotlinStringValues = mutableListOf<String>()
+
+        for (v in mapValues) {
+            @Suppress("UNCHECKED_CAST")
+            kotlinStringValues.add(
+                "${generateKotlinValue(definition, v.key, addImport)} to ${generateKotlinValue(definition, v.value, addImport)}"
+            )
+        }
+
+        "mapOf(${kotlinStringValues.joinToString(", ")})"
+    }
     else -> "$value"
 }

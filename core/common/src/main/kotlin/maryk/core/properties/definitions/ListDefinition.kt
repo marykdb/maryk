@@ -43,8 +43,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>, DataModelContext, ValueDefinitionContext>(
-        contextTransformer = { it: DataModelContext? -> ValueDefinitionContext(it) },
+    object Model : ContextualDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>, DataModelContext, ListDefinitionContext>(
+        contextTransformer = { it: DataModelContext? -> ListDefinitionContext(it) },
         properties = object : PropertyDefinitions<ListDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
@@ -60,7 +60,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefSubModelDefinitions
                         ),
-                        capturer = { context: ValueDefinitionContext?, value ->
+                        capturer = { context: ListDefinitionContext?, value ->
                             context?.apply {
                                 @Suppress("UNCHECKED_CAST")
                                 valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
@@ -80,9 +80,9 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                 @Suppress("UNCHECKED_CAST")
                 add(7, "default", ContextualCollectionDefinition(
                     required = false,
-                    contextualResolver = { context: ValueDefinitionContext? ->
-                        context?.valueDefinion?.let {
-                            ListDefinition(valueDefinition = it) as IsByteTransportableCollection<Any, Collection<Any>, ValueDefinitionContext>
+                    contextualResolver = { context: ListDefinitionContext? ->
+                        context?.listDefinition?.let {
+                            it as IsByteTransportableCollection<Any, Collection<Any>, ListDefinitionContext>
                         } ?: throw ContextNotFoundException()
                     }
                 ), ListDefinition<*, *>::default)
@@ -100,4 +100,16 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
             default = map(7)
         )
     }
+}
+
+class ListDefinitionContext(
+    val dataModelContext: DataModelContext?
+) : IsPropertyContext {
+    var valueDefinion: IsValueDefinition<Any, DataModelContext>? = null
+
+    private var _listDefinition: Lazy<ListDefinition<Any, DataModelContext>> = lazy {
+        ListDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
+    }
+
+    val listDefinition: ListDefinition<Any, DataModelContext> get() = this._listDefinition.value
 }

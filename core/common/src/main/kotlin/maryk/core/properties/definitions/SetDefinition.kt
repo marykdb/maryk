@@ -47,8 +47,8 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<SetDefinition<*, *>, PropertyDefinitions<SetDefinition<*, *>>, DataModelContext, ValueDefinitionContext>(
-        contextTransformer = { it: DataModelContext? -> ValueDefinitionContext(it) },
+    object Model : ContextualDataModel<SetDefinition<*, *>, PropertyDefinitions<SetDefinition<*, *>>, DataModelContext, SetDefinitionContext>(
+        contextTransformer = { it: DataModelContext? -> SetDefinitionContext(it) },
         properties = object : PropertyDefinitions<SetDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)
@@ -64,7 +64,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefSubModelDefinitions
                         ),
-                        capturer = { context: ValueDefinitionContext?, value ->
+                        capturer = { context: SetDefinitionContext?, value ->
                             context?.apply {
                                 @Suppress("UNCHECKED_CAST")
                                 valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
@@ -84,9 +84,9 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                 @Suppress("UNCHECKED_CAST")
                 add(7, "default", ContextualCollectionDefinition(
                     required = false,
-                    contextualResolver = { context: ValueDefinitionContext? ->
-                        context?.valueDefinion?.let {
-                            SetDefinition(valueDefinition = it) as IsByteTransportableCollection<Any, Collection<Any>, ValueDefinitionContext>
+                    contextualResolver = { context: SetDefinitionContext? ->
+                        context?.setDefinition?.let {
+                            it as IsByteTransportableCollection<Any, Collection<Any>, SetDefinitionContext>
                         } ?: throw ContextNotFoundException()
                     }
                 ), SetDefinition<*, *>::default)
@@ -104,4 +104,16 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
             default = map(7)
         )
     }
+}
+
+class SetDefinitionContext(
+    val dataModelContext: DataModelContext?
+) : IsPropertyContext {
+    var valueDefinion: IsValueDefinition<Any, DataModelContext>? = null
+
+    private var _setDefinition: Lazy<SetDefinition<Any, DataModelContext>> = lazy {
+        SetDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
+    }
+
+    val setDefinition: SetDefinition<Any, DataModelContext> get() = this._setDefinition.value
 }

@@ -279,4 +279,13 @@ class KeyValueDefinitionContext(
 ) : IsPropertyContext {
     var keyDefinion: IsSimpleValueDefinition<Any, DataModelContext>? = null
     var valueDefinion: IsValueDefinition<Any, DataModelContext>? = null
+
+    private var _mapDefinition: Lazy<MapDefinition<Any, Any, DataModelContext>> = lazy {
+        MapDefinition(
+            keyDefinition = this.keyDefinion ?: throw ContextNotFoundException(),
+            valueDefinition = this.valueDefinion ?: throw ContextNotFoundException()
+        )
+    }
+
+    val mapDefinition: MapDefinition<Any, Any, DataModelContext> get() = this._mapDefinition.value
 }

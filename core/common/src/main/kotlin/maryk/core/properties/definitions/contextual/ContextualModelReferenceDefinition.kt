@@ -16,8 +16,20 @@ import maryk.lib.bytes.writeUTF8Bytes
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
-internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>(
-    val contextualResolver: (context: CX?, name: String) -> DataModel<*, *>
+@Suppress("FunctionName")
+internal fun <CX: IsPropertyContext> ContextualModelReferenceDefinition(
+    contextualResolver: (context: CX?, name: String) -> DataModel<*, *>
+) = ContextualModelReferenceDefinition<CX, CX>(contextualResolver) {
+    it
+}
+
+/**
+ * Definition for a reference to another DataObject resolved from context by [contextualResolver].
+ * Has a [contextTransformer] to transform context.
+ */
+internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext, CXI: IsPropertyContext>(
+    val contextualResolver: (context: CXI?, name: String) -> DataModel<*, *>,
+    val contextTransformer: (CX?) -> CXI?
 ): IsValueDefinition<DataModel<*, *>, CX>, IsSerializableFlexBytesEncodable<DataModel<*, *>, CX> {
     override val indexed = false
     override val searchable = false
@@ -29,7 +41,7 @@ internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>
         value.name
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(context, string)
+        contextualResolver(contextTransformer(context), string)
 
     override fun writeJsonValue(value: DataModel<*, *>, writer: IsJsonLikeWriter, context: CX?) =
         writer.writeString(this.asString(value, context))
@@ -55,5 +67,5 @@ internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext>
         value.name.writeUTF8Bytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        contextualResolver(context, initString(length, reader))
+        contextualResolver(contextTransformer(context), initString(length, reader))
 }

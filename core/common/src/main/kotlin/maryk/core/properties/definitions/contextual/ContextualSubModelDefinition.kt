@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.objects.RootDataModel
+import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
@@ -14,8 +14,8 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
-internal data class ContextualSubModelDefinition<in CX: IsPropertyContext>(
-    val contextualResolver: (context: CX?) -> RootDataModel<Any, PropertyDefinitions<Any>>
+internal data class ContextualSubModelDefinition<CX: IsPropertyContext>(
+    val contextualResolver: (context: CX?) -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
 ): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
     override val indexed = false
     override val searchable = false

@@ -3,13 +3,15 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.objects.DefinitionDataModel
+import maryk.core.objects.AbstractDataModel
+import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
+import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
+import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType
 import maryk.core.query.DataModelContext
@@ -23,13 +25,15 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
+    val dataModel: DM,
     override val minValue: DO? = null,
     override val maxValue: DO? = null,
-    val dataModel: DM
+    override val default: DO? = null
 ) :
     IsComparableDefinition<DO, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<DO, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType<DO>
+    IsTransportablePropertyDefinitionType<DO>,
+    IsWithDefaultDefinition<DO>
 {
     override val propertyDefinitionType = PropertyDefinitionType.ValueModel
     override val wireType = WireType.LENGTH_DELIMITED
@@ -75,7 +79,8 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
             }
         } else { null }
 
-    object Model : DefinitionDataModel<ValueModelDefinition<*, *>>(
+    object Model : ContextualDataModel<ValueModelDefinition<*, *>, PropertyDefinitions<ValueModelDefinition<*, *>>, DataModelContext, ModelContext>(
+        contextTransformer = { ModelContext(it) },
         properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *>::indexed)
@@ -83,20 +88,10 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *>::final)
                 IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *>::unique)
-                add(5, "minValue",
-                    FlexBytesDefinition(),
-                    ValueModelDefinition<*, *>::minValue,
-                    { it?._bytes?.let { Bytes(it) } },
-                    { it?.let { ValueDataObject(it.bytes) } }
-                )
-                add(6, "maxValue",
-                    FlexBytesDefinition(),
-                    ValueModelDefinition<*, *>::maxValue,
-                    { it?._bytes?.let { Bytes(it) } },
-                    { it?.let { ValueDataObject(it.bytes) } }
-                )
-                add(7, "dataModel",
-                    ContextualModelReferenceDefinition<DataModelContext>(
+
+                add(5, "dataModel",
+                    ContextualModelReferenceDefinition<ModelContext, DataModelContext>(
+                        contextTransformer = { it?.dataModelContext },
                         contextualResolver = { context, name ->
                             context?.let {
                                 it.dataModels[name] ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
@@ -106,11 +101,43 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                     ValueModelDefinition<*, *>::dataModel,
                     capturer = { context, dataModel ->
                         context.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel
-                            }
+                            @Suppress("UNCHECKED_CAST")
+                            context.model = dataModel as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+
+                            context.dataModelContext?.let {
+                                if (!it.dataModels.containsKey(dataModel.name)) {
+                                    it.dataModels[dataModel.name] = dataModel
+                                }
+                            } ?: throw ContextNotFoundException()
                         }
                     }
+                )
+
+                add(6, "minValue",
+                    ContextualSubModelDefinition(
+                        contextualResolver = { context: ModelContext? ->
+                            context?.model ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    ValueModelDefinition<*, *>::minValue
+                )
+
+                add(7, "maxValue",
+                    ContextualSubModelDefinition(
+                        contextualResolver = { context: ModelContext? ->
+                            context?.model ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    ValueModelDefinition<*, *>::maxValue
+                )
+
+                add(8, "default",
+                    ContextualSubModelDefinition(
+                        contextualResolver = { context: ModelContext? ->
+                            context?.model ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    ValueModelDefinition<*, *>::default
                 )
             }
         }
@@ -121,9 +148,10 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
             required = map(2),
             final = map(3),
             unique = map(4),
-            minValue = map(5),
-            maxValue = map(6),
-            dataModel = map(7)
+            dataModel = map(5),
+            minValue = map(6),
+            maxValue = map(7),
+            default = map(8)
         )
     }
 }

@@ -28,14 +28,19 @@ internal class ValueModelDefinitionTest {
         minValue = TestValueObject(
             int = 0,
             dateTime = DateTime(2007,12,5),
-            bool = true
+            bool = false
         ),
         maxValue = TestValueObject(
             int = 999,
             dateTime = DateTime(2017,12,5),
             bool = true
         ),
-        dataModel = TestValueObject
+        dataModel = TestValueObject,
+        default = TestValueObject(
+            int = 10,
+            dateTime = DateTime(2010,10,10),
+            bool = true
+        )
     )
 
     @Test
@@ -120,9 +125,19 @@ internal class ValueModelDefinitionTest {
         required: false
         final: true
         unique: true
-        minValue: gAAAAAGAAABHVeoAAQE
-        maxValue: gAAD5wGAAABaJeGAAQE
         dataModel: TestValueObject
+        minValue:
+          int: 0
+          dateTime: '2007-12-05T00:00'
+          bool: false
+        maxValue:
+          int: 999
+          dateTime: '2017-12-05T00:00'
+          bool: true
+        default:
+          int: 10
+          dateTime: '2010-10-10T00:00'
+          bool: true
 
         """.trimIndent()
     }

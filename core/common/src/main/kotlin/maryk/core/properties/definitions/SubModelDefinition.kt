@@ -5,9 +5,10 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.DataModel
-import maryk.core.objects.DefinitionDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
+import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
+import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
@@ -25,12 +26,14 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
     override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
-    dataModel: () -> DM
+    dataModel: () -> DM,
+    override val default: DO? = null
 ) :
     IsValueDefinition<DO, CXI>,
     IsSerializableFlexBytesEncodable<DO, CXI>,
     IsSubModelDefinition<DO, CXI>,
-    IsTransportablePropertyDefinitionType<DO>
+    IsTransportablePropertyDefinitionType<DO>,
+    IsWithDefaultDefinition<DO>
 {
     override val propertyDefinitionType = PropertyDefinitionType.SubModel
     override val wireType = WireType.LENGTH_DELIMITED
@@ -125,7 +128,8 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         return result
     }
 
-    object Model : DefinitionDataModel<SubModelDefinition<*, *, *, *, *>>(
+    object Model : ContextualDataModel<SubModelDefinition<*, *, *, *, *>, PropertyDefinitions<SubModelDefinition<*, *, *, *, *>>, DataModelContext, ModelContext>(
+        contextTransformer = { ModelContext(it) },
         properties = object : PropertyDefinitions<SubModelDefinition<*, *, *, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SubModelDefinition<*, *, *, *, *>::indexed)
@@ -133,8 +137,11 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                 IsPropertyDefinition.addRequired(this, SubModelDefinition<*, *, *, *, *>::required)
                 IsPropertyDefinition.addFinal(this, SubModelDefinition<*, *, *, *, *>::final)
                 add(4, "dataModel",
-                    ContextualModelReferenceDefinition<DataModelContext>(
-                        contextualResolver = { context, name ->
+                    ContextualModelReferenceDefinition(
+                        contextTransformer = {context: ModelContext? ->
+                            context?.dataModelContext
+                        },
+                        contextualResolver = { context: DataModelContext?, name ->
                             context?.let{
                                 it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
@@ -144,10 +151,24 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                         it.dataModel as DataModel<*, *>
                     },
                     capturer = { context, dataModel ->
-                        if (!context.dataModels.containsKey(dataModel.name)) {
-                            context.dataModels[dataModel.name] = dataModel
-                        }
+                        @Suppress("UNCHECKED_CAST")
+                        context.model = dataModel as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+
+                        context.dataModelContext?.let {
+                            if (!it.dataModels.containsKey(dataModel.name)) {
+                                it.dataModels[dataModel.name] = dataModel
+                            }
+                        } ?: throw ContextNotFoundException()
                     }
+                )
+
+                add(5, "default",
+                    ContextualSubModelDefinition(
+                        contextualResolver = { context: ModelContext? ->
+                            context?.model ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    SubModelDefinition<*, *, *, *, *>::default
                 )
             }
         }
@@ -159,7 +180,8 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
             final = map(3),
             dataModel = {
                 map<DataModel<Any, PropertyDefinitions<Any>>>(4)
-            }
+            },
+            default = map(5)
         )
     }
 }

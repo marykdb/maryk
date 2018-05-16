@@ -44,7 +44,8 @@ internal class SubModelDefinitionTest {
         required = false,
         final = true,
         searchable = false,
-        dataModel = { MarykObject }
+        dataModel = { MarykObject },
+        default = MarykObject("default")
     )
 
     @Test
@@ -107,6 +108,8 @@ internal class SubModelDefinitionTest {
         required: false
         final: true
         dataModel: MarykObject
+        default:
+          string: default
 
         """.trimIndent()
     }

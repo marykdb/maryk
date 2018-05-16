@@ -84,8 +84,13 @@ data class CompleteMarykObject(
     val fixedBytes: Bytes = Bytes("AAECAwQ"),
     val flexBytes: Bytes = Bytes("AAECAw"),
     val reference: Key<SimpleMarykObject> = Key("AAECAw"),
-    val subModel: SimpleMarykObject,
-    val valueModel: ValueMarykObject,
+    val subModel: SimpleMarykObject = SimpleMarykObject(
+        value = "a default"
+    ),
+    val valueModel: ValueMarykObject = ValueMarykObject(
+        int = 10,
+        date = Date(2010, 10, 10)
+    ),
     val list: List<String> = listOf("ha1", "ha2", "ha3"),
     val set: Set<Int> = setOf(1, 2, 3),
     val map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
@@ -255,7 +260,10 @@ data class CompleteMarykObject(
                 searchable = false,
                 required = false,
                 final = true,
-                dataModel = { SimpleMarykObject }
+                dataModel = { SimpleMarykObject },
+                default = SimpleMarykObject(
+                    value = "a default"
+                )
             ),
             getter = CompleteMarykObject::subModel
         )
@@ -266,7 +274,19 @@ data class CompleteMarykObject(
                 searchable = false,
                 required = false,
                 final = true,
-                dataModel = { ValueMarykObject }
+                dataModel = { ValueMarykObject },
+                minValue = ValueMarykObject(
+                    int = 0,
+                    date = Date(100, 1, 1)
+                ),
+                maxValue = ValueMarykObject(
+                    int = 999,
+                    date = Date(9999, 12, 31)
+                ),
+                default = ValueMarykObject(
+                    int = 10,
+                    date = Date(2010, 10, 10)
+                )
             ),
             getter = CompleteMarykObject::valueModel
         )

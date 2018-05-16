@@ -49,6 +49,10 @@ private val sInt64Imports = arrayOf("maryk.core.properties.types.numeric.SInt64"
 private val float32Imports = arrayOf("maryk.core.properties.types.numeric.Float32")
 private val float64Imports = arrayOf("maryk.core.properties.types.numeric.Float64")
 
+private val generateKotlinValueWithDefinition: (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String = { definition, value, addImport ->
+    generateKotlinValue(definition, value, addImport)
+}
+
 @Suppress("UNCHECKED_CAST")
 private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Boolean to PropertyDefinitionKotlinDescriptor(
@@ -153,12 +157,7 @@ private val definitionNamesMap = mapOf(
 
                 "mapOf<$typeName, IsSubDefinition<*, IsPropertyContext>>(\n$types\n)"
             },
-            "default" to { definition, value, addImport ->
-                val multiTypeDefinition = definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
-                multiTypeDefinition.default?.let{
-                    generateKotlinValue(definition, value, addImport)
-                }
-            }
+            "default" to generateKotlinValueWithDefinition
         )
     ),
     PropertyDefinitionType.Number to PropertyDefinitionKotlinDescriptor(
@@ -216,7 +215,10 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.SubModel to PropertyDefinitionKotlinDescriptor(
         className = "SubModelDefinition",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = SubModelDefinition.Model as IsDataModel<SubModelDefinition<Any, *, DataModel<Any, *>, *, *>>
+        definitionModel = SubModelDefinition.Model as IsDataModel<SubModelDefinition<Any, *, DataModel<Any, *>, *, *>>,
+        propertyValueOverride = mapOf(
+            "default" to generateKotlinValueWithDefinition
+        )
     ),
     PropertyDefinitionType.Time to PropertyDefinitionKotlinDescriptor(
         className = "TimeDefinition",
@@ -227,6 +229,11 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.ValueModel to PropertyDefinitionKotlinDescriptor(
         className = "ValueModelDefinition",
         kotlinTypeName = { it -> it.dataModel.name },
-        definitionModel = ValueModelDefinition.Model as IsDataModel<ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>>>
+        definitionModel = ValueModelDefinition.Model as IsDataModel<ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>>>,
+        propertyValueOverride = mapOf(
+            "default" to generateKotlinValueWithDefinition,
+            "minValue" to generateKotlinValueWithDefinition,
+            "maxValue" to generateKotlinValueWithDefinition
+        )
     )
 )

@@ -1,10 +1,14 @@
 package maryk.generator.kotlin
 
 import maryk.core.objects.DataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.IndexedEnumDefinition
@@ -133,5 +137,34 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)
         "TypedValue(${multiTypeDefinition.typeEnum.name}.${value.type.name}, $valueAsString)"
     }
-    else -> "$value"
+    else -> {
+        when (definition) {
+            is SubModelDefinition<*, *, *, *, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
+                return it.generateKotlinValue(value, addImport)
+            } ?: throw Exception("DataModel ${definition.dataModel} cannot be used to generate Kotlin code")
+            is ValueModelDefinition<*, *> -> definition.dataModel.let {
+                return it.generateKotlinValue(value, addImport)
+            }
+            else -> "$value"
+        }
+    }
+}
+
+private fun DataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
+    val values = mutableListOf<String>()
+
+    for(property in this.properties) {
+        @Suppress("UNCHECKED_CAST")
+        val wrapper = property as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>
+        property.getter(value)?.let {
+            values.add("${property.name} = ${generateKotlinValue(wrapper.definition, it, addImport)}")
+        }
+    }
+
+    return if (values.isEmpty()) {
+        "${this.name}()"
+    } else {
+        "${this.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
+    }
+
 }

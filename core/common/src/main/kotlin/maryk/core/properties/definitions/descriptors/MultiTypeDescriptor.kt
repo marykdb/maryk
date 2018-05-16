@@ -2,17 +2,20 @@ package maryk.core.properties.definitions.descriptors
 
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefSubModelDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -39,7 +42,7 @@ import maryk.yaml.YamlWriter
 private data class MultiTypeDescriptor(
     val index: Int,
     val name: String,
-    val definition: IsSubDefinition<out Any, IsPropertyContext>
+    val definition: IsSubDefinition<out Any, DataModelContext>
 ) {
     private object Properties: PropertyDefinitions<MultiTypeDescriptor>() {
         val index = add(0, "index",
@@ -174,14 +177,14 @@ private data class MultiTypeDescriptorListDefinition(
 private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constructor(
     override val index: Int,
     override val name: String,
-    override val definition: MultiTypeDescriptorListDefinition,
+    override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, DataModelContext>,
     override val toSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
     override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
-    override val capturer: ((IsPropertyContext, List<MultiTypeDescriptor>) -> Unit)? = null,
-    override val getter: (MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>) -> List<MultiTypeDescriptor>?
+    override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
+    override val getter: (MultiTypeDefinition<IndexedEnum<Any>, DataModelContext>) -> List<MultiTypeDescriptor>?
 ) :
-    IsCollectionDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, IsPropertyContext, IsValueDefinition<MultiTypeDescriptor, IsPropertyContext>> by definition,
-    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, IsPropertyContext, MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>
+    IsByteTransportableCollection<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
+    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<IndexedEnum<Any>, DataModelContext>>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         ValuePropertyReference(this, parentRef)
@@ -195,19 +198,31 @@ internal fun PropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropert
     index: Int,
     name: String
 ) {
-    MultiTypeDescriptorPropertyDefinitionWrapper(index, name, MultiTypeDescriptorListDefinition(
-        valueDefinition =  SubModelDefinition(
-            dataModel = { MultiTypeDescriptor.Model }
-        )
-    )) {
-        it.definitionMap.map {
-            MultiTypeDescriptor(
-                index = it.key.index,
-                name = it.key.name,
-                definition = it.value
-            )
-        }.toList()
-    }.apply {
+    MultiTypeDescriptorPropertyDefinitionWrapper(
+        index, name,
+        definition = ContextCollectionTransformerDefinition(
+            definition = MultiTypeDescriptorListDefinition(
+                valueDefinition = SubModelDefinition(
+                    dataModel = { MultiTypeDescriptor.Model }
+                )
+            ),
+            contextTransformer = {context: MultiTypeDefinitionContext? ->
+                context?.dataModelContext
+            }
+        ),
+        getter = {
+            it.definitionMap.map {
+                MultiTypeDescriptor(
+                    index = it.key.index,
+                    name = it.key.name,
+                    definition = it.value
+                )
+            }.toList()
+        },
+        capturer = { context: MultiTypeDefinitionContext, value ->
+            context.definitionMap = convertMultiTypeDescriptors(value)
+        }
+    ).apply {
         @Suppress("UNCHECKED_CAST")
         addSingle(this as IsPropertyDefinitionWrapper<out Any, *, *, MultiTypeDefinition<*, *>>)
     }
@@ -218,7 +233,7 @@ internal fun PropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropert
  * Will throw an exception if it fails to convert
  */
 @Suppress("UNCHECKED_CAST")
-internal fun convertMultiTypeDescriptors(value: Any?): Map<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>> {
+internal fun convertMultiTypeDescriptors(value: Any?): Map<IndexedEnum<Any>, IsSubDefinition<out Any, DataModelContext>> {
     val descriptorList = value as? List<MultiTypeDescriptor>
             ?: throw ParseException("Multi type definition descriptor cannot be empty")
 

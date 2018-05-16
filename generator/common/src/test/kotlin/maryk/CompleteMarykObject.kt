@@ -35,8 +35,6 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
-
-
 data class CompleteMarykObject(
     val string: String = "string",
     val number: UInt32 = 42.toUInt32(),
@@ -53,7 +51,7 @@ data class CompleteMarykObject(
     val list: List<String> = listOf("ha1", "ha2", "ha3"),
     val set: Set<Int> = setOf(1, 2, 3),
     val map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
-    val multi: TypedValue<MarykEnum, *>,
+    val multi: TypedValue<MarykEnum, *> = TypedValue(MarykEnum.O1, "a value"),
     val booleanForKey: Boolean,
     val dateForKey: Date,
     val multiForKey: TypedValue<MarykEnum, *>
@@ -295,7 +293,8 @@ data class CompleteMarykObject(
                         regEx = "hi.*"
                     ),
                     MarykEnum.O2 to BooleanDefinition()
-                )
+                ),
+                default = TypedValue(MarykEnum.O1, "a value")
             ),
             getter = CompleteMarykObject::multi
         )

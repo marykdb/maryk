@@ -41,12 +41,14 @@ val generatedKotlinForCompleteDataModel = """
 package maryk
 
 import maryk.core.objects.RootDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -64,6 +66,7 @@ import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
+import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.lib.time.Date
@@ -86,7 +89,7 @@ data class CompleteMarykObject(
     val list: List<String> = listOf("ha1", "ha2", "ha3"),
     val set: Set<Int> = setOf(1, 2, 3),
     val map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
-    val multi: TypedValue<MarykEnum, *>,
+    val multi: TypedValue<MarykEnum, *> = TypedValue(MarykEnum.O1, "a value"),
     val booleanForKey: Boolean,
     val dateForKey: Date,
     val multiForKey: TypedValue<MarykEnum, *>
@@ -329,7 +332,8 @@ data class CompleteMarykObject(
                         regEx = "hi.*"
                     ),
                     MarykEnum.O2 to BooleanDefinition()
-                )
+                ),
+                default = TypedValue(MarykEnum.O1, "a value")
             ),
             getter = CompleteMarykObject::multi
         )

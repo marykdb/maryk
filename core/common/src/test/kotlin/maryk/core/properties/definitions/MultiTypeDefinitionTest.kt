@@ -42,7 +42,8 @@ internal class MultiTypeDefinitionTest {
         definitionMap = mapOf(
             Option.V0 to stringDef,
             Option.V1 to intDef
-        )
+        ),
+        default = TypedValue(Option.V0, "test")
     )
 
     private val multisToTest = arrayOf(
@@ -122,6 +123,7 @@ internal class MultiTypeDefinitionTest {
             type: SInt32
             maxValue: 1000
             random: false
+        default: !V0 test
 
         """.trimIndent()
     }

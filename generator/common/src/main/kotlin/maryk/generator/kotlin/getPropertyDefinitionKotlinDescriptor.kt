@@ -73,23 +73,23 @@ private val definitionNamesMap = mapOf(
         kotlinTypeName = { it: EnumDefinition<*> -> it.enum.name },
         definitionModel = EnumDefinition.Model as IsDataModel<EnumDefinition<IndexedEnum<IndexedEnum<*>>>>,
         propertyValueOverride = mapOf(
-            "maxValue" to { definition, value ->
+            "maxValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
             },
-            "minValue" to { definition, value ->
+            "minValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
             },
-            "default" to { definition, value ->
+            "default" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
             },
-            "values" to { definition, _ ->
+            "values" to { definition, _, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.values()"
             },
-            "name" to { definition, _ ->
+            "name" to { definition, _, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
 
                 enumDefinition.enum.name
@@ -131,7 +131,7 @@ private val definitionNamesMap = mapOf(
         kotlinTypeName = { "TypedValue<${it.typeEnum.name}, *>" },
         definitionModel = MultiTypeDefinition.Model as IsDataModel<MultiTypeDefinition<IndexedEnum<Any>, *>>,
         propertyValueOverride = mapOf(
-            "definitionMap" to { definition, _ ->
+            "definitionMap" to { definition, _, addImport ->
                 val multiTypeDefinition = definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
 
                 val typeName = multiTypeDefinition.typeEnum.name
@@ -148,7 +148,16 @@ private val definitionNamesMap = mapOf(
 
                 val types = typeValues.joinToString(",\n").prependIndent()
 
+                addImport("maryk.core.properties.IsPropertyContext")
+                addImport("maryk.core.properties.definitions.IsSubDefinition")
+
                 "mapOf<$typeName, IsSubDefinition<*, IsPropertyContext>>(\n$types\n)"
+            },
+            "default" to { definition, value, addImport ->
+                val multiTypeDefinition = definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
+                multiTypeDefinition.default?.let{
+                    generateKotlinValue(definition, value, addImport)
+                }
             }
         )
     ),

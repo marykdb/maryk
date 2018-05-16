@@ -11,7 +11,7 @@ internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportabl
     val className: String,
     val kotlinTypeName: (D) -> String,
     val definitionModel: IsDataModel<D>,
-    val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<Any>, Any) -> String?> = mapOf(),
+    val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String?> = mapOf(),
     private val imports: ((D) -> Array<String>?)? = null
 ) {
     /** Get an array of all imports which are always needed for this property [definition] */
@@ -40,7 +40,7 @@ internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportabl
 
                 if (override != null) {
                     @Suppress("UNCHECKED_CAST")
-                    override(definition as IsTransportablePropertyDefinitionType<Any>, value)?.let {
+                    override(definition as IsTransportablePropertyDefinitionType<Any>, value, addImport)?.let {
                         output.add("""${property.name} = $it""")
                     }
                 } else {

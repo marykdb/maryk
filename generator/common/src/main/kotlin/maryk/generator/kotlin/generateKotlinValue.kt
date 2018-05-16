@@ -4,11 +4,13 @@ import maryk.core.objects.DataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
+import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.UInt16
 import maryk.core.properties.types.numeric.UInt32
@@ -120,6 +122,16 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         }
 
         "mapOf(${kotlinStringValues.joinToString(", ")})"
+    }
+    is TypedValue<*, *> -> {
+        addImport("maryk.core.properties.types.TypedValue")
+
+        val multiTypeDefinition = definition as MultiTypeDefinition<*, *>
+        val valueDefinition = multiTypeDefinition.definitionMap[value.type]
+
+        @Suppress("UNCHECKED_CAST")
+        val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)
+        "TypedValue(${multiTypeDefinition.typeEnum.name}.${value.type.name}, $valueAsString)"
     }
     else -> "$value"
 }

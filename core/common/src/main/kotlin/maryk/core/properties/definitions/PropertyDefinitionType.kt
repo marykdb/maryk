@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.objects.AbstractDataModel
-import maryk.core.objects.SimpleDataModel
+import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -50,7 +50,7 @@ internal val mapOfPropertyDefSubModelDefinitions = mapOf(
     PropertyDefinitionType.Map to SubModelDefinition(dataModel = { MapDefinition.Model }),
     PropertyDefinitionType.MultiType to SubModelDefinition(dataModel = {
         @Suppress("UNCHECKED_CAST")
-        MultiTypeDefinition.Model as SimpleDataModel<MultiTypeDefinition<out IndexedEnum<Any>, *>, PropertyDefinitions<MultiTypeDefinition<out IndexedEnum<Any>, *>>>
+        MultiTypeDefinition.Model as ContextualDataModel<MultiTypeDefinition<out IndexedEnum<Any>, *>, PropertyDefinitions<MultiTypeDefinition<out IndexedEnum<Any>, *>>, DataModelContext, MultiTypeDefinitionContext>
     }),
     PropertyDefinitionType.Number to SubModelDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
     PropertyDefinitionType.Reference to SubModelDefinition(dataModel = { ReferenceDefinition.Model }),

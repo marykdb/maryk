@@ -11,7 +11,7 @@ interface IsTimeDefinition<T : IsTime<T>> : IsMomentDefinition<T>, IsSerializabl
     override fun calculateStorageByteLength(value: T) = this.byteSize
 
     companion object {
-        internal fun <DO : Any> addPrecision(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> TimePrecision) {
+        internal fun <DO : Any> addPrecision(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> TimePrecision, capturer: ((TimePrecisionContext, TimePrecision) -> Unit)? = null) {
             definitions.add(
                 index,
                 "precision",
@@ -19,8 +19,13 @@ interface IsTimeDefinition<T : IsTime<T>> : IsMomentDefinition<T>, IsSerializabl
                     enum = TimePrecision,
                     default = TimePrecision.SECONDS
                 ),
-                getter
+                getter,
+                capturer
             )
         }
     }
+}
+
+open class TimePrecisionContext : IsPropertyContext {
+    var precision: TimePrecision? = null
 }

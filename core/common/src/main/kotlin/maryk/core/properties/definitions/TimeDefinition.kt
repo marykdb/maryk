@@ -1,16 +1,19 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.SimpleDataModel
+import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
 import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
+import maryk.core.query.DataModelContext
 import maryk.lib.time.Time
 
 /** Definition for Time properties */
@@ -68,7 +71,8 @@ data class TimeDefinition(
         else -> value as? Time
     }
 
-    object Model : SimpleDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>>(
+    object Model : ContextualDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>, DataModelContext, TimeDefinitionContext>(
+        contextTransformer = { TimeDefinitionContext() },
         properties = object : PropertyDefinitions<TimeDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)
@@ -76,10 +80,36 @@ data class TimeDefinition(
                 IsPropertyDefinition.addRequired(this, TimeDefinition::required)
                 IsPropertyDefinition.addFinal(this, TimeDefinition::final)
                 IsComparableDefinition.addUnique(this, TimeDefinition::unique)
-                IsTimeDefinition.addPrecision(5,this, TimeDefinition::precision)
-                add(6, "minValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::minValue)
-                add(7, "maxValue", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::maxValue)
-                add(8, "default", TimeDefinition(precision = TimePrecision.MILLIS), TimeDefinition::default)
+                IsTimeDefinition.addPrecision(5,this,
+                    TimeDefinition::precision,
+                    capturer = { context: TimePrecisionContext, timePrecision ->
+                        context.precision = timePrecision
+                    }
+                )
+                add(6, "minValue",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: TimeDefinitionContext? ->
+                            context?.timeDefinition ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    TimeDefinition::minValue
+                )
+                add(7, "maxValue",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: TimeDefinitionContext? ->
+                            context?.timeDefinition ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    TimeDefinition::maxValue
+                )
+                add(8, "default",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: TimeDefinitionContext? ->
+                            context?.timeDefinition ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    TimeDefinition::default
+                )
                 IsMomentDefinition.addFillWithNow(9, this, TimeDefinition::fillWithNow)
             }
         }
@@ -97,4 +127,14 @@ data class TimeDefinition(
             fillWithNow = map(9)
         )
     }
+}
+
+class TimeDefinitionContext : TimePrecisionContext() {
+    private var _timeDefinition: Lazy<TimeDefinition> = lazy {
+        TimeDefinition(
+            precision = precision ?: throw ContextNotFoundException()
+        )
+    }
+
+    val timeDefinition: TimeDefinition get() = this._timeDefinition.value
 }

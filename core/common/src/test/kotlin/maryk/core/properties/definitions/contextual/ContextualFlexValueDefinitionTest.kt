@@ -21,8 +21,10 @@ class ContextualValueDefinitionTest {
     )
 
     @Suppress("UNCHECKED_CAST")
-    private val def = ContextualValueDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext> }
+    private val def = ContextualValueDefinition(
+        contextualResolver = { context: DataModelPropertyContext? ->
+            context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+        }
     )
 
     @Suppress("UNCHECKED_CAST")

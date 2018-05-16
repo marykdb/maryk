@@ -1,10 +1,12 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.SimpleDataModel
+import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
@@ -12,6 +14,7 @@ import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
+import maryk.core.query.DataModelContext
 
 /**
  * Definition for DateTime properties
@@ -65,7 +68,8 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? DateTime
 
-    object Model : SimpleDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>>(
+    object Model : ContextualDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>, DataModelContext, DateTimeDefinitionContext>(
+        contextTransformer = { DateTimeDefinitionContext() },
         properties = object : PropertyDefinitions<DateTimeDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, DateTimeDefinition::indexed)
@@ -73,10 +77,36 @@ data class DateTimeDefinition(
                 IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
                 IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
                 IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
-                IsTimeDefinition.addPrecision(5, this, DateTimeDefinition::precision)
-                add(6, "minValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::minValue)
-                add(7, "maxValue", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::maxValue)
-                add(8, "default", DateTimeDefinition(precision = TimePrecision.MILLIS), DateTimeDefinition::default)
+                IsTimeDefinition.addPrecision(5, this,
+                    DateTimeDefinition::precision,
+                    capturer = { context: TimePrecisionContext, timePrecision ->
+                        context.precision = timePrecision
+                    }
+                )
+                add(6, "minValue",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: DateTimeDefinitionContext? ->
+                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    DateTimeDefinition::minValue
+                )
+                add(7, "maxValue",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: DateTimeDefinitionContext? ->
+                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    DateTimeDefinition::maxValue
+                )
+                add(8, "default",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: DateTimeDefinitionContext? ->
+                            context?.dateTimeDefinition ?: throw ContextNotFoundException()
+                        }
+                    ),
+                    DateTimeDefinition::default
+                )
                 IsMomentDefinition.addFillWithNow(9, this, DateTimeDefinition::fillWithNow)
             }
         }
@@ -94,4 +124,14 @@ data class DateTimeDefinition(
             fillWithNow = map(9)
         )
     }
+}
+
+class DateTimeDefinitionContext : TimePrecisionContext() {
+    private var _dateTimeDefinition: Lazy<DateTimeDefinition> = lazy {
+        DateTimeDefinition(
+            precision = precision ?: throw ContextNotFoundException()
+        )
+    }
+
+    val dateTimeDefinition: DateTimeDefinition get() = this._dateTimeDefinition.value
 }

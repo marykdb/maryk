@@ -28,9 +28,9 @@ data class ValueIn<T: Any> internal constructor(
             init {
                 IsPropertyCheck.addReference(this, ValueIn<*>::reference)
                 add(1, "values", SetDefinition(
-                    valueDefinition = ContextualValueDefinition<DataModelPropertyContext>(
-                        contextualResolver = {
-                            it?.reference?.let {
+                    valueDefinition = ContextualValueDefinition(
+                        contextualResolver = { context: DataModelPropertyContext? ->
+                            context?.reference?.let {
                                 @Suppress("UNCHECKED_CAST")
                                 it.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
                             } ?: throw ContextNotFoundException()

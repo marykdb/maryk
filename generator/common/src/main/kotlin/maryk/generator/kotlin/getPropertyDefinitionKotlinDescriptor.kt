@@ -23,7 +23,6 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
-import maryk.core.properties.definitions.contextual.IsDefinitionContextWrapper
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.NumberType
@@ -75,37 +74,23 @@ private val definitionNamesMap = mapOf(
         definitionModel = EnumDefinition.Model as IsDataModel<EnumDefinition<IndexedEnum<IndexedEnum<*>>>>,
         propertyValueOverride = mapOf(
             "maxValue" to { definition, value ->
-                val enumDefinition = if (definition is IsDefinitionContextWrapper) {
-                    definition as EnumDefinition<*>
-                } else definition as EnumDefinition<*>
-
+                val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
             },
             "minValue" to { definition, value ->
-                val enumDefinition = if (definition is IsDefinitionContextWrapper) {
-                    definition as EnumDefinition<*>
-                } else definition as EnumDefinition<*>
-
+                val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
             },
             "default" to { definition, value ->
-                val enumDefinition = if (definition is IsDefinitionContextWrapper) {
-                    definition as EnumDefinition<*>
-                } else definition as EnumDefinition<*>
-
+                val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
             },
             "values" to { definition, _ ->
-                val enumDefinition = if (definition is IsDefinitionContextWrapper) {
-                    definition as EnumDefinition<*>
-                } else definition as EnumDefinition<*>
-
+                val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.values()"
             },
             "name" to { definition, _ ->
-                val enumDefinition = if (definition is IsDefinitionContextWrapper) {
-                    definition as EnumDefinition<*>
-                } else definition as EnumDefinition<*>
+                val enumDefinition = definition as EnumDefinition<*>
 
                 enumDefinition.enum.name
             }

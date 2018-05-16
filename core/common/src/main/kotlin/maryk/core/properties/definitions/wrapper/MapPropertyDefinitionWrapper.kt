@@ -15,20 +15,21 @@ import maryk.core.properties.references.MapValueReference
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class MapPropertyDefinitionWrapper<K: Any, V: Any, CX: IsPropertyContext, in DO: Any> internal constructor(
+data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyContext, in DO: Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: MapDefinition<K, V, CX>,
-    override val getter: (DO) -> Map<K, V>?
+    override val getter: (DO) -> TO?,
+    override val toSerializable: ((TO?) -> Map<K, V>?)? = null,
+    override val fromSerializable: ((Map<K, V>?) -> TO?)? = null,
+    override val capturer: ((CX, Map<K, V>) -> Unit)? = null
 ) :
     IsMapDefinition<K, V, CX> by definition,
-    IsPropertyDefinitionWrapper<Map<K,V>, Map<K,V>, CX, DO>
+    IsPropertyDefinitionWrapper<Map<K,V>, TO, CX, DO>
 {
-    override val toSerializable: (Map<K,V>?) -> Map<K,V>? = { it }
-    override val fromSerializable: (Map<K,V>?) -> Map<K,V>? = { it }
-
+    @Suppress("UNCHECKED_CAST")
     override fun getRef(parentRef: IsPropertyReference<*, *>?): MapReference<K, V, CX> =
-        MapReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
+        MapReference(this as MapPropertyDefinitionWrapper<K, V, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific map [key] with optional [parentRef] */
     private fun getKeyRef(key: K, parentRef: IsPropertyReference<*, *>? = null) =

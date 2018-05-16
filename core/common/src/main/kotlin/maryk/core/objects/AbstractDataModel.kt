@@ -97,9 +97,12 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
-        for (def in this.properties) {
-            val value = def.getPropertyAndSerialize(obj) ?: continue
-            writeJsonValue(def, writer, value, context)
+        for (definition in this.properties) {
+            val value = definition.getPropertyAndSerialize(obj) ?: continue
+
+            definition.capture(context, value)
+
+            writeJsonValue(definition, writer, value, context)
         }
         writer.writeEndObject()
     }
@@ -111,8 +114,11 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     open fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
-            val def = properties.getDefinition(key) ?: continue
-            writeJsonValue(def, writer, value, context)
+            val definition = properties.getDefinition(key) ?: continue
+
+            definition.capture(context, value)
+
+            writeJsonValue(definition, writer, value, context)
         }
         writer.writeEndObject()
     }
@@ -172,7 +178,10 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                             continue@walker
                         }
 
-                        valueMap[definition.index] = definition.definition.readJson(reader, context)
+                        definition.definition.readJson(reader, context).also {
+                            valueMap[definition.index] = it
+                            definition.capture(context, it)
+                        }
                     }
                 }
                 else -> break@walker
@@ -196,6 +205,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         var totalByteLength = 0
         for ((key, value) in map) {
             val def = properties.getDefinition(key) ?: continue
+
+            def.capture(context, value)
+
             totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
         }
         return totalByteLength
@@ -208,9 +220,12 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
-        for (def in this.properties) {
-            val value = def.getPropertyAndSerialize(dataObject) ?: continue
-            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
+        for (definition in this.properties) {
+            val value = definition.getPropertyAndSerialize(dataObject) ?: continue
+
+            definition.capture(context, value)
+
+            totalByteLength += definition.definition.calculateTransportByteLengthWithKey(definition.index, value, cacher, context)
         }
         return totalByteLength
     }
@@ -222,8 +237,11 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     internal fun writeProtoBuf(map: Map<Int, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
-            val def = properties.getDefinition(key) ?: continue
-            def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
+            val definition = properties.getDefinition(key) ?: continue
+
+            definition.capture(context, value)
+
+            definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
         }
     }
 
@@ -233,9 +251,12 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
     internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
-        for (def in this.properties) {
-            val value = def.getPropertyAndSerialize(dataObject) ?: continue
-            def.definition.writeTransportBytesWithKey(def.index, value, cacheGetter, writer, context)
+        for (definition in this.properties) {
+            val value = definition.getPropertyAndSerialize(dataObject) ?: continue
+
+            definition.capture(context, value)
+
+            definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
         }
     }
 
@@ -286,7 +307,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                     ProtoBuf.getLength(key.wireType, byteReader),
                     byteReader,
                     context
-                )
+                ).also {
+                    dataObjectPropertyDefinition.capture(context, it)
+                }
                 is IsByteTransportableCollection<out Any, *, CX> -> {
                     when {
                         propertyDefinition.isPacked(context, key.wireType) -> {
@@ -296,6 +319,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                                 byteReader,
                                 context
                             ) as MutableCollection<Any>
+
+                            dataObjectPropertyDefinition.capture(context, collection)
+
                             @Suppress("UNCHECKED_CAST")
                             when {
                                 valueMap.contains(key.tag) -> (valueMap[key.tag] as MutableCollection<Any>).addAll(collection)
@@ -315,6 +341,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                                     valueMap[key.tag] = it
                                 }
                             } as MutableCollection<Any>
+
+                            dataObjectPropertyDefinition.capture(context, collection)
                             collection += value
                         }
                     }
@@ -330,7 +358,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                         val map = valueMap[key.tag] as MutableMap<Any, Any>
                         map[value.first] = value.second
                     } else {
-                        valueMap[key.tag] = mutableMapOf(value)
+                        valueMap[key.tag] = mutableMapOf(value).also {
+                            dataObjectPropertyDefinition.capture(context, it)
+                        }
                     }
                 }
                 else -> throw ParseException("Unknown property type for ${dataObjectPropertyDefinition.name}")
@@ -349,13 +379,15 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         val value = this[index]
 
         val valueDef = this@AbstractDataModel.properties.getDefinition(index)
-        val valueDefDefinition = valueDef?.definition
+                ?: throw Exception("Value definition of index $index is missing")
+
+        val valueDefDefinition = valueDef.definition
 
         if (value == null && valueDefDefinition is IsWithDefaultDefinition<*>) {
             return valueDefDefinition.default as T
         }
 
-        val transformedValue = valueDef!!.fromSerializable(value)
+        val transformedValue = valueDef.fromSerializable?.invoke(value) ?: value
 
         return if (transformedValue is T) {
             transformedValue

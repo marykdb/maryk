@@ -27,14 +27,14 @@ data class SubModelPropertyDefinitionWrapper<
     override val index: Int,
     override val name: String,
     override val definition: SubModelDefinition<SDO, P, DM, CXI, CX>,
-    override val getter: (DO) -> SDO?
+    override val getter: (DO) -> SDO?,
+    override val toSerializable: ((SDO?) -> SDO?)? = null,
+    override val fromSerializable: ((SDO?) -> SDO?)? = null,
+    override val capturer: ((CXI, SDO) -> Unit)? = null
 ) :
     IsSubModelDefinition<SDO, CXI> by definition,
     IsPropertyDefinitionWrapper<SDO, SDO, CXI, DO>
 {
-    override val toSerializable: (SDO?) -> SDO? = { it }
-    override val fromSerializable: (SDO?) -> SDO? = { it }
-
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         SubModelPropertyRef(
             this,

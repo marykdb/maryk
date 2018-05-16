@@ -170,13 +170,14 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val index: Int,
     override val name: String,
     override val definition: MultiTypeDescriptorListDefinition,
+    override val toSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
+    override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
+    override val capturer: ((IsPropertyContext, List<MultiTypeDescriptor>) -> Unit)? = null,
     override val getter: (MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>) -> List<MultiTypeDescriptor>?
 ) :
     IsCollectionDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, IsPropertyContext, IsValueDefinition<MultiTypeDescriptor, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, IsPropertyContext, MultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>
 {
-    override val toSerializable: (List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>? = { it }
-    override val fromSerializable: (List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>? = { it }
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         ValuePropertyReference(this, parentRef)
 }

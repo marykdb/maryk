@@ -1,13 +1,13 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.json.IsJsonLikeReader
-import maryk.json.IsJsonLikeWriter
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific property value definition based on context from [contextualResolver] */
 internal data class ContextualValueDefinition<in CX: IsPropertyContext>(

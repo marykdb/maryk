@@ -179,13 +179,13 @@ internal class RootDataModelTest {
         			"required": true,
         			"final": true,
         			"unique": false,
-        			"default": 0,
         			"name": "Option",
         			"values": {
         				"0": "V0",
         				"1": "V1",
         				"2": "V2"
-        			}
+        			},
+        			"default": "V0"
         		}]
         	}, {
         		"index": 7,
@@ -426,12 +426,12 @@ internal class RootDataModelTest {
             required: true
             final: true
             unique: false
-            default: 0
             name: Option
             values:
               0: V0
               1: V1
               2: V2
+            default: V0
           ? 7: list
           : !List
             indexed: false

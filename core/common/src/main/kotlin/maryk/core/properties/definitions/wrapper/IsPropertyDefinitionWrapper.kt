@@ -37,12 +37,9 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> TO?
-    val toSerializable: (TO?) -> T?
-    val fromSerializable: (T?) -> TO?
-
-    fun getPropertyAndSerialize(dataObject: DO): T? {
-        return this.toSerializable(this.getter(dataObject))
-    }
+    val toSerializable: ((TO?) -> T?)?
+    val fromSerializable: ((T?) -> TO?)?
+    val capturer: ((CX, T) -> Unit)?
 
     /** Get a reference to this definition inside [parentRef] */
     fun getRef(parentRef: IsPropertyReference<*, *>? = null): IsPropertyReference<T, *>
@@ -67,6 +64,19 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
      */
     fun writeTransportBytesWithKey(value: T, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) =
         this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
+
+    /** Get the property from the [dataObject] and serialize it for transportation */
+    fun getPropertyAndSerialize(dataObject: DO): T? {
+        @Suppress("UNCHECKED_CAST")
+        return this.toSerializable?.invoke(this.getter(dataObject)) ?: this.getter(dataObject) as T?
+    }
+
+    /** Capture the [value] in the [context] if needed */
+    fun capture(context: CX?, value: T) {
+        if(this.capturer != null && context != null) {
+            this.capturer!!.invoke(context, value)
+        }
+    }
 
     companion object {
         private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) =

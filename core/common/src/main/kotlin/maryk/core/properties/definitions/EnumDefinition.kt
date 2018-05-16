@@ -1,18 +1,21 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.SimpleDataModel
+import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
+import maryk.core.query.DataModelContext
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Enum properties */
@@ -109,7 +112,8 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    object Model : SimpleDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>>(
+    object Model : ContextualDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>(
+        contextTransformer = { EnumDefinitionContext() },
         properties = object : PropertyDefinitions<EnumDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)
@@ -117,20 +121,68 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 IsPropertyDefinition.addRequired(this, EnumDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, EnumDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
-                add(5, "minValue", NumberDefinition(type = UInt32), EnumDefinition<*>::minValue, { it?.index?.toUInt32() }, { null })
-                add(6, "maxValue", NumberDefinition(type = UInt32), EnumDefinition<*>::maxValue, { it?.index?.toUInt32() }, { null })
-                add(7, "default", NumberDefinition(type = UInt32), EnumDefinition<*>::default, { it?.index?.toUInt32() }, { null })
-                add(8, "name", StringDefinition(), EnumDefinition<*>::enum, { it?.name }, { null })
-                add(9, "values", MapDefinition(
-                    keyDefinition = NumberDefinition(type = UInt32),
-                    valueDefinition = StringDefinition()
-                )) { it.enum.values().map { Pair(it.index.toUInt32(), it.name) }.toMap() }
+                add(5, "name",
+                    StringDefinition(),
+                    getter = EnumDefinition<*>::enum,
+                    toSerializable = { it?.name },
+                    fromSerializable = { null },
+                    capturer = { context: EnumDefinitionContext, value ->
+                        context.name = value
+                    }
+                )
+                @Suppress("UNCHECKED_CAST")
+                add(6, "values",
+                    definition = MapDefinition<UInt32, String, EnumDefinitionContext>(
+                        keyDefinition = NumberDefinition(type = UInt32),
+                        valueDefinition = StringDefinition()
+                    ),
+                    getter = EnumDefinition<*>::enum as (EnumDefinition<*>) -> IndexedEnumDefinition<IndexedEnum<Any>>?,
+                    toSerializable = {
+                        it?.values?.invoke()?.map {
+                            Pair(it.index.toUInt32(), it.name)
+                        }?.toMap()
+                    },
+                    fromSerializable = { null },
+                    capturer = { context, value ->
+                        context.values = value
+                    }
+                )
+                @Suppress("UNCHECKED_CAST")
+                add(7, "minValue",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: EnumDefinitionContext? ->
+                            @Suppress("UNCHECKED_CAST")
+                            context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        }
+                    ) as IsSerializableFlexBytesEncodable<IndexedEnum<*>, IsPropertyContext>,
+                    getter = EnumDefinition<*>::minValue
+                )
+                @Suppress("UNCHECKED_CAST")
+                add(8, "maxValue",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: EnumDefinitionContext? ->
+                            @Suppress("UNCHECKED_CAST")
+                            context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        }
+                    ) as IsSerializableFlexBytesEncodable<IndexedEnum<*>, IsPropertyContext>,
+                    getter = EnumDefinition<*>::maxValue
+                )
+                @Suppress("UNCHECKED_CAST")
+                add(9, "default",
+                    ContextualValueDefinition(
+                        contextualResolver = { context: EnumDefinitionContext? ->
+                            @Suppress("UNCHECKED_CAST")
+                            context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
+                        }
+                    ) as IsSerializableFlexBytesEncodable<IndexedEnum<*>, IsPropertyContext>,
+                    getter = EnumDefinition<*>::default
+                )
             }
         }
     ) {
 
         override fun invoke(map: Map<Int, *>): EnumDefinition<IndexedEnum<Any>> {
-            val valueMap = map<Map<UInt32, String>>(9).map {
+            val valueMap = map<Map<UInt32, String>>(6).map {
                 Pair(it.key, IndexedEnum(it.key.toInt(), it.value))
             }.toMap()
 
@@ -144,16 +196,10 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 required = map(2),
                 final = map(3),
                 unique = map(4),
-                minValue = map.transform(5, { it: UInt32? ->
-                    valueMap[it] as IndexedEnum<Any>
-                }),
-                maxValue = map.transform(6, { it: UInt32? ->
-                    valueMap[it] as IndexedEnum<Any>
-                }),
-                default = map.transform(7, { it: UInt32? ->
-                    valueMap[it] as IndexedEnum<Any>
-                }),
-                enum = IndexedEnumDefinition(map(8), { values })
+                enum = IndexedEnumDefinition(map(5), { values }),
+                minValue = map(7),
+                maxValue = map(8),
+                default = map(9)
             )
         }
     }
@@ -179,4 +225,29 @@ private fun enumsHashCode(enumValues: Array<out IndexedEnum<*>>): Int {
         result = 31 * result + it.index.hashCode()
     }
     return result
+}
+
+class EnumDefinitionContext() : IsPropertyContext {
+    var name: String? = null
+    var values: Map<UInt32, String>? = null
+
+    private var _enumDefinition: Lazy<EnumDefinition<IndexedEnum<Any>>> = lazy {
+        values?.let { values ->
+            val valueMap = values.map {
+                Pair(it.key, IndexedEnum(it.key.toInt(), it.value))
+            }.toMap()
+
+            @Suppress("UNCHECKED_CAST")
+            val convertedValues = valueMap.values.toTypedArray() as Array<IndexedEnum<Any>>
+
+            EnumDefinition(
+                enum = IndexedEnumDefinition(
+                    name ?: throw ContextNotFoundException() ,
+                    { convertedValues }
+                )
+            )
+        } ?: throw ContextNotFoundException()
+    }
+
+    val enumDefinition: EnumDefinition<IndexedEnum<Any>> get() = this._enumDefinition.value
 }

@@ -10,9 +10,9 @@ import maryk.lib.exceptions.ParseException
  * Reference to a map with key [K] and value [V] and context [CX]
  */
 open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
-    propertyDefinition: MapPropertyDefinitionWrapper<K, V, CX, *>,
+    propertyDefinition: MapPropertyDefinitionWrapper<K, V, Any, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
-) : ValuePropertyReference<Map<K, V>, Map<K, V>, MapPropertyDefinitionWrapper<K, V, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+) : ValuePropertyReference<Map<K, V>, Any, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<Map<K, V>> {

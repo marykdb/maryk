@@ -23,11 +23,10 @@ internal fun <T: Any, CX: IsPropertyContext> ContextCaptureDefinition(
  * Transforms context with [contextTransformer] if needed.
  */
 internal data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext, CXI: IsPropertyContext>(
-    override val definition: IsValueDefinition<T, CXI>,
+    val definition: IsValueDefinition<T, CXI>,
     private val contextTransformer: (CX?) -> CXI?,
     private val capturer: (CX?, T) -> Unit
-) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX>,
-    IsDefinitionContextWrapper {
+) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
     override val wireType = definition.wireType
     override val indexed = definition.indexed
     override val searchable = definition.searchable

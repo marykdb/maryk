@@ -15,14 +15,9 @@ data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: I
     override val name: String,
     override val definition: D,
     override val getter: (DO) -> TO?,
-    override val toSerializable: (TO?) -> T? = {
-        @Suppress("UNCHECKED_CAST")
-        it as T?
-    },
-    override val fromSerializable: (T?) -> TO? = {
-        @Suppress("UNCHECKED_CAST")
-        it as TO?
-    }
+    override val toSerializable: ((TO?) -> T?)? = null,
+    override val fromSerializable: ((T?) -> TO?)? = null,
+    override val capturer: ((CX, T) -> Unit)? = null
 ) :
     IsSerializableFlexBytesEncodable<T, CX> by definition,
     IsValuePropertyDefinitionWrapper<T, TO, CX, DO>

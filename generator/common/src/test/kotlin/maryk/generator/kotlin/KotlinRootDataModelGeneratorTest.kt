@@ -143,11 +143,11 @@ data class CompleteMarykObject(
                 required = false,
                 final = true,
                 unique = true,
+                name = MarykEnum,
+                values = MarykEnum.values(),
                 minValue = MarykEnum.O1,
                 maxValue = MarykEnum.O3,
-                default = MarykEnum.O1,
-                name = MarykEnum,
-                values = MarykEnum.values()
+                default = MarykEnum.O1
             ),
             getter = CompleteMarykObject::enum
         )

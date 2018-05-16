@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.query.DataModelContext
 import maryk.json.MapType
 
 /** Indexed type of property definitions */
@@ -42,7 +43,7 @@ internal val mapOfPropertyDefSubModelDefinitions = mapOf(
     PropertyDefinitionType.Boolean to SubModelDefinition(dataModel = { BooleanDefinition.Model }),
     PropertyDefinitionType.Date to SubModelDefinition(dataModel = { DateDefinition.Model }),
     PropertyDefinitionType.DateTime to SubModelDefinition(dataModel = { DateTimeDefinition.Model }),
-    PropertyDefinitionType.Enum to SubModelDefinition<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, AbstractDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>(dataModel = { EnumDefinition.Model }),
+    PropertyDefinitionType.Enum to SubModelDefinition<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, AbstractDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>, DataModelContext, EnumDefinitionContext>(dataModel = { EnumDefinition.Model }),
     PropertyDefinitionType.FixedBytes to SubModelDefinition(dataModel = { FixedBytesDefinition.Model }),
     PropertyDefinitionType.FlexBytes to SubModelDefinition(dataModel = { FlexBytesDefinition.Model }),
     PropertyDefinitionType.List to SubModelDefinition(dataModel = { ListDefinition.Model }),

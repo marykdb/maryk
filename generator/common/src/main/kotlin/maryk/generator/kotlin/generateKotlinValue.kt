@@ -4,7 +4,6 @@ import maryk.core.objects.DataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.contextual.IsDefinitionContextWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.IndexedEnumDefinition
@@ -28,10 +27,7 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         value.name
     }
     is Enum<*> -> {
-        val enumDefinition = if (definition is IsDefinitionContextWrapper) {
-            definition.definition as EnumDefinition<*>
-        } else definition as EnumDefinition<*>
-
+        val enumDefinition = definition as EnumDefinition<*>
         "${enumDefinition.enum.name}.${value.name}"
     }
     is UInt8 -> {

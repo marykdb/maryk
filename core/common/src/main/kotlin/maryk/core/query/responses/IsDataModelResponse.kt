@@ -43,7 +43,7 @@ private val dataModel = ContextCaptureDefinition(
             } ?: throw ContextNotFoundException()
         }
     )
-){ context, value ->
+) { context, value ->
     @Suppress("UNCHECKED_CAST")
     context?.apply {
         dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>

@@ -75,8 +75,9 @@ abstract class PropertyDefinitions<DO: Any>(
         definition: D,
         getter: (DO) -> TO? = { null },
         toSerializable: (TO?) -> T?,
-        fromSerializable: (T?) -> TO?
-    ) = PropertyDefinitionWrapper(index, name, definition, getter, toSerializable, fromSerializable).apply {
+        fromSerializable: (T?) -> TO?,
+        capturer: ((CX, T) -> Unit)? = null
+    ) = PropertyDefinitionWrapper(index, name, definition, getter, toSerializable, fromSerializable, capturer).apply {
         addSingle(this)
     }
 
@@ -159,6 +160,24 @@ abstract class PropertyDefinitions<DO: Any>(
         definition: MapDefinition<K, V, CX>,
         getter: (DO) -> Map<K, V>? = { null }
     ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
+        addSingle(this)
+    }
+
+    /**
+     * Add map property [definition] with [name] and [index] and value [getter]
+     * Also has a [toSerializable], [fromSerializable] and [capturer] to serialize and capture properties
+     */
+    fun <K: Any, V: Any, TO: Any, CX: IsPropertyContext> add(
+        index: Int,
+        name: String,
+        definition: MapDefinition<K, V, CX>,
+        getter: (DO) -> TO? = { null },
+        toSerializable: (TO?) -> Map<K, V>?,
+        fromSerializable: (Map<K, V>?) -> TO?,
+        capturer: ((CX, Map<K, V>) -> Unit)? = null
+    ) = MapPropertyDefinitionWrapper(
+        index, name, definition, getter, toSerializable, fromSerializable, capturer
+    ).apply {
         addSingle(this)
     }
 
@@ -326,8 +345,9 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
     IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<Any>, DataModelContext, SubModelDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<PropertyDefinitions<Any>, PropertyDefinitions<Any>, DataModelContext, DO>
 {
-    override val toSerializable: (PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>? = { it }
-    override val fromSerializable: (PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>? = { it }
+    override val toSerializable: ((PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>?)? = null
+    override val fromSerializable: ((PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>?)? = null
+    override val capturer: ((DataModelContext, PropertyDefinitions<Any>) -> Unit)? = null
 
     override fun getRef(parentRef: IsPropertyReference<*, *>?) = throw Throwable("Not implemented")
 }

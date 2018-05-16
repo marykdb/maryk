@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.protobuf.ProtoBuf
@@ -102,6 +103,27 @@ internal class EnumDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, EnumDefinition.Model, null, ::compare)
         checkJsonConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, EnumDefinition.Model, null, ::compare)
+        checkYamlConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        name: Option
+        values:
+          0: V0
+          1: V1
+          2: V2
+        minValue: V0
+        maxValue: V2
+        default: V1
+
+        """.trimIndent()
     }
 }
 

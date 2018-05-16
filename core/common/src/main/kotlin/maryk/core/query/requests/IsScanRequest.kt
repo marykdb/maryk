@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.DataModelPropertyContext
 
 /** Defines a Scan from key request. */
@@ -25,6 +26,7 @@ interface IsScanRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsFetchRequest<
 
         internal fun <DO: Any> addLimit(definitions: PropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
             definitions.add(6, "limit", NumberDefinition(
+                default = 100.toUInt32(),
                 type = UInt32
             ), getter)
         }

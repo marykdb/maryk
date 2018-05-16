@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.IsWithDefaultDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinitionWrapper
@@ -344,14 +345,16 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     /**
      * Utility method to check and map a value to a constructor property
      */
-    protected inline operator fun <reified T> Map<Int, *>.invoke(index: Int, default: T? = null): T {
+    protected inline operator fun <reified T> Map<Int, *>.invoke(index: Int): T {
         val value = this[index]
 
-        if (value == null && default != null) {
-            return default
+        val valueDef = this@AbstractDataModel.properties.getDefinition(index)
+        val valueDefDefinition = valueDef?.definition
+
+        if (value == null && valueDefDefinition is IsWithDefaultDefinition<*>) {
+            return valueDefDefinition.default as T
         }
 
-        val valueDef = this@AbstractDataModel.properties.getDefinition(index)
         val transformedValue = valueDef!!.fromSerializable(value)
 
         return if (transformedValue is T) {

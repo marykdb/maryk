@@ -52,7 +52,9 @@ interface IsFetchRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsObjectReques
 
         internal fun <DM: Any> addFilterSoftDeleted(definitions: PropertyDefinitions<DM>, getter: (DM) -> Boolean?) {
             definitions.add(5, "filterSoftDeleted",
-                BooleanDefinition(),
+                BooleanDefinition(
+                    default = true
+                ),
                 getter
             )
         }

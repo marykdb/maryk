@@ -39,6 +39,7 @@ data class DataObjectChange<out DO: Any> internal constructor(
 
                 add(1, "changes",
                     ListDefinition(
+                        default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
                             typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
@@ -57,7 +58,7 @@ data class DataObjectChange<out DO: Any> internal constructor(
     ) {
         override fun invoke(map: Map<Int, *>) = DataObjectChange(
             key = map(0),
-            changes = map(1, emptyList()),
+            changes = map(1),
             lastVersion = map(2)
         )
     }

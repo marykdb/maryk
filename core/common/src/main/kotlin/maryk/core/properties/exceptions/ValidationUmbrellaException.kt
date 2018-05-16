@@ -3,7 +3,6 @@ package maryk.core.properties.exceptions
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -26,6 +25,7 @@ data class ValidationUmbrellaException internal constructor(
                 ValidationException.addReference(this, ValidationUmbrellaException::reference)
                 add(1, "exceptions",
                     ListDefinition(
+                        default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
                             typeEnum = ValidationExceptionType,
                             definitionMap = mapOfValidationExceptionDefinitions
@@ -40,7 +40,7 @@ data class ValidationUmbrellaException internal constructor(
     ) {
         override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
             reference = map(0),
-            exceptions = map(1, emptyList())
+            exceptions = map(1)
         )
     }
 }

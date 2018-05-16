@@ -126,16 +126,16 @@ data class NumberDefinition<T: Comparable<T>>(
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = NumberDefinition(
-            indexed = map(0, false),
-            searchable = map(1, true),
-            required = map(2, true),
-            final = map(3, false),
-            unique = map(4, false),
+            indexed = map(0),
+            searchable = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
             type = map<NumberType>(5).descriptor() as NumberDescriptor<Comparable<Any>>,
             minValue = map(6),
             maxValue = map(7),
             default = map(8),
-            random = map(9, false)
+            random = map(9)
         )
     }
 }

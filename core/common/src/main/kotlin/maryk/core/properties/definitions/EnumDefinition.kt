@@ -139,11 +139,11 @@ class EnumDefinition<E : IndexedEnum<E>>(
 
             @Suppress("UNCHECKED_CAST")
             return EnumDefinition(
-                indexed = map(0, false),
-                searchable = map(1, true),
-                required = map(2, true),
-                final = map(3, false),
-                unique = map(4, false),
+                indexed = map(0),
+                searchable = map(1),
+                required = map(2),
+                final = map(3),
+                unique = map(4),
                 minValue = map.transform(5, { it: UInt32? ->
                     valueMap[it] as IndexedEnum<Any>
                 }),

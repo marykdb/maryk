@@ -10,6 +10,7 @@ data class SimpleMarykObject(
         val value = add(
             index = 0, name = "value",
             definition = StringDefinition(
+                default = "haha",
                 regEx = "ha.*"
             ),
             getter = SimpleMarykObject::value
@@ -21,7 +22,7 @@ data class SimpleMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = SimpleMarykObject(
-            value = map(0, "haha")
+            value = map(0)
         )
     }
 }

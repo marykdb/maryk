@@ -30,7 +30,7 @@ data class EmbeddedMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = EmbeddedMarykObject(
-            value = map(0, "haha")
+            value = map(0)
         )
     }
 }

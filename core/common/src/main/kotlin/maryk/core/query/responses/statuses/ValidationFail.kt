@@ -23,6 +23,7 @@ data class ValidationFail<DO: Any>(
             init {
                 add(0, "exceptions",
                     ListDefinition(
+                        default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
                             typeEnum = ValidationExceptionType,
                             definitionMap = mapOfValidationExceptionDefinitions
@@ -36,7 +37,7 @@ data class ValidationFail<DO: Any>(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = ValidationFail<Any>(
-            exceptions = map(0, emptyList())
+            exceptions = map(0)
         )
     }
 }

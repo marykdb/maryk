@@ -14,16 +14,10 @@ internal fun <DO: Any> PropertyDefinitions<DO>.generateKotlin(addImport: (String
         val names =
             (it.definition as IsTransportablePropertyDefinitionType<Any>).getKotlinDescriptor()
 
-        val defaultInvoke: String
-        val default: String
-
-        if(definition is IsWithDefaultDefinition<*> && definition.default != null) {
-            val defaultValue = generateKotlinValue(definition, definition.default as Any, addImport)
-            defaultInvoke = ", $defaultValue"
-            default = " = $defaultValue"
+        val default = if(definition is IsWithDefaultDefinition<*> && definition.default != null) {
+            " = ${generateKotlinValue(definition, definition.default as Any, addImport)}"
         } else {
-            defaultInvoke = ""
-            default = ""
+            ""
         }
 
         val nativeTypeName = names.kotlinTypeName(definition)
@@ -38,7 +32,7 @@ internal fun <DO: Any> PropertyDefinitions<DO>.generateKotlin(addImport: (String
                 index = it.index,
                 value = """val ${it.name}: $nativeTypeName$default""",
                 definition = names.definitionToKotlin(definition, addImport),
-                invoke = "map(${it.index}$defaultInvoke)"
+                invoke = "map(${it.index})"
             )
         )
     }

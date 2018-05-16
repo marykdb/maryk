@@ -158,10 +158,10 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         }
     ) {
         override fun invoke(map: Map<Int, *>) = SubModelDefinition(
-            indexed = map(0, false),
-            searchable = map(1, true),
-            required = map(2, true),
-            final = map(3, false),
+            indexed = map(0),
+            searchable = map(1),
+            required = map(2),
+            final = map(3),
             dataModel = {
                 map<DataModel<Any, PropertyDefinitions<Any>>>(4)
             }

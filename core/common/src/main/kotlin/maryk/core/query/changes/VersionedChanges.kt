@@ -22,6 +22,7 @@ data class VersionedChanges(
 
                 add(1, "changes",
                     ListDefinition(
+                        default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
                             typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
@@ -36,7 +37,7 @@ data class VersionedChanges(
     ) {
         override fun invoke(map: Map<Int, *>) = VersionedChanges(
             version = map(0),
-            changes = map(1, emptyList())
+            changes = map(1)
         )
     }
 }

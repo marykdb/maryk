@@ -35,8 +35,8 @@ data class ValueMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = ValueMarykObject(
-            int = map(0, 5),
-            date = map(1, Date(2000, 5, 12))
+            int = map(0),
+            date = map(1)
         )
     }
 }

@@ -26,6 +26,7 @@ data class DataObjectVersionedChange<out DO: Any>(
                 ), DataObjectVersionedChange<*>::key)
 
                 add(1, "changes", ListDefinition(
+                    default = emptyList(),
                     valueDefinition = SubModelDefinition(
                         dataModel = { VersionedChanges }
                     )
@@ -36,7 +37,7 @@ data class DataObjectVersionedChange<out DO: Any>(
         @Suppress("RemoveExplicitTypeArguments")
         override fun invoke(map: Map<Int, *>) = DataObjectVersionedChange(
             key = map(0),
-            changes = map<List<VersionedChanges>>(1, emptyList())
+            changes = map<List<VersionedChanges>>(1)
         )
     }
 }

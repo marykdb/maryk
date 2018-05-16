@@ -27,6 +27,7 @@ data class AddSuccess<DO: Any>(
                 add(1,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
                 add(2,"changes",
                     ListDefinition(
+                        default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
                             typeEnum = ChangeType,
                             definitionMap = mapOfChangeDefinitions
@@ -42,7 +43,7 @@ data class AddSuccess<DO: Any>(
         override fun invoke(map: Map<Int, *>) = AddSuccess(
             key = map(0),
             version = map(1),
-            changes = map(2, emptyList())
+            changes = map(2)
         )
     }
 }

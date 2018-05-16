@@ -42,14 +42,17 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
                     )
                 ), DeleteRequest<*, *>::objectsToDelete)
 
-                add(2, "hardDelete", BooleanDefinition(), DeleteRequest<*,*>::hardDelete)
+                add(2, "hardDelete",
+                    BooleanDefinition(default = false),
+                    DeleteRequest<*,*>::hardDelete
+                )
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = DeleteRequest(
             dataModel = map<RootDataModel<Any, *>>(0),
             objectsToDelete = map(1),
-            hardDelete = map(2, false)
+            hardDelete = map(2)
         )
     }
 }

@@ -67,9 +67,9 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> int
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
             order = map(3),
             toVersion = map(4),
-            filterSoftDeleted = map(5, true),
+            filterSoftDeleted = map(5),
             fromVersion = map(6),
-            maxVersions = map(7, 1000.toUInt32())
+            maxVersions = map(7)
         )
     }
 }

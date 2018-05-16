@@ -215,13 +215,13 @@ data class TestMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = TestMarykObject(
-            string = map(0, "haha"),
+            string = map(0),
             int = map(1),
             uint = map(2),
             double = map(3),
             dateTime = map(4),
             bool = map(5),
-            enum = map(6, Option.V0),
+            enum = map(6),
             list = map(7),
             set = map(8),
             map = map(9),

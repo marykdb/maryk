@@ -90,10 +90,10 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = ListDefinition(
-            indexed = map(0, false),
-            searchable = map(1, true),
-            required = map(2, true),
-            final = map(3, false),
+            indexed = map(0),
+            searchable = map(1),
+            required = map(2),
+            final = map(3),
             minSize = map(4),
             maxSize = map(5),
             valueDefinition = map<IsValueDefinition<*, *>>(6),

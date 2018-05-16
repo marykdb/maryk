@@ -261,10 +261,10 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         }
     ) {
         override fun invoke(map: Map<Int, *>) = MapDefinition(
-            indexed = map(0, false),
-            searchable = map(1, true),
-            required = map(2, true),
-            final = map(3, false),
+            indexed = map(0),
+            searchable = map(1),
+            required = map(2),
+            final = map(3),
             minSize = map(4),
             maxSize = map(5),
             keyDefinition = map<IsSimpleValueDefinition<*, *>>(6),

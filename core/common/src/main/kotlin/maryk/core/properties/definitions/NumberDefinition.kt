@@ -30,7 +30,7 @@ data class NumberDefinition<T: Comparable<T>>(
     IsNumericDefinition<T>,
     IsSerializableFixedBytesEncodable<T, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<T>,
-    IsWithDefaultDefinition<T>
+    HasDefaultValueDefinition<T>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Number
     override val wireType = type.wireType

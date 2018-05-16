@@ -28,7 +28,7 @@ data class DateDefinition(
     IsMomentDefinition<Date>,
     IsSerializableFixedBytesEncodable<Date, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Date>,
-    IsWithDefaultDefinition<Date>
+    HasDefaultValueDefinition<Date>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = WireType.VAR_INT

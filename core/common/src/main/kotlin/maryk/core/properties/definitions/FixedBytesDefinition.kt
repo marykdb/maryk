@@ -22,7 +22,7 @@ data class FixedBytesDefinition(
     IsNumericDefinition<Bytes>,
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
-    IsWithDefaultDefinition<Bytes>
+    HasDefaultValueDefinition<Bytes>
 {
     override val propertyDefinitionType = PropertyDefinitionType.FixedBytes
     override val wireType = WireType.LENGTH_DELIMITED

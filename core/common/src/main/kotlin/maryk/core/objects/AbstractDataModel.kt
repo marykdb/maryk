@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.IsWithDefaultDefinition
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinition
 import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinitionWrapper
@@ -383,7 +383,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
 
         val valueDefDefinition = valueDef.definition
 
-        if (value == null && valueDefDefinition is IsWithDefaultDefinition<*>) {
+        if (value == null && valueDefDefinition is HasDefaultValueDefinition<*>) {
             return valueDefDefinition.default as T
         }
 

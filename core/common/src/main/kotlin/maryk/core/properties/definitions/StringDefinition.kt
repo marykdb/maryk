@@ -28,7 +28,7 @@ data class StringDefinition(
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<String, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<String>,
-    IsWithDefaultDefinition<String>
+    HasDefaultValueDefinition<String>
 {
     override val propertyDefinitionType = PropertyDefinitionType.String
     override val wireType = WireType.LENGTH_DELIMITED

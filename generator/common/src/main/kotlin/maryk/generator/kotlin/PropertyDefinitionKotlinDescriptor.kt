@@ -2,7 +2,7 @@ package maryk.generator.kotlin
 
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.IsWithDefaultDefinition
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 
 /**
  * Describes the property definitions for translation to kotlin
@@ -35,7 +35,7 @@ internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportabl
             val value = property.getter(definition)
 
             val def = property.definition
-            if (value != null && (def !is IsWithDefaultDefinition<*> || value != def.default)) {
+            if (value != null && (def !is HasDefaultValueDefinition<*> || value != def.default)) {
                 val override = this.propertyValueOverride[property.name]
 
                 if (override != null) {

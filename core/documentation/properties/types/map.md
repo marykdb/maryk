@@ -21,6 +21,7 @@ be null.
 - `maxSize` - default unset. Maximum size of map
 
 ## Other options
+- `default` - the default value to be used if value was not set.
 - `indexed` - default false
 - `searchable` - default true
 - `keyDefinition` - definition of keys contained in map

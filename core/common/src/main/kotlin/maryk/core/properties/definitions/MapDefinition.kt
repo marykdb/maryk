@@ -44,7 +44,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     IsByteTransportableMap<K, V, CX>,
     IsMapDefinition<K, V, CX>,
     IsTransportablePropertyDefinitionType<Map<K, V>>,
-    IsWithDefaultDefinition<Map<K, V>>
+    HasDefaultValueDefinition<Map<K, V>>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Map
 

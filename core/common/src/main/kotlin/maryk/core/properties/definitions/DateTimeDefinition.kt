@@ -34,7 +34,7 @@ data class DateTimeDefinition(
     IsTimeDefinition<DateTime>,
     IsSerializableFixedBytesEncodable<DateTime, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<DateTime>,
-    IsWithDefaultDefinition<DateTime>
+    HasDefaultValueDefinition<DateTime>
 {
     override val propertyDefinitionType = PropertyDefinitionType.DateTime
     override val wireType = WireType.VAR_INT

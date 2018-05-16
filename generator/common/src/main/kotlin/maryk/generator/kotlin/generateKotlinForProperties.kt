@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.IsWithDefaultDefinition
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 
 @Suppress("UNCHECKED_CAST")
@@ -14,7 +14,7 @@ internal fun <DO: Any> PropertyDefinitions<DO>.generateKotlin(addImport: (String
         val names =
             (it.definition as IsTransportablePropertyDefinitionType<Any>).getKotlinDescriptor()
 
-        val default = if(definition is IsWithDefaultDefinition<*> && definition.default != null) {
+        val default = if(definition is HasDefaultValueDefinition<*> && definition.default != null) {
             " = ${generateKotlinValue(definition, definition.default as Any, addImport)}"
         } else {
             ""

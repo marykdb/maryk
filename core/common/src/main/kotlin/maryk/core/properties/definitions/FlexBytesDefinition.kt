@@ -24,7 +24,7 @@ data class FlexBytesDefinition(
     HasSizeDefinition,
     IsSerializableFlexBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
-    IsWithDefaultDefinition<Bytes>
+    HasDefaultValueDefinition<Bytes>
 {
     override val propertyDefinitionType = PropertyDefinitionType.FlexBytes
     override val wireType = WireType.LENGTH_DELIMITED

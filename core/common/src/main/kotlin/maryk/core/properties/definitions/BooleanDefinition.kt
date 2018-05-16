@@ -19,7 +19,7 @@ data class BooleanDefinition(
     IsSimpleValueDefinition<Boolean, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Boolean, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Boolean>,
-    IsWithDefaultDefinition<Boolean>
+    HasDefaultValueDefinition<Boolean>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Boolean
     override val wireType = WireType.VAR_INT

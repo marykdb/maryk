@@ -33,7 +33,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
     IsComparableDefinition<E, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<E, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<E>,
-    IsWithDefaultDefinition<E>
+    HasDefaultValueDefinition<E>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Enum
     override val wireType = WireType.VAR_INT

@@ -60,6 +60,7 @@ Check the page for each type of property to see what is possible.
 
 * Required - Property needs to be set. Default = true
 * Final - Property can never be changed. Default = false
+* Default - Sets the default value. Default = null
 
 ### Validation present depending on the type:
 

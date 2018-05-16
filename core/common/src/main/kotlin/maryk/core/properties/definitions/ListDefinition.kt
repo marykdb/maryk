@@ -21,7 +21,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     override val maxSize: Int? = null,
     override val valueDefinition: IsValueDefinition<T, CX>,
     override val default: List<T>? = null
-) : IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>>, IsWithDefaultDefinition<List<T>> {
+) : IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>>, HasDefaultValueDefinition<List<T>> {
     override val propertyDefinitionType = PropertyDefinitionType.List
 
     init {

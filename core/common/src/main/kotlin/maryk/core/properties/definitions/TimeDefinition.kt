@@ -32,7 +32,7 @@ data class TimeDefinition(
     IsTimeDefinition<Time>,
     IsSerializableFixedBytesEncodable<Time, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Time>,
-    IsWithDefaultDefinition<Time>
+    HasDefaultValueDefinition<Time>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Time
     override val wireType = WireType.VAR_INT

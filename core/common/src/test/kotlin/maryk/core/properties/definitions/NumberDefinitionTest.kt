@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.numeric.Float32
@@ -142,6 +143,24 @@ internal class NumberDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, NumberDefinition.Model)
         checkJsonConversion(this.defMaxDefined, NumberDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, NumberDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, NumberDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        type: SInt32
+        minValue: 3254765
+        maxValue: 92763478
+        default: 4444444
+        random: true
+
+        """.trimIndent()
     }
 
     @Test

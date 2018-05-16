@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.protobuf.ProtoBuf
@@ -81,5 +82,18 @@ internal class BooleanDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, BooleanDefinition.Model)
         checkJsonConversion(this.defMaxDefined, BooleanDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, BooleanDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, BooleanDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        default: true
+
+        """.trimIndent()
     }
 }

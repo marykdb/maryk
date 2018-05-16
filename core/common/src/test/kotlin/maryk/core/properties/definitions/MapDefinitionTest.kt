@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.NotEnoughItemsException
@@ -175,5 +176,38 @@ internal class MapDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, MapDefinition.Model)
         checkJsonConversion(this.defMaxDefined, MapDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, MapDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, MapDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        minSize: 2
+        maxSize: 4
+        keyDefinition: !Number
+          indexed: false
+          searchable: true
+          required: true
+          final: false
+          unique: false
+          type: SInt32
+          maxValue: 1000
+          random: false
+        valueDefinition: !String
+          indexed: false
+          searchable: true
+          required: true
+          final: false
+          unique: false
+          regEx: '#.*'
+        default:
+          4: four
+          5: five
+
+        """.trimIndent()
     }
 }

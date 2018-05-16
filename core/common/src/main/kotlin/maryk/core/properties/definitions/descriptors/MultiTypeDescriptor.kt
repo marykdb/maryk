@@ -73,7 +73,7 @@ private data class MultiTypeDescriptor(
                 val valueMap: MutableMap<Int, Any> = mutableMapOf()
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
 
-                valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext)
+                valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext?)
                 valueMap
             } else {
                 super.readJson(reader, context)
@@ -88,7 +88,7 @@ private data class MultiTypeDescriptor(
 
                 writer.writeNamedIndexField(obj.name, obj.index)
 
-                Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext)
+                Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext?)
             } else {
                 super.writeJson(obj, writer, context)
             }

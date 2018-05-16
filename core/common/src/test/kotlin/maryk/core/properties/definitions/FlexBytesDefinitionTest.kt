@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.types.Bytes
@@ -96,5 +97,23 @@ internal class FlexBytesDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, FlexBytesDefinition.Model)
         checkJsonConversion(this.defMaxDefined, FlexBytesDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, FlexBytesDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        minValue: AAAAAAA
+        maxValue: qqqqqqo
+        default: AAAAAAE
+        minSize: 4
+        maxSize: 10
+
+        """.trimIndent()
     }
 }

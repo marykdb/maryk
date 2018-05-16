@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -129,6 +130,25 @@ internal class StringDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, StringDefinition.Model)
         checkJsonConversion(this.defMaxDefined, StringDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, StringDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, StringDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        minValue: aaa
+        maxValue: zzzzz
+        default: aaa
+        minSize: 3
+        maxSize: 6
+        regEx: ^[abcd]{3,4}${'$'}
+
+        """.trimIndent()
     }
 }
 

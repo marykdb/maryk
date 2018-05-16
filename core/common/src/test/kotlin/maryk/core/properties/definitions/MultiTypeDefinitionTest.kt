@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
@@ -91,5 +92,37 @@ internal class MultiTypeDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, MultiTypeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, MultiTypeDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        typeEnum: Option
+        definitionMap:
+          ? 0: V0
+          : !String
+            indexed: false
+            searchable: true
+            required: true
+            final: false
+            unique: false
+            regEx: '#.*'
+          ? 1: V1
+          : !Number
+            indexed: false
+            searchable: true
+            required: true
+            final: false
+            unique: false
+            type: SInt32
+            maxValue: 1000
+            random: false
+
+        """.trimIndent()
     }
 }

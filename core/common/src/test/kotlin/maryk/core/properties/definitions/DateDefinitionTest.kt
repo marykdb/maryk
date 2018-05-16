@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
 import maryk.lib.exceptions.ParseException
@@ -90,5 +91,22 @@ internal class DateDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, DateDefinition.Model)
         checkJsonConversion(this.defMaxDefined, DateDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, DateDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, DateDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        minValue: -99999999-01-01
+        maxValue: 99999999-12-31
+        default: 1970-12-01
+        fillWithNow: true
+
+        """.trimIndent()
     }
 }

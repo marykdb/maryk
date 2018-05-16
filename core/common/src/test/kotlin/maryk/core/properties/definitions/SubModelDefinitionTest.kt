@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.DataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -95,5 +96,18 @@ internal class SubModelDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, SubModelDefinition.Model, DataModelContext())
         checkJsonConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, SubModelDefinition.Model, DataModelContext())
+        checkYamlConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext()) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        dataModel: MarykObject
+
+        """.trimIndent()
     }
 }

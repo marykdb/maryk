@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.properties.ByteCollector
@@ -85,5 +86,22 @@ internal class ReferenceDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, ReferenceDefinition.Model, DataModelContext())
         checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, ReferenceDefinition.Model, DataModelContext())
+        checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext()) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        minValue: AAAAAAAAAAAA
+        maxValue: ////////////
+        default: AQEBAQEBAQEB
+        dataModel: TestMarykObject
+
+        """.trimIndent()
     }
 }

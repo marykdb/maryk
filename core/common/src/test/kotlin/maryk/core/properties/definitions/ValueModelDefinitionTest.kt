@@ -3,13 +3,14 @@ package maryk.core.properties.definitions
 import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.query.DataModelContext
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
-import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -108,5 +109,21 @@ internal class ValueModelDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, ValueModelDefinition.Model, DataModelContext())
         checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext())
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, ValueModelDefinition.Model, DataModelContext())
+        checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext()) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        minValue: gAAAAAGAAABHVeoAAQE
+        maxValue: gAAD5wGAAABaJeGAAQE
+        dataModel: TestValueObject
+
+        """.trimIndent()
     }
 }

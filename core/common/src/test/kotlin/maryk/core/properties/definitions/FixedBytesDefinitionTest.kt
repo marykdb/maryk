@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.types.Bytes
 import maryk.lib.exceptions.ParseException
@@ -84,5 +85,23 @@ internal class FixedBytesDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, FixedBytesDefinition.Model)
         checkJsonConversion(this.defMaxDefined, FixedBytesDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, FixedBytesDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        minValue: AAAAAAA
+        maxValue: qqqqqqo
+        default: AAAAAAE
+        random: true
+        byteSize: 5
+
+        """.trimIndent()
     }
 }

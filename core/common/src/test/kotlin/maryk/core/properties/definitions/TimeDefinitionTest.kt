@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.TimePrecision
@@ -130,6 +131,24 @@ internal class TimeDefinitionTest {
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(this.def, TimeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, TimeDefinition.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(this.def, TimeDefinition.Model)
+        checkYamlConversion(this.defMaxDefined, TimeDefinition.Model) shouldBe """
+        indexed: true
+        searchable: false
+        required: false
+        final: true
+        unique: true
+        precision: MILLIS
+        minValue: '00:00'
+        maxValue: '23:59:59.999'
+        default: '12:13:14'
+        fillWithNow: true
+
+        """.trimIndent()
     }
 
     @Test

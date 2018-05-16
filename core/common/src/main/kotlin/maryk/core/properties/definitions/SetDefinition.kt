@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
@@ -58,18 +58,12 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMinSize(4, this, SetDefinition<*, *>::minSize)
                 HasSizeDefinition.addMaxSize(5, this, SetDefinition<*, *>::maxSize)
                 add(6, "valueDefinition",
-                    ContextCaptureDefinition(
+                    ContextTransformerDefinition(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefSubModelDefinitions
-                        ),
-                        capturer = { context: SetDefinitionContext?, value ->
-                            context?.apply {
-                                @Suppress("UNCHECKED_CAST")
-                                valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
-                            } ?: throw ContextNotFoundException()
-                        }
+                        )
                     ),
                     getter = SetDefinition<*, *>::valueDefinition,
                     toSerializable = {
@@ -79,6 +73,10 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
                         it?.value as IsValueDefinition<Any, DataModelContext>?
+                    },
+                    capturer = { context: SetDefinitionContext, value ->
+                        @Suppress("UNCHECKED_CAST")
+                        context.valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
                     }
                 )
                 @Suppress("UNCHECKED_CAST")

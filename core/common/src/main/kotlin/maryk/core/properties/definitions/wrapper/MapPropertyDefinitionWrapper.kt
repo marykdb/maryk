@@ -20,9 +20,9 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
     override val name: String,
     override val definition: MapDefinition<K, V, CX>,
     override val getter: (DO) -> TO?,
+    override val capturer: ((CX, Map<K, V>) -> Unit)? = null,
     override val toSerializable: ((TO?) -> Map<K, V>?)? = null,
-    override val fromSerializable: ((Map<K, V>?) -> TO?)? = null,
-    override val capturer: ((CX, Map<K, V>) -> Unit)? = null
+    override val fromSerializable: ((Map<K, V>?) -> TO?)? = null
 ) :
     IsMapDefinition<K, V, CX> by definition,
     IsPropertyDefinitionWrapper<Map<K,V>, TO, CX, DO>

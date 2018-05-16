@@ -23,7 +23,12 @@ interface IsFixedBytesEncodable<T: Any> {
 
     companion object {
         internal fun <DO:Any> addByteSize(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) {
-            definitions.add(index, "byteSize", NumberDefinition(type = UInt32), getter, { it?.toUInt32() }, { it?.toInt() })
+            definitions.add(index, "byteSize",
+                NumberDefinition(type = UInt32),
+                getter,
+                toSerializable = { it?.toUInt32() },
+                fromSerializable = { it?.toInt() }
+            )
         }
     }
 }

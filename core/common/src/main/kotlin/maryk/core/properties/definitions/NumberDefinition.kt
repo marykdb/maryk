@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
@@ -80,17 +79,13 @@ data class NumberDefinition<T: Comparable<T>>(
                 IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
                 add(5, "type",
-                    ContextCaptureDefinition(
-                        definition = EnumDefinition(enum = NumberType),
-                        capturer = { context: NumericContext?, value ->
-                            context?.apply {
-                                @Suppress("UNCHECKED_CAST")
-                                numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
-                            } ?: throw ContextNotFoundException()
-                        }
-                    ),
+                    definition = EnumDefinition(enum = NumberType),
                     getter = {
                         it.type.type
+                    },
+                    capturer = { context: NumericContext, value ->
+                        @Suppress("UNCHECKED_CAST")
+                        context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
                     }
                 )
                 add(6, "minValue",

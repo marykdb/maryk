@@ -65,12 +65,22 @@ typealias WrapperCreator = (index: Int, name: String, definition: IsPropertyDefi
 
 @Suppress("UNCHECKED_CAST")
 val createFixedBytesWrapper: WrapperCreator = { index, name, definition, getter ->
-    FixedBytesPropertyDefinitionWrapper(index, name, definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>, getter)
+    FixedBytesPropertyDefinitionWrapper(
+        index,
+        name,
+        definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>,
+        getter
+    )
 }
 
 @Suppress("UNCHECKED_CAST")
 val createFlexBytesWrapper: WrapperCreator = { index, name, definition, getter ->
-    PropertyDefinitionWrapper(index, name, definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>, getter)
+    PropertyDefinitionWrapper(
+        index,
+        name,
+        definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>,
+        getter
+    )
 }
 
 internal val mapOfPropertyDefWrappers = mapOf(
@@ -82,23 +92,43 @@ internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.FlexBytes to createFlexBytesWrapper,
     PropertyDefinitionType.List to { index, name, definition, getter ->
         @Suppress("UNCHECKED_CAST")
-        ListPropertyDefinitionWrapper(index, name, definition as ListDefinition<Any, IsPropertyContext>, getter as (Any) -> List<Any>?)
+        ListPropertyDefinitionWrapper(
+            index,
+            name,
+            definition as ListDefinition<Any, IsPropertyContext>,
+            getter as (Any) -> List<Any>?
+        )
     },
     PropertyDefinitionType.Map to { index, name, definition, getter ->
         @Suppress("UNCHECKED_CAST")
-        MapPropertyDefinitionWrapper(index, name, definition as MapDefinition<Any, Any, IsPropertyContext>, getter as (Any) -> Map<Any, Any>?)
+        MapPropertyDefinitionWrapper(
+            index,
+            name,
+            definition as MapDefinition<Any, Any, IsPropertyContext>,
+            getter as (Any) -> Map<Any, Any>?
+        )
     },
     PropertyDefinitionType.MultiType to createFlexBytesWrapper,
     PropertyDefinitionType.Number to createFixedBytesWrapper,
     PropertyDefinitionType.Reference to createFixedBytesWrapper,
     PropertyDefinitionType.Set to { index, name, definition, getter ->
         @Suppress("UNCHECKED_CAST")
-        SetPropertyDefinitionWrapper(index, name, definition as SetDefinition<Any, IsPropertyContext>, getter as (Any) -> Set<Any>?)
+        SetPropertyDefinitionWrapper(
+            index,
+            name,
+            definition as SetDefinition<Any, IsPropertyContext>,
+            getter as (Any) -> Set<Any>?
+        )
     },
     PropertyDefinitionType.String to createFlexBytesWrapper,
     PropertyDefinitionType.SubModel to { index, name, definition, getter ->
         @Suppress("UNCHECKED_CAST")
-        SubModelPropertyDefinitionWrapper(index, name, definition as SubModelDefinition<Any, PropertyDefinitions<Any>, AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>, getter as (Any) -> Set<Any>?)
+        SubModelPropertyDefinitionWrapper(
+            index,
+            name,
+            definition as SubModelDefinition<Any, PropertyDefinitions<Any>, AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>,
+            getter as (Any) -> Set<Any>?
+        )
     },
     PropertyDefinitionType.Time to createFixedBytesWrapper,
     PropertyDefinitionType.ValueModel to createFixedBytesWrapper

@@ -77,7 +77,7 @@ abstract class PropertyDefinitions<DO: Any>(
         toSerializable: (TO?) -> T?,
         fromSerializable: (T?) -> TO?,
         capturer: ((CX, T) -> Unit)? = null
-    ) = PropertyDefinitionWrapper(index, name, definition, getter, toSerializable, fromSerializable, capturer).apply {
+    ) = PropertyDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable).apply {
         addSingle(this)
     }
 
@@ -86,8 +86,9 @@ abstract class PropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: D,
-        getter: (DO) -> T? = { null }
-    ) = PropertyDefinitionWrapper(index, name, definition, getter).apply {
+        getter: (DO) -> T? = { null },
+        capturer: ((CX, T) -> Unit)? = null
+    ) = PropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -97,9 +98,18 @@ abstract class PropertyDefinitions<DO: Any>(
         name: String,
         definition: D,
         getter: (DO) -> TO? = { null },
+        capturer: ((CX, T) -> Unit)? = null,
         toSerializable: (TO?) -> T?,
         fromSerializable: (T?) -> TO?
-    ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter, toSerializable, fromSerializable).apply {
+    ) = FixedBytesPropertyDefinitionWrapper(
+        index,
+        name,
+        definition,
+        getter,
+        capturer,
+        toSerializable,
+        fromSerializable
+    ).apply {
         addSingle(this)
     }
 
@@ -108,8 +118,9 @@ abstract class PropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: D,
-        getter: (DO) -> T? = { null }
-    ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter).apply {
+        getter: (DO) -> T? = { null },
+        capturer: ((CX, T) -> Unit)? = null
+    ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter, capturer = capturer).apply {
         addSingle(this)
     }
 
@@ -118,8 +129,9 @@ abstract class PropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: ListDefinition<T, CX>,
-        getter: (DO) -> List<T>? = { null }
-    ) = ListPropertyDefinitionWrapper(index, name, definition, getter).apply {
+        getter: (DO) -> List<T>? = { null },
+        capturer: ((CX, List<T>) -> Unit)? = null
+    ) = ListPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -129,10 +141,11 @@ abstract class PropertyDefinitions<DO: Any>(
         name: String,
         definition: ListDefinition<T, CX>,
         getter: (DO) -> List<TO>? = { null },
+        capturer: ((CX, List<T>) -> Unit)? = null,
         toSerializable: (TO) -> T,
         fromSerializable: (T) -> TO
     ) = ListPropertyDefinitionWrapper(
-        index, name, definition, getter,
+        index, name, definition, getter, capturer,
         toSerializable = {
             it?.map { toSerializable(it) }
         },
@@ -148,8 +161,9 @@ abstract class PropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: SetDefinition<T, CX>,
-        getter: (DO) -> Set<T>? = { null }
-    ) = SetPropertyDefinitionWrapper(index, name, definition, getter).apply {
+        getter: (DO) -> Set<T>? = { null },
+        capturer: ((CX, Set<T>) -> Unit)? = null
+    ) = SetPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -158,8 +172,9 @@ abstract class PropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: MapDefinition<K, V, CX>,
-        getter: (DO) -> Map<K, V>? = { null }
-    ) = MapPropertyDefinitionWrapper(index, name, definition, getter).apply {
+        getter: (DO) -> Map<K, V>? = { null },
+        capturer: ((CX, Map<K, V>) -> Unit)? = null
+    ) = MapPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -172,11 +187,11 @@ abstract class PropertyDefinitions<DO: Any>(
         name: String,
         definition: MapDefinition<K, V, CX>,
         getter: (DO) -> TO? = { null },
+        capturer: ((CX, Map<K, V>) -> Unit)? = null,
         toSerializable: (TO?) -> Map<K, V>?,
-        fromSerializable: (Map<K, V>?) -> TO?,
-        capturer: ((CX, Map<K, V>) -> Unit)? = null
+        fromSerializable: (Map<K, V>?) -> TO?
     ) = MapPropertyDefinitionWrapper(
-        index, name, definition, getter, toSerializable, fromSerializable, capturer
+        index, name, definition, getter, capturer, toSerializable, fromSerializable
     ).apply {
         addSingle(this)
     }
@@ -186,8 +201,9 @@ abstract class PropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: SubModelDefinition<SDO, P, D, CXI, CX>,
-        getter: (DO) -> SDO? = { null }
-    ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter).apply {
+        getter: (DO) -> SDO? = { null },
+        capturer: ((CXI, SDO) -> Unit)? = null
+    ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 

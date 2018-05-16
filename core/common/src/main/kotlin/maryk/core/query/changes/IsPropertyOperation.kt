@@ -5,7 +5,6 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
@@ -20,19 +19,17 @@ interface IsPropertyOperation<T: Any> : IsChange {
     companion object {
         internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
-                0, "reference", ContextCaptureDefinition(
-                    ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                        contextualResolver = {
-                            it?.dataModel?.properties ?: throw ContextNotFoundException()
-                        }
-                    )
-                ) { context, value ->
-                    context?.apply {
-                        @Suppress("UNCHECKED_CAST")
-                        reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<* ,*, *, *, *>>
-                    } ?: throw ContextNotFoundException()
-                },
-                getter
+                0, "reference",
+                ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                    contextualResolver = {
+                        it?.dataModel?.properties ?: throw ContextNotFoundException()
+                    }
+                ),
+                getter = getter,
+                capturer = { context, value ->
+                    @Suppress("UNCHECKED_CAST")
+                    context.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<* ,*, *, *, *>>
+                }
             )
         }
 

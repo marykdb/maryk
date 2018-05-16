@@ -5,7 +5,6 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.changes.ChangeType
 
 /** Does an And comparison against given [filters]. Only if all given filters return true will the entire result be true. */
 data class And(

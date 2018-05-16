@@ -137,20 +137,23 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             }
         }
         val properties = AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
-        val key = add(2, "key", ListDefinition(
-            valueDefinition = MultiTypeDefinition(
-                typeEnum = KeyPartType,
-                definitionMap = mapOfKeyPartDefinitions
-            )
-        )) {
-            it.key.keyDefinitions.map {
-                val def: Any = when(it) {
-                    is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *> -> it.getRef()
-                    else -> it
+        val key = add(2, "key",
+            ListDefinition(
+                valueDefinition = MultiTypeDefinition(
+                    typeEnum = KeyPartType,
+                    definitionMap = mapOfKeyPartDefinitions
+                )
+            ),
+            getter = {
+                it.key.keyDefinitions.map {
+                    val def: Any = when(it) {
+                        is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *> -> it.getRef()
+                        else -> it
+                    }
+                    TypedValue(it.keyPartType, def)
                 }
-                TypedValue(it.keyPartType, def)
             }
-        }
+        )
     }
 
     @Suppress("UNCHECKED_CAST")

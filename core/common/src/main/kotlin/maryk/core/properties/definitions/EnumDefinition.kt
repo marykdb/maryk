@@ -131,21 +131,22 @@ class EnumDefinition<E : IndexedEnum<E>>(
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(6, "values",
+                add(
+                    6, "values",
                     definition = MapDefinition<UInt32, String, EnumDefinitionContext>(
                         keyDefinition = NumberDefinition(type = UInt32),
                         valueDefinition = StringDefinition()
                     ),
                     getter = EnumDefinition<*>::enum as (EnumDefinition<*>) -> IndexedEnumDefinition<IndexedEnum<Any>>?,
+                    capturer = { context, value ->
+                        context.values = value
+                    },
                     toSerializable = {
                         it?.values?.invoke()?.map {
                             Pair(it.index.toUInt32(), it.name)
                         }?.toMap()
                     },
-                    fromSerializable = { null },
-                    capturer = { context, value ->
-                        context.values = value
-                    }
+                    fromSerializable = { null }
                 )
                 @Suppress("UNCHECKED_CAST")
                 add(7, "minValue",

@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -29,20 +28,17 @@ abstract class ValidationException internal constructor(
         internal fun <DO: ValidationException> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
                 index = 0, name = "reference",
-                definition = ContextCaptureDefinition(
-                    ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                        required = false,
-                        contextualResolver = {
-                            it?.dataModel?.properties ?: throw ContextNotFoundException()
-                        }
-                    )
-                ) { context, value ->
-                    context?.apply {
-                        @Suppress("UNCHECKED_CAST")
-                        reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>
-                    } ?: throw ContextNotFoundException()
-                },
-                getter = getter
+                definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                    required = false,
+                    contextualResolver = {
+                        it?.dataModel?.properties ?: throw ContextNotFoundException()
+                    }
+                ),
+                getter = getter,
+                capturer = { context, value ->
+                    @Suppress("UNCHECKED_CAST")
+                    context.reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>
+                }
             )
         }
         internal fun <DO: ValidationException> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> String?) {

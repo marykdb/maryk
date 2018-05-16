@@ -42,7 +42,12 @@ private data class MultiTypeDescriptor(
     val definition: IsSubDefinition<out Any, IsPropertyContext>
 ) {
     private object Properties: PropertyDefinitions<MultiTypeDescriptor>() {
-        val index = add(0, "index", NumberDefinition(type = UInt32), MultiTypeDescriptor::index, { it?.toUInt32() }, { it?.toInt() })
+        val index = add(0, "index",
+            NumberDefinition(type = UInt32),
+            MultiTypeDescriptor::index,
+            toSerializable = { it?.toUInt32() },
+            fromSerializable = { it?.toInt() }
+        )
         val name = add(1, "name", StringDefinition(), MultiTypeDescriptor::name)
 
         val definition = add(

@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
@@ -193,18 +193,12 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMaxSize(5, this, MapDefinition<*, *, *>::maxSize)
 
                 add(6, "keyDefinition",
-                    ContextCaptureDefinition(
+                    ContextTransformerDefinition(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefSubModelDefinitions
-                        ),
-                        capturer = { context: KeyValueDefinitionContext?, value ->
-                            context?.apply {
-                                @Suppress("UNCHECKED_CAST")
-                                keyDefinion = value.value as IsSimpleValueDefinition<Any, DataModelContext>
-                            } ?: throw ContextNotFoundException()
-                        }
+                        )
                     ),
                     getter = MapDefinition<*, *, *>::keyDefinition,
                     toSerializable = {
@@ -214,22 +208,20 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
                         it?.value as IsSimpleValueDefinition<Any, DataModelContext>?
+                    },
+                    capturer = { context: KeyValueDefinitionContext, value ->
+                        @Suppress("UNCHECKED_CAST")
+                        context.keyDefinion = value.value as IsSimpleValueDefinition<Any, DataModelContext>
                     }
                 )
 
                 add(7, "valueDefinition",
-                    ContextCaptureDefinition(
+                    ContextTransformerDefinition(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefSubModelDefinitions
-                        ),
-                        capturer = { context: KeyValueDefinitionContext?, value ->
-                            context?.apply {
-                                @Suppress("UNCHECKED_CAST")
-                                valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
-                            } ?: throw ContextNotFoundException()
-                        }
+                        )
                     ),
                     getter = MapDefinition<*, *, *>::valueDefinition,
                     toSerializable = {
@@ -239,6 +231,10 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
                         it?.value as IsValueDefinition<Any, DataModelContext>?
+                    },
+                    capturer = { context: KeyValueDefinitionContext, value ->
+                        @Suppress("UNCHECKED_CAST")
+                        context.valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
                     }
                 )
 
@@ -247,10 +243,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     ContextualMapDefinition(
                         contextualResolver = { context: KeyValueDefinitionContext? ->
                             context?.let {
-                                MapDefinition(
-                                    keyDefinition = it.keyDefinion!!,
-                                    valueDefinition = it.valueDefinion!!
-                                ) as IsByteTransportableMap<Any, Any, KeyValueDefinitionContext>
+                                it.mapDefinition as IsByteTransportableMap<Any, Any, KeyValueDefinitionContext>
                             } ?: throw ContextNotFoundException()
                         },
                         required = false

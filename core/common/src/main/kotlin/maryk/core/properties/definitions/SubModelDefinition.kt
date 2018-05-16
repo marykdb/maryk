@@ -7,7 +7,6 @@ import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.DataModel
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -134,24 +133,20 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                 IsPropertyDefinition.addRequired(this, SubModelDefinition<*, *, *, *, *>::required)
                 IsPropertyDefinition.addFinal(this, SubModelDefinition<*, *, *, *, *>::final)
                 add(4, "dataModel",
-                    ContextCaptureDefinition(
-                        definition = ContextualModelReferenceDefinition<DataModelContext>(
-                            contextualResolver = { context, name ->
-                                context?.let{
-                                    it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
-                                } ?: throw ContextNotFoundException()
-                            }
-                        ),
-                        capturer = { context, dataModel ->
-                            context?.let {
-                                if (!it.dataModels.containsKey(dataModel.name)) {
-                                    it.dataModels[dataModel.name] = dataModel
-                                }
+                    ContextualModelReferenceDefinition<DataModelContext>(
+                        contextualResolver = { context, name ->
+                            context?.let{
+                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = {
                         it.dataModel as DataModel<*, *>
+                    },
+                    capturer = { context, dataModel ->
+                        if (!context.dataModels.containsKey(dataModel.name)) {
+                            context.dataModels[dataModel.name] = dataModel
+                        }
                     }
                 )
             }

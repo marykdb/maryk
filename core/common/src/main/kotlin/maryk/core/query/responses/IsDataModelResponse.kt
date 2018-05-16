@@ -7,7 +7,6 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelPropertyContext
@@ -27,27 +26,25 @@ interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
 
     companion object {
         internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
-            definitions.add(0, "dataModel", dataModel, getter)
+            definitions.add(0, "dataModel",
+                ContextualModelReferenceDefinition<DataModelPropertyContext>(
+                    contextualResolver = { context, name ->
+                        context?.let {
+                            it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                        } ?: throw ContextNotFoundException()
+                    }
+                ),
+                getter = getter,
+                capturer = { context, value ->
+                    @Suppress("UNCHECKED_CAST")
+                    context.dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
+                }
+            )
         }
         internal fun <DM: Any> addStatuses(definitions: PropertyDefinitions<DM>, getter: (DM) -> List<TypedValue<StatusType, *>>?){
             definitions.add(1, "statuses", listOfStatuses, getter)
         }
     }
-}
-
-private val dataModel = ContextCaptureDefinition(
-    ContextualModelReferenceDefinition<DataModelPropertyContext>(
-        contextualResolver = { context, name ->
-            context?.let {
-                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
-            } ?: throw ContextNotFoundException()
-        }
-    )
-) { context, value ->
-    @Suppress("UNCHECKED_CAST")
-    context?.apply {
-        dataModel = value as RootDataModel<Any, PropertyDefinitions<Any>>
-    } ?: throw ContextNotFoundException()
 }
 
 private val listOfStatuses = ListDefinition(

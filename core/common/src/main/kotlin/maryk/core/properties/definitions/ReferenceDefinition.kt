@@ -5,7 +5,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -98,23 +97,19 @@ class ReferenceDefinition<DO: Any>(
                 add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
                 add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
                 add(8, "dataModel",
-                    ContextCaptureDefinition(
-                        definition = ContextualModelReferenceDefinition<DataModelContext>(
-                            contextualResolver = { context, name ->
-                                context?.let {
-                                    it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
-                                } ?: throw ContextNotFoundException()
-                            }
-                        ),
-                        capturer = { context, dataModel ->
-                            context?.apply {
-                                if (!this.dataModels.containsKey(dataModel.name)) {
-                                    this.dataModels[dataModel.name] = dataModel
-                                }
-                            } ?: ContextNotFoundException()
+                    definition = ContextualModelReferenceDefinition<DataModelContext>(
+                        contextualResolver = { context, name ->
+                            context?.let {
+                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = ReferenceDefinition<*>::dataModel
+                    getter = ReferenceDefinition<*>::dataModel,
+                    capturer = { context, dataModel ->
+                        if (!context.dataModels.containsKey(dataModel.name)) {
+                            context.dataModels[dataModel.name] = dataModel
+                        }
+                    }
                 )
             }
         }

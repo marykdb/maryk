@@ -37,9 +37,9 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> TO?
+    val capturer: ((CX, T) -> Unit)?
     val toSerializable: ((TO?) -> T?)?
     val fromSerializable: ((T?) -> TO?)?
-    val capturer: ((CX, T) -> Unit)?
 
     /** Get a reference to this definition inside [parentRef] */
     fun getRef(parentRef: IsPropertyReference<*, *>? = null): IsPropertyReference<T, *>
@@ -80,7 +80,12 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
 
     companion object {
         private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) =
-            definitions.add(0, "index", NumberDefinition(type = UInt32), getter, { it?.toUInt32() }, { it?.toInt() })
+            definitions.add(0, "index",
+                NumberDefinition(type = UInt32),
+                getter,
+                toSerializable = { it?.toUInt32() },
+                fromSerializable = { it?.toInt() }
+            )
 
         private fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) =
             definitions.add(1, "name", StringDefinition(), getter)

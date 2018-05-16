@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
@@ -54,18 +54,12 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMinSize(4, this, ListDefinition<*, *>::minSize)
                 HasSizeDefinition.addMaxSize(5, this, ListDefinition<*, *>::maxSize)
                 add(6, "valueDefinition",
-                    ContextCaptureDefinition(
+                    ContextTransformerDefinition(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefSubModelDefinitions
-                        ),
-                        capturer = { context: ListDefinitionContext?, value ->
-                            context?.apply {
-                                @Suppress("UNCHECKED_CAST")
-                                valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
-                            } ?: throw ContextNotFoundException()
-                        }
+                        )
                     ),
                     getter = ListDefinition<*, *>::valueDefinition,
                     toSerializable = {
@@ -75,6 +69,12 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
                         it?.value as IsValueDefinition<Any, DataModelContext>?
+                    },
+                    capturer = { context: ListDefinitionContext?, value ->
+                        context?.apply {
+                            @Suppress("UNCHECKED_CAST")
+                            valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
+                        } ?: throw ContextNotFoundException()
                     }
                 )
                 @Suppress("UNCHECKED_CAST")

@@ -41,6 +41,7 @@ val generatedKotlinForCompleteDataModel = """
 package maryk
 
 import maryk.core.objects.RootDataModel
+import maryk.core.objects.definitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -67,6 +68,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.lib.time.Date
@@ -151,8 +153,7 @@ data class CompleteMarykObject(
                 required = false,
                 final = true,
                 unique = true,
-                name = MarykEnum,
-                values = MarykEnum.values(),
+                enum = MarykEnum,
                 minValue = MarykEnum.O1,
                 maxValue = MarykEnum.O3,
                 default = MarykEnum.O1
@@ -274,7 +275,7 @@ data class CompleteMarykObject(
                 searchable = false,
                 required = false,
                 final = true,
-                dataModel = { ValueMarykObject },
+                dataModel = ValueMarykObject,
                 minValue = ValueMarykObject(
                     int = 0,
                     date = Date(100, 1, 1)

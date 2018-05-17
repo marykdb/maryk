@@ -22,6 +22,8 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(pa
     val keyDefAsKotlin = if (this.key.keyDefinitions.size != 1 || this.key.keyDefinitions[0] != UUIDKey) {
         val keyDefs = this.key.keyDefinitions.generateKotlin(addImport)
 
+        addImport("maryk.core.objects.definitions")
+
         """keyDefinitions = definitions(
             ${keyDefs.prependIndent().prependIndent().trimStart()}
         ),

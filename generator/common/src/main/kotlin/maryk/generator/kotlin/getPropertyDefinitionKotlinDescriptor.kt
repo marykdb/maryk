@@ -89,15 +89,17 @@ private val definitionNamesMap = mapOf(
                 val enumDefinition = definition as EnumDefinition<*>
                 "${enumDefinition.enum.name}.${(value as IndexedEnum<*>).name}"
             },
-            "values" to { definition, _, _ ->
-                val enumDefinition = definition as EnumDefinition<*>
-                "${enumDefinition.enum.name}.values()"
+            "values" to { _, _, _ ->
+                null
             },
             "name" to { definition, _, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
 
                 enumDefinition.enum.name
             }
+        ),
+        propertyNameOverride = mapOf(
+            "name" to "enum"
         )
     ),
     PropertyDefinitionType.FixedBytes to PropertyDefinitionKotlinDescriptor(

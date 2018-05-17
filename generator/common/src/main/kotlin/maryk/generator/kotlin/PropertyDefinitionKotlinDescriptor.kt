@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.core.objects.IsDataModel
-import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.HasDefaultValueDefinition
+import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 
 /**
  * Describes the property definitions for translation to kotlin
@@ -12,6 +12,7 @@ internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportabl
     val kotlinTypeName: (D) -> String,
     val definitionModel: IsDataModel<D>,
     val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String?> = mapOf(),
+    val propertyNameOverride: Map<String, String> = mapOf<String, String>(),
     private val imports: ((D) -> Array<String>?)? = null
 ) {
     /** Get an array of all imports which are always needed for this property [definition] */
@@ -37,11 +38,12 @@ internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportabl
             val def = property.definition
             if (value != null && (def !is HasDefaultValueDefinition<*> || value != def.default)) {
                 val override = this.propertyValueOverride[property.name]
+                val propertyName = this.propertyNameOverride[property.name] ?: property.name
 
                 if (override != null) {
                     @Suppress("UNCHECKED_CAST")
                     override(definition as IsTransportablePropertyDefinitionType<Any>, value, addImport)?.let {
-                        output.add("""${property.name} = $it""")
+                        output.add("""$propertyName = $it""")
                     }
                 } else {
                     output.add("""${property.name} = ${generateKotlinValue(def, value, addImport)}""")

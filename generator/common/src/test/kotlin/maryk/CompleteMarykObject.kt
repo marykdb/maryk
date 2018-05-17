@@ -47,7 +47,8 @@ data class CompleteMarykObject(
     val flexBytes: Bytes = Bytes("AAECAw"),
     val reference: Key<SimpleMarykObject> = Key("AAECAw"),
     val subModel: SimpleMarykObject = SimpleMarykObject(
-        value = "a default"),
+        value = "a default"
+    ),
     val valueModel: ValueMarykObject = ValueMarykObject(
         int = 10,
         date = Date(2010, 10, 10)
@@ -112,10 +113,10 @@ data class CompleteMarykObject(
                 required = false,
                 final = true,
                 unique = true,
+                enum = MarykEnum,
                 minValue = MarykEnum.O1,
                 maxValue = MarykEnum.O3,
-                default = MarykEnum.O1,
-                enum = MarykEnum
+                default = MarykEnum.O1
             ),
             getter = CompleteMarykObject::enum
         )
@@ -221,7 +222,9 @@ data class CompleteMarykObject(
                 required = false,
                 final = true,
                 dataModel = { SimpleMarykObject },
-                default = SimpleMarykObject("a default")
+                default = SimpleMarykObject(
+                    value = "a default"
+                )
             ),
             getter = CompleteMarykObject::subModel
         )
@@ -317,18 +320,21 @@ data class CompleteMarykObject(
         )
         val booleanForKey = add(
             index = 16, name = "booleanForKey",
-            definition = BooleanDefinition(final = true),
+            definition = BooleanDefinition(
+                final = true
+            ),
             getter = CompleteMarykObject::booleanForKey
         )
         val dateForKey = add(
             index = 17, name = "dateForKey",
-            definition = DateDefinition(final = true),
+            definition = DateDefinition(
+                final = true
+            ),
             getter = CompleteMarykObject::dateForKey
         )
         val multiForKey = add(
             index = 18, name = "multiForKey",
             definition = MultiTypeDefinition(
-                required = true,
                 final = true,
                 typeEnum = MarykEnum,
                 definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(

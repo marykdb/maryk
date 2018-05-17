@@ -1,6 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.core.objects.DataModel
+import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -70,6 +71,9 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
     }
     is Date ->  "Date(${value.year}, ${value.month}, ${value.day})"
     is IndexedEnumDefinition<*> -> value.name
+    is ValueDataModel<*, *> -> {
+        value.name
+    }
     is DataModel<*, *> -> {
         """{ ${value.name} }"""
     }
@@ -82,6 +86,10 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         @Suppress("UNCHECKED_CAST")
         val kotlinDescriptor =
             (value as IsTransportablePropertyDefinitionType<Any>).getKotlinDescriptor()
+
+        for (import in kotlinDescriptor.getImports(value)) {
+            addImport(import)
+        }
 
         kotlinDescriptor.definitionToKotlin(value, addImport).trimStart()
     }

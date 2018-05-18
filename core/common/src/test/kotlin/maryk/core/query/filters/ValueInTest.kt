@@ -34,8 +34,7 @@ class ValueInTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.valueIn, ValueIn, this.context) shouldBe """
-        reference: value
-        values: [t1, t2, t3]
+        value: [t1, t2, t3]
 
         """.trimIndent()
     }

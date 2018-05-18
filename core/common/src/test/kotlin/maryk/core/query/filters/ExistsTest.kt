@@ -34,8 +34,7 @@ class ExistsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.exists, Exists, this.context) shouldBe """
-        reference: value
-
+        value
         """.trimIndent()
     }
 }

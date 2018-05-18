@@ -75,7 +75,7 @@ class JsonWriter(
             }
         }
     } else {
-        throw IllegalJsonOperation("Cannot checkTypeIsAllowed a value outside array or object")
+        writer(value)
     }
 
     private fun makePretty() {

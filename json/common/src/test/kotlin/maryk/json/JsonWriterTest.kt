@@ -74,16 +74,6 @@ internal class JsonWriterTest {
             jsonWriter.writeEndArray()
         }
 
-        // Should not be able to start with value
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeValue("test")
-        }
-
-        // Should not be able to start with string value
-        shouldThrow<IllegalJsonOperation> {
-            jsonWriter.writeString("test")
-        }
-
         // Should not be able to start with field name
         shouldThrow<IllegalJsonOperation> {
             jsonWriter.writeFieldName("test")

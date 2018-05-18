@@ -12,7 +12,7 @@ interface IsPropertyComparison<T: Any>: IsPropertyCheck<T> {
     val value: T
 
     companion object {
-        internal fun <DO: Any> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> Any?) {
+        internal fun <DO: Any> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> Any?) =
             definitions.add(
                 1, "value",
                 ContextualValueDefinition(
@@ -25,6 +25,5 @@ interface IsPropertyComparison<T: Any>: IsPropertyCheck<T> {
                 ),
                 getter
             )
-        }
     }
 }

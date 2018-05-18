@@ -34,8 +34,7 @@ class PrefixTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.prefix, Prefix, this.context) shouldBe """
-        reference: value
-        prefix: te
+        value: te
 
         """.trimIndent()
     }

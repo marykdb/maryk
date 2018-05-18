@@ -34,7 +34,6 @@ class LessThanEqualsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.lessThanEquals, LessThanEquals, this.context) shouldBe """
-        reference: value
         value: test
 
         """.trimIndent()

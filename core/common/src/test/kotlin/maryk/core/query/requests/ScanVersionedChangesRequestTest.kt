@@ -63,8 +63,7 @@ class ScanVersionedChangesRequestTest {
         checkYamlConversion(this.scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, this.context) shouldBe """
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
-        filter: !Exists
-          reference: value
+        filter: !Exists value
         order:
           propertyReference: value
           direction: DESC

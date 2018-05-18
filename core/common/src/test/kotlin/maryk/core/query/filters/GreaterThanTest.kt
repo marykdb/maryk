@@ -34,7 +34,6 @@ class GreaterThanTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.greaterThan, GreaterThan, this.context) shouldBe """
-        reference: value
         value: test
 
         """.trimIndent()

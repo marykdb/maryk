@@ -38,10 +38,8 @@ class AndTest {
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.and, And, this.context) shouldBe """
         filters:
-        - !Exists
-          reference: value
+        - !Exists value
         - !Equals
-          reference: value
           value: hoi
 
         """.trimIndent()

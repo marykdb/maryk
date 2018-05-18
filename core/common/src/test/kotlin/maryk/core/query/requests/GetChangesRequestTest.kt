@@ -64,8 +64,7 @@ class GetChangesRequestTest {
         checkYamlConversion(this.getChangesMaxRequest, GetChangesRequest, this.context) shouldBe """
         dataModel: SimpleMarykObject
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
-        filter: !Exists
-          reference: value
+        filter: !Exists value
         order:
           propertyReference: value
           direction: ASC

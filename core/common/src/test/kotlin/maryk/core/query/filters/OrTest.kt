@@ -37,12 +37,10 @@ class OrTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.or, Or, this.context) shouldBe """
-        |filters:
-        |- !Exists
-        |  reference: value
-        |- !Equals
-        |  reference: value
-        |  value: hoi
-        |""".trimMargin()
+        filters:
+        - !Exists value
+        - !Equals
+          value: hoi
+        """.trimMargin()
     }
 }

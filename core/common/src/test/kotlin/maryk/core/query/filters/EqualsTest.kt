@@ -28,13 +28,16 @@ class EqualsTest {
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.equals, Equals, this.context)
+        checkJsonConversion(this.equals, Equals, this.context) shouldBe """
+        {
+        	"value": "test"
+        }
+        """.trimIndent()
     }
 
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.equals, Equals, this.context) shouldBe """
-        reference: value
         value: test
 
         """.trimIndent()

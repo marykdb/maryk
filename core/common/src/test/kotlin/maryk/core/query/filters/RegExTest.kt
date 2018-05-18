@@ -34,8 +34,7 @@ class RegExTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.regEx, RegEx, this.context) shouldBe """
-        reference: value
-        regEx: .*
+        value: .*
 
         """.trimIndent()
     }

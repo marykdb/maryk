@@ -17,7 +17,7 @@ class RangeTest {
     private val range2 = SimpleMarykObject.ref { value }.inRange(
         from = "test",
         to = "test999",
-        inclusiveFrom = true,
+        inclusiveFrom = false,
         inclusiveTo = false
     )
 
@@ -54,17 +54,22 @@ class RangeTest {
 
     @Test
     fun convert_to_JSON_and_back2() {
-        checkJsonConversion(this.range2, Range, this.context2)
+        checkJsonConversion(this.range2, Range, this.context2) shouldBe """
+        {
+        	"value": {
+        		"from": "test",
+        		"inclusiveFrom": false,
+        		"to": "test999",
+        		"inclusiveTo": false
+        	}
+        }
+        """.trimIndent()
     }
 
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.range, Range, this.context) shouldBe """
-        reference: int
-        from: 2
-        to: 6
-        inclusiveFrom: true
-        inclusiveTo: true
+        int: [2, 6]
 
         """.trimIndent()
     }
@@ -72,11 +77,7 @@ class RangeTest {
     @Test
     fun convert_to_YAML_and_back2() {
         checkYamlConversion(this.range2, Range, this.context2) shouldBe """
-        reference: value
-        from: test
-        to: test999
-        inclusiveFrom: true
-        inclusiveTo: false
+        value: [!Exclude test, !Exclude test999]
 
         """.trimIndent()
     }

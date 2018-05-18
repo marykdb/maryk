@@ -376,16 +376,6 @@ internal class YamlWriterTest {
                 writeEndArray()
             }
 
-            // Should not be able to start with value
-            shouldThrow<IllegalJsonOperation> {
-                writeValue("test")
-            }
-
-            // Should not be able to start with string value
-            shouldThrow<IllegalJsonOperation> {
-                writeString("test")
-            }
-
             // Should not be able to start with field name
             shouldThrow<IllegalJsonOperation> {
                 writeFieldName("test")

@@ -1,10 +1,12 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.QueryDataModel
+import maryk.core.objects.SimpleFilterDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DataModelPropertyContext
+import maryk.json.IsJsonLikeWriter
 
 /** Referenced value should be less than and not equalgiven [value] of type [T] */
 infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.lessThan(
@@ -18,17 +20,21 @@ data class LessThan<T: Any> internal constructor(
 ) : IsPropertyComparison<T> {
     override val filterType = FilterType.LessThan
 
-    internal companion object: QueryDataModel<LessThan<*>>(
-        properties = object : PropertyDefinitions<LessThan<*>>() {
-            init {
-                IsPropertyCheck.addReference(this, LessThan<*>::reference)
-                IsPropertyComparison.addValue(this, LessThan<*>::value)
-            }
-        }
+    internal object Properties : PropertyDefinitions<LessThan<*>>() {
+        val reference = IsPropertyCheck.addReference(this, LessThan<*>::reference)
+        val value = IsPropertyComparison.addValue(this, LessThan<*>::value)
+    }
+
+    internal companion object: SimpleFilterDataModel<LessThan<*>>(
+        properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = LessThan(
             reference = map(0),
             value = map(1)
         )
+
+        override fun writeJson(obj: LessThan<*>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            writer.writeJsonValues(Properties.reference, obj.reference, Properties.value, obj.value, context)
+        }
     }
 }

@@ -36,8 +36,7 @@ class NotTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.not, Not, this.context) shouldBe """
-        filter: !Exists
-          reference: value
+        filter: !Exists value
 
         """.trimIndent()
     }

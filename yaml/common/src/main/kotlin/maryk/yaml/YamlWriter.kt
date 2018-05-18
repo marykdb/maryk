@@ -202,7 +202,7 @@ class YamlWriter(
             }
         }
     } else {
-        throw IllegalJsonOperation("Cannot checkAndWrite a value outside array or object")
+        writer(value)
     }
 
     /** Writes a [tag] to YAML output */

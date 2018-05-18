@@ -33,6 +33,7 @@ class JsonReader(
                     when(lastChar) {
                         '{' -> startObject()
                         '[' -> startArray()
+                        '"' -> readStringValue(this::constructJsonValueToken)
                         else -> throwJsonException()
                     }
                 }

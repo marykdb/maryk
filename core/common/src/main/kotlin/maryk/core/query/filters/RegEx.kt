@@ -1,11 +1,14 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.QueryDataModel
+import maryk.core.objects.SimpleFilterDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DataModelPropertyContext
+import maryk.json.IsJsonLikeWriter
 
 /** Compares given regular expression [regEx] against referenced property */
 infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *, IsPropertyContext, *>>.matchesRegEx(
@@ -19,18 +22,28 @@ data class RegEx(
 ) : IsPropertyCheck<String> {
     override val filterType = FilterType.RegEx
 
-    internal companion object: QueryDataModel<RegEx>(
-        properties = object : PropertyDefinitions<RegEx>() {
-            init {
-                IsPropertyCheck.addReference(this, RegEx::reference)
+    internal object Properties : PropertyDefinitions<RegEx>() {
+        val reference = IsPropertyCheck.addReference(this, RegEx::reference)
+        val regEx = add(1, "regEx", StringDefinition(), RegEx::regEx)
+    }
 
-                add(1, "regEx", StringDefinition(), RegEx::regEx)
-            }
-        }
+    internal companion object: SimpleFilterDataModel<RegEx>(
+        properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = RegEx(
             reference = map(0),
             regEx = map(1)
         )
+
+        override fun writeJson(obj: RegEx, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            @Suppress("UNCHECKED_CAST")
+            writer.writeJsonValues(
+                Properties.reference,
+                obj.reference,
+                Properties.regEx as PropertyDefinitionWrapper<Any, *, IsPropertyContext, *, *>,
+                obj.regEx,
+                context
+            )
+        }
     }
 }

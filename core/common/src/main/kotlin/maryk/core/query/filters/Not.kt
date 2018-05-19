@@ -1,31 +1,70 @@
 package maryk.core.query.filters
 
 import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DataModelPropertyContext
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
+import maryk.lib.exceptions.ParseException
 
 /** Reverses the boolean check for given [filter] */
 data class Not(
-    val filter: IsFilter
+    val filters: List<IsFilter>
 ) : IsFilter {
+    constructor(vararg filters: IsFilter) : this(filters.toList())
+
     override val filterType = FilterType.Not
 
-    internal companion object: QueryDataModel<Not>(
-        properties = object : PropertyDefinitions<Not>() {
-            init {
-                add(0, "filter",
-                    MultiTypeDefinition(
-                        typeEnum = FilterType,
-                        definitionMap = mapOfFilterDefinitions
-                    ),
-                    getter = { TypedValue(it.filter.filterType, it.filter) }
+    internal object Properties : PropertyDefinitions<Not>() {
+        val filters = Properties.add(0, "filters",
+            ListDefinition(
+                valueDefinition = MultiTypeDefinition(
+                    typeEnum = FilterType,
+                    definitionMap = mapOfFilterDefinitions
                 )
-            }
-        }
+            ),
+            getter = Not::filters,
+            toSerializable = { TypedValue(it.filterType, it) },
+            fromSerializable = { it.value as IsFilter }
+        )
+    }
+
+    internal companion object: QueryDataModel<Not>(
+        properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Not(
-            filter = map<TypedValue<FilterType, IsFilter>>(0).value
+            filters = map<List<IsFilter>>(0)
         )
+
+        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            @Suppress("UNCHECKED_CAST")
+            Properties.filters.writeJsonValue(
+                map[Properties.filters.index] as List<TypedValue<FilterType, Any>>? ?: throw ParseException("Missing filters in Not filter"),
+                writer,
+                context
+            )
+        }
+
+        override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            Properties.filters.writeJsonValue(
+                Properties.filters.getPropertyAndSerialize(obj) ?: throw ParseException("Missing filters in Not filter"),
+                writer,
+                context
+            )
+        }
+
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+            if (reader.currentToken == JsonToken.StartDocument){
+                reader.nextToken()
+            }
+
+            return mapOf(
+                Properties.filters.index to Properties.filters.readJson(reader, context)
+            )
+        }
     }
 }

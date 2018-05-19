@@ -5,6 +5,11 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.DataModelPropertyContext
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
+import maryk.lib.exceptions.ParseException
 
 /** Does an Or comparison against given [filters]. If one returns true the entire result will be true. */
 data class Or(
@@ -14,25 +19,52 @@ data class Or(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    internal companion object: QueryDataModel<Or>(
-        properties = object : PropertyDefinitions<Or>() {
-            init {
-                add(0, "filters",
-                    ListDefinition(
-                        valueDefinition = MultiTypeDefinition(
-                            typeEnum = FilterType,
-                            definitionMap = mapOfFilterDefinitions
-                        )
-                    ),
-                    getter = Or::filters,
-                    toSerializable = { TypedValue(it.filterType, it) },
-                    fromSerializable = { it.value as IsFilter }
+    internal object Properties : PropertyDefinitions<Or>() {
+        val filters = add(0, "filters",
+            ListDefinition(
+                valueDefinition = MultiTypeDefinition(
+                    typeEnum = FilterType,
+                    definitionMap = mapOfFilterDefinitions
                 )
-            }
-        }
+            ),
+            getter = Or::filters,
+            toSerializable = { TypedValue(it.filterType, it) },
+            fromSerializable = { it.value as IsFilter }
+        )
+    }
+
+    internal companion object: QueryDataModel<Or>(
+        properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Or(
             filters = map<List<IsFilter>>(0)
         )
+
+        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            @Suppress("UNCHECKED_CAST")
+            Properties.filters.writeJsonValue(
+                map[Properties.filters.index] as List<TypedValue<FilterType, Any>>? ?: throw ParseException("Missing filters in Or"),
+                writer,
+                context
+            )
+        }
+
+        override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            Properties.filters.writeJsonValue(
+                Properties.filters.getPropertyAndSerialize(obj) ?: throw ParseException("Missing filters in Or"),
+                writer,
+                context
+            )
+        }
+
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+            if (reader.currentToken == JsonToken.StartDocument){
+                reader.nextToken()
+            }
+
+            return mapOf(
+                Properties.filters.index to Properties.filters.readJson(reader, context)
+            )
+        }
     }
 }

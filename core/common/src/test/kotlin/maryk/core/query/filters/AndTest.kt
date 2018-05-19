@@ -37,7 +37,6 @@ class AndTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.and, And, this.context) shouldBe """
-        filters:
         - !Exists value
         - !Equals
           value: hoi

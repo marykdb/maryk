@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.SimpleMarykObject
+import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,14 +11,19 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ExistsTest {
-    private val exists = SimpleMarykObject.ref { value }.exists()
+    private val exists = TestMarykObject.ref { string }.exists()
+    private val existsMultiple = Exists(
+        TestMarykObject.ref { string },
+        TestMarykObject.ref { int },
+        TestMarykObject.ref { dateTime }
+    )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+            TestMarykObject.name to TestMarykObject
         ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
@@ -34,7 +39,14 @@ class ExistsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.exists, Exists, this.context) shouldBe """
-        value
+        string
+        """.trimIndent()
+
+        checkYamlConversion(this.existsMultiple, Exists, this.context) shouldBe """
+        - string
+        - int
+        - dateTime
+
         """.trimIndent()
     }
 }

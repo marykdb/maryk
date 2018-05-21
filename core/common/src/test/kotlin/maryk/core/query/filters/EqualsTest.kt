@@ -1,24 +1,29 @@
 package maryk.core.query.filters
 
-import maryk.SimpleMarykObject
+import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class EqualsTest {
-    private val equals = SimpleMarykObject.ref { value } equals "test"
+    private val equals = TestMarykObject.ref { string } equals "test"
+    private val equalsMultiple = Equals(
+        TestMarykObject.ref { string } with "test",
+        TestMarykObject.ref { int } with 5
+    )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+            TestMarykObject.name to TestMarykObject
         ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
@@ -30,7 +35,7 @@ class EqualsTest {
     fun convert_to_JSON_and_back() {
         checkJsonConversion(this.equals, Equals, this.context) shouldBe """
         {
-        	"value": "test"
+        	"string": "test"
         }
         """.trimIndent()
     }
@@ -38,7 +43,13 @@ class EqualsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.equals, Equals, this.context) shouldBe """
-        value: test
+        string: test
+
+        """.trimIndent()
+
+        checkYamlConversion(this.equalsMultiple, Equals, this.context) shouldBe """
+        string: test
+        int: 5
 
         """.trimIndent()
     }

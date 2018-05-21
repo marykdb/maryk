@@ -1,6 +1,5 @@
 package maryk.core.query.filters
 
-import maryk.SimpleMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -14,7 +13,7 @@ import kotlin.test.Test
 class RangeTest {
     private val range = TestMarykObject.ref { int } inRange 2..6
 
-    private val range2 = SimpleMarykObject.ref { value }.inRange(
+    private val range2 = TestMarykObject.ref { string }.inRange(
         from = "test",
         to = "test999",
         inclusiveFrom = false,
@@ -29,14 +28,6 @@ class RangeTest {
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
-    @Suppress("UNCHECKED_CAST")
-    private val context2 = DataModelPropertyContext(
-        mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
-        ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
-    )
-
     @Test
     fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(this.range, Range, this.context)
@@ -49,14 +40,14 @@ class RangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back2() {
-        checkProtoBufConversion(this.range2, Range, this.context2)
+        checkProtoBufConversion(this.range2, Range, this.context)
     }
 
     @Test
     fun convert_to_JSON_and_back2() {
-        checkJsonConversion(this.range2, Range, this.context2) shouldBe """
+        checkJsonConversion(this.range2, Range, this.context) shouldBe """
         {
-        	"value": {
+        	"string": {
         		"from": "test",
         		"inclusiveFrom": false,
         		"to": "test999",
@@ -76,8 +67,8 @@ class RangeTest {
 
     @Test
     fun convert_to_YAML_and_back2() {
-        checkYamlConversion(this.range2, Range, this.context2) shouldBe """
-        value: [!Exclude test, !Exclude test999]
+        checkYamlConversion(this.range2, Range, this.context) shouldBe """
+        string: [!Exclude test, !Exclude test999]
 
         """.trimIndent()
     }

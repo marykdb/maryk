@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.SimpleMarykObject
+import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,14 +11,14 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class PrefixTest {
-    private val prefix = SimpleMarykObject.ref { value } isPrefixedBy "te"
+    private val prefix = TestMarykObject.ref { string } isPrefixedBy "te"
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+            TestMarykObject.name to TestMarykObject
         ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
@@ -34,7 +34,7 @@ class PrefixTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.prefix, Prefix, this.context) shouldBe """
-        value: te
+        string: te
 
         """.trimIndent()
     }

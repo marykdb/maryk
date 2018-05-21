@@ -1,24 +1,31 @@
 package maryk.core.query.filters
 
 import maryk.SimpleMarykObject
+import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class LessThanEqualsTest {
-    private val lessThanEquals = SimpleMarykObject.ref { value } lessThanEquals "test"
+    private val lessThanEquals = TestMarykObject.ref { string } lessThanEquals "test"
+
+    private val lessThanEqualsMultiple = LessThanEquals(
+        TestMarykObject.ref { string } with "test",
+        TestMarykObject.ref { int } with 6
+    )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+            TestMarykObject.name to SimpleMarykObject
         ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
@@ -34,7 +41,13 @@ class LessThanEqualsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.lessThanEquals, LessThanEquals, this.context) shouldBe """
-        value: test
+        string: test
+
+        """.trimIndent()
+
+        checkYamlConversion(this.lessThanEqualsMultiple, LessThanEquals, this.context) shouldBe """
+        string: test
+        int: 6
 
         """.trimIndent()
     }

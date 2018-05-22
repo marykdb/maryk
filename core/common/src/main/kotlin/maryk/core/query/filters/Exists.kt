@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.exists() =
         Exists(this)
 
-/** Checks if [reference] to value of type [T] exists */
+/** Checks if [references] exist on DataModel */
 data class Exists internal constructor(
     val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>
 ) : IsFilter {

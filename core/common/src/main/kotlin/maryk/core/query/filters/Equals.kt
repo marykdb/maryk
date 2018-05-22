@@ -14,7 +14,7 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
     value: T
 ) = Equals(ReferenceValuePair(this, value))
 
-/** [referenceValuePairs] should be equal given value */
+/** Referenced values in [referenceValuePairs] should be equal given value */
 data class Equals internal constructor(
     override val referenceValuePairs: List<ReferenceValuePair<Any>>
 ) : IsFilter, HasReferenceValuePairs {

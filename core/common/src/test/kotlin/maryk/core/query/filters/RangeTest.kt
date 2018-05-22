@@ -7,6 +7,8 @@ import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.ValueRange
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -18,6 +20,16 @@ class RangeTest {
         to = "test999",
         inclusiveFrom = false,
         inclusiveTo = false
+    )
+
+    private val rangeMultiple = Range(
+        TestMarykObject.ref { string } with ValueRange(
+            from = "test",
+            to = "test999",
+            inclusiveFrom = false,
+            inclusiveTo = false
+        ),
+        TestMarykObject.ref { int } with 3..5
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -61,6 +73,12 @@ class RangeTest {
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.range, Range, this.context) shouldBe """
         int: [2, 6]
+
+        """.trimIndent()
+
+        checkYamlConversion(this.rangeMultiple, Range, this.context) shouldBe """
+        string: [!Exclude test, !Exclude test999]
+        int: [3, 5]
 
         """.trimIndent()
     }

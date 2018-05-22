@@ -19,7 +19,7 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
     values: Set<T>
 ) = ValueIn(ReferenceValueSetPair(this, values))
 
-/** Checks if [reference] exists in set with [values] of type [T] */
+/** Referenced values in [referenceValuePairs] should be within given value set */
 data class ValueIn internal constructor(
     val referenceValuePairs: List<ReferenceValueSetPair<Any>>
 ) : IsFilter {

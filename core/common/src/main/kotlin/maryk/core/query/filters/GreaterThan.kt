@@ -15,7 +15,7 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
     value: T
 ) = GreaterThan(this with value)
 
-/** [referenceValuePairs] should be greater than and not equal given value */
+/** Referenced values in [referenceValuePairs] should be greater than and not equal given value */
 data class GreaterThan(
     override val referenceValuePairs: List<ReferenceValuePair<Any>>
 ) : IsFilter, HasReferenceValuePairs {

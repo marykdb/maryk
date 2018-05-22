@@ -15,7 +15,7 @@ infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *
     regEx: String
 ) = RegEx(this with regEx)
 
-/** [referenceValuePairs] with pairs of references and regular expressions to match */
+/** Referenced values in [referenceValuePairs] should match with regular expressions */
 data class RegEx(
     override val referenceValuePairs: List<ReferenceValuePair<String>>
 ) : IsFilter, HasReferenceValuePairs {

@@ -1,203 +1,131 @@
 package maryk.core.query.filters
 
-import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.BooleanDefinition
-import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.ValueRange
+import maryk.core.query.pairs.ReferenceValueRangePair
+import maryk.core.query.pairs.with
+import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
-import maryk.json.TokenWithType
 import maryk.lib.exceptions.ParseException
-import maryk.yaml.IsYamlReader
-import maryk.yaml.UnknownYamlTag
-import maryk.yaml.YamlWriter
 
 /** Checks if reference is within given [range] */
 infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.inRange(
     range: ClosedRange<T>
-) = Range(this, range.start, range.endInclusive, true, true)
+) = Range(this with ValueRange(range.start, range.endInclusive, true, true))
 
 /** Checks if reference is within range of [from] and [to] while checking if is inclusive with [inclusiveFrom] and [inclusiveTo] */
 fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.inRange(
     from: T,
     to: T,
-    inclusiveFrom: Boolean,
-    inclusiveTo: Boolean
-) = Range(this, from, to, inclusiveFrom, inclusiveTo)
+    inclusiveFrom: Boolean = true,
+    inclusiveTo: Boolean = true
+) = Range(this with ValueRange(from, to, inclusiveFrom, inclusiveTo))
 
 /**
- * Checks if [reference] is within given range of [from] until [to] of type [T].
- * With [inclusiveFrom] and [inclusiveTo] set to true (default) it will search the range including [from] or [to]
+ * Compares [referenceRangePairs] if referred values are within given ranges.
  */
-data class Range<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
-    val from: T,
-    val to: T,
-    val inclusiveFrom: Boolean = true,
-    val inclusiveTo: Boolean = true
-) : IsPropertyCheck<T> {
-    override val filterType = FilterType.Range
+data class Range internal constructor(
+    val referenceRangePairs: List<ReferenceValueRangePair<*>>
+) {
+    constructor(vararg range: ReferenceValueRangePair<*>): this(range.toList())
 
-    internal object Properties : PropertyDefinitions<Range<*>>() {
-        val reference = IsPropertyCheck.addReference(this, Range<*>::reference)
-        val from = add(1, "from", ContextualValueDefinition(
-            contextualResolver = { context: DataModelPropertyContext? ->
-                @Suppress("UNCHECKED_CAST")
-                context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
-                        ?: throw ContextNotFoundException()
-            }
-        ), Range<*>::from)
-
-        val to = add(2, "to", ContextualValueDefinition(
-            contextualResolver = { context: DataModelPropertyContext? ->
-                @Suppress("UNCHECKED_CAST")
-                context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
-                        ?: throw ContextNotFoundException()
-            }
-        ), Range<*>::to)
-
-        val inclusiveFrom = add(3, "inclusiveFrom", BooleanDefinition(default = true), Range<*>::inclusiveFrom)
-        val inclusiveTo = add(4, "inclusiveTo", BooleanDefinition(default = true), Range<*>::inclusiveTo)
+    internal object Properties : PropertyDefinitions<Range>() {
+        val ranges = Properties.add(0, "referenceRangePairs",
+            ListDefinition(
+                valueDefinition = SubModelDefinition(
+                    dataModel = { ReferenceValueRangePair }
+                )
+            ),
+            Range::referenceRangePairs
+        )
     }
 
-    internal companion object: QueryDataModel<Range<*>>(
+    internal companion object: QueryDataModel<Range>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Range(
-            reference = map(0),
-            from = map(1),
-            to = map(2),
-            inclusiveFrom = map(3),
-            inclusiveTo = map(4)
+            referenceRangePairs = map(0)
         )
 
-        override fun writeJson(obj: Range<*>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            writer.writeJsonValues(
-                obj.reference,
-                obj.from,
-                obj.to,
-                obj.inclusiveFrom,
-                obj.inclusiveTo,
-                context
-            )
-        }
-
         override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            writer.writeJsonValues(
-                map[0] as IsPropertyReference<*, *>,
-                map[1] as Any,
-                map[2] as Any,
-                map[3] as Boolean,
-                map[4] as Boolean,
-                context
-            )
+            @Suppress("UNCHECKED_CAST")
+            val ranges = map[0] as List<ReferenceValueRangePair<*>>
+
+            writer.writeJsonRanges(ranges, context)
         }
 
-        override fun walkJsonToRead(
-            reader: IsJsonLikeReader,
-            valueMap: MutableMap<Int, Any>,
-            context: DataModelPropertyContext?
-        ) {
-            (reader.currentToken as? JsonToken.FieldName)?.value?.let {
-                valueMap[Properties.reference.index] =
-                        Properties.reference.definition.fromString(it, context)
-            } ?: throw ParseException("Expected a field name for reference on Range")
+        override fun writeJson(obj: Range, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            val ranges = obj.referenceRangePairs
 
-            if(reader is IsYamlReader) {
-                if (reader.nextToken() !is JsonToken.StartArray) {
-                    throw ParseException("Range should be contained in an Array")
-                }
-
-                reader.nextToken().let {
-                    (it as? TokenWithType)?.type?.let {
-                        if (it is UnknownYamlTag && it.name == "Exclude") {
-                            valueMap[Properties.inclusiveFrom.index] = false
-                        }
-                    }
-                }
-
-                valueMap[Properties.from.index] = Properties.from.readJson(reader, context)
-
-                reader.nextToken().let {
-                    (it as? TokenWithType)?.type?.let {
-                        if (it is UnknownYamlTag && it.name == "Exclude") {
-                            valueMap[Properties.inclusiveTo.index] = false
-                        }
-                    }
-                }
-
-                valueMap[Properties.to.index] =
-                        Properties.to.readJson(reader, context)
-
-                if (reader.nextToken() !is JsonToken.EndArray) {
-                    throw ParseException("Range should have two values")
-                }
-            } else {
-                if (reader.nextToken() !is JsonToken.StartObject) {
-                    throw ParseException("Range should be contained in an Object")
-                }
-                reader.nextToken()
-
-                super.walkJsonToRead(reader, valueMap, context)
-            }
-
-            if(reader.nextToken() !== JsonToken.EndObject) {
-                throw ParseException("Expected only 1 value on Range map")
-            }
+            writer.writeJsonRanges(ranges, context)
         }
 
-        protected fun <T: Any> IsJsonLikeWriter.writeJsonValues(
-            reference: IsPropertyReference<*, *>,
-            from: T,
-            to: T,
-            inclusiveFrom: Boolean,
-            inclusiveTo: Boolean,
+        private fun IsJsonLikeWriter.writeJsonRanges(
+            ranges: List<ReferenceValueRangePair<*>>,
             context: DataModelPropertyContext?
         ) {
             writeStartObject()
-            writeFieldName(
-                Properties.reference.definition.asString(reference, context)
-            )
+            for (it in ranges) {
+                writeFieldName(
+                    ReferenceValueRangePair.Properties.reference.definition.asString(it.reference)
+                )
+                ReferenceValueRangePair.Properties.reference.capture(context, it.reference)
 
-            Properties.reference.capture(context, reference)
+                ReferenceValueRangePair.Properties.range.definition.writeJsonValue(it.range, this, context)
+            }
+            writeEndObject()
+        }
 
-            @Suppress("UNCHECKED_CAST")
-            if (this is YamlWriter) {
-                writeStartArray(true)
-
-                if (!inclusiveFrom) {
-                    this.writeTag("!Exclude")
-                }
-
-                Properties.from.definition.writeJsonValue(from, this, context)
-
-                if (!inclusiveTo) {
-                    this.writeTag("!Exclude")
-                }
-
-                Properties.to.definition.writeJsonValue(to, this, context)
-
-                writeEndArray()
-            } else {
-                writeStartObject()
-
-                writeJsonValue(Properties.from as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Range<*>>, this, from, context)
-                writeJsonValue(Properties.inclusiveFrom as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Range<*>>, this, inclusiveFrom, context)
-                writeJsonValue(Properties.to as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Range<*>>, this, to, context)
-                writeJsonValue(Properties.inclusiveTo as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Range<*>>, this, inclusiveTo, context)
-
-                writeEndObject()
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+            if (reader.currentToken == JsonToken.StartDocument){
+                reader.nextToken()
             }
 
-            writeEndObject()
+            if (reader.currentToken !is JsonToken.StartObject) {
+                throw IllegalJsonOperation("Expected object at start of json")
+            }
+
+            val listOfRanges = mutableListOf<ReferenceValueRangePair<*>>()
+            reader.nextToken()
+
+            walker@ do {
+                val token = reader.currentToken
+                when (token) {
+                    is JsonToken.FieldName -> {
+                        val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
+
+                        val reference = ReferenceValueRangePair.Properties.reference.definition.fromString(value, context)
+                        ReferenceValueRangePair.Properties.reference.capture(context, reference)
+
+                        reader.nextToken()
+
+                        val range = ReferenceValueRangePair.Properties.range.readJson(reader, context)
+
+                        @Suppress("UNCHECKED_CAST")
+                        listOfRanges.add(
+                            ReferenceValueRangePair(
+                                reference as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>>,
+                                range as ValueRange<Any>
+                            )
+                        )
+                    }
+                    else -> break@walker
+                }
+                reader.nextToken()
+            } while (token !is JsonToken.Stopped)
+
+            return mapOf(
+                Properties.ranges.index to listOfRanges
+            )
         }
     }
 }

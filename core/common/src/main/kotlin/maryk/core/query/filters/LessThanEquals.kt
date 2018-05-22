@@ -15,7 +15,7 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
     value: T
 ) = LessThanEquals(this with value)
 
-/** [referenceValuePairs] should be less than and not equal given value */
+/** Referenced values in [referenceValuePairs] should be less than and not equal given value */
 data class LessThanEquals internal constructor(
     override val referenceValuePairs: List<ReferenceValuePair<Any>>
 ) : IsFilter, HasReferenceValuePairs {

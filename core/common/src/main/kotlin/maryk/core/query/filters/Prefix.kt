@@ -15,7 +15,7 @@ infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *
     prefix: String
 ) = Prefix(this with prefix)
 
-/** [referenceValuePairs] with pairs of references and prefixes to match */
+/** Referenced values in [referenceValuePairs] should match with prefixes */
 data class Prefix(
     override val referenceValuePairs: List<ReferenceValuePair<String>>
 ) : IsFilter, HasReferenceValuePairs {

@@ -12,7 +12,7 @@ import kotlin.test.Test
 class OrderTest {
     private val order = Order(
         SimpleMarykObject.ref { value },
-        Direction.ASC
+        Direction.DESC
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -25,7 +25,7 @@ class OrderTest {
 
     @Test
     fun testOrder() {
-        this.order.direction shouldBe Direction.ASC
+        this.order.direction shouldBe Direction.DESC
         this.order.propertyReference shouldBe SimpleMarykObject.ref { value }
     }
 
@@ -41,10 +41,8 @@ class OrderTest {
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.order, Order, this.context) shouldBe """
-        propertyReference: value
-        direction: ASC
-
+        checkYamlConversion(this.order, Order, this.context, ::compareRequest) shouldBe """
+        !Desc value
         """.trimIndent()
     }
 

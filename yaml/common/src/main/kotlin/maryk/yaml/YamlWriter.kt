@@ -202,6 +202,9 @@ class YamlWriter(
             }
         }
     } else {
+        if (this.lastType == JsonType.TAG) {
+            writer(" ")
+        }
         writer(value)
     }
 

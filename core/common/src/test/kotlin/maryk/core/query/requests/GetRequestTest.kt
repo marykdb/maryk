@@ -61,9 +61,7 @@ class GetRequestTest {
         dataModel: SimpleMarykObject
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filter: !Exists value
-        order:
-          propertyReference: value
-          direction: DESC
+        order: !Desc value
         toVersion: 0x000000000000014d
         filterSoftDeleted: true
 

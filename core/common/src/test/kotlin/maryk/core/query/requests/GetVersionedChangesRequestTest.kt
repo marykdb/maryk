@@ -66,9 +66,7 @@ class GetVersionedChangesRequestTest {
         dataModel: SimpleMarykObject
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filter: !Exists value
-        order:
-          propertyReference: value
-          direction: DESC
+        order: !Desc value
         toVersion: 0x0000000000003039
         filterSoftDeleted: true
         fromVersion: 0x00000000000004d2

@@ -64,9 +64,7 @@ class ScanVersionedChangesRequestTest {
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value
-        order:
-          propertyReference: value
-          direction: DESC
+        order: !Desc value
         toVersion: 0x0000000000000929
         filterSoftDeleted: true
         limit: 300

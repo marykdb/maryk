@@ -65,9 +65,7 @@ class GetChangesRequestTest {
         dataModel: SimpleMarykObject
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
         filter: !Exists value
-        order:
-          propertyReference: value
-          direction: ASC
+        order: value
         toVersion: 0x0000000000000d80
         filterSoftDeleted: true
         fromVersion: 0x00000000000004d2

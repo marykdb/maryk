@@ -8,6 +8,13 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
+import maryk.lib.exceptions.ParseException
+import maryk.yaml.IsYamlReader
+import maryk.yaml.UnknownYamlTag
+import maryk.yaml.YamlWriter
 
 /** Direction Enumeration */
 enum class Direction(override val index: Int) : IndexedEnum<Direction> {
@@ -29,24 +36,85 @@ data class Order internal constructor(
     val propertyReference: IsPropertyReference<*, *>,
     val direction: Direction = Direction.ASC
 ) {
-    internal companion object: QueryDataModel<Order>(
-        properties = object : PropertyDefinitions<Order>() {
-            init {
-                add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = {
-                        it?.dataModel?.properties ?: throw ContextNotFoundException()
-                    }
-                ), Order::propertyReference)
-
-                add(1, "direction", EnumDefinition(
-                    enum = Direction
-                ), Order::direction)
+    internal object Properties : PropertyDefinitions<Order>() {
+        val propertyReference = add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+            contextualResolver = {
+                it?.dataModel?.properties ?: throw ContextNotFoundException()
             }
-        }
+        ), Order::propertyReference)
+
+        val direction = add(1, "direction", EnumDefinition(
+            enum = Direction,
+            default = Direction.ASC
+        ), Order::direction)
+    }
+
+    internal companion object: QueryDataModel<Order>(
+        properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Order(
             propertyReference = map(0),
             direction = map(1)
         )
+
+        override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            if (writer is YamlWriter) {
+                writeJsonOrderValue(obj.propertyReference, obj.direction, writer, context)
+            } else {
+                super.writeJson(obj, writer, context)
+            }
+        }
+
+        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            if (writer is YamlWriter) {
+                writeJsonOrderValue(map(0), map(1), writer, context)
+            } else {
+                super.writeJson(map, writer, context)
+            }
+        }
+
+        private fun writeJsonOrderValue(
+            reference: IsPropertyReference<*, *>,
+            direction: Direction,
+            writer: YamlWriter,
+            context: DataModelPropertyContext?
+        ) {
+            if (direction == Direction.DESC) {
+                writer.writeTag("!Desc")
+            }
+            Properties.propertyReference.writeJsonValue(reference, writer, context)
+        }
+
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+            if (reader is IsYamlReader) {
+                var currentToken = reader.currentToken
+
+                if (currentToken == JsonToken.StartDocument) {
+                    currentToken = reader.nextToken()
+
+                    if (currentToken is JsonToken.Suspended) {
+                        currentToken = currentToken.lastToken
+                    }
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                (currentToken as? JsonToken.Value<String>)?.let {
+                    val valueMap = mutableMapOf<Int, Any>()
+
+                    it.type.let {
+                        if (it is UnknownYamlTag && it.name == "Desc") {
+                            valueMap[Properties.direction.index] = Direction.DESC
+                        }
+                    }
+
+                    valueMap[Properties.propertyReference.index] =
+                            Properties.propertyReference.definition.fromString(it.value, context)
+
+                    return valueMap
+                } ?: throw ParseException("Expected only a property reference in Order")
+            } else {
+                return super.readJson(reader, context)
+            }
+        }
     }
 }

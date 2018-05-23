@@ -7,11 +7,14 @@ import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class PrefixTest {
-    private val prefix = TestMarykObject.ref { string } isPrefixedBy "te"
+    private val prefix = Prefix(
+        TestMarykObject.ref { string } with "te"
+    )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

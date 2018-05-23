@@ -17,19 +17,6 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** Checks if reference is within given [range] */
-infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.inRange(
-    range: ClosedRange<T>
-) = Range(this with ValueRange(range.start, range.endInclusive, true, true))
-
-/** Checks if reference is within range of [from] and [to] while checking if is inclusive with [inclusiveFrom] and [inclusiveTo] */
-fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.inRange(
-    from: T,
-    to: T,
-    inclusiveFrom: Boolean = true,
-    inclusiveTo: Boolean = true
-) = Range(this with ValueRange(from, to, inclusiveFrom, inclusiveTo))
-
 /**
  * Compares [referenceRangePairs] if referred values are within given ranges.
  */

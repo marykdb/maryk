@@ -13,9 +13,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class LessThanEqualsTest {
-    private val lessThanEquals = TestMarykObject.ref { string } lessThanEquals "test"
-
-    private val lessThanEqualsMultiple = LessThanEquals(
+    private val lessThanEquals = LessThanEquals(
         TestMarykObject.ref { string } with "test",
         TestMarykObject.ref { int } with 6
     )
@@ -41,11 +39,6 @@ class LessThanEqualsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.lessThanEquals, LessThanEquals, this.context) shouldBe """
-        string: test
-
-        """.trimIndent()
-
-        checkYamlConversion(this.lessThanEqualsMultiple, LessThanEquals, this.context) shouldBe """
         string: test
         int: 6
 

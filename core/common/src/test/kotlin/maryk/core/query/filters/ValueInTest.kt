@@ -12,8 +12,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ValueInTest {
-    private val valueIn = TestMarykObject.ref { string } valueIsIn setOf("t1", "t2", "t3")
-    private val valueInMultiple = ValueIn(
+    private val valueIn = ValueIn(
         TestMarykObject.ref { string } with setOf("t1", "t2", "t3"),
         TestMarykObject.ref { int } with setOf(1, 2, 3)
     )
@@ -39,11 +38,6 @@ class ValueInTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.valueIn, ValueIn, this.context) shouldBe """
-        string: [t1, t2, t3]
-
-        """.trimIndent()
-
-        checkYamlConversion(this.valueInMultiple, ValueIn, this.context) shouldBe """
         string: [t1, t2, t3]
         int: [1, 2, 3]
 

@@ -8,7 +8,7 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
-import maryk.core.query.filters.exists
+import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -26,7 +26,7 @@ class GetVersionedChangesRequestTest {
         getVersionedChanges(
             key1,
             key2,
-            filter = ref { value }.exists(),
+            filter = Exists(ref { value }),
             order = ref { value }.descending(),
             fromVersion = 1234L.toUInt64(),
             toVersion = 12345L.toUInt64(),

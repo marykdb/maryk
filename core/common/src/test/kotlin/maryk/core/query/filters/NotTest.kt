@@ -12,7 +12,7 @@ import kotlin.test.Test
 
 class NotTest {
     private val not = Not(
-        SimpleMarykObject.ref { value }.exists()
+        Exists(SimpleMarykObject.ref { value })
     )
 
     @Suppress("UNCHECKED_CAST")

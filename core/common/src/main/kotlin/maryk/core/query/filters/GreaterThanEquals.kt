@@ -10,11 +10,6 @@ import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.query.pairs.with
 import maryk.json.IsJsonLikeWriter
 
-/** Referenced value should be greater than or equal given [value] of type [T] */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.greaterThanEquals(
-    value: T
-) = GreaterThanEquals(this with value)
-
 /** Referenced values in [referenceValuePairs] should be greater than and equal given value */
 data class GreaterThanEquals(
     val referenceValuePairs: List<ReferenceValuePair<Any>>

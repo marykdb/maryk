@@ -10,11 +10,6 @@ import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.query.pairs.with
 import maryk.json.IsJsonLikeWriter
 
-/** Referenced value should be less than and not equal given [value] of type [T] */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.lessThan(
-    value: T
-) = LessThan(this with value)
-
 /** Referenced values in [referenceValuePairs] should be less than and not equal given value */
 data class LessThan internal constructor(
     val referenceValuePairs: List<ReferenceValuePair<Any>>

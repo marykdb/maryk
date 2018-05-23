@@ -13,16 +13,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class RangeTest {
-    private val range = TestMarykObject.ref { int } inRange 2..6
-
-    private val range2 = TestMarykObject.ref { string }.inRange(
-        from = "test",
-        to = "test999",
-        inclusiveFrom = false,
-        inclusiveTo = false
-    )
-
-    private val rangeMultiple = Range(
+    private val range = Range(
         TestMarykObject.ref { string } with ValueRange(
             from = "test",
             to = "test999",
@@ -51,42 +42,10 @@ class RangeTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back2() {
-        checkProtoBufConversion(this.range2, Range, this.context)
-    }
-
-    @Test
-    fun convert_to_JSON_and_back2() {
-        checkJsonConversion(this.range2, Range, this.context) shouldBe """
-        {
-        	"string": {
-        		"from": "test",
-        		"inclusiveFrom": false,
-        		"to": "test999",
-        		"inclusiveTo": false
-        	}
-        }
-        """.trimIndent()
-    }
-
-    @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.range, Range, this.context) shouldBe """
-        int: [2, 6]
-
-        """.trimIndent()
-
-        checkYamlConversion(this.rangeMultiple, Range, this.context) shouldBe """
         string: [!Exclude test, !Exclude test999]
         int: [3, 5]
-
-        """.trimIndent()
-    }
-
-    @Test
-    fun convert_to_YAML_and_back2() {
-        checkYamlConversion(this.range2, Range, this.context) shouldBe """
-        string: [!Exclude test, !Exclude test999]
 
         """.trimIndent()
     }

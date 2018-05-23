@@ -11,7 +11,9 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ExistsTest {
-    private val exists = TestMarykObject.ref { string }.exists()
+    private val exists = Exists(
+        TestMarykObject.ref { string }
+    )
     private val existsMultiple = Exists(
         TestMarykObject.ref { string },
         TestMarykObject.ref { int },

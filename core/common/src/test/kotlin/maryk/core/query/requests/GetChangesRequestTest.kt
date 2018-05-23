@@ -7,7 +7,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.ascending
-import maryk.core.query.filters.exists
+import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -26,7 +26,7 @@ class GetChangesRequestTest {
         getChanges(
             key1,
             key2,
-            filter = ref { value }.exists(),
+            filter = Exists(ref { value }),
             order = ref { value }.ascending(),
             fromVersion = 1234L.toUInt64(),
             toVersion = 3456L.toUInt64(),

@@ -8,7 +8,7 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
-import maryk.core.query.filters.exists
+import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -23,7 +23,7 @@ class ScanVersionedChangesRequestTest {
     private val scanVersionedChangesMaxRequest = SimpleMarykObject.run {
         scanVersionedChanges(
             startKey = key1,
-            filter = ref { value }.exists(),
+            filter = Exists(ref { value }),
             order = ref { value }.descending(),
             limit = 300.toUInt32(),
             toVersion = 2345L.toUInt64(),

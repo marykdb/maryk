@@ -12,8 +12,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class EqualsTest {
-    private val equals = TestMarykObject.ref { string } equals "test"
-    private val equalsMultiple = Equals(
+    private val equals = Equals(
         TestMarykObject.ref { string } with "test",
         TestMarykObject.ref { int } with 5
     )
@@ -35,7 +34,8 @@ class EqualsTest {
     fun convert_to_JSON_and_back() {
         checkJsonConversion(this.equals, Equals, this.context) shouldBe """
         {
-        	"string": "test"
+        	"string": "test",
+        	"int": 5
         }
         """.trimIndent()
     }
@@ -43,11 +43,6 @@ class EqualsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.equals, Equals, this.context) shouldBe """
-        string: test
-
-        """.trimIndent()
-
-        checkYamlConversion(this.equalsMultiple, Equals, this.context) shouldBe """
         string: test
         int: 5
 

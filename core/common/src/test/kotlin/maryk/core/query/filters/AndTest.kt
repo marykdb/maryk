@@ -7,13 +7,16 @@ import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class AndTest {
     private val and = And(
-        SimpleMarykObject.ref{ value }.exists(),
-        SimpleMarykObject.ref{ value } equals "hoi"
+        Exists(SimpleMarykObject.ref{ value }),
+        Equals(
+            SimpleMarykObject.ref{ value } with "hoi"
+        )
     )
 
     @Suppress("UNCHECKED_CAST")

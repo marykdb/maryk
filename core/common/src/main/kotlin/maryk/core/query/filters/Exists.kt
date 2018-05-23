@@ -14,10 +14,6 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** Checks if value exists */
-fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.exists() =
-        Exists(this)
-
 /** Checks if [references] exist on DataModel */
 data class Exists internal constructor(
     val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>

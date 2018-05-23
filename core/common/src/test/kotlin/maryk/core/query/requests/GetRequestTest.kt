@@ -7,7 +7,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
-import maryk.core.query.filters.exists
+import maryk.core.query.filters.Exists
 import maryk.core.yaml.MarykYamlReader
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -25,7 +25,7 @@ class GetRequestTest {
         get(
             key1,
             key2,
-            filter = ref { value }.exists(),
+            filter = Exists(ref { value }),
             order = ref { value }.descending(),
             toVersion = 333L.toUInt64(),
             filterSoftDeleted = true

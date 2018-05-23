@@ -14,11 +14,6 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** Checks if reference exists in set with [values] of type [T] */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.valueIsIn(
-    values: Set<T>
-) = ValueIn(ReferenceValueSetPair(this, values))
-
 /** Referenced values in [referenceValuePairs] should be within given value set */
 data class ValueIn internal constructor(
     val referenceValuePairs: List<ReferenceValueSetPair<Any>>

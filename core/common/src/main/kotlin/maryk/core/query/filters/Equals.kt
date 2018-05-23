@@ -2,17 +2,9 @@ package maryk.core.query.filters
 
 import maryk.core.objects.ReferencePairDataModel
 import maryk.core.objects.ReferenceValuePairsPropertyDefinitions
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
-
-/** Compares given [value] of type [T] against referenced value */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.equals(
-    value: T
-) = Equals(ReferenceValuePair(this, value))
 
 /** Referenced values in [referenceValuePairs] should be equal given value */
 data class Equals internal constructor(

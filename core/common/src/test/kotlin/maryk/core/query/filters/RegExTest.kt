@@ -7,11 +7,14 @@ import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class RegExTest {
-    private val regEx = TestMarykObject.ref { string } matchesRegEx ".*"
+    private val regEx = RegEx(
+        TestMarykObject.ref { string } with ".*"
+    )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(

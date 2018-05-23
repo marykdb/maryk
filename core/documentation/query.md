@@ -15,6 +15,18 @@ added to a store. When applied it will deliver an [`AddResponse`](../common/src/
 with a status on each object to add.
 
 Example:
+
+Maryk YAML:
+```yaml
+!Add
+  dataModel: Person
+  objectsToAdd:
+  - firstName: Jurriaan
+    lastName: Mous
+  - firstName: John
+    lastName: Smith
+```
+Kotlin:
 ```kotlin
 val addRequest = Person.add(
     Person(
@@ -38,6 +50,23 @@ Refer to [property operations](properties/operations.md) to see how to apply
 changes to properties.
 
 Example:
+Maryk YAML:
+```yaml
+!Change
+  dataModel: SimpleMarykObject
+  objectChanges:
+  - key: MYc6LBYcT38nWxoE1ahNxA
+    changes:
+      !Check
+        firstName: Jane
+      !Change
+        lastName: Doe
+  - key: lneV6ioyQL0vnbkLqwVw+A
+    changes:
+      !Change
+        lastName: Smith
+```
+Kotlin:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -69,7 +98,6 @@ val changeRequest = Person.run {
       )
   )
 }
-
 ```
 
 ### Delete
@@ -81,6 +109,16 @@ still in the store but not viewable unless specifically requested.
 When applied it will deliver an [`DeleteResponse`](../common/src/main/kotlin/maryk/core/query/responses/DeleteResponse.kt)
 with a status on each delete.
 
+Maryk YAML:
+```yaml
+!Delete
+  dataModel: Person
+  keys: 
+  - WWurg6ysTsozoMei/SurOw
+  - awfbjYrVQ+cdXblfQKV10A
+  hardDelete: true
+```
+Kotlin:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -105,6 +143,15 @@ When applied it will deliver an [`ObjectsResponse`](../common/src/main/kotlin/ma
 with a list with [`DataObjectWithMetaData`](../common/src/main/kotlin/maryk/core/query/DataObjectWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 
+Maryk YAML:
+```yaml
+!Get
+  dataModel: Person
+  keys: 
+  - WWurg6ysTsozoMei/SurOw
+  - awfbjYrVQ+cdXblfQKV10A
+```
+Kotlin:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -116,6 +163,22 @@ val getRequest = Person.get(
 ```
 
 With all options
+Maryk YAML:
+```yaml
+!Get
+  dataModel: Person
+  keys: 
+  - WWurg6ysTsozoMei/SurOw
+  - awfbjYrVQ+cdXblfQKV10A
+  filter: !And
+  - !Equals
+    firstName: Clark
+  - !Exists lastName
+  order: !Desc lastName
+  toVersion: 2
+  filterSoftDeleted: false
+```
+Kotlin:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -148,6 +211,13 @@ When applied it will deliver an [`ObjectsResponse`](../common/src/main/kotlin/ma
 with a list with [`DataObjectWithMetaData`](../common/src/main/kotlin/maryk/core/query/DataObjectWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 
+Maryk YAML:
+```yaml
+!Scan
+  dataModel: Logs
+  startKey: Zk6m4QpZQegUg5s13JVYlQ
+```
+Kotlin:
 ```kotlin
 val timedKey // Key which start at certain time
 
@@ -157,19 +227,32 @@ val scanRequest = Logs.scan(
 ```
 
 With all options
+Maryk YAML:
+```yaml
+!Scan
+  dataModel: Logs
+  startKey: Zk6m4QpZQegUg5s13JVYlQ
+  filter: !GreaterThanEquals
+    severity: ERROR
+  order: !Desc timeStamp
+  filterSoftDeleted: false
+  limit: 50
+  toVersion: 2
+```
+Kotlin:
 ```kotlin
 val timedKey // Key which start at certain time
 
 val scanRequest = Logs.run {
     scan(
         startKey = timedKey,
-        limit = 50,
         filter = GreaterThanEquals(
             ref { severity } with Severity.ERROR
         ),
         order = ref { timeStamp }.descending(),
-        toVersion = 2L,
-        filterSoftDeleted = false
+        filterSoftDeleted = false,
+        limit = 50,
+        toVersion = 2L
     )
 }
 ```
@@ -186,6 +269,23 @@ with a list with [`DataObjectChange`](../common/src/main/kotlin/maryk/core/query
 containing the `key`, the `lastVersion` and a list of `changes`.
 
 Get with all options
+Maryk YAML:
+```yaml
+!GetChanges
+  dataModel: Person
+  keys: 
+  - WWurg6ysTsozoMei/SurOw
+  - awfbjYrVQ+cdXblfQKV10A
+  filter: !And
+  - !Equals
+    firstName: Clark
+  - !Exists lastName
+  order: !Desc lastName
+  toVersion: 2000
+  filterSoftDeleted: false
+  fromVersion: 1000
+```
+Kotlin:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -199,27 +299,41 @@ val getRequest = Person.run {
             Exists(ref { lastName })
         ),
         order = ref { lastName }.ascending(),
-        fromVersion = 1000L,
         toVersion = 2000L,
-        filterSoftDeleted = false    
+        filterSoftDeleted = false,    
+        fromVersion = 1000L
     )
 }
 ```
 
 Scan with all options
+Maryk YAML:
+```yaml
+!ScanChanges
+  dataModel: Logs
+  startKey: Zk6m4QpZQegUg5s13JVYlQ
+  filter: !GreaterThanEquals
+    severity: ERROR
+  order: !Desc timeStamp
+  filterSoftDeleted: false
+  limit: 50
+  fromVersion: 1000
+  toVersion: 2000
+```
+Kotlin:
 ```kotlin
 val timedKey // Key which start at certain time
 
 val scanRequest = Logs.scanChanges(
     startKey = timedKey,
-    limit = 50,
     filter = GreaterThanEquals(
         Logs.ref { severity } with Severity.ERROR
     ),
     order = ref { timeStamp }.descending(),
+    filterSoftDeleted = false,  
+    limit = 50,
     fromVersion = 1000L,
-    toVersion = 2000L,
-    filterSoftDeleted = false    
+    toVersion = 2000L
 )
 ```
 
@@ -237,6 +351,24 @@ with a list with [`DataObjectVersionedChange`](../common/src/main/kotlin/maryk/c
 containing the `key` and `changes` with a list of objects containing the version and changes.
 
 Get versioned changes with all options
+Maryk YAML:
+```yaml
+!GetVersionedChanges
+  dataModel: Person
+  keys: 
+  - WWurg6ysTsozoMei/SurOw
+  - awfbjYrVQ+cdXblfQKV10A
+  filter: !And
+  - !Equals
+    firstName: Clark
+  - !Exists lastName
+  order: !Desc lastName
+  toVersion: 2000
+  filterSoftDeleted: false
+  fromVersion: 1000
+  maxVersions: 100
+```
+Kotlin:
 ```kotlin
 val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
@@ -250,28 +382,43 @@ val getRequest = Person.run {
             Exists(ref { lastName })
         ),
         order = ref { lastName }.ascending(),
-        fromVersion = 1000L,
         toVersion = 2000L,
-        maxVersions = 100,
-        filterSoftDeleted = false    
+        filterSoftDeleted = false,    
+        fromVersion = 1000L,
+        maxVersions = 100
     )
 }
 ```
 
 Scan versioned changes with all options
+Maryk YAML:
+```yaml
+!ScanVersionedChanges
+  dataModel: Logs
+  startKey: Zk6m4QpZQegUg5s13JVYlQ
+  filter: !GreaterThanEquals
+    severity: ERROR
+  order: !Desc timeStamp
+  filterSoftDeleted: false
+  limit: 50
+  fromVersion: 1000
+  toVersion: 2000
+  maxVersions: 100
+```
+Kotlin:
 ```kotlin
 val timedKey // Key which start at certain time
 
 val scanRequest = Logs.scanVersionedChanges(
     startKey = timedKey,
-    limit = 50,
     filter = GreaterThanEquals(
         Logs.ref { severity } with Severity.ERROR
     ),
     order = ref { timeStamp }.descending(),
+    filterSoftDeleted = false,    
+    limit = 50,
     fromVersion = 1000L,
     toVersion = 2000L,
-    maxVersions = 100,
-    filterSoftDeleted = false    
+    maxVersions = 100
 )
 ```

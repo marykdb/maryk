@@ -18,6 +18,7 @@ import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -37,9 +38,9 @@ class ObjectVersionedChangesResponseTest {
                         219674127L.toUInt64(),
                         listOf(
                             ObjectSoftDeleteChange(true),
-                            ListChange(TestMarykObject.ref { list }),
-                            SetChange(TestMarykObject.ref { set }),
-                            MapChange(TestMarykObject.ref { map })
+                            ListChange(TestMarykObject.ref { list }.change()),
+                            SetChange(TestMarykObject.ref { set }.change()),
+                            MapChange(TestMarykObject.ref { map }.change())
                         )
                     ),
                     VersionedChanges(
@@ -86,11 +87,11 @@ class ObjectVersionedChangesResponseTest {
             - !ObjectDelete
               isDeleted: true
             - !ListChange
-              reference: list
+              list:
             - !SetChange
-              reference: set
+              set:
             - !MapChange
-              reference: map
+              map:
           - version: 0x00000000130dd70f
             changes:
             - !Change

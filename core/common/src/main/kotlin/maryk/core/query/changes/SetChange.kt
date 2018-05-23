@@ -1,53 +1,53 @@
 package maryk.core.query.changes
 
-import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.QueryDataModel
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.objects.ReferenceMappedDataModel
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SetDefinition
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.SetReference
+import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.DefinedByReference
+import maryk.json.IsJsonLikeWriter
 
-/** Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues] */
-data class SetChange<T: Any> internal constructor(
-    override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>>,
-    val addValues: Set<T>? = null,
-    val deleteValues: Set<T>? = null
-) : IsPropertyOperation<Set<T>> {
+/** Defines changes to sets by [setValueChanges] */
+data class SetChange internal constructor(
+    val setValueChanges: List<SetValueChanges<*>>
+) : IsChange {
     override val changeType = ChangeType.SetChange
 
-    internal companion object: QueryDataModel<SetChange<out Any>>(
-        properties = object : PropertyDefinitions<SetChange<*>>() {
-            init {
-                DefinedByReference.addReference(this, SetChange<*>::reference)
+    constructor(vararg setValueChange: SetValueChanges<*>): this(setValueChange.toList())
 
-                add(1, "addValues", SetDefinition(
-                    required = false,
-                    valueDefinition = valueDefinition
-                ), SetChange<*>::addValues)
-
-                add(2, "deleteValues", SetDefinition(
-                    required = false,
-                    valueDefinition = valueDefinition
-                ), SetChange<*>::deleteValues)
-            }
+    internal object Properties : PropertyDefinitions<SetChange>() {
+        init {
+            add(0, "setValueChanges",
+                ListDefinition(
+                    valueDefinition = SubModelDefinition(
+                        dataModel = { SetValueChanges }
+                    )
+                ),
+                SetChange::setValueChanges
+            )
         }
+    }
+
+    internal companion object: ReferenceMappedDataModel<SetChange, SetValueChanges<*>>(
+        properties = SetChange.Properties,
+        containedDataModel = SetValueChanges,
+        referenceProperty = SetValueChanges.Properties.reference
     ) {
-        @Suppress("RemoveExplicitTypeArguments")
-        override fun invoke(map: Map<Int, *>) = SetChange<Any>(
-            reference = map(0),
-            addValues = map(1),
-            deleteValues = map(2)
+        override fun invoke(map: Map<Int, *>) = SetChange(
+            setValueChanges = map(0)
         )
+
+        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            @Suppress("UNCHECKED_CAST")
+            writeReferenceValueMap(
+                writer,
+                map[0] as List<SetValueChanges<*>>,
+                context
+            )
+        }
+
+        override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            writeReferenceValueMap(writer, obj.setValueChanges, context)
+        }
     }
 }
-
-@Suppress("UNCHECKED_CAST")
-private val valueDefinition = ContextualValueDefinition(contextualResolver = { context: DataModelPropertyContext? ->
-    (context?.reference as SetReference<Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
-            ?: throw ContextNotFoundException()
-})

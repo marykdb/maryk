@@ -27,9 +27,9 @@ class DataObjectVersionedChangeTest {
                 219674127L.toUInt64(),
                 listOf(
                     ObjectSoftDeleteChange(true),
-                    ListChange(TestMarykObject.ref { list }),
-                    SetChange(TestMarykObject.ref { set }),
-                    MapChange(TestMarykObject.ref { map })
+                    ListChange(TestMarykObject.ref { list }.change()),
+                    SetChange(TestMarykObject.ref { set }.change()),
+                    MapChange(TestMarykObject.ref { map }.change())
                 )
             ),
             VersionedChanges(
@@ -72,11 +72,11 @@ class DataObjectVersionedChangeTest {
           - !ObjectDelete
             isDeleted: true
           - !ListChange
-            reference: list
+            list:
           - !SetChange
-            reference: set
+            set:
           - !MapChange
-            reference: map
+            map:
         - version: 0x00000000130dd70f
           changes:
           - !Change

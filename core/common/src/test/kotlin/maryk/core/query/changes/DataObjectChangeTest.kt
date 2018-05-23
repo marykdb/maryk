@@ -25,9 +25,13 @@ class DataObjectChangeTest {
         Delete(SubMarykObject.ref(subModel) { value }),
         Check(SubMarykObject.ref(subModel) { value } with "current"),
         ObjectSoftDeleteChange(true),
-        ListChange(TestMarykObject.ref { list }),
-        SetChange(TestMarykObject.ref { set }),
-        MapChange(TestMarykObject.ref { map }),
+        ListChange(
+            TestMarykObject.ref { list }.change(
+                addValuesToEnd = listOf(1,2,3)
+            )
+        ),
+        SetChange(TestMarykObject.ref { set }.change()),
+        MapChange(TestMarykObject.ref { map }.change()),
         lastVersion = 12345L.toUInt64()
     )
 
@@ -62,11 +66,12 @@ class DataObjectChangeTest {
         - !ObjectDelete
           isDeleted: true
         - !ListChange
-          reference: list
+          list:
+            addValuesToEnd: [1, 2, 3]
         - !SetChange
-          reference: set
+          set:
         - !MapChange
-          reference: map
+          map:
         lastVersion: 0x0000000000003039
 
         """.trimIndent()

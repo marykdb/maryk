@@ -12,11 +12,12 @@ import kotlin.test.Test
 
 class ListChangeTest {
     private val listPropertyChange = ListChange(
-        TestMarykObject.ref { listOfString },
-        addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
-        addValuesToEnd = listOf("four", "five"),
-        deleteAtIndex = setOf(0, 1),
-        deleteValues = listOf("three")
+        TestMarykObject.ref { listOfString }.change(
+            addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
+            addValuesToEnd = listOf("four", "five"),
+            deleteAtIndex = setOf(0, 1),
+            deleteValues = listOf("three")
+        )
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -40,13 +41,13 @@ class ListChangeTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.listPropertyChange, ListChange, this.context) shouldBe """
-        reference: listOfString
-        addValuesToEnd: [four, five]
-        addValuesAtIndex:
-          2: a
-          3: abc
-        deleteValues: [three]
-        deleteAtIndex: [0, 1]
+        listOfString:
+          addValuesToEnd: [four, five]
+          addValuesAtIndex:
+            2: a
+            3: abc
+          deleteValues: [three]
+          deleteAtIndex: [0, 1]
 
         """.trimIndent()
     }

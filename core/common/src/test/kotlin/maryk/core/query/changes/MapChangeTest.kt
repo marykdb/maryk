@@ -14,14 +14,15 @@ import kotlin.test.Test
 
 class MapChangeTest {
     private val mapPropertyChange = MapChange(
-        reference = TestMarykObject.ref { map },
-        keysToDelete = setOf(
-            Time(12, 33, 12)
-        ),
-        valuesToAdd = mapOf(
-            Time(23, 0, 0) to "Test4",
-            Time(5, 51, 53) to "Test5",
-            Time(11, 10, 9) to "Test6"
+        TestMarykObject.ref { map }.change(
+            keysToDelete = setOf(
+                Time(12, 33, 12)
+            ),
+            valuesToAdd = mapOf(
+                Time(23, 0, 0) to "Test4",
+                Time(5, 51, 53) to "Test5",
+                Time(11, 10, 9) to "Test6"
+            )
         )
     )
 
@@ -46,12 +47,12 @@ class MapChangeTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.mapPropertyChange, MapChange, this.context) shouldBe """
-        reference: map
-        valuesToAdd:
-          23:00: Test4
-          05:51:53: Test5
-          11:10:09: Test6
-        keysToDelete: ['12:33:12']
+        map:
+          valuesToAdd:
+            23:00: Test4
+            05:51:53: Test5
+            11:10:09: Test6
+          keysToDelete: ['12:33:12']
 
         """.trimIndent()
     }

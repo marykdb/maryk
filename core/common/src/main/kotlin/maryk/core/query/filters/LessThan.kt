@@ -17,15 +17,15 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
 
 /** Referenced values in [referenceValuePairs] should be less than and not equal given value */
 data class LessThan internal constructor(
-    override val referenceValuePairs: List<ReferenceValuePair<Any>>
-) : IsFilter, HasReferenceValuePairs {
+    val referenceValuePairs: List<ReferenceValuePair<Any>>
+) : IsFilter {
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     override val filterType = FilterType.LessThan
 
     internal object Properties : ReferenceValuePairsPropertyDefinitions<Any, LessThan>() {
-        override val referenceValuePairs = HasReferenceValuePairs.addReferenceValuePairs(
+        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
             this, LessThan::referenceValuePairs
         )
     }

@@ -10,15 +10,15 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.filters.IsPropertyCheck
+import maryk.core.query.DefinedByReference
 
 /** Compares given [values] set of type [T] against referenced value [reference] */
 data class ReferenceValueSetPair<T: Any> internal constructor(
-    val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     val values: Set<T>
-) {
+) : DefinedByReference<T> {
     internal object Properties: PropertyDefinitions<ReferenceValueSetPair<*>>() {
-        val reference = IsPropertyCheck.addReference(
+        val reference = DefinedByReference.addReference(
             this,
             ReferenceValueSetPair<*>::reference
         )

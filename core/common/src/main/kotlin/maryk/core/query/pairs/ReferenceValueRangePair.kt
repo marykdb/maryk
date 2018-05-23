@@ -6,16 +6,16 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DefinedByReference
 import maryk.core.query.ValueRange
-import maryk.core.query.filters.IsPropertyCheck
 
 /** Defines a pair of a [reference] and [range] of type [T] */
 data class ReferenceValueRangePair<T: Any> internal constructor(
-    val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     val range: ValueRange<T>
-) {
+) : DefinedByReference<T> {
     internal object Properties: PropertyDefinitions<ReferenceValueRangePair<*>>() {
-        val reference = IsPropertyCheck.addReference(
+        val reference = DefinedByReference.addReference(
             this,
             ReferenceValueRangePair<*>::reference
         )

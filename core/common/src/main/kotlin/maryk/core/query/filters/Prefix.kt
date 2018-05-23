@@ -17,14 +17,14 @@ infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *
 
 /** Referenced values in [referenceValuePairs] should match with prefixes */
 data class Prefix(
-    override val referenceValuePairs: List<ReferenceValuePair<String>>
-) : IsFilter, HasReferenceValuePairs {
+    val referenceValuePairs: List<ReferenceValuePair<String>>
+) : IsFilter {
     override val filterType = FilterType.Prefix
 
     constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())
 
     internal object Properties : ReferenceValuePairsPropertyDefinitions<String, Prefix>() {
-        override val referenceValuePairs = HasReferenceValuePairs.addReferenceValuePairs(
+        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
             this, Prefix::referenceValuePairs
         )
     }

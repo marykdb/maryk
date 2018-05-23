@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DefinedByReference
 
 /**
  * Delete of a property of type [T]
@@ -28,7 +29,7 @@ data class PropertyDelete<T: Any> internal constructor(
     internal companion object: QueryDataModel<PropertyDelete<*>>(
         properties = object : PropertyDefinitions<PropertyDelete<*>>() {
             init {
-                IsPropertyOperation.addReference(this, PropertyDelete<*>::reference)
+                DefinedByReference.addReference(this, PropertyDelete<*>::reference)
                 IsPropertyOperation.addValueToCompare(this, PropertyDelete<*>::valueToCompare)
             }
         }

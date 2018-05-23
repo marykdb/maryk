@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DefinedByReference
 
 /**
  * Value check for a property of type [T]
@@ -28,7 +29,7 @@ data class PropertyCheck<T: Any> internal constructor(
     internal companion object: QueryDataModel<PropertyCheck<*>>(
         properties = object : PropertyDefinitions<PropertyCheck<*>>() {
             init {
-                IsPropertyOperation.addReference(this, PropertyCheck<*>::reference)
+                DefinedByReference.addReference(this, PropertyCheck<*>::reference)
                 IsPropertyOperation.addValueToCompare(this, PropertyCheck<*>::valueToCompare)
             }
         }

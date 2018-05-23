@@ -16,6 +16,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.DefinedByReference
 
 /**
  * Changes for a list property containing values of type [T]
@@ -48,7 +49,7 @@ data class ListPropertyChange<T: Any> internal constructor(
     internal companion object: QueryDataModel<ListPropertyChange<*>>(
         properties = object : PropertyDefinitions<ListPropertyChange<*>>() {
             init {
-                IsPropertyOperation.addReference(this, ListPropertyChange<*>::reference)
+                DefinedByReference.addReference(this, ListPropertyChange<*>::reference)
 
                 @Suppress("UNCHECKED_CAST")
                 add(1, "valueToCompare", ContextualCollectionDefinition(

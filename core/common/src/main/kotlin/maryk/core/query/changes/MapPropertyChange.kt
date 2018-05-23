@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.DefinedByReference
 
 fun <K: Any, V: Any> IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>>.change(
     valuesToAdd: Map<K, V>? = null,
@@ -69,7 +70,7 @@ data class MapPropertyChange<K: Any, V: Any> internal constructor(
     internal companion object: QueryDataModel<MapPropertyChange<*, *>>(
         properties = object : PropertyDefinitions<MapPropertyChange<*, *>>() {
             init {
-                IsPropertyOperation.addReference(this, MapPropertyChange<*, *>::reference)
+                DefinedByReference.addReference(this, MapPropertyChange<*, *>::reference)
                 add(1, "valueToCompare", Properties.valueToCompare, MapPropertyChange<*, *>::valueToCompare)
                 add(2, "valuesToAdd", Properties.valuesToAdd, MapPropertyChange<*, *>::valuesToAdd)
                 add(3, "keysToDelete", Properties.keysToDelete, MapPropertyChange<*, *>::keysToDelete)

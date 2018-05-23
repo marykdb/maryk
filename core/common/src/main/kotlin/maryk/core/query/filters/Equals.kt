@@ -16,15 +16,15 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
 
 /** Referenced values in [referenceValuePairs] should be equal given value */
 data class Equals internal constructor(
-    override val referenceValuePairs: List<ReferenceValuePair<Any>>
-) : IsFilter, HasReferenceValuePairs {
+    val referenceValuePairs: List<ReferenceValuePair<Any>>
+) : IsFilter {
     override val filterType = FilterType.Equals
 
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     internal object Properties: ReferenceValuePairsPropertyDefinitions<Any, Equals>() {
-        override val referenceValuePairs = HasReferenceValuePairs.addReferenceValuePairs(
+        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
             this, Equals::referenceValuePairs
         )
     }

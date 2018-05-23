@@ -91,7 +91,7 @@ data class Range internal constructor(
             }
 
             if (reader.currentToken !is JsonToken.StartObject) {
-                throw IllegalJsonOperation("Expected object at start of json")
+                throw IllegalJsonOperation("Expected object at start of JSON")
             }
 
             val listOfRanges = mutableListOf<ReferenceValueRangePair<*>>()

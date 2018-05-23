@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.DefinedByReference
 
 /**
  * Change value to [newValue] for property of type [T]
@@ -33,7 +34,7 @@ data class PropertyChange<T: Any> internal constructor(
     internal companion object: QueryDataModel<PropertyChange<*>>(
         properties = object : PropertyDefinitions<PropertyChange<*>>() {
             init {
-                IsPropertyOperation.addReference(this, PropertyChange<*>::reference)
+                DefinedByReference.addReference(this, PropertyChange<*>::reference)
                 IsPropertyOperation.addValueToCompare(this, PropertyChange<*>::valueToCompare)
 
                 add(2, "newValue", ContextualValueDefinition(

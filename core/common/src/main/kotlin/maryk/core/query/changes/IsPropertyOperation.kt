@@ -2,37 +2,17 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.DefinedByReference
 
 /** An operation on a property of type [T] */
-interface IsPropertyOperation<T: Any> : IsChange {
-    val reference: IsPropertyReference<T, IsPropertyDefinition<T>>
+interface IsPropertyOperation<T: Any> : IsChange, DefinedByReference<T> {
     val valueToCompare: T?
 
     companion object {
-        internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
-            definitions.add(
-                0, "reference",
-                ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = {
-                        it?.dataModel?.properties ?: throw ContextNotFoundException()
-                    }
-                ),
-                getter = getter,
-                capturer = { context, value ->
-                    @Suppress("UNCHECKED_CAST")
-                    context.reference = value as IsPropertyReference<*, PropertyDefinitionWrapper<* ,*, *, *, *>>
-                }
-            )
-        }
-
         internal fun <DO: Any> addValueToCompare(definitions: PropertyDefinitions<DO>, getter: (DO) -> Any?) {
             definitions.add(
                 1, "valueToCompare",

@@ -17,15 +17,15 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
 
 /** Referenced values in [referenceValuePairs] should be greater than and equal given value */
 data class GreaterThanEquals(
-    override val referenceValuePairs: List<ReferenceValuePair<Any>>
-) : IsFilter, HasReferenceValuePairs {
+    val referenceValuePairs: List<ReferenceValuePair<Any>>
+) : IsFilter {
     override val filterType = FilterType.GreaterThanEquals
 
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     internal object Properties : ReferenceValuePairsPropertyDefinitions<Any, GreaterThanEquals>() {
-        override val referenceValuePairs = HasReferenceValuePairs.addReferenceValuePairs(
+        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
             this, GreaterThanEquals::referenceValuePairs
         )
     }

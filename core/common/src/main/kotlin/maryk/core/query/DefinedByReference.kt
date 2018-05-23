@@ -1,17 +1,17 @@
-package maryk.core.query.filters
+package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
 
-/** Check of property of type [T] */
-interface IsPropertyCheck<T: Any> : IsFilter {
-    val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>
+/**
+ * For objects containing a reference which defines the context of other properties
+ */
+interface DefinedByReference<T: Any> {
+    val reference: IsPropertyReference<T, IsPropertyDefinition<T>>
 
     companion object {
         internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) =

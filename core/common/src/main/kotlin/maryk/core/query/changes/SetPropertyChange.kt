@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.DefinedByReference
 
 /**
  * Changes for a set property of [T] referred with [addValues] and [deleteValues]
@@ -38,7 +39,7 @@ data class SetPropertyChange<T: Any> internal constructor(
     internal companion object: QueryDataModel<SetPropertyChange<out Any>>(
         properties = object : PropertyDefinitions<SetPropertyChange<*>>() {
             init {
-                IsPropertyOperation.addReference(this, SetPropertyChange<*>::reference)
+                DefinedByReference.addReference(this, SetPropertyChange<*>::reference)
                 add(1, "valueToCompare", ContextualCollectionDefinition(
                     required = false,
                     contextualResolver = { context: DataModelPropertyContext? ->

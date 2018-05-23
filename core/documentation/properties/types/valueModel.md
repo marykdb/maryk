@@ -26,6 +26,14 @@ This makes them usable as map keys and list/set items.
 
 ## Examples
 
+**Example of a YAML ValueModel property definition**
+```yaml
+!ValueModel
+  dataModel: PersonRoleInPeriod
+  required: false
+  final: true
+```
+
 **Example of a Kotlin ValueModel property definition**
 ```kotlin
 val def = ValueModelDefinition(
@@ -33,14 +41,6 @@ val def = ValueModelDefinition(
     final = true,
     dataModel = PersonRoleInPeriod
 )
-```
-
-**Example of a YAML ValueModel property definition**
-```yaml
-!ValueModel
-  dataModel: PersonRoleInPeriod
-  required: false
-  final: true
 ```
 
 ## Storage/Transport Byte representation

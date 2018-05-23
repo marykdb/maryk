@@ -26,15 +26,6 @@ Property definitions need to be required and values can thus not be null.
 
 ## Examples
 
-**Example of a Kotlin List property definition**
-```kotlin
-val def = ListDefinition(
-    required = false,
-    final = true,
-    valueDefinition = StringDefinition()
-)
-```
-
 **Example of a YAML List property definition**
 ```yaml
 !List
@@ -47,6 +38,15 @@ val def = ListDefinition(
   maxSize: 10
 ```
 
+**Example of a Kotlin List property definition**
+```kotlin
+val def = ListDefinition(
+    required = false,
+    final = true,
+    valueDefinition = StringDefinition()
+)
+```
+
 ## Operations
 List can be applied with List operations through `ListPropertyChange` to check
 or change their contents. It can be defined with a set with `addValuesToEnd` or 
@@ -55,25 +55,50 @@ a list with `deleteValues`. It can also operate with the value index by
 
 The current value can be compared against `valueToCompare`
 
-Kotlin example on a model with a list containing strings.
+**Example on a model with a list containing strings.**
+
+Maryk Yaml:
+```yaml
+!ListChange
+  listOfStrings:
+    addValuesToEnd:
+    - three 
+    - four
+    deleteValues: [one, two]
+```
+Kotlin:
 ```kotlin
-Model.ref { listOfStrings }.change(
-    addValuesToEnd: listOf("three", "four"),
-    deleteValues: listOf("one", "two"),
-    valueToCompare: listOf("one", "two")
+ListChange(
+    Model.ref { listOfStrings }.change(
+        addValuesToEnd: listOf("three", "four"),
+        deleteValues: listOf("one", "two")
+    )
 )
 ```
 
-Kotlin example with indexed operations on a model with a list containing strings.
+**Example with indexed operations on a model with a list containing strings.**
+
+Kotlin:
 ```kotlin
-Model.ref { listOfStrings }.change(
-    addValuesAtIndex: map(
-        0 to "three", 
-        0 to "four"
-    ),
-    deleteAtIndex: setOf(1, 2),
-    valueToCompare: listOf("one", "two")
+ListChange(
+    Model.ref { listOfStrings }.change(
+        addValuesAtIndex: map(
+            0 to "three", 
+            0 to "four"
+        ),
+        deleteAtIndex: setOf(1, 2)
+    )
 )
+```
+
+Maryk Yaml:
+```yaml
+!ListChange
+  listOfStrings:
+    addValuesAtIndex:
+      0: three 
+      0: four
+    deleteAtIndex: [1, 2]
 ```
 
 ## Storage Byte representation

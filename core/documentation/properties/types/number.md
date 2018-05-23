@@ -57,20 +57,6 @@ unsigned integers are available.
 
 ## Examples
 
-**Example of a Kotlin Number property definition**
-```kotlin
-val def = NumberDefinition(
-    type = UInt32,
-    required = true,
-    final = true,
-    unique = true,
-    default = 42,
-    minValue = 32,
-    maxValue = 1000000,
-    random = true
-)
-```
-
 **Example of a YAML Number property definition**
 ```yaml
 !Number
@@ -84,6 +70,19 @@ val def = NumberDefinition(
   maxValue: 1000000
 ```
 
+**Example of a Kotlin Number property definition**
+```kotlin
+val def = NumberDefinition(
+    type = UInt32,
+    required = true,
+    final = true,
+    unique = true,
+    default = 42,
+    minValue = 32,
+    maxValue = 1000000,
+    random = true
+)
+```
 
 ## Storage Byte representation
 All numbers are encoded to a fixed length byte format fitting their type. 

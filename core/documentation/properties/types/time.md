@@ -28,6 +28,19 @@ in seconds and milliseconds.
 
 ## Examples
 
+**Example of a YAML Time property definition**
+```yaml
+!Time
+  precision: SECONDS
+  required: false
+  unique: false
+  final: true
+  default: 12:00:00
+  minValue: 08:00:00
+  maxValue: 17:59:59
+  fillWithNow: true
+```
+
 **Example of a Kotlin String property definition**
 ```kotlin
 val def = TimeDefinition(
@@ -40,19 +53,6 @@ val def = TimeDefinition(
     precision = TimePrecision.MILLIS,
     fillWithNow = true
 )
-```
-
-**Example of a YAML Time property definition**
-```yaml
-!Time
-  precision: SECONDS
-  required: false
-  unique: false
-  final: true
-  default: 12:00:00
-  minValue: 08:00:00
-  maxValue: 17:59:59
-  fillWithNow: true
 ```
 
 ## Storage Byte representation

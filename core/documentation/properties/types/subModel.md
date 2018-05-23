@@ -22,6 +22,14 @@ A property which contains another DataModel as embedded object. See
 
 ## Examples
 
+**Example of a YAML SubModel property definition**
+```yaml
+!SubModel
+  dataModel: Address
+  required: false
+  final: true
+```
+
 **Example of a Kotlin SubModel property definition**
 ```kotlin
 val def = SubModelDefinition(
@@ -29,14 +37,6 @@ val def = SubModelDefinition(
     final = true,
     dataModel = Address
 )
-```
-
-**Example of a YAML SubModel property definition**
-```yaml
-!SubModel
-  dataModel: Address
-  required: false
-  final: true
 ```
 
 ## Transport Byte representation

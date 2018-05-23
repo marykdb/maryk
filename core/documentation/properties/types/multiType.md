@@ -31,6 +31,19 @@ or photos.
 
 ## Examples
 
+**Example of a YAML MultiType property definition**
+```yaml
+!MultiType
+  required: false
+  final: true
+  definitionMap:
+  ? 0: ByString
+  : !String
+  ? 1: ByInt
+  : !Number
+    type: SINT32
+```
+
 **Example of a Kotlin Multi type property definition**
 ```kotlin
 val intDef = NumberDefinition<Int>(
@@ -57,19 +70,6 @@ val def = MultiTypeDefinition(
         MultiType.ByInt to NumberDefinition(type = Int32)
     )
 )
-```
-
-**Example of a YAML MultiType property definition**
-```yaml
-!MultiType
-  required: false
-  final: true
-  definitionMap:
-  ? 0: ByString
-  : !String
-  ? 1: ByInt
-  : !Number
-    type: SINT32
 ```
 
 ## Storage Byte representation

@@ -25,6 +25,22 @@ Contains an enumaration value. Is limited to one of the values in an enum
 
 ## Examples
 
+**Example of a YAML Enum property definition**
+```yaml
+!Enum
+  name: Role
+  values:
+    0: Admin
+    1: Moderator
+    2: User
+  required: false
+  unique: false
+  final: true
+  default: User
+  minValue: Admin
+  maxValue: User
+```
+
 **Example of a Kotlin Enum property definition**
 ```kotlin
 enum class Role(override val index: Int): IndexedEnum<Option> {
@@ -42,22 +58,6 @@ val def = EnumDefinition(
     minValue = Role.Admin,
     maxValue = Role.User
 )
-```
-
-**Example of a YAML Enum property definition**
-```yaml
-!Enum
-  name: Role
-  values:
-    0: Admin
-    1: Moderator
-    2: User
-  required: false
-  unique: false
-  final: true
-  default: User
-  minValue: Admin
-  maxValue: User
 ```
 
 ## Storage Byte representation

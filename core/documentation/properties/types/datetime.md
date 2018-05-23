@@ -27,6 +27,19 @@ A DateTime Property which can be used to represent the time in a date plus time.
 
 ## Examples
 
+**Example of a YAML DateTime property definition**
+```yaml
+!DateTime
+  precision: SECONDS
+  required: false
+  unique: false
+  final: true
+  default: 2018-04-30T22:22:22
+  minValue: 1900-01-01T00:00:00
+  maxValue: 2099-12-31T23:59:59
+  fillWithNow: true
+```
+
 **Example of a Kotlin DateTime property definition**
 ```kotlin
 val def = DateTimeDefinition(
@@ -39,19 +52,6 @@ val def = DateTimeDefinition(
     precision = TimePrecision.MILLIS,
     fillWithNow = true
 )
-```
-
-**Example of a YAML DateTime property definition**
-```yaml
-!DateTime
-  precision: SECONDS
-  required: false
-  unique: false
-  final: true
-  default: 2018-04-30T22:22:22
-  minValue: 1900-01-01T00:00:00
-  maxValue: 2099-12-31T23:59:59
-  fillWithNow: true
 ```
 
 ## Storage Byte representation

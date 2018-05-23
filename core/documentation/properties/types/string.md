@@ -27,6 +27,20 @@ Basic String property to represent text.
 
 ## Examples
 
+**Example of a YAML String property definition**
+```yaml
+!String
+  required: false
+  unique: false
+  final: true
+  minSize: 3
+  maxSize: 6
+  default: baa
+  minValue: aab
+  maxValue: ddda
+  regEx: [abcd]{3,4}
+```
+
 **Example of a Kotlin String property definition**
 ```kotlin
 val def = StringDefinition(
@@ -40,20 +54,6 @@ val def = StringDefinition(
     maxValue = "ddda",
     regEx = "[abcd]{3,4}"
 )
-```
-
-**Example of a YAML String property definition**
-```yaml
-!String
-  required: false
-  unique: false
-  final: true
-  minSize: 3
-  maxSize: 6
-  default: baa
-  minValue: aab
-  maxValue: ddda
-  regEx: [abcd]{3,4}
 ```
 
 ## Storage/Transport Byte representation

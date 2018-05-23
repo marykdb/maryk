@@ -44,11 +44,11 @@ val person2Key // Containing the key of person 2 to change
 
 val changeRequest = Person.change(
     person1Key.change(
-        Person.ref { firstName }.check("Jane"),
-        Person.ref { lastName }.change("Doe")
+        Check(Person.ref { firstName } with "Jane"),
+        Change(Person.ref { lastName } with "Doe")
     ),
     person2Key.change(
-        Person.ref { lastName }.change("Smith")
+        Change(Person.ref { lastName } with "Smith")
     )
 )
 ```
@@ -61,11 +61,11 @@ val person2Key // Containing the key of person 2 to change
 val changeRequest = Person.run {
   change(
       person1Key.change(
-          ref { firstName }.check("Jane"),
-          ref { lastName }.change("Doe")
+          Check(ref { firstName } with "Jane"),
+          Change(ref { lastName } with "Doe")
       ),
       person2Key.change(
-          ref { lastName }.change("Smith")
+          Change(ref { lastName } with "Smith")
       )
   )
 }
@@ -125,8 +125,8 @@ val getRequest = Person.run{
       person1Key,
       person2Key,
       filter = And(
-          ref { firstName } equals "Clark",
-          ref { lastName } equals "Kent"
+          Equals(ref { firstName } with "Clark"),
+          Exists(ref { lastName })
       ),
       order = ref { lastName }.ascending(),
       toVersion = 2L,
@@ -164,7 +164,9 @@ val scanRequest = Logs.run {
     scan(
         startKey = timedKey,
         limit = 50,
-        filter = ref { severity } greaterThanOrEquals Severity.ERROR,
+        filter = GreaterThanEquals(
+            ref { severity } with Severity.ERROR
+        ),
         order = ref { timeStamp }.descending(),
         toVersion = 2L,
         filterSoftDeleted = false
@@ -193,8 +195,8 @@ val getRequest = Person.run {
         person1Key,
         person2Key,
         filter = And(
-            ref { firstName } equals "Clark",
-            ref { lastName } equals "Kent"
+            Equals(ref { firstName } with "Clark"),
+            Exists(ref { lastName })
         ),
         order = ref { lastName }.ascending(),
         fromVersion = 1000L,
@@ -211,7 +213,9 @@ val timedKey // Key which start at certain time
 val scanRequest = Logs.scanChanges(
     startKey = timedKey,
     limit = 50,
-    filter = Logs.ref { severity } greaterThanOrEquals Severity.ERROR,
+    filter = GreaterThanEquals(
+        Logs.ref { severity } with Severity.ERROR
+    ),
     order = ref { timeStamp }.descending(),
     fromVersion = 1000L,
     toVersion = 2000L,
@@ -242,8 +246,8 @@ val getRequest = Person.run {
         person1Key,
         person2Key,
         filter = And(
-            ref { firstName } equals "Clark",
-            ref { lastName } equals "Kent"
+            Equals(ref { firstName } with "Clark"),
+            Exists(ref { lastName })
         ),
         order = ref { lastName }.ascending(),
         fromVersion = 1000L,
@@ -261,7 +265,9 @@ val timedKey // Key which start at certain time
 val scanRequest = Logs.scanVersionedChanges(
     startKey = timedKey,
     limit = 50,
-    filter = Logs.ref { severity } greaterThanOrEquals Severity.ERROR,
+    filter = GreaterThanEquals(
+        Logs.ref { severity } with Severity.ERROR
+    ),
     order = ref { timeStamp }.descending(),
     fromVersion = 1000L,
     toVersion = 2000L,

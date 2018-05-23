@@ -21,6 +21,14 @@ Boolean true or false.
 
 ## Examples
 
+**Example of a YAML Boolean property definition**
+```yaml
+!Boolean
+  required: false
+  final: true
+  default: true
+```
+
 **Example of a Kotlin Boolean property definition**
 ```kotlin
 val def = BooleanDefinition(
@@ -30,14 +38,6 @@ val def = BooleanDefinition(
     final = false,
     default = true
 )
-```
-
-**Example of a YAML Boolean property definition**
-```yaml
-!Boolean
-  required: false
-  final: true
-  default: true
 ```
 
 ## Storage and Transport Byte representation

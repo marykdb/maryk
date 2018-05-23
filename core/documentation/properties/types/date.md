@@ -26,6 +26,18 @@ year is unsigned so it can contain negative dates
 
 ## Examples
 
+**Example of a YAML Date property definition**
+```yaml
+!Date
+  required: false
+  unique: false
+  final: true
+  default: 2018-04-30
+  minValue: 1900-01-01
+  maxValue: 2100-01-01
+  fillWithNow: true
+```
+
 **Example of a Kotlin Date property definition**
 ```kotlin
 val def = DateDefinition(
@@ -37,18 +49,6 @@ val def = DateDefinition(
     maxValue = Date(2100, 1, 1),
     fillWithNow = true
 )
-```
-
-**Example of a YAML Date property definition**
-```yaml
-!Date
-  required: false
-  unique: false
-  final: true
-  default: 2018-04-30
-  minValue: 1900-01-01
-  maxValue: 2100-01-01
-  fillWithNow: true
 ```
 
 ## Storage Byte representation

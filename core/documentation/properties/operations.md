@@ -9,37 +9,58 @@ unless it is true.
 
 Check if firstName is `John`
 ```kotlin
-Person.ref { firstName }.check("John")
+Check(
+    Person.ref { firstName } with "John",
+    Person.ref { lastName } with "Smith"
+)
+```
+
+Maryk YAML:
+```yaml
+!Check
+  firstName: John
+  lastName: Smith
 ```
 
 ## Change property value
-A property value can be changes with a `PropertyChange`. It can also check
-`valueToCompare` with current value before changing the property. Will only
-succeed if property matches.
+A property value can be changed with a `PropertyChange`.
 
-Change firstName to `Jane`
 ```kotlin
-Person.ref { firstName }.change("Jane")
+Change(
+    Person.ref { firstName } with "Jane",
+    Person.ref { lastName } with "Doe"
+)
 ```
 
-Only change firstName to `Jane` if current value is Janice
-```kotlin
-Person.ref { firstName }.change("Jane", valueToCompare = "Janice")
+Maryk YAML:
+```yaml
+!Change
+  firstName: Jane
+  lastName: Doe
 ```
 
 ## Delete a property
-A `PropertyDelete` can be used to delete a property. It can also check if
-a current value matches `valueToCompare` before deleting.
+A `PropertyDelete` can be used to delete a property.
 
 Delete firstName
 ```kotlin
-Person.ref { firstName }.delete()
+Delete(
+    Person.ref { firstName },
+    Person.ref { lastName }
+)
 ```
 
-Delete firstName if current value is Jane
-```kotlin
-Person.ref { firstName }.delete(valueToCompare = "Janice")
+Maryk YAML:
+```yaml
+# single
+!Delete firstName
+
+# multiple
+!Delete
+- firstName
+- lastName
 ```
+
 
 ## Changes on Map, List and Set properties
 

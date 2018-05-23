@@ -29,16 +29,6 @@ be null.
 
 ## Examples
 
-**Example of a Kotlin Map property definition**
-```kotlin
-val def = MapDefinition(
-    required = false,
-    final = true,
-    keyDefinition = NumberDefinition(type = UInt32),
-    valueDefinition = StringDefinition()
-)
-```
-
 **Example of a YAML Map property definition**
 ```yaml
 !Map
@@ -53,23 +43,42 @@ val def = MapDefinition(
   maxSize: 10
 ```
 
+**Example of a Kotlin Map property definition**
+```kotlin
+val def = MapDefinition(
+    required = false,
+    final = true,
+    keyDefinition = NumberDefinition(type = UInt32),
+    valueDefinition = StringDefinition()
+)
+```
 
 ## Operations
 Maps can be applied with Map operations through `MapPropertyChange` to check
 or change the contents. It can be defined with a map with `valuesToAdd` or a set of 
-`keysToDelete`. The current value can be compared against `valueToCompare`
+`keysToDelete`.
 
-Kotlin example on a model with a map containing integers mapped to strings.
+Example on a model with a map containing integers mapped to strings:
+
+Maryk Yaml:
+```yaml
+!MapChange
+  mapOfIntToString:
+    valuesToAdd:
+        3: "three",
+        4: "four"
+    keysToDelete: [1, 2]
+```
+
+Kotlin:
 ```kotlin
-Model.ref { mapOfIntToString }.change(
-    valuesToAdd: mapOf(
-        3 to "three",
-        4 to "four"
-    ),
-    keysToDelete: setOf(1, 2),
-    valueToCompare: mapOf(
-        1 to "one",
-        2 to "two"
+MapChange(
+    Model.ref { mapOfIntToString }.change(
+        valuesToAdd: mapOf(
+            3 to "three",
+            4 to "four"
+        ),
+        keysToDelete: setOf(1, 2)
     )
 )
 ```

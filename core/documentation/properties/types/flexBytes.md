@@ -26,21 +26,6 @@ Defines a property of a flexible bytes length.
 
 ## Examples
 
-**Example of a Kotlin Flex Bytes property definition**
-```kotlin
-val def = FlexBytesDefinition(
-    required = false,
-    final = true,
-    unique = true,
-    random = true,
-    minSize = 2,
-    maxSize = 5,
-    default = Bytes.ofHex("1111"),
-    minValue = Bytes.ofHex("0000"),
-    maxValue = Bytes.ofHex("FFFFFFFFFF")
-)
-```
-
 **Example of a YAML Flex Bytes property definition**
 ```yaml
 !FlexBytes
@@ -54,6 +39,21 @@ val def = FlexBytesDefinition(
   minValue: AA # Base64 value
   maxValue: //////////8 # Base64 value
   random: true
+```
+
+**Example of a Kotlin Flex Bytes property definition**
+```kotlin
+val def = FlexBytesDefinition(
+    required = false,
+    final = true,
+    unique = true,
+    random = true,
+    minSize = 2,
+    maxSize = 5,
+    default = Bytes.ofHex("1111"),
+    minValue = Bytes.ofHex("0000"),
+    maxValue = Bytes.ofHex("FFFFFFFFFF")
+)
 ```
 
 ## Storage/Transport Byte representation

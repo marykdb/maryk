@@ -24,15 +24,6 @@ Property definitions need to be required and values can thus not be null.
 - `searchable` - default true
 - `valueDefinition` - definition of values contained
 
-**Example of a Kotlin Set property definition**
-```kotlin
-val def = SetDefinition(
-    required = true,
-    final = true,
-    valueDefinition = StringDefinition()
-)
-```
-
 ## Examples
 
 **Example of a YAML Set property definition**
@@ -45,6 +36,15 @@ val def = SetDefinition(
   maxSize: 10
 ```
 
+**Example of a Kotlin Set property definition**
+```kotlin
+val def = SetDefinition(
+    required = true,
+    final = true,
+    valueDefinition = StringDefinition()
+)
+```
+
 ## Operations
 Set can be applied with Set operations through `SetPropertyChange` to check
 or change the contents. It can be defined with a set with `addValues` or a set with 
@@ -52,11 +52,20 @@ or change the contents. It can be defined with a set with `addValues` or a set w
 
 Kotlin example on a model with a set containing strings.
 ```kotlin
-Model.ref { setOfStrings }.change(
-    addValues: setOf("three", "four"),
-    deleteValues: setOf("one", "two"),
-    valueToCompare: mapOf("one", "two")
+SetChange(
+    Model.ref { setOfStrings }.change(
+        addValues: setOf("three", "four"),
+        deleteValues: setOf("one", "two"),
+    )
 )
+```
+
+Maryk Yaml:
+```yaml
+!SetChange
+  mapOfIntToString:
+    addValues: [three, four]
+    deleteValues: [one, two]
 ```
 
 ## Byte representation

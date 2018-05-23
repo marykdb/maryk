@@ -25,6 +25,14 @@ Property representing a Reference to another DataObject.
 
 ## Examples
 
+**Example of a YAML Reference property definition**
+```yaml
+!Reference
+  dataModel: Person
+  required: false
+  final: true
+```
+
 **Example of a Kotlin Reference property definition**
 ```kotlin
 val def = ReferenceDefinition(
@@ -33,14 +41,6 @@ val def = ReferenceDefinition(
     unique = true,
     dataModel = Person
 )
-```
-
-**Example of a YAML Reference property definition**
-```yaml
-!Reference
-  dataModel: Person
-  required: false
-  final: true
 ```
 
 ## Storage/Transport Byte representation

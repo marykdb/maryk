@@ -9,6 +9,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -34,9 +35,9 @@ class DataObjectVersionedChangeTest {
             VersionedChanges(
                 319674127L.toUInt64(),
                 listOf(
-                    Change(SubMarykObject.ref(subModel) { value }, "new"),
+                    Change(SubMarykObject.ref(subModel) { value } with "new"),
                     Delete(SubMarykObject.ref(subModel) { value }),
-                    Check(SubMarykObject.ref(subModel) { value }, "current")
+                    Check(SubMarykObject.ref(subModel) { value } with "current")
                 )
             )
         )
@@ -64,28 +65,26 @@ class DataObjectVersionedChangeTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, this.context) shouldBe """
-        |key: AAACKwEBAQAC
-        |changes:
-        |- version: 0x000000000d17f60f
-        |  changes:
-        |  - !ObjectDelete
-        |    isDeleted: true
-        |  - !ListChange
-        |    reference: list
-        |  - !SetChange
-        |    reference: set
-        |  - !MapChange
-        |    reference: map
-        |- version: 0x00000000130dd70f
-        |  changes:
-        |  - !Change
-        |    reference: subModel.value
-        |    value: new
-        |  - !Delete
-        |    reference: subModel.value
-        |  - !Check
-        |    reference: subModel.value
-        |    value: current
-        |""".trimMargin()
+        key: AAACKwEBAQAC
+        changes:
+        - version: 0x000000000d17f60f
+          changes:
+          - !ObjectDelete
+            isDeleted: true
+          - !ListChange
+            reference: list
+          - !SetChange
+            reference: set
+          - !MapChange
+            reference: map
+        - version: 0x00000000130dd70f
+          changes:
+          - !Change
+            subModel.value: new
+          - !Delete subModel.value
+          - !Check
+            subModel.value: current
+
+        """.trimIndent()
     }
 }

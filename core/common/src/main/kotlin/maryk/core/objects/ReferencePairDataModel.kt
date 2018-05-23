@@ -1,7 +1,9 @@
 package maryk.core.objects
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -77,4 +79,17 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any>(
 
 internal abstract class ReferenceValuePairsPropertyDefinitions<T: Any, DO: Any> : PropertyDefinitions<DO>() {
     abstract val referenceValuePairs: ListPropertyDefinitionWrapper<ReferenceValuePair<T>, ReferenceValuePair<T>, IsPropertyContext, DO>
+
+    protected fun <T: Any> addReferenceValuePairsDefinition(getter: (DO) -> List<ReferenceValuePair<T>>?) =
+        this.add(0, "referenceValuePairs",
+            ListDefinition(
+                valueDefinition = SubModelDefinition(
+                    dataModel = {
+                        @Suppress("UNCHECKED_CAST")
+                        ReferenceValuePair as SimpleDataModel<ReferenceValuePair<T>, PropertyDefinitions<ReferenceValuePair<T>>>
+                    }
+                )
+            ),
+            getter = getter
+        )
 }

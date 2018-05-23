@@ -1,26 +1,28 @@
 package maryk.core.query.changes
 
-import maryk.SimpleMarykObject
+import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class CheckTest {
     private val valueCheck = Check(
-        SimpleMarykObject.ref { value }
+        TestMarykObject.ref { string } with "test",
+        TestMarykObject.ref { int } with 42
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+            TestMarykObject.name to TestMarykObject
         ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )
 
     @Test
@@ -36,7 +38,8 @@ class CheckTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.valueCheck, Check, this.context) shouldBe """
-        reference: value
+        string: test
+        int: 42
 
         """.trimIndent()
     }

@@ -16,9 +16,7 @@ data class Equals internal constructor(
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     internal object Properties: ReferenceValuePairsPropertyDefinitions<Any, Equals>() {
-        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
-            this, Equals::referenceValuePairs
-        )
+        override val referenceValuePairs = addReferenceValuePairsDefinition(Equals::referenceValuePairs)
     }
 
     internal companion object: ReferencePairDataModel<Any, Equals>(

@@ -15,9 +15,7 @@ data class RegEx internal constructor(
     constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())
 
     internal object Properties : ReferenceValuePairsPropertyDefinitions<String, RegEx>() {
-        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
-            this, RegEx::referenceValuePairs
-        )
+        override val referenceValuePairs = addReferenceValuePairsDefinition(RegEx::referenceValuePairs)
     }
 
     internal companion object: ReferencePairDataModel<String, RegEx>(

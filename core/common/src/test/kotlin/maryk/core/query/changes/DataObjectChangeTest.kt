@@ -9,6 +9,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -20,9 +21,9 @@ class DataObjectChangeTest {
     private val subModel = TestMarykObject.ref { subModel }
 
     private val dataObjectChange = key1.change(
-        Change(SubMarykObject.ref(subModel) { value }, "new"),
+        Change(SubMarykObject.ref(subModel) { value } with  "new"),
         Delete(SubMarykObject.ref(subModel) { value }),
-        Check(SubMarykObject.ref(subModel) { value }, "current"),
+        Check(SubMarykObject.ref(subModel) { value } with "current"),
         ObjectSoftDeleteChange(true),
         ListChange(TestMarykObject.ref { list }),
         SetChange(TestMarykObject.ref { set }),
@@ -54,13 +55,10 @@ class DataObjectChangeTest {
         key: AAACKwEBAQAC
         changes:
         - !Change
-          reference: subModel.value
-          value: new
-        - !Delete
-          reference: subModel.value
+          subModel.value: new
+        - !Delete subModel.value
         - !Check
-          reference: subModel.value
-          value: current
+          subModel.value: current
         - !ObjectDelete
           isDeleted: true
         - !ListChange

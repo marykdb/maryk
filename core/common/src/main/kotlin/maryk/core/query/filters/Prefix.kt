@@ -15,9 +15,7 @@ data class Prefix internal constructor(
     constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())
 
     internal object Properties : ReferenceValuePairsPropertyDefinitions<String, Prefix>() {
-        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
-            this, Prefix::referenceValuePairs
-        )
+        override val referenceValuePairs = addReferenceValuePairsDefinition(Prefix::referenceValuePairs)
     }
 
     internal companion object: ReferencePairDataModel<String, Prefix>(

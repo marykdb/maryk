@@ -18,6 +18,7 @@ import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -44,9 +45,9 @@ class ObjectVersionedChangesResponseTest {
                     VersionedChanges(
                         319674127L.toUInt64(),
                         listOf(
-                            Change(SubMarykObject.ref(subModel) { value }, "new"),
+                            Change(SubMarykObject.ref(subModel) { value } with "new"),
                             Delete(SubMarykObject.ref(subModel) { value }),
-                            Check(SubMarykObject.ref(subModel) { value }, "current")
+                            Check(SubMarykObject.ref(subModel) { value } with "current")
                         )
                     )
                 )
@@ -93,13 +94,10 @@ class ObjectVersionedChangesResponseTest {
           - version: 0x00000000130dd70f
             changes:
             - !Change
-              reference: subModel.value
-              value: new
-            - !Delete
-              reference: subModel.value
+              subModel.value: new
+            - !Delete subModel.value
             - !Check
-              reference: subModel.value
-              value: current
+              subModel.value: current
 
         """.trimIndent()
     }

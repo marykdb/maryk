@@ -10,7 +10,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.ValueRange
 import maryk.core.query.pairs.ReferenceValueRangePair
-import maryk.core.query.pairs.with
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter

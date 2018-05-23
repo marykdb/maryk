@@ -9,6 +9,7 @@ import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.change
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -19,7 +20,7 @@ class ObjectChangesResponseTest {
         SimpleMarykObject,
         listOf(
             key.change(
-                Change(SimpleMarykObject.ref { value }, "hoho"),
+                Change(SimpleMarykObject.ref { value } with "hoho"),
                 Delete(SimpleMarykObject.ref { value }),
                 lastVersion = 14141L.toUInt64()
             )
@@ -48,10 +49,8 @@ class ObjectChangesResponseTest {
         - key: +1xO4zD4R5sIMcS9pXTZEA
           changes:
           - !Change
-            reference: value
             value: hoho
-          - !Delete
-            reference: value
+          - !Delete value
           lastVersion: 0x000000000000373d
 
         """.trimIndent()

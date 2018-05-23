@@ -2,12 +2,8 @@ package maryk.core.query.filters
 
 import maryk.core.objects.ReferencePairDataModel
 import maryk.core.objects.ReferenceValuePairsPropertyDefinitions
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
-import maryk.core.query.pairs.with
 import maryk.json.IsJsonLikeWriter
 
 /** Referenced values in [referenceValuePairs] should be less than and not equal given value */
@@ -20,9 +16,7 @@ data class LessThan internal constructor(
     override val filterType = FilterType.LessThan
 
     internal object Properties : ReferenceValuePairsPropertyDefinitions<Any, LessThan>() {
-        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
-            this, LessThan::referenceValuePairs
-        )
+        override val referenceValuePairs = addReferenceValuePairsDefinition(LessThan::referenceValuePairs)
     }
 
     internal companion object: ReferencePairDataModel<Any, LessThan>(

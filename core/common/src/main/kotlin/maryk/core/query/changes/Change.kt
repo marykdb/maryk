@@ -1,41 +1,33 @@
 package maryk.core.query.changes
 
-import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.QueryDataModel
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualValueDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.objects.ReferencePairDataModel
+import maryk.core.objects.ReferenceValuePairsPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.DefinedByReference
+import maryk.core.query.pairs.ReferenceValuePair
+import maryk.json.IsJsonLikeWriter
 
-/** Change value to [value] for property of type [T] referred by [reference] */
-data class Change<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
-    val value: T
-) : IsPropertyOperation<T> {
+/** Defines changes to properties defined by [referenceValuePairs] */
+data class Change internal constructor(
+    val referenceValuePairs: List<ReferenceValuePair<Any>>
+) : IsChange {
     override val changeType = ChangeType.Change
 
-    internal companion object: QueryDataModel<Change<*>>(
-        properties = object : PropertyDefinitions<Change<*>>() {
-            init {
-                DefinedByReference.addReference(this, Change<*>::reference)
+    @Suppress("UNCHECKED_CAST")
+    constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-                add(1, "value", ContextualValueDefinition(
-                    contextualResolver = { context: DataModelPropertyContext? ->
-                        @Suppress("UNCHECKED_CAST")
-                        context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
-                            ?: throw ContextNotFoundException()
-                    }
-                ), Change<*>::value)
-            }
-        }
+    internal object Properties : ReferenceValuePairsPropertyDefinitions<Any, Change>() {
+        override val referenceValuePairs = addReferenceValuePairsDefinition(Change::referenceValuePairs)
+    }
+
+    internal companion object: ReferencePairDataModel<Any, Change>(
+        properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Change(
-            reference = map(0),
-            value = map(1)
+            referenceValuePairs = map(0)
         )
+
+        override fun writeJson(obj: Change, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+            writer.writeJsonMapObject(obj.referenceValuePairs, context)
+        }
     }
 }

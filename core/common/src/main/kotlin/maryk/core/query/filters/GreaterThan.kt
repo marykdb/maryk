@@ -16,9 +16,7 @@ data class GreaterThan internal constructor(
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
     internal object Properties : ReferenceValuePairsPropertyDefinitions<Any, GreaterThan>() {
-        override val referenceValuePairs = ReferenceValuePair.addReferenceValuePairsDefinition(
-            this, GreaterThan::referenceValuePairs
-        )
+        override val referenceValuePairs = addReferenceValuePairsDefinition(GreaterThan::referenceValuePairs)
     }
 
     internal companion object: ReferencePairDataModel<Any, GreaterThan>(

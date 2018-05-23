@@ -45,7 +45,7 @@ class SetChangeTest {
         reference: set
         addValues: [2014-04-14, 2013-03-13]
         deleteValues: [2018-07-17]
-        
+
         """.trimIndent()
     }
 }

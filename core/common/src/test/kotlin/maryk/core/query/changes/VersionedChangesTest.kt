@@ -9,6 +9,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -18,9 +19,9 @@ class VersionedChangesTest {
     private val versionedChanges = VersionedChanges(
         219674127L.toUInt64(),
         listOf(
-            Change(subModelValue, "new"),
+            Change(subModelValue with "new"),
             Delete(subModelValue),
-            Check(subModelValue),
+            Check(subModelValue with "current"),
             ObjectSoftDeleteChange(true),
             ListChange(TestMarykObject.ref { list }),
             SetChange(TestMarykObject.ref { set }),
@@ -53,12 +54,10 @@ class VersionedChangesTest {
         version: 0x000000000d17f60f
         changes:
         - !Change
-          reference: subModel.value
-          value: new
-        - !Delete
-          reference: subModel.value
+          subModel.value: new
+        - !Delete subModel.value
         - !Check
-          reference: subModel.value
+          subModel.value: current
         - !ObjectDelete
           isDeleted: true
         - !ListChange
@@ -67,7 +66,7 @@ class VersionedChangesTest {
           reference: set
         - !MapChange
           reference: map
-        
+
         """.trimIndent()
     }
 }

@@ -11,46 +11,31 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.DefinedByReference
 
-/**
- * Change value to [newValue] for property of type [T]
- * Optionally compares against [valueToCompare] and will only change value if values match
- */
-fun <T:Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.change(
-    newValue: T,
-    valueToCompare: T? = null
-) = PropertyChange(this, newValue, valueToCompare)
-
-/**
- * Change value to [newValue] for property of type [T] referred by [reference]
- * Optionally compares against [valueToCompare] and will only change value if values match
- */
-data class PropertyChange<T: Any> internal constructor(
+/** Change value to [value] for property of type [T] referred by [reference] */
+data class Change<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
-    val newValue: T,
-    override val valueToCompare: T? = null
+    val value: T
 ) : IsPropertyOperation<T> {
     override val changeType = ChangeType.Change
 
-    internal companion object: QueryDataModel<PropertyChange<*>>(
-        properties = object : PropertyDefinitions<PropertyChange<*>>() {
+    internal companion object: QueryDataModel<Change<*>>(
+        properties = object : PropertyDefinitions<Change<*>>() {
             init {
-                DefinedByReference.addReference(this, PropertyChange<*>::reference)
-                IsPropertyOperation.addValueToCompare(this, PropertyChange<*>::valueToCompare)
+                DefinedByReference.addReference(this, Change<*>::reference)
 
-                add(2, "newValue", ContextualValueDefinition(
+                add(1, "value", ContextualValueDefinition(
                     contextualResolver = { context: DataModelPropertyContext? ->
                         @Suppress("UNCHECKED_CAST")
                         context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
                             ?: throw ContextNotFoundException()
                     }
-                ), PropertyChange<*>::newValue)
+                ), Change<*>::value)
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = PropertyChange(
+        override fun invoke(map: Map<Int, *>) = Change(
             reference = map(0),
-            valueToCompare = map(1),
-            newValue = map(2)
+            value = map(1)
         )
     }
 }

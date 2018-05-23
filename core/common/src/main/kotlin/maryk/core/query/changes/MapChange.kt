@@ -15,26 +15,18 @@ import maryk.core.properties.references.MapReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.DefinedByReference
 
-fun <K: Any, V: Any> IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>>.change(
-    valuesToAdd: Map<K, V>? = null,
-    keysToDelete: Set<K>? = null,
-    valueToCompare: Map<K, V>? = null
-) = MapPropertyChange(this, valuesToAdd, keysToDelete, valueToCompare)
-
 /**
  * Changes for a map property containing keys [K] and values [V] referred by [reference]
  * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
- * Optionally compares against [valueToCompare] and will only succeed if values match
  */
-data class MapPropertyChange<K: Any, V: Any> internal constructor(
+data class MapChange<K: Any, V: Any> internal constructor(
     override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>>,
     val valuesToAdd: Map<K, V>? = null,
-    val keysToDelete: Set<K>? = null,
-    override val valueToCompare: Map<K, V>? = null
+    val keysToDelete: Set<K>? = null
 ) : IsPropertyOperation<Map<K, V>> {
     override val changeType = ChangeType.MapChange
 
-    internal object Properties : PropertyDefinitions<MapPropertyChange<out Any, out Any>>() {
+    internal object Properties : PropertyDefinitions<MapChange<out Any, out Any>>() {
         @Suppress("UNCHECKED_CAST")
         private val keyDefinition = ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
@@ -43,15 +35,6 @@ data class MapPropertyChange<K: Any, V: Any> internal constructor(
                         ?: throw ContextNotFoundException()
             }
         )
-        @Suppress("UNCHECKED_CAST")
-        val valueToCompare = ContextualMapDefinition(
-            required = false,
-            contextualResolver = { context: DataModelPropertyContext? ->
-                (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
-                    ?.propertyDefinition?.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>?
-                        ?: throw ContextNotFoundException()
-            }
-        ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>
         @Suppress("UNCHECKED_CAST")
         val valuesToAdd = ContextualMapDefinition(
             required = false,
@@ -67,22 +50,20 @@ data class MapPropertyChange<K: Any, V: Any> internal constructor(
         )
     }
 
-    internal companion object: QueryDataModel<MapPropertyChange<*, *>>(
-        properties = object : PropertyDefinitions<MapPropertyChange<*, *>>() {
+    internal companion object: QueryDataModel<MapChange<*, *>>(
+        properties = object : PropertyDefinitions<MapChange<*, *>>() {
             init {
-                DefinedByReference.addReference(this, MapPropertyChange<*, *>::reference)
-                add(1, "valueToCompare", Properties.valueToCompare, MapPropertyChange<*, *>::valueToCompare)
-                add(2, "valuesToAdd", Properties.valuesToAdd, MapPropertyChange<*, *>::valuesToAdd)
-                add(3, "keysToDelete", Properties.keysToDelete, MapPropertyChange<*, *>::keysToDelete)
+                DefinedByReference.addReference(this, MapChange<*, *>::reference)
+                add(1, "valuesToAdd", Properties.valuesToAdd, MapChange<*, *>::valuesToAdd)
+                add(2, "keysToDelete", Properties.keysToDelete, MapChange<*, *>::keysToDelete)
             }
         }
     ) {
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = MapPropertyChange<Any, Any>(
+        override fun invoke(map: Map<Int, *>) = MapChange<Any, Any>(
             reference = map(0),
-            valueToCompare = map(1),
-            valuesToAdd = map(2),
-            keysToDelete = map(3)
+            valuesToAdd = map(1),
+            keysToDelete = map(2)
         )
     }
 }

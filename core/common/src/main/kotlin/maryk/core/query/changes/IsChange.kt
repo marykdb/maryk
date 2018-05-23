@@ -8,11 +8,11 @@ interface IsChange {
 }
 
 internal val mapOfChangeDefinitions = mapOf(
-    ChangeType.Change to SubModelDefinition(dataModel = { PropertyChange }),
-    ChangeType.Check to SubModelDefinition(dataModel = { PropertyCheck } ),
-    ChangeType.Delete to SubModelDefinition(dataModel = { PropertyDelete } ),
+    ChangeType.Change to SubModelDefinition(dataModel = { Change }),
+    ChangeType.Check to SubModelDefinition(dataModel = { Check } ),
+    ChangeType.Delete to SubModelDefinition(dataModel = { Delete } ),
     ChangeType.ObjectDelete to SubModelDefinition(dataModel = { ObjectSoftDeleteChange } ),
-    ChangeType.ListChange to SubModelDefinition(dataModel = { ListPropertyChange } ),
-    ChangeType.SetChange to SubModelDefinition(dataModel = { SetPropertyChange } ),
-    ChangeType.MapChange to SubModelDefinition(dataModel = { MapPropertyChange } )
+    ChangeType.ListChange to SubModelDefinition(dataModel = { ListChange } ),
+    ChangeType.SetChange to SubModelDefinition(dataModel = { SetChange } ),
+    ChangeType.MapChange to SubModelDefinition(dataModel = { MapChange } )
 )

@@ -10,10 +10,9 @@ import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class PropertyCheckTest {
-    private val valueCheck = PropertyCheck(
-        reference = SimpleMarykObject.ref { value },
-        valueToCompare = "test"
+class CheckTest {
+    private val valueCheck = Check(
+        SimpleMarykObject.ref { value }
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -26,19 +25,19 @@ class PropertyCheckTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.valueCheck, PropertyCheck, this.context)
+        checkProtoBufConversion(this.valueCheck, Check, this.context)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.valueCheck, PropertyCheck, this.context)
+        checkJsonConversion(this.valueCheck, Check, this.context)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.valueCheck, PropertyCheck, this.context) shouldBe """
-        |reference: value
-        |valueToCompare: test
-        |""".trimMargin()
+        checkYamlConversion(this.valueCheck, Check, this.context) shouldBe """
+        reference: value
+
+        """.trimIndent()
     }
 }

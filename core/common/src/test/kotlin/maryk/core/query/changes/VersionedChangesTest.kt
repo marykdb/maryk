@@ -18,13 +18,13 @@ class VersionedChangesTest {
     private val versionedChanges = VersionedChanges(
         219674127L.toUInt64(),
         listOf(
-            subModelValue.change("new"),
-            subModelValue.delete(),
-            subModelValue.check(),
+            Change(subModelValue, "new"),
+            Delete(subModelValue),
+            Check(subModelValue),
             ObjectSoftDeleteChange(true),
-            TestMarykObject.ref { list }.change(),
-            TestMarykObject.ref { set }.change(),
-            TestMarykObject.ref { map }.change()
+            ListChange(TestMarykObject.ref { list }),
+            SetChange(TestMarykObject.ref { set }),
+            MapChange(TestMarykObject.ref { map })
         )
     )
 
@@ -50,23 +50,24 @@ class VersionedChangesTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.versionedChanges, VersionedChanges, this.context) shouldBe """
-        |version: 0x000000000d17f60f
-        |changes:
-        |- !Change
-        |  reference: subModel.value
-        |  newValue: new
-        |- !Delete
-        |  reference: subModel.value
-        |- !Check
-        |  reference: subModel.value
-        |- !ObjectDelete
-        |  isDeleted: true
-        |- !ListChange
-        |  reference: list
-        |- !SetChange
-        |  reference: set
-        |- !MapChange
-        |  reference: map
-        |""".trimMargin()
+        version: 0x000000000d17f60f
+        changes:
+        - !Change
+          reference: subModel.value
+          value: new
+        - !Delete
+          reference: subModel.value
+        - !Check
+          reference: subModel.value
+        - !ObjectDelete
+          isDeleted: true
+        - !ListChange
+          reference: list
+        - !SetChange
+          reference: set
+        - !MapChange
+          reference: map
+        
+        """.trimIndent()
     }
 }

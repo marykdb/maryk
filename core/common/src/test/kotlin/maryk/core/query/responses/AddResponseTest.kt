@@ -8,7 +8,7 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
-import maryk.core.query.changes.change
+import maryk.core.query.changes.Change
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.AuthFail
@@ -25,7 +25,7 @@ class AddResponseTest {
         listOf(
             AddSuccess(
                 key, 32352L.toUInt64(), listOf(
-                    SimpleMarykObject.ref{ value }.change("new")
+                    Change(SimpleMarykObject.ref{ value }, "new")
                 )
             ),
             AlreadyExists(key),
@@ -62,7 +62,7 @@ class AddResponseTest {
           changes:
           - !Change
             reference: value
-            newValue: new
+            value: new
         - !ALREADY_EXISTS
           key: T/sdrQBeRnYrRo1h7uhfQg
         - !VALIDATION_FAIL

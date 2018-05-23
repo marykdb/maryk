@@ -26,17 +26,17 @@ class DataObjectVersionedChangeTest {
                 219674127L.toUInt64(),
                 listOf(
                     ObjectSoftDeleteChange(true),
-                    TestMarykObject.ref { list }.change(),
-                    TestMarykObject.ref { set }.change(),
-                    TestMarykObject.ref { map }.change()
+                    ListChange(TestMarykObject.ref { list }),
+                    SetChange(TestMarykObject.ref { set }),
+                    MapChange(TestMarykObject.ref { map })
                 )
             ),
             VersionedChanges(
                 319674127L.toUInt64(),
                 listOf(
-                    SubMarykObject.ref(subModel) { value }.change("new"),
-                    SubMarykObject.ref(subModel) { value }.delete(),
-                    SubMarykObject.ref(subModel) { value }.check("current")
+                    Change(SubMarykObject.ref(subModel) { value }, "new"),
+                    Delete(SubMarykObject.ref(subModel) { value }),
+                    Check(SubMarykObject.ref(subModel) { value }, "current")
                 )
             )
         )
@@ -80,12 +80,12 @@ class DataObjectVersionedChangeTest {
         |  changes:
         |  - !Change
         |    reference: subModel.value
-        |    newValue: new
+        |    value: new
         |  - !Delete
         |    reference: subModel.value
         |  - !Check
         |    reference: subModel.value
-        |    valueToCompare: current
+        |    value: current
         |""".trimMargin()
     }
 }

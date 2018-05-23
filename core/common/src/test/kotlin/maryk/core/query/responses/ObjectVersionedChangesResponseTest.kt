@@ -9,12 +9,15 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.Check
 import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.Delete
+import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
-import maryk.core.query.changes.change
-import maryk.core.query.changes.check
-import maryk.core.query.changes.delete
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -33,17 +36,17 @@ class ObjectVersionedChangesResponseTest {
                         219674127L.toUInt64(),
                         listOf(
                             ObjectSoftDeleteChange(true),
-                            TestMarykObject.ref { list }.change(),
-                            TestMarykObject.ref { set }.change(),
-                            TestMarykObject.ref { map }.change()
+                            ListChange(TestMarykObject.ref { list }),
+                            SetChange(TestMarykObject.ref { set }),
+                            MapChange(TestMarykObject.ref { map })
                         )
                     ),
                     VersionedChanges(
                         319674127L.toUInt64(),
                         listOf(
-                            SubMarykObject.ref(subModel) { value }.change("new"),
-                            SubMarykObject.ref(subModel) { value }.delete(),
-                            SubMarykObject.ref(subModel) { value }.check("current")
+                            Change(SubMarykObject.ref(subModel) { value }, "new"),
+                            Delete(SubMarykObject.ref(subModel) { value }),
+                            Check(SubMarykObject.ref(subModel) { value }, "current")
                         )
                     )
                 )
@@ -91,12 +94,12 @@ class ObjectVersionedChangesResponseTest {
             changes:
             - !Change
               reference: subModel.value
-              newValue: new
+              value: new
             - !Delete
               reference: subModel.value
             - !Check
               reference: subModel.value
-              valueToCompare: current
+              value: current
 
         """.trimIndent()
     }

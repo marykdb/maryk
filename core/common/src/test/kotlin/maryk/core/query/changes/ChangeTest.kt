@@ -10,8 +10,10 @@ import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class PropertyDeleteTest {
-    private val propertyDelete = SimpleMarykObject.ref { value }.delete(valueToCompare = "test")
+class ChangeTest {
+    private val valueChange = Change(
+        SimpleMarykObject.ref { value }, "test"
+    )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
@@ -22,20 +24,26 @@ class PropertyDeleteTest {
     )
 
     @Test
+    fun testValueChange() {
+        valueChange.reference shouldBe SimpleMarykObject.ref { value }
+        valueChange.value shouldBe "test"
+    }
+
+    @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.propertyDelete, PropertyDelete, this.context)
+        checkProtoBufConversion(this.valueChange, Change, this.context)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.propertyDelete, PropertyDelete, this.context)
+        checkJsonConversion(this.valueChange, Change, this.context)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.propertyDelete, PropertyDelete, this.context) shouldBe """
+        checkYamlConversion(this.valueChange, Change, this.context) shouldBe """
         reference: value
-        valueToCompare: test
+        value: test
 
         """.trimIndent()
     }

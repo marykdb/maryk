@@ -10,13 +10,13 @@ import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class ListPropertyChangeTest {
-    private val listPropertyChange = TestMarykObject.ref { listOfString }.change(
+class ListChangeTest {
+    private val listPropertyChange = ListChange(
+        TestMarykObject.ref { listOfString },
         addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
         addValuesToEnd = listOf("four", "five"),
         deleteAtIndex = setOf(0, 1),
-        deleteValues = listOf("three"),
-        valueToCompare = listOf("one", "two", "three")
+        deleteValues = listOf("three")
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -29,25 +29,25 @@ class ListPropertyChangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.listPropertyChange, ListPropertyChange, this.context)
+        checkProtoBufConversion(this.listPropertyChange, ListChange, this.context)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.listPropertyChange, ListPropertyChange, this.context)
+        checkJsonConversion(this.listPropertyChange, ListChange, this.context)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.listPropertyChange, ListPropertyChange, this.context) shouldBe """
-        |reference: listOfString
-        |valueToCompare: [one, two, three]
-        |addValuesToEnd: [four, five]
-        |addValuesAtIndex:
-        |  2: a
-        |  3: abc
-        |deleteValues: [three]
-        |deleteAtIndex: [0, 1]
-        |""".trimMargin()
+        checkYamlConversion(this.listPropertyChange, ListChange, this.context) shouldBe """
+        reference: listOfString
+        addValuesToEnd: [four, five]
+        addValuesAtIndex:
+          2: a
+          3: abc
+        deleteValues: [three]
+        deleteAtIndex: [0, 1]
+
+        """.trimIndent()
     }
 }

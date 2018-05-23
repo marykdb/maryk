@@ -20,13 +20,13 @@ class DataObjectChangeTest {
     private val subModel = TestMarykObject.ref { subModel }
 
     private val dataObjectChange = key1.change(
-        SubMarykObject.ref(subModel) { value }.change("new"),
-        SubMarykObject.ref(subModel) { value }.delete(),
-        SubMarykObject.ref(subModel) { value }.check("current"),
+        Change(SubMarykObject.ref(subModel) { value }, "new"),
+        Delete(SubMarykObject.ref(subModel) { value }),
+        Check(SubMarykObject.ref(subModel) { value }, "current"),
         ObjectSoftDeleteChange(true),
-        TestMarykObject.ref { list }.change(),
-        SetPropertyChange(TestMarykObject.ref { set }),
-        MapPropertyChange(TestMarykObject.ref { map }),
+        ListChange(TestMarykObject.ref { list }),
+        SetChange(TestMarykObject.ref { set }),
+        MapChange(TestMarykObject.ref { map }),
         lastVersion = 12345L.toUInt64()
     )
 
@@ -51,25 +51,26 @@ class DataObjectChangeTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.dataObjectChange, DataObjectChange, this.context) shouldBe """
-        |key: AAACKwEBAQAC
-        |changes:
-        |- !Change
-        |  reference: subModel.value
-        |  newValue: new
-        |- !Delete
-        |  reference: subModel.value
-        |- !Check
-        |  reference: subModel.value
-        |  valueToCompare: current
-        |- !ObjectDelete
-        |  isDeleted: true
-        |- !ListChange
-        |  reference: list
-        |- !SetChange
-        |  reference: set
-        |- !MapChange
-        |  reference: map
-        |lastVersion: 0x0000000000003039
-        |""".trimMargin()
+        key: AAACKwEBAQAC
+        changes:
+        - !Change
+          reference: subModel.value
+          value: new
+        - !Delete
+          reference: subModel.value
+        - !Check
+          reference: subModel.value
+          value: current
+        - !ObjectDelete
+          isDeleted: true
+        - !ListChange
+          reference: list
+        - !SetChange
+          reference: set
+        - !MapChange
+          reference: map
+        lastVersion: 0x0000000000003039
+
+        """.trimIndent()
     }
 }

@@ -213,7 +213,7 @@ Maryk YAML:
 ```yaml
 !And
   - !Equals
-    stringPropertyReference: value,
+    stringPropertyReference: value
   - !GreaterThan
     intPropertyReference: 42
 ```
@@ -237,7 +237,7 @@ Maryk YAML:
 ```yaml
 !Or
   - !Equals
-    stringPropertyReference: value,
+    stringPropertyReference: value
   - !GreaterThan
     intPropertyReference: 42
 ```
@@ -261,7 +261,7 @@ Maryk YAML:
 ```yaml
 !Not
   - !Equals
-    stringPropertyReference: value,
+    stringPropertyReference: value
   - !Exists intPropertyReference
 ```
 

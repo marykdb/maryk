@@ -18,9 +18,7 @@ data class SetValueChanges<T: Any> internal constructor(
     override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>>,
     val addValues: Set<T>? = null,
     val deleteValues: Set<T>? = null
-) : IsPropertyOperation<Set<T>> {
-    override val changeType = ChangeType.SetChange
-
+) : DefinedByReference<Set<T>> {
     internal object Properties : PropertyDefinitions<SetValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, SetValueChanges<*>::reference)
 

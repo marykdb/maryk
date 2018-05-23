@@ -23,9 +23,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
     override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>>,
     val valuesToAdd: Map<K, V>? = null,
     val keysToDelete: Set<K>? = null
-) : IsPropertyOperation<Map<K, V>> {
-    override val changeType = ChangeType.MapChange
-
+) : DefinedByReference<Map<K, V>> {
     internal object Properties : PropertyDefinitions<MapValueChanges<out Any, out Any>>() {
         val reference = DefinedByReference.addReference(this, MapValueChanges<*, *>::reference)
 

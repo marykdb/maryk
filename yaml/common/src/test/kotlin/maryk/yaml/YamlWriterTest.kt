@@ -31,14 +31,15 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |- 1
-        |- '#Test''s'
-        |- 3.5
-        |- true
-        |- test: false
-        |  test2: value
-        |- another: yes
-        |""".trimMargin()
+        - 1
+        - '#Test''s'
+        - 3.5
+        - true
+        - test: false
+          test2: value
+        - another: yes
+
+        """.trimIndent()
     }
 
     @Test
@@ -64,12 +65,13 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |t1:
-        |  c1: v1
-        |  c2: v2
-        |t2:
-        |  c3: v3
-        |""".trimMargin()
+        t1:
+          c1: v1
+          c2: v2
+        t2:
+          c3: v3
+
+        """.trimIndent()
     }
 
     @Test
@@ -96,9 +98,10 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |t1: {c1: v1, c2: v2}
-        |t2: {c3: v3}
-        |""".trimMargin()
+        t1: {c1: v1, c2: v2}
+        t2: {c3: v3}
+
+        """.trimIndent()
     }
 
     @Test
@@ -124,8 +127,9 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |{t1: {c1: v1, c2: v2}, t2: {c3: v3}}
-        |""".trimMargin()
+        {t1: {c1: v1, c2: v2}, t2: {c3: v3}}
+
+        """.trimIndent()
     }
 
     @Test
@@ -147,11 +151,43 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |- - 1
-        |  - 2
-        |- - 3
-        |  - 4
-        |""".trimMargin()
+        - - 1
+          - 2
+        - - 3
+          - 4
+
+        """.trimIndent()
+    }
+
+    @Test
+    fun write_YAML_in_double_array_and_tag() {
+        var output = ""
+        YamlWriter {
+            output += it
+        }.apply {
+            writeStartArray()
+            writeTag("!tag")
+            writeStartArray()
+            writeValue("1")
+            writeValue("2")
+            writeEndArray()
+            writeTag("!tag")
+            writeStartArray()
+            writeValue("3")
+            writeValue("4")
+            writeEndArray()
+            writeEndArray()
+        }
+
+        output shouldBe """
+        - !tag
+          - 1
+          - 2
+        - !tag
+          - 3
+          - 4
+
+        """.trimIndent()
     }
 
     @Test
@@ -173,9 +209,10 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |- [1, 2]
-        |- [3, 4]
-        |""".trimMargin()
+        - [1, 2]
+        - [3, 4]
+
+        """.trimIndent()
     }
 
     @Test
@@ -197,8 +234,9 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |[[1, 2],[3, 4]]
-        |""".trimMargin()
+        [[1, 2],[3, 4]]
+
+        """.trimIndent()
     }
 
     @Test
@@ -241,15 +279,16 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |!!omap
-        |t1: !!str true
-        |t2: !!set
-        |- !!int 30
-        |t3: !!omap
-        |  a1: 1
-        |t4: !!omap {a1: !!int 1}
-        |t5: !!set [!!int 30]
-        |""".trimMargin()
+        !!omap
+        t1: !!str true
+        t2: !!set
+        - !!int 30
+        t3: !!omap
+          a1: 1
+        t4: !!omap {a1: !!int 1}
+        t5: !!set [!!int 30]
+
+        """.trimIndent()
     }
 
     @Test
@@ -276,12 +315,13 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |key:
-        |- !Foo
-        |  k1: 30
-        |- !Bar
-        |  k2: 40
-        |""".trimMargin()
+        key:
+        - !Foo
+          k1: 30
+        - !Bar
+          k2: 40
+
+        """.trimIndent()
     }
 
     @Test
@@ -343,20 +383,21 @@ internal class YamlWriterTest {
         }
 
         output shouldBe """
-        |- ? - a1
-        |    - a2
-        |  : value 1
-        |  ? f1: v1
-        |    f2: v2
-        |  : !tag value 2
-        |  ? {f1: v1, f2: v2}
-        |  :
-        |  - a1
-        |  - a2
-        |  ? [a1, a2]
-        |  : f1: v1
-        |    f2: v2
-        |""".trimMargin()
+        - ? - a1
+            - a2
+          : value 1
+          ? f1: v1
+            f2: v2
+          : !tag value 2
+          ? {f1: v1, f2: v2}
+          :
+          - a1
+          - a2
+          ? [a1, a2]
+          : f1: v1
+            f2: v2
+
+        """.trimIndent()
     }
 
     @Test

@@ -90,7 +90,18 @@ class YamlWriter(
     override fun writeStartArray(isCompact: Boolean) {
         if (!this.lastIsCompact) {
             when (lastType) {
-                JsonType.FIELD_NAME, JsonType.TAG, JsonType.COMPLEX_FIELD_NAME_END -> {
+                JsonType.TAG -> {
+                    if (!isCompact) {
+                        writer("\n")
+                        if (typeStack.last() is JsonEmbedType.Array) {
+                            this.prefix += "  "
+                        }
+                        this.prefixWasWritten = false
+                    } else {
+                        writer(" ")
+                    }
+                }
+                JsonType.FIELD_NAME, JsonType.COMPLEX_FIELD_NAME_END -> {
                     if (!isCompact) {
                         writer("\n")
                         this.prefixWasWritten = false
@@ -133,10 +144,12 @@ class YamlWriter(
                 this.prefixWasWritten = false
             }
         } else {
-            if (lastType == JsonType.END_ARRAY) {
+            super.writeEndArray()
+            val lastType = if(typeStack.isEmpty()) null else typeStack.last()
+
+            if (lastType == null || (lastType !is JsonEmbedType.Object && lastType !is JsonEmbedType.ComplexField)) {
                 prefix = prefix.removeSuffix(spacing)
             }
-            super.writeEndArray()
         }
     }
 
@@ -223,6 +236,7 @@ class YamlWriter(
                 JsonType.FIELD_NAME,
                 JsonType.ARRAY_VALUE,
                 JsonType.START_ARRAY,
+                JsonType.END_ARRAY,
                 JsonType.END_OBJ,
                 JsonType.COMPLEX_FIELD_NAME_START,
                 JsonType.COMPLEX_FIELD_NAME_END

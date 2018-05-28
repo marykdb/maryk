@@ -45,6 +45,8 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> int
     override val maxVersions: UInt32 = 1000.toUInt32(),
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
+    override val requestType = RequestType.GetVersionedChanges
+
     internal companion object: QueryDataModel<GetVersionedChangesRequest<*, *>>(
         properties = object : PropertyDefinitions<GetVersionedChangesRequest<*, *>>() {
             init {

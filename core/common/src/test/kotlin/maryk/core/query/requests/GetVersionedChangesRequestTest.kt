@@ -12,48 +12,48 @@ import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class GetVersionedChangesRequestTest {
-    private val key1 = SimpleMarykObject.key("WWurg6ysTsozoMei/SurOw")
-    private val key2 = SimpleMarykObject.key("awfbjYrVQ+cdXblfQKV10A")
+private val key1 = SimpleMarykObject.key("WWurg6ysTsozoMei/SurOw")
+private val key2 = SimpleMarykObject.key("awfbjYrVQ+cdXblfQKV10A")
 
-    private val getVersionedChangesRequest = SimpleMarykObject.getVersionedChanges(
+internal val getVersionedChangesRequest = SimpleMarykObject.getVersionedChanges(
+    key1,
+    key2,
+    fromVersion = 1234L.toUInt64()
+)
+
+internal val getVersionedChangesMaxRequest = SimpleMarykObject.run {
+    getVersionedChanges(
         key1,
         key2,
-        fromVersion = 1234L.toUInt64()
+        filter = Exists(ref { value }),
+        order = ref { value }.descending(),
+        fromVersion = 1234L.toUInt64(),
+        toVersion = 12345L.toUInt64(),
+        maxVersions = 5.toUInt32(),
+        filterSoftDeleted = true
     )
+}
 
-    private val getVersionedChangesMaxRequest = SimpleMarykObject.run {
-        getVersionedChanges(
-            key1,
-            key2,
-            filter = Exists(ref { value }),
-            order = ref { value }.descending(),
-            fromVersion = 1234L.toUInt64(),
-            toVersion = 12345L.toUInt64(),
-            maxVersions = 5.toUInt32(),
-            filterSoftDeleted = true
-        )
-    }
-
+class GetVersionedChangesRequestTest {
     private val context = DataModelPropertyContext(mapOf(
         SimpleMarykObject.name to SimpleMarykObject
     ))
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
-        checkProtoBufConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
+        checkProtoBufConversion(getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
+        checkProtoBufConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
-        checkJsonConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
+        checkJsonConversion(getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
+        checkJsonConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.getVersionedChangesRequest, GetVersionedChangesRequest, this.context) shouldBe """
+        checkYamlConversion(getVersionedChangesRequest, GetVersionedChangesRequest, this.context) shouldBe """
         dataModel: SimpleMarykObject
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filterSoftDeleted: true
@@ -62,7 +62,7 @@ class GetVersionedChangesRequestTest {
 
         """.trimIndent()
 
-        checkYamlConversion(this.getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context) shouldBe """
+        checkYamlConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context) shouldBe """
         dataModel: SimpleMarykObject
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filter: !Exists value

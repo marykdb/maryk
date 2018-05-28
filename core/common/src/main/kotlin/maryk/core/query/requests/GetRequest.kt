@@ -37,6 +37,8 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
     override val toVersion: UInt64?,
     override val filterSoftDeleted: Boolean
 ) : IsGetRequest<DO, DM> {
+    override val requestType = RequestType.Get
+
     internal companion object: QueryDataModel<GetRequest<*, *>>(
         properties = object : PropertyDefinitions<GetRequest<*, *>>() {
             init {

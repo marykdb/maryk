@@ -42,6 +42,8 @@ data class ScanRequest<DO: Any, out DM: RootDataModel<DO, *>> internal construct
     override val toVersion: UInt64? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM> {
+    override val requestType = RequestType.Scan
+
     internal companion object: QueryDataModel<ScanRequest<*, *>>(
         properties = object : PropertyDefinitions<ScanRequest<*, *>>() {
             init {

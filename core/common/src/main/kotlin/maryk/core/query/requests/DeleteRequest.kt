@@ -29,6 +29,8 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
     val objectsToDelete: List<Key<DO>>,
     val hardDelete: Boolean
 ) : IsObjectRequest<DO, DM> {
+    override val requestType = RequestType.Delete
+
     internal companion object: QueryDataModel<DeleteRequest<*, *>>(
         properties = object : PropertyDefinitions<DeleteRequest<*, *>>() {
             init {

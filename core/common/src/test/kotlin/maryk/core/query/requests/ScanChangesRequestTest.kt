@@ -12,23 +12,25 @@ import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
+private val key1 = SimpleMarykObject.key("Zk6m4QpZQegUg5s13JVYlQ")
+
+internal val scanChangesRequest = SimpleMarykObject.scanChanges(
+    startKey = key1,
+    fromVersion = 1234L.toUInt64()
+)
+
+internal val scanChangeMaxRequest = SimpleMarykObject.scanChanges(
+    startKey = key1,
+    filter = Exists(SimpleMarykObject.ref { value }),
+    order = Order(SimpleMarykObject.ref { value }),
+    limit = 100.toUInt32(),
+    filterSoftDeleted = true,
+    toVersion = 2345L.toUInt64(),
+    fromVersion = 1234L.toUInt64()
+)
+
 class ScanChangesRequestTest {
-    private val key1 = SimpleMarykObject.key("Zk6m4QpZQegUg5s13JVYlQ")
 
-    private val scanChangesRequest = SimpleMarykObject.scanChanges(
-        startKey = key1,
-        fromVersion = 1234L.toUInt64()
-    )
-
-    private val scanChangeMaxRequest = SimpleMarykObject.scanChanges(
-        startKey = key1,
-        filter = Exists(SimpleMarykObject.ref { value }),
-        order = Order(SimpleMarykObject.ref { value }),
-        limit = 100.toUInt32(),
-        filterSoftDeleted = true,
-        toVersion = 2345L.toUInt64(),
-        fromVersion = 1234L.toUInt64()
-    )
 
     private val context = DataModelPropertyContext(mapOf(
         SimpleMarykObject.name to SimpleMarykObject
@@ -36,19 +38,19 @@ class ScanChangesRequestTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.scanChangesRequest, ScanChangesRequest, this.context)
-        checkProtoBufConversion(this.scanChangeMaxRequest, ScanChangesRequest, this.context)
+        checkProtoBufConversion(scanChangesRequest, ScanChangesRequest, this.context)
+        checkProtoBufConversion(scanChangeMaxRequest, ScanChangesRequest, this.context)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.scanChangesRequest, ScanChangesRequest, this.context)
-        checkJsonConversion(this.scanChangeMaxRequest, ScanChangesRequest, this.context)
+        checkJsonConversion(scanChangesRequest, ScanChangesRequest, this.context)
+        checkJsonConversion(scanChangeMaxRequest, ScanChangesRequest, this.context)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.scanChangesRequest, ScanChangesRequest, this.context) shouldBe """
+        checkYamlConversion(scanChangesRequest, ScanChangesRequest, this.context) shouldBe """
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
@@ -57,7 +59,7 @@ class ScanChangesRequestTest {
 
         """.trimIndent()
 
-        checkYamlConversion(this.scanChangeMaxRequest, ScanChangesRequest, this.context) shouldBe """
+        checkYamlConversion(scanChangeMaxRequest, ScanChangesRequest, this.context) shouldBe """
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value

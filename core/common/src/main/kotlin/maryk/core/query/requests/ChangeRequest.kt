@@ -18,6 +18,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
     override val dataModel: DM,
     val objectChanges: List<DataObjectChange<DO>>
 ) : IsObjectRequest<DO, DM> {
+    override val requestType = RequestType.Change
 
     internal companion object: QueryDataModel<ChangeRequest<*, *>>(
         properties = object : PropertyDefinitions<ChangeRequest<*, *>>() {

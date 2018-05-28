@@ -41,6 +41,8 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
     override val toVersion: UInt64? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DO, DM>, IsChangesRequest<DO, DM> {
+    override val requestType = RequestType.GetChanges
+
     internal companion object: QueryDataModel<GetChangesRequest<*, *>>(
         properties = object : PropertyDefinitions<GetChangesRequest<*, *>>() {
             init {

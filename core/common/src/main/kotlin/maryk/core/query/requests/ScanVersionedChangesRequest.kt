@@ -47,6 +47,8 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> in
     override val maxVersions: UInt32 = 1000.toUInt32(),
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
+    override val requestType = RequestType.ScanVersionedChanges
+
     internal companion object: QueryDataModel<ScanVersionedChangesRequest<*, *>>(
         properties = object : PropertyDefinitions<ScanVersionedChangesRequest<*, *>>() {
             init {

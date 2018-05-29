@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.properties.IsPropertyContext
@@ -44,6 +45,8 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
 ) : DataModel<DO, P>(name, properties){
+    override val primitiveType = PrimitiveType.RootModel
+
     val key = KeyDefinition(*keyDefinitions)
 
     /** Defines the structure of the Key by passing [keyDefinitions] */
@@ -74,8 +77,8 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         }
 
         private fun checkDefinition(name: String, it: IsPropertyDefinition<*>) {
-            require(it.required, { "Definition of $name should be required" })
-            require(it.final, { "Definition of $name should be final" })
+            require(it.required) { "Definition of $name should be required" }
+            require(it.final) { "Definition of $name should be final" }
         }
 
         /** Get Key by [bytes] array */
@@ -102,9 +105,9 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                 val value = it.getValue(this@RootDataModel, dataObject)
 
                 @Suppress("UNCHECKED_CAST")
-                (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value, {
+                (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
                     bytes[index++] = it
-                })
+                }
 
                 // Add separator
                 if (index < this.size) {

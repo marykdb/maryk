@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.core.objects.DataModel
-import maryk.core.objects.MarykPrimitive
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.definitions.PropertyDefinitions

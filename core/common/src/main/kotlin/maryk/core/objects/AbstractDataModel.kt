@@ -410,13 +410,13 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         }
 
         if (value == null) {
-            return if (default != null) {
-                default
-            } else if (value !is TI) {
-                val valueDef = this@AbstractDataModel.properties.getDefinition(index)!!
-                throw ParseException("Property '${valueDef.name}' with value '$value' cannot be null")
-            } else {
-                value
+            return when {
+                default != null -> default
+                value !is TI -> {
+                    val valueDef = this@AbstractDataModel.properties.getDefinition(index)!!
+                    throw ParseException("Property '${valueDef.name}' with value '$value' cannot be null")
+                }
+                else -> value
             }
         }
 

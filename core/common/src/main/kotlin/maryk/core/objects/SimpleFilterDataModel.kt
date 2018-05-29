@@ -60,7 +60,7 @@ internal abstract class SimpleFilterDataModel<DO: Any>(
         }
     }
 
-    protected fun <T: Any, CX: IsPropertyContext> IsJsonLikeWriter.writeJsonValues(
+    private fun <T: Any, CX: IsPropertyContext> IsJsonLikeWriter.writeJsonValues(
         referenceProperty: PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, *>,
         reference: IsPropertyReference<*, *>,
         valueProperty: IsPropertyDefinitionWrapper<T, *, CX, *>,

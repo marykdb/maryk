@@ -1,5 +1,7 @@
 package maryk.core.objects
 
+import maryk.core.definitions.MarykPrimitive
+import maryk.core.definitions.PrimitiveType
 import maryk.core.properties.definitions.PropertyDefinitions
 
 /**
@@ -8,11 +10,13 @@ import maryk.core.properties.definitions.PropertyDefinitions
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
 abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
-    val name: String,
+    override val name: String,
     properties: P
 ) : SimpleDataModel<DO, P>(
     properties
 ), MarykPrimitive {
+    override val primitiveType = PrimitiveType.Model
+
     internal object Model : DefinitionDataModel<DataModel<*, *>>(
         properties = object : PropertyDefinitions<DataModel<out Any, PropertyDefinitions<out Any>>>() {
             init {

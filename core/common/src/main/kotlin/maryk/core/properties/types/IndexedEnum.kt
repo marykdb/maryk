@@ -1,6 +1,13 @@
 package maryk.core.properties.types
 
-import maryk.core.objects.MarykPrimitive
+import maryk.core.definitions.MarykPrimitive
+import maryk.core.definitions.PrimitiveType
+import maryk.core.objects.QueryDataModel
+import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.types.numeric.SInt32
 
 interface IndexedEnum<in E>: Comparable<E>{
     val index: Int
@@ -23,7 +30,43 @@ interface IndexedEnum<in E>: Comparable<E>{
     }
 }
 
-open class IndexedEnumDefinition<E>(
-    val name: String,
+open class IndexedEnumDefinition<E: IndexedEnum<E>>(
+    override val name: String,
     val values: () -> Array<E>
-): MarykPrimitive
+): MarykPrimitive {
+    override val primitiveType = PrimitiveType.Enum
+
+    internal object Properties : PropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
+        init {
+            add(0, "name", StringDefinition(), IndexedEnumDefinition<*>::name)
+            add(1, "values",
+                MapDefinition(
+                    keyDefinition = NumberDefinition(
+                        type = SInt32
+                    ),
+                    valueDefinition = StringDefinition()
+                ),
+                IndexedEnumDefinition<*>::values,
+                toSerializable = {
+                    it?.invoke()?.map { v: IndexedEnum<*> -> Pair(v.index, v.name) }?.toMap()
+                },
+                fromSerializable = {
+                    {
+                        @Suppress("UNCHECKED_CAST")
+                        it?.map { IndexedEnum(it.key, it.value) }?.toTypedArray() as Array<IndexedEnum<*>>
+                    }
+                }
+            )
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    internal object Model: QueryDataModel<IndexedEnumDefinition<IndexedEnum<Any>>>(
+        properties = Properties
+    ) {
+        override fun invoke(map: Map<Int, *>) = IndexedEnumDefinition<IndexedEnum<Any>>(
+            name = map(0),
+            values = map(1)
+        )
+    }
+}

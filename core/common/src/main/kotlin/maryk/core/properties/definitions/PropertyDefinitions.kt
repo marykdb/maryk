@@ -276,14 +276,14 @@ internal data class PropertyDefinitionsCollectionDefinition(
         PropertyDefinitions<Any>,
         DataModelContext,
         SubModelDefinition<
+            IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+            PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>,
+            SimpleDataModel<
                 IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
-                PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>,
-                SimpleDataModel<
-                        IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
-                        PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>
-                        >,
-                IsPropertyContext,
-                IsPropertyContext
+                PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>
+            >,
+            IsPropertyContext,
+            IsPropertyContext
         >
 > {
     override val indexed = false

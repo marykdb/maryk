@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -14,6 +15,8 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
     name: String,
     properties: P
 ) : DataModel<DO, P>(name, properties) {
+    override val primitiveType = PrimitiveType.ValueModel
+
     internal val byteSize: Int by lazy {
         var size = - 1
         for (it in this.properties) {
@@ -45,9 +48,9 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
         this.properties.forEachIndexed { index, it ->
             @Suppress("UNCHECKED_CAST")
             val def = it as IsFixedBytesEncodable<in Any>
-            def.writeStorageBytes(inputs[index], {
+            def.writeStorageBytes(inputs[index]) {
                 bytes[offset++] = it
-            })
+            }
 
             if(offset < bytes.size) {
                 bytes[offset++] = 1 // separator byte
@@ -63,9 +66,9 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
     internal fun fromString(value: String): DO {
         val b = Base64.decode(value)
         var index = 0
-        return this.readFromBytes({
+        return this.readFromBytes {
             b[index++]
-        })
+        }
     }
 
     internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(

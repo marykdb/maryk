@@ -12,8 +12,11 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
-import maryk.core.query.DataModelPropertyContext
 
+/**
+ * Contains multiple definitions of models and enums. Is passed MarykPrimitives like
+ * DataModels and Enums to [definitions]
+ */
 data class Definitions(
     val definitions: List<MarykPrimitive>
 ) {
@@ -35,14 +38,25 @@ data class Definitions(
                         PrimitiveType.RootModel to SubModelDefinition(
                             dataModel = { RootDataModel.Model }
                         ),
-                        PrimitiveType.Enum to SubModelDefinition(
+                        PrimitiveType.EnumDefinition to SubModelDefinition(
                             dataModel = { IndexedEnumDefinition.Model }
                         )
                     )
-                ) as MultiTypeDefinition<PrimitiveType, DataModelPropertyContext>
-            ),
+                )
+            ) as ListDefinition<TypedValue<PrimitiveType, MarykPrimitive>, DataModelContext>,
             Definitions::definitions,
-            fromSerializable = { it.value as MarykPrimitive },
+            capturer = { context: DataModelContext, value: List<TypedValue<PrimitiveType, *>> ->
+                for (definition in value) {
+                    when(definition.type) {
+                        PrimitiveType.Model, PrimitiveType.ValueModel, PrimitiveType.RootModel -> {
+                            val model = definition.value as DataModel<*, *>
+                            context.dataModels[model.name] = model
+                        }
+                        else -> {}
+                    }
+                }
+            },
+            fromSerializable = { it.value },
             toSerializable = { TypedValue(it.primitiveType, it) }
         )
     }

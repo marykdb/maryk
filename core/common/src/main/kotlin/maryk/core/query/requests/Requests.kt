@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelPropertyContext
 
-/** Object to contain multiple requests */
+/** Object to contain multiple [requests] */
 data class Requests(
     val requests: List<IsRequest>
 ) {

@@ -18,7 +18,7 @@ class IndexedEnumTest {
             Option,
             IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
             context,
-            ::compareEnumDefs
+            ::compareEnumDefinitions
         )
     }
 
@@ -29,7 +29,7 @@ class IndexedEnumTest {
             Option,
             IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
             context,
-            ::compareEnumDefs
+            ::compareEnumDefinitions
         )
     }
 
@@ -40,21 +40,21 @@ class IndexedEnumTest {
             Option,
             IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
             context,
-            ::compareEnumDefs
+            ::compareEnumDefinitions
         )
     }
+}
 
-    private fun compareEnumDefs(
-        value: IndexedEnumDefinition<*>,
-        against: IndexedEnumDefinition<*>
-    ) {
-        value.name shouldBe against.name
-        value.values().size shouldBe against.values().size
+internal fun compareEnumDefinitions(
+    value: IndexedEnumDefinition<*>,
+    against: IndexedEnumDefinition<*>
+) {
+    value.name shouldBe against.name
+    value.values().size shouldBe against.values().size
 
-        val valueMap = value.values().map { Pair(it.index, it.name) }.toMap()
+    val valueMap = value.values().map { Pair(it.index, it.name) }.toMap()
 
-        for (enum in against.values()) {
-            valueMap.get(enum.index) shouldBe enum.name
-        }
+    for (enum in against.values()) {
+        valueMap.get(enum.index) shouldBe enum.name
     }
 }

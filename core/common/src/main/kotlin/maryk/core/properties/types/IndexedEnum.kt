@@ -34,7 +34,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>>(
     override val name: String,
     val values: () -> Array<E>
 ): MarykPrimitive {
-    override val primitiveType = PrimitiveType.Enum
+    override val primitiveType = PrimitiveType.EnumDefinition
 
     internal object Properties : PropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
         init {

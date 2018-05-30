@@ -8,6 +8,8 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.objects.DataModel
 import maryk.core.objects.compareDataModels
+import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.types.compareEnumDefinitions
 import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -245,7 +247,7 @@ class DefinitionsTest {
               unique: false
               default: haha
               regEx: ha.*
-        - !Enum
+        - !EnumDefinition
           name: Option
           values:
             0: V0
@@ -254,16 +256,20 @@ class DefinitionsTest {
 
         """.trimIndent()
     }
+}
 
-    private fun compareDefinitions(converted: Definitions, original: Definitions) {
-        converted.definitions.size shouldBe original.definitions.size
+internal fun compareDefinitions(converted: Definitions, original: Definitions) {
+    converted.definitions.size shouldBe original.definitions.size
 
-        for ((index, item) in original.definitions.withIndex()) {
-            if (item is DataModel<*, *>) {
-                (converted.definitions[index] as? DataModel<*, *>)?.let {
-                    compareDataModels(it, item)
-                } ?: throw AssertionError("Converted Model should be a DataModel")
-            }
+    for ((index, item) in original.definitions.withIndex()) {
+        if (item is DataModel<*, *>) {
+            (converted.definitions[index] as? DataModel<*, *>)?.let {
+                compareDataModels(it, item)
+            } ?: throw AssertionError("Converted Model should be a DataModel")
+        } else if (item is IndexedEnumDefinition<*>) {
+            (converted.definitions[index] as? IndexedEnumDefinition<*>)?.let {
+                compareEnumDefinitions(it, item)
+            } ?: throw AssertionError("Converted item should be an EnumDefinition")
         }
     }
 }

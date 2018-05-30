@@ -33,25 +33,20 @@ class RootMarykTest {
         )
     )
 
-    private val context = DataModelContext(
-        mutableMapOf(
-//            SimpleMarykObject.name to SimpleMarykObject
-        )
-    )
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.rootMaryk, RootMaryk, this.context, ::compareRootMaryk)
+        checkProtoBufConversion(this.rootMaryk, RootMaryk, DataModelContext(), ::compareRootMaryk)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.rootMaryk, RootMaryk, this.context, ::compareRootMaryk)
+        checkJsonConversion(this.rootMaryk, RootMaryk, DataModelContext(), ::compareRootMaryk)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.rootMaryk, RootMaryk, this.context, ::compareRootMaryk) shouldBe """
+        checkYamlConversion(this.rootMaryk, RootMaryk, DataModelContext(), ::compareRootMaryk) shouldBe """
         - !Define
           - !EnumDefinition
             name: Option

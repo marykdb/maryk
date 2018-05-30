@@ -21,25 +21,19 @@ class DefinitionsTest {
         Option
     )
 
-    private val context = DataModelContext(
-        mutableMapOf(
-            SimpleMarykObject.name to SimpleMarykObject
-        )
-    )
-
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.definitions, Definitions, this.context, ::compareDefinitions)
+        checkProtoBufConversion(this.definitions, Definitions, DataModelContext(), ::compareDefinitions)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.definitions, Definitions, this.context, ::compareDefinitions)
+        checkJsonConversion(this.definitions, Definitions, DataModelContext(), ::compareDefinitions)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.definitions, Definitions, this.context, ::compareDefinitions) shouldBe """
+        checkYamlConversion(this.definitions, Definitions, DataModelContext(), ::compareDefinitions) shouldBe """
         - !RootModel
           name: TestMarykObject
           key:

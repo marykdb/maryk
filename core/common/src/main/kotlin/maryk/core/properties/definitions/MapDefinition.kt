@@ -49,8 +49,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     override val propertyDefinitionType = PropertyDefinitionType.Map
 
     init {
-        require(keyDefinition.required, { "Definition for key should be required on map" })
-        require(valueDefinition.required, { "Definition for value should be required on map" })
+        require(keyDefinition.required) { "Definition for key should be required on map" }
+        require(valueDefinition.required) { "Definition for value should be required on map" }
     }
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
@@ -80,18 +80,18 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             createValidationUmbrellaException(refGetter) { addException ->
                 for ((key, value) in newValue) {
                     try {
-                        this.keyDefinition.validateWithRef(null, key, {
+                        this.keyDefinition.validateWithRef(null, key) {
                             @Suppress("UNCHECKED_CAST")
                             this.getKeyRef(key, refGetter() as MapReference<K, V, CX>?)
-                        })
+                        }
                     } catch (e: ValidationException) {
                         addException(e)
                     }
                     try {
-                        this.valueDefinition.validateWithRef(null, value, {
+                        this.valueDefinition.validateWithRef(null, value) {
                             @Suppress("UNCHECKED_CAST")
                             this.getValueRef(key, refGetter() as MapReference<K, V, CX>?)
-                        })
+                        }
                     } catch (e: ValidationException) {
                         addException(e)
                     }

@@ -50,7 +50,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
      * @throws ValidationException when encountering invalid new value
      */
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>? = { null }) {
-        this.validateWithRef(previousValue, newValue, { this.getRef(parentRefFactory()) })
+        this.validateWithRef(previousValue, newValue) { this.getRef(parentRefFactory()) }
     }
 
     /** Calculates the needed byte size to transport [value] within optional [context] and caches it with [cacher] */
@@ -120,9 +120,8 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             return mapOfPropertyDefWrappers[type]?.invoke(
                 map(0),
                 map(1),
-                typedDefinition.value,
-                { _: Any -> null }
-            ) ?: throw DefNotFoundException("Property type $type not found")
+                typedDefinition.value
+            ) { _: Any -> null } ?: throw DefNotFoundException("Property type $type not found")
         }
 
         override fun writeJson(

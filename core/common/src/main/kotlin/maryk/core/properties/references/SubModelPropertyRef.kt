@@ -16,11 +16,11 @@ import maryk.core.protobuf.WriteCacheWriter
  * DataModel of type [DM] and expects context of type [CX] which is transformed into context [CXI] for properties.
  */
 class SubModelPropertyRef<
-        DO : Any,
-        out P: PropertyDefinitions<DO>,
-        out DM : AbstractDataModel<DO, P, CXI, CX>,
-        CXI: IsPropertyContext,
-        CX: IsPropertyContext
+    DO : Any,
+    out P: PropertyDefinitions<DO>,
+    out DM : AbstractDataModel<DO, P, CXI, CX>,
+    CXI: IsPropertyContext,
+    CX: IsPropertyContext
 > internal constructor(
     propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?

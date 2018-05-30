@@ -278,9 +278,11 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                 }
 
                 valueMap[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DataModelContext?)
-            }
 
-            super.walkJsonToRead(reader, valueMap, context)
+                if (reader is IsYamlReader) {
+                    reader.nextToken()
+                }
+            }
         }
     }
 }

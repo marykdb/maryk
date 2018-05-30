@@ -7,8 +7,6 @@ import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -430,16 +428,6 @@ internal class DataModelTest {
     @Test
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
-    }
-
-    private fun compareDataModels(converted: DataModel<out Any, PropertyDefinitions<out Any>>, original: DataModel<out Any, PropertyDefinitions<out Any>>) {
-        converted.name shouldBe original.name
-
-        (converted.properties)
-            .zip(original.properties)
-            .forEach { (convertedWrapper, originalWrapper) ->
-                comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
-            }
     }
 }
 

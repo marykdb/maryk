@@ -118,13 +118,14 @@ class JsonReader(
 
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = typeStack.count()
-        do {
-            nextToken()
-            handleSkipToken?.invoke(this.currentToken)
-        } while (
+        nextToken()
+        while(
             !(currentToken is JsonToken.FieldName && this.typeStack.count() <= startDepth)
             && currentToken !is JsonToken.Stopped
-        )
+        ) {
+            handleSkipToken?.invoke(this.currentToken)
+            nextToken()
+        }
     }
 
     private fun read() = try {

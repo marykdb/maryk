@@ -218,13 +218,14 @@ internal class YamlReaderImpl(
 
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = this.tokenDepth
-        do {
-            nextToken()
-            handleSkipToken?.invoke(this.currentToken)
-        } while (
+        nextToken()
+        while(
             !(currentToken is JsonToken.FieldName && this.tokenDepth <= startDepth)
             && currentToken !is JsonToken.Stopped
-        )
+        ) {
+            handleSkipToken?.invoke(this.currentToken)
+            nextToken()
+        }
     }
 
     override fun read() = try {

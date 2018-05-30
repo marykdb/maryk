@@ -1,8 +1,8 @@
 package maryk.core.objects
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -14,11 +14,11 @@ import maryk.lib.exceptions.ParseException
  *
  * In JSON/YAML this model is represented as just that property.
  */
-internal abstract class QuerySingleValueDataModel<T: Any, DO: Any>(
+internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropertyContext>(
     properties: PropertyDefinitions<DO>,
-    private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, *, DataModelPropertyContext, DO>
-) : QueryDataModel<DO>(properties) {
-    override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, *, CX, DO>
+) : AbstractDataModel<DO, PropertyDefinitions<DO>, CX, CX>(properties) {
+    override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         singlePropertyDefinition.writeJsonValue(
             map[singlePropertyDefinition.index] as T? ?: throw ParseException("Missing requests in Requests"),
@@ -27,7 +27,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any>(
         )
     }
 
-    override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX?) {
         singlePropertyDefinition.writeJsonValue(
             singlePropertyDefinition.getPropertyAndSerialize(obj) ?: throw ParseException("Missing requests in Requests"),
             writer,
@@ -35,7 +35,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any>(
         )
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): Map<Int, Any> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

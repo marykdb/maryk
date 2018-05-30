@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.key
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -41,9 +42,9 @@ internal class UUIDKeyTest {
         val specificDef = keyDef as UUIDKey
 
         var index = 0
-        val uuid = specificDef.readStorageBytes(key.size, {
+        val uuid = specificDef.readStorageBytes(key.size) {
             key.bytes[index++]
-        })
+        }
 
         val bc = ByteCollector()
         bc.reserve(16)
@@ -60,5 +61,10 @@ internal class UUIDKeyTest {
     @Test
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(UUIDKey, UUIDKey.Model)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(UUIDKey, UUIDKey.Model)
     }
 }

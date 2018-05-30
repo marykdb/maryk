@@ -29,7 +29,7 @@ data class Requests(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal companion object: QuerySingleValueDataModel<TypedValue<RequestType, Any>, Requests>(
+    internal companion object: QuerySingleValueDataModel<TypedValue<RequestType, Any>, Requests, DataModelPropertyContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, *, DataModelPropertyContext, Requests>
     ) {

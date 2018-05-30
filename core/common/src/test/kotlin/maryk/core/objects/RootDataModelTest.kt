@@ -19,15 +19,12 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.toUInt32
@@ -715,25 +712,6 @@ internal class RootDataModelTest {
             properties.getDefinition("isTrue")!!.let {
                 it.index shouldBe 15
                 it.definition shouldBe BooleanDefinition()
-            }
-        }
-    }
-
-    private fun compareDataModels(converted: RootDataModel<out Any, out PropertyDefinitions<out Any>>, original: RootDataModel<out Any, out PropertyDefinitions<out Any>>) {
-        converted.name shouldBe original.name
-
-        (converted.properties)
-            .zip(original.properties)
-            .forEach { (convertedWrapper, originalWrapper) ->
-                comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
-            }
-
-        converted.key.keyDefinitions.zip(original.key.keyDefinitions).forEach { (converted, original) ->
-            when(converted) {
-                is IsPropertyDefinitionWrapper<*, *, *, *> -> {
-                    comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *, *>)
-                }
-                else -> converted shouldBe original
             }
         }
     }

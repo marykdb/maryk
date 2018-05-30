@@ -6,7 +6,10 @@ import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.IsDataModel
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.query.DataModelContext
+import maryk.json.IsJsonLikeReader
 import maryk.lib.uuid.generateUUID
+import maryk.yaml.IsYamlReader
 
 /** A key with a Universally Unique ID */
 object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
@@ -29,5 +32,13 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
         properties = object : PropertyDefinitions<UUIDKey>() {}
     ) {
         override fun invoke(map: Map<Int, *>) = UUIDKey
+
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelContext?): Map<Int, Any> {
+            return if (reader is IsYamlReader) {
+                mapOf()
+            } else {
+                super.readJson(reader, context)
+            }
+        }
     }
 }

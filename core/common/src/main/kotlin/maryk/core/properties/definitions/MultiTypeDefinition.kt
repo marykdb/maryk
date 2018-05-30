@@ -111,7 +111,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override fun readJson(reader: IsJsonLikeReader, context: CX?): TypedValue<E, Any> {
         if(reader is IsYamlReader) {
             val token = reader.currentToken as? TokenWithType
-                    ?: throw ParseException("Expected an Token with Type which describes a property")
+                    ?: throw ParseException("Expected an Token with YAML type tag which describes property type")
 
             val tokenType = token.type
             val type: E = when (tokenType) {

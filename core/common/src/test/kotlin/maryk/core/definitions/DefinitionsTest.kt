@@ -1,0 +1,269 @@
+package maryk.core.definitions
+
+import maryk.Option
+import maryk.SimpleMarykObject
+import maryk.TestMarykObject
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
+import maryk.core.objects.DataModel
+import maryk.core.objects.compareDataModels
+import maryk.core.query.DataModelContext
+import maryk.test.shouldBe
+import kotlin.test.Test
+
+class DefinitionsTest {
+    private val definitions = Definitions(
+        TestMarykObject,
+        SimpleMarykObject,
+        Option
+    )
+
+    private val context = DataModelContext(
+        mutableMapOf(
+            SimpleMarykObject.name to SimpleMarykObject
+        )
+    )
+
+    @Test
+    fun convert_to_ProtoBuf_and_back() {
+        checkProtoBufConversion(this.definitions, Definitions, this.context, ::compareDefinitions)
+    }
+
+    @Test
+    fun convert_to_JSON_and_back() {
+        checkJsonConversion(this.definitions, Definitions, this.context, ::compareDefinitions)
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.definitions, Definitions, this.context, ::compareDefinitions) shouldBe """
+        - !RootModel
+          name: TestMarykObject
+          key:
+          - !Ref uint
+          - !Ref bool
+          - !Ref enum
+          properties:
+            ? 0: string
+            : !String
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              default: haha
+              regEx: ha.*
+            ? 1: int
+            : !Number
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              maxValue: 6
+              random: false
+            ? 2: uint
+            : !Number
+              indexed: false
+              searchable: true
+              required: true
+              final: true
+              unique: false
+              type: UInt32
+              random: false
+            ? 3: double
+            : !Number
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              type: Float64
+              random: false
+            ? 4: dateTime
+            : !DateTime
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              precision: SECONDS
+              fillWithNow: false
+            ? 5: bool
+            : !Boolean
+              indexed: false
+              searchable: true
+              required: true
+              final: true
+            ? 6: enum
+            : !Enum
+              indexed: false
+              searchable: true
+              required: true
+              final: true
+              unique: false
+              name: Option
+              values:
+                0: V0
+                1: V1
+                2: V2
+              default: V0
+            ? 7: list
+            : !List
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              valueDefinition: !Number
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                unique: false
+                type: SInt32
+                random: false
+            ? 8: set
+            : !Set
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              valueDefinition: !Date
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                unique: false
+                fillWithNow: false
+            ? 9: map
+            : !Map
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              keyDefinition: !Time
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                unique: false
+                precision: SECONDS
+                fillWithNow: false
+              valueDefinition: !String
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                unique: false
+            ? 10: valueObject
+            : !ValueModel
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              unique: false
+              dataModel: TestValueObject
+            ? 11: subModel
+            : !SubModel
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              dataModel: SubMarykObject
+            ? 12: multi
+            : !MultiType
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              typeEnum: Option
+              definitionMap:
+                ? 0: V0
+                : !String
+                  indexed: false
+                  searchable: true
+                  required: true
+                  final: false
+                  unique: false
+                ? 1: V1
+                : !Number
+                  indexed: false
+                  searchable: true
+                  required: true
+                  final: false
+                  unique: false
+                  type: SInt32
+                  random: false
+                ? 2: V2
+                : !SubModel
+                  indexed: false
+                  searchable: true
+                  required: true
+                  final: false
+                  dataModel: SubMarykObject
+            ? 13: reference
+            : !Reference
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              unique: false
+              dataModel: TestMarykObject
+            ? 14: listOfString
+            : !List
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              valueDefinition: !String
+                indexed: false
+                searchable: true
+                required: true
+                final: false
+                unique: false
+            ? 15: selfReference
+            : !Reference
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              unique: false
+              dataModel: TestMarykObject
+        - !RootModel
+          name: SimpleMarykObject
+          key:
+          - !UUID
+          properties:
+            ? 0: value
+            : !String
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              default: haha
+              regEx: ha.*
+        - !Enum
+          name: Option
+          values:
+            0: V0
+            1: V1
+            2: V2
+
+        """.trimIndent()
+    }
+
+    private fun compareDefinitions(converted: Definitions, original: Definitions) {
+        converted.definitions.size shouldBe original.definitions.size
+
+        for ((index, item) in original.definitions.withIndex()) {
+            if (item is DataModel<*, *>) {
+                (converted.definitions[index] as? DataModel<*, *>)?.let {
+                    compareDataModels(it, item)
+                } ?: throw AssertionError("Converted Model should be a DataModel")
+            }
+        }
+    }
+}

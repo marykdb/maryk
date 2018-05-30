@@ -44,17 +44,17 @@ class DataObjectWithMetaDataTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, this.context)
+        checkProtoBufConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, this.context)
+        checkJsonConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, this.context) shouldBe """
+        checkYamlConversion(this.dataObjectWithMetaData, DataObjectWithMetaData, { this.context }) shouldBe """
         key: AAACKwEBAQAC
         dataObject:
           string: name

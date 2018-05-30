@@ -33,17 +33,17 @@ class ChangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.valueChange, Change, this.context)
+        checkProtoBufConversion(this.valueChange, Change, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.valueChange, Change, this.context)
+        checkJsonConversion(this.valueChange, Change, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.valueChange, Change, this.context) shouldBe """
+        checkYamlConversion(this.valueChange, Change, { this.context }) shouldBe """
         string: test
         int: 5
 

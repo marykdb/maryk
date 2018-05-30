@@ -28,17 +28,17 @@ class LessThanEqualsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.lessThanEquals, LessThanEquals, this.context)
+        checkProtoBufConversion(this.lessThanEquals, LessThanEquals, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.lessThanEquals, LessThanEquals, this.context)
+        checkJsonConversion(this.lessThanEquals, LessThanEquals, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.lessThanEquals, LessThanEquals, this.context) shouldBe """
+        checkYamlConversion(this.lessThanEquals, LessThanEquals, { this.context }) shouldBe """
         string: test
         int: 6
 

@@ -40,19 +40,19 @@ class GetChangesRequestTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(getChangesRequest, GetChangesRequest, this.context)
-        checkProtoBufConversion(getChangesMaxRequest, GetChangesRequest, this.context)
+        checkProtoBufConversion(getChangesRequest, GetChangesRequest, { this.context })
+        checkProtoBufConversion(getChangesMaxRequest, GetChangesRequest, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(getChangesRequest, GetChangesRequest, this.context)
-        checkJsonConversion(getChangesMaxRequest, GetChangesRequest, this.context)
+        checkJsonConversion(getChangesRequest, GetChangesRequest, { this.context })
+        checkJsonConversion(getChangesMaxRequest, GetChangesRequest, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(getChangesRequest, GetChangesRequest, this.context) shouldBe """
+        checkYamlConversion(getChangesRequest, GetChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
         toVersion: 0x0000000000000d80
@@ -61,7 +61,7 @@ class GetChangesRequestTest {
 
         """.trimIndent()
 
-        checkYamlConversion(getChangesMaxRequest, GetChangesRequest, this.context) shouldBe """
+        checkYamlConversion(getChangesMaxRequest, GetChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
         filter: !Exists value

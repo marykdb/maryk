@@ -83,7 +83,7 @@ internal class RootDataModelTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(TestMarykObject, RootDataModel.Model, DataModelContext(), ::compareDataModels)
+        checkProtoBufConversion(TestMarykObject, RootDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 
     @Test
@@ -91,7 +91,7 @@ internal class RootDataModelTest {
         checkJsonConversion(
             TestMarykObject,
             RootDataModel.Model,
-            DataModelContext(),
+            { DataModelContext() },
             ::compareDataModels
         ) shouldBe """
         {
@@ -355,7 +355,7 @@ internal class RootDataModelTest {
         checkYamlConversion(
             TestMarykObject,
             RootDataModel.Model,
-            DataModelContext(),
+            { DataModelContext() },
             ::compareDataModels
         ) shouldBe """
         name: TestMarykObject

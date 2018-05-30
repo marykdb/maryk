@@ -26,17 +26,17 @@ class RegExTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.regEx, RegEx, this.context)
+        checkProtoBufConversion(this.regEx, RegEx, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.regEx, RegEx, this.context)
+        checkJsonConversion(this.regEx, RegEx, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.regEx, RegEx, this.context) shouldBe """
+        checkYamlConversion(this.regEx, RegEx, { this.context }) shouldBe """
         string: .*
 
         """.trimIndent()

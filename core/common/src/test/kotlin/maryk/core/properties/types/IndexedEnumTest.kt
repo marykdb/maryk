@@ -3,6 +3,7 @@ package maryk.core.properties.types
 import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.QueryDataModel
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
@@ -17,7 +18,7 @@ class IndexedEnumTest {
         checkProtoBufConversion(
             Option,
             IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
-            context,
+            { context },
             ::compareEnumDefinitions
         )
     }
@@ -28,7 +29,7 @@ class IndexedEnumTest {
         checkJsonConversion(
             Option,
             IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
-            context,
+            { context },
             ::compareEnumDefinitions
         )
     }
@@ -36,10 +37,10 @@ class IndexedEnumTest {
     @Test
     fun convert_definition_to_YAML_and_back() {
         @Suppress("UNCHECKED_CAST")
-        checkJsonConversion(
+        checkYamlConversion(
             Option,
             IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
-            context,
+            { context },
             ::compareEnumDefinitions
         )
     }

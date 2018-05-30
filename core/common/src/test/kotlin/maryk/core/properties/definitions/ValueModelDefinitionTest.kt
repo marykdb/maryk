@@ -106,20 +106,20 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, ValueModelDefinition.Model, DataModelContext())
-        checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.def, ValueModelDefinition.Model, { DataModelContext() })
+        checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, ValueModelDefinition.Model, DataModelContext())
-        checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext())
+        checkJsonConversion(this.def, ValueModelDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, ValueModelDefinition.Model, DataModelContext())
-        checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, DataModelContext()) shouldBe """
+        checkYamlConversion(this.def, ValueModelDefinition.Model, { DataModelContext() })
+        checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DataModelContext() }) shouldBe """
         indexed: true
         searchable: false
         required: false

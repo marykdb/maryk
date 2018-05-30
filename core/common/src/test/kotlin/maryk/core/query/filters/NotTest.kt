@@ -25,17 +25,17 @@ class NotTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.not, Not, this.context)
+        checkProtoBufConversion(this.not, Not, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.not, Not, this.context)
+        checkJsonConversion(this.not, Not, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.not, Not, this.context) shouldBe """
+        checkYamlConversion(this.not, Not, { this.context }) shouldBe """
         - !Exists value
 
         """.trimIndent()

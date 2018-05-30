@@ -25,17 +25,17 @@ class ObjectSoftDeleteTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, this.context)
+        checkProtoBufConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, this.context)
+        checkJsonConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, this.context) shouldBe """
+        checkYamlConversion(this.objectSoftDeleteChange, ObjectSoftDeleteChange, { this.context }) shouldBe """
         |isDeleted: true
         |""".trimMargin()
     }

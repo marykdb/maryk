@@ -6,6 +6,7 @@ import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
@@ -422,12 +423,17 @@ internal class DataModelTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
+        checkProtoBufConversion(SubMarykObject, DataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(SubMarykObject, DataModel.Model, DataModelContext(), ::compareDataModels)
+        checkJsonConversion(SubMarykObject, DataModel.Model, { DataModelContext() }, ::compareDataModels)
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(SubMarykObject, DataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 }
 

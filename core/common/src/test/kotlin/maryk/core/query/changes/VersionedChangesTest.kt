@@ -40,17 +40,17 @@ class VersionedChangesTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.versionedChanges, VersionedChanges, this.context)
+        checkProtoBufConversion(this.versionedChanges, VersionedChanges, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.versionedChanges, VersionedChanges, this.context)
+        checkJsonConversion(this.versionedChanges, VersionedChanges, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.versionedChanges, VersionedChanges, this.context) shouldBe """
+        checkYamlConversion(this.versionedChanges, VersionedChanges, { this.context }) shouldBe """
         version: 0x000000000d17f60f
         changes:
         - !Change

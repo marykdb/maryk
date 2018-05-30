@@ -271,5 +271,17 @@ data class SubMarykObject(
             model = map(1),
             marykModel = map(2)
         )
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is DataModel<*, *>) return false
+
+            @Suppress("UNCHECKED_CAST")
+            val otherModel = other as DataModel<Any, PropertyDefinitions<Any>>
+
+            if (this.name != otherModel.name) return false
+            if (this.properties.size != otherModel.properties.size) return false
+
+            return true
+        }
     }
 }

@@ -1,13 +1,16 @@
 package maryk.core.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.DataModel
 import maryk.core.objects.QuerySingleValueDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.ValueDataModel
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
@@ -29,33 +32,43 @@ data class Definitions(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = PrimitiveType,
                     definitionMap = mapOf(
-                        PrimitiveType.Model to SubModelDefinition(
-                            dataModel = { DataModel.Model }
+                        PrimitiveType.Model to ContextCaptureDefinition(
+                            definition = SubModelDefinition(
+                                dataModel = { DataModel.Model }
+                            ),
+                            capturer = { context, model ->
+                                context?.let {
+                                    it.dataModels[model.name] = model
+                                } ?: throw ContextNotFoundException()
+                            }
                         ),
-                        PrimitiveType.ValueModel to SubModelDefinition(
-                            dataModel = { ValueDataModel.Model }
+                        PrimitiveType.ValueModel to ContextCaptureDefinition(
+                            definition = SubModelDefinition(
+                                dataModel = { ValueDataModel.Model }
+                            ),
+                            capturer = { context, model ->
+                                context?.let {
+                                    it.dataModels[model.name] = model
+                                } ?: throw ContextNotFoundException()
+                            }
                         ),
-                        PrimitiveType.RootModel to SubModelDefinition(
-                            dataModel = { RootDataModel.Model }
+                        PrimitiveType.RootModel to ContextCaptureDefinition(
+                            definition = SubModelDefinition(
+                                dataModel = { RootDataModel.Model }
+                            ),
+                            capturer = { context: DataModelContext?, model ->
+                                context?.let {
+                                    it.dataModels[model.name] = model
+                                } ?: throw ContextNotFoundException()
+                            }
                         ),
                         PrimitiveType.EnumDefinition to SubModelDefinition(
                             dataModel = { IndexedEnumDefinition.Model }
                         )
-                    )
+                    ) as Map<PrimitiveType, IsSubDefinition<out Any, DataModelContext>>
                 )
             ) as ListDefinition<TypedValue<PrimitiveType, MarykPrimitive>, DataModelContext>,
             Definitions::definitions,
-            capturer = { context: DataModelContext, value: List<TypedValue<PrimitiveType, *>> ->
-                for (definition in value) {
-                    when(definition.type) {
-                        PrimitiveType.Model, PrimitiveType.ValueModel, PrimitiveType.RootModel -> {
-                            val model = definition.value as DataModel<*, *>
-                            context.dataModels[model.name] = model
-                        }
-                        else -> {}
-                    }
-                }
-            },
             fromSerializable = { it.value },
             toSerializable = { TypedValue(it.primitiveType, it) }
         )

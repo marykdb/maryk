@@ -34,6 +34,18 @@ data class TestValueObject(
             dateTime = map(1),
             bool = map(2)
         )
+
+        override fun equals(other: Any?): Boolean {
+            if (other !is ValueDataModel<*, *>) return false
+
+            @Suppress("UNCHECKED_CAST")
+            val otherModel = other as ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>
+
+            if (this.name != otherModel.name) return false
+            if (this.properties.size != otherModel.properties.size) return false
+
+            return true
+        }
     }
 }
 

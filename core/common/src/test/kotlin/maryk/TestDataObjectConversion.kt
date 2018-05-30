@@ -14,10 +14,11 @@ import maryk.yaml.YamlWriter
 fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
     value: T,
     dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
-    context: CXI? = null,
-    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
+    context: (() -> CXI)? = null,
+    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
+    resetContextBeforeRead: Boolean = false
 ) {
-    val newContext = dataModel.transformContext(context)
+    var newContext = dataModel.transformContext(context?.invoke())
 
     val bc = ByteCollector()
     val cache = WriteCache()
@@ -25,6 +26,10 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConvers
     val byteLength = dataModel.calculateProtoBufLength(value, cache, newContext)
     bc.reserve(byteLength)
     dataModel.writeProtoBuf(value, cache, bc::write, newContext)
+
+    if (resetContextBeforeRead) {
+        newContext = dataModel.transformContext(context?.invoke())
+    }
 
     val converted = dataModel.readProtoBufToObject(byteLength, bc::read, newContext)
 
@@ -34,8 +39,9 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConvers
 fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
     value: T,
     dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
-    context: CXI? = null,
-    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
+    context: (() -> CXI)? = null,
+    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
+    resetContextBeforeRead: Boolean = false
 ): String {
     var output = ""
 
@@ -43,9 +49,13 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
         output += it
     }
 
-    val newContext = dataModel.transformContext(context)
+    var newContext = dataModel.transformContext(context?.invoke())
 
     dataModel.writeJson(value, writer, newContext)
+
+    if (resetContextBeforeRead) {
+        newContext = dataModel.transformContext(context?.invoke())
+    }
 
     val chars = output.iterator()
     val reader = JsonReader { chars.nextChar() }
@@ -59,8 +69,9 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
 fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
     value: T,
     dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
-    context: CXI? = null,
-    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original }
+    context: (() -> CXI)? = null,
+    checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
+    resetContextBeforeRead: Boolean = false
 ): String {
     var output = ""
 
@@ -68,9 +79,13 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
         output += it
     }
 
-    val newContext = dataModel.transformContext(context)
+    var newContext = dataModel.transformContext(context?.invoke())
 
     dataModel.writeJson(value, writer, newContext)
+
+    if (resetContextBeforeRead) {
+        newContext = dataModel.transformContext(context?.invoke())
+    }
 
     val chars = output.iterator()
     val reader = MarykYamlReader {

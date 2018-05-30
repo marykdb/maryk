@@ -26,17 +26,17 @@ class PrefixTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.prefix, Prefix, this.context)
+        checkProtoBufConversion(this.prefix, Prefix, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.prefix, Prefix, this.context)
+        checkJsonConversion(this.prefix, Prefix, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.prefix, Prefix, this.context) shouldBe """
+        checkYamlConversion(this.prefix, Prefix, { this.context }) shouldBe """
         string: te
 
         """.trimIndent()

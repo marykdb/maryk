@@ -36,17 +36,17 @@ class RootMarykTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.rootMaryk, RootMaryk, DataModelContext(), ::compareRootMaryk)
+        checkProtoBufConversion(this.rootMaryk, RootMaryk, { DataModelContext() }, ::compareRootMaryk, true)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.rootMaryk, RootMaryk, DataModelContext(), ::compareRootMaryk)
+        checkJsonConversion(this.rootMaryk, RootMaryk, { DataModelContext() }, ::compareRootMaryk, true)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.rootMaryk, RootMaryk, DataModelContext(), ::compareRootMaryk) shouldBe """
+        checkYamlConversion(this.rootMaryk, RootMaryk, { DataModelContext() }, ::compareRootMaryk, true) shouldBe """
         - !Define
           - !EnumDefinition
             name: Option

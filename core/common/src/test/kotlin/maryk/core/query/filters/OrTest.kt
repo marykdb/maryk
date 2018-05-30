@@ -27,17 +27,17 @@ class OrTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.or, Or, this.context)
+        checkProtoBufConversion(this.or, Or, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.or, Or, this.context)
+        checkJsonConversion(this.or, Or, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.or, Or, this.context) shouldBe """
+        checkYamlConversion(this.or, Or, { this.context }) shouldBe """
         - !Exists value
         - !Equals
           value: hoi

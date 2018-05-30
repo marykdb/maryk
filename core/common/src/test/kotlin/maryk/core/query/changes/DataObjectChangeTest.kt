@@ -45,17 +45,17 @@ class DataObjectChangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, this.context)
+        checkProtoBufConversion(this.dataObjectChange, DataObjectChange, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.dataObjectChange, DataObjectChange, this.context)
+        checkJsonConversion(this.dataObjectChange, DataObjectChange, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.dataObjectChange, DataObjectChange, this.context) shouldBe """
+        checkYamlConversion(this.dataObjectChange, DataObjectChange, { this.context }) shouldBe """
         key: AAACKwEBAQAC
         changes:
         - !Change

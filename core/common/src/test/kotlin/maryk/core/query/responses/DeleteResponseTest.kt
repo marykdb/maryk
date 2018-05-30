@@ -32,17 +32,17 @@ class DeleteResponseTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.deleteResponse, DeleteResponse, this.context)
+        checkProtoBufConversion(this.deleteResponse, DeleteResponse, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.deleteResponse, DeleteResponse, this.context)
+        checkJsonConversion(this.deleteResponse, DeleteResponse, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.deleteResponse, DeleteResponse, this.context) shouldBe """
+        checkYamlConversion(this.deleteResponse, DeleteResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         statuses:
         - !SUCCESS

@@ -27,17 +27,17 @@ class RequestsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.requests, Requests, this.context)
+        checkProtoBufConversion(this.requests, Requests, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.requests, Requests, this.context)
+        checkJsonConversion(this.requests, Requests, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.requests, Requests, this.context) shouldBe """
+        checkYamlConversion(this.requests, Requests, { this.context }) shouldBe """
         - !Add
           dataModel: SimpleMarykObject
           objectsToAdd:

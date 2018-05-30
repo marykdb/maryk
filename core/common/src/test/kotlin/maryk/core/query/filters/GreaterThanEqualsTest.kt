@@ -28,17 +28,17 @@ class GreaterThanEqualsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.greaterThanEquals, GreaterThanEquals, this.context)
+        checkProtoBufConversion(this.greaterThanEquals, GreaterThanEquals, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.greaterThanEquals, GreaterThanEquals, this.context)
+        checkJsonConversion(this.greaterThanEquals, GreaterThanEquals, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.greaterThanEquals, GreaterThanEquals, this.context) shouldBe """
+        checkYamlConversion(this.greaterThanEquals, GreaterThanEquals, { this.context }) shouldBe """
         string: test
         int: 6
 

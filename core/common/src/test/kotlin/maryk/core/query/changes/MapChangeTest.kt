@@ -36,17 +36,17 @@ class MapChangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.mapPropertyChange, MapChange, this.context)
+        checkProtoBufConversion(this.mapPropertyChange, MapChange, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.mapPropertyChange, MapChange, this.context)
+        checkJsonConversion(this.mapPropertyChange, MapChange, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.mapPropertyChange, MapChange, this.context) shouldBe """
+        checkYamlConversion(this.mapPropertyChange, MapChange, { this.context }) shouldBe """
         map:
           valuesToAdd:
             23:00: Test4

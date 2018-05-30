@@ -38,19 +38,19 @@ class ScanVersionedChangesRequestTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, this.context)
-        checkProtoBufConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, this.context)
+        checkProtoBufConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context })
+        checkProtoBufConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, this.context)
-        checkJsonConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, this.context)
+        checkJsonConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context })
+        checkJsonConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, this.context) shouldBe """
+        checkYamlConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
@@ -60,7 +60,7 @@ class ScanVersionedChangesRequestTest {
 
         """.trimIndent()
 
-        checkYamlConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, this.context) shouldBe """
+        checkYamlConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value

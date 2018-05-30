@@ -30,21 +30,21 @@ class ExistsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.exists, Exists, this.context)
+        checkProtoBufConversion(this.exists, Exists, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.exists, Exists, this.context)
+        checkJsonConversion(this.exists, Exists, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.exists, Exists, this.context) shouldBe """
+        checkYamlConversion(this.exists, Exists, { this.context }) shouldBe """
         string
         """.trimIndent()
 
-        checkYamlConversion(this.existsMultiple, Exists, this.context) shouldBe """
+        checkYamlConversion(this.existsMultiple, Exists, { this.context }) shouldBe """
         - string
         - int
         - dateTime

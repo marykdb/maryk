@@ -2,7 +2,9 @@ package maryk.core.definitions
 
 import maryk.Option
 import maryk.SimpleMarykObject
+import maryk.SubMarykObject
 import maryk.TestMarykObject
+import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -16,24 +18,54 @@ import kotlin.test.Test
 
 class DefinitionsTest {
     private val definitions = Definitions(
-        TestMarykObject,
+        TestValueObject,
         SimpleMarykObject,
+        SubMarykObject,
+        TestMarykObject,
         Option
     )
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.definitions, Definitions, DataModelContext(), ::compareDefinitions)
+        checkProtoBufConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.definitions, Definitions, DataModelContext(), ::compareDefinitions)
+        checkJsonConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.definitions, Definitions, DataModelContext(), ::compareDefinitions) shouldBe """
+        checkYamlConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions) shouldBe """
+        - !ValueModel
+          name: TestValueObject
+          properties:
+            ? 0: int
+            : !Number
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              type: SInt32
+              maxValue: 6
+              random: false
+            ? 1: dateTime
+            : !DateTime
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              precision: SECONDS
+              fillWithNow: false
+            ? 2: bool
+            : !Boolean
+              indexed: false
+              searchable: true
+              required: true
+              final: false
         - !RootModel
           name: TestMarykObject
           key:

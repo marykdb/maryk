@@ -27,12 +27,12 @@ class EqualsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.equals, Equals, this.context)
+        checkProtoBufConversion(this.equals, Equals, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.equals, Equals, this.context) shouldBe """
+        checkJsonConversion(this.equals, Equals, { this.context }) shouldBe """
         {
         	"string": "test",
         	"int": 5
@@ -42,7 +42,7 @@ class EqualsTest {
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.equals, Equals, this.context) shouldBe """
+        checkYamlConversion(this.equals, Equals, { this.context }) shouldBe """
         string: test
         int: 5
 

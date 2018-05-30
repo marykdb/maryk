@@ -3,6 +3,7 @@ package maryk.core.properties.exceptions
 import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
@@ -36,11 +37,16 @@ class ValidationExceptionTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.validationUmbrellaException, ValidationUmbrellaException, this.context)
+        checkProtoBufConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.validationUmbrellaException, ValidationUmbrellaException, this.context)
+        checkJsonConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
+    }
+
+    @Test
+    fun convert_to_YALM_and_back() {
+        checkYamlConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
     }
 }

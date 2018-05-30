@@ -67,17 +67,17 @@ class ObjectVersionedChangesResponseTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.objectVersionedChangesResponse, ObjectVersionedChangesResponse, this.context)
+        checkProtoBufConversion(this.objectVersionedChangesResponse, ObjectVersionedChangesResponse, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.objectVersionedChangesResponse, ObjectVersionedChangesResponse, this.context)
+        checkJsonConversion(this.objectVersionedChangesResponse, ObjectVersionedChangesResponse, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.objectVersionedChangesResponse, ObjectVersionedChangesResponse, this.context) shouldBe """
+        checkYamlConversion(this.objectVersionedChangesResponse, ObjectVersionedChangesResponse, { this.context }) shouldBe """
         dataModel: TestMarykObject
         changes:
         - key: AAACKwEBAQAC

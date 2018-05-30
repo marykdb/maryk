@@ -89,20 +89,20 @@ internal class SubModelDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, SubModelDefinition.Model, DataModelContext())
-        checkProtoBufConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.def, SubModelDefinition.Model, { DataModelContext() })
+        checkProtoBufConversion(this.defMaxDefined, SubModelDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, SubModelDefinition.Model, DataModelContext())
-        checkJsonConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext())
+        checkJsonConversion(this.def, SubModelDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.defMaxDefined, SubModelDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, SubModelDefinition.Model, DataModelContext())
-        checkYamlConversion(this.defMaxDefined, SubModelDefinition.Model, DataModelContext()) shouldBe """
+        checkYamlConversion(this.def, SubModelDefinition.Model, { DataModelContext() })
+        checkYamlConversion(this.defMaxDefined, SubModelDefinition.Model, { DataModelContext() }) shouldBe """
         indexed: true
         searchable: false
         required: false

@@ -30,17 +30,17 @@ class ListChangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.listPropertyChange, ListChange, this.context)
+        checkProtoBufConversion(this.listPropertyChange, ListChange, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.listPropertyChange, ListChange, this.context)
+        checkJsonConversion(this.listPropertyChange, ListChange, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.listPropertyChange, ListChange, this.context) shouldBe """
+        checkYamlConversion(this.listPropertyChange, ListChange, { this.context }) shouldBe """
         listOfString:
           addValuesToEnd: [four, five]
           addValuesAtIndex:

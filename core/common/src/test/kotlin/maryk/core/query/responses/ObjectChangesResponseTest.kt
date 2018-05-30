@@ -33,17 +33,17 @@ class ObjectChangesResponseTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.objectChangesResponse, ObjectChangesResponse, this.context)
+        checkProtoBufConversion(this.objectChangesResponse, ObjectChangesResponse, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.objectChangesResponse, ObjectChangesResponse, this.context)
+        checkJsonConversion(this.objectChangesResponse, ObjectChangesResponse, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.objectChangesResponse, ObjectChangesResponse, this.context) shouldBe """
+        checkYamlConversion(this.objectChangesResponse, ObjectChangesResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         changes:
         - key: +1xO4zD4R5sIMcS9pXTZEA

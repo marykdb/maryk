@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -77,7 +78,7 @@ internal class TypeIdTest {
         checkProtoBufConversion(
             value = TypeId(MarykObject.Properties.multi.getRef()),
             dataModel = TypeId.Model,
-            context = context
+            context = { context }
         )
     }
 
@@ -86,7 +87,16 @@ internal class TypeIdTest {
         checkJsonConversion(
             value = TypeId(MarykObject.Properties.multi.getRef()),
             dataModel = TypeId.Model,
-            context = context
+            context = { context }
+        )
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(
+            value = TypeId(MarykObject.Properties.multi.getRef()),
+            dataModel = TypeId.Model,
+            context = { context }
         )
     }
 }

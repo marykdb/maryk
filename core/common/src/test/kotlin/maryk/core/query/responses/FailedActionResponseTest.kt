@@ -20,17 +20,17 @@ class FailedActionResponseTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.failedActionResponse, FailedActionResponse, this.context)
+        checkProtoBufConversion(this.failedActionResponse, FailedActionResponse, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.failedActionResponse, FailedActionResponse, this.context)
+        checkJsonConversion(this.failedActionResponse, FailedActionResponse, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.failedActionResponse, FailedActionResponse, this.context) shouldBe """
+        checkYamlConversion(this.failedActionResponse, FailedActionResponse, { this.context }) shouldBe """
         message: Something went wrong
         failType: CONNECTION
 

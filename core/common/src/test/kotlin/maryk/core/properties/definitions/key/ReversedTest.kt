@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.key
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.definitions
 import maryk.core.properties.ByteCollector
@@ -72,7 +73,7 @@ internal class ReversedTest {
         checkProtoBufConversion(
             value = Reversed(MarykObject.Properties.boolean.getRef()),
             dataModel = Reversed.Model,
-            context = context
+            context = { context }
         )
     }
 
@@ -81,7 +82,16 @@ internal class ReversedTest {
         checkJsonConversion(
             value = Reversed(MarykObject.Properties.boolean.getRef()),
             dataModel = Reversed.Model,
-            context = context
+            context = { context }
+        )
+    }
+
+    @Test
+    fun convert_definition_to_YAML_and_back() {
+        checkYamlConversion(
+            value = Reversed(MarykObject.Properties.boolean.getRef()),
+            dataModel = Reversed.Model,
+            context = { context }
         )
     }
 }

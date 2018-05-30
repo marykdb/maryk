@@ -41,19 +41,19 @@ class GetVersionedChangesRequestTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
-        checkProtoBufConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
+        checkProtoBufConversion(getVersionedChangesRequest, GetVersionedChangesRequest, { this.context })
+        checkProtoBufConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(getVersionedChangesRequest, GetVersionedChangesRequest, this.context)
-        checkJsonConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context)
+        checkJsonConversion(getVersionedChangesRequest, GetVersionedChangesRequest, { this.context })
+        checkJsonConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(getVersionedChangesRequest, GetVersionedChangesRequest, this.context) shouldBe """
+        checkYamlConversion(getVersionedChangesRequest, GetVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filterSoftDeleted: true
@@ -62,7 +62,7 @@ class GetVersionedChangesRequestTest {
 
         """.trimIndent()
 
-        checkYamlConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, this.context) shouldBe """
+        checkYamlConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filter: !Exists value

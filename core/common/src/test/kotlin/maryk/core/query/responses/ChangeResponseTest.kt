@@ -40,17 +40,17 @@ class ChangeResponseTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.changeResponse, ChangeResponse, this.context)
+        checkProtoBufConversion(this.changeResponse, ChangeResponse, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.changeResponse, ChangeResponse, this.context)
+        checkJsonConversion(this.changeResponse, ChangeResponse, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.changeResponse, ChangeResponse, this.context) shouldBe """
+        checkYamlConversion(this.changeResponse, ChangeResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         statuses:
         - !SUCCESS

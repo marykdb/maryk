@@ -38,26 +38,26 @@ class GetRequestTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(getRequest, GetRequest, this.context)
-        checkProtoBufConversion(getMaxRequest, GetRequest, this.context)
+        checkProtoBufConversion(getRequest, GetRequest, { this.context })
+        checkProtoBufConversion(getMaxRequest, GetRequest, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(getRequest, GetRequest, this.context)
-        checkJsonConversion(getMaxRequest, GetRequest, this.context)
+        checkJsonConversion(getRequest, GetRequest, { this.context })
+        checkJsonConversion(getMaxRequest, GetRequest, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(getRequest, GetRequest, this.context) shouldBe """
+        checkYamlConversion(getRequest, GetRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filterSoftDeleted: true
 
         """.trimIndent()
 
-        checkYamlConversion(getMaxRequest, GetRequest, this.context) shouldBe """
+        checkYamlConversion(getMaxRequest, GetRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filter: !Exists value

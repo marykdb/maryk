@@ -27,17 +27,17 @@ class CheckTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.valueCheck, Check, this.context)
+        checkProtoBufConversion(this.valueCheck, Check, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.valueCheck, Check, this.context)
+        checkJsonConversion(this.valueCheck, Check, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.valueCheck, Check, this.context) shouldBe """
+        checkYamlConversion(this.valueCheck, Check, { this.context }) shouldBe """
         string: test
         int: 42
 

@@ -33,17 +33,17 @@ class RangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.range, Range, this.context)
+        checkProtoBufConversion(this.range, Range, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.range, Range, this.context)
+        checkJsonConversion(this.range, Range, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.range, Range, this.context) shouldBe """
+        checkYamlConversion(this.range, Range, { this.context }) shouldBe """
         string: [!Exclude test, !Exclude test999]
         int: [3, 5]
 

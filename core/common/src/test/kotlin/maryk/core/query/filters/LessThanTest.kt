@@ -28,17 +28,17 @@ class LessThanTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.lessThan, LessThan, this.context)
+        checkProtoBufConversion(this.lessThan, LessThan, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.lessThan, LessThan, this.context)
+        checkJsonConversion(this.lessThan, LessThan, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.lessThan, LessThan, this.context) shouldBe """
+        checkYamlConversion(this.lessThan, LessThan, { this.context }) shouldBe """
         int: 2
         dateTime: '2018-01-01T13:22:34'
 

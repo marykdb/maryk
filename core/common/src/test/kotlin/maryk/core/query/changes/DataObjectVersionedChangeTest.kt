@@ -54,17 +54,17 @@ class DataObjectVersionedChangeTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, this.context)
+        checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, this.context)
+        checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, this.context) shouldBe """
+        checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context }) shouldBe """
         key: AAACKwEBAQAC
         changes:
         - version: 0x000000000d17f60f

@@ -31,23 +31,23 @@ class DeleteTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.propertyDelete, Delete, this.context)
-        checkProtoBufConversion(this.propertyDeleteMultiple, Delete, this.context)
+        checkProtoBufConversion(this.propertyDelete, Delete, { this.context })
+        checkProtoBufConversion(this.propertyDeleteMultiple, Delete, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.propertyDelete, Delete, this.context)
-        checkJsonConversion(this.propertyDeleteMultiple, Delete, this.context)
+        checkJsonConversion(this.propertyDelete, Delete, { this.context })
+        checkJsonConversion(this.propertyDeleteMultiple, Delete, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.propertyDelete, Delete, this.context) shouldBe """
+        checkYamlConversion(this.propertyDelete, Delete, { this.context }) shouldBe """
         string
         """.trimIndent()
 
-        checkYamlConversion(this.propertyDeleteMultiple, Delete, this.context) shouldBe """
+        checkYamlConversion(this.propertyDeleteMultiple, Delete, { this.context }) shouldBe """
         - string
         - int
         - dateTime

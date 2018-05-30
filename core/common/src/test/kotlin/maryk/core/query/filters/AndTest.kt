@@ -29,17 +29,17 @@ class AndTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.and, And, this.context)
+        checkProtoBufConversion(this.and, And, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.and, And, this.context)
+        checkJsonConversion(this.and, And, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.and, And, this.context) shouldBe """
+        checkYamlConversion(this.and, And, { this.context }) shouldBe """
         - !Exists value
         - !Equals
           value: hoi

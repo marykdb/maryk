@@ -78,20 +78,20 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, ReferenceDefinition.Model, DataModelContext())
-        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
+        checkProtoBufConversion(this.def, ReferenceDefinition.Model,{ DataModelContext() })
+        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, ReferenceDefinition.Model, DataModelContext())
-        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext())
+        checkJsonConversion(this.def, ReferenceDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, ReferenceDefinition.Model, DataModelContext())
-        checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, DataModelContext()) shouldBe """
+        checkYamlConversion(this.def, ReferenceDefinition.Model, { DataModelContext() })
+        checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DataModelContext() }) shouldBe """
         indexed: true
         searchable: false
         required: false

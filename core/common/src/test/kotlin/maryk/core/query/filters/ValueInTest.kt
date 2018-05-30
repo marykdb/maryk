@@ -27,17 +27,17 @@ class ValueInTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.valueIn, ValueIn, this.context)
+        checkProtoBufConversion(this.valueIn, ValueIn, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.valueIn, ValueIn, this.context)
+        checkJsonConversion(this.valueIn, ValueIn, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.valueIn, ValueIn, this.context) shouldBe """
+        checkYamlConversion(this.valueIn, ValueIn, { this.context }) shouldBe """
         string: [t1, t2, t3]
         int: [1, 2, 3]
 

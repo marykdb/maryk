@@ -36,19 +36,19 @@ class ScanRequestTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(scanRequest, ScanRequest, this.context)
-        checkProtoBufConversion(scanMaxRequest, ScanRequest, this.context)
+        checkProtoBufConversion(scanRequest, ScanRequest, { this.context })
+        checkProtoBufConversion(scanMaxRequest, ScanRequest, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(scanRequest, ScanRequest, this.context)
-        checkJsonConversion(scanMaxRequest, ScanRequest, this.context)
+        checkJsonConversion(scanRequest, ScanRequest, { this.context })
+        checkJsonConversion(scanMaxRequest, ScanRequest, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(scanRequest, ScanRequest, this.context) shouldBe """
+        checkYamlConversion(scanRequest, ScanRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
@@ -56,7 +56,7 @@ class ScanRequestTest {
 
         """.trimIndent()
 
-        checkYamlConversion(scanMaxRequest, ScanRequest, this.context) shouldBe """
+        checkYamlConversion(scanMaxRequest, ScanRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value

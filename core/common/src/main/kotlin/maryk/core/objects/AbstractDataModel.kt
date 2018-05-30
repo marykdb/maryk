@@ -342,8 +342,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
                                 }
                             } as MutableCollection<Any>
 
-                            dataObjectPropertyDefinition.capture(context, collection)
                             collection += value
+                            dataObjectPropertyDefinition.capture(context, collection)
                         }
                     }
                 }

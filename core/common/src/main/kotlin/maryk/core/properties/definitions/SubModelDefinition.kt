@@ -143,20 +143,22 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                         },
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let{
-                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                it.dataModels[name]?.invoke() ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = {
-                        it.dataModel as DataModel<*, *>
-                    },
-                    capturer = { context, dataModel ->
+                    getter = { it: SubModelDefinition<*, *, *, *, *> ->
                         @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                        { it.dataModel } as () -> DataModel<*, *>
+                    },
+                    capturer = { context: ModelContext, dataModel: () -> DataModel<*, *> ->
+                        @Suppress("UNCHECKED_CAST")
+                        context.model = dataModel() as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
 
                         context.dataModelContext?.let {
-                            if (!it.dataModels.containsKey(dataModel.name)) {
-                                it.dataModels[dataModel.name] = dataModel
+                            val model = dataModel()
+                            if (!it.dataModels.containsKey(model.name)) {
+                                it.dataModels[model.name] = dataModel
                             }
                         } ?: throw ContextNotFoundException()
                     }
@@ -178,9 +180,7 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
             searchable = map(1),
             required = map(2),
             final = map(3),
-            dataModel = {
-                map<DataModel<Any, PropertyDefinitions<Any>>>(4)
-            },
+            dataModel = map<() -> DataModel<Any, PropertyDefinitions<Any>>>(4),
             default = map(5)
         )
     }

@@ -624,8 +624,8 @@ internal class RootDataModelTest {
         }
 
         val newContext = DataModelContext()
-        newContext.dataModels["TestMarykObject"] = TestMarykObject
-        newContext.dataModels["TestValueObject"] = TestValueObject
+        newContext.dataModels["TestMarykObject"] = { TestMarykObject }
+        newContext.dataModels["TestValueObject"] = { TestValueObject }
 
         RootDataModel.Model.readJsonToObject(reader, newContext).apply {
             name shouldBe "SimpleModel"

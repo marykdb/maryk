@@ -31,7 +31,7 @@ internal val scanMaxRequest = SimpleMarykObject.run {
 
 class ScanRequestTest {
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to { SimpleMarykObject }
     ))
 
     @Test

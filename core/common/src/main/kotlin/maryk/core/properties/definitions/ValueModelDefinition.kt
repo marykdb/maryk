@@ -5,6 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.ContextualDataModel
+import maryk.core.objects.DataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -94,19 +95,26 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                         contextTransformer = { it?.dataModelContext },
                         contextualResolver = { context, name ->
                             context?.let {
-                                it.dataModels[name] ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
+                                it.dataModels[name]?.invoke() ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModelDefinition<*, *>::dataModel,
+                    toSerializable = { it: DataModel<*, *>? ->
+                        it?.let{
+                            { it }
+                        }
+                    },
+                    fromSerializable = { it?.invoke() },
                     capturer = { context, dataModel ->
                         context.let {
                             @Suppress("UNCHECKED_CAST")
-                            context.model = dataModel as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                            context.model = dataModel() as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
 
                             context.dataModelContext?.let {
-                                if (!it.dataModels.containsKey(dataModel.name)) {
-                                    it.dataModels[dataModel.name] = dataModel
+                                val model = dataModel.invoke()
+                                if (!it.dataModels.containsKey(model.name)) {
+                                    it.dataModels[model.name] = dataModel
                                 }
                             } ?: throw ContextNotFoundException()
                         }

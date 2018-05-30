@@ -21,7 +21,7 @@ class GreaterThanEqualsTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to SimpleMarykObject
+            TestMarykObject.name to { SimpleMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

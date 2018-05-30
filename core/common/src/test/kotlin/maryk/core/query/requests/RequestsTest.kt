@@ -22,7 +22,7 @@ class RequestsTest {
     )
 
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to { SimpleMarykObject }
     ))
 
     @Test

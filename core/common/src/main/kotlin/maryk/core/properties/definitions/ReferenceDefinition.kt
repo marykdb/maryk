@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.objects.DataModel
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
@@ -97,17 +98,24 @@ class ReferenceDefinition<DO: Any>(
                 add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
                 add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
                 add(8, "dataModel",
-                    definition = ContextualModelReferenceDefinition<DataModelContext>(
+                    definition = ContextualModelReferenceDefinition(
                         contextualResolver = { context, name ->
                             context?.let {
-                                it.dataModels[name] ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                it.dataModels[name]?.invoke() ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = ReferenceDefinition<*>::dataModel,
-                    capturer = { context, dataModel ->
-                        if (!context.dataModels.containsKey(dataModel.name)) {
-                            context.dataModels[dataModel.name] = dataModel
+                    toSerializable = { it: DataModel<*, *>? ->
+                        it?.let{
+                            { it }
+                        }
+                    },
+                    fromSerializable = { it?.invoke() },
+                    capturer = { context: DataModelContext, dataModel: ()-> DataModel<*,*> ->
+                        val model = dataModel()
+                        if (!context.dataModels.containsKey(model.name)) {
+                            context.dataModels[model.name] = dataModel
                         }
                     }
                 )

@@ -23,7 +23,7 @@ class ExistsTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to TestMarykObject
+            TestMarykObject.name to { TestMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

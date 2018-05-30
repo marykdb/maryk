@@ -46,8 +46,8 @@ class DataObjectVersionedChangeTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         dataModels = mapOf(
-            SubMarykObject.name to SubMarykObject,
-            TestMarykObject.name to TestMarykObject
+            SubMarykObject.name to { SubMarykObject },
+            TestMarykObject.name to { TestMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

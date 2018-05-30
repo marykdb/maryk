@@ -11,7 +11,8 @@ fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
     bc: ByteCollector = ByteCollector(),
     value: T,
     def: IsValueDefinition<T, CX>,
-    context: CX? = null
+    context: CX? = null,
+    compare: (T, T) -> Unit = { converted, original -> converted shouldBe original }
 ) {
     val cache = WriteCache()
 
@@ -23,10 +24,12 @@ fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
     key.tag shouldBe 22
     key.wireType shouldBe def.wireType
 
-    def.readTransportBytes(
+    val converted = def.readTransportBytes(
         ProtoBuf.getLength(key.wireType, bc::read),
         bc::read,
         context
-    ) shouldBe value
+    )
+
+    compare(converted, value)
     bc.reset()
 }

@@ -30,8 +30,8 @@ class ContextualValueDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to TestMarykObject,
-            SubMarykObject.name to SubMarykObject
+            TestMarykObject.name to { TestMarykObject },
+            SubMarykObject.name to { SubMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>,
         reference = TestMarykObject.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>

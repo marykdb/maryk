@@ -29,7 +29,7 @@ class MapChangeTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to SubMarykObject
+            TestMarykObject.name to { SubMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

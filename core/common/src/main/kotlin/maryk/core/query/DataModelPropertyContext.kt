@@ -12,7 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
  * Context does not need to be cached since it is present in all phases.
  */
 internal class DataModelPropertyContext(
-    internal val dataModels: Map<String, DataModel<*, *>>,
+    internal val dataModels: Map<String, () -> DataModel<*, *>>,
     internal var dataModel: RootDataModel<Any, PropertyDefinitions<Any>>? = null,
     internal var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>? = null
 ) : IsPropertyContext

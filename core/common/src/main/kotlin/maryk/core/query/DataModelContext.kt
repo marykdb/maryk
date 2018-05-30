@@ -9,6 +9,6 @@ import maryk.core.properties.definitions.PropertyDefinitions
  * Context does not need to be cached since it is present in all phases.
  */
 open class DataModelContext(
-    internal val dataModels: MutableMap<String, DataModel<*, *>> = mutableMapOf(),
+    internal val dataModels: MutableMap<String, () -> DataModel<*, *>> = mutableMapOf(),
     internal var propertyDefinitions: PropertyDefinitions<*>? = null
 ) : IsPropertyContext

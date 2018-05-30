@@ -18,7 +18,7 @@ class ObjectSoftDeleteTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to SimpleMarykObject
+            SimpleMarykObject.name to { SimpleMarykObject }
         ),
         dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

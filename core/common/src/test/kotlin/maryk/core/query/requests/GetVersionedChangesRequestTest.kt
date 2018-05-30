@@ -36,7 +36,7 @@ internal val getVersionedChangesMaxRequest = SimpleMarykObject.run {
 
 class GetVersionedChangesRequestTest {
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to SimpleMarykObject
+        SimpleMarykObject.name to { SimpleMarykObject }
     ))
 
     @Test

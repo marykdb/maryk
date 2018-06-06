@@ -15,7 +15,7 @@ class ContextualModelReferenceDefinitionTest {
         SubMarykObject
     )
 
-    private val def = ContextualModelReferenceDefinition<DataModelPropertyContext>(
+    private val def = ContextualModelReferenceDefinition<DataModel<*, *>, DataModelPropertyContext>(
         contextualResolver = { context, name -> context!!.dataModels[name]!!.invoke() }
     )
 
@@ -31,8 +31,8 @@ class ContextualModelReferenceDefinitionTest {
     fun testTransportConversion() {
         val bc = ByteCollector()
         for (value in modelsToTest) {
-            checkProtoBufConversion(bc, { value }, this.def, this.context) { converted, original ->
-                converted() shouldBe original()
+            checkProtoBufConversion(bc, DataModelReference(value.name){ value }, this.def, this.context) { converted, original ->
+                converted.get() shouldBe original.get()
             }
         }
     }
@@ -40,8 +40,8 @@ class ContextualModelReferenceDefinitionTest {
     @Test
     fun convertString() {
         for (it in modelsToTest) {
-            val b = def.asString({ it }, this.context)
-            def.fromString(b, this.context).invoke() shouldBe it
+            val b = def.asString(DataModelReference(it.name){ it }, this.context)
+            def.fromString(b, this.context).get.invoke() shouldBe it
         }
     }
 }

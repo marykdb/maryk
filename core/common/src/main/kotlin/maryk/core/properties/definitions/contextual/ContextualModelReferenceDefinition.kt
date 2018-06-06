@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -17,9 +18,9 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 @Suppress("FunctionName")
-internal fun <CX: IsPropertyContext> ContextualModelReferenceDefinition(
-    contextualResolver: (context: CX?, name: String) -> DataModel<*, *>
-) = ContextualModelReferenceDefinition<CX, CX>(contextualResolver) {
+internal fun <DM: DataModel<*, *>, CX: IsPropertyContext> ContextualModelReferenceDefinition(
+    contextualResolver: (context: CX?, name: String) -> DM
+) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
 }
 
@@ -27,25 +28,23 @@ internal fun <CX: IsPropertyContext> ContextualModelReferenceDefinition(
  * Definition for a reference to another DataObject resolved from context by [contextualResolver].
  * Has a [contextTransformer] to transform context.
  */
-internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext, CXI: IsPropertyContext>(
-    val contextualResolver: (context: CXI?, name: String) -> DataModel<*, *>,
+internal data class ContextualModelReferenceDefinition<DM: DataModel<*, *>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
+    val contextualResolver: (context: CXI?, name: String) -> DM,
     val contextTransformer: (CX?) -> CXI?
-): IsValueDefinition<() -> DataModel<*, *>, CX>, IsSerializableFlexBytesEncodable<() -> DataModel<*, *>, CX> {
+): IsValueDefinition<DataModelReference<DM>, CX>, IsSerializableFlexBytesEncodable<DataModelReference<DM>, CX> {
     override val indexed = false
     override val searchable = false
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 
-    override fun asString(value: () -> DataModel<*, *>, context: CX?) =
-        value().name
+    override fun asString(value: DataModelReference<DM>, context: CX?) =
+        value.name
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(contextTransformer(context), string).let {
-            { it }
-        }
+        resolveContext(contextTransformer(context), string)
 
-    override fun writeJsonValue(value: () -> DataModel<*, *>, writer: IsJsonLikeWriter, context: CX?) =
+    override fun writeJsonValue(value: DataModelReference<DM>, writer: IsJsonLikeWriter, context: CX?) =
         writer.writeString(this.asString(value, context))
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) = reader.currentToken.let {
@@ -62,14 +61,22 @@ internal data class ContextualModelReferenceDefinition<in CX: IsPropertyContext,
         }
     }
 
-    override fun calculateTransportByteLength(value: () -> DataModel<*, *>, cacher: WriteCacheWriter, context: CX?) =
-        value().name.calculateUTF8ByteLength()
+    override fun calculateTransportByteLength(value: DataModelReference<DM>, cacher: WriteCacheWriter, context: CX?) =
+        value.name.calculateUTF8ByteLength()
 
-    override fun writeTransportBytes(value: () -> DataModel<*, *>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
-        value().name.writeUTF8Bytes(writer)
+    override fun writeTransportBytes(value: DataModelReference<DM>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) =
+        value.name.writeUTF8Bytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        contextualResolver(contextTransformer(context), initString(length, reader)).let {
-            { it }
+        resolveContext(contextTransformer(context), initString(length, reader))
+
+    private fun resolveContext(context: CXI?, name: String): DataModelReference<DM> {
+        try {
+            this.contextualResolver(context, name).let {
+                return DataModelReference(name){ it }
+            }
+        } catch (e: DefNotFoundException) {
+            throw Exception("WORK TO DO ${e.message}")
         }
+    }
 }

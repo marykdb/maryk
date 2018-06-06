@@ -8,6 +8,7 @@ import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -148,17 +149,21 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                         }
                     ),
                     getter = { it: SubModelDefinition<*, *, *, *, *> ->
-                        @Suppress("UNCHECKED_CAST")
-                        { it.dataModel } as () -> DataModel<*, *>
+                        { it.dataModel as DataModel<*, *> }
                     },
-                    capturer = { context: ModelContext, dataModel: () -> DataModel<*, *> ->
+                    toSerializable = { it: (() -> DataModel<*, *>)? ->
+                        it?.invoke()?.let{ model ->
+                            DataModelReference(model.name, it)
+                        }
+                    },
+                    fromSerializable = { it: DataModelReference<DataModel<*, *>>? -> it?.get },
+                    capturer = { context: ModelContext, dataModel: DataModelReference<DataModel<*, *>> ->
                         @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel() as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                        context.model = dataModel.get() as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
 
                         context.dataModelContext?.let {
-                            val model = dataModel()
-                            if (!it.dataModels.containsKey(model.name)) {
-                                it.dataModels[model.name] = dataModel
+                            if (!it.dataModels.containsKey(dataModel.name)) {
+                                it.dataModels[dataModel.name] = dataModel.get
                             }
                         } ?: throw ContextNotFoundException()
                     }

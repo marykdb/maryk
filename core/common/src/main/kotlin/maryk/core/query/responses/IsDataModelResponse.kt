@@ -2,13 +2,13 @@ package maryk.core.query.responses
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.DataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.responses.statuses.AddSuccess
@@ -28,23 +28,23 @@ interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
     companion object {
         internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
             definitions.add(0, "dataModel",
-                ContextualModelReferenceDefinition<DataModelPropertyContext>(
+                ContextualModelReferenceDefinition<RootDataModel<*, *>, DataModelPropertyContext>(
                     contextualResolver = { context, name ->
                         context?.let {
-                            it.dataModels[name]?.invoke() ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            it.dataModels[name]?.invoke() as RootDataModel<*, *>? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,
-                toSerializable = { it: DataModel<*, *>? ->
+                toSerializable = { it: RootDataModel<*, *>? ->
                     it?.let{
-                        { it }
+                        DataModelReference(it.name){ it }
                     }
                 },
-                fromSerializable = { it?.invoke() },
+                fromSerializable = { it?.get?.invoke() },
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.dataModel = value() as RootDataModel<Any, PropertyDefinitions<Any>>
+                    context.dataModel = value.get() as RootDataModel<Any, PropertyDefinitions<Any>>
                 }
             )
         }

@@ -2,11 +2,11 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.DataModel
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
@@ -99,23 +99,27 @@ class ReferenceDefinition<DO: Any>(
                 add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
                 add(8, "dataModel",
                     definition = ContextualModelReferenceDefinition(
-                        contextualResolver = { context, name ->
+                        contextualResolver = { context: DataModelContext?, name ->
                             context?.let {
-                                it.dataModels[name]?.invoke() ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                it.dataModels[name]?.invoke() as RootDataModel<*, *>? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = ReferenceDefinition<*>::dataModel,
-                    toSerializable = { it: DataModel<*, *>? ->
-                        it?.let{
-                            { it }
+                    getter = { it: ReferenceDefinition<*> ->
+                        { it.dataModel }
+                    },
+                    toSerializable = {
+                        it?.invoke()?.let{ model: RootDataModel<*, *> ->
+                            DataModelReference(model.name, it)
                         }
                     },
-                    fromSerializable = { it?.invoke() },
-                    capturer = { context: DataModelContext, dataModel: ()-> DataModel<*,*> ->
-                        val model = dataModel()
-                        if (!context.dataModels.containsKey(model.name)) {
-                            context.dataModels[model.name] = dataModel
+                    fromSerializable = {
+                        @Suppress("UNCHECKED_CAST")
+                        it?.get
+                    },
+                    capturer = { context, dataModel ->
+                        if (!context.dataModels.containsKey(dataModel.name)) {
+                            context.dataModels[dataModel.name] = dataModel.get
                         }
                     }
                 )
@@ -131,7 +135,7 @@ class ReferenceDefinition<DO: Any>(
             minValue = map<Bytes?>(5)?.let { Key<Any>(it.bytes) },
             maxValue = map<Bytes?>(6)?.let { Key<Any>(it.bytes) },
             default = map<Bytes?>(7)?.let { Key<Any>(it.bytes) },
-            dataModel = { map(8) }
+            dataModel = map(8)
         )
     }
 }

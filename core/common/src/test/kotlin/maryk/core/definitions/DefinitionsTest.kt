@@ -67,6 +67,44 @@ class DefinitionsTest {
               required: true
               final: false
         - !RootModel
+          name: SimpleMarykObject
+          key:
+          - !UUID
+          properties:
+            ? 0: value
+            : !String
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+              default: haha
+              regEx: ha.*
+        - !Model
+          name: EmbeddedMarykObject
+          properties:
+            ? 0: value
+            : !String
+              indexed: false
+              searchable: true
+              required: true
+              final: false
+              unique: false
+            ? 1: embedded
+            : !Embed
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              dataModel: EmbeddedMarykObject
+            ? 2: marykModel
+            : !Embed
+              indexed: false
+              searchable: true
+              required: false
+              final: false
+              dataModel: TestMarykObject
+        - !RootModel
           name: TestMarykObject
           key:
           - !Ref uint
@@ -259,20 +297,6 @@ class DefinitionsTest {
               final: false
               unique: false
               dataModel: TestMarykObject
-        - !RootModel
-          name: SimpleMarykObject
-          key:
-          - !UUID
-          properties:
-            ? 0: value
-            : !String
-              indexed: false
-              searchable: true
-              required: true
-              final: false
-              unique: false
-              default: haha
-              regEx: ha.*
         - !EnumDefinition
           name: Option
           values:

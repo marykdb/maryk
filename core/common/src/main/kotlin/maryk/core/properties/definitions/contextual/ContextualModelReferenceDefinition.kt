@@ -28,7 +28,7 @@ internal fun <DM: DataModel<*, *>, CX: IsPropertyContext> ContextualModelReferen
  * Definition for a reference to another DataObject resolved from context by [contextualResolver].
  * Has a [contextTransformer] to transform context.
  */
-internal data class ContextualModelReferenceDefinition<DM: DataModel<*, *>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
+data class ContextualModelReferenceDefinition<DM: DataModel<*, *>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
     val contextualResolver: (context: CXI?, name: String) -> DM,
     val contextTransformer: (CX?) -> CXI?
 ): IsValueDefinition<DataModelReference<DM>, CX>, IsSerializableFlexBytesEncodable<DataModelReference<DM>, CX> {

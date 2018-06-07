@@ -3,12 +3,13 @@ package maryk.generator.kotlin
 import maryk.core.objects.DataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
@@ -73,9 +74,6 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
     is IndexedEnumDefinition<*> -> value.name
     is ValueDataModel<*, *> -> {
         value.name
-    }
-    is DataModel<*, *> -> {
-        """{ ${value.name} }"""
     }
     is Key<*> -> """Key("$value")"""
     is Bytes -> {
@@ -147,6 +145,12 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
     }
     else -> {
         when (definition) {
+            is ContextualModelReferenceDefinition<*, *, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                (value as? () -> DataModel<*, *>)?.let {
+                    """{ ${value().name} }"""
+                } ?: throw Exception("DataModel $value cannot be null")
+            }
             is EmbeddedObjectDefinition<*, *, *, *, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
                 return it.generateKotlinValue(value, addImport)
             } ?: throw Exception("DataModel ${definition.dataModel} cannot be used to generate Kotlin code")

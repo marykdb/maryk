@@ -46,6 +46,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
@@ -58,7 +59,6 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.key.Reversed

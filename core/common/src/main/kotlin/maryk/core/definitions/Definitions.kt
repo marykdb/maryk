@@ -5,11 +5,11 @@ import maryk.core.objects.DataModel
 import maryk.core.objects.QuerySingleValueDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.ValueDataModel
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnumDefinition

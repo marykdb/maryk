@@ -7,8 +7,8 @@ import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
+import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper

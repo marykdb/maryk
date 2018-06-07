@@ -5,11 +5,15 @@ import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.StringDefinition
 import maryk.test.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *, *, *>, original: IsPropertyDefinitionWrapper<*, *, *, *>) {
     converted.index shouldBe original.index
     converted.name shouldBe original.name
-    converted.definition shouldBe original.definition
+    // Make sure JS tests correct
+    assertTrue {
+         original.definition.equals(converted.definition)
+    }
 }
 
 class PropertyDefinitionWrapperTest {

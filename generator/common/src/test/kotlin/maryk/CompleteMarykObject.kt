@@ -18,7 +18,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.key.Reversed
@@ -216,7 +216,7 @@ data class CompleteMarykObject(
         )
         val subModel = add(
             index = 10, name = "subModel",
-            definition = SubModelDefinition(
+            definition = EmbeddedObjectDefinition(
                 indexed = true,
                 searchable = false,
                 required = false,

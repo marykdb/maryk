@@ -197,7 +197,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefSubModelDefinitions
+                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                         )
                     ),
                     getter = MapDefinition<*, *, *>::keyDefinition,
@@ -220,7 +220,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefSubModelDefinitions
+                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                         )
                     ),
                     getter = MapDefinition<*, *, *>::valueDefinition,

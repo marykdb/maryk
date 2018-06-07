@@ -1,18 +1,18 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.query.DataModelContext
 import kotlin.test.Test
 
-class SubModelPropertyDefinitionWrapperTest {
-    private val def = SubModelPropertyDefinitionWrapper(
+class EmbeddedObjectPropertyDefinitionWrapperTest {
+    private val def = EmbeddedObjectPropertyDefinitionWrapper(
         index = 1,
         name = "wrapper",
-        definition = SubModelDefinition(
-            dataModel = { SubMarykObject }
+        definition = EmbeddedObjectDefinition(
+            dataModel = { EmbeddedMarykObject }
         ),
         getter = { _: Any -> null }
     )

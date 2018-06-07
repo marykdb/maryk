@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 
 /** Filter */
 interface IsFilter {
@@ -8,17 +8,17 @@ interface IsFilter {
 }
 
 internal val mapOfFilterDefinitions = mapOf(
-    FilterType.And to SubModelDefinition(dataModel = { And }),
-    FilterType.Or to SubModelDefinition(dataModel = { Or }),
-    FilterType.Not to SubModelDefinition(dataModel = { Not }),
-    FilterType.Exists to SubModelDefinition(dataModel = { Exists }),
-    FilterType.Equals to SubModelDefinition(dataModel = { Equals }),
-    FilterType.LessThan to SubModelDefinition(dataModel = { LessThan }),
-    FilterType.LessThanEquals to SubModelDefinition(dataModel = { LessThanEquals }),
-    FilterType.GreaterThan to SubModelDefinition(dataModel = { GreaterThan }),
-    FilterType.GreaterThanEquals to SubModelDefinition(dataModel = { GreaterThanEquals }),
-    FilterType.Prefix to SubModelDefinition(dataModel = { Prefix }),
-    FilterType.Range to SubModelDefinition(dataModel = { Range }),
-    FilterType.RegEx to SubModelDefinition(dataModel = { RegEx }),
-    FilterType.ValueIn to SubModelDefinition(dataModel = { ValueIn })
+    FilterType.And to EmbeddedObjectDefinition(dataModel = { And }),
+    FilterType.Or to EmbeddedObjectDefinition(dataModel = { Or }),
+    FilterType.Not to EmbeddedObjectDefinition(dataModel = { Not }),
+    FilterType.Exists to EmbeddedObjectDefinition(dataModel = { Exists }),
+    FilterType.Equals to EmbeddedObjectDefinition(dataModel = { Equals }),
+    FilterType.LessThan to EmbeddedObjectDefinition(dataModel = { LessThan }),
+    FilterType.LessThanEquals to EmbeddedObjectDefinition(dataModel = { LessThanEquals }),
+    FilterType.GreaterThan to EmbeddedObjectDefinition(dataModel = { GreaterThan }),
+    FilterType.GreaterThanEquals to EmbeddedObjectDefinition(dataModel = { GreaterThanEquals }),
+    FilterType.Prefix to EmbeddedObjectDefinition(dataModel = { Prefix }),
+    FilterType.Range to EmbeddedObjectDefinition(dataModel = { Range }),
+    FilterType.RegEx to EmbeddedObjectDefinition(dataModel = { RegEx }),
+    FilterType.ValueIn to EmbeddedObjectDefinition(dataModel = { ValueIn })
 )

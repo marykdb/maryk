@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.DefinitionDataModel
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.IndexedEnumDefinition
@@ -32,15 +32,15 @@ sealed class KeyPartType(
 val keyPartValues = arrayOf<KeyPartType>(KeyPartType.UUID, KeyPartType.Reference, KeyPartType.TypeId, KeyPartType.Reversed)
 
 internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DataModelContext>>(
-    KeyPartType.UUID to SubModelDefinition(dataModel = { UUIDKey.Model }),
+    KeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
     KeyPartType.Reference to ContextualPropertyReferenceDefinition(
         contextualResolver = {
             it?.propertyDefinitions ?: throw ContextNotFoundException()
         }
     ),
-    KeyPartType.TypeId to SubModelDefinition(dataModel = {
+    KeyPartType.TypeId to EmbeddedObjectDefinition(dataModel = {
         @Suppress("UNCHECKED_CAST")
         TypeId.Model as DefinitionDataModel<TypeId<IndexedEnum<Any>>>
     }),
-    KeyPartType.Reversed to SubModelDefinition(dataModel = { Reversed.Model })
+    KeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { Reversed.Model })
 )

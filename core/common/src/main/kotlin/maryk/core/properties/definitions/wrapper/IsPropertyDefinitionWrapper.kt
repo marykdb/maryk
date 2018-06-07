@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.mapOfPropertyDefSubModelDefinitions
+import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
@@ -94,7 +94,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             definitions.add(2, "definition",
                 MultiTypeDefinition(
                     typeEnum = PropertyDefinitionType,
-                    definitionMap = mapOfPropertyDefSubModelDefinitions
+                    definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                 ),
                 getter = {
                     val def = getter(it) as IsTransportablePropertyDefinitionType<*>

@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
@@ -27,7 +27,7 @@ data class DataObjectVersionedChange<out DO: Any>(
 
                 add(1, "changes", ListDefinition(
                     default = emptyList(),
-                    valueDefinition = SubModelDefinition(
+                    valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { VersionedChanges }
                     )
                 ), DataObjectVersionedChange<*>::changes)

@@ -3,7 +3,7 @@ package maryk.core.query.pairs
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
@@ -21,7 +21,7 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
         )
         val range = add(
             index = 1, name = "range",
-            definition = SubModelDefinition(
+            definition = EmbeddedObjectDefinition(
                 dataModel = { ValueRange }
             ),
             getter = ReferenceValueRangePair<*>::range

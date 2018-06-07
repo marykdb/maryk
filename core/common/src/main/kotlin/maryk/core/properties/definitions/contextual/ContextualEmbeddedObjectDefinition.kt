@@ -14,7 +14,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
-internal data class ContextualSubModelDefinition<CX: IsPropertyContext>(
+internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
 ): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
     override val indexed = false

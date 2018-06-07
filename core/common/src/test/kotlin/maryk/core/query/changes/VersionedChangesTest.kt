@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -14,7 +14,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class VersionedChangesTest {
-    private val subModelValue = TestMarykObject { subModel ref { value } }
+    private val subModelValue = TestMarykObject { embeddedObject ref { value } }
 
     private val versionedChanges = VersionedChanges(
         219674127L.toUInt64(),
@@ -32,7 +32,7 @@ class VersionedChangesTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         dataModels = mapOf(
-            SubMarykObject.name to { SubMarykObject },
+            EmbeddedMarykObject.name to { EmbeddedMarykObject },
             TestMarykObject.name to { TestMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
@@ -54,10 +54,10 @@ class VersionedChangesTest {
         version: 0x000000000d17f60f
         changes:
         - !Change
-          subModel.value: new
-        - !Delete subModel.value
+          embeddedObject.value: new
+        - !Delete embeddedObject.value
         - !Check
-          subModel.value: current
+          embeddedObject.value: current
         - !ObjectDelete
           isDeleted: true
         - !ListChange

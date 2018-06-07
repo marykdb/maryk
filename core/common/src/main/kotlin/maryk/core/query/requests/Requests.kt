@@ -19,7 +19,7 @@ data class Requests(
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = RequestType,
-                    definitionMap = mapOfRequestTypeSubModelDefinitions
+                    definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
                 )
             ),
             Requests::requests,

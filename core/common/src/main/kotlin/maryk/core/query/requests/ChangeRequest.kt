@@ -4,7 +4,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.query.changes.DataObjectChange
 
 /**
@@ -26,7 +26,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
                 IsObjectRequest.addDataModel(this, ChangeRequest<*, *>::dataModel)
                 add(1, "objectChanges",
                     ListDefinition(
-                        valueDefinition = SubModelDefinition(
+                        valueDefinition = EmbeddedObjectDefinition(
                             dataModel = { DataObjectChange }
                         )
                     ),

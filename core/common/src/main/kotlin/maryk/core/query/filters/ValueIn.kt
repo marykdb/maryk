@@ -4,7 +4,7 @@ import maryk.core.objects.SimpleFilterDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -26,7 +26,7 @@ data class ValueIn internal constructor(
     internal object Properties : PropertyDefinitions<ValueIn>() {
         val referenceValuePairs = add(0, "referenceValuePairs",
             ListDefinition(
-                valueDefinition = SubModelDefinition(
+                valueDefinition = EmbeddedObjectDefinition(
                     dataModel = {
                         ReferenceValueSetPair
                     }

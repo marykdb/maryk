@@ -8,7 +8,7 @@ import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
-import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
+import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -36,7 +36,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
     IsTransportablePropertyDefinitionType<DO>,
     HasDefaultValueDefinition<DO>
 {
-    override val propertyDefinitionType = PropertyDefinitionType.ValueModel
+    override val propertyDefinitionType = PropertyDefinitionType.Value
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize = dataModel.byteSize
 
@@ -123,7 +123,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 )
 
                 add(6, "minValue",
-                    ContextualSubModelDefinition(
+                    ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model ?: throw ContextNotFoundException()
                         }
@@ -132,7 +132,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 )
 
                 add(7, "maxValue",
-                    ContextualSubModelDefinition(
+                    ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model ?: throw ContextNotFoundException()
                         }
@@ -141,7 +141,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 )
 
                 add(8, "default",
-                    ContextualSubModelDefinition(
+                    ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model ?: throw ContextNotFoundException()
                         }

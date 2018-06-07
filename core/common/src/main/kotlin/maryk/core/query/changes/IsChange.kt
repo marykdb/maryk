@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 
 /** Defines a change to a DataObject */
 interface IsChange {
@@ -8,11 +8,11 @@ interface IsChange {
 }
 
 internal val mapOfChangeDefinitions = mapOf(
-    ChangeType.Change to SubModelDefinition(dataModel = { Change }),
-    ChangeType.Check to SubModelDefinition(dataModel = { Check } ),
-    ChangeType.Delete to SubModelDefinition(dataModel = { Delete } ),
-    ChangeType.ObjectDelete to SubModelDefinition(dataModel = { ObjectSoftDeleteChange } ),
-    ChangeType.ListChange to SubModelDefinition(dataModel = { ListChange } ),
-    ChangeType.SetChange to SubModelDefinition(dataModel = { SetChange } ),
-    ChangeType.MapChange to SubModelDefinition(dataModel = { MapChange } )
+    ChangeType.Change to EmbeddedObjectDefinition(dataModel = { Change }),
+    ChangeType.Check to EmbeddedObjectDefinition(dataModel = { Check } ),
+    ChangeType.Delete to EmbeddedObjectDefinition(dataModel = { Delete } ),
+    ChangeType.ObjectDelete to EmbeddedObjectDefinition(dataModel = { ObjectSoftDeleteChange } ),
+    ChangeType.ListChange to EmbeddedObjectDefinition(dataModel = { ListChange } ),
+    ChangeType.SetChange to EmbeddedObjectDefinition(dataModel = { SetChange } ),
+    ChangeType.MapChange to EmbeddedObjectDefinition(dataModel = { MapChange } )
 )

@@ -4,7 +4,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.query.DataObjectWithMetaData
 
 /** Response with [objects] to an objects (Get/Scan) request to [dataModel] */
@@ -17,7 +17,7 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO, *>>(
             init {
                 IsDataModelResponse.addDataModel(this, ObjectsResponse<*, *>::dataModel)
                 add(1, "objects", ListDefinition(
-                    valueDefinition = SubModelDefinition(
+                    valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { DataObjectWithMetaData }
                     )
                 ), ObjectsResponse<*, *>::objects)

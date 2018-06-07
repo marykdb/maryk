@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -18,12 +18,12 @@ class DataObjectChangeTest {
         byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
-    private val subModel = TestMarykObject.ref { subModel }
+    private val subModel = TestMarykObject.ref { embeddedObject }
 
     private val dataObjectChange = key1.change(
-        Change(SubMarykObject.ref(subModel) { value } with  "new"),
-        Delete(SubMarykObject.ref(subModel) { value }),
-        Check(SubMarykObject.ref(subModel) { value } with "current"),
+        Change(EmbeddedMarykObject.ref(subModel) { value } with  "new"),
+        Delete(EmbeddedMarykObject.ref(subModel) { value }),
+        Check(EmbeddedMarykObject.ref(subModel) { value } with "current"),
         ObjectSoftDeleteChange(true),
         ListChange(
             TestMarykObject.ref { list }.change(
@@ -59,10 +59,10 @@ class DataObjectChangeTest {
         key: AAACKwEBAQAC
         changes:
         - !Change
-          subModel.value: new
-        - !Delete subModel.value
+          embeddedObject.value: new
+        - !Delete embeddedObject.value
         - !Check
-          subModel.value: current
+          embeddedObject.value: current
         - !ObjectDelete
           isDeleted: true
         - !ListChange

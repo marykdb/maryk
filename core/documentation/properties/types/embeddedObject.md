@@ -1,9 +1,9 @@
-# SubModel Property
+# EmbeddedObject Property
 A property which contains another DataModel as embedded object. See 
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
-- Maryk Yaml Definition: `SubModel` T is name of model
-- Kotlin Definition: `SubModelDefinition<T>` T is for the name of DataModel
+- Maryk Yaml Definition: `EmbeddedObject` T is name of model
+- Kotlin Definition: `EmbeddedObjectDefinition<T>` T is for the name of DataModel
 - Kotlin Value: `T` T stands for the DataModel data class 
 
 ## Usage options
@@ -22,17 +22,17 @@ A property which contains another DataModel as embedded object. See
 
 ## Examples
 
-**Example of a YAML SubModel property definition**
+**Example of a YAML EmbeddedObject property definition**
 ```yaml
-!SubModel
+!Embed
   dataModel: Address
   required: false
   final: true
 ```
 
-**Example of a Kotlin SubModel property definition**
+**Example of a Kotlin EmbeddedObject property definition**
 ```kotlin
-val def = SubModelDefinition(
+val def = EmbeddedObjectDefinition(
     required = false,
     final = true,
     dataModel = Address

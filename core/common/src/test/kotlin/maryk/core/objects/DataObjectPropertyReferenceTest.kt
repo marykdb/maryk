@@ -12,16 +12,16 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykObject.ref { string }.completeName shouldBe "string"
         TestMarykObject.ref { bool }.completeName shouldBe "bool"
 
-        TestMarykObject { subModel ref { value } }.completeName shouldBe "subModel.value"
+        TestMarykObject { embeddedObject ref { value } }.completeName shouldBe "embeddedObject.value"
 
-        TestMarykObject { subModel ref { model } }.completeName shouldBe "subModel.model"
-        TestMarykObject { subModel { model { model ref { value } } } }.completeName shouldBe "subModel.model.model.value"
-        TestMarykObject { subModel { model { model { model ref { value } } } } }.completeName shouldBe "subModel.model.model.model.value"
+        TestMarykObject { embeddedObject ref { embedded } }.completeName shouldBe "embeddedObject.embedded"
+        TestMarykObject { embeddedObject { embedded { embedded ref { value } } } }.completeName shouldBe "embeddedObject.embedded.embedded.value"
+        TestMarykObject { embeddedObject { embedded { embedded { embedded ref { value } } } } }.completeName shouldBe "embeddedObject.embedded.embedded.embedded.value"
 
-        TestMarykObject { subModel { marykModel { list at 5 } } }.completeName shouldBe "subModel.marykModel.list.@5"
-        TestMarykObject { subModel { marykModel { set at Date(2017, 12, 5) } } }.completeName shouldBe "subModel.marykModel.set.\$2017-12-05"
+        TestMarykObject { embeddedObject { marykModel { list at 5 } } }.completeName shouldBe "embeddedObject.marykModel.list.@5"
+        TestMarykObject { embeddedObject { marykModel { set at Date(2017, 12, 5) } } }.completeName shouldBe "embeddedObject.marykModel.set.\$2017-12-05"
 
-        TestMarykObject { subModel { marykModel { map key Time(12, 23) } } }.completeName shouldBe """subModel.marykModel.map.$12:23"""
-        TestMarykObject { subModel { marykModel { map at Time(12, 23) } } }.completeName shouldBe "subModel.marykModel.map.@12:23"
+        TestMarykObject { embeddedObject { marykModel { map key Time(12, 23) } } }.completeName shouldBe """embeddedObject.marykModel.map.$12:23"""
+        TestMarykObject { embeddedObject { marykModel { map at Time(12, 23) } } }.completeName shouldBe "embeddedObject.marykModel.map.@12:23"
     }
 }

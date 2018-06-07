@@ -4,7 +4,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -27,7 +27,7 @@ data class Range internal constructor(
     internal object Properties : PropertyDefinitions<Range>() {
         val ranges = Properties.add(0, "referenceRangePairs",
             ListDefinition(
-                valueDefinition = SubModelDefinition(
+                valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { ReferenceValueRangePair }
                 )
             ),

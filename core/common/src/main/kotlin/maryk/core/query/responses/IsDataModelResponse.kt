@@ -6,7 +6,7 @@ import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.TypedValue
@@ -58,14 +58,14 @@ private val listOfStatuses = ListDefinition(
     valueDefinition = MultiTypeDefinition(
         typeEnum = StatusType,
         definitionMap = mapOf(
-            StatusType.SUCCESS to SubModelDefinition(dataModel = {  Success } ),
-            StatusType.ADD_SUCCESS to SubModelDefinition(dataModel = {  AddSuccess } ),
-            StatusType.AUTH_FAIL to SubModelDefinition(dataModel = {  AuthFail } ),
-            StatusType.REQUEST_FAIL to SubModelDefinition(dataModel = {  RequestFail } ),
-            StatusType.SERVER_FAIL to SubModelDefinition(dataModel = {  ServerFail } ),
-            StatusType.VALIDATION_FAIL to SubModelDefinition(dataModel = {  ValidationFail } ),
-            StatusType.ALREADY_EXISTS to SubModelDefinition(dataModel = {  AlreadyExists } ),
-            StatusType.DOES_NOT_EXIST to SubModelDefinition(dataModel = {  DoesNotExist } )
+            StatusType.SUCCESS to EmbeddedObjectDefinition(dataModel = {  Success } ),
+            StatusType.ADD_SUCCESS to EmbeddedObjectDefinition(dataModel = {  AddSuccess } ),
+            StatusType.AUTH_FAIL to EmbeddedObjectDefinition(dataModel = {  AuthFail } ),
+            StatusType.REQUEST_FAIL to EmbeddedObjectDefinition(dataModel = {  RequestFail } ),
+            StatusType.SERVER_FAIL to EmbeddedObjectDefinition(dataModel = {  ServerFail } ),
+            StatusType.VALIDATION_FAIL to EmbeddedObjectDefinition(dataModel = {  ValidationFail } ),
+            StatusType.ALREADY_EXISTS to EmbeddedObjectDefinition(dataModel = {  AlreadyExists } ),
+            StatusType.DOES_NOT_EXIST to EmbeddedObjectDefinition(dataModel = {  DoesNotExist } )
         )
     )
 )

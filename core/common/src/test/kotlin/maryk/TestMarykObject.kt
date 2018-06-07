@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
@@ -15,7 +16,6 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.IndexedEnum
@@ -49,7 +49,7 @@ data class TestMarykObject(
     val set: Set<Date>? = null,
     val map: Map<Time, String>? = null,
     val valueObject: TestValueObject? = null,
-    val subModel: SubMarykObject? = null,
+    val embeddedObject: EmbeddedMarykObject? = null,
     val multi: TypedValue<Option, *>? = null,
     val reference: Key<TestMarykObject>? = null,
     val listOfString: List<String>? = null,
@@ -152,13 +152,13 @@ data class TestMarykObject(
             getter = TestMarykObject::valueObject
         )
 
-        val subModel = add(
-            index = 11, name = "subModel",
-            definition = SubModelDefinition(
+        val embeddedObject = add(
+            index = 11, name = "embeddedObject",
+            definition = EmbeddedObjectDefinition(
                 required = false,
-                dataModel = { SubMarykObject }
+                dataModel = { EmbeddedMarykObject }
             ),
-            getter = TestMarykObject::subModel
+            getter = TestMarykObject::embeddedObject
         )
 
         val multi = add(
@@ -169,8 +169,8 @@ data class TestMarykObject(
                 definitionMap = mapOf(
                     Option.V0 to StringDefinition(),
                     Option.V1 to NumberDefinition(type = SInt32),
-                    Option.V2 to SubModelDefinition(
-                        dataModel = { SubMarykObject }
+                    Option.V2 to EmbeddedObjectDefinition(
+                        dataModel = { EmbeddedMarykObject }
                     )
                 )
             ),
@@ -226,7 +226,7 @@ data class TestMarykObject(
             set = map(8),
             map = map(9),
             valueObject = map(10),
-            subModel = map(11),
+            embeddedObject = map(11),
             multi = map(12),
             reference = map(13),
             listOfString = map(14)
@@ -234,39 +234,39 @@ data class TestMarykObject(
     }
 }
 
-data class SubMarykObject(
+data class EmbeddedMarykObject(
     val value: String,
-    val model: SubMarykObject? = null,
+    val model: EmbeddedMarykObject? = null,
     val marykModel: TestMarykObject? = null
 ){
-    object Properties : PropertyDefinitions<SubMarykObject>() {
+    object Properties : PropertyDefinitions<EmbeddedMarykObject>() {
         val value = add(
             index = 0, name = "value",
             definition = StringDefinition(),
-            getter = SubMarykObject::value
+            getter = EmbeddedMarykObject::value
         )
-        val model = add(
-            index = 1, name = "model",
-            definition = SubModelDefinition(
+        val embedded = add(
+            index = 1, name = "embedded",
+            definition = EmbeddedObjectDefinition(
                 required = false,
-                dataModel = { SubMarykObject }
+                dataModel = { EmbeddedMarykObject }
             ),
-            getter = SubMarykObject::model
+            getter = EmbeddedMarykObject::model
         )
         val marykModel = add(
             index = 2, name = "marykModel",
-            definition = SubModelDefinition(
+            definition = EmbeddedObjectDefinition(
                 required = false,
                 dataModel = { TestMarykObject }
             ),
-            getter = SubMarykObject::marykModel
+            getter = EmbeddedMarykObject::marykModel
         )
     }
-    companion object: DataModel<SubMarykObject, Properties>(
-        name = "SubMarykObject",
+    companion object: DataModel<EmbeddedMarykObject, Properties>(
+        name = "EmbeddedMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = SubMarykObject(
+        override fun invoke(map: Map<Int, *>) = EmbeddedMarykObject(
             value = map(0),
             model = map(1),
             marykModel = map(2)

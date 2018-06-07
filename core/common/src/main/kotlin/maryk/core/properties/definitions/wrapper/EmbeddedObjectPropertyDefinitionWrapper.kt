@@ -2,23 +2,23 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsSubModelDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
+import maryk.core.properties.references.EmbeddedObjectPropertyRef
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.SubModelPropertyRef
 
 /**
- * Contains a Sub Model property [definition] containing DataObjects of [SDO] and Properties described by [P]
+ * Contains a Embedded Object property [definition] containing DataObjects of [SDO] and Properties described by [P]
  * in a DataModel of [DM]
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO]
  * It has an input context of [CXI] and the functions take context of [CX] so contexts can be transformed
  * to be relevant to the Sub DataModel
  */
-data class SubModelPropertyDefinitionWrapper<
+data class EmbeddedObjectPropertyDefinitionWrapper<
     SDO: Any,
     out P: PropertyDefinitions<SDO>,
     out DM: AbstractDataModel<SDO, P, CXI, CX>,
@@ -26,17 +26,17 @@ data class SubModelPropertyDefinitionWrapper<
 > internal constructor(
     override val index: Int,
     override val name: String,
-    override val definition: SubModelDefinition<SDO, P, DM, CXI, CX>,
+    override val definition: EmbeddedObjectDefinition<SDO, P, DM, CXI, CX>,
     override val getter: (DO) -> SDO?,
     override val capturer: ((CXI, SDO) -> Unit)? = null,
     override val toSerializable: ((SDO?) -> SDO?)? = null,
     override val fromSerializable: ((SDO?) -> SDO?)? = null
 ) :
-    IsSubModelDefinition<SDO, CXI> by definition,
+    IsEmbeddedObjectDefinition<SDO, CXI> by definition,
     IsPropertyDefinitionWrapper<SDO, SDO, CXI, DO>
 {
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
-        SubModelPropertyRef(
+        EmbeddedObjectPropertyRef(
             this,
             parentRef?.let {
                 it as CanHaveComplexChildReference<*, *, *>

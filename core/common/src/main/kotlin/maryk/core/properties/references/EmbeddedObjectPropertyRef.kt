@@ -7,24 +7,24 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /**
- * Reference to a SubModel property containing type [DO] DataObjects, [P] PropertyDefinitions. Which is defined by
+ * Reference to a Embed property containing type [DO] DataObjects, [P] PropertyDefinitions. Which is defined by
  * DataModel of type [DM] and expects context of type [CX] which is transformed into context [CXI] for properties.
  */
-class SubModelPropertyRef<
+class EmbeddedObjectPropertyRef<
     DO : Any,
     out P: PropertyDefinitions<DO>,
     out DM : AbstractDataModel<DO, P, CXI, CX>,
     CXI: IsPropertyContext,
     CX: IsPropertyContext
 > internal constructor(
-    propertyDefinition: SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>,
+    propertyDefinition: EmbeddedObjectPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveComplexChildReference<DO, SubModelPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+): CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name

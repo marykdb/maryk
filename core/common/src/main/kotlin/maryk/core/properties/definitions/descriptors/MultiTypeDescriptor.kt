@@ -14,9 +14,9 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
-import maryk.core.properties.definitions.mapOfPropertyDefSubModelDefinitions
+import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
@@ -57,7 +57,7 @@ private data class MultiTypeDescriptor(
             2, "definition",
             MultiTypeDefinition(
                 typeEnum = PropertyDefinitionType,
-                definitionMap = mapOfPropertyDefSubModelDefinitions
+                definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
             ),
             getter = {
                 val defType = it.definition as IsTransportablePropertyDefinitionType<*>
@@ -202,7 +202,7 @@ internal fun PropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropert
         index, name,
         definition = ContextCollectionTransformerDefinition(
             definition = MultiTypeDescriptorListDefinition(
-                valueDefinition = SubModelDefinition(
+                valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { MultiTypeDescriptor.Model }
                 )
             ),

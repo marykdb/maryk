@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.Bytes
@@ -147,7 +147,7 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
     }
     else -> {
         when (definition) {
-            is SubModelDefinition<*, *, *, *, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
+            is EmbeddedObjectDefinition<*, *, *, *, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
                 return it.generateKotlinValue(value, addImport)
             } ?: throw Exception("DataModel ${definition.dataModel} cannot be used to generate Kotlin code")
             is ValueModelDefinition<*, *> -> definition.dataModel.let {

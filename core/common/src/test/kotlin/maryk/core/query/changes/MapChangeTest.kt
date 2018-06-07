@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -29,7 +29,7 @@ class MapChangeTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { SubMarykObject }
+            TestMarykObject.name to { EmbeddedMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

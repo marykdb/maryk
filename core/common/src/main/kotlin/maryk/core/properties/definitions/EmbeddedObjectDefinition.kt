@@ -6,8 +6,8 @@ import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.ContextualDataModel
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
-import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -21,8 +21,8 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
-/** Definition for sub model properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
+/** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
+class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
     override val searchable: Boolean = true,
     override val required: Boolean = true,
@@ -32,11 +32,11 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
 ) :
     IsValueDefinition<DO, CXI>,
     IsSerializableFlexBytesEncodable<DO, CXI>,
-    IsSubModelDefinition<DO, CXI>,
+    IsEmbeddedObjectDefinition<DO, CXI>,
     IsTransportablePropertyDefinitionType<DO>,
     HasDefaultValueDefinition<DO>
 {
-    override val propertyDefinitionType = PropertyDefinitionType.SubModel
+    override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val wireType = WireType.LENGTH_DELIMITED
 
     private val internalDataModel = lazy(dataModel)
@@ -109,7 +109,7 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is SubModelDefinition<*, *, *, *, *>) return false
+        if (other !is EmbeddedObjectDefinition<*, *, *, *, *>) return false
 
         if (indexed != other.indexed) return false
         if (searchable != other.searchable) return false
@@ -129,14 +129,14 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
         return result
     }
 
-    object Model : ContextualDataModel<SubModelDefinition<*, *, *, *, *>, PropertyDefinitions<SubModelDefinition<*, *, *, *, *>>, DataModelContext, ModelContext>(
+    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, DataModelContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
-        properties = object : PropertyDefinitions<SubModelDefinition<*, *, *, *, *>>() {
+        properties = object : PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, SubModelDefinition<*, *, *, *, *>::indexed)
-                IsPropertyDefinition.addSearchable(this, SubModelDefinition<*, *, *, *, *>::searchable)
-                IsPropertyDefinition.addRequired(this, SubModelDefinition<*, *, *, *, *>::required)
-                IsPropertyDefinition.addFinal(this, SubModelDefinition<*, *, *, *, *>::final)
+                IsPropertyDefinition.addIndexed(this, EmbeddedObjectDefinition<*, *, *, *, *>::indexed)
+                IsPropertyDefinition.addSearchable(this, EmbeddedObjectDefinition<*, *, *, *, *>::searchable)
+                IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
+                IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
                 add(4, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextTransformer = {context: ModelContext? ->
@@ -148,7 +148,7 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = { it: SubModelDefinition<*, *, *, *, *> ->
+                    getter = { it: EmbeddedObjectDefinition<*, *, *, *, *> ->
                         { it.dataModel as DataModel<*, *> }
                     },
                     toSerializable = { it: (() -> DataModel<*, *>)? ->
@@ -170,17 +170,17 @@ class SubModelDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : Abst
                 )
 
                 add(5, "default",
-                    ContextualSubModelDefinition(
+                    ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model ?: throw ContextNotFoundException()
                         }
                     ),
-                    SubModelDefinition<*, *, *, *, *>::default
+                    EmbeddedObjectDefinition<*, *, *, *, *>::default
                 )
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = SubModelDefinition(
+        override fun invoke(map: Map<Int, *>) = EmbeddedObjectDefinition(
             indexed = map(0),
             searchable = map(1),
             required = map(2),

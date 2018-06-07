@@ -5,7 +5,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
+import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.query.DataModelPropertyContext
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
@@ -24,7 +24,7 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
             init {
                 IsObjectRequest.addDataModel(this, AddRequest<*, *>::dataModel)
                 add(1, "objectsToAdd", ListDefinition(
-                    valueDefinition = ContextualSubModelDefinition<DataModelPropertyContext>(
+                    valueDefinition = ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
                         contextualResolver = {
                             it?.dataModel ?: throw ContextNotFoundException()
                         }

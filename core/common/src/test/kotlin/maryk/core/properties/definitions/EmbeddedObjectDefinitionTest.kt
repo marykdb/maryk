@@ -15,7 +15,7 @@ import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-internal class SubModelDefinitionTest {
+internal class EmbeddedObjectDefinitionTest {
     private data class MarykObject(
         val string: String = "jur"
     ){
@@ -36,10 +36,10 @@ internal class SubModelDefinitionTest {
         }
     }
 
-    private val def = SubModelDefinition(
+    private val def = EmbeddedObjectDefinition(
         dataModel = { MarykObject }
     )
-    private val defMaxDefined = SubModelDefinition(
+    private val defMaxDefined = EmbeddedObjectDefinition(
         indexed = true,
         required = false,
         final = true,
@@ -89,20 +89,20 @@ internal class SubModelDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, SubModelDefinition.Model, { DataModelContext() })
-        checkProtoBufConversion(this.defMaxDefined, SubModelDefinition.Model, { DataModelContext() })
+        checkProtoBufConversion(this.def, EmbeddedObjectDefinition.Model, { DataModelContext() })
+        checkProtoBufConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, SubModelDefinition.Model, { DataModelContext() })
-        checkJsonConversion(this.defMaxDefined, SubModelDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.def, EmbeddedObjectDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DataModelContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, SubModelDefinition.Model, { DataModelContext() })
-        checkYamlConversion(this.defMaxDefined, SubModelDefinition.Model, { DataModelContext() }) shouldBe """
+        checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DataModelContext() })
+        checkYamlConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DataModelContext() }) shouldBe """
         indexed: true
         searchable: false
         required: false

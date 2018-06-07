@@ -206,9 +206,9 @@ data class TimelineItem(
         val item = add(1, "item", MultiTypeDefinition(
             final = true,
             typeMap = mapOf(
-                0 to SubModelDefinition(dataModel = Post),
-                1 to SubModelDefinition(dataModel = Event),
-                2 to SubModelDefinition(dataModel = Advertisement)
+                0 to EmbeddedObjectDefinition(dataModel = Post),
+                1 to EmbeddedObjectDefinition(dataModel = Event),
+                2 to EmbeddedObjectDefinition(dataModel = Advertisement)
             )
         ), TimeLineItem::item)
     }

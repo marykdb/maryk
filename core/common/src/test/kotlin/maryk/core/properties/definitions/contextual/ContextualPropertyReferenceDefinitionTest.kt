@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.objects.RootDataModel
@@ -13,7 +13,7 @@ import kotlin.test.Test
 class ContextualPropertyReferenceDefinitionTest {
     private val refsToTest = listOf(
         TestMarykObject.ref { string },
-        TestMarykObject { subModel ref { value } }
+        TestMarykObject { embeddedObject ref { value } }
     )
 
     private val def = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
@@ -24,7 +24,7 @@ class ContextualPropertyReferenceDefinitionTest {
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykObject.name to { TestMarykObject },
-            SubMarykObject.name to { SubMarykObject }
+            EmbeddedMarykObject.name to { EmbeddedMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

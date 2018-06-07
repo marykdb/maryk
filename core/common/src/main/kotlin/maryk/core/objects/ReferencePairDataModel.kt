@@ -3,7 +3,7 @@ package maryk.core.objects
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -83,7 +83,7 @@ internal abstract class ReferenceValuePairsPropertyDefinitions<T: Any, DO: Any> 
     protected fun <T: Any> addReferenceValuePairsDefinition(getter: (DO) -> List<ReferenceValuePair<T>>?) =
         this.add(0, "referenceValuePairs",
             ListDefinition(
-                valueDefinition = SubModelDefinition(
+                valueDefinition = EmbeddedObjectDefinition(
                     dataModel = {
                         @Suppress("UNCHECKED_CAST")
                         ReferenceValuePair as SimpleDataModel<ReferenceValuePair<T>, PropertyDefinitions<ReferenceValuePair<T>>>

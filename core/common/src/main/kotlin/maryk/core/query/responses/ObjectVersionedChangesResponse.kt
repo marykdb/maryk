@@ -4,7 +4,7 @@ import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.query.changes.DataObjectVersionedChange
 
 /** Response with [changes] with all versioned changes since version in request to [dataModel] */
@@ -17,7 +17,7 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO, *>>
             init {
                 IsDataModelResponse.addDataModel(this, ObjectVersionedChangesResponse<*, *>::dataModel)
                 add(1, "changes", ListDefinition(
-                    valueDefinition = SubModelDefinition(
+                    valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { DataObjectVersionedChange }
                     )
                 ), ObjectVersionedChangesResponse<*, *>::changes)

@@ -9,13 +9,13 @@ import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class ContextualSubModelDefinitionTest {
+class ContextualEmbeddedObjectDefinitionTest {
     private val subModelsToTest = listOf(
         SimpleMarykObject("test1"),
         SimpleMarykObject("test2")
     )
 
-    private val def = ContextualSubModelDefinition<DataModelPropertyContext>(
+    private val def = ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
         contextualResolver = { it!!.dataModel!! }
     )
 

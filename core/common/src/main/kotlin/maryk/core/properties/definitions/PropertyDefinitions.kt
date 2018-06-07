@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.SubModelPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelContext
@@ -200,10 +200,10 @@ abstract class PropertyDefinitions<DO: Any>(
     fun <SDO: Any, P: PropertyDefinitions<SDO>, D: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
         index: Int,
         name: String,
-        definition: SubModelDefinition<SDO, P, D, CXI, CX>,
+        definition: EmbeddedObjectDefinition<SDO, P, D, CXI, CX>,
         getter: (DO) -> SDO? = { null },
         capturer: ((CXI, SDO) -> Unit)? = null
-    ) = SubModelPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+    ) = EmbeddedObjectPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
 
@@ -275,7 +275,7 @@ internal data class PropertyDefinitionsCollectionDefinition(
         IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
         PropertyDefinitions<Any>,
         DataModelContext,
-        SubModelDefinition<
+        EmbeddedObjectDefinition<
             IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
             PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>,
             SimpleDataModel<
@@ -294,7 +294,7 @@ internal data class PropertyDefinitionsCollectionDefinition(
     override val maxSize: Int? = null
     override val propertyDefinitionType = PropertyDefinitionType.List
 
-    override val valueDefinition = SubModelDefinition(
+    override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
             IsPropertyDefinitionWrapper.Model as SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>
@@ -358,7 +358,7 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
     override val definition: PropertyDefinitionsCollectionDefinition,
     override val getter: (DO) -> PropertyDefinitions<Any>?
 ) :
-    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<Any>, DataModelContext, SubModelDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<Any>, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<PropertyDefinitions<Any>, PropertyDefinitions<Any>, DataModelContext, DO>
 {
     override val toSerializable: ((PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>?)? = null

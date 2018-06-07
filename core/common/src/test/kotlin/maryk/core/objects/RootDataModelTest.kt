@@ -1,7 +1,7 @@
 package maryk.core.objects
 
 import maryk.Option
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.checkJsonConversion
@@ -22,7 +22,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.Bytes
@@ -54,7 +54,7 @@ internal class RootDataModelTest {
         )
     }
 
-    private val subModelRef = SubMarykObject.Properties.value.getRef(TestMarykObject.Properties.subModel.getRef())
+    private val subModelRef = EmbeddedMarykObject.Properties.value.getRef(TestMarykObject.Properties.embeddedObject.getRef())
     private val mapRef = TestMarykObject.ref { map }
     private val mapKeyRef = TestMarykObject { map key Time(12, 33, 44) }
 
@@ -247,7 +247,7 @@ internal class RootDataModelTest {
         	}, {
         		"index": 10,
         		"name": "valueObject",
-        		"definition": ["ValueModel", {
+        		"definition": ["Value", {
         			"indexed": false,
         			"searchable": true,
         			"required": false,
@@ -257,13 +257,13 @@ internal class RootDataModelTest {
         		}]
         	}, {
         		"index": 11,
-        		"name": "subModel",
-        		"definition": ["SubModel", {
+        		"name": "embeddedObject",
+        		"definition": ["Embed", {
         			"indexed": false,
         			"searchable": true,
         			"required": false,
         			"final": false,
-        			"dataModel": "SubMarykObject"
+        			"dataModel": "EmbeddedMarykObject"
         		}]
         	}, {
         		"index": 12,
@@ -299,12 +299,12 @@ internal class RootDataModelTest {
         			}, {
         				"index": 2,
         				"name": "V2",
-        				"definition": ["SubModel", {
+        				"definition": ["Embed", {
         					"indexed": false,
         					"searchable": true,
         					"required": true,
         					"final": false,
-        					"dataModel": "SubMarykObject"
+        					"dataModel": "EmbeddedMarykObject"
         				}]
         			}]
         		}]
@@ -477,20 +477,20 @@ internal class RootDataModelTest {
               final: false
               unique: false
           ? 10: valueObject
-          : !ValueModel
+          : !Value
             indexed: false
             searchable: true
             required: false
             final: false
             unique: false
             dataModel: TestValueObject
-          ? 11: subModel
-          : !SubModel
+          ? 11: embeddedObject
+          : !Embed
             indexed: false
             searchable: true
             required: false
             final: false
-            dataModel: SubMarykObject
+            dataModel: EmbeddedMarykObject
           ? 12: multi
           : !MultiType
             indexed: false
@@ -516,12 +516,12 @@ internal class RootDataModelTest {
                 type: SInt32
                 random: false
               ? 2: V2
-              : !SubModel
+              : !Embed
                 indexed: false
                 searchable: true
                 required: true
                 final: false
-                dataModel: SubMarykObject
+                dataModel: EmbeddedMarykObject
           ? 13: reference
           : !Reference
             indexed: false
@@ -592,11 +592,11 @@ internal class RootDataModelTest {
         |  : !Map
         |    keyDefinition: !Date
         |    valueDefinition: !String
-        |  ? 11: model
-        |  : !SubModel
+        |  ? 11: embedded
+        |  : !Embed
         |    dataModel: TestMarykObject
         |  ? 12: value
-        |  : !ValueModel
+        |  : !Value
         |    dataModel: TestValueObject
         |  ? 13: ref
         |  : !Reference
@@ -681,9 +681,9 @@ internal class RootDataModelTest {
                     valueDefinition = StringDefinition()
                 )
             }
-            properties.getDefinition("model")!!.let {
+            properties.getDefinition("embedded")!!.let {
                 it.index shouldBe 11
-                it.definition shouldBe SubModelDefinition(
+                it.definition shouldBe EmbeddedObjectDefinition(
                     dataModel = { TestMarykObject }
                 )
             }

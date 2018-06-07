@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.core.objects.ReferenceMappedDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeWriter
 
@@ -19,7 +19,7 @@ data class ListChange internal constructor(
         init {
             add(0, "referenceListValueChangesPairs",
                 ListDefinition(
-                    valueDefinition = SubModelDefinition(
+                    valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { ListValueChanges }
                     )
                 ),

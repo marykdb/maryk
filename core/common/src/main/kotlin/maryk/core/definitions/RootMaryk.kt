@@ -5,7 +5,7 @@ import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
@@ -24,11 +24,11 @@ data class RootMaryk(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = Operation,
                     definitionMap = mapOf(
-                        Operation.Define to SubModelDefinition(
+                        Operation.Define to EmbeddedObjectDefinition(
                             dataModel = { Definitions }
                         ),
                         Operation.Request to ContextTransformerDefinition<Requests, DataModelContext, DataModelPropertyContext>(
-                            definition = SubModelDefinition(
+                            definition = EmbeddedObjectDefinition(
                                 dataModel = { Requests }
                             ),
                             contextTransformer = {

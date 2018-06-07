@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.IndexedEnumDefinition
@@ -33,7 +33,7 @@ data class Definitions(
                     typeEnum = PrimitiveType,
                     definitionMap = mapOf(
                         PrimitiveType.Model to ContextCaptureDefinition(
-                            definition = SubModelDefinition(
+                            definition = EmbeddedObjectDefinition(
                                 dataModel = { DataModel.Model }
                             ),
                             capturer = { context, model ->
@@ -43,7 +43,7 @@ data class Definitions(
                             }
                         ),
                         PrimitiveType.ValueModel to ContextCaptureDefinition(
-                            definition = SubModelDefinition(
+                            definition = EmbeddedObjectDefinition(
                                 dataModel = { ValueDataModel.Model }
                             ),
                             capturer = { context, model ->
@@ -53,7 +53,7 @@ data class Definitions(
                             }
                         ),
                         PrimitiveType.RootModel to ContextCaptureDefinition(
-                            definition = SubModelDefinition(
+                            definition = EmbeddedObjectDefinition(
                                 dataModel = { RootDataModel.Model }
                             ),
                             capturer = { context: DataModelContext?, model ->
@@ -62,7 +62,7 @@ data class Definitions(
                                 } ?: throw ContextNotFoundException()
                             }
                         ),
-                        PrimitiveType.EnumDefinition to SubModelDefinition(
+                        PrimitiveType.EnumDefinition to EmbeddedObjectDefinition(
                             dataModel = { IndexedEnumDefinition.Model }
                         )
                     ) as Map<PrimitiveType, IsSubDefinition<out Any, DataModelContext>>

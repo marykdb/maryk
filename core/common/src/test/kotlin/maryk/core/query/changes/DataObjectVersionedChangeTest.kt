@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -18,7 +18,7 @@ class DataObjectVersionedChangeTest {
         byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
-    private val subModel = TestMarykObject.ref { subModel }
+    private val subModel = TestMarykObject.ref { embeddedObject }
 
     private val dataObjectVersionedChanges = DataObjectVersionedChange(
         key = key1,
@@ -35,9 +35,9 @@ class DataObjectVersionedChangeTest {
             VersionedChanges(
                 319674127L.toUInt64(),
                 listOf(
-                    Change(SubMarykObject.ref(subModel) { value } with "new"),
-                    Delete(SubMarykObject.ref(subModel) { value }),
-                    Check(SubMarykObject.ref(subModel) { value } with "current")
+                    Change(EmbeddedMarykObject.ref(subModel) { value } with "new"),
+                    Delete(EmbeddedMarykObject.ref(subModel) { value }),
+                    Check(EmbeddedMarykObject.ref(subModel) { value } with "current")
                 )
             )
         )
@@ -46,7 +46,7 @@ class DataObjectVersionedChangeTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         dataModels = mapOf(
-            SubMarykObject.name to { SubMarykObject },
+            EmbeddedMarykObject.name to { EmbeddedMarykObject },
             TestMarykObject.name to { TestMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
@@ -80,10 +80,10 @@ class DataObjectVersionedChangeTest {
         - version: 0x00000000130dd70f
           changes:
           - !Change
-            subModel.value: new
-          - !Delete subModel.value
+            embeddedObject.value: new
+          - !Delete embeddedObject.value
           - !Check
-            subModel.value: current
+            embeddedObject.value: current
 
         """.trimIndent()
     }

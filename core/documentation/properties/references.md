@@ -8,7 +8,7 @@ These operations can be defined in Kotlin or any of the serialization formats Ma
 
 ## Example models
 
-This Person model has 2 top level fields (firstName, lastName) and a SubModel named Address 
+This Person model has 2 top level fields (firstName, lastName) and an Embed named Address 
 ```yaml
 name: Person
 properties:
@@ -17,7 +17,7 @@ properties:
   ? 1: lastName
   : !String
   ? 2: livingAddress
-  : !SubModel
+  : !Embed
     dataModel: Address
 ```
 

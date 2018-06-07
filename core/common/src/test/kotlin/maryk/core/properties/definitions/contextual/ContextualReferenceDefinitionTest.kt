@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
@@ -28,7 +28,7 @@ class ContextualReferenceDefinitionTest {
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykObject.name to { TestMarykObject },
-            SubMarykObject.name to { SubMarykObject }
+            EmbeddedMarykObject.name to { EmbeddedMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
     )

@@ -58,7 +58,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
-                            definitionMap = mapOfPropertyDefSubModelDefinitions
+                            definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
                         )
                     ),
                     getter = ListDefinition<*, *>::valueDefinition,

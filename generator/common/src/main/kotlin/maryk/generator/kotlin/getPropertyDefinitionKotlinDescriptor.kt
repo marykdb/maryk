@@ -20,7 +20,7 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.IndexedEnum
@@ -214,10 +214,10 @@ private val definitionNamesMap = mapOf(
         kotlinTypeName = { "String" },
         definitionModel = StringDefinition.Model
     ),
-    PropertyDefinitionType.SubModel to PropertyDefinitionKotlinDescriptor(
-        className = "SubModelDefinition",
+    PropertyDefinitionType.Embed to PropertyDefinitionKotlinDescriptor(
+        className = "EmbeddedObjectDefinition",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = SubModelDefinition.Model as IsDataModel<SubModelDefinition<Any, *, DataModel<Any, *>, *, *>>,
+        definitionModel = EmbeddedObjectDefinition.Model as IsDataModel<EmbeddedObjectDefinition<Any, *, DataModel<Any, *>, *, *>>,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition
         )
@@ -228,7 +228,7 @@ private val definitionNamesMap = mapOf(
         imports = { timeImports },
         definitionModel = TimeDefinition.Model
     ),
-    PropertyDefinitionType.ValueModel to PropertyDefinitionKotlinDescriptor(
+    PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueModelDefinition",
         kotlinTypeName = { it -> it.dataModel.name },
         definitionModel = ValueModelDefinition.Model as IsDataModel<ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>>>,

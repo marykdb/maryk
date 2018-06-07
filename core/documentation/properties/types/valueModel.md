@@ -28,7 +28,7 @@ This makes them usable as map keys and list/set items.
 
 **Example of a YAML ValueModel property definition**
 ```yaml
-!ValueModel
+!Value
   dataModel: PersonRoleInPeriod
   required: false
   final: true

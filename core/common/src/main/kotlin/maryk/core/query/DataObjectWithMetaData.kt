@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
-import maryk.core.properties.definitions.contextual.ContextualSubModelDefinition
+import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt64
 
@@ -25,7 +25,7 @@ data class DataObjectWithMetaData<out DO: Any>(
                         it?.dataModel?.key ?: throw ContextNotFoundException()
                     }
                 ), DataObjectWithMetaData<*>::key)
-                add(1, "dataObject", ContextualSubModelDefinition<DataModelPropertyContext>(
+                add(1, "dataObject", ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
                     contextualResolver = {
                         it?.dataModel ?: throw ContextNotFoundException()
                     }

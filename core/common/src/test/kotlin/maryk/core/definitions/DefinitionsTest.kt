@@ -1,8 +1,8 @@
 package maryk.core.definitions
 
+import maryk.EmbeddedMarykObject
 import maryk.Option
 import maryk.SimpleMarykObject
-import maryk.SubMarykObject
 import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.checkJsonConversion
@@ -20,7 +20,7 @@ class DefinitionsTest {
     private val definitions = Definitions(
         TestValueObject,
         SimpleMarykObject,
-        SubMarykObject,
+        EmbeddedMarykObject,
         TestMarykObject,
         Option
     )
@@ -186,20 +186,20 @@ class DefinitionsTest {
                 final: false
                 unique: false
             ? 10: valueObject
-            : !ValueModel
+            : !Value
               indexed: false
               searchable: true
               required: false
               final: false
               unique: false
               dataModel: TestValueObject
-            ? 11: subModel
-            : !SubModel
+            ? 11: embeddedObject
+            : !Embed
               indexed: false
               searchable: true
               required: false
               final: false
-              dataModel: SubMarykObject
+              dataModel: EmbeddedMarykObject
             ? 12: multi
             : !MultiType
               indexed: false
@@ -225,12 +225,12 @@ class DefinitionsTest {
                   type: SInt32
                   random: false
                 ? 2: V2
-                : !SubModel
+                : !Embed
                   indexed: false
                   searchable: true
                   required: true
                   final: false
-                  dataModel: SubMarykObject
+                  dataModel: EmbeddedMarykObject
             ? 13: reference
             : !Reference
               indexed: false

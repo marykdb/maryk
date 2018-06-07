@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.SubMarykObject
+import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -26,7 +26,7 @@ import kotlin.test.Test
 class ObjectVersionedChangesResponseTest {
     private val key = TestMarykObject.key("AAACKwEBAQAC")
 
-    private val subModel = TestMarykObject.ref { subModel }
+    private val subModel = TestMarykObject.ref { embeddedObject }
 
     private val objectVersionedChangesResponse = ObjectVersionedChangesResponse(
         TestMarykObject,
@@ -46,9 +46,9 @@ class ObjectVersionedChangesResponseTest {
                     VersionedChanges(
                         319674127L.toUInt64(),
                         listOf(
-                            Change(SubMarykObject.ref(subModel) { value } with "new"),
-                            Delete(SubMarykObject.ref(subModel) { value }),
-                            Check(SubMarykObject.ref(subModel) { value } with "current")
+                            Change(EmbeddedMarykObject.ref(subModel) { value } with "new"),
+                            Delete(EmbeddedMarykObject.ref(subModel) { value }),
+                            Check(EmbeddedMarykObject.ref(subModel) { value } with "current")
                         )
                     )
                 )
@@ -59,7 +59,7 @@ class ObjectVersionedChangesResponseTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         dataModels = mapOf(
-            SubMarykObject.name to { SubMarykObject },
+            EmbeddedMarykObject.name to { EmbeddedMarykObject },
             TestMarykObject.name to { TestMarykObject }
         ),
         dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
@@ -95,10 +95,10 @@ class ObjectVersionedChangesResponseTest {
           - version: 0x00000000130dd70f
             changes:
             - !Change
-              subModel.value: new
-            - !Delete subModel.value
+              embeddedObject.value: new
+            - !Delete embeddedObject.value
             - !Check
-              subModel.value: current
+              embeddedObject.value: current
 
         """.trimIndent()
     }

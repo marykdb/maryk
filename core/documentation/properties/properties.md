@@ -7,24 +7,24 @@ and stored.
 
 ## Types of properties
 
-|Type                             |Keyable |MapKey |MapValue |List   |Indexable   |
-|:--------------------------------|:------:|:-----:|:-------:|:-----:|:----------:|
-|[String](types/string.md)        |false   |false  |true     |true   |true        |
-|[Boolean](types/boolean.md)      |true    |true   |true     |true   |true        |
-|[Number](types/number.md)*       |true    |true   |true     |true   |true        |
-|[Enum](types/enum.md)            |true    |true   |true     |true   |true        |
-|[Date](types/date.md)            |true    |true   |true     |true   |true        |
-|[Time](types/time.md)            |true    |true   |true     |true   |true        |
-|[DateTime](types/datetime.md)    |true    |true   |true     |true   |true        |
-|[Reference](types/reference.md)  |true    |true   |true     |true   |true        |
-|[FixedBytes](types/fixedBytes.md)|true    |true   |true     |true   |true        |
-|[FlexBytes](types/flexBytes.md)  |false   |false  |true     |true   |true        |
-|[MultiType](types/multiType.md)  |typeId**|false  |false    |false  |true        |
-|[List](types/list.md)            |false   |false  |false    |false  |true        |
-|[Set](types/set.md)              |false   |false  |false    |false  |true        |
-|[Map](types/map.md)              |false   |false  |false    |false  |key only    |
-|[SubModel](types/subModel.md)    |false   |false  |true     |false  |subProp only|
-|[ValueModel](types/valueModel.md)|false   |true   |true     |true   |true        |
+|Type                                     |Keyable |MapKey |MapValue |List   |Indexable   |
+|:----------------------------------------|:------:|:-----:|:-------:|:-----:|:----------:|
+|[String](types/string.md)                |false   |false  |true     |true   |true        |
+|[Boolean](types/boolean.md)              |true    |true   |true     |true   |true        |
+|[Number](types/number.md)*               |true    |true   |true     |true   |true        |
+|[Enum](types/enum.md)                    |true    |true   |true     |true   |true        |
+|[Date](types/date.md)                    |true    |true   |true     |true   |true        |
+|[Time](types/time.md)                    |true    |true   |true     |true   |true        |
+|[DateTime](types/datetime.md)            |true    |true   |true     |true   |true        |
+|[Reference](types/reference.md)          |true    |true   |true     |true   |true        |
+|[FixedBytes](types/fixedBytes.md)        |true    |true   |true     |true   |true        |
+|[FlexBytes](types/flexBytes.md)          |false   |false  |true     |true   |true        |
+|[MultiType](types/multiType.md)          |typeId**|false  |false    |false  |true        |
+|[List](types/list.md)                    |false   |false  |false    |false  |true        |
+|[Set](types/set.md)                      |false   |false  |false    |false  |true        |
+|[Map](types/map.md)                      |false   |false  |false    |false  |key only    |
+|[EmbeddedObject](types/embeddedObject.md)|false   |false  |true     |false  |subProp only|
+|[ValueModel](types/valueModel.md)        |false   |true   |true     |true   |true        |
 
 \* All numeric properties like Int8/16/32/64, UInt8/16/32/64, Float, Double 
 

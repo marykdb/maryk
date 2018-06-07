@@ -4,7 +4,7 @@ import maryk.TestMarykObject
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.SubModelDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
@@ -13,7 +13,7 @@ import kotlin.test.Test
 
 private object Properties : PropertyDefinitions<Any>()
 
-private val modelDefinition = Properties.add(2, "subModel", SubModelDefinition(
+private val modelDefinition = Properties.add(2, "embeddedObject", EmbeddedObjectDefinition(
     dataModel = { TestMarykObject }
 ))
 
@@ -26,7 +26,7 @@ internal class PropertyReferenceTest {
     @Test
     fun getCompleteName() {
         ref.completeName shouldBe "test"
-        subRef.completeName shouldBe "subModel.test"
+        subRef.completeName shouldBe "embeddedObject.test"
     }
 
     @Test

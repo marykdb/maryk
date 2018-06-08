@@ -19,7 +19,8 @@ interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO, *>>: IsRequest {
                 ContextualModelReferenceDefinition<RootDataModel<*, *>, DataModelPropertyContext>(
                     contextualResolver = { context, name ->
                         context?.let {
-                            it.dataModels[name]?.invoke() as RootDataModel<*, *>? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            @Suppress("UNCHECKED_CAST")
+                            it.dataModels[name] as (() -> RootDataModel<*, *>)? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),

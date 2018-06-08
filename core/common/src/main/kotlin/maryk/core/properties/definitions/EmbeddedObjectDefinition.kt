@@ -9,6 +9,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -144,7 +145,8 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
                         },
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let{
-                                it.dataModels[name]?.invoke() ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                it.dataModels[name]
+                                        ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -156,23 +158,23 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
                             DataModelReference(model.name, it)
                         }
                     },
-                    fromSerializable = { it: DataModelReference<DataModel<*, *>>? -> it?.get },
-                    capturer = { context: ModelContext, dataModel: DataModelReference<DataModel<*, *>> ->
-                        @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel.get() as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
-
+                    fromSerializable = { it: IsDataModelReference<DataModel<*, *>>? -> it?.get },
+                    capturer = { context: ModelContext, dataModel: IsDataModelReference<DataModel<*, *>> ->
                         context.dataModelContext?.let {
                             if (!it.dataModels.containsKey(dataModel.name)) {
                                 it.dataModels[dataModel.name] = dataModel.get
                             }
                         } ?: throw ContextNotFoundException()
+
+                        @Suppress("UNCHECKED_CAST")
+                        context.model = dataModel.get as () -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                     }
                 )
 
                 add(5, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model ?: throw ContextNotFoundException()
+                            context?.model?.invoke() ?: throw ContextNotFoundException()
                         }
                     ),
                     EmbeddedObjectDefinition<*, *, *, *, *>::default

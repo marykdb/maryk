@@ -95,7 +95,8 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                         contextTransformer = { it?.dataModelContext },
                         contextualResolver = { context, name ->
                             context?.let {
-                                it.dataModels[name]?.invoke() as ValueDataModel<*, *>? ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
+                                @Suppress("UNCHECKED_CAST")
+                                it.dataModels[name] as (() -> ValueDataModel<*, *>)? ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -110,14 +111,14 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                     },
                     capturer = { context, dataModel ->
                         context.let {
-                            @Suppress("UNCHECKED_CAST")
-                            context.model = dataModel.get() as AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
-
                             context.dataModelContext?.let {
                                 if (!it.dataModels.containsKey(dataModel.name)) {
                                     it.dataModels[dataModel.name] = dataModel.get
                                 }
                             } ?: throw ContextNotFoundException()
+
+                            @Suppress("UNCHECKED_CAST")
+                            context.model = dataModel.get as () -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                         }
                     }
                 )
@@ -125,7 +126,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 add(6, "minValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model ?: throw ContextNotFoundException()
+                            context?.model?.invoke() ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModelDefinition<*, *>::minValue
@@ -134,7 +135,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 add(7, "maxValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model ?: throw ContextNotFoundException()
+                            context?.model?.invoke() ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModelDefinition<*, *>::maxValue
@@ -143,7 +144,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                 add(8, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model ?: throw ContextNotFoundException()
+                            context?.model?.invoke() ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModelDefinition<*, *>::default

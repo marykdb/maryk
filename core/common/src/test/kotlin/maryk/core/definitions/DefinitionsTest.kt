@@ -27,17 +27,17 @@ class DefinitionsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions)
+        checkProtoBufConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions, true)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions)
+        checkJsonConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions, true)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions) shouldBe """
+        checkYamlConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions, true) shouldBe """
         - !ValueModel
           name: TestValueObject
           properties:

@@ -11,5 +11,5 @@ import maryk.core.query.DataModelContext
 class ModelContext(
     val dataModelContext: DataModelContext?
 ) : IsPropertyContext {
-    var model: AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>? = null
+    var model: (() -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>)? = null
 }

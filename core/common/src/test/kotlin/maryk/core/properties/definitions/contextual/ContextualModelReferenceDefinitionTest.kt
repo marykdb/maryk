@@ -16,7 +16,7 @@ class ContextualModelReferenceDefinitionTest {
     )
 
     private val def = ContextualModelReferenceDefinition<DataModel<*, *>, DataModelPropertyContext>(
-        contextualResolver = { context, name -> context!!.dataModels[name]!!.invoke() }
+        contextualResolver = { context, name -> context!!.dataModels[name]!! }
     )
 
     @Suppress("UNCHECKED_CAST")

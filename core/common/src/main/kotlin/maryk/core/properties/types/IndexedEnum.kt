@@ -2,12 +2,13 @@ package maryk.core.properties.types
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
-import maryk.core.objects.QueryDataModel
+import maryk.core.objects.AbstractDataModel
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.numeric.SInt32
+import maryk.core.query.DataModelContext
 
 interface IndexedEnum<in E>: Comparable<E>{
     val index: Int
@@ -61,7 +62,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal object Model: QueryDataModel<IndexedEnumDefinition<IndexedEnum<Any>>>(
+    internal object Model: AbstractDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, DataModelContext, DataModelContext>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = IndexedEnumDefinition<IndexedEnum<Any>>(

@@ -62,8 +62,15 @@ data class Definitions(
                                 } ?: throw ContextNotFoundException()
                             }
                         ),
-                        PrimitiveType.EnumDefinition to EmbeddedObjectDefinition(
-                            dataModel = { IndexedEnumDefinition.Model }
+                        PrimitiveType.EnumDefinition to ContextCaptureDefinition(
+                            definition = EmbeddedObjectDefinition(
+                                dataModel = { IndexedEnumDefinition.Model }
+                            ),
+                            capturer = { context, value ->
+                                context?.let{
+                                    it.enums[value.name] = value
+                                } ?: throw ContextNotFoundException()
+                            }
                         )
                     ) as Map<PrimitiveType, IsSubDefinition<out Any, DataModelContext>>
                 )

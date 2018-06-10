@@ -4,21 +4,21 @@ import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.QueryDataModel
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.objects.AbstractDataModel
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.query.DataModelContext
+import maryk.core.yaml.createMarykYamlModelReader
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class IndexedEnumTest {
-    private val context = DataModelPropertyContext(mapOf())
-
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             Option,
-            IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
-            { context },
+            IndexedEnumDefinition.Model as AbstractDataModel<Option.Companion, PropertyDefinitions<Option.Companion>, DataModelContext, DataModelContext>,
+            null,
             ::compareEnumDefinitions
         )
     }
@@ -28,8 +28,8 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             Option,
-            IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
-            { context },
+            IndexedEnumDefinition.Model as AbstractDataModel<Option.Companion, PropertyDefinitions<Option.Companion>, DataModelContext, DataModelContext>,
+            null,
             ::compareEnumDefinitions
         )
     }
@@ -39,10 +39,17 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkYamlConversion(
             Option,
-            IndexedEnumDefinition.Model as QueryDataModel<Option.Companion>,
-            { context },
+            IndexedEnumDefinition.Model as AbstractDataModel<Option.Companion, PropertyDefinitions<Option.Companion>, DataModelContext, DataModelContext>,
+            null,
             ::compareEnumDefinitions
-        )
+        ) shouldBe """
+        name: Option
+        values:
+          0: V0
+          1: V1
+          2: V2
+
+        """.trimIndent()
     }
 }
 

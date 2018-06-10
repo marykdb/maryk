@@ -18,11 +18,11 @@ import kotlin.test.Test
 
 class DefinitionsTest {
     private val definitions = Definitions(
+        Option,
         TestValueObject,
         SimpleMarykObject,
         EmbeddedMarykObject,
-        TestMarykObject,
-        Option
+        TestMarykObject
     )
 
     @Test
@@ -38,6 +38,12 @@ class DefinitionsTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.definitions, Definitions, { DataModelContext() }, ::compareDefinitions, true) shouldBe """
+        - !EnumDefinition
+          name: Option
+          values:
+            0: V0
+            1: V1
+            2: V2
         - !ValueModel
           name: TestValueObject
           properties:
@@ -297,12 +303,6 @@ class DefinitionsTest {
               final: false
               unique: false
               dataModel: TestMarykObject
-        - !EnumDefinition
-          name: Option
-          values:
-            0: V0
-            1: V1
-            2: V2
 
         """.trimIndent()
     }

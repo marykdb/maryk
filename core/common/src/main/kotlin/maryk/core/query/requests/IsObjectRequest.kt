@@ -25,8 +25,8 @@ interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO, *>>: IsRequest {
                     }
                 ),
                 getter = getter,
-                toSerializable = {
-                    it?.let{
+                toSerializable = { value, _ ->
+                    value?.let{
                         DataModelReference(it.name){ it }
                     }
                 },

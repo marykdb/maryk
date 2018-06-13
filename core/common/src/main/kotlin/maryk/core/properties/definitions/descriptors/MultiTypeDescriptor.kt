@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.descriptors
 
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -14,7 +15,6 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -48,7 +48,7 @@ private data class MultiTypeDescriptor(
         val index = add(0, "index",
             NumberDefinition(type = UInt32),
             MultiTypeDescriptor::index,
-            toSerializable = { it?.toUInt32() },
+            toSerializable = { value, _ -> value?.toUInt32() },
             fromSerializable = { it?.toInt() }
         )
         val name = add(1, "name", StringDefinition(), MultiTypeDescriptor::name)
@@ -91,12 +91,12 @@ private data class MultiTypeDescriptor(
         override fun writeJson(obj: MultiTypeDescriptor, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             // When writing YAML, use YAML optimized format with complex field names
             if (writer is YamlWriter) {
-                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj)
+                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as DataModelContext?)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index)
 
-                Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext?)
+                Properties.definition.writeJsonValue(typedDefinition, writer, context)
             } else {
                 super.writeJson(obj, writer, context)
             }
@@ -178,7 +178,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val index: Int,
     override val name: String,
     override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, DataModelContext>,
-    override val toSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
+    override val toSerializable: ((List<MultiTypeDescriptor>?, MultiTypeDefinitionContext?) -> List<MultiTypeDescriptor>?)? = null,
     override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
     override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
     override val getter: (MultiTypeDefinition<IndexedEnum<Any>, DataModelContext>) -> List<MultiTypeDescriptor>?

@@ -21,7 +21,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
     override val definition: SetDefinition<T, CX>,
     override val getter: (DO) -> Set<T>?,
     override val capturer: ((CX, Set<T>) -> Unit)? = null,
-    override val toSerializable: ((Set<T>?) -> Set<T>?)? = null,
+    override val toSerializable: ((Set<T>?, CX?) -> Set<T>?)? = null,
     override val fromSerializable: ((Set<T>?) -> Set<T>?)? = null
 ) :
     IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,

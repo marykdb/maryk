@@ -26,7 +26,7 @@ interface IsFixedBytesEncodable<T: Any> {
             definitions.add(index, "byteSize",
                 NumberDefinition(type = UInt32),
                 getter,
-                toSerializable = { it?.toUInt32() },
+                toSerializable = { value, _ -> value?.toUInt32() },
                 fromSerializable = { it?.toInt() }
             )
         }

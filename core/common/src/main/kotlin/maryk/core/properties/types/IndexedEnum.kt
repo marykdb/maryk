@@ -2,11 +2,13 @@ package maryk.core.properties.types
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
-import maryk.core.objects.AbstractDataModel
+import maryk.core.objects.ContextualDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.DataModelContext
 
@@ -44,17 +46,49 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
 
     internal object Properties : PropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
         init {
-            add(0, "name", StringDefinition(), IndexedEnumDefinition<*>::name)
+            add(0, "name",
+                ContextCaptureDefinition(
+                    definition = StringDefinition(),
+                    capturer = { context: EnumNameContext?, value ->
+                        context?.let {
+                            it.name = value
+                        }
+                    }
+                ),
+                IndexedEnumDefinition<*>::name
+            )
+
+            @Suppress("UNCHECKED_CAST")
             add(1, "values",
                 MapDefinition(
                     keyDefinition = NumberDefinition(
                         type = SInt32
                     ),
                     valueDefinition = StringDefinition()
-                ),
+                ) as MapDefinition<Int, String, EnumNameContext>,
                 IndexedEnumDefinition<*>::values,
-                toSerializable = {
-                    it?.invoke()?.map { v: IndexedEnum<*> -> Pair(v.index, v.name) }?.toMap()
+                toSerializable = { value, context ->
+                    // If Enum was defined before and is thus available in context, don't include the values again
+                    val toReturnNull = context?.let { enumNameContext ->
+                        if (enumNameContext.isOriginalDefinition == true) {
+                            false
+                        } else {
+                            enumNameContext.dataModelContext?.let {
+                                if(it.enums[enumNameContext.name] == null) {
+                                    enumNameContext.isOriginalDefinition = true
+                                    false
+                                } else {
+                                    true
+                                }
+                            }
+                        }
+                    } ?: false
+
+                    if (toReturnNull) {
+                        null
+                    } else {
+                        value?.invoke()?.map { v: IndexedEnum<*> -> Pair(v.index, v.name) }?.toMap()
+                    }
                 },
                 fromSerializable = {
                     {
@@ -67,12 +101,20 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal object Model: AbstractDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, DataModelContext, DataModelContext>(
-        properties = Properties
+    internal object Model: ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, DataModelContext, EnumNameContext>(
+        properties = Properties,
+        contextTransformer = { EnumNameContext(it) }
     ) {
         override fun invoke(map: Map<Int, *>) = IndexedEnumDefinition<IndexedEnum<Any>>(
             name = map(0),
             optionalValues = map(1)
         )
     }
+}
+
+class EnumNameContext(
+    val dataModelContext: DataModelContext? = null
+): IsPropertyContext {
+    var name: String? = null
+    var isOriginalDefinition: Boolean? = false
 }

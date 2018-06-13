@@ -51,7 +51,7 @@ data class Or(
 
         override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
-                Properties.filters.getPropertyAndSerialize(obj) ?: throw ParseException("Missing filters in Or"),
+                Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in Or"),
                 writer,
                 context
             )

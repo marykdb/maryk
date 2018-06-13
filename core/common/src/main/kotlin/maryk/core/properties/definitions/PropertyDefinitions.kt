@@ -47,9 +47,9 @@ abstract class PropertyDefinitions<DO: Any>(
     fun getDefinition(index: Int) = indexToDefinition[index]
 
     /** Get a method to retrieve property from DataObject by [name] */
-    fun getPropertyGetter(name: String): ((DO) -> Any?)? = { nameToDefinition[name]?.getPropertyAndSerialize(it) }
+    fun getPropertyGetter(name: String): ((DO) -> Any?)? = { nameToDefinition[name]?.getPropertyAndSerialize(it, null) }
     /** Get a method to retrieve property from DataObject by [index] */
-    fun getPropertyGetter(index: Int): ((DO) -> Any?)? = { indexToDefinition[index]?.getPropertyAndSerialize(it) }
+    fun getPropertyGetter(index: Int): ((DO) -> Any?)? = { indexToDefinition[index]?.getPropertyAndSerialize(it, null) }
 
     init {
         for (it in properties) {
@@ -62,8 +62,8 @@ abstract class PropertyDefinitions<DO: Any>(
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
 
-        require(propertyDefinitionWrapper.index in (0..Short.MAX_VALUE), { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" })
-        require(indexToDefinition[propertyDefinitionWrapper.index] == null, { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" })
+        require(propertyDefinitionWrapper.index in (0..Short.MAX_VALUE)) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
+        require(indexToDefinition[propertyDefinitionWrapper.index] == null) { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" }
         indexToDefinition[propertyDefinitionWrapper.index] = propertyDefinitionWrapper
         nameToDefinition[propertyDefinitionWrapper.name] = propertyDefinitionWrapper
     }
@@ -74,7 +74,7 @@ abstract class PropertyDefinitions<DO: Any>(
         name: String,
         definition: D,
         getter: (DO) -> TO? = { null },
-        toSerializable: (TO?) -> T?,
+        toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?,
         capturer: ((CX, T) -> Unit)? = null
     ) = PropertyDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable).apply {
@@ -99,7 +99,7 @@ abstract class PropertyDefinitions<DO: Any>(
         definition: D,
         getter: (DO) -> TO? = { null },
         capturer: ((CX, T) -> Unit)? = null,
-        toSerializable: (TO?) -> T?,
+        toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?
     ) = FixedBytesPropertyDefinitionWrapper(
         index,
@@ -146,11 +146,11 @@ abstract class PropertyDefinitions<DO: Any>(
         fromSerializable: (T) -> TO
     ) = ListPropertyDefinitionWrapper(
         index, name, definition, getter, capturer,
-        toSerializable = {
-            it?.map { toSerializable(it) }
+        toSerializable = { value, _ ->
+            value?.map { toSerializable(it) }
         },
-        fromSerializable = { it: List<T>? ->
-            it?.map { fromSerializable(it) }
+        fromSerializable = { value: List<T>? ->
+            value?.map { fromSerializable(it) }
         }
     ).apply {
         addSingle(this)
@@ -188,7 +188,7 @@ abstract class PropertyDefinitions<DO: Any>(
         definition: MapDefinition<K, V, CX>,
         getter: (DO) -> TO? = { null },
         capturer: ((CX, Map<K, V>) -> Unit)? = null,
-        toSerializable: (TO?) -> Map<K, V>?,
+        toSerializable: (TO?, CX?) -> Map<K, V>?,
         fromSerializable: (Map<K, V>?) -> TO?
     ) = MapPropertyDefinitionWrapper(
         index, name, definition, getter, capturer, toSerializable, fromSerializable
@@ -198,17 +198,6 @@ abstract class PropertyDefinitions<DO: Any>(
 
     /** Add embedded object property [definition] with [name] and [index] and value [getter] */
     fun <EODO: Any, P: PropertyDefinitions<EODO>, D: AbstractDataModel<EODO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
-        index: Int,
-        name: String,
-        definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
-        getter: (DO) -> EODO? = { null },
-        capturer: ((CXI, EODO) -> Unit)? = null
-    ) = EmbeddedObjectPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
-        addSingle(this)
-    }
-
-    /** Add sub model property [definition] with [name] and [index] and value [getter] */
-    fun <EODO: Any, P: PropertyDefinitions<EODO>, D: AbstractDataModel<EODO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> addSM(
         index: Int,
         name: String,
         definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
@@ -372,7 +361,7 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
     IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<Any>, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<PropertyDefinitions<Any>, PropertyDefinitions<Any>, DataModelContext, DO>
 {
-    override val toSerializable: ((PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>?)? = null
+    override val toSerializable: ((PropertyDefinitions<Any>?, DataModelContext?) -> PropertyDefinitions<Any>?)? = null
     override val fromSerializable: ((PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>?)? = null
     override val capturer: ((DataModelContext, PropertyDefinitions<Any>) -> Unit)? = null
 

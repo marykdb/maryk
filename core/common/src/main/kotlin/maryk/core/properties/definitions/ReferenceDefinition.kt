@@ -109,9 +109,9 @@ class ReferenceDefinition<DO: Any>(
                     getter = { it: ReferenceDefinition<*> ->
                         { it.dataModel }
                     },
-                    toSerializable = {
-                        it?.invoke()?.let{ model: RootDataModel<*, *> ->
-                            DataModelReference(model.name, it)
+                    toSerializable = { value, _ ->
+                        value?.invoke()?.let{ model: RootDataModel<*, *> ->
+                            DataModelReference(model.name, value)
                         }
                     },
                     fromSerializable = {

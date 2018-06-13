@@ -34,7 +34,7 @@ interface HasSizeDefinition {
                 name = "minSize",
                 definition = NumberDefinition(type = UInt32),
                 getter = getter,
-                toSerializable = { it?.toUInt32() },
+                toSerializable = { value, _ -> value?.toUInt32() },
                 fromSerializable = { it?.toInt() }
             )
         }
@@ -49,7 +49,7 @@ interface HasSizeDefinition {
                 name = "maxSize",
                 definition = NumberDefinition(type = UInt32),
                 getter = getter,
-                toSerializable = { it?.toUInt32() },
+                toSerializable = { value, _ -> value?.toUInt32() },
                 fromSerializable = { it?.toInt() }
             )
         }

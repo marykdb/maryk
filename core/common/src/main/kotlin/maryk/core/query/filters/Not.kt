@@ -51,7 +51,7 @@ data class Not(
 
         override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
-                Properties.filters.getPropertyAndSerialize(obj) ?: throw ParseException("Missing filters in Not filter"),
+                Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in Not filter"),
                 writer,
                 context
             )

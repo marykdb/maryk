@@ -51,7 +51,7 @@ data class And(
 
         override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
-                Properties.filters.getPropertyAndSerialize(obj) ?: throw ParseException("Missing filters in And filter"),
+                Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in And filter"),
                 writer,
                 context
             )

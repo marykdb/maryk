@@ -65,7 +65,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             for (it in this.properties) {
                 try {
                     it.validate(
-                        newValue = it.getPropertyAndSerialize(dataObject),
+                        newValue = it.getPropertyAndSerialize(dataObject, null),
                         parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
@@ -98,7 +98,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (definition in this.properties) {
-            val value = definition.getPropertyAndSerialize(obj) ?: continue
+            val value = definition.getPropertyAndSerialize(obj, context) ?: continue
 
             definition.capture(context, value)
 
@@ -221,7 +221,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (definition in this.properties) {
-            val value = definition.getPropertyAndSerialize(dataObject) ?: continue
+            val value = definition.getPropertyAndSerialize(dataObject, context) ?: continue
 
             definition.capture(context, value)
 
@@ -252,7 +252,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (definition in this.properties) {
-            val value = definition.getPropertyAndSerialize(dataObject) ?: continue
+            val value = definition.getPropertyAndSerialize(dataObject, context) ?: continue
 
             definition.capture(context, value)
 

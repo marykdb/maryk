@@ -201,9 +201,9 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                         )
                     ),
                     getter = MapDefinition<*, *, *>::keyDefinition,
-                    toSerializable = {
-                        val defType = it!! as IsTransportablePropertyDefinitionType<*>
-                        TypedValue(defType.propertyDefinitionType, it)
+                    toSerializable = { value, _ ->
+                        val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, value)
                     },
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
@@ -224,9 +224,9 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                         )
                     ),
                     getter = MapDefinition<*, *, *>::valueDefinition,
-                    toSerializable = {
-                        val defType = it!! as IsTransportablePropertyDefinitionType<*>
-                        TypedValue(defType.propertyDefinitionType, it)
+                    toSerializable = { value, _ ->
+                    val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, value)
                     },
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")

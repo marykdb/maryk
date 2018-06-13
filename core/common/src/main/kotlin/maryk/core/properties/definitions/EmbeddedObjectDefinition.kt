@@ -152,9 +152,9 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
                     getter = { it: EmbeddedObjectDefinition<*, *, *, *, *> ->
                         { it.dataModel as DataModel<*, *> }
                     },
-                    toSerializable = { it: (() -> DataModel<*, *>)? ->
-                        it?.invoke()?.let{ model ->
-                            DataModelReference(model.name, it)
+                    toSerializable = { value: (() -> DataModel<*, *>)?, _ ->
+                        value?.invoke()?.let{ model ->
+                            DataModelReference(model.name, value)
                         }
                     },
                     fromSerializable = { it: IsDataModelReference<DataModel<*, *>>? -> it?.get },

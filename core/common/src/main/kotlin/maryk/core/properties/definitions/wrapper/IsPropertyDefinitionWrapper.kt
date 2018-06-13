@@ -38,7 +38,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> TO?
     val capturer: ((CX, T) -> Unit)?
-    val toSerializable: ((TO?) -> T?)?
+    val toSerializable: ((TO?, CX?) -> T?)?
     val fromSerializable: ((T?) -> TO?)?
 
     /** Get a reference to this definition inside [parentRef] */
@@ -66,9 +66,11 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         this.writeTransportBytesWithKey(this.index, value, cacheGetter, writer, context)
 
     /** Get the property from the [dataObject] and serialize it for transportation */
-    fun getPropertyAndSerialize(dataObject: DO): T? {
+    fun getPropertyAndSerialize(dataObject: DO, context: CX?): T? {
         @Suppress("UNCHECKED_CAST")
-        return this.toSerializable?.invoke(this.getter(dataObject)) ?: this.getter(dataObject) as T?
+        this.toSerializable?.let {
+            return it.invoke(this.getter(dataObject), context)
+        } ?: return this.getter(dataObject) as T?
     }
 
     /** Capture the [value] in the [context] if needed */
@@ -83,7 +85,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             definitions.add(0, "index",
                 NumberDefinition(type = UInt32),
                 getter,
-                toSerializable = { it?.toUInt32() },
+                toSerializable = { value, _ -> value?.toUInt32() },
                 fromSerializable = { it?.toInt() }
             )
 
@@ -131,12 +133,12 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         ) {
             // When writing YAML, use YAML optimized format with complex field names
             if (writer is YamlWriter) {
-                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj)
+                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as DataModelContext)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index)
 
-                Properties.definition.writeJsonValue(typedDefinition, writer, context as DataModelContext)
+                Properties.definition.writeJsonValue(typedDefinition, writer, context)
             } else {
                 super.writeJson(obj, writer, context)
             }

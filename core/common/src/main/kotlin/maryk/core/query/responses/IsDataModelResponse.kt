@@ -37,8 +37,8 @@ interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
                     }
                 ),
                 getter = getter,
-                toSerializable = { it: RootDataModel<*, *>? ->
-                    it?.let{
+                toSerializable = { value: RootDataModel<*, *>?, _ ->
+                    value?.let{
                         DataModelReference(it.name){ it }
                     }
                 },

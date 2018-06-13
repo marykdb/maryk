@@ -25,7 +25,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
     override val propertyDefinitionType = PropertyDefinitionType.Set
 
     init {
-        require(valueDefinition.required, { "Definition for value should have required=true on set" })
+        require(valueDefinition.required) { "Definition for value should have required=true on set" }
     }
 
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
@@ -66,9 +66,9 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                         )
                     ),
                     getter = SetDefinition<*, *>::valueDefinition,
-                    toSerializable = {
-                        val defType = it!! as IsTransportablePropertyDefinitionType<*>
-                        TypedValue(defType.propertyDefinitionType, it)
+                    toSerializable = { value, _ ->
+                        val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                        TypedValue(defType.propertyDefinitionType, value)
                     },
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")

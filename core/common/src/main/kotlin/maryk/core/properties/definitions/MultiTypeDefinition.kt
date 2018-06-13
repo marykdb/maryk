@@ -240,7 +240,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                     capturer = { context: MultiTypeDefinitionContext, value ->
                         context.typeEnumName = value
                     },
-                    toSerializable = { it?.name },
+                    toSerializable = { value, _ ->
+                        value?.name
+                    },
                     fromSerializable = { null }
                 )
 

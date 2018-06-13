@@ -210,7 +210,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             for (def in this.properties) {
                 if (def == RootModelProperties.properties) continue // skip properties to write last
 
-                val value = def.getPropertyAndSerialize(obj) ?: continue
+                val value = def.getPropertyAndSerialize(obj, context) ?: continue
                 this.writeJsonValue(def, writer, value, context)
             }
             this.writeJsonValue(

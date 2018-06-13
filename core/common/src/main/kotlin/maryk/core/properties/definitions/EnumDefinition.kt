@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.initShortByVar
@@ -8,6 +9,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.objects.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
+import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.IndexedEnumDefinition
@@ -121,12 +123,26 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
                 @Suppress("UNCHECKED_CAST")
                 add(5, "enum",
-                    ContextTransformerDefinition(
-                        definition = EmbeddedObjectDefinition(
-                            dataModel = { IndexedEnumDefinition.Model }
+                    ContextValueTransformDefinition(
+                        definition = ContextTransformerDefinition(
+                            definition = EmbeddedObjectDefinition(
+                                dataModel = { IndexedEnumDefinition.Model }
+                            ),
+                            contextTransformer = {
+                                it?.dataModelContext
+                            }
                         ),
-                        contextTransformer = {
-                            it?.dataModelContext
+                        valueTransformer = { context, value ->
+                            if (value.optionalValues == null) {
+                                context?.let {
+                                    it.dataModelContext?.let {
+                                        it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?
+                                            ?: throw ParseException("Enum ${value.name} is not Defined")
+                                    }
+                                } ?: throw ContextNotFoundException()
+                            } else {
+                                value
+                            }
                         }
                     ),
                     getter = EnumDefinition<*>::enum as (EnumDefinition<*>) -> IndexedEnumDefinition<IndexedEnum<Any>>,

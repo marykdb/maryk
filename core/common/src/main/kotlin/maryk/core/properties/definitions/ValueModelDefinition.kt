@@ -101,8 +101,8 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                         }
                     ),
                     ValueModelDefinition<*, *>::dataModel,
-                    toSerializable = { it: ValueDataModel<*, *>? ->
-                        it?.let{
+                    toSerializable = { value: ValueDataModel<*, *>?, _ ->
+                        value?.let{
                             DataModelReference(it.name){ it }
                         }
                     },

@@ -23,7 +23,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, in CXI: IsPropertyContext, CX: IsPropertyContext>(
+class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
     override val searchable: Boolean = true,
     override val required: Boolean = true,
@@ -32,8 +32,7 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
     override val default: DO? = null
 ) :
     IsValueDefinition<DO, CXI>,
-    IsSerializableFlexBytesEncodable<DO, CXI>,
-    IsEmbeddedObjectDefinition<DO, CXI>,
+    IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX>,
     IsTransportablePropertyDefinitionType<DO>,
     HasDefaultValueDefinition<DO>
 {
@@ -41,7 +40,7 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
     override val wireType = WireType.LENGTH_DELIMITED
 
     private val internalDataModel = lazy(dataModel)
-    val dataModel: DM get() = internalDataModel.value
+    override val dataModel: DM get() = internalDataModel.value
 
     override fun asString(value: DO, context: CXI?): String {
         var string = ""

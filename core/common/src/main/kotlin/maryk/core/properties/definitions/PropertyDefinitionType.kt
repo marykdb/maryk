@@ -39,7 +39,7 @@ enum class PropertyDefinitionType(
     companion object: IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
 }
 
-internal val mapOfPropertyDefEmbeddedObjectDefinitions = mapOf(
+internal val mapOfPropertyDefEmbeddedObjectDefinitions = mapOf<PropertyDefinitionType, IsSubDefinition<out Any, DataModelContext>>(
     PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
     PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
     PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),

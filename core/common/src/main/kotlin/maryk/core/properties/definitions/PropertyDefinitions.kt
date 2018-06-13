@@ -5,13 +5,13 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelContext
@@ -196,13 +196,24 @@ abstract class PropertyDefinitions<DO: Any>(
         addSingle(this)
     }
 
-    /** Add sub model property [definition] with [name] and [index] and value [getter] */
-    fun <SDO: Any, P: PropertyDefinitions<SDO>, D: AbstractDataModel<SDO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
+    /** Add embedded object property [definition] with [name] and [index] and value [getter] */
+    fun <EODO: Any, P: PropertyDefinitions<EODO>, D: AbstractDataModel<EODO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
         index: Int,
         name: String,
-        definition: EmbeddedObjectDefinition<SDO, P, D, CXI, CX>,
-        getter: (DO) -> SDO? = { null },
-        capturer: ((CXI, SDO) -> Unit)? = null
+        definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
+        getter: (DO) -> EODO? = { null },
+        capturer: ((CXI, EODO) -> Unit)? = null
+    ) = EmbeddedObjectPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+        addSingle(this)
+    }
+
+    /** Add sub model property [definition] with [name] and [index] and value [getter] */
+    fun <EODO: Any, P: PropertyDefinitions<EODO>, D: AbstractDataModel<EODO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> addSM(
+        index: Int,
+        name: String,
+        definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
+        getter: (DO) -> EODO? = { null },
+        capturer: ((CXI, EODO) -> Unit)? = null
     ) = EmbeddedObjectPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }

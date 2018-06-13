@@ -17,14 +17,15 @@ import maryk.core.protobuf.WriteCacheWriter
  */
 class EmbeddedObjectPropertyRef<
     DO : Any,
+    TO: Any,
     out P: PropertyDefinitions<DO>,
     out DM : AbstractDataModel<DO, P, CXI, CX>,
     CXI: IsPropertyContext,
     CX: IsPropertyContext
 > internal constructor(
-    propertyDefinition: EmbeddedObjectPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>,
+    propertyDefinition: EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+): CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name

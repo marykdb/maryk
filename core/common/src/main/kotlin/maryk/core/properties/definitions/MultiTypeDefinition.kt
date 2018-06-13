@@ -11,9 +11,9 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
 import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType

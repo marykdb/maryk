@@ -10,8 +10,8 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.objects.DataModel
 import maryk.core.objects.compareDataModels
-import maryk.core.properties.types.IndexedEnumDefinition
-import maryk.core.properties.types.compareEnumDefinitions
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.compareEnumDefinitions
 import maryk.core.query.DataModelContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -176,8 +176,7 @@ class DefinitionsTest {
               required: true
               final: true
               unique: false
-              enum:
-                name: Option
+              enum: Option
               default: V0
             ? 7: list
             : !List

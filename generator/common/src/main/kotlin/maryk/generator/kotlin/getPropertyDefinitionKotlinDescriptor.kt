@@ -23,7 +23,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
-import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.NumberType
 

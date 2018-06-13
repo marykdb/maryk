@@ -28,8 +28,7 @@ Contains an enumaration value. Is limited to one of the values in an enum
 **Example of a YAML Enum property definition with previously defined Enum named Role**
 ```yaml
 !Enum
-  enum:
-    name: Role
+  enum: Role
   required: false
   unique: false
   final: true

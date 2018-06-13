@@ -6,8 +6,8 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken

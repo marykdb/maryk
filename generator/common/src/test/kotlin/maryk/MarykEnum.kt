@@ -1,7 +1,7 @@
 package maryk
 
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class MarykEnum(
     override val index: Int

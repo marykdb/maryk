@@ -3,7 +3,7 @@ package maryk.core.query
 import maryk.core.objects.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumDefinition
 
 /**
  * Saves the context while writing and parsing Definitions

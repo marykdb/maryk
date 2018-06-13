@@ -1,15 +1,15 @@
 package maryk.generator.kotlin
 
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 
 /**
  * Generates kotlin code to [writer] for IndexedEnumDefinition in [packageName]
  */
 fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlin(packageName: String, writer: (String) -> Unit) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.properties.types.IndexedEnum",
-        "maryk.core.properties.types.IndexedEnumDefinition"
+        "maryk.core.properties.enum.IndexedEnum",
+        "maryk.core.properties.enum.IndexedEnumDefinition"
     )
 
     val values = mutableListOf<String>()

@@ -1,4 +1,4 @@
-package maryk.core.properties.types
+package maryk.core.properties.enum
 
 import maryk.Option
 import maryk.checkJsonConversion

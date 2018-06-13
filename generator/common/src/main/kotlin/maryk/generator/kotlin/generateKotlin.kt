@@ -5,8 +5,8 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.ValueDataObject
 
 fun generateKotlin(packageName: String, vararg objects: MarykPrimitive, writerConstructor: (String) -> ((String) -> Unit)) {

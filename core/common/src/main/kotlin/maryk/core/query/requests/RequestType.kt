@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class RequestType(override val index: Int): IndexedEnum<RequestType> {
     Add(0),

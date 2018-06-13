@@ -20,7 +20,7 @@ import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitio
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
-import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32

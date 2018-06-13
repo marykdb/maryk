@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.types.IndexedEnum
+import maryk.core.properties.enum.IndexedEnum
 
 fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(packageName: String, writer: (String) -> Unit) {
     val importsToAdd = mutableSetOf(

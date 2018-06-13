@@ -2,6 +2,8 @@ package maryk.core.properties.types
 
 import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.lib.time.Time
 
 enum class TimePrecision(override val index: Int): IndexedEnum<TimePrecision> {

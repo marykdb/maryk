@@ -5,8 +5,8 @@ import maryk.core.objects.DefinitionDataModel
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.query.DataModelContext
 import maryk.json.TokenType
 import maryk.json.ValueType

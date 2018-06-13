@@ -1,7 +1,7 @@
 package maryk.core.definitions
 
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class PrimitiveType(
     override val index: Int

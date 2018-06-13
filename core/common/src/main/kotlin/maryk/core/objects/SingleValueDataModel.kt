@@ -27,7 +27,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
     }
 
     override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX?) {
-        val value = singlePropertyDefinition.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing requests in Requests")
+        val value = singlePropertyDefinition.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
         singlePropertyDefinition.writeJsonValue(value, writer, context)
         singlePropertyDefinition.capture(context, value)
     }

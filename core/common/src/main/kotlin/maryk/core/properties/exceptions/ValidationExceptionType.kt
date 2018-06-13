@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.properties.types.IndexedEnum
-import maryk.core.properties.types.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 
 /** Indexed type of changes */
 enum class ValidationExceptionType(

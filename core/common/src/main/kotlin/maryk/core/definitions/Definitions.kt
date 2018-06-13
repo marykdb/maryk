@@ -11,10 +11,13 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
+import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.types.IndexedEnum
 import maryk.core.properties.types.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
+import maryk.lib.exceptions.ParseException
 
 /**
  * Contains multiple definitions of models and enums. Is passed MarykPrimitives like
@@ -63,8 +66,22 @@ data class Definitions(
                             }
                         ),
                         PrimitiveType.EnumDefinition to ContextCaptureDefinition(
-                            definition = EmbeddedObjectDefinition(
-                                dataModel = { IndexedEnumDefinition.Model }
+                            // This transformer takes care to catch Enums without values to replace them
+                            // with previously defined Enums which are stored in the context
+                            definition = ContextValueTransformDefinition(
+                                definition = EmbeddedObjectDefinition(
+                                    dataModel = { IndexedEnumDefinition.Model }
+                                ),
+                                valueTransformer = { context, value ->
+                                    if (value.optionalValues == null) {
+                                        context?.let {
+                                            it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?
+                                                ?: throw ParseException("Enum ${value.name} has not been defined")
+                                        } ?: throw ContextNotFoundException()
+                                    } else {
+                                        value
+                                    }
+                                }
                             ),
                             capturer = { context, value ->
                                 context?.let{

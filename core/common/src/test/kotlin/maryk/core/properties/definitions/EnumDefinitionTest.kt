@@ -114,11 +114,12 @@ internal class EnumDefinitionTest {
         required: false
         final: true
         unique: true
-        name: Option
-        values:
-          0: V0
-          1: V1
-          2: V2
+        enum:
+          name: Option
+          values:
+            0: V0
+            1: V1
+            2: V2
         minValue: V0
         maxValue: V2
         default: V1

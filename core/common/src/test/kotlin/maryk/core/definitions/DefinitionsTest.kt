@@ -176,11 +176,12 @@ class DefinitionsTest {
               required: true
               final: true
               unique: false
-              name: Option
-              values:
-                0: V0
-                1: V1
-                2: V2
+              enum:
+                name: Option
+                values:
+                  0: V0
+                  1: V1
+                  2: V2
               default: V0
             ? 7: list
             : !List

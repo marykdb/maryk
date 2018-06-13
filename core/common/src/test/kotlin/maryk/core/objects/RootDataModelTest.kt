@@ -1,7 +1,7 @@
 package maryk.core.objects
 
-import maryk.Option
 import maryk.EmbeddedMarykObject
+import maryk.Option
 import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.checkJsonConversion
@@ -12,6 +12,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
@@ -22,7 +23,6 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.Bytes
@@ -176,11 +176,13 @@ internal class RootDataModelTest {
         			"required": true,
         			"final": true,
         			"unique": false,
-        			"name": "Option",
-        			"values": {
-        				"0": "V0",
-        				"1": "V1",
-        				"2": "V2"
+        			"enum": {
+        				"name": "Option",
+        				"values": {
+        					"0": "V0",
+        					"1": "V1",
+        					"2": "V2"
+        				}
         			},
         			"default": "V0"
         		}]
@@ -423,11 +425,12 @@ internal class RootDataModelTest {
             required: true
             final: true
             unique: false
-            name: Option
-            values:
-              0: V0
-              1: V1
-              2: V2
+            enum:
+              name: Option
+              values:
+                0: V0
+                1: V1
+                2: V2
             default: V0
           ? 7: list
           : !List
@@ -557,61 +560,63 @@ internal class RootDataModelTest {
     @Test
     fun convert_basic_definition_from_YAML() {
         val simpleYaml = """
-        |name: SimpleModel
-        |properties:
-        |  ? 0: string
-        |  : !String
-        |  ? 1: int
-        |  : !Number
-        |    type: SInt32
-        |  ? 2: date
-        |  : !Date
-        |  ? 3: time
-        |  : !Time
-        |  ? 4: dateTime
-        |  : !DateTime
-        |  ? 5: options
-        |  : !Enum
-        |    name: Option
-        |    values:
-        |      0: V0
-        |      1: V1
-        |      2: V2
-        |  ? 6: fixed
-        |  : !FixedBytes
-        |    byteSize: 4
-        |  ? 7: flex
-        |  : !FlexBytes
-        |  ? 8: list
-        |  : !List
-        |    valueDefinition: !String
-        |  ? 9: set
-        |  : !Set
-        |    valueDefinition: !Boolean
-        |  ? 10: map
-        |  : !Map
-        |    keyDefinition: !Date
-        |    valueDefinition: !String
-        |  ? 11: embedded
-        |  : !Embed
-        |    dataModel: TestMarykObject
-        |  ? 12: value
-        |  : !Value
-        |    dataModel: TestValueObject
-        |  ? 13: ref
-        |  : !Reference
-        |    dataModel: TestMarykObject
-        |  ? 14: multi
-        |  : !MultiType
-        |    typeEnum: Option
-        |    definitionMap:
-        |      ? 0: V0
-        |      : !String
-        |      ? 1: V1
-        |      : !Boolean
-        |  ? 15: isTrue
-        |  : !Boolean
-        |""".trimMargin()
+        name: SimpleModel
+        properties:
+          ? 0: string
+          : !String
+          ? 1: int
+          : !Number
+            type: SInt32
+          ? 2: date
+          : !Date
+          ? 3: time
+          : !Time
+          ? 4: dateTime
+          : !DateTime
+          ? 5: options
+          : !Enum
+            enum:
+              name: Option
+              values:
+                0: V0
+                1: V1
+                2: V2
+          ? 6: fixed
+          : !FixedBytes
+            byteSize: 4
+          ? 7: flex
+          : !FlexBytes
+          ? 8: list
+          : !List
+            valueDefinition: !String
+          ? 9: set
+          : !Set
+            valueDefinition: !Boolean
+          ? 10: map
+          : !Map
+            keyDefinition: !Date
+            valueDefinition: !String
+          ? 11: embedded
+          : !Embed
+            dataModel: TestMarykObject
+          ? 12: value
+          : !Value
+            dataModel: TestValueObject
+          ? 13: ref
+          : !Reference
+            dataModel: TestMarykObject
+          ? 14: multi
+          : !MultiType
+            typeEnum: Option
+            definitionMap:
+              ? 0: V0
+              : !String
+              ? 1: V1
+              : !Boolean
+          ? 15: isTrue
+          : !Boolean
+
+        """.trimIndent()
 
         var index = 0
 

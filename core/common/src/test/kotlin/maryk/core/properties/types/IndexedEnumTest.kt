@@ -51,6 +51,22 @@ class IndexedEnumTest {
 
         """.trimIndent()
     }
+
+    @Test
+    fun read_enum_from_yaml_without_values() {
+        val reader = createMarykYamlModelReader(
+            """
+            name: Option
+            """.trimIndent()
+        )
+
+        val enum = IndexedEnumDefinition.Model.readJsonToObject(
+            reader
+        )
+
+        enum.name shouldBe "Option"
+        enum.optionalValues shouldBe null
+    }
 }
 
 internal fun compareEnumDefinitions(

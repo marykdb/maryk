@@ -31,10 +31,15 @@ interface IndexedEnum<in E>: Comparable<E>{
     }
 }
 
-open class IndexedEnumDefinition<E: IndexedEnum<E>>(
-    override val name: String,
-    val values: () -> Array<E>
+/** Enum Definitions with a [name] and [values] */
+open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
+    internal val optionalValues: (() -> Array<E>)?,
+    override val name: String
 ): MarykPrimitive {
+    constructor(name: String, values: () -> Array<E>) : this(name = name, optionalValues = values)
+
+    val values get() = optionalValues!!
+
     override val primitiveType = PrimitiveType.EnumDefinition
 
     internal object Properties : PropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
@@ -67,7 +72,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>>(
     ) {
         override fun invoke(map: Map<Int, *>) = IndexedEnumDefinition<IndexedEnum<Any>>(
             name = map(0),
-            values = map(1)
+            optionalValues = map(1)
         )
     }
 }

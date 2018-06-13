@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
+import maryk.core.definitions.Definitions
 import maryk.core.objects.DataModel
-import maryk.core.definitions.MarykPrimitive
 import maryk.core.objects.RootDataModel
 import maryk.core.objects.ValueDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -9,8 +9,8 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.ValueDataObject
 
-fun generateKotlin(packageName: String, vararg objects: MarykPrimitive, writerConstructor: (String) -> ((String) -> Unit)) {
-    for (obj in objects) {
+fun Definitions.generateKotlin(packageName: String, writerConstructor: (String) -> ((String) -> Unit)) {
+    for (obj in this.definitions) {
         @Suppress("UNCHECKED_CAST")
         when (obj) {
             is IndexedEnumDefinition<*> -> {

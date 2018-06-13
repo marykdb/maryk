@@ -5,6 +5,7 @@ import maryk.EmbeddedMarykObject
 import maryk.MarykEnum
 import maryk.SimpleMarykObject
 import maryk.ValueMarykObject
+import maryk.core.definitions.Definitions
 import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.fail
@@ -22,13 +23,13 @@ class MixedKotlinGenerationTest {
 
         val setOfNames = mutableSetOf<String>()
 
-        generateKotlin("maryk",
+        Definitions(
             MarykEnum,
             SimpleMarykObject,
             EmbeddedMarykObject,
             CompleteMarykObject,
             ValueMarykObject
-        ) { name ->
+        ).generateKotlin("maryk") { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]
                     ?: fail("Called for not known writer $name")

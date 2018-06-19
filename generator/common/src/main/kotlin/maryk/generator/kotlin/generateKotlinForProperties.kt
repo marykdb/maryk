@@ -1,18 +1,38 @@
 package maryk.generator.kotlin
 
-import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
+import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.enum.IndexedEnum
 
 @Suppress("UNCHECKED_CAST")
-internal fun <DO: Any> PropertyDefinitions<DO>.generateKotlin(addImport: (String) -> Unit): List<KotlinForProperty> {
+internal fun <DO: Any> PropertyDefinitions<DO>.generateKotlin(
+    addImport: (String) -> Unit,
+    generationContext: KotlinGenerationContext? = null,
+    addEnumDefinition: ((String) -> Unit)? = null
+): List<KotlinForProperty> {
     val propertiesKotlin = mutableListOf<KotlinForProperty>()
-    for (it in this) {
-        val definition = it.definition as? IsTransportablePropertyDefinitionType<Any>
-                ?: throw Exception("Property definition is not supported: ${it.definition}")
+    for (propertyDefinitionWrapper in this) {
+        val definition = propertyDefinitionWrapper.definition as? IsTransportablePropertyDefinitionType<Any>
+                ?: throw Exception("Property definition is not supported: ${propertyDefinitionWrapper.definition}")
 
-        val names =
-            (it.definition as IsTransportablePropertyDefinitionType<Any>).getKotlinDescriptor()
+        val kotlinDescriptor =
+            definition.getKotlinDescriptor()
+
+        if (definition.propertyDefinitionType == PropertyDefinitionType.Enum) {
+            (definition as EnumDefinition<*>).enum.let { enum ->
+                if (generationContext?.enums?.contains(enum) != true) {
+                    @Suppress("UNCHECKED_CAST")
+                    val enumDefinition = (definition as EnumDefinition<IndexedEnum<Any>>).enum
+
+                    addEnumDefinition?.invoke(
+                        enumDefinition.generateKotlinClass(addImport)
+                    )
+                }
+            }
+        }
 
         val default = if(definition is HasDefaultValueDefinition<*> && definition.default != null) {
             " = ${generateKotlinValue(definition, definition.default as Any, addImport)}"
@@ -20,19 +40,19 @@ internal fun <DO: Any> PropertyDefinitions<DO>.generateKotlin(addImport: (String
             ""
         }
 
-        val nativeTypeName = names.kotlinTypeName(definition)
+        val nativeTypeName = kotlinDescriptor.kotlinTypeName(definition)
 
-        for (import in names.getImports(definition)) {
+        for (import in kotlinDescriptor.getImports(definition)) {
             addImport(import)
         }
 
         propertiesKotlin.add(
             KotlinForProperty(
-                name = it.name,
-                index = it.index,
-                value = """val ${it.name}: $nativeTypeName$default""",
-                definition = names.definitionToKotlin(definition, addImport),
-                invoke = "map(${it.index})"
+                name = propertyDefinitionWrapper.name,
+                index = propertyDefinitionWrapper.index,
+                value = """val ${propertyDefinitionWrapper.name}: $nativeTypeName$default""",
+                definition = kotlinDescriptor.definitionToKotlin(definition, addImport),
+                invoke = "map(${propertyDefinitionWrapper.index})"
             )
         )
     }

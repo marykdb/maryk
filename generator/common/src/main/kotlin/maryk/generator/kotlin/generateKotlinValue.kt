@@ -11,9 +11,9 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
-import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue

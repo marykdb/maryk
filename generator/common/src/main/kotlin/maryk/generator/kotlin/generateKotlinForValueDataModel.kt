@@ -4,7 +4,11 @@ import maryk.core.objects.ValueDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
-fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlin(packageName: String, writer: (String) -> Unit) {
+fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlin(
+    packageName: String,
+    generationContext: KotlinGenerationContext? = null,
+    writer: (String) -> Unit
+) {
     val importsToAdd = mutableSetOf(
         "maryk.core.objects.ValueDataModel",
         "maryk.core.properties.definitions.PropertyDefinitions",
@@ -12,7 +16,10 @@ fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.gene
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
-    val propertiesKotlin = properties.generateKotlin(addImport)
+    val enumKotlinDefinitions = mutableListOf<String>()
+    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
+        enumKotlinDefinitions.add(it)
+    }
 
     val code = """
     data class $name(
@@ -33,15 +40,7 @@ fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.gene
     }
     """.trimIndent()
 
-    val imports = """
-    package $packageName
-
-    ${generateImports(
-        importsToAdd
-    ).prependIndent().trimStart()}
-    """.trimIndent()
-
-    writer("$imports\n$code")
+    writeKotlinFile(packageName, importsToAdd, enumKotlinDefinitions, code, writer)
 }
 
 private fun List<KotlinForProperty>.generatePropertyNamesForConstructor(): String {

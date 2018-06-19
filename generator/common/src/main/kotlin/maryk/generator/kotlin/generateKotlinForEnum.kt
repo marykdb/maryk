@@ -7,18 +7,26 @@ import maryk.core.properties.enum.IndexedEnumDefinition
  * Generates kotlin code to [writer] for IndexedEnumDefinition in [packageName]
  */
 fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlin(packageName: String, writer: (String) -> Unit) {
-    val importsToAdd = mutableSetOf(
-        "maryk.core.properties.enum.IndexedEnum",
-        "maryk.core.properties.enum.IndexedEnumDefinition"
-    )
+    val importsToAdd = mutableSetOf<String>()
+
+    val code = this.generateKotlinClass {
+        importsToAdd.add(it)
+    }
+
+    writeKotlinFile(packageName, importsToAdd, null, code, writer)
+}
+
+/** Generates kotlin class string for IndexedEnumDefinition and adds imports to [addImport] */
+fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlinClass(addImport: (String) -> Unit): String {
+    addImport("maryk.core.properties.enum.IndexedEnum")
+    addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 
     val values = mutableListOf<String>()
-
     for (value in this.values()) {
         values.add("${value.name}(${value.index})")
     }
 
-    val code = """
+    return """
     enum class ${this.name}(
         override val index: Int
     ): IndexedEnum<${this.name}> {
@@ -29,14 +37,4 @@ fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlin(packageName: Str
         )
     }
     """.trimIndent()
-
-    val imports = """
-    package $packageName
-
-    ${generateImports(
-        importsToAdd
-    ).prependIndent().trimStart()}
-    """.trimIndent()
-
-    writer("$imports\n$code")
 }

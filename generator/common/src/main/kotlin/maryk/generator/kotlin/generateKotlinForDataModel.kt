@@ -3,14 +3,21 @@ package maryk.generator.kotlin
 import maryk.core.objects.DataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 
-fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(packageName: String, writer: (String) -> Unit) {
+fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(
+    packageName: String,
+    generationContext: KotlinGenerationContext? = null,
+    writer: (String) -> Unit
+) {
     val importsToAdd = mutableSetOf(
         "maryk.core.objects.DataModel",
         "maryk.core.properties.definitions.PropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
-    val propertiesKotlin = properties.generateKotlin(addImport)
+    val enumKotlinDefinitions = mutableListOf<String>()
+    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
+        enumKotlinDefinitions.add(it)
+    }
 
     val code = """
     data class $name(
@@ -31,15 +38,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(packag
     }
     """.trimIndent()
 
-    val imports = """
-    package $packageName
-
-    ${generateImports(
-        importsToAdd
-    ).prependIndent().trimStart()}
-    """.trimIndent()
-
-    writer("$imports\n$code")
+    writeKotlinFile(packageName, importsToAdd, enumKotlinDefinitions, code, writer)
 }
 
 internal fun List<KotlinForProperty>.generateInvokesForProperties(): String {

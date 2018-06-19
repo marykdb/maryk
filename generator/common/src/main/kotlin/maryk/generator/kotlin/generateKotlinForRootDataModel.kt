@@ -9,14 +9,16 @@ import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(packageName: String, writer: (String) -> Unit) {
+fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(
+    packageName: String,
+    generationContext: KotlinGenerationContext? = null,
+    writer: (String) -> Unit
+) {
     val importsToAdd = mutableSetOf(
         "maryk.core.objects.RootDataModel",
         "maryk.core.properties.definitions.PropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
-
-    val propertiesKotlin = properties.generateKotlin(addImport)
 
     // Add key definitions if they are not the default UUID key
     val keyDefAsKotlin = if (this.key.keyDefinitions.size != 1 || this.key.keyDefinitions[0] != UUIDKey) {
@@ -29,6 +31,11 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(pa
         ),
             """.prependIndent().trimStart()
     } else ""
+
+    val enumKotlinDefinitions = mutableListOf<String>()
+    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
+        enumKotlinDefinitions.add(it)
+    }
 
     val code = """
     data class $name(
@@ -49,15 +56,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(pa
     }
     """.trimIndent()
 
-    val imports = """
-    package $packageName
-
-    ${generateImports(
-        importsToAdd
-    ).prependIndent().trimStart()}
-    """.trimIndent()
-
-    writer("$imports\n$code")
+    writeKotlinFile(packageName, importsToAdd, enumKotlinDefinitions, code, writer)
 }
 
 /**

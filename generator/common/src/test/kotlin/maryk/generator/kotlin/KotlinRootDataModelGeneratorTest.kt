@@ -1,6 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.CompleteMarykObject
+import maryk.MarykEnum
 import maryk.SimpleMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -64,6 +65,8 @@ import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.key.UUIDKey
+import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
@@ -74,6 +77,18 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+
+enum class MarykEnumEmbedded(
+    override val index: Int
+): IndexedEnum<MarykEnumEmbedded> {
+    E1(1),
+    E2(2),
+    E3(3);
+
+    companion object: IndexedEnumDefinition<MarykEnumEmbedded>(
+        "MarykEnumEmbedded", MarykEnumEmbedded::values
+    )
+}
 
 data class CompleteMarykObject(
     val string: String = "string",
@@ -99,7 +114,8 @@ data class CompleteMarykObject(
     val multi: TypedValue<MarykEnum, *> = TypedValue(MarykEnum.O1, "a value"),
     val booleanForKey: Boolean,
     val dateForKey: Date,
-    val multiForKey: TypedValue<MarykEnum, *>
+    val multiForKey: TypedValue<MarykEnum, *>,
+    val enumEmbedded: MarykEnumEmbedded
 ) {
     object Properties: PropertyDefinitions<CompleteMarykObject>() {
         val string = add(
@@ -386,6 +402,14 @@ data class CompleteMarykObject(
             ),
             getter = CompleteMarykObject::multiForKey
         )
+        val enumEmbedded = add(
+            index = 19, name = "enumEmbedded",
+            definition = EnumDefinition(
+                enum = MarykEnumEmbedded,
+                minValue = MarykEnumEmbedded.E1
+            ),
+            getter = CompleteMarykObject::enumEmbedded
+        )
     }
 
     companion object: RootDataModel<CompleteMarykObject, Properties>(
@@ -417,7 +441,8 @@ data class CompleteMarykObject(
             multi = map(15),
             booleanForKey = map(16),
             dateForKey = map(17),
-            multiForKey = map(18)
+            multiForKey = map(18),
+            enumEmbedded = map(19)
         )
     }
 }
@@ -439,7 +464,11 @@ class KotlinRootDataModelGeneratorTest {
     fun generate_kotlin_for_complete_model(){
         var output = ""
 
-        CompleteMarykObject.generateKotlin("maryk") {
+        val generationContext = KotlinGenerationContext(
+            enums = mutableListOf(MarykEnum)
+        )
+
+        CompleteMarykObject.generateKotlin("maryk", generationContext) {
             output += it
         }
 

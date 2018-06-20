@@ -4,6 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.objects.AbstractDataModel
 import maryk.core.objects.SimpleDataModel
+import maryk.core.objects.graph.GraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
@@ -361,6 +362,8 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
     IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<Any>, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<PropertyDefinitions<Any>, PropertyDefinitions<Any>, DataModelContext, DO>
 {
+    override val graphType = GraphType.PropRef
+
     override val toSerializable: ((PropertyDefinitions<Any>?, DataModelContext?) -> PropertyDefinitions<Any>?)? = null
     override val fromSerializable: ((PropertyDefinitions<Any>?) -> PropertyDefinitions<Any>?)? = null
     override val capturer: ((DataModelContext, PropertyDefinitions<Any>) -> Unit)? = null

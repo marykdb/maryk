@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.objects.IsDataModel
+import maryk.core.objects.graph.GraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
@@ -27,6 +28,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
     IsValuePropertyDefinitionWrapper<T, TO, CX, DO>,
     FixedBytesProperty<T>()
 {
+    override val graphType = GraphType.PropRef
     override val keyPartType = KeyPartType.Reference
 
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =

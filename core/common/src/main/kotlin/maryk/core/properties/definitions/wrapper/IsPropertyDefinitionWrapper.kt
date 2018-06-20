@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.SimpleDataModel
+import maryk.core.objects.graph.IsGraphable
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -32,7 +33,10 @@ import maryk.yaml.YamlWriter
  * Wraps a Property Definition of type [T] to give it more context [CX] about
  * DataObject [DO] which contains this Definition.
  */
-interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, in DO> : IsSerializablePropertyDefinition<T, CX> {
+interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, in DO> :
+    IsSerializablePropertyDefinition<T, CX>,
+    IsGraphable<DO>
+{
     val index: Int
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
@@ -46,7 +50,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
 
     /**
      * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates
-     * refernce with [parentRefFactory]
+     * reference with [parentRefFactory]
      * @throws ValidationException when encountering invalid new value
      */
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>? = { null }) {

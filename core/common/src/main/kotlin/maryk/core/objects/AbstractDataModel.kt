@@ -38,6 +38,11 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     /** Creates a Data Object by [map] */
     abstract operator fun invoke(map: Map<Int, *>): DO
 
+    /** For quick notation to return [T] that operates with [runner] on Properties */
+    fun <T: Any> props(
+        runner: P.() -> T
+    ) = runner(this.properties)
+
     /**
      * Get property reference fetcher of this DataModel with [referenceGetter]
      * Optionally pass an already resolved [parent]
@@ -56,6 +61,18 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Optionally pass an already resolved [parent]
      */
     fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, propertyDefinitionGetter: P.()-> W): IsPropertyReference<T, W> {
+        @Suppress("UNCHECKED_CAST")
+        return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
+    }
+
+    /**
+     * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
+     * Optionally pass an already resolved [parent]
+     */
+    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> graph(
+        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
+        propertyDefinitionGetter: P.()-> W
+    ): IsPropertyReference<T, W> {
         @Suppress("UNCHECKED_CAST")
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
     }

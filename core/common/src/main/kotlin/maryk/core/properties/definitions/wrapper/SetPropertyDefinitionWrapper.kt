@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.objects.graph.GraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -27,6 +28,8 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
     IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,
     IsPropertyDefinitionWrapper<Set<T>, Set<T>, CX, DO>
 {
+    override val graphType = GraphType.PropRef
+
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 

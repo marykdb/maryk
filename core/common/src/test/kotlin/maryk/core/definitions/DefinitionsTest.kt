@@ -96,7 +96,7 @@ class DefinitionsTest {
               required: true
               final: false
               unique: false
-            ? 1: embedded
+            ? 1: model
             : !Embed
               indexed: false
               searchable: true

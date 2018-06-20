@@ -14,7 +14,11 @@ class GraphTest {
     private val graph = TestMarykObject.properties.embeddedObject.props {
         it.graph(
             value,
-            embedded
+            model.props {
+                it.graph(
+                    marykModel
+                )
+            }
         )
     }
 
@@ -39,10 +43,10 @@ class GraphTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.graph, Graph, { this.context }) shouldBe """
-        parent: embeddedObject
-        properties:
-        - !Reference value
-        - !Reference embedded
+        embeddedObject:
+        - value
+        - model:
+          - marykModel
 
         """.trimIndent()
     }

@@ -14,9 +14,9 @@ internal class DataObjectPropertyReferenceTest {
 
         TestMarykObject { embeddedObject ref { value } }.completeName shouldBe "embeddedObject.value"
 
-        TestMarykObject { embeddedObject ref { embedded } }.completeName shouldBe "embeddedObject.embedded"
-        TestMarykObject { embeddedObject { embedded { embedded ref { value } } } }.completeName shouldBe "embeddedObject.embedded.embedded.value"
-        TestMarykObject { embeddedObject { embedded { embedded { embedded ref { value } } } } }.completeName shouldBe "embeddedObject.embedded.embedded.embedded.value"
+        TestMarykObject { embeddedObject ref { model } }.completeName shouldBe "embeddedObject.model"
+        TestMarykObject { embeddedObject { model { model ref { value } } } }.completeName shouldBe "embeddedObject.model.model.value"
+        TestMarykObject { embeddedObject { model { model { model ref { value } } } } }.completeName shouldBe "embeddedObject.model.model.model.value"
 
         TestMarykObject { embeddedObject { marykModel { list at 5 } } }.completeName shouldBe "embeddedObject.marykModel.list.@5"
         TestMarykObject { embeddedObject { marykModel { set at Date(2017, 12, 5) } } }.completeName shouldBe "embeddedObject.marykModel.set.\$2017-12-05"

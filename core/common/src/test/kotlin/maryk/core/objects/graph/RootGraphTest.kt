@@ -20,7 +20,11 @@ class RootGraphTest {
             embeddedObject.props {
                 it.graph(
                     value,
-                    embedded
+                    model.props {
+                        it.graph(
+                            value
+                        )
+                    }
                 )
             }
         )
@@ -47,14 +51,12 @@ class RootGraphTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.graph, RootGraph, { this.context }) shouldBe """
-        properties:
-        - !PropRef string
-        - !PropRef set
-        - !Graph
-          parent: embeddedObject
-          properties:
-          - !PropRef value
-          - !PropRef embedded
+        - string
+        - set
+        - embeddedObject:
+          - value
+          - model:
+            - value
 
         """.trimIndent()
     }

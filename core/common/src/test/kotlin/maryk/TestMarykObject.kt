@@ -257,8 +257,8 @@ data class EmbeddedMarykObject(
             definition = StringDefinition(),
             getter = EmbeddedMarykObject::value
         )
-        val embedded = add(
-            index = 1, name = "embedded",
+        val model = add(
+            index = 1, name = "model",
             definition = EmbeddedObjectDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykObject }

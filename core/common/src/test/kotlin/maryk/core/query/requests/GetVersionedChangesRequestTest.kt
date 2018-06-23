@@ -4,6 +4,7 @@ import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.objects.graph.RootGraph
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
@@ -30,7 +31,12 @@ internal val getVersionedChangesMaxRequest = SimpleMarykObject.run {
         fromVersion = 1234L.toUInt64(),
         toVersion = 12345L.toUInt64(),
         maxVersions = 5.toUInt32(),
-        filterSoftDeleted = true
+        filterSoftDeleted = true,
+        select = SimpleMarykObject.props {
+            RootGraph(
+                value
+            )
+        }
     )
 }
 
@@ -71,6 +77,8 @@ class GetVersionedChangesRequestTest {
         filterSoftDeleted: true
         fromVersion: 0x00000000000004d2
         maxVersions: 5
+        select:
+        - value
 
         """.trimIndent()
     }

@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
+import maryk.core.objects.graph.RootGraph
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -25,16 +26,17 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanChanges(
     limit: UInt32 = 100.toUInt32(),
     fromVersion: UInt64,
     toVersion: UInt64? = null,
+    select: RootGraph<DO>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    ScanChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, filterSoftDeleted)
+    ScanChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, select, filterSoftDeleted)
 
 /**
  * A Request to scan DataObjects by key from [startKey] [fromVersion] until [limit]
  * for specific [dataModel]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order]
+ * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
@@ -44,8 +46,9 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal co
     override val limit: UInt32 = 100.toUInt32(),
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
+    override val select: RootGraph<DO>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DO, DM>, IsChangesRequest<DO, DM> {
+) : IsScanRequest<DO, DM>, IsChangesRequest<DO, DM>, IsSelectRequest<DO, DM> {
     override val requestType = RequestType.ScanChanges
 
     internal companion object: QueryDataModel<ScanChangesRequest<*, *>>(
@@ -61,6 +64,7 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal co
                 IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*, *>::filterSoftDeleted)
                 IsScanRequest.addLimit(this, ScanChangesRequest<*, *>::limit)
                 IsChangesRequest.addFromVersion(7, this, ScanChangesRequest<*, *>::fromVersion)
+                IsSelectRequest.addSelect(8, this, ScanChangesRequest<*, *>::select)
             }
         }
     ) {
@@ -72,7 +76,8 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal co
             toVersion = map(4),
             filterSoftDeleted = map(5),
             limit = map(6),
-            fromVersion = map(7)
+            fromVersion = map(7),
+            select = map(8)
         )
     }
 }

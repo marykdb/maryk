@@ -111,11 +111,11 @@ data class Graph<PDO: Any, DO: Any> internal constructor(
             reader.nextToken()
 
             val parent = reader.currentToken.let {
-                val value = if (it !is JsonToken.FieldName || it.value == null) {
-                    throw ParseException("JSON value should be a non empty FieldName")
-                } else {
-                    it.value!!
+                if (it !is JsonToken.FieldName) {
+                    throw ParseException("JSON value should be a FieldName")
                 }
+
+                val value = it.value ?: throw ParseException("JSON value should not be null")
 
                 Properties.parent.definition.fromString(value, context)
             }

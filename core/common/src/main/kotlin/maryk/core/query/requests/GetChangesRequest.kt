@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
+import maryk.core.objects.graph.RootGraph
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -22,15 +23,16 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.getChanges(
     order: Order? = null,
     fromVersion: UInt64,
     toVersion: UInt64? = null,
+    select: RootGraph<DO>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    GetChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, filterSoftDeleted)
+    GetChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, select, filterSoftDeleted)
 
 /**
  * A Request to get changes on [dataModel] by [keys]
  * It will only fetch the changes [fromVersion] (Inclusive).
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order]
+ * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
@@ -39,6 +41,7 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
     override val order: Order? = null,
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
+    override val select: RootGraph<DO>? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DO, DM>, IsChangesRequest<DO, DM> {
     override val requestType = RequestType.GetChanges
@@ -55,6 +58,7 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
                 IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
                 IsChangesRequest.addFromVersion(6, this, GetChangesRequest<*, *>::fromVersion)
+                IsSelectRequest.addSelect(7, this, GetChangesRequest<*, *>::select)
             }
         }
     ) {
@@ -65,7 +69,8 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
             order = map(3),
             toVersion = map(4),
             filterSoftDeleted = map(5),
-            fromVersion = map(6)
+            fromVersion = map(6),
+            select = map(7)
         )
     }
 }

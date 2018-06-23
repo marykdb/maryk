@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
+import maryk.core.objects.graph.RootGraph
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -25,15 +26,16 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.getVersionedChang
     fromVersion: UInt64,
     toVersion: UInt64? = null,
     maxVersions: UInt32 = 1000.toUInt32(),
+    select: RootGraph<DO>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    GetVersionedChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, maxVersions, filterSoftDeleted)
+    GetVersionedChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
 
 /**
  * A Request to get DataObject of type [DO] its versioned changes by value [keys] for specific [dataModel] of type [DM]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order]
+ * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
@@ -43,6 +45,7 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> int
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
     override val maxVersions: UInt32 = 1000.toUInt32(),
+    override val select: RootGraph<DO>? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
     override val requestType = RequestType.GetVersionedChanges
@@ -60,6 +63,7 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> int
                 IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*, *>::filterSoftDeleted)
                 IsChangesRequest.addFromVersion(6, this, GetVersionedChangesRequest<*, *>::fromVersion)
                 IsVersionedChangesRequest.addMaxVersions(7, this, GetVersionedChangesRequest<*, *>::maxVersions)
+                IsSelectRequest.addSelect(8, this, GetVersionedChangesRequest<*, *>::select)
             }
         }
     ) {
@@ -71,7 +75,8 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> int
             toVersion = map(4),
             filterSoftDeleted = map(5),
             fromVersion = map(6),
-            maxVersions = map(7)
+            maxVersions = map(7),
+            select = map(8)
         )
     }
 }

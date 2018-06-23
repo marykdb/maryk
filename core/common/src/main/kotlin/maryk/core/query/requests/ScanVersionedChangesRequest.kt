@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.objects.QueryDataModel
 import maryk.core.objects.RootDataModel
+import maryk.core.objects.graph.RootGraph
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -26,15 +27,16 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanVersionedChan
     fromVersion: UInt64,
     toVersion: UInt64? = null,
     maxVersions: UInt32 = 1000.toUInt32(),
+    select: RootGraph<DO>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    ScanVersionedChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, maxVersions, filterSoftDeleted)
+    ScanVersionedChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit] for specific [dataModel]
  * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
- * Results can be ordered with an [order]
+ * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
@@ -45,6 +47,7 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> in
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
     override val maxVersions: UInt32 = 1000.toUInt32(),
+    override val select: RootGraph<DO>? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
     override val requestType = RequestType.ScanVersionedChanges
@@ -63,6 +66,7 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> in
                 IsScanRequest.addLimit(this, ScanVersionedChangesRequest<*, *>::limit)
                 IsChangesRequest.addFromVersion(7, this, ScanVersionedChangesRequest<*, *>::fromVersion)
                 IsVersionedChangesRequest.addMaxVersions(8, this, ScanVersionedChangesRequest<*, *>::maxVersions)
+                IsSelectRequest.addSelect(9, this, ScanVersionedChangesRequest<*, *>::select)
             }
         }
     ) {
@@ -75,7 +79,8 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> in
             filterSoftDeleted = map(5),
             limit = map(6),
             fromVersion = map(7),
-            maxVersions = map(8)
+            maxVersions = map(8),
+            select = map(9)
         )
     }
 }

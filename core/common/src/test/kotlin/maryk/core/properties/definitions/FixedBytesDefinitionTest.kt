@@ -25,7 +25,6 @@ internal class FixedBytesDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minValue = Bytes.ofHex("0000000000"),
         maxValue = Bytes.ofHex("AAAAAAAAAA"),
@@ -92,7 +91,6 @@ internal class FixedBytesDefinitionTest {
         checkYamlConversion(this.def, FixedBytesDefinition.Model)
         checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

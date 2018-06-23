@@ -43,7 +43,6 @@ internal class EmbeddedObjectDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         dataModel = { MarykObject },
         default = MarykObject("default")
     )
@@ -104,7 +103,6 @@ internal class EmbeddedObjectDefinitionTest {
         checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DataModelContext() })
         checkYamlConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DataModelContext() }) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         dataModel: MarykObject

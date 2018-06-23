@@ -38,7 +38,6 @@ import maryk.yaml.YamlWriter
  */
 data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     val typeEnum: IndexedEnumDefinition<E>,
@@ -199,7 +198,6 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         if (other !is MultiTypeDefinition<*, *>) return false
 
         if (indexed != other.indexed) return false
-        if (searchable != other.searchable) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (definitionMap != other.definitionMap) {
@@ -218,7 +216,6 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
     override fun hashCode(): Int {
         var result = indexed.hashCode()
-        result = 31 * result + searchable.hashCode()
         result = 31 * result + required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + definitionMap.hashCode()
@@ -230,11 +227,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         properties = object : PropertyDefinitions<MultiTypeDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*, *>::indexed)
-                IsPropertyDefinition.addSearchable(this, MultiTypeDefinition<*, *>::searchable)
                 IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
 
-                add(4, "typeEnum",
+                add(3, "typeEnum",
                     StringDefinition(),
                     getter = MultiTypeDefinition<*, *>::typeEnum,
                     capturer = { context: MultiTypeDefinitionContext, value ->
@@ -246,10 +242,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                     fromSerializable = { null }
                 )
 
-                this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
+                this.addDescriptorPropertyWrapperWrapper(4, "definitionMap")
 
                 @Suppress("UNCHECKED_CAST")
-                add(6, "default",
+                add(5, "default",
                     ContextualValueDefinition(
                         required = false,
                         contextTransformer = { context: MultiTypeDefinitionContext? ->
@@ -265,22 +261,23 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         }
     ) {
         override fun invoke(map: Map<Int, *>): MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> {
-            val definitionMap = convertMultiTypeDescriptors(map(5))
+            val definitionMap = convertMultiTypeDescriptors(
+                map(4)
+            )
 
             val typeOptions = definitionMap.keys.toTypedArray()
 
             val typeEnum = IndexedEnumDefinition(
-                map(4), { typeOptions }
-            )
+                map(3)
+            ) { typeOptions }
 
             return MultiTypeDefinition(
                 indexed = map(0),
-                searchable = map(1),
-                required = map(2),
-                final = map(3),
+                required = map(1),
+                final = map(2),
                 typeEnum = typeEnum,
                 definitionMap = definitionMap,
-                default = map(6)
+                default = map(5)
             )
         }
     }
@@ -297,9 +294,8 @@ class MultiTypeDefinitionContext(
         val typeOptions = definitionMap?.keys?.toTypedArray() ?: throw ContextNotFoundException()
 
         val typeEnum = IndexedEnumDefinition(
-            typeEnumName ?: throw ContextNotFoundException(),
-            { typeOptions }
-        )
+            typeEnumName ?: throw ContextNotFoundException()
+        ) { typeOptions }
 
         MultiTypeDefinition(
             typeEnum = typeEnum,

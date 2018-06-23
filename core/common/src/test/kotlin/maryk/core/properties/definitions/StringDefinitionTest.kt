@@ -38,7 +38,6 @@ internal class StringDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minSize = 3,
         maxSize = 6,
@@ -137,7 +136,6 @@ internal class StringDefinitionTest {
         checkYamlConversion(this.def, StringDefinition.Model)
         checkYamlConversion(this.defMaxDefined, StringDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

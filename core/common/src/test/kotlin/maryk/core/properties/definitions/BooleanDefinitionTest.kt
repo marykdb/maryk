@@ -18,7 +18,6 @@ internal class BooleanDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         default = true
     )
 
@@ -89,7 +88,6 @@ internal class BooleanDefinitionTest {
         checkYamlConversion(this.def, BooleanDefinition.Model)
         checkYamlConversion(this.defMaxDefined, BooleanDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         default: true

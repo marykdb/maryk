@@ -21,7 +21,6 @@ import maryk.lib.exceptions.ParseException
 /** Definition for Enum properties */
 class EnumDefinition<E : IndexedEnum<E>>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -80,7 +79,6 @@ class EnumDefinition<E : IndexedEnum<E>>(
         if (other !is EnumDefinition<*>) return false
 
         if (indexed != other.indexed) return false
-        if (searchable != other.searchable) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (unique != other.unique) return false
@@ -98,7 +96,6 @@ class EnumDefinition<E : IndexedEnum<E>>(
     /** Override hashCode to handle enum values comparison */
     override fun hashCode(): Int {
         var result = indexed.hashCode()
-        result = 31 * result + searchable.hashCode()
         result = 31 * result + required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + unique.hashCode()
@@ -117,12 +114,11 @@ class EnumDefinition<E : IndexedEnum<E>>(
         properties = object : PropertyDefinitions<EnumDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)
-                IsPropertyDefinition.addSearchable(this, EnumDefinition<*>::searchable)
                 IsPropertyDefinition.addRequired(this, EnumDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, EnumDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
                 @Suppress("UNCHECKED_CAST")
-                add(5, "enum",
+                add(4, "enum",
                     ContextValueTransformDefinition(
                         definition = ContextTransformerDefinition(
                             definition = EmbeddedObjectDefinition(
@@ -151,7 +147,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(6, "minValue",
+                add(5, "minValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: EnumDefinitionContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -161,7 +157,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                     getter = EnumDefinition<*>::minValue
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(7, "maxValue",
+                add(6, "maxValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: EnumDefinitionContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -171,7 +167,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                     getter = EnumDefinition<*>::maxValue
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(8, "default",
+                add(7, "default",
                     ContextualValueDefinition(
                         contextualResolver = { context: EnumDefinitionContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -187,14 +183,13 @@ class EnumDefinition<E : IndexedEnum<E>>(
         override fun invoke(map: Map<Int, *>): EnumDefinition<IndexedEnum<Any>> {
             return EnumDefinition(
                 indexed = map(0),
-                searchable = map(1),
-                required = map(2),
-                final = map(3),
-                unique = map(4),
-                enum = map(5),
-                minValue = map(6),
-                maxValue = map(7),
-                default = map(8)
+                required = map(1),
+                final = map(2),
+                unique = map(3),
+                enum = map(4),
+                minValue = map(5),
+                maxValue = map(6),
+                default = map(7)
             )
         }
     }

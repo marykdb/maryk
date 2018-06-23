@@ -16,7 +16,6 @@ internal class ContextualCollectionDefinition<in CX: IsPropertyContext>(
     override val required: Boolean = true
 ): IsByteTransportableCollection<Any, Collection<Any>, CX>, IsSerializableFlexBytesEncodable<Collection<Any>, CX> {
     override val indexed = false
-    override val searchable = false
     override val final = true
 
     override fun isPacked(context: CX?, encodedWireType: WireType) =

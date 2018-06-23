@@ -24,7 +24,6 @@ internal class DateDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         fillWithNow = true,
         maxValue = Date.MAX,
@@ -98,7 +97,6 @@ internal class DateDefinitionTest {
         checkYamlConversion(this.def, DateDefinition.Model)
         checkYamlConversion(this.defMaxDefined, DateDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

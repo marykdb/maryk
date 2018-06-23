@@ -15,7 +15,6 @@ internal class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>
     override val required: Boolean = true
 ) : IsByteTransportableMap<K, V, CX>, IsSerializableFlexBytesEncodable<Map<K, V>, CX> {
     override val indexed = false
-    override val searchable = false
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null

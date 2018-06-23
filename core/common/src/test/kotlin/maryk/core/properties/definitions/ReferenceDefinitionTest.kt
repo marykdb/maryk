@@ -28,7 +28,6 @@ internal class ReferenceDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minValue = refToTest[0],
         maxValue = refToTest[1],
@@ -93,7 +92,6 @@ internal class ReferenceDefinitionTest {
         checkYamlConversion(this.def, ReferenceDefinition.Model, { DataModelContext() })
         checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DataModelContext() }) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

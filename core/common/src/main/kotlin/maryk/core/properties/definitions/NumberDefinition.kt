@@ -17,7 +17,6 @@ import maryk.lib.exceptions.ParseException
 /** Definition for Number properties */
 data class NumberDefinition<T: Comparable<T>>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -74,11 +73,10 @@ data class NumberDefinition<T: Comparable<T>>(
         properties = object : PropertyDefinitions<NumberDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, NumberDefinition<*>::indexed)
-                IsPropertyDefinition.addSearchable(this, NumberDefinition<*>::searchable)
                 IsPropertyDefinition.addRequired(this, NumberDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
-                add(5, "type",
+                add(4, "type",
                     definition = EnumDefinition(enum = NumberType),
                     getter = {
                         it.type.type
@@ -88,7 +86,7 @@ data class NumberDefinition<T: Comparable<T>>(
                         context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
                     }
                 )
-                add(6, "minValue",
+                add(5, "minValue",
                     ContextualNumberDefinition<NumericContext>(required = false) {
                         it?.numberType ?: throw ContextNotFoundException()
                     },
@@ -97,7 +95,7 @@ data class NumberDefinition<T: Comparable<T>>(
                         it.minValue as Comparable<Any>?
                     }
                 )
-                add(7, "maxValue",
+                add(6, "maxValue",
                     ContextualNumberDefinition<NumericContext>(required = false) {
                         it?.numberType ?: throw ContextNotFoundException()
                     },
@@ -106,7 +104,7 @@ data class NumberDefinition<T: Comparable<T>>(
                         it.maxValue as Comparable<Any>?
                     }
                 )
-                add(8, "default",
+                add(7, "default",
                     ContextualNumberDefinition<NumericContext>(required = false) {
                         it?.numberType ?: throw ContextNotFoundException()
                     },
@@ -115,22 +113,21 @@ data class NumberDefinition<T: Comparable<T>>(
                         it.default as Comparable<Any>?
                     }
                 )
-                IsNumericDefinition.addRandom(9,this, NumberDefinition<*>::random)
+                IsNumericDefinition.addRandom(8,this, NumberDefinition<*>::random)
             }
         }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: Map<Int, *>) = NumberDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            type = map<NumberType>(5).descriptor() as NumberDescriptor<Comparable<Any>>,
-            minValue = map(6),
-            maxValue = map(7),
-            default = map(8),
-            random = map(9)
+            required = map(1),
+            final = map(2),
+            unique = map(3),
+            type = map<NumberType>(4).descriptor() as NumberDescriptor<Comparable<Any>>,
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            random = map(8)
         )
     }
 }

@@ -20,7 +20,6 @@ Property representing a Reference to another DataObject.
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `indexed` - default false
-- `searchable` - default true
 - `dataModel` - Model of DataObjects to be referred to
 
 ## Examples

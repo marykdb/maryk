@@ -11,7 +11,6 @@ import maryk.lib.exceptions.ParseException
 /** Definition for Boolean properties */
 data class BooleanDefinition(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val default: Boolean? = null
@@ -49,19 +48,17 @@ data class BooleanDefinition(
         properties = object : PropertyDefinitions<BooleanDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)
-                IsPropertyDefinition.addSearchable(this, BooleanDefinition::searchable)
                 IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
                 IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
-                add(4, "default", BooleanDefinition(), BooleanDefinition::default)
+                add(3, "default", BooleanDefinition(), BooleanDefinition::default)
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = BooleanDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            default = map(4)
+            required = map(1),
+            final = map(2),
+            default = map(3)
         )
     }
 }

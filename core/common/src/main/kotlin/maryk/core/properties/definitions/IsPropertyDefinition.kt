@@ -11,7 +11,6 @@ import maryk.core.properties.references.IsPropertyReference
  */
 interface IsPropertyDefinition<T: Any> {
     val indexed: Boolean
-    val searchable: Boolean
     val required: Boolean
     val final: Boolean
 
@@ -36,16 +35,12 @@ interface IsPropertyDefinition<T: Any> {
             definitions.add(0, "indexed", BooleanDefinition(default = false), getter)
         }
 
-        internal fun <DO:Any> addSearchable(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(1, "searchable", BooleanDefinition(default = true), getter)
-        }
-
         internal fun <DO:Any> addRequired(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(2, "required", BooleanDefinition(default = true), getter)
+            definitions.add(1, "required", BooleanDefinition(default = true), getter)
         }
 
         internal fun <DO:Any> addFinal(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(3, "final", BooleanDefinition(default = false), getter)
+            definitions.add(2, "final", BooleanDefinition(default = false), getter)
         }
     }
 }

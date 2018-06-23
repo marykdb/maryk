@@ -23,7 +23,6 @@ Basic String property to represent text.
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `indexed` - default false
-- `searchable` - default true
 
 ## Examples
 

@@ -39,7 +39,6 @@ internal class MapDefinitionTest {
 
     private val defMaxDefined = MapDefinition(
         indexed = true,
-        searchable = false,
         final = true,
         required = false,
         minSize = 2,
@@ -183,14 +182,12 @@ internal class MapDefinitionTest {
         checkYamlConversion(this.def, MapDefinition.Model)
         checkYamlConversion(this.defMaxDefined, MapDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         minSize: 2
         maxSize: 4
         keyDefinition: !Number
           indexed: false
-          searchable: true
           required: true
           final: false
           unique: false
@@ -199,7 +196,6 @@ internal class MapDefinitionTest {
           random: false
         valueDefinition: !String
           indexed: false
-          searchable: true
           required: true
           final: false
           unique: false

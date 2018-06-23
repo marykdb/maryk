@@ -23,7 +23,6 @@ be null.
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `indexed` - default false
-- `searchable` - default true
 - `keyDefinition` - definition of keys contained in map
 - `valueDefinition` - definition of values contained in map
 
@@ -36,7 +35,6 @@ be null.
     type: UInt32
   valueDefinition: !String
   indexed: true
-  searchable: true
   required: false
   final: true
   minSize: 1

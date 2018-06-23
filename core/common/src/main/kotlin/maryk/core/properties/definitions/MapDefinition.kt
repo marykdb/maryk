@@ -31,7 +31,6 @@ import maryk.lib.exceptions.ParseException
 /** Definition for Map property */
 data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val minSize: Int? = null,
@@ -186,13 +185,12 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         properties = object : PropertyDefinitions<MapDefinition<*, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)
-                IsPropertyDefinition.addSearchable(this, MapDefinition<*, *, *>::searchable)
                 IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
                 IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
-                HasSizeDefinition.addMinSize(4, this, MapDefinition<*, *, *>::minSize)
-                HasSizeDefinition.addMaxSize(5, this, MapDefinition<*, *, *>::maxSize)
+                HasSizeDefinition.addMinSize(3, this, MapDefinition<*, *, *>::minSize)
+                HasSizeDefinition.addMaxSize(4, this, MapDefinition<*, *, *>::maxSize)
 
-                add(6, "keyDefinition",
+                add(5, "keyDefinition",
                     ContextTransformerDefinition(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
@@ -215,7 +213,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     }
                 )
 
-                add(7, "valueDefinition",
+                add(6, "valueDefinition",
                     ContextTransformerDefinition(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
@@ -239,7 +237,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                 )
 
                 @Suppress("UNCHECKED_CAST")
-                add(8, "default",
+                add(7, "default",
                     ContextualMapDefinition(
                         contextualResolver = { context: KeyValueDefinitionContext? ->
                             context?.let {
@@ -255,14 +253,13 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     ) {
         override fun invoke(map: Map<Int, *>) = MapDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            minSize = map(4),
-            maxSize = map(5),
-            keyDefinition = map<IsSimpleValueDefinition<*, *>>(6),
-            valueDefinition = map<IsValueDefinition<*, *>>(7),
-            default = map(8)
+            required = map(1),
+            final = map(2),
+            minSize = map(3),
+            maxSize = map(4),
+            keyDefinition = map<IsSimpleValueDefinition<*, *>>(5),
+            valueDefinition = map<IsValueDefinition<*, *>>(6),
+            default = map(7)
         )
     }
 }

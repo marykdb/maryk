@@ -28,7 +28,6 @@ internal class EnumDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minValue = Option.V0,
         maxValue = Option.V2,
@@ -110,7 +109,6 @@ internal class EnumDefinitionTest {
         checkYamlConversion(this.def, EnumDefinition.Model, null, ::compare)
         checkYamlConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

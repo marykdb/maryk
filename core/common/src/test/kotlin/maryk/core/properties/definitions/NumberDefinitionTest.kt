@@ -26,7 +26,6 @@ internal class NumberDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minValue = 3254765,
         maxValue = 92763478,
@@ -150,7 +149,6 @@ internal class NumberDefinitionTest {
         checkYamlConversion(this.def, NumberDefinition.Model)
         checkYamlConversion(this.defMaxDefined, NumberDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

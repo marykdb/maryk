@@ -32,7 +32,6 @@ internal class DateTimeDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         fillWithNow = true,
         precision = TimePrecision.MILLIS,
@@ -135,7 +134,6 @@ internal class DateTimeDefinitionTest {
         checkYamlConversion(this.def, DateTimeDefinition.Model)
         checkYamlConversion(this.defMaxDefined, DateTimeDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

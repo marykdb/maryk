@@ -78,10 +78,3 @@ Most properties contain a property to set it on indexed. If this value is set
 to true it will be indexed in the persistent storage. Be careful adding indices
 since this can slow down writing data. Also consider a good key design so less
 indices are needed.
-
-## Searchable
-
-Most properties also contain a way to set if it is searchable which is on by default.
-This value is read by search engines (like ElasticSearch) which can be used
-on top of a persistence engine for more fuzzy and aggregated types of data retrieval. 
-With this value you control what is stored in the index of that search engine.

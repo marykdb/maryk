@@ -27,7 +27,6 @@ internal class FlexBytesDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minValue = Bytes.ofHex("0000000000"),
         maxValue = Bytes.ofHex("AAAAAAAAAA"),
@@ -104,7 +103,6 @@ internal class FlexBytesDefinitionTest {
         checkYamlConversion(this.def, FlexBytesDefinition.Model)
         checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

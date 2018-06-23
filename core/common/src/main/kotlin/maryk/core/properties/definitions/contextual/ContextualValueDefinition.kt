@@ -19,7 +19,6 @@ internal data class ContextualValueDefinition<CX: IsPropertyContext, CXI: IsProp
     override val required: Boolean = true
 ): IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
     override val indexed = false
-    override val searchable = false
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 

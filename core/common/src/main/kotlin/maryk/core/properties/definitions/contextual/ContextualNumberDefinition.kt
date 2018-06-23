@@ -27,7 +27,6 @@ internal class ContextualNumberDefinition<in CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> NumberDescriptor<Comparable<Any>>
 ): IsSubDefinition<Comparable<Any>, CX>, IsSerializableFlexBytesEncodable<Comparable<Any>, CX> {
     override val indexed = false
-    override val searchable = false
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null

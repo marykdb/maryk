@@ -16,7 +16,6 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DO: Any>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -61,7 +60,6 @@ class ReferenceDefinition<DO: Any>(
         if (other !is ReferenceDefinition<*>) return false
 
         if (indexed != other.indexed) return false
-        if (searchable != other.searchable) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (unique != other.unique) return false
@@ -75,7 +73,6 @@ class ReferenceDefinition<DO: Any>(
 
     override fun hashCode(): Int {
         var result = indexed.hashCode()
-        result = 31 * result + searchable.hashCode()
         result = 31 * result + required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + unique.hashCode()
@@ -90,14 +87,13 @@ class ReferenceDefinition<DO: Any>(
         properties = object : PropertyDefinitions<ReferenceDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ReferenceDefinition<*>::indexed)
-                IsPropertyDefinition.addSearchable(this, ReferenceDefinition<*>::searchable)
                 IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, ReferenceDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
-                add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
-                add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
-                add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
-                add(8, "dataModel",
+                add(4, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
+                add(5, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
+                add(6, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
+                add(7, "dataModel",
                     definition = ContextualModelReferenceDefinition(
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let {
@@ -129,14 +125,13 @@ class ReferenceDefinition<DO: Any>(
     ) {
         override fun invoke(map: Map<Int, *>) = ReferenceDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            minValue = map<Bytes?>(5)?.let { Key<Any>(it.bytes) },
-            maxValue = map<Bytes?>(6)?.let { Key<Any>(it.bytes) },
-            default = map<Bytes?>(7)?.let { Key<Any>(it.bytes) },
-            dataModel = map(8)
+            required = map(1),
+            final = map(2),
+            unique = map(3),
+            minValue = map<Bytes?>(4)?.let { Key<Any>(it.bytes) },
+            maxValue = map<Bytes?>(5)?.let { Key<Any>(it.bytes) },
+            default = map<Bytes?>(6)?.let { Key<Any>(it.bytes) },
+            dataModel = map(7)
         )
     }
 }

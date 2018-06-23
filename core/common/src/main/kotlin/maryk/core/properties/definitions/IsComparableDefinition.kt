@@ -43,7 +43,7 @@ interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : I
 
     companion object {
         internal fun <DO : Any> addUnique(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(4, "unique", BooleanDefinition(default = false), getter)
+            definitions.add(3, "unique", BooleanDefinition(default = false), getter)
         }
     }
 }

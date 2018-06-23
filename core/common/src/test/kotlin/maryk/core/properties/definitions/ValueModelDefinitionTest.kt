@@ -23,7 +23,6 @@ internal class ValueModelDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minValue = TestValueObject(
             int = 0,
@@ -121,7 +120,6 @@ internal class ValueModelDefinitionTest {
         checkYamlConversion(this.def, ValueModelDefinition.Model, { DataModelContext() })
         checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DataModelContext() }) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

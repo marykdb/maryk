@@ -35,7 +35,6 @@ internal class TimeDefinitionTest {
         indexed = true,
         required = false,
         final = true,
-        searchable = false,
         unique = true,
         minValue = Time.MIN,
         maxValue = Time.MAX_IN_MILLIS,
@@ -138,7 +137,6 @@ internal class TimeDefinitionTest {
         checkYamlConversion(this.def, TimeDefinition.Model)
         checkYamlConversion(this.defMaxDefined, TimeDefinition.Model) shouldBe """
         indexed: true
-        searchable: false
         required: false
         final: true
         unique: true

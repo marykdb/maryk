@@ -17,7 +17,6 @@ internal data class ContextCaptureDefinition<T: Any, in CX: IsPropertyContext>(
 ) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
     override val wireType = definition.wireType
     override val indexed = definition.indexed
-    override val searchable = definition.searchable
     override val required = definition.required
     override val final = definition.final
 

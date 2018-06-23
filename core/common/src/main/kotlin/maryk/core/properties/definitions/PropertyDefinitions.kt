@@ -288,7 +288,6 @@ internal data class PropertyDefinitionsCollectionDefinition(
         >
 > {
     override val indexed = false
-    override val searchable = false
     override val required = true
     override val final = true
     override val minSize: Int? = null

@@ -18,7 +18,6 @@ internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
 ): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
     override val indexed = false
-    override val searchable = false
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED

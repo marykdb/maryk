@@ -33,7 +33,6 @@ data class ContextualModelReferenceDefinition<DM: DataModel<*, *>, in CX: IsProp
     val contextTransformer: (CX?) -> CXI?
 ): IsValueDefinition<IsDataModelReference<DM>, CX>, IsSerializableFlexBytesEncodable<IsDataModelReference<DM>, CX> {
     override val indexed = false
-    override val searchable = false
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED

@@ -62,7 +62,6 @@ class RootMarykTest {
               ? 0: value
               : !String
                 indexed: false
-                searchable: true
                 required: true
                 final: false
                 unique: false

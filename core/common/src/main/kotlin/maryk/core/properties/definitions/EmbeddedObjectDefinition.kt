@@ -25,7 +25,6 @@ import maryk.json.JsonWriter
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
 class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: () -> DM,
@@ -112,7 +111,6 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
         if (other !is EmbeddedObjectDefinition<*, *, *, *, *>) return false
 
         if (indexed != other.indexed) return false
-        if (searchable != other.searchable) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (internalDataModel.value != other.internalDataModel.value) return false
@@ -122,7 +120,6 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
 
     override fun hashCode(): Int {
         var result = indexed.hashCode()
-        result = 31 * result + searchable.hashCode()
         result = 31 * result + required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + internalDataModel.value.hashCode()
@@ -134,10 +131,9 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
         properties = object : PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, EmbeddedObjectDefinition<*, *, *, *, *>::indexed)
-                IsPropertyDefinition.addSearchable(this, EmbeddedObjectDefinition<*, *, *, *, *>::searchable)
                 IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
                 IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
-                add(4, "dataModel",
+                add(3, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextTransformer = {context: ModelContext? ->
                             context?.dataModelContext
@@ -170,7 +166,7 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
                     }
                 )
 
-                add(5, "default",
+                add(4, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model?.invoke() ?: throw ContextNotFoundException()
@@ -183,11 +179,10 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
     ) {
         override fun invoke(map: Map<Int, *>) = EmbeddedObjectDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            dataModel = map<() -> DataModel<Any, PropertyDefinitions<Any>>>(4),
-            default = map(5)
+            required = map(1),
+            final = map(2),
+            dataModel = map<() -> DataModel<Any, PropertyDefinitions<Any>>>(3),
+            default = map(4)
         )
     }
 }

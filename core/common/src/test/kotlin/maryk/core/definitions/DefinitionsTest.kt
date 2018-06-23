@@ -50,7 +50,6 @@ class DefinitionsTest {
             ? 0: int
             : !Number
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
@@ -60,7 +59,6 @@ class DefinitionsTest {
             ? 1: dateTime
             : !DateTime
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
@@ -69,7 +67,6 @@ class DefinitionsTest {
             ? 2: bool
             : !Boolean
               indexed: false
-              searchable: true
               required: true
               final: false
         - !RootModel
@@ -80,7 +77,6 @@ class DefinitionsTest {
             ? 0: value
             : !String
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
@@ -92,21 +88,18 @@ class DefinitionsTest {
             ? 0: value
             : !String
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
             ? 1: model
             : !Embed
               indexed: false
-              searchable: true
               required: false
               final: false
               dataModel: EmbeddedMarykObject
             ? 2: marykModel
             : !Embed
               indexed: false
-              searchable: true
               required: false
               final: false
               dataModel: TestMarykObject
@@ -120,7 +113,6 @@ class DefinitionsTest {
             ? 0: string
             : !String
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
@@ -129,7 +121,6 @@ class DefinitionsTest {
             ? 1: int
             : !Number
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
@@ -139,7 +130,6 @@ class DefinitionsTest {
             ? 2: uint
             : !Number
               indexed: false
-              searchable: true
               required: true
               final: true
               unique: false
@@ -148,7 +138,6 @@ class DefinitionsTest {
             ? 3: double
             : !Number
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
@@ -157,7 +146,6 @@ class DefinitionsTest {
             ? 4: dateTime
             : !DateTime
               indexed: false
-              searchable: true
               required: true
               final: false
               unique: false
@@ -166,13 +154,11 @@ class DefinitionsTest {
             ? 5: bool
             : !Boolean
               indexed: false
-              searchable: true
               required: true
               final: true
             ? 6: enum
             : !Enum
               indexed: false
-              searchable: true
               required: true
               final: true
               unique: false
@@ -181,12 +167,10 @@ class DefinitionsTest {
             ? 7: list
             : !List
               indexed: false
-              searchable: true
               required: false
               final: false
               valueDefinition: !Number
                 indexed: false
-                searchable: true
                 required: true
                 final: false
                 unique: false
@@ -195,12 +179,10 @@ class DefinitionsTest {
             ? 8: set
             : !Set
               indexed: false
-              searchable: true
               required: false
               final: false
               valueDefinition: !Date
                 indexed: false
-                searchable: true
                 required: true
                 final: false
                 unique: false
@@ -208,12 +190,10 @@ class DefinitionsTest {
             ? 9: map
             : !Map
               indexed: false
-              searchable: true
               required: false
               final: false
               keyDefinition: !Time
                 indexed: false
-                searchable: true
                 required: true
                 final: false
                 unique: false
@@ -221,14 +201,12 @@ class DefinitionsTest {
                 fillWithNow: false
               valueDefinition: !String
                 indexed: false
-                searchable: true
                 required: true
                 final: false
                 unique: false
             ? 10: valueObject
             : !Value
               indexed: false
-              searchable: true
               required: false
               final: false
               unique: false
@@ -236,14 +214,12 @@ class DefinitionsTest {
             ? 11: embeddedObject
             : !Embed
               indexed: false
-              searchable: true
               required: false
               final: false
               dataModel: EmbeddedMarykObject
             ? 12: multi
             : !MultiType
               indexed: false
-              searchable: true
               required: false
               final: false
               typeEnum: Option
@@ -251,14 +227,12 @@ class DefinitionsTest {
                 ? 0: V0
                 : !String
                   indexed: false
-                  searchable: true
                   required: true
                   final: false
                   unique: false
                 ? 1: V1
                 : !Number
                   indexed: false
-                  searchable: true
                   required: true
                   final: false
                   unique: false
@@ -267,14 +241,12 @@ class DefinitionsTest {
                 ? 2: V2
                 : !Embed
                   indexed: false
-                  searchable: true
                   required: true
                   final: false
                   dataModel: EmbeddedMarykObject
             ? 13: reference
             : !Reference
               indexed: false
-              searchable: true
               required: false
               final: false
               unique: false
@@ -282,19 +254,16 @@ class DefinitionsTest {
             ? 14: listOfString
             : !List
               indexed: false
-              searchable: true
               required: false
               final: false
               valueDefinition: !String
                 indexed: false
-                searchable: true
                 required: true
                 final: false
                 unique: false
             ? 15: selfReference
             : !Reference
               indexed: false
-              searchable: true
               required: false
               final: false
               unique: false

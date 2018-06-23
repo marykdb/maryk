@@ -27,7 +27,6 @@ internal class ValueDataModelTest {
           ? 0: int
           : !Number
             indexed: false
-            searchable: true
             required: true
             final: false
             unique: false
@@ -37,7 +36,6 @@ internal class ValueDataModelTest {
           ? 1: dateTime
           : !DateTime
             indexed: false
-            searchable: true
             required: true
             final: false
             unique: false
@@ -46,7 +44,6 @@ internal class ValueDataModelTest {
           ? 2: bool
           : !Boolean
             indexed: false
-            searchable: true
             required: true
             final: false
 

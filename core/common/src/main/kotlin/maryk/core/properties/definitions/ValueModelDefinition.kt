@@ -22,7 +22,6 @@ import maryk.json.IsJsonLikeWriter
 /** Definition for value model properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
 data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO, PropertyDefinitions<DO>>>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -85,12 +84,11 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
         properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *>::indexed)
-                IsPropertyDefinition.addSearchable(this, ValueModelDefinition<*, *>::searchable)
                 IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *>::final)
                 IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *>::unique)
 
-                add(5, "dataModel",
+                add(4, "dataModel",
                     ContextualModelReferenceDefinition<ValueDataModel<*, *>,ModelContext, DataModelContext>(
                         contextTransformer = { it?.dataModelContext },
                         contextualResolver = { context, name ->
@@ -123,7 +121,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                     }
                 )
 
-                add(6, "minValue",
+                add(5, "minValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model?.invoke() ?: throw ContextNotFoundException()
@@ -132,7 +130,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                     ValueModelDefinition<*, *>::minValue
                 )
 
-                add(7, "maxValue",
+                add(6, "maxValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model?.invoke() ?: throw ContextNotFoundException()
@@ -141,7 +139,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                     ValueModelDefinition<*, *>::maxValue
                 )
 
-                add(8, "default",
+                add(7, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model?.invoke() ?: throw ContextNotFoundException()
@@ -154,14 +152,13 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
     ) {
         override fun invoke(map: Map<Int, *>) = ValueModelDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            dataModel = map(5),
-            minValue = map(6),
-            maxValue = map(7),
-            default = map(8)
+            required = map(1),
+            final = map(2),
+            unique = map(3),
+            dataModel = map(4),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7)
         )
     }
 }

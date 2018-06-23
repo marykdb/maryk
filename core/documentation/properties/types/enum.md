@@ -20,7 +20,6 @@ Contains an enumaration value. Is limited to one of the values in an enum
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `indexed` - default false
-- `searchable` - default true
 - `enum` - defines the enum can contain
 
 ## Examples

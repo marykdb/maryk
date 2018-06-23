@@ -81,7 +81,6 @@ data class CompleteMarykObject(
             index = 0, name = "string",
             definition = StringDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -98,7 +97,6 @@ data class CompleteMarykObject(
             index = 1, name = "number",
             definition = NumberDefinition(
                 indexed = true,
-                searchable = false,
                 final = true,
                 unique = true,
                 type = UInt32,
@@ -113,7 +111,6 @@ data class CompleteMarykObject(
             index = 2, name = "boolean",
             definition = BooleanDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 default = true
@@ -124,7 +121,6 @@ data class CompleteMarykObject(
             index = 3, name = "enum",
             definition = EnumDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -139,7 +135,6 @@ data class CompleteMarykObject(
             index = 4, name = "date",
             definition = DateDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -154,7 +149,6 @@ data class CompleteMarykObject(
             index = 5, name = "dateTime",
             definition = DateTimeDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -170,7 +164,6 @@ data class CompleteMarykObject(
             index = 6, name = "time",
             definition = TimeDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -186,7 +179,6 @@ data class CompleteMarykObject(
             index = 7, name = "fixedBytes",
             definition = FixedBytesDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -202,7 +194,6 @@ data class CompleteMarykObject(
             index = 8, name = "flexBytes",
             definition = FlexBytesDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -218,7 +209,6 @@ data class CompleteMarykObject(
             index = 9, name = "reference",
             definition = ReferenceDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 unique = true,
@@ -233,7 +223,6 @@ data class CompleteMarykObject(
             index = 10, name = "subModel",
             definition = EmbeddedObjectDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 dataModel = { SimpleMarykObject },
@@ -247,7 +236,6 @@ data class CompleteMarykObject(
             index = 11, name = "valueModel",
             definition = ValueModelDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 dataModel = ValueMarykObject,
@@ -270,7 +258,6 @@ data class CompleteMarykObject(
             index = 12, name = "list",
             definition = ListDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 minSize = 1,
@@ -286,7 +273,6 @@ data class CompleteMarykObject(
             index = 13, name = "set",
             definition = SetDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 minSize = 1,
@@ -302,7 +288,6 @@ data class CompleteMarykObject(
             index = 14, name = "map",
             definition = MapDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 minSize = 1,
@@ -319,7 +304,6 @@ data class CompleteMarykObject(
             index = 15, name = "multi",
             definition = MultiTypeDefinition(
                 indexed = true,
-                searchable = false,
                 required = false,
                 final = true,
                 typeEnum = MarykEnum,

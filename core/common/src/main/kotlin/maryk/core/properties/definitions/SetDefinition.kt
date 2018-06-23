@@ -14,7 +14,6 @@ import maryk.core.query.DataModelContext
 /** Definition for Set property */
 data class SetDefinition<T: Any, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val minSize: Int? = null,
@@ -52,12 +51,11 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         properties = object : PropertyDefinitions<SetDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)
-                IsPropertyDefinition.addSearchable(this, SetDefinition<*, *>::searchable)
                 IsPropertyDefinition.addRequired(this, SetDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, SetDefinition<*, *>::final)
-                HasSizeDefinition.addMinSize(4, this, SetDefinition<*, *>::minSize)
-                HasSizeDefinition.addMaxSize(5, this, SetDefinition<*, *>::maxSize)
-                add(6, "valueDefinition",
+                HasSizeDefinition.addMinSize(3, this, SetDefinition<*, *>::minSize)
+                HasSizeDefinition.addMaxSize(4, this, SetDefinition<*, *>::maxSize)
+                add(5, "valueDefinition",
                     ContextTransformerDefinition(
                         contextTransformer = { it?.dataModelContext },
                         definition = MultiTypeDefinition(
@@ -80,7 +78,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(7, "default", ContextualCollectionDefinition(
+                add(6, "default", ContextualCollectionDefinition(
                     required = false,
                     contextualResolver = { context: SetDefinitionContext? ->
                         context?.setDefinition?.let {
@@ -93,13 +91,12 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
     ) {
         override fun invoke(map: Map<Int, *>) = SetDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            minSize = map(4),
-            maxSize = map(5),
-            valueDefinition = map<IsValueDefinition<*, *>>(6),
-            default = map(7)
+            required = map(1),
+            final = map(2),
+            minSize = map(3),
+            maxSize = map(4),
+            valueDefinition = map<IsValueDefinition<*, *>>(5),
+            default = map(6)
         )
     }
 }

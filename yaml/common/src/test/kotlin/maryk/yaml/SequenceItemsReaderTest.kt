@@ -178,18 +178,15 @@ class SequenceItemsReaderTest {
     @Test
     fun read_map_inside_sequence() {
         createYamlReader("""
-        | - Number
-        | - indexed: false
-        |   searchable: true
-        |   required: false
-        """.trimMargin()).apply {
+         - Number
+         - indexed: false
+           required: false
+        """.trimIndent()).apply {
             assertStartArray()
             assertValue("Number")
             assertStartObject()
             assertFieldName("indexed")
             assertValue(false, ValueType.Bool)
-            assertFieldName("searchable")
-            assertValue(true, ValueType.Bool)
             assertFieldName("required")
             assertValue(false, ValueType.Bool)
             assertEndObject()

@@ -19,7 +19,6 @@ import maryk.lib.time.Time
 /** Definition for Time properties */
 data class TimeDefinition(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -76,17 +75,16 @@ data class TimeDefinition(
         properties = object : PropertyDefinitions<TimeDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)
-                IsPropertyDefinition.addSearchable(this, TimeDefinition::searchable)
                 IsPropertyDefinition.addRequired(this, TimeDefinition::required)
                 IsPropertyDefinition.addFinal(this, TimeDefinition::final)
                 IsComparableDefinition.addUnique(this, TimeDefinition::unique)
-                IsTimeDefinition.addPrecision(5,this,
+                IsTimeDefinition.addPrecision(4,this,
                     TimeDefinition::precision,
                     capturer = { context: TimePrecisionContext, timePrecision ->
                         context.precision = timePrecision
                     }
                 )
-                add(6, "minValue",
+                add(5, "minValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: TimeDefinitionContext? ->
                             context?.timeDefinition ?: throw ContextNotFoundException()
@@ -94,7 +92,7 @@ data class TimeDefinition(
                     ),
                     TimeDefinition::minValue
                 )
-                add(7, "maxValue",
+                add(6, "maxValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: TimeDefinitionContext? ->
                             context?.timeDefinition ?: throw ContextNotFoundException()
@@ -102,7 +100,7 @@ data class TimeDefinition(
                     ),
                     TimeDefinition::maxValue
                 )
-                add(8, "default",
+                add(7, "default",
                     ContextualValueDefinition(
                         contextualResolver = { context: TimeDefinitionContext? ->
                             context?.timeDefinition ?: throw ContextNotFoundException()
@@ -110,21 +108,20 @@ data class TimeDefinition(
                     ),
                     TimeDefinition::default
                 )
-                IsMomentDefinition.addFillWithNow(9, this, TimeDefinition::fillWithNow)
+                IsMomentDefinition.addFillWithNow(8, this, TimeDefinition::fillWithNow)
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = TimeDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            precision = map(5),
-            minValue = map(6),
-            maxValue = map(7),
-            default = map(8),
-            fillWithNow = map(9)
+            required = map(1),
+            final = map(2),
+            unique = map(3),
+            precision = map(4),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            fillWithNow = map(8)
         )
     }
 }

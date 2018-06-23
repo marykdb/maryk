@@ -9,7 +9,6 @@ import maryk.lib.extensions.randomBytes
 /** Definition for a bytes array with fixed length */
 data class FixedBytesDefinition(
     override val indexed: Boolean = false,
-    override val searchable: Boolean = true,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -50,29 +49,27 @@ data class FixedBytesDefinition(
         properties = object : PropertyDefinitions<FixedBytesDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, FixedBytesDefinition::indexed)
-                IsPropertyDefinition.addSearchable(this, FixedBytesDefinition::searchable)
                 IsPropertyDefinition.addRequired(this, FixedBytesDefinition::required)
                 IsPropertyDefinition.addFinal(this, FixedBytesDefinition::final)
                 IsComparableDefinition.addUnique(this, FixedBytesDefinition::unique)
-                add(5, "minValue", FlexBytesDefinition(), FixedBytesDefinition::minValue)
-                add(6, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
-                add(7, "default", FlexBytesDefinition(), FixedBytesDefinition::default)
-                IsNumericDefinition.addRandom(8, this, FixedBytesDefinition::random)
-                IsFixedBytesEncodable.addByteSize(9, this, FixedBytesDefinition::byteSize)
+                add(4, "minValue", FlexBytesDefinition(), FixedBytesDefinition::minValue)
+                add(5, "maxValue", FlexBytesDefinition(), FixedBytesDefinition::maxValue)
+                add(6, "default", FlexBytesDefinition(), FixedBytesDefinition::default)
+                IsNumericDefinition.addRandom(7, this, FixedBytesDefinition::random)
+                IsFixedBytesEncodable.addByteSize(8, this, FixedBytesDefinition::byteSize)
             }
         }
     ) {
         override fun invoke(map: Map<Int, *>) = FixedBytesDefinition(
             indexed = map(0),
-            searchable = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            minValue = map(5),
-            maxValue = map(6),
-            default = map(7),
-            random = map(8),
-            byteSize = map(9)
+            required = map(1),
+            final = map(2),
+            unique = map(3),
+            minValue = map(4),
+            maxValue = map(5),
+            default = map(6),
+            random = map(7),
+            byteSize = map(8)
         )
     }
 }

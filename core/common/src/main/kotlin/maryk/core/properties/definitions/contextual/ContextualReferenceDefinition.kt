@@ -18,7 +18,6 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> RootDataModel<*, *>.KeyDefinition
 ): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
     override val indexed = false
-    override val searchable = false
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED

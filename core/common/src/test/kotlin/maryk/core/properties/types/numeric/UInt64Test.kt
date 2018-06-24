@@ -5,7 +5,12 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UInt64Test {
-    private val uInt64values = arrayOf(UInt64.MIN_VALUE, UInt64.MAX_VALUE, 6267862346434742349L.toUInt64())
+    private val uInt64values = arrayOf(
+        UInt64.MIN_VALUE,
+        UInt64.MAX_VALUE,
+        6267862346434742349L.toUInt64(),
+        0L.toUInt64()
+    )
 
     @Test
     fun testRandom() {
@@ -26,8 +31,11 @@ internal class UInt64Test {
 
     @Test
     fun testStringConversion() {
-        UInt64.MIN_VALUE.toString() shouldBe "0x0000000000000000"
+        UInt64.MIN_VALUE.toString() shouldBe "0"
         UInt64.MAX_VALUE.toString() shouldBe "0xffffffffffffffff"
+        Long.MAX_VALUE.toUInt64().toString() shouldBe "9223372036854775807"
+
+        UInt64.ofString("0xf000000000000000").toString() shouldBe "0xf000000000000000"
 
         for (it in uInt64values) {
             UInt64.ofString(it.toString()) shouldBe it

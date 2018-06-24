@@ -63,7 +63,7 @@ class GetVersionedChangesRequestTest {
         dataModel: SimpleMarykObject
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filterSoftDeleted: true
-        fromVersion: 0x00000000000004d2
+        fromVersion: 1234
         maxVersions: 1000
 
         """.trimIndent()
@@ -73,9 +73,9 @@ class GetVersionedChangesRequestTest {
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filter: !Exists value
         order: !Desc value
-        toVersion: 0x0000000000003039
+        toVersion: 12345
         filterSoftDeleted: true
-        fromVersion: 0x00000000000004d2
+        fromVersion: 1234
         maxVersions: 5
         select:
         - value

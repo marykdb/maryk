@@ -51,7 +51,7 @@ class VersionedChangesTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.versionedChanges, VersionedChanges, { this.context }) shouldBe """
-        version: 0x000000000d17f60f
+        version: 219674127
         changes:
         - !Change
           embeddedObject.value: new

@@ -61,7 +61,7 @@ class ScanVersionedChangesRequestTest {
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
         limit: 100
-        fromVersion: 0x00000000000004d2
+        fromVersion: 1234
         maxVersions: 1000
 
         """.trimIndent()
@@ -71,10 +71,10 @@ class ScanVersionedChangesRequestTest {
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value
         order: !Desc value
-        toVersion: 0x0000000000000929
+        toVersion: 2345
         filterSoftDeleted: true
         limit: 300
-        fromVersion: 0x00000000000004d2
+        fromVersion: 1234
         maxVersions: 10
         select:
         - value

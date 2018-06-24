@@ -61,14 +61,14 @@ class RequestsTest {
         - !GetChanges
           dataModel: SimpleMarykObject
           keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
-          toVersion: 0x0000000000000d80
+          toVersion: 3456
           filterSoftDeleted: true
-          fromVersion: 0x00000000000004d2
+          fromVersion: 1234
         - !GetVersionedChanges
           dataModel: SimpleMarykObject
           keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
           filterSoftDeleted: true
-          fromVersion: 0x00000000000004d2
+          fromVersion: 1234
           maxVersions: 1000
         - !Scan
           dataModel: SimpleMarykObject
@@ -80,13 +80,13 @@ class RequestsTest {
           startKey: Zk6m4QpZQegUg5s13JVYlQ
           filterSoftDeleted: true
           limit: 100
-          fromVersion: 0x00000000000004d2
+          fromVersion: 1234
         - !ScanVersionedChanges
           dataModel: SimpleMarykObject
           startKey: Zk6m4QpZQegUg5s13JVYlQ
           filterSoftDeleted: true
           limit: 100
-          fromVersion: 0x00000000000004d2
+          fromVersion: 1234
           maxVersions: 1000
 
         """.trimIndent()

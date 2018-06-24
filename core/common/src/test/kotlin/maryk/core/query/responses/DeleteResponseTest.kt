@@ -46,7 +46,7 @@ class DeleteResponseTest {
         dataModel: SimpleMarykObject
         statuses:
         - !SUCCESS
-          version: 0x0000000000007e60
+          version: 32352
         - !DOES_NOT_EXIST
           key: +1xO4zD4R5sIMcS9pXTZEA
         - !AUTH_FAIL

@@ -50,8 +50,8 @@ class ObjectsResponseTest {
         - key: +1xO4zD4R5sIMcS9pXTZEA
           dataObject:
             value: haha1
-          firstVersion: 0x0000000000000000
-          lastVersion: 0x000000000000373d
+          firstVersion: 0
+          lastVersion: 14141
           isDeleted: false
 
         """.trimIndent()

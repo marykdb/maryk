@@ -51,7 +51,7 @@ class ObjectChangesResponseTest {
           - !Change
             value: hoho
           - !Delete value
-          lastVersion: 0x000000000000373d
+          lastVersion: 14141
 
         """.trimIndent()
     }

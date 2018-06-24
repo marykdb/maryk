@@ -64,8 +64,8 @@ class DataObjectWithMetaDataTest {
           dateTime: '2017-12-05T01:33:55'
           bool: true
           enum: V2
-        firstVersion: 0x000000000000000c
-        lastVersion: 0x0000000000003039
+        firstVersion: 12
+        lastVersion: 12345
         isDeleted: false
 
         """.trimIndent()

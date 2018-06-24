@@ -72,7 +72,7 @@ class DataObjectChangeTest {
           set:
         - !MapChange
           map:
-        lastVersion: 0x0000000000003039
+        lastVersion: 12345
 
         """.trimIndent()
     }

@@ -82,7 +82,7 @@ class ObjectVersionedChangesResponseTest {
         changes:
         - key: AAACKwEBAQAC
           changes:
-          - version: 0x000000000d17f60f
+          - version: 219674127
             changes:
             - !ObjectDelete
               isDeleted: true
@@ -92,7 +92,7 @@ class ObjectVersionedChangesResponseTest {
               set:
             - !MapChange
               map:
-          - version: 0x00000000130dd70f
+          - version: 319674127
             changes:
             - !Change
               embeddedObject.value: new

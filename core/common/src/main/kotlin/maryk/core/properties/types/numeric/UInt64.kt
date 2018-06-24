@@ -15,10 +15,15 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
     override fun compareTo(other: UInt<Long>) = number.compareTo(other.number)
 
     override fun toString(): String {
-        val bytes = ByteArray(8)
-        var index = 0
-        number.writeBytes({ bytes[index++] = it })
-        return "0x${bytes.toHex()}"
+        // If number is within normal positive Long range. Print it as base 10
+        return if (this.number < 0L) {
+            this.toLong().toString()
+        } else {
+            val bytes = ByteArray(8)
+            var index = 0
+            number.writeBytes({ bytes[index++] = it })
+            return "0x${bytes.toHex(true)}"
+        }
     }
 
     override fun toInt() = (this.number - Long.MIN_VALUE).toInt()
@@ -39,10 +44,18 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
             number.writeVarBytes(writer)
         }
         override fun ofString(value: String): UInt64 {
-            if(value.startsWith("0x") && value.length < 4) { throw ParseException("Long should be represented by hex") }
-            val bytes = initByteArrayByHex(value.substring(2))
-            var index = 0
-            return UInt64(initLong({ bytes[index++] }))
+            return if(value.startsWith("0x")) {
+                if (value.length < 4) {
+                    throw ParseException("Hex string should be at least 4 characters long")
+                }
+                val bytes = initByteArrayByHex(value.substring(2))
+                var index = 0
+                UInt64(initLong({ bytes[index++] }))
+            } else if(value.startsWith("-")) {
+                throw ParseException("UInt64 cannot start with a -")
+            } else {
+                value.toLong().toUInt64()
+            }
         }
         override fun ofDouble(value: Double) = value.toLong().toUInt64()
         override fun ofInt(value: Int) = value.toLong().toUInt64()

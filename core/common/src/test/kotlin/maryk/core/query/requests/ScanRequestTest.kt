@@ -61,7 +61,7 @@ class ScanRequestTest {
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value
         order: value
-        toVersion: 0x0000000000000929
+        toVersion: 2345
         filterSoftDeleted: true
         limit: 200
 

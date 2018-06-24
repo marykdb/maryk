@@ -59,7 +59,7 @@ class AddResponseTest {
         statuses:
         - !ADD_SUCCESS
           key: T/sdrQBeRnYrRo1h7uhfQg
-          version: 0x0000000000007e60
+          version: 32352
           changes:
           - !Change
             value: new

@@ -78,7 +78,7 @@ class RootMarykTest {
             keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
             filter: !Exists value
             order: !Desc value
-            toVersion: 0x000000000000014d
+            toVersion: 333
             filterSoftDeleted: true
 
         """.trimIndent()

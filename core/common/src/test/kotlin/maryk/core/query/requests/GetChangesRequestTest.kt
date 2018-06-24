@@ -61,9 +61,9 @@ class GetChangesRequestTest {
         checkYamlConversion(getChangesRequest, GetChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykObject
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
-        toVersion: 0x0000000000000d80
+        toVersion: 3456
         filterSoftDeleted: true
-        fromVersion: 0x00000000000004d2
+        fromVersion: 1234
 
         """.trimIndent()
 
@@ -72,9 +72,9 @@ class GetChangesRequestTest {
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
         filter: !Exists value
         order: value
-        toVersion: 0x0000000000000d80
+        toVersion: 3456
         filterSoftDeleted: true
-        fromVersion: 0x00000000000004d2
+        fromVersion: 1234
         select:
         - value
 

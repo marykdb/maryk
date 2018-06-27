@@ -225,33 +225,35 @@ internal class DataModelTest {
 
         TestMarykObject.writeJson(testExtendedObject, writer)
 
-        output shouldBe """{
-    |	"string": "hay",
-    |	"int": 4,
-    |	"uint": 32,
-    |	"double": "3.555",
-    |	"dateTime": "2017-12-04T12:13",
-    |	"bool": true,
-    |	"enum": "V0",
-    |	"list": [34, 2352, 3423, 766],
-    |	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-    |	"map": {
-    |		"12:55": "yes",
-    |		"10:03": "ahum"
-    |	},
-    |	"valueObject": {
-    |		"int": 6,
-    |		"dateTime": "2017-04-01T12:55",
-    |		"bool": true
-    |	},
-    |	"embeddedObject": {
-    |		"value": "test"
-    |	},
-    |	"multi": ["V2", {
-    |		"value": "subInMulti!"
-    |	}],
-    |	"listOfString": ["test1", "another test", "🤗"]
-    |}""".trimMargin()
+        output shouldBe """
+        {
+        	"string": "hay",
+        	"int": 4,
+        	"uint": 32,
+        	"double": "3.555",
+        	"dateTime": "2017-12-04T12:13",
+        	"bool": true,
+        	"enum": "V0",
+        	"list": [34, 2352, 3423, 766],
+        	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+        	"map": {
+        		"12:55": "yes",
+        		"10:03": "ahum"
+        	},
+        	"valueObject": {
+        		"int": 6,
+        		"dateTime": "2017-04-01T12:55",
+        		"bool": true
+        	},
+        	"embeddedObject": {
+        		"value": "test"
+        	},
+        	"multi": ["V2", {
+        		"value": "subInMulti!"
+        	}],
+        	"listOfString": ["test1", "another test", "🤗"]
+        }
+        """.trimIndent()
     }
 
     @Test
@@ -264,28 +266,29 @@ internal class DataModelTest {
         TestMarykObject.writeJson(testExtendedObject, writer)
 
         output shouldBe """
-    |string: hay
-    |int: 4
-    |uint: 32
-    |double: 3.555
-    |dateTime: '2017-12-04T12:13'
-    |bool: true
-    |enum: V0
-    |list: [34, 2352, 3423, 766]
-    |set: [2017-12-05, 2016-03-02, 1981-12-05]
-    |map:
-    |  12:55: yes
-    |  10:03: ahum
-    |valueObject:
-    |  int: 6
-    |  dateTime: '2017-04-01T12:55'
-    |  bool: true
-    |embeddedObject:
-    |  value: test
-    |multi: !V2
-    |  value: subInMulti!
-    |listOfString: [test1, another test, 🤗]
-    |""".trimMargin()
+        string: hay
+        int: 4
+        uint: 32
+        double: 3.555
+        dateTime: '2017-12-04T12:13'
+        bool: true
+        enum: V0
+        list: [34, 2352, 3423, 766]
+        set: [2017-12-05, 2016-03-02, 1981-12-05]
+        map:
+          12:55: yes
+          10:03: ahum
+        valueObject:
+          int: 6
+          dateTime: '2017-04-01T12:55'
+          bool: true
+        embeddedObject:
+          value: test
+        multi: !V2
+          value: subInMulti!
+        listOfString: [test1, another test, 🤗]
+
+        """.trimIndent()
     }
 
     @Test
@@ -295,14 +298,14 @@ internal class DataModelTest {
 
         val map = TestMarykObject.map {
             mapOf(
-                0 to "hay",
-                1 to 4,
-                2 to 32.toUInt32(),
-                3 to 3.555,
-                4 to DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-                5 to true,
-                6 to Option.V2,
-                13 to TestMarykObject.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
+                string with "hay",
+                int with 4,
+                uint with 32.toUInt32(),
+                double with 3.555,
+                dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
+                bool with true,
+                enum with Option.V2,
+                reference with TestMarykObject.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
             )
         }
 

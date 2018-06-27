@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -52,7 +52,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<DeleteRequest<*, *>>) = DeleteRequest(
+        override fun invoke(map: ValueMap<DeleteRequest<*, *>>) = DeleteRequest(
             dataModel = map<RootDataModel<Any, *>>(0),
             objectsToDelete = map(1),
             hardDelete = map(2)

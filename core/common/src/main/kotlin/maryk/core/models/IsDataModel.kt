@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -21,8 +21,8 @@ interface IsDataModel<DO: Any> {
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
-    fun validate(map: DataObjectMap<DO>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
+    fun validate(map: ValueMap<DO>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
 
     /** Creates a Data Object by [map] */
-    operator fun invoke(map: DataObjectMap<DO>): DO
+    operator fun invoke(map: ValueMap<DO>): DO
 }

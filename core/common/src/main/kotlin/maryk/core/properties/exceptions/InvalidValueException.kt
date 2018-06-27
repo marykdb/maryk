@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
@@ -23,7 +23,7 @@ data class InvalidValueException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<InvalidValueException>) = InvalidValueException(
+        override fun invoke(map: ValueMap<InvalidValueException>) = InvalidValueException(
             reference = map[0] as IsPropertyReference<*, *>,
             value = map(1)
         )

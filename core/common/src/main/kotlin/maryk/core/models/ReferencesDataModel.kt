@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -20,7 +20,7 @@ import maryk.lib.exceptions.ParseException
 internal abstract class ReferencesDataModel<DO: Any>(
     properties: ReferencesPropertyDefinitions<DO>
 ) : AbstractDataModel<DO, ReferencesPropertyDefinitions<DO>, DataModelPropertyContext, DataModelPropertyContext>(properties){
-    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(map: ValueMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")
         val references = map[0] as List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>
 
@@ -42,7 +42,7 @@ internal abstract class ReferencesDataModel<DO: Any>(
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<DO> {
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<DO> {
         var currentToken = reader.currentToken
 
         if (currentToken == JsonToken.StartDocument){

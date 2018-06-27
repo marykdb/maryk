@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -39,11 +39,11 @@ data class Range internal constructor(
     internal companion object: QueryDataModel<Range, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<Range>) = Range(
+        override fun invoke(map: ValueMap<Range>) = Range(
             referenceRangePairs = map(0)
         )
 
-        override fun writeJson(map: DataObjectMap<Range>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ValueMap<Range>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             val ranges = map[0] as List<ReferenceValueRangePair<*>>
 
@@ -72,7 +72,7 @@ data class Range internal constructor(
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<Range> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<Range> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

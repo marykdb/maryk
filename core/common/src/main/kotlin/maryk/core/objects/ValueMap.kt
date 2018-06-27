@@ -8,7 +8,7 @@ import maryk.lib.exceptions.ParseException
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-data class DataObjectMap<DO: Any> internal constructor(
+data class ValueMap<DO: Any> internal constructor(
     val dataModel: IsDataModel<DO>,
     val map: Map<Int, Any?>
 ) : Map<Int, Any?> by map {

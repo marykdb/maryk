@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.DataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
@@ -31,7 +31,7 @@ internal class EmbeddedObjectDefinitionTest {
             name = "MarykObject",
             properties = Properties
         ) {
-            override fun invoke(map: DataObjectMap<MarykObject>) = MarykObject(
+            override fun invoke(map: ValueMap<MarykObject>) = MarykObject(
                 map(0)
             )
         }

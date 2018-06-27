@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.references.IsPropertyReference
@@ -71,7 +71,7 @@ data class FlexBytesDefinition(
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<FlexBytesDefinition>) = FlexBytesDefinition(
+        override fun invoke(map: ValueMap<FlexBytesDefinition>) = FlexBytesDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

@@ -2,7 +2,7 @@ package maryk.core.models
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.PropertyDefinitions
 
 /**
@@ -28,11 +28,11 @@ abstract class DataModel<DO: Any, out P: PropertyDefinitions<DO>>(
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<DataModel<*, *>>) = object : DataModel<Any, PropertyDefinitions<Any>>(
+        override fun invoke(map: ValueMap<DataModel<*, *>>) = object : DataModel<Any, PropertyDefinitions<Any>>(
             name = map(0),
             properties = map(1)
         ){
-            override fun invoke(map: DataObjectMap<Any>): Any {
+            override fun invoke(map: ValueMap<Any>): Any {
                 // TODO: What is the right path here?
                 return object : Any(){}
             }

@@ -1,7 +1,7 @@
 package maryk.core.definitions
 
 import maryk.core.models.QuerySingleValueDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -50,7 +50,7 @@ data class RootMaryk(
         properties = Properties,
         singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, *, DataModelContext, RootMaryk>
     ) {
-        override fun invoke(map: DataObjectMap<RootMaryk>) = RootMaryk(
+        override fun invoke(map: ValueMap<RootMaryk>) = RootMaryk(
             operations = map(0)
         )
     }

@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.descriptors
 
 import maryk.core.models.SimpleDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -71,13 +71,13 @@ private data class MultiTypeDescriptor(
     internal object Model : SimpleDataModel<MultiTypeDescriptor, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<MultiTypeDescriptor>) = MultiTypeDescriptor(
+        override fun invoke(map: ValueMap<MultiTypeDescriptor>) = MultiTypeDescriptor(
             index = map(0),
             name = map(1),
             definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(2).value
         )
 
-        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DataObjectMap<MultiTypeDescriptor> {
+        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): ValueMap<MultiTypeDescriptor> {
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 this.map {

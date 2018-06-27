@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
@@ -34,7 +34,7 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<AddRequest<*, *>>) = AddRequest(
+        override fun invoke(map: ValueMap<AddRequest<*, *>>) = AddRequest(
             dataModel = map<RootDataModel<Any, *>>(0),
             objectsToAdd = map(1)
         )

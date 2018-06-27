@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
@@ -20,7 +20,7 @@ data class RequestFail<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<RequestFail<*>>) = RequestFail<Any>(
+        override fun invoke(map: ValueMap<RequestFail<*>>) = RequestFail<Any>(
             map(0)
         )
     }

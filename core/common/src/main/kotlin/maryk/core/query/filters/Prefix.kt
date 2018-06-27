@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsPropertyDefinitions
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
@@ -22,7 +22,7 @@ data class Prefix internal constructor(
     internal companion object: ReferencePairDataModel<String, Prefix>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<Prefix>) = Prefix(
+        override fun invoke(map: ValueMap<Prefix>) = Prefix(
             referenceValuePairs = map(0)
         )
 

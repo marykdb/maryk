@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
@@ -40,8 +40,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         runner: P.() -> T
     ) = runner(this.properties)
 
-    /** Create a DataObjectMap with given [createMap] function */
-    fun map(createMap: P.() -> Map<Int, Any?>) = DataObjectMap(this, createMap(this.properties))
+    /** Create a ValueMap with given [createMap] function */
+    fun map(createMap: P.() -> Map<Int, Any?>) = ValueMap(this, createMap(this.properties))
 
     /**
      * Get property reference fetcher of this DataModel with [referenceGetter]
@@ -92,7 +92,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         }
     }
 
-    override fun validate(map: DataObjectMap<DO>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+    override fun validate(map: ValueMap<DO>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         createValidationUmbrellaException(refGetter) { addException ->
             for ((key, value) in map) {
                 val definition = properties.getDefinition(key) ?: continue
@@ -128,7 +128,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Write an [map] with values for this DataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    open fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: CX? = null) {
+    open fun writeJson(map: ValueMap<DO>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
             if (value == null) continue
@@ -156,7 +156,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Read JSON from [reader] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): DataObjectMap<DO> {
+    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): ValueMap<DO> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
@@ -216,7 +216,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun calculateProtoBufLength(map: DataObjectMap<DO>, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    internal fun calculateProtoBufLength(map: ValueMap<DO>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for ((key, value) in map) {
             if (value == null) continue // continue on empty values
@@ -252,7 +252,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun writeProtoBuf(map: DataObjectMap<DO>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    internal fun writeProtoBuf(map: ValueMap<DO>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
             if (value == null) continue // skip empty values
 
@@ -283,7 +283,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): DataObjectMap<DO> {
+    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): ValueMap<DO> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
         var byteCounter = 1
 

@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -22,7 +22,7 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: PropertyDefinitions<DO
     properties: P
 ) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
 
-    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(map: ValueMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")
         writer.writeJsonValues(
             this.properties.getDefinition(0) as PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, Any>,

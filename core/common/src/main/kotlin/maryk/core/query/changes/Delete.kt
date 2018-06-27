@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesPropertyDefinitions
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -25,7 +25,7 @@ data class Delete internal constructor(
     internal companion object: ReferencesDataModel<Delete>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<Delete>) = Delete(
+        override fun invoke(map: ValueMap<Delete>) = Delete(
             references = map(0)
         )
 

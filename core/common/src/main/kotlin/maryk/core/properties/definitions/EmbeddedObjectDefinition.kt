@@ -5,7 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.DataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -177,7 +177,7 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<EmbeddedObjectDefinition<*, *, *, *, *>>) = EmbeddedObjectDefinition(
+        override fun invoke(map: ValueMap<EmbeddedObjectDefinition<*, *, *, *, *>>) = EmbeddedObjectDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

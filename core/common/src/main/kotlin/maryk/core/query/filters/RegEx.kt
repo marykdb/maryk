@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsPropertyDefinitions
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
@@ -22,7 +22,7 @@ data class RegEx internal constructor(
     internal companion object: ReferencePairDataModel<String, RegEx>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<RegEx>) = RegEx(
+        override fun invoke(map: ValueMap<RegEx>) = RegEx(
             referenceValuePairs = map(0)
         )
 

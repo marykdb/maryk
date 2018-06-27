@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -19,7 +19,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
     properties: PropertyDefinitions<DO>,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, *, CX, DO>
 ) : AbstractDataModel<DO, PropertyDefinitions<DO>, CX, CX>(properties) {
-    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: CX?) {
+    override fun writeJson(map: ValueMap<DO>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         val value = map[singlePropertyDefinition.index] as T? ?: throw ParseException("Missing requests in Requests")
 
@@ -33,7 +33,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
         singlePropertyDefinition.capture(context, value)
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?): DataObjectMap<DO> {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): ValueMap<DO> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

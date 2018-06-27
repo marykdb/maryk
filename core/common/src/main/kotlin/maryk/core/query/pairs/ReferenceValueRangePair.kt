@@ -1,7 +1,7 @@
 package maryk.core.query.pairs
 
 import maryk.core.models.SimpleDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -32,7 +32,7 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
     internal companion object: SimpleDataModel<ReferenceValueRangePair<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<ReferenceValueRangePair<*>>) = ReferenceValueRangePair<Any>(
+        override fun invoke(map: ValueMap<ReferenceValueRangePair<*>>) = ReferenceValueRangePair<Any>(
             reference = map(0),
             range = map(1)
         )

@@ -2,7 +2,7 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -53,7 +53,7 @@ data class Order internal constructor(
     internal companion object: QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<Order>) = Order(
+        override fun invoke(map: ValueMap<Order>) = Order(
             propertyReference = map(0),
             direction = map(1)
         )
@@ -66,7 +66,7 @@ data class Order internal constructor(
             }
         }
 
-        override fun writeJson(map: DataObjectMap<Order>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ValueMap<Order>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             if (writer is YamlWriter) {
                 writeJsonOrderValue(map(0), map(1), writer, context)
             } else {
@@ -86,7 +86,7 @@ data class Order internal constructor(
             Properties.propertyReference.writeJsonValue(reference, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<Order> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<Order> {
             if (reader is IsYamlReader) {
                 var currentToken = reader.currentToken
 

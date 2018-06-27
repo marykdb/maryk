@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -62,7 +62,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
     internal companion object: QueryDataModel<MapValueChanges<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<MapValueChanges<*, *>>) = MapValueChanges<Any, Any>(
+        override fun invoke(map: ValueMap<MapValueChanges<*, *>>) = MapValueChanges<Any, Any>(
             reference = map(0),
             valuesToAdd = map(1),
             keysToDelete = map(2)

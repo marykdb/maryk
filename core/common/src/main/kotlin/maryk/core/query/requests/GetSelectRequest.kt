@@ -2,7 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
@@ -58,7 +58,7 @@ data class GetSelectRequest<DO: Any, out DM: RootDataModel<DO, *>> internal cons
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<GetSelectRequest<*, *>>) = GetSelectRequest(
+        override fun invoke(map: ValueMap<GetSelectRequest<*, *>>) = GetSelectRequest(
             dataModel = map<RootDataModel<Any, *>>(0),
             keys = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,

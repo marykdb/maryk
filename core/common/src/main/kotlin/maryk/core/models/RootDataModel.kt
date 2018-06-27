@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsFixedBytesEncodable
@@ -164,7 +164,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
         properties = RootModelProperties
     ) {
-        override fun invoke(map: DataObjectMap<RootDataModel<*, *>>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
+        override fun invoke(map: ValueMap<RootDataModel<*, *>>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
             name = map(0),
             properties = map(1),
             keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(2))?.map {
@@ -174,7 +174,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                 }
             }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<FixedBytesProperty<out Any>>
         ){
-            override fun invoke(map: DataObjectMap<Any>): Any {
+            override fun invoke(map: ValueMap<Any>): Any {
                 // TODO: What to do here?
                 return object : Any(){}
             }
@@ -183,7 +183,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(map: DataObjectMap<RootDataModel<*, *>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override fun writeJson(map: ValueMap<RootDataModel<*, *>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
             for ((key, value) in map) {
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last

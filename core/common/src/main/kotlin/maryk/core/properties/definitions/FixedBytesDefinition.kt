@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
@@ -61,7 +61,7 @@ data class FixedBytesDefinition(
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<FixedBytesDefinition>) = FixedBytesDefinition(
+        override fun invoke(map: ValueMap<FixedBytesDefinition>) = FixedBytesDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

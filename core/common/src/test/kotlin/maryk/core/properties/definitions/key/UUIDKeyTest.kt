@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -24,7 +24,7 @@ internal class UUIDKeyTest {
             name = "MarykObject",
             properties = Properties
         ) {
-            override fun invoke(map: DataObjectMap<MarykObject>) = MarykObject(
+            override fun invoke(map: ValueMap<MarykObject>) = MarykObject(
                 value = map(0)
             )
         }

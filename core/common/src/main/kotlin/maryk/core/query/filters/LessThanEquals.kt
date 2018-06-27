@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsPropertyDefinitions
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
@@ -23,7 +23,7 @@ data class LessThanEquals internal constructor(
     internal companion object: ReferencePairDataModel<Any, LessThanEquals>(
         properties = Properties
     ) {
-        override fun invoke(map: DataObjectMap<LessThanEquals>) = LessThanEquals(
+        override fun invoke(map: ValueMap<LessThanEquals>) = LessThanEquals(
             referenceValuePairs = map(0)
         )
 

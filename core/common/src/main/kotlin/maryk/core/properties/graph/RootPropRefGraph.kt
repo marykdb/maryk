@@ -2,7 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
@@ -33,11 +33,11 @@ data class RootPropRefGraph<DO> internal constructor(
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(map: DataObjectMap<RootPropRefGraph<*>>) = RootPropRefGraph<Any>(
+        override fun invoke(map: ValueMap<RootPropRefGraph<*>>) = RootPropRefGraph<Any>(
             properties = map(0)
         )
 
-        override fun writeJson(map: DataObjectMap<RootPropRefGraph<*>>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override fun writeJson(map: ValueMap<RootPropRefGraph<*>>, writer: IsJsonLikeWriter, context: GraphContext?) {
             @Suppress("UNCHECKED_CAST")
             val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
 
@@ -57,7 +57,7 @@ data class RootPropRefGraph<DO> internal constructor(
             writePropertiesToJson(listOfPropRefGraphables, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): DataObjectMap<RootPropRefGraph<*>> {
+        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ValueMap<RootPropRefGraph<*>> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

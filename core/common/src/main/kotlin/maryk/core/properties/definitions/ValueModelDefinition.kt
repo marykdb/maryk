@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -151,7 +151,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
             }
         }
     ) {
-        override fun invoke(map: DataObjectMap<ValueModelDefinition<*, *>>) = ValueModelDefinition(
+        override fun invoke(map: ValueMap<ValueModelDefinition<*, *>>) = ValueModelDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

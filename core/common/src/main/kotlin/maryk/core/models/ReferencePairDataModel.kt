@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -19,7 +19,7 @@ import maryk.lib.exceptions.ParseException
 internal abstract class ReferencePairDataModel<T: Any, DO: Any>(
     properties: ReferenceValuePairsPropertyDefinitions<T, DO>
 ) : AbstractDataModel<DO, ReferenceValuePairsPropertyDefinitions<T, DO>, DataModelPropertyContext, DataModelPropertyContext>(properties){
-    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(map: ValueMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")
         (map[this.properties.referenceValuePairs.index] as List<ReferenceValuePair<*>>?)?.let {
             writer.writeJsonMapObject(it, context)
@@ -43,7 +43,7 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any>(
         writeEndObject()
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<DO> {
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<DO> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

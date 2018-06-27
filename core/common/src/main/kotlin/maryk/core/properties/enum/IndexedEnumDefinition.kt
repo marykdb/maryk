@@ -3,7 +3,7 @@ package maryk.core.properties.enum
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.DataObjectMap
+import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -91,13 +91,13 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         properties = Properties,
         contextTransformer = { EnumNameContext(it) }
     ) {
-        override fun invoke(map: DataObjectMap<IndexedEnumDefinition<IndexedEnum<Any>>>) =
+        override fun invoke(map: ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
                 name = map(0),
                 optionalValues = map(1)
             )
 
-        override fun writeJson(map: DataObjectMap<IndexedEnumDefinition<IndexedEnum<Any>>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
+        override fun writeJson(map: ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
             if (map[Properties.values.index] == null) {
                 // Write a single string name if no options was defined
                 @Suppress("UNCHECKED_CAST")
@@ -122,7 +122,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: EnumNameContext?): DataObjectMap<IndexedEnumDefinition<IndexedEnum<Any>>>{
+        override fun readJson(reader: IsJsonLikeReader, context: EnumNameContext?): ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>>{
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

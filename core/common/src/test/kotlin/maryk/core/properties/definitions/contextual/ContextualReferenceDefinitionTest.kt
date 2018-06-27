@@ -5,7 +5,7 @@ import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
-import maryk.core.objects.RootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key

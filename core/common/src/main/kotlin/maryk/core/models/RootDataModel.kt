@@ -1,4 +1,4 @@
-package maryk.core.objects
+package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException

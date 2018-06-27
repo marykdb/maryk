@@ -1,6 +1,6 @@
 package maryk.core.query.pairs
 
-import maryk.core.objects.SimpleDataModel
+import maryk.core.models.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition

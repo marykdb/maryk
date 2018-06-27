@@ -2,8 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.DefinitionDataModel
-import maryk.core.objects.RootDataModel
+import maryk.core.models.DefinitionDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference

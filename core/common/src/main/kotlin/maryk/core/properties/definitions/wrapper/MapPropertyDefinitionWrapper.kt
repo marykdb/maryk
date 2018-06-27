@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.graph.GraphType
+import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -28,7 +28,7 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
     IsMapDefinition<K, V, CX> by definition,
     IsPropertyDefinitionWrapper<Map<K,V>, TO, CX, DO>
 {
-    override val graphType = GraphType.PropRef
+    override val graphType = PropRefGraphType.PropRef
 
     @Suppress("UNCHECKED_CAST")
     override fun getRef(parentRef: IsPropertyReference<*, *>?): MapReference<K, V, CX> =

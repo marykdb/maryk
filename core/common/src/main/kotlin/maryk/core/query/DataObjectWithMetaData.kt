@@ -1,7 +1,7 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.QueryDataModel
+import maryk.core.models.QueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions

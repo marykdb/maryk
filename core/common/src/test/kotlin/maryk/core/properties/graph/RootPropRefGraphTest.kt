@@ -1,10 +1,10 @@
-package maryk.core.objects.graph
+package maryk.core.properties.graph
 
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.RootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
@@ -12,9 +12,9 @@ import kotlin.test.Test
 
 
 
-class RootGraphTest {
+class RootPropRefGraphTest {
     private val graph = TestMarykObject.props {
-        RootGraph(
+        RootPropRefGraph(
             string,
             set,
             embeddedObject.props {
@@ -40,17 +40,17 @@ class RootGraphTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.graph, RootGraph, { this.context })
+        checkProtoBufConversion(this.graph, RootPropRefGraph, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.graph, RootGraph, { this.context })
+        checkJsonConversion(this.graph, RootPropRefGraph, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.graph, RootGraph, { this.context }) shouldBe """
+        checkYamlConversion(this.graph, RootPropRefGraph, { this.context }) shouldBe """
         - string
         - set
         - embeddedObject:

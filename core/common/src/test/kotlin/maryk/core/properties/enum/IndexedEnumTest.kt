@@ -4,7 +4,7 @@ import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.AbstractDataModel
+import maryk.core.models.AbstractDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelContext
 import maryk.core.yaml.createMarykYamlModelReader

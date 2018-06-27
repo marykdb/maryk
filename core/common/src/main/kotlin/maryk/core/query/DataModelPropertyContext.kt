@@ -1,7 +1,7 @@
 package maryk.core.query
 
-import maryk.core.objects.DataModel
-import maryk.core.objects.RootDataModel
+import maryk.core.models.DataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference

@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.objects.AbstractDataModel
+import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 
 /** Interface for property definitions containing embedded DataObjects of [DO] and context [CX]. */

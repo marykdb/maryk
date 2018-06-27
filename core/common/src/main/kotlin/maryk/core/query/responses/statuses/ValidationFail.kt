@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.objects.QueryDataModel
+import maryk.core.models.QueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions

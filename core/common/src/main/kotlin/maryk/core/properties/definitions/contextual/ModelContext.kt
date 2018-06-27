@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.objects.AbstractDataModel
+import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelContext

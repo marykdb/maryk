@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.objects.DataModel
+import maryk.core.models.DataModel
 
 interface IsDataModelReference<DM: DataModel<*, *>> {
     val name: String

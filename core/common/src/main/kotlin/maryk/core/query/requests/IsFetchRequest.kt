@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.RootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition

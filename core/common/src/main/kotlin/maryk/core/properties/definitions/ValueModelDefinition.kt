@@ -3,9 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.objects.AbstractDataModel
-import maryk.core.objects.ContextualDataModel
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.ContextualDataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition

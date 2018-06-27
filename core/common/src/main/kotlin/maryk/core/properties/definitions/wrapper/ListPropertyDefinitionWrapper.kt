@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.graph.GraphType
+import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -28,7 +28,7 @@ data class ListPropertyDefinitionWrapper<T: Any, TO: Any, CX: IsPropertyContext,
     IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> by definition,
     IsPropertyDefinitionWrapper<List<T>, List<TO>, CX, DO>
 {
-    override val graphType = GraphType.PropRef
+    override val graphType = PropRefGraphType.PropRef
 
     @Suppress("UNCHECKED_CAST")
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =

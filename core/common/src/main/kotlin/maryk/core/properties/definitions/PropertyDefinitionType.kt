@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.objects.AbstractDataModel
-import maryk.core.objects.ContextualDataModel
+import maryk.core.models.AbstractDataModel
+import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper

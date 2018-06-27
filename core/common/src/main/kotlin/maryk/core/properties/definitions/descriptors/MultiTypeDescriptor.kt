@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.descriptors
 
-import maryk.core.objects.SimpleDataModel
-import maryk.core.objects.graph.GraphType
+import maryk.core.models.SimpleDataModel
+import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -186,7 +186,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     IsByteTransportableCollection<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
     IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<IndexedEnum<Any>, DataModelContext>>
 {
-    override val graphType = GraphType.PropRef
+    override val graphType = PropRefGraphType.PropRef
 
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         ValuePropertyReference(this, parentRef)

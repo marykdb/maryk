@@ -1,7 +1,7 @@
 package maryk
 
-import maryk.core.objects.RootDataModel
-import maryk.core.objects.definitions
+import maryk.core.models.RootDataModel
+import maryk.core.models.definitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition

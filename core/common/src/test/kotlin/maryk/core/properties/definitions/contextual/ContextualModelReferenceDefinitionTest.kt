@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.objects.DataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe

@@ -4,7 +4,7 @@ import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.graph.RootGraph
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
@@ -19,7 +19,7 @@ internal val scanSelectRequest = SimpleMarykObject.run {
     scanSelect(
         startKey = key1,
         select = props {
-            RootGraph(
+            RootPropRefGraph(
                 value
             )
         }
@@ -35,7 +35,7 @@ internal val scanSelectMaxRequest = SimpleMarykObject.run {
         filterSoftDeleted = true,
         toVersion = 2345L.toUInt64(),
         select = props {
-            RootGraph(
+            RootPropRefGraph(
                 value
             )
         }

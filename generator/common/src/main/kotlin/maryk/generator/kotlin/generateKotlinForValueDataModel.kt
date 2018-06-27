@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 

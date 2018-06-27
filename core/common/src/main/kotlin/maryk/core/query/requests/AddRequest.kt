@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.QueryDataModel
-import maryk.core.objects.RootDataModel
+import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition

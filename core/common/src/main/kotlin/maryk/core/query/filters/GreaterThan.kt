@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.ReferencePairDataModel
-import maryk.core.objects.ReferenceValuePairsPropertyDefinitions
+import maryk.core.models.ReferencePairDataModel
+import maryk.core.models.ReferenceValuePairsPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter

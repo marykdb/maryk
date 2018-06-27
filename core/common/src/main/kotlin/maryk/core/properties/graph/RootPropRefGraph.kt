@@ -1,7 +1,7 @@
-package maryk.core.objects.graph
+package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.ContextualDataModel
+import maryk.core.models.ContextualDataModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
@@ -13,47 +13,47 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
- * Create a Root graph with [properties]
+ * Create a Root graph with references to [properties]
  */
-data class RootGraph<DO> internal constructor(
-    val properties: List<IsGraphable<DO>>
+data class RootPropRefGraph<DO> internal constructor(
+    val properties: List<IsPropRefGraphable<DO>>
 ) {
-    constructor(vararg property: IsGraphable<DO>) : this(property.toList())
+    constructor(vararg property: IsPropRefGraphable<DO>) : this(property.toList())
 
-    internal object Properties : PropertyDefinitions<RootGraph<*>>() {
-        val properties = this.addProperties(0, RootGraph<*>::properties)  { context: GraphContext? ->
+    internal object Properties : PropertyDefinitions<RootPropRefGraph<*>>() {
+        val properties = this.addProperties(0, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
             context?.dataModel?.properties ?: throw ContextNotFoundException()
         }
     }
 
-    internal companion object : ContextualDataModel<RootGraph<*>, Properties, ContainsDataModelContext<*>, GraphContext>(
+    internal companion object : ContextualDataModel<RootPropRefGraph<*>, Properties, ContainsDataModelContext<*>, GraphContext>(
         properties = Properties,
         contextTransformer = {
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = RootGraph<Any>(
+        override fun invoke(map: Map<Int, *>) = RootPropRefGraph<Any>(
             properties = map(0)
         )
 
         override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: GraphContext?) {
             @Suppress("UNCHECKED_CAST")
-            val listOfGraphables = map[Properties.properties.index] as List<IsGraphable<*>>
+            val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
 
-            this.writeJsonValues(listOfGraphables, writer, context)
+            writeJsonValues(listOfGraphables, writer, context)
         }
 
-        override fun writeJson(obj: RootGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
-            this.writeJsonValues(obj.properties, writer, context)
+        override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
+            writeJsonValues(obj.properties, writer, context)
         }
 
         @Suppress("UNUSED_PARAMETER")
         private fun writeJsonValues(
-            listOfGraphables: List<IsGraphable<*>>,
+            listOfPropRefGraphables: List<IsPropRefGraphable<*>>,
             writer: IsJsonLikeWriter,
             context: GraphContext?
         ) {
-            writePropertiesToJson(listOfGraphables, writer, context)
+            writePropertiesToJson(listOfPropRefGraphables, writer, context)
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): Map<Int, Any> {
@@ -67,25 +67,25 @@ data class RootGraph<DO> internal constructor(
 
             var currentToken = reader.nextToken()
 
-            val properties = mutableListOf<TypedValue<GraphType, *>>()
+            val properties = mutableListOf<TypedValue<PropRefGraphType, *>>()
 
             while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
                 when (currentToken) {
                     is JsonToken.StartObject -> {
                         properties.add(
                             TypedValue(
-                                GraphType.Graph,
-                                Graph.readJsonToObject(reader, context)
+                                PropRefGraphType.Graph,
+                                PropRefGraph.readJsonToObject(reader, context)
                             )
                         )
                     }
                     is JsonToken.Value<*> -> {
-                        val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<GraphType, GraphContext>
+                        val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
 
                         properties.add(
                             TypedValue(
-                                GraphType.PropRef,
-                                multiTypeDefinition.definitionMap[GraphType.PropRef]!!
+                                PropRefGraphType.PropRef,
+                                multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
                                     .readJson(reader, context) as IsPropertyReference<*, *>
                             )
                         )

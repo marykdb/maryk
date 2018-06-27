@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.objects.RootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext

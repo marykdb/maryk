@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.ContextualDataModel
+import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.types.numeric.Float32

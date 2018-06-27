@@ -8,8 +8,8 @@ import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.DataModel
-import maryk.core.objects.compareDataModels
+import maryk.core.models.DataModel
+import maryk.core.models.compareDataModels
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.compareEnumDefinitions
 import maryk.core.query.DataModelContext

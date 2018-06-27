@@ -2,8 +2,8 @@ package maryk.core.properties.definitions.key
 
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.objects.DefinitionDataModel
-import maryk.core.objects.IsDataModel
+import maryk.core.models.DefinitionDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelContext

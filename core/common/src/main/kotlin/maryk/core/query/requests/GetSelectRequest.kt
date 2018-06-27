@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.QueryDataModel
-import maryk.core.objects.RootDataModel
-import maryk.core.objects.graph.RootGraph
+import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -21,7 +21,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.getSelect(
     filter: IsFilter? = null,
     order: Order? = null,
     toVersion: UInt64? = null,
-    select: RootGraph<DO>,
+    select: RootPropRefGraph<DO>,
     filterSoftDeleted: Boolean = true
     ) =
     GetSelectRequest(this, keys.toList(), filter, order, toVersion, select, filterSoftDeleted)
@@ -37,7 +37,7 @@ data class GetSelectRequest<DO: Any, out DM: RootDataModel<DO, *>> internal cons
     override val filter: IsFilter?,
     override val order: Order?,
     override val toVersion: UInt64?,
-    override val select: RootGraph<DO>,
+    override val select: RootPropRefGraph<DO>,
     override val filterSoftDeleted: Boolean
 ) : IsGetRequest<DO, DM>, IsSelectRequest<DO, DM> {
     override val requestType = RequestType.Get

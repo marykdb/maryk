@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.QueryDataModel
-import maryk.core.objects.RootDataModel
-import maryk.core.objects.graph.RootGraph
+import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -26,7 +26,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanChanges(
     limit: UInt32 = 100.toUInt32(),
     fromVersion: UInt64,
     toVersion: UInt64? = null,
-    select: RootGraph<DO>? = null,
+    select: RootPropRefGraph<DO>? = null,
     filterSoftDeleted: Boolean = true
 ) =
     ScanChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, select, filterSoftDeleted)
@@ -46,7 +46,7 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal co
     override val limit: UInt32 = 100.toUInt32(),
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
-    override val select: RootGraph<DO>? = null,
+    override val select: RootPropRefGraph<DO>? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsChangesRequest<DO, DM>, IsSelectRequest<DO, DM> {
     override val requestType = RequestType.ScanChanges

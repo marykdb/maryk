@@ -1,4 +1,4 @@
-package maryk.core.objects
+package maryk.core.models
 
 import maryk.TestMarykObject
 import maryk.lib.time.Date

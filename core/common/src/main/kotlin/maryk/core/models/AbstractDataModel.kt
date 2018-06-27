@@ -1,4 +1,4 @@
-package maryk.core.objects
+package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.IsPropertyContext

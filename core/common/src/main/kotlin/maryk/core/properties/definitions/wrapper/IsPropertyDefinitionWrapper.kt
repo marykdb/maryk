@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.SimpleDataModel
-import maryk.core.objects.graph.IsGraphable
+import maryk.core.models.SimpleDataModel
+import maryk.core.properties.graph.IsPropRefGraphable
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -35,7 +35,7 @@ import maryk.yaml.YamlWriter
  */
 interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, in DO> :
     IsSerializablePropertyDefinition<T, CX>,
-    IsGraphable<DO>
+    IsPropRefGraphable<DO>
 {
     val index: Int
     val name: String

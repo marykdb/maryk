@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.objects.SimpleDataModel
+import maryk.core.models.SimpleDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime

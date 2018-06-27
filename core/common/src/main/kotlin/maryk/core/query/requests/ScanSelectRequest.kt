@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.QueryDataModel
-import maryk.core.objects.RootDataModel
-import maryk.core.objects.graph.RootGraph
+import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -25,7 +25,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanSelect(
     order: Order? = null,
     limit: UInt32 = 100.toUInt32(),
     toVersion: UInt64? = null,
-    select: RootGraph<DO>,
+    select: RootPropRefGraph<DO>,
     filterSoftDeleted: Boolean = true
 ) =
     ScanSelectRequest(this, startKey, filter, order, limit, toVersion, select, filterSoftDeleted)
@@ -44,7 +44,7 @@ data class ScanSelectRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
     override val order: Order? = null,
     override val limit: UInt32 = 100.toUInt32(),
     override val toVersion: UInt64? = null,
-    override val select: RootGraph<DO>,
+    override val select: RootPropRefGraph<DO>,
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DO, DM>, IsSelectRequest<DO, DM> {
     override val requestType = RequestType.Scan

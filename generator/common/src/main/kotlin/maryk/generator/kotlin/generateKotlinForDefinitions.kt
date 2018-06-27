@@ -1,9 +1,9 @@
 package maryk.generator.kotlin
 
 import maryk.core.definitions.Definitions
-import maryk.core.objects.DataModel
-import maryk.core.objects.RootDataModel
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.DataModel
+import maryk.core.models.RootDataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition

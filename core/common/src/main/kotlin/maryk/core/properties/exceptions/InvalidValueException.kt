@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.objects.QueryDataModel
+import maryk.core.models.QueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 

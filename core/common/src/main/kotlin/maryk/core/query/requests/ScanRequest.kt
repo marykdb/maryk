@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.QueryDataModel
-import maryk.core.objects.RootDataModel
+import maryk.core.models.QueryDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue

@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.objects.AbstractDataModel
-import maryk.core.objects.graph.GraphType
+import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -36,7 +36,7 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     IsEmbeddedObjectDefinition<EODO, P, DM, CXI, CX> by definition,
     IsPropertyDefinitionWrapper<EODO, TO, CXI, DO>
 {
-    override val graphType = GraphType.PropRef
+    override val graphType = PropRefGraphType.PropRef
 
     override fun getRef(parentRef: IsPropertyReference<*, *>?) =
         EmbeddedObjectPropertyRef(

@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.objects.IsDataModel
+import maryk.core.models.IsDataModel
 
 /** Interface to get value of fixed bytes encodables */
 interface IsFixedBytesValueGetter<out T: Any> {

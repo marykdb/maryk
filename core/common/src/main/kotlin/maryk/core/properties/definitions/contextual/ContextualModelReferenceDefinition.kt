@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.DataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition

@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.QueryDataModel
+import maryk.core.models.QueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 

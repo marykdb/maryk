@@ -4,7 +4,7 @@ import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.graph.RootGraph
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
@@ -30,8 +30,8 @@ internal val scanVersionedChangesMaxRequest = SimpleMarykObject.run {
         fromVersion = 1234L.toUInt64(),
         maxVersions = 10.toUInt32(),
         select = SimpleMarykObject.props {
-            RootGraph(
-                SimpleMarykObject.Properties.value
+            RootPropRefGraph(
+                value
             )
         }
     )

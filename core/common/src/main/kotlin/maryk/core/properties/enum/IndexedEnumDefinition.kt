@@ -2,7 +2,7 @@ package maryk.core.properties.enum
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
-import maryk.core.objects.ContextualDataModel
+import maryk.core.models.ContextualDataModel
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions

@@ -1,10 +1,10 @@
 package maryk.core.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.DataModel
-import maryk.core.objects.QuerySingleValueDataModel
-import maryk.core.objects.RootDataModel
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.DataModel
+import maryk.core.models.QuerySingleValueDataModel
+import maryk.core.models.RootDataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition

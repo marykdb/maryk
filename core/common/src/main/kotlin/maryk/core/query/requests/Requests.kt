@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.objects.QuerySingleValueDataModel
+import maryk.core.models.QuerySingleValueDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions

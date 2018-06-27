@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.objects.ReferencesDataModel
-import maryk.core.objects.ReferencesPropertyDefinitions
+import maryk.core.models.ReferencesDataModel
+import maryk.core.models.ReferencesPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference

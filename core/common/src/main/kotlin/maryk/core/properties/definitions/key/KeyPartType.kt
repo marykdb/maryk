@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.key
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.DefinitionDataModel
+import maryk.core.models.DefinitionDataModel
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition

@@ -1,7 +1,7 @@
-package maryk.core.objects.graph
+package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.ContextualDataModel
+import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -18,21 +18,21 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** Get a graph of an embedded object */
+/** Get a graph for property references of an embedded object */
 fun <PDO: Any, DO: Any> IsPropertyDefinitionWrapper<DO, DO, IsPropertyContext, PDO>.graph(
-    vararg property: IsGraphable<DO>
-) = Graph(this, property.toList())
+    vararg property: IsPropRefGraphable<DO>
+) = PropRefGraph(this, property.toList())
 
 /**
- * Represents a Graph branch below a [parent] with all [properties] to fetch
+ * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
  */
-data class Graph<PDO: Any, DO: Any> internal constructor(
+data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
     val parent: IsPropertyDefinitionWrapper<DO, DO, IsPropertyContext, PDO>,
-    val properties: List<IsGraphable<DO>>
-) : IsGraphable<PDO> {
-    override val graphType = GraphType.Graph
+    val properties: List<IsPropRefGraphable<DO>>
+) : IsPropRefGraphable<PDO> {
+    override val graphType = PropRefGraphType.Graph
 
-    internal object Properties : PropertyDefinitions<Graph<*, *>>() {
+    internal object Properties : PropertyDefinitions<PropRefGraph<*, *>>() {
         val parent = add(0, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
@@ -48,15 +48,15 @@ data class Graph<PDO: Any, DO: Any> internal constructor(
             fromSerializable = { value ->
                 value?.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>?
             },
-            getter = Graph<*, *>::parent
+            getter = PropRefGraph<*, *>::parent
         )
 
-        val properties = addProperties(1, Graph<*, *>::properties) { context: GraphContext? ->
+        val properties = addProperties(1, PropRefGraph<*, *>::properties) { context: GraphContext? ->
             context?.subDataModel?.properties ?: throw ContextNotFoundException()
         }
     }
 
-    internal companion object : ContextualDataModel<Graph<*, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
+    internal companion object : ContextualDataModel<PropRefGraph<*, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
         properties = Properties,
         contextTransformer = {
             if (it is GraphContext && it.subDataModel != null) {
@@ -66,7 +66,7 @@ data class Graph<PDO: Any, DO: Any> internal constructor(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = Graph<Any, Any>(
+        override fun invoke(map: Map<Int, *>) = PropRefGraph<Any, Any>(
             parent = map(0),
             properties = map(1)
         )
@@ -74,19 +74,19 @@ data class Graph<PDO: Any, DO: Any> internal constructor(
         override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: GraphContext?) {
             val reference = map[Properties.parent.index] as IsPropertyReference<*, *>
             @Suppress("UNCHECKED_CAST")
-            val listOfGraphables = map[Properties.properties.index] as List<IsGraphable<*>>
+            val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
 
-            this.writeJsonValues(reference, listOfGraphables, writer, context)
+            writeJsonValues(reference, listOfGraphables, writer, context)
         }
 
-        override fun writeJson(obj: Graph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
-            this.writeJsonValues(obj.parent.getRef(), obj.properties, writer, context)
+        override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
+            writeJsonValues(obj.parent.getRef(), obj.properties, writer, context)
         }
 
         @Suppress("UNUSED_PARAMETER")
         private fun writeJsonValues(
             reference: IsPropertyReference<*, *>,
-            listOfGraphables: List<IsGraphable<*>>,
+            listOfPropRefGraphables: List<IsPropRefGraphable<*>>,
             writer: IsJsonLikeWriter,
             context: GraphContext?
         ) {
@@ -94,7 +94,7 @@ data class Graph<PDO: Any, DO: Any> internal constructor(
 
             writer.writeStartObject()
             writer.writeFieldName(reference.completeName)
-            writePropertiesToJson(listOfGraphables, writer, context)
+            writePropertiesToJson(listOfPropRefGraphables, writer, context)
 
             writer.writeEndObject()
         }
@@ -127,27 +127,27 @@ data class Graph<PDO: Any, DO: Any> internal constructor(
 
             var currentToken = reader.nextToken()
 
-            val properties = mutableListOf<TypedValue<GraphType,*>>()
+            val properties = mutableListOf<TypedValue<PropRefGraphType,*>>()
 
             while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
                 when (currentToken) {
                     is JsonToken.StartObject -> {
-                        val newContext = Graph.transformContext(context)
+                        val newContext = PropRefGraph.transformContext(context)
 
                         properties.add(
                             TypedValue(
-                                GraphType.Graph,
-                                Graph.readJsonToObject(reader, newContext)
+                                PropRefGraphType.Graph,
+                                PropRefGraph.readJsonToObject(reader, newContext)
                             )
                         )
                     }
                     is JsonToken.Value<*> -> {
-                        val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<GraphType, GraphContext>
+                        val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
 
                         properties.add(
                             TypedValue(
-                                GraphType.PropRef,
-                                multiTypeDefinition.definitionMap[GraphType.PropRef]!!
+                                PropRefGraphType.PropRef,
+                                multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
                                     .readJson(reader, context) as IsPropertyReference<*, *>
                             )
                         )
@@ -170,41 +170,41 @@ data class Graph<PDO: Any, DO: Any> internal constructor(
 }
 
 /**
- * Add properties to Graph objects so they are encodable
+ * Add properties to Property Reference PropRefGraph objects so they are encodable
  */
 internal fun <DO: Any> PropertyDefinitions<DO>.addProperties(
     index: Int,
-    getter: (DO) -> List<IsGraphable<*>>,
+    getter: (DO) -> List<IsPropRefGraphable<*>>,
     contextResolver: (GraphContext?) -> PropertyDefinitions<*>
 ) =
     add(index, "properties",
         ListDefinition(
             valueDefinition = MultiTypeDefinition(
                 definitionMap = mapOf(
-                    GraphType.Graph to EmbeddedObjectDefinition(
-                        dataModel = { Graph }
+                    PropRefGraphType.Graph to EmbeddedObjectDefinition(
+                        dataModel = { PropRefGraph }
                     ),
-                    GraphType.PropRef to ContextualPropertyReferenceDefinition(
+                    PropRefGraphType.PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = contextResolver
                     )
                 ),
-                typeEnum = GraphType
+                typeEnum = PropRefGraphType
             )
         ),
-        toSerializable = { value: IsGraphable<*> ->
+        toSerializable = { value: IsPropRefGraphable<*> ->
             value.let {
                 when (it) {
                     is IsPropertyDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.getRef())
-                    is Graph<*, *> -> TypedValue(it.graphType, it)
-                    else -> throw ParseException("Unknown GraphType ${it.graphType}")
+                    is PropRefGraph<*, *> -> TypedValue(it.graphType, it)
+                    else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
                 }
             }
         },
-        fromSerializable = { value: TypedValue<GraphType, *> ->
+        fromSerializable = { value: TypedValue<PropRefGraphType, *> ->
             when (value.value) {
                 is IsPropertyReference<*, *> -> value.value.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>
-                is Graph<*, *> -> value.value
-                else -> throw ParseException("Unknown GraphType ${value.type}")
+                is PropRefGraph<*, *> -> value.value
+                else -> throw ParseException("Unknown PropRefGraphType ${value.type}")
             }
         },
         getter = getter
@@ -212,16 +212,16 @@ internal fun <DO: Any> PropertyDefinitions<DO>.addProperties(
 
 /** Write properties to JSON with [writer] in [context] */
 internal fun writePropertiesToJson(
-    listOfGraphables: List<IsGraphable<*>>,
+    listOfPropRefGraphables: List<IsPropRefGraphable<*>>,
     writer: IsJsonLikeWriter,
     context: GraphContext?
 ) {
-    val transformed = Graph.Properties.properties.toSerializable!!.invoke(listOfGraphables, context)!!
+    val transformed = PropRefGraph.Properties.properties.toSerializable!!.invoke(listOfPropRefGraphables, context)!!
 
     writer.writeStartArray()
     for (graphable in transformed) {
         when (graphable.value) {
-            is Graph<*, *> -> Graph.writeJson(
+            is PropRefGraph<*, *> -> PropRefGraph.writeJson(
                 graphable.value, writer, context
             )
             is IsPropertyReference<*, *> -> {

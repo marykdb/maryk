@@ -3,8 +3,8 @@ package maryk.core.properties.definitions.key
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.RootDataModel
-import maryk.core.objects.definitions
+import maryk.core.models.RootDataModel
+import maryk.core.models.definitions
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition

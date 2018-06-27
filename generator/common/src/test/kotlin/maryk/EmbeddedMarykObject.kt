@@ -1,5 +1,5 @@
 package maryk
-import maryk.core.objects.DataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 

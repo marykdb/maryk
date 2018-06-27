@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
-import maryk.core.objects.DataModel
-import maryk.core.objects.IsDataModel
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.DataModel
+import maryk.core.models.IsDataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition

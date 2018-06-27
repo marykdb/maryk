@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.objects.IsDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 

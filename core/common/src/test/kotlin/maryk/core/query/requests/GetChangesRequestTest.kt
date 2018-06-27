@@ -4,7 +4,7 @@ import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.objects.graph.RootGraph
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.ascending
@@ -32,7 +32,7 @@ internal val getChangesMaxRequest = SimpleMarykObject.run {
         toVersion = 3456L.toUInt64(),
         filterSoftDeleted = true,
         select = SimpleMarykObject.props {
-            RootGraph(
+            RootPropRefGraph(
                 value
             )
         }

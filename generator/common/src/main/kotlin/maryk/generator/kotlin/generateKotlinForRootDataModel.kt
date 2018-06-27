@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.objects.RootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed

@@ -1,6 +1,6 @@
 package maryk
 
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions

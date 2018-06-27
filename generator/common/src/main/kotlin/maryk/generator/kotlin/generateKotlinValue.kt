@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
-import maryk.core.objects.DataModel
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.DataModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EnumDefinition

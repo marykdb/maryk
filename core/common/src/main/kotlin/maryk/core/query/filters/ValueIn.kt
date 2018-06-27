@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.core.objects.SimpleFilterDataModel
+import maryk.core.models.SimpleFilterDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions

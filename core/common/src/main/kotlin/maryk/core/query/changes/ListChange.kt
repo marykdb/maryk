@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeWriter
+import maryk.lib.exceptions.ParseException
 
 /** Defines changes to lists by [listValueChanges] */
 data class ListChange internal constructor(
@@ -17,16 +18,14 @@ data class ListChange internal constructor(
     constructor(vararg listValueChange: ListValueChanges<*>): this(listValueChange.toList())
 
     internal object Properties : PropertyDefinitions<ListChange>() {
-        init {
-            add(0, "referenceListValueChangesPairs",
-                ListDefinition(
-                    valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { ListValueChanges }
-                    )
-                ),
-                ListChange::listValueChanges
-            )
-        }
+        val referenceListValueChangesPairs = add(0, "referenceListValueChangesPairs",
+            ListDefinition(
+                valueDefinition = EmbeddedObjectDefinition(
+                    dataModel = { ListValueChanges }
+                )
+            ),
+            ListChange::listValueChanges
+        )
     }
 
     internal companion object: ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Properties, ListValueChanges.Properties>(
@@ -39,8 +38,11 @@ data class ListChange internal constructor(
         )
 
         override fun writeJson(map: ValueMap<ListChange, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            @Suppress("UNCHECKED_CAST")
-            writeReferenceValueMap(writer, map[0] as List<ListValueChanges<*>>, context)
+            writeReferenceValueMap(
+                writer,
+                map { referenceListValueChangesPairs } ?: throw ParseException("Missing referenceListValueChangesPairs in ListChange"),
+                context
+            )
         }
 
         override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

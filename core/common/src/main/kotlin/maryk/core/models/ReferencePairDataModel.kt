@@ -20,8 +20,7 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValu
     properties: P
 ) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     override fun writeJson(map: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-        @Suppress("UNCHECKED_CAST")
-        (map[this.properties.referenceValuePairs.index] as List<ReferenceValuePair<*>>?)?.let {
+        map { referenceValuePairs }?.let {
             writer.writeJsonMapObject(it, context)
         }
     }

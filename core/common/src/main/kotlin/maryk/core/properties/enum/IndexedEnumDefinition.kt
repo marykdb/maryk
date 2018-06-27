@@ -100,8 +100,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         override fun writeJson(map: ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
             if (map[Properties.values.index] == null) {
                 // Write a single string name if no options was defined
-                @Suppress("UNCHECKED_CAST")
-                val value = map[Properties.name.index] as String? ?: throw ParseException("Missing name in Enum")
+                val value = map { name } ?: throw ParseException("Missing name in Enum")
 
                 Properties.name.writeJsonValue(value, writer, context)
                 Properties.name.capture(context, value)

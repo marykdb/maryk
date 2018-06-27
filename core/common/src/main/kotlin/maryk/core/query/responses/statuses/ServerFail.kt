@@ -19,7 +19,7 @@ data class ServerFail<DO: Any>(
         }
     ) {
         override fun invoke(map: SimpleValueMap<ServerFail<*>>) = ServerFail<Any>(
-            map[0] as String
+            map(0)
         )
     }
 }

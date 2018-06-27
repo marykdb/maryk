@@ -42,9 +42,8 @@ data class Not(
         )
 
         override fun writeJson(map: ValueMap<Not, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            @Suppress("UNCHECKED_CAST")
             Properties.filters.writeJsonValue(
-                map[Properties.filters.index] as List<TypedValue<FilterType, Any>>? ?: throw ParseException("Missing filters in Not filter"),
+                map.original { filters } ?: throw ParseException("Missing filters in Not filter"),
                 writer,
                 context
             )

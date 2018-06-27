@@ -126,7 +126,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 
                     reader.nextToken()
                     map[key] = valueDefinition.readJson(reader, context)
-                } else { throw ParseException("JSON value should be an Object Field but was ${this.name}")
+                } else {
+                    throw ParseException("JSON value should be an Object Field but was ${this.name}")
                 }
             }
         }

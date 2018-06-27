@@ -2,11 +2,9 @@ package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.ValueMap
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -21,14 +19,16 @@ internal abstract class ReferencesDataModel<DO: Any, P: ReferencesPropertyDefini
     properties: P
 ) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     override fun writeJson(map: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-        @Suppress("UNCHECKED_CAST")
-        val references = map[0] as List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>
+        val references = map { references } ?: throw ParseException("References are missing from ReferencesDataModel")
 
-        writer.writeJsonReferences(references, context)
+        writer.writeJsonReferences(
+            references,
+            context
+        )
     }
 
     protected fun IsJsonLikeWriter.writeJsonReferences(
-        references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>,
+        references: List<IsPropertyReference<*, *>>,
         context: DataModelPropertyContext?
     ) {
         if (references.size == 1) {

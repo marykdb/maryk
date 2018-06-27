@@ -22,7 +22,7 @@ data class RequiredException internal constructor(
         }
     ) {
         override fun invoke(map: SimpleValueMap<RequiredException>) = RequiredException(
-            reference = map[0] as IsPropertyReference<*, *>?
+            reference = map(0)
         )
     }
 }

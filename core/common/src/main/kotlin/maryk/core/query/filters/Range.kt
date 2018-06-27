@@ -44,8 +44,7 @@ data class Range internal constructor(
         )
 
         override fun writeJson(map: ValueMap<Range, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            @Suppress("UNCHECKED_CAST")
-            val ranges = map[0] as List<ReferenceValueRangePair<*>>
+            val ranges = map { ranges } ?: throw ParseException("Ranges missing in Range")
 
             writer.writeJsonRanges(ranges, context)
         }

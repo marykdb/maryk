@@ -49,8 +49,7 @@ data class ValueIn internal constructor(
         }
 
         override fun writeJson(map: ValueMap<ValueIn, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            @Suppress("UNCHECKED_CAST")
-            (map[Properties.referenceValuePairs.index] as List<ReferenceValueSetPair<*>>?)?.let {
+            map { referenceValuePairs }?.let {
                 writer.writeJsonMapObject(it, context)
             }
         }

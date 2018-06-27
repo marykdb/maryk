@@ -39,7 +39,7 @@ data class RootPropRefGraph<DO> internal constructor(
 
         override fun writeJson(map: ValueMap<RootPropRefGraph<*>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
             @Suppress("UNCHECKED_CAST")
-            val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
+            val listOfGraphables = map { properties } ?: throw ParseException("RootPropRefGraph needs items in graph")
 
             writeJsonValues(listOfGraphables, writer, context)
         }

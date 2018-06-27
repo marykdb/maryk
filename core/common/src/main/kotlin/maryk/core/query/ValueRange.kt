@@ -77,10 +77,10 @@ data class ValueRange<T: Any> internal constructor(
         override fun writeJson(map: ValueMap<ValueRange<*>, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             writeJsonValues(
                 writer,
-                map[0] as Any,
-                map[1] as Any,
-                map[2] as Boolean,
-                map[3] as Boolean,
+                map { from } ?: throw ParseException("From is mandatory in a ValueRange"),
+                map { to } ?: throw ParseException("To is mandatory in a ValueRange"),
+                map { inclusiveFrom } ?: throw ParseException("InclusiveFrom is mandatory in a ValueRange"),
+                map { inclusiveTo } ?: throw ParseException("InclusiveFrom is mandatory in a ValueRange"),
                 context
             )
         }

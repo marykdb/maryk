@@ -73,9 +73,8 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
         )
 
         override fun writeJson(map: ValueMap<PropRefGraph<*, *>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
-            val reference = map[Properties.parent.index] as IsPropertyReference<*, *>
-            @Suppress("UNCHECKED_CAST")
-            val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
+            val reference = map.original { parent } ?: throw ParseException("Parent missing in PropRefGraph")
+            val listOfGraphables = map { properties } ?: throw ParseException("Properties missing in PropRefGraph")
 
             writeJsonValues(reference, listOfGraphables, writer, context)
         }

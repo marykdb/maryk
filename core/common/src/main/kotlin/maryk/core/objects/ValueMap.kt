@@ -48,13 +48,20 @@ data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
         }
     }
 
-    /**
-     *
-     */
-    inline operator fun <reified T: Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? =
+    /** Get property from map with wrapper in [getProperty] and convert it to native usage */
+    inline operator fun <TI: Any, reified TO: Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<TI, TO, *, DO>): TO? =
         invoke(
             getProperty(
                 this.dataModel.properties
             ).index
         )
+
+    /** Get property from map with wrapper in [getProperty] and convert it to native usage */
+    @Suppress("UNCHECKED_CAST")
+    fun <T: Any> original(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? =
+        this[
+            getProperty(
+                this.dataModel.properties
+            ).index
+        ] as T?
 }

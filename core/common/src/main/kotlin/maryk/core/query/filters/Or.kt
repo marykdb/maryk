@@ -42,9 +42,8 @@ data class Or(
         )
 
         override fun writeJson(map: ValueMap<Or, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            @Suppress("UNCHECKED_CAST")
             Properties.filters.writeJsonValue(
-                map[Properties.filters.index] as List<TypedValue<FilterType, Any>>? ?: throw ParseException("Missing filters in Or"),
+                map.original { filters } ?: throw ParseException("Missing filters in Or"),
                 writer,
                 context
             )

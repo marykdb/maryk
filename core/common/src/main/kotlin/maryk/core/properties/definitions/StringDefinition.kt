@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -90,7 +91,7 @@ data class StringDefinition(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = StringDefinition(
+        override fun invoke(map: DataObjectMap<StringDefinition>) = StringDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

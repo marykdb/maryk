@@ -33,7 +33,7 @@ data class RootPropRefGraph<DO> internal constructor(
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = RootPropRefGraph<Any>(
+        override fun invoke(map: DataObjectMap<RootPropRefGraph<*>>) = RootPropRefGraph<Any>(
             properties = map(0)
         )
 

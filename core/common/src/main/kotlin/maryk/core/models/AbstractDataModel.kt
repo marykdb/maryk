@@ -3,7 +3,6 @@ package maryk.core.models
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
@@ -42,7 +41,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     ) = runner(this.properties)
 
     /** Create a DataObjectMap with given [createMap] function */
-    fun map(createMap: P.() -> Map<Int, Any>) = DataObjectMap(this, createMap(this.properties))
+    fun map(createMap: P.() -> Map<Int, Any?>) = DataObjectMap(this, createMap(this.properties))
 
     /**
      * Get property reference fetcher of this DataModel with [referenceGetter]
@@ -132,6 +131,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     open fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
+            if (value == null) continue
+
             val definition = properties.getDefinition(key) ?: continue
 
             definition.capture(context, value)
@@ -218,6 +219,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     internal fun calculateProtoBufLength(map: DataObjectMap<DO>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for ((key, value) in map) {
+            if (value == null) continue // continue on empty values
+
             val def = properties.getDefinition(key) ?: continue
 
             def.capture(context, value)
@@ -251,6 +254,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      */
     internal fun writeProtoBuf(map: DataObjectMap<DO>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
+            if (value == null) continue // skip empty values
+
             val definition = properties.getDefinition(key) ?: continue
 
             definition.capture(context, value)
@@ -381,32 +386,6 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
     /** Transform [context] into context specific to DataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")
     internal open fun transformContext(context: CXI?): CX?  = context as CX?
-
-    /**
-     * Utility method to check and map a value to a constructor property
-     */
-    protected inline operator fun <reified T> Map<Int, *>.invoke(index: Int): T {
-        val value = this[index]
-
-        val valueDef = this@AbstractDataModel.properties.getDefinition(index)
-                ?: throw Exception("Value definition of index $index is missing")
-
-        val valueDefDefinition = valueDef.definition
-
-        if (value == null && valueDefDefinition is HasDefaultValueDefinition<*>) {
-            return valueDefDefinition.default as T
-        }
-
-        val transformedValue = valueDef.fromSerializable?.invoke(value) ?: value
-
-        return if (transformedValue is T) {
-            transformedValue
-        } else if (value != null && transformedValue == null) {
-            value as T
-        } else {
-            throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
-        }
-    }
 
     /**
      * Utility method to check and map a value to a constructor property

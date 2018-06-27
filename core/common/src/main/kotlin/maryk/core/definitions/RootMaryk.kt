@@ -1,11 +1,12 @@
 package maryk.core.definitions
 
 import maryk.core.models.QuerySingleValueDataModel
+import maryk.core.objects.DataObjectMap
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
@@ -49,7 +50,7 @@ data class RootMaryk(
         properties = Properties,
         singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, *, DataModelContext, RootMaryk>
     ) {
-        override fun invoke(map: Map<Int, *>) = RootMaryk(
+        override fun invoke(map: DataObjectMap<RootMaryk>) = RootMaryk(
             operations = map(0)
         )
     }

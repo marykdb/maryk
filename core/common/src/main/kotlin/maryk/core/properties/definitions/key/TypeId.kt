@@ -5,14 +5,15 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
-import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
 
@@ -56,7 +57,7 @@ data class TypeId<E: IndexedEnum<E>>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = TypeId<IndexedEnum<Any>>(
+        override fun invoke(map: DataObjectMap<TypeId<*>>) = TypeId<IndexedEnum<Any>>(
             reference = map(0)
         )
     }

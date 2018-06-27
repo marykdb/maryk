@@ -15,7 +15,8 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.objects.RootDataModel",
+        "maryk.core.models.RootDataModel",
+        "maryk.core.objects.DataObjectMap",
         "maryk.core.properties.definitions.PropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
@@ -24,7 +25,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(
     val keyDefAsKotlin = if (this.key.keyDefinitions.size != 1 || this.key.keyDefinitions[0] != UUIDKey) {
         val keyDefs = this.key.keyDefinitions.generateKotlin(addImport)
 
-        addImport("maryk.core.objects.definitions")
+        addImport("maryk.core.models.definitions")
 
         """keyDefinitions = definitions(
             ${keyDefs.prependIndent().prependIndent().trimStart()}
@@ -49,7 +50,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(
             name = "$name",
             ${keyDefAsKotlin}properties = Properties
         ) {
-            override fun invoke(map: Map<Int, *>) = $name(
+            override fun invoke(map: DataObjectMap<$name>) = $name(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

@@ -1,6 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -38,7 +39,7 @@ data class ValidationUmbrellaException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = ValidationUmbrellaException(
+        override fun invoke(map: DataObjectMap<ValidationUmbrellaException>) = ValidationUmbrellaException(
             reference = map(0),
             exceptions = map(1)
         )

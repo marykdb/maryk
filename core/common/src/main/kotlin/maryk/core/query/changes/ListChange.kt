@@ -34,7 +34,7 @@ data class ListChange internal constructor(
         containedDataModel = ListValueChanges,
         referenceProperty = ListValueChanges.Properties.reference
     ) {
-        override fun invoke(map: Map<Int, *>) = ListChange(
+        override fun invoke(map: DataObjectMap<ListChange>) = ListChange(
             listValueChanges = map(0)
         )
 

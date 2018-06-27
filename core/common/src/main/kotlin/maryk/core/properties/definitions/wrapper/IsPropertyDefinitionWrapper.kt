@@ -47,7 +47,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val fromSerializable: ((T?) -> TO?)?
 
     /** Create an index [value] pair for maps */
-    infix fun with(value: Any): Pair<Int, Any> {
+    infix fun with(value: Any?): Pair<Int, Any?> {
         return Pair(this.index, value)
     }
 
@@ -124,7 +124,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
+        override fun invoke(map: DataObjectMap<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
                 map<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(2)
             val type = typedDefinition.type
@@ -157,7 +157,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DataObjectMap<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
-                val valueMap: MutableMap<Int, Any> = mutableMapOf()
+                val valueMap: MutableMap<Int, Any?> = mutableMapOf()
 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext)

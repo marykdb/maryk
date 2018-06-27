@@ -2,13 +2,14 @@ package maryk.core.query.changes
 
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesPropertyDefinitions
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeWriter
 
-/** Delete of a property of type [T] referred by [reference] */
+/** Delete of a property referred by [references] */
 data class Delete internal constructor(
     val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>
 ) : IsChange {
@@ -24,7 +25,7 @@ data class Delete internal constructor(
     internal companion object: ReferencesDataModel<Delete>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = Delete(
+        override fun invoke(map: DataObjectMap<Delete>) = Delete(
             references = map(0)
         )
 

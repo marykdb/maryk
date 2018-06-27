@@ -17,6 +17,7 @@ import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.UInt16
 import maryk.core.properties.types.numeric.UInt32
@@ -142,6 +143,9 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         @Suppress("UNCHECKED_CAST")
         val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)
         "TypedValue(${multiTypeDefinition.typeEnum.name}.${value.type.name}, $valueAsString)"
+    }
+    is NumberDescriptor<*> -> {
+        value.type.name
     }
     else -> {
         when (definition) {

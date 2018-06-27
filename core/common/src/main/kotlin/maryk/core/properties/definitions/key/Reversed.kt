@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -25,15 +26,15 @@ data class Reversed<T: Any>(
     constructor(definition: FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>) : this(definition.getRef())
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
-        this.reference.propertyDefinition.writeStorageBytes(value, {
+        this.reference.propertyDefinition.writeStorageBytes(value) {
             writer(MAX_BYTE xor it)
-        })
+        }
     }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): T {
-        return this.reference.propertyDefinition.readStorageBytes(byteSize, {
+        return this.reference.propertyDefinition.readStorageBytes(byteSize) {
             MAX_BYTE xor reader()
-        })
+        }
     }
 
     internal object Model : DefinitionDataModel<Reversed<out Any>>(
@@ -51,7 +52,7 @@ data class Reversed<T: Any>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = Reversed<Any>(
+        override fun invoke(map: DataObjectMap<Reversed<out Any>>) = Reversed<Any>(
             reference = map(0)
         )
     }

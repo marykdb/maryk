@@ -71,7 +71,7 @@ private data class MultiTypeDescriptor(
     internal object Model : SimpleDataModel<MultiTypeDescriptor, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = MultiTypeDescriptor(
+        override fun invoke(map: DataObjectMap<MultiTypeDescriptor>) = MultiTypeDescriptor(
             index = map(0),
             name = map(1),
             definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(2).value
@@ -81,7 +81,7 @@ private data class MultiTypeDescriptor(
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 this.map {
-                    val valueMap: MutableMap<Int, Any> = mutableMapOf()
+                    val valueMap: MutableMap<Int, Any?> = mutableMapOf()
 
                     reader.readNamedIndexField(valueMap, name, index)
                     valueMap += definition with definition.readJson(reader, context as DataModelContext?)

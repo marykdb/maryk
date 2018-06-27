@@ -37,7 +37,7 @@ data class Not(
     internal companion object: QueryDataModel<Not, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = Not(
+        override fun invoke(map: DataObjectMap<Not>) = Not(
             filters = map<List<IsFilter>>(0)
         )
 

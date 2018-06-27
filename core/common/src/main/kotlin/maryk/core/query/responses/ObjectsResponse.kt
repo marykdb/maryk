@@ -2,6 +2,7 @@ package maryk.core.query.responses
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -24,7 +25,7 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO, *>>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = ObjectsResponse(
+        override fun invoke(map: DataObjectMap<ObjectsResponse<*, *>>) = ObjectsResponse(
             dataModel = map<RootDataModel<Any, *>>(0),
             objects = map(1)
         )

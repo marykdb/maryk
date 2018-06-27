@@ -34,7 +34,7 @@ data class SetChange internal constructor(
         containedDataModel = SetValueChanges,
         referenceProperty = SetValueChanges.Properties.reference
     ) {
-        override fun invoke(map: Map<Int, *>) = SetChange(
+        override fun invoke(map: DataObjectMap<SetChange>) = SetChange(
             setValueChanges = map(0)
         )
 

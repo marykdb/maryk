@@ -46,7 +46,7 @@ data class Person(
     companion object: RootDataModel<Person>(
         properties = Properties
     ){ 
-        override fun invoke(map: Map<Int, *>) = Person(
+        override fun invoke(map: DataObjectMap<Person>) = Person(
             firstName = map(0),
             lastName = map(1),
             dateOfBirth = map(2)

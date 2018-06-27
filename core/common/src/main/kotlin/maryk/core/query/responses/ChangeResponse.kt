@@ -2,6 +2,7 @@ package maryk.core.query.responses
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
@@ -22,7 +23,7 @@ data class ChangeResponse<DO: Any, out DM: RootDataModel<DO, *>>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = ChangeResponse(
+        override fun invoke(map: DataObjectMap<ChangeResponse<*, *>>) = ChangeResponse(
             dataModel = map(0),
             statuses = map<List<TypedValue<StatusType, IsChangeResponseStatus<Any>>>?>(1)?.map { it.value } ?: emptyList()
         )

@@ -5,6 +5,7 @@ import maryk.core.models.DataModel
 import maryk.core.models.QuerySingleValueDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.ValueDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -103,7 +104,7 @@ data class Definitions(
         properties = Properties,
         singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, *, DataModelContext, Definitions>
     ) {
-        override fun invoke(map: Map<Int, *>) = Definitions(
+        override fun invoke(map: DataObjectMap<Definitions>) = Definitions(
             definitions = map(0)
         )
     }

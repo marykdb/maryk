@@ -9,7 +9,8 @@ fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.objects.DataModel",
+        "maryk.core.models.DataModel",
+        "maryk.core.objects.DataObjectMap",
         "maryk.core.properties.definitions.PropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
@@ -31,7 +32,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(
             name = "$name",
             properties = Properties
         ) {
-            override fun invoke(map: Map<Int, *>) = $name(
+            override fun invoke(map: DataObjectMap<$name>) = $name(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

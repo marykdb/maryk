@@ -40,7 +40,7 @@ data class ValueIn internal constructor(
     internal companion object: SimpleFilterDataModel<ValueIn, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = ValueIn(
+        override fun invoke(map: DataObjectMap<ValueIn>) = ValueIn(
             referenceValuePairs = map(0)
         )
 

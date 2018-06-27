@@ -56,7 +56,7 @@ data class ValueRange<T: Any> internal constructor(
     internal companion object: QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = ValueRange(
+        override fun invoke(map: DataObjectMap<ValueRange<*>>) = ValueRange(
             from = map(0),
             to = map(1),
             inclusiveFrom = map(2),
@@ -92,7 +92,7 @@ data class ValueRange<T: Any> internal constructor(
                 }
 
                 this.map {
-                    val valueMap = mutableMapOf<Int, Any>()
+                    val valueMap = mutableMapOf<Int, Any?>()
 
                     if (reader.currentToken !is JsonToken.StartArray) {
                         throw ParseException("Range should be contained in an Array")

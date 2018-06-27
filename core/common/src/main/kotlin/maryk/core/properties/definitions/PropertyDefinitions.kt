@@ -4,7 +4,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.SimpleDataModel
-import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
@@ -13,6 +12,7 @@ import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelContext

@@ -2,6 +2,7 @@ package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
@@ -37,7 +38,7 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
             val def = it as IsFixedBytesEncodable<*>
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
-        return this(values)
+        return this(this.map { values })
     }
 
     /** Creates bytes for given [inputs] */
@@ -81,11 +82,11 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
+        override fun invoke(map: DataObjectMap<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
             name = map(0),
             properties = map(1)
         ){
-            override fun invoke(map: Map<Int, *>): ValueDataObject {
+            override fun invoke(map: DataObjectMap<ValueDataObject>): ValueDataObject {
                 return object : ValueDataObject(ByteArray(0)){}
             }
         }

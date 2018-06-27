@@ -1,6 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
@@ -20,7 +21,7 @@ data class RequiredException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = RequiredException(
+        override fun invoke(map: DataObjectMap<RequiredException>) = RequiredException(
             reference = map[0] as IsPropertyReference<*, *>?
         )
     }

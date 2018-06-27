@@ -1,6 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -36,7 +37,7 @@ data class ValidationFail<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = ValidationFail<Any>(
+        override fun invoke(map: DataObjectMap<ValidationFail<*>>) = ValidationFail<Any>(
             exceptions = map(0)
         )
     }

@@ -120,15 +120,17 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 internal class DataModelTest {
     @Test
     fun construct_by_map() {
-        TestMarykObject(mapOf(
-            0 to testObject.string,
-            1 to testObject.int,
-            2 to testObject.uint,
-            3 to testObject.double,
-            4 to testObject.dateTime,
-            5 to testObject.bool,
-            6 to testObject.enum
-        )) shouldBe testObject
+        TestMarykObject.map {
+            mapOf(
+                string with testObject.string,
+                int with testObject.int,
+                uint with testObject.uint,
+                double with testObject.double,
+                dateTime with testObject.dateTime,
+                bool with testObject.bool,
+                enum with testObject.enum
+            )
+        }.toDataObject() shouldBe testObject
     }
 
     @Test

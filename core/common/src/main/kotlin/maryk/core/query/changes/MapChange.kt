@@ -34,8 +34,7 @@ data class MapChange internal constructor(
         containedDataModel = MapValueChanges,
         referenceProperty = MapValueChanges.Properties.reference
     ) {
-        @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = MapChange(
+        override fun invoke(map: DataObjectMap<MapChange>) = MapChange(
             mapValueChanges = map(0)
         )
 

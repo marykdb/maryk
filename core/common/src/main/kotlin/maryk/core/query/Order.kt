@@ -53,7 +53,7 @@ data class Order internal constructor(
     internal companion object: QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = Order(
+        override fun invoke(map: DataObjectMap<Order>) = Order(
             propertyReference = map(0),
             direction = map(1)
         )
@@ -101,7 +101,7 @@ data class Order internal constructor(
                 @Suppress("UNCHECKED_CAST")
                 (currentToken as? JsonToken.Value<String>)?.let {
                     return this.map {
-                        val valueMap = mutableMapOf<Int, Any>()
+                        val valueMap = mutableMapOf<Int, Any?>()
 
                         it.type.let {
                             if (it is UnknownYamlTag && it.name == "Desc") {

@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
@@ -87,7 +88,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = ListDefinition(
+        override fun invoke(map: DataObjectMap<ListDefinition<*, *>>) = ListDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

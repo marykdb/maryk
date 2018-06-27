@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.types.numeric.Float32
@@ -76,14 +77,21 @@ data class NumberDefinition<T: Comparable<T>>(
                 IsPropertyDefinition.addRequired(this, NumberDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
+                @Suppress("UNCHECKED_CAST")
                 add(4, "type",
                     definition = EnumDefinition(enum = NumberType),
-                    getter = {
-                        it.type.type
-                    },
-                    capturer = { context: NumericContext, value ->
+                    getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
+                    capturer = { context: NumericContext, value: NumberType ->
                         @Suppress("UNCHECKED_CAST")
                         context.numberType = value.descriptor() as NumberDescriptor<Comparable<Any>>
+                    },
+                    fromSerializable = { value: NumberType? ->
+                        value?.let {
+                            it.descriptor() as NumberDescriptor<Comparable<Any>>
+                        }
+                    },
+                    toSerializable = { value: NumberDescriptor<Comparable<Any>>?, _: NumericContext? ->
+                        value?.type
                     }
                 )
                 add(5, "minValue",
@@ -118,12 +126,12 @@ data class NumberDefinition<T: Comparable<T>>(
         }
     ) {
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: Map<Int, *>) = NumberDefinition(
+        override fun invoke(map: DataObjectMap<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
             indexed = map(0),
             required = map(1),
             final = map(2),
             unique = map(3),
-            type = map<NumberType>(4).descriptor() as NumberDescriptor<Comparable<Any>>,
+            type = map(4),
             minValue = map(5),
             maxValue = map(6),
             default = map(7),
@@ -137,19 +145,17 @@ object NumericContext : IsPropertyContext {
 }
 
 fun <T: Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
-    if (type.isOfType(value)) {
-        @Suppress("UNCHECKED_CAST")
-        value as T
-    } else if (value is Double) {
-        type.ofDouble(value).also {
+    when {
+        type.isOfType(value) -> {
+            @Suppress("UNCHECKED_CAST")
+            value as T
+        }
+        value is Double -> type.ofDouble(value).also {
             if (it != value) {
                 throw ParseException("$value not of expected type")
             }
         }
-    } else if (value is Int) {
-        type.ofInt(value)
-    } else if (value is Long) {
-        type.ofLong(value)
-    } else {
-        null
+        value is Int -> type.ofInt(value)
+        value is Long -> type.ofLong(value)
+        else -> null
     }

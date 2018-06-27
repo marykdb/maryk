@@ -164,7 +164,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
         properties = RootModelProperties
     ) {
-        override fun invoke(map: Map<Int, *>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
+        override fun invoke(map: DataObjectMap<RootDataModel<*, *>>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
             name = map(0),
             properties = map(1),
             keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(2))?.map {
@@ -174,7 +174,8 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                 }
             }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<FixedBytesProperty<out Any>>
         ){
-            override fun invoke(map: Map<Int, *>): Any {
+            override fun invoke(map: DataObjectMap<Any>): Any {
+                // TODO: What to do here?
                 return object : Any(){}
             }
         }
@@ -186,6 +187,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
             writer.writeStartObject()
             for ((key, value) in map) {
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last
+                if (value == null) continue // skip writing empty values
 
                 val def = properties.getDefinition(key) ?: continue
                 this.writeJsonValue(def, writer, value, context)

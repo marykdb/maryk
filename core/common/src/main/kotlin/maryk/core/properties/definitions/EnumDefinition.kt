@@ -7,6 +7,7 @@ import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
@@ -179,19 +180,16 @@ class EnumDefinition<E : IndexedEnum<E>>(
             }
         }
     ) {
-
-        override fun invoke(map: Map<Int, *>): EnumDefinition<IndexedEnum<Any>> {
-            return EnumDefinition(
-                indexed = map(0),
-                required = map(1),
-                final = map(2),
-                unique = map(3),
-                enum = map(4),
-                minValue = map(5),
-                maxValue = map(6),
-                default = map(7)
-            )
-        }
+        override fun invoke(map: DataObjectMap<EnumDefinition<*>>) = EnumDefinition<IndexedEnum<Any>>(
+            indexed = map(0),
+            required = map(1),
+            final = map(2),
+            unique = map(3),
+            enum = map(4),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7)
+        )
     }
 }
 

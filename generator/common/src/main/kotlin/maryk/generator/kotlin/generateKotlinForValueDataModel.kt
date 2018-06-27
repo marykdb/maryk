@@ -10,7 +10,8 @@ fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.gene
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.objects.ValueDataModel",
+        "maryk.core.models.ValueDataModel",
+        "maryk.core.objects.DataObjectMap",
         "maryk.core.properties.definitions.PropertyDefinitions",
         "maryk.core.properties.types.ValueDataObject"
     )
@@ -33,7 +34,7 @@ fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.gene
             name = "$name",
             properties = Properties
         ) {
-            override fun invoke(map: Map<Int, *>) = $name(
+            override fun invoke(map: DataObjectMap<$name>) = $name(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

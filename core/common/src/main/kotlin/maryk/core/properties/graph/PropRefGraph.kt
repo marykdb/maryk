@@ -67,7 +67,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = PropRefGraph<Any, Any>(
+        override fun invoke(map: DataObjectMap<PropRefGraph<*, *>>) = PropRefGraph<Any, Any>(
             parent = map(0),
             properties = map(1)
         )

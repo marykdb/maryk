@@ -1,6 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
@@ -23,7 +24,7 @@ data class AlreadySetException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = AlreadySetException(
+        override fun invoke(map: DataObjectMap<AlreadySetException>) = AlreadySetException(
             reference = map(0)
         )
     }

@@ -37,7 +37,7 @@ data class And(
     internal companion object: QueryDataModel<And, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = And(
+        override fun invoke(map: DataObjectMap<And>) = And(
             filters = map<List<IsFilter>>(0)
         )
 

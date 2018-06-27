@@ -90,7 +90,13 @@ internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReferenc
 
                         this.containedDataModel.walkJsonToRead(reader, valueMap, context)
                     }
-                    items.add(this.containedDataModel(valueMap))
+
+                    val dataObjectMap = this.containedDataModel.map {
+                        valueMap
+                    }
+                    items.add(
+                        dataObjectMap.toDataObject()
+                    )
                 }
                 else -> break@walker
             }

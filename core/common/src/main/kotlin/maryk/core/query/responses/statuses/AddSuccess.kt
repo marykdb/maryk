@@ -1,6 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -40,7 +41,7 @@ data class AddSuccess<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = AddSuccess(
+        override fun invoke(map: DataObjectMap<AddSuccess<*>>) = AddSuccess(
             key = map(0),
             version = map(1),
             changes = map(2)

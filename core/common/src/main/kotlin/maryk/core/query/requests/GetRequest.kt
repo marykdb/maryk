@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -53,7 +54,7 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = GetRequest(
+        override fun invoke(map: DataObjectMap<GetRequest<*, *>>) = GetRequest(
             dataModel = map<RootDataModel<Any, *>>(0),
             keys = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,

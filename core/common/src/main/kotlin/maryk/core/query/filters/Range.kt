@@ -39,7 +39,7 @@ data class Range internal constructor(
     internal companion object: QueryDataModel<Range, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = Range(
+        override fun invoke(map: DataObjectMap<Range>) = Range(
             referenceRangePairs = map(0)
         )
 

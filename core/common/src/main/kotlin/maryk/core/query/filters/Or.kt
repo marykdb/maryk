@@ -37,7 +37,7 @@ data class Or(
     internal companion object: QueryDataModel<Or, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = Or(
+        override fun invoke(map: DataObjectMap<Or>) = Or(
             filters = map<List<IsFilter>>(0)
         )
 

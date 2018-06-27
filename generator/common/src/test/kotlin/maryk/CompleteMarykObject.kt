@@ -2,6 +2,7 @@ package maryk
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -365,7 +366,7 @@ data class CompleteMarykObject(
         ),
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = CompleteMarykObject(
+        override fun invoke(map: DataObjectMap<CompleteMarykObject>) = CompleteMarykObject(
             string = map(0),
             number = map(1),
             boolean = map(2),

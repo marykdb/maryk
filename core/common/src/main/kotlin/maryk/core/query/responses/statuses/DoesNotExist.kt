@@ -1,6 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 
@@ -17,7 +18,7 @@ data class DoesNotExist<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: Map<Int, *>) = DoesNotExist(
+        override fun invoke(map: DataObjectMap<DoesNotExist<*>>) = DoesNotExist(
             key = map(0)
         )
     }

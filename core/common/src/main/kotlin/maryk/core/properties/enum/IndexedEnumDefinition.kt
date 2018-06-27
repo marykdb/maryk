@@ -91,7 +91,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         properties = Properties,
         contextTransformer = { EnumNameContext(it) }
     ) {
-        override fun invoke(map: Map<Int, *>) =
+        override fun invoke(map: DataObjectMap<IndexedEnumDefinition<IndexedEnum<Any>>>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
                 name = map(0),
                 optionalValues = map(1)

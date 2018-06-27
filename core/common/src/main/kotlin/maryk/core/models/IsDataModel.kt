@@ -24,5 +24,5 @@ interface IsDataModel<DO: Any> {
     fun validate(map: DataObjectMap<DO>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
 
     /** Creates a Data Object by [map] */
-    operator fun invoke(map: Map<Int, *>): DO
+    operator fun invoke(map: DataObjectMap<DO>): DO
 }

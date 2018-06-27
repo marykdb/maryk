@@ -7,7 +7,8 @@ import kotlin.test.Test
 val generatedKotlinForValueDataModel = """
 package maryk
 
-import maryk.core.objects.ValueDataModel
+import maryk.core.models.ValueDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -41,7 +42,7 @@ data class ValueMarykObject(
         name = "ValueMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, *>) = ValueMarykObject(
+        override fun invoke(map: DataObjectMap<ValueMarykObject>) = ValueMarykObject(
             int = map(0),
             date = map(1)
         )

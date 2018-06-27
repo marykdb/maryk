@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.EmbeddedObjectPropertyRef
 import maryk.core.properties.references.IsPropertyReference
@@ -21,7 +21,7 @@ import maryk.core.properties.references.IsPropertyReference
 data class EmbeddedObjectPropertyDefinitionWrapper<
     EODO: Any,
     TO: Any,
-    out P: PropertyDefinitions<EODO>,
+    P: PropertyDefinitions<EODO>,
     out DM: AbstractDataModel<EODO, P, CXI, CX>,
     CXI: IsPropertyContext, CX: IsPropertyContext, in DO: Any
 > internal constructor(

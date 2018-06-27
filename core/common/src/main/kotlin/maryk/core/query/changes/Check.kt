@@ -20,10 +20,10 @@ data class Check internal constructor(
         override val referenceValuePairs = addReferenceValuePairsDefinition(Check::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, Check>(
+    internal companion object: ReferencePairDataModel<Any, Check, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Check>) = Check(
+        override fun invoke(map: ValueMap<Check, Properties>) = Check(
             referenceValuePairs = map(0)
         )
 

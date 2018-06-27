@@ -20,10 +20,10 @@ data class LessThan internal constructor(
         override val referenceValuePairs = addReferenceValuePairsDefinition(LessThan::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, LessThan>(
+    internal companion object: ReferencePairDataModel<Any, LessThan, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<LessThan>) = LessThan(
+        override fun invoke(map: ValueMap<LessThan, Properties>) = LessThan(
             referenceValuePairs = map(0)
         )
 

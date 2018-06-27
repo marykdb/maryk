@@ -62,7 +62,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
     internal companion object: QueryDataModel<MapValueChanges<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<MapValueChanges<*, *>>) = MapValueChanges<Any, Any>(
+        override fun invoke(map: ValueMap<MapValueChanges<*, *>, Properties>) = MapValueChanges<Any, Any>(
             reference = map(0),
             valuesToAdd = map(1),
             keysToDelete = map(2)

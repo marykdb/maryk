@@ -1,15 +1,19 @@
 package maryk.core.objects
 
-import maryk.core.models.IsDataModel
+import maryk.core.models.IsDataModelWithPropertyDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.lib.exceptions.ParseException
+
+typealias SimpleValueMap<DO> = ValueMap<DO, PropertyDefinitions<DO>>
 
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-data class ValueMap<DO: Any> internal constructor(
-    val dataModel: IsDataModel<DO>,
+data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
+    val dataModel: IsDataModelWithPropertyDefinition<DO, P>,
     val map: Map<Int, Any?>
 ) : Map<Int, Any?> by map {
     /**
@@ -43,4 +47,14 @@ data class ValueMap<DO: Any> internal constructor(
             throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
         }
     }
+
+    /**
+     *
+     */
+    inline operator fun <reified T: Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? =
+        invoke(
+            getProperty(
+                this.dataModel.properties
+            ).index
+        )
 }

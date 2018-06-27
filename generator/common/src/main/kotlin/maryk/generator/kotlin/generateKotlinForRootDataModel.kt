@@ -50,7 +50,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(
             name = "$name",
             ${keyDefAsKotlin}properties = Properties
         ) {
-            override fun invoke(map: ValueMap<$name>) = $name(
+            override fun invoke(map: ValueMap<$name, Properties>) = $name(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

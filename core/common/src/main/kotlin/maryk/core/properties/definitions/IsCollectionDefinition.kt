@@ -49,7 +49,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
             createValidationUmbrellaException(refGetter) { addException ->
                 validateCollectionForExceptions(refGetter, newValue) { item, itemRefFactory ->
                     try {
-                        this.valueDefinition.validateWithRef(null, item, { itemRefFactory() })
+                        this.valueDefinition.validateWithRef(null, item) { itemRefFactory() }
                     } catch (e: ValidationException) {
                         addException(e)
                     }
@@ -71,7 +71,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
         val renderCompact = this.valueDefinition !is EmbeddedObjectDefinition<*, *, *, *, *>
-                && this.valueDefinition !is ValueModelDefinition<*, *>
+                && this.valueDefinition !is ValueModelDefinition<*, *, *>
                 && this.valueDefinition !is ContextualEmbeddedObjectDefinition<*>
                 && this.valueDefinition !is MultiTypeDefinition<*, *>
                 && value.size < 5

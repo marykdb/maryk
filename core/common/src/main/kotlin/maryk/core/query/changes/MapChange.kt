@@ -34,11 +34,11 @@ data class MapChange internal constructor(
         containedDataModel = MapValueChanges,
         referenceProperty = MapValueChanges.Properties.reference
     ) {
-        override fun invoke(map: ValueMap<MapChange>) = MapChange(
+        override fun invoke(map: ValueMap<MapChange, MapChange.Properties>) = MapChange(
             mapValueChanges = map(0)
         )
 
-        override fun writeJson(map: ValueMap<MapChange>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ValueMap<MapChange, MapChange.Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             writeReferenceValueMap(
                 writer,

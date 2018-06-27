@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -20,8 +20,11 @@ import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
+private typealias GenericValueModelDefinition = ValueModelDefinition<*, *, *>
+//private typealias GenericValueModelDefinition2 = ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>>
+
 /** Definition for value model properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
-data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO, PropertyDefinitions<DO>>>(
+data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>, P: PropertyDefinitions<DO>>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -80,14 +83,14 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
             }
         } else { null }
 
-    object Model : ContextualDataModel<ValueModelDefinition<*, *>, PropertyDefinitions<ValueModelDefinition<*, *>>, DataModelContext, ModelContext>(
+    object Model : ContextualDataModel<ValueModelDefinition<*, *, *>, PropertyDefinitions<ValueModelDefinition<*, *, *>>, DataModelContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
-        properties = object : PropertyDefinitions<ValueModelDefinition<*, *>>() {
+        properties = object : PropertyDefinitions<ValueModelDefinition<*, *, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *>::indexed)
-                IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *>::required)
-                IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *>::final)
-                IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *>::unique)
+                IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *, *>::indexed)
+                IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *, *>::required)
+                IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *, *>::final)
+                IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *, *>::unique)
 
                 add(4, "dataModel",
                     ContextualModelReferenceDefinition<ValueDataModel<*, *>,ModelContext, DataModelContext>(
@@ -99,7 +102,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    ValueModelDefinition<*, *>::dataModel,
+                    ValueModelDefinition<*, *, *>::dataModel,
                     toSerializable = { value: ValueDataModel<*, *>?, _ ->
                         value?.let{
                             DataModelReference(it.name){ it }
@@ -128,7 +131,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                             context?.model?.invoke() ?: throw ContextNotFoundException()
                         }
                     ),
-                    ValueModelDefinition<*, *>::minValue
+                    ValueModelDefinition<*, *, *>::minValue
                 )
 
                 add(6, "maxValue",
@@ -137,7 +140,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                             context?.model?.invoke() ?: throw ContextNotFoundException()
                         }
                     ),
-                    ValueModelDefinition<*, *>::maxValue
+                    ValueModelDefinition<*, *, *>::maxValue
                 )
 
                 add(7, "default",
@@ -146,20 +149,21 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
                             context?.model?.invoke() ?: throw ContextNotFoundException()
                         }
                     ),
-                    ValueModelDefinition<*, *>::default
+                    ValueModelDefinition<*, *, *>::default
                 )
             }
         }
     ) {
-        override fun invoke(map: ValueMap<ValueModelDefinition<*, *>>) = ValueModelDefinition(
+        @Suppress("UNCHECKED_CAST")
+        override fun invoke(map: SimpleValueMap<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),
             unique = map(3),
-            dataModel = map(4),
+            dataModel = map<ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>>(4),
             minValue = map(5),
             maxValue = map(6),
             default = map(7)
-        )
+        ) as GenericValueModelDefinition
     }
 }

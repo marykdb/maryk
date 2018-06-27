@@ -11,9 +11,9 @@ import maryk.json.JsonWriter
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 
-fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
+fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
     value: T,
-    dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+    dataModel: AbstractDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
     resetContextBeforeRead: Boolean = false
@@ -36,9 +36,9 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConvers
     checker(converted, value)
 }
 
-fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
+fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
     value: T,
-    dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+    dataModel: AbstractDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
     resetContextBeforeRead: Boolean = false
@@ -66,9 +66,9 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
     return output
 }
 
-fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
+fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
     value: T,
-    dataModel: AbstractDataModel<T, PropertyDefinitions<T>, CXI, CX>,
+    dataModel: AbstractDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
     checker: (T, T) -> Unit = { converted, original -> converted shouldBe original },
     resetContextBeforeRead: Boolean = false

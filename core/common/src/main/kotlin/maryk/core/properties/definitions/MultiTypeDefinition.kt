@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
@@ -261,7 +261,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> {
+        override fun invoke(map: SimpleValueMap<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> {
             val definitionMap = convertMultiTypeDescriptors(
                 map(4)
             )

@@ -24,7 +24,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -177,7 +177,7 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
             }
         }
     ) {
-        override fun invoke(map: ValueMap<EmbeddedObjectDefinition<*, *, *, *, *>>) = EmbeddedObjectDefinition(
+        override fun invoke(map: ValueMap<EmbeddedObjectDefinition<*, *, *, *, *>, PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

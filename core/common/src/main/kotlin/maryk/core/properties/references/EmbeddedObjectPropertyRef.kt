@@ -18,7 +18,7 @@ import maryk.core.protobuf.WriteCacheWriter
 class EmbeddedObjectPropertyRef<
     DO : Any,
     TO: Any,
-    out P: PropertyDefinitions<DO>,
+    P: PropertyDefinitions<DO>,
     out DM : AbstractDataModel<DO, P, CXI, CX>,
     CXI: IsPropertyContext,
     CX: IsPropertyContext

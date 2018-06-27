@@ -30,7 +30,7 @@ data class TestValueObject(
         name = "TestValueObject",
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<TestValueObject>) = TestValueObject(
+        override fun invoke(map: ValueMap<TestValueObject, Properties>) = TestValueObject(
             int = map(0),
             dateTime = map(1),
             bool = map(2)

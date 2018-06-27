@@ -40,7 +40,7 @@ data class SetValueChanges<T: Any> internal constructor(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")
-        override fun invoke(map: ValueMap<SetValueChanges<out Any>>) = SetValueChanges<Any>(
+        override fun invoke(map: ValueMap<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
             reference = map(0),
             addValues = map(1),
             deleteValues = map(2)

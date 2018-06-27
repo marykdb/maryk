@@ -91,13 +91,13 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         properties = Properties,
         contextTransformer = { EnumNameContext(it) }
     ) {
-        override fun invoke(map: ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>>) =
+        override fun invoke(map: ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
                 name = map(0),
                 optionalValues = map(1)
             )
 
-        override fun writeJson(map: ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
+        override fun writeJson(map: ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
             if (map[Properties.values.index] == null) {
                 // Write a single string name if no options was defined
                 @Suppress("UNCHECKED_CAST")
@@ -122,7 +122,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: EnumNameContext?): ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>>{
+        override fun readJson(reader: IsJsonLikeReader, context: EnumNameContext?): ValueMap<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>{
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

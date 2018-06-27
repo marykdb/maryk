@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
@@ -18,7 +18,7 @@ data class ServerFail<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<ServerFail<*>>) = ServerFail<Any>(
+        override fun invoke(map: SimpleValueMap<ServerFail<*>>) = ServerFail<Any>(
             map[0] as String
         )
     }

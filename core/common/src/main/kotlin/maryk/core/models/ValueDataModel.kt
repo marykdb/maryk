@@ -2,6 +2,7 @@ package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.objects.SimpleValueMap
 import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -12,7 +13,7 @@ import maryk.lib.bytes.Base64
  * DataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
  */
-abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO>>(
+abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
     name: String,
     properties: P
 ) : DataModel<DO, P>(name, properties) {
@@ -82,11 +83,11 @@ abstract class ValueDataModel<DO: ValueDataObject, out P: PropertyDefinitions<DO
             }
         }
     ) {
-        override fun invoke(map: ValueMap<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
+        override fun invoke(map: SimpleValueMap<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
             name = map(0),
             properties = map(1)
         ){
-            override fun invoke(map: ValueMap<ValueDataObject>): ValueDataObject {
+            override fun invoke(map: ValueMap<ValueDataObject, PropertyDefinitions<ValueDataObject>>): ValueDataObject {
                 return object : ValueDataObject(ByteArray(0)){}
             }
         }

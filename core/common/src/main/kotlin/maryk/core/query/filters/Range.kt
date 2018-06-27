@@ -39,11 +39,11 @@ data class Range internal constructor(
     internal companion object: QueryDataModel<Range, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Range>) = Range(
+        override fun invoke(map: ValueMap<Range, Properties>) = Range(
             referenceRangePairs = map(0)
         )
 
-        override fun writeJson(map: ValueMap<Range>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ValueMap<Range, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             val ranges = map[0] as List<ReferenceValueRangePair<*>>
 
@@ -72,7 +72,7 @@ data class Range internal constructor(
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<Range> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<Range, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

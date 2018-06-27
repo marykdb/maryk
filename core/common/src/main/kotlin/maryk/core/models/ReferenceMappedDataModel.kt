@@ -54,7 +54,7 @@ internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReferenc
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<DO> {
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<DO, P> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

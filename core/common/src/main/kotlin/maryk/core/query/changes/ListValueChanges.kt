@@ -29,6 +29,7 @@ data class ListValueChanges<T: Any> internal constructor(
     val deleteValues: List<T>? = null,
     val deleteAtIndex: Set<Int>? = null
 ) : DefinedByReference<List<T>> {
+    @Suppress("unused")
     internal object Properties : PropertyDefinitions<ListValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, ListValueChanges<*>::reference)
 
@@ -51,7 +52,7 @@ data class ListValueChanges<T: Any> internal constructor(
     internal companion object: QueryDataModel<ListValueChanges<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<ListValueChanges<*>>) = ListValueChanges<Any>(
+        override fun invoke(map: ValueMap<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
             reference = map(0),
             addValuesToEnd = map(1),
             addValuesAtIndex = map(2),

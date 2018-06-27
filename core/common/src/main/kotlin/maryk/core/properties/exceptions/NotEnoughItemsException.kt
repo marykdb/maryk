@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
@@ -30,7 +30,7 @@ data class NotEnoughItemsException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<NotEnoughItemsException>) = NotEnoughItemsException(
+        override fun invoke(map: SimpleValueMap<NotEnoughItemsException>) = NotEnoughItemsException(
             reference = map(0),
             size = map(1),
             minSize = map(2)

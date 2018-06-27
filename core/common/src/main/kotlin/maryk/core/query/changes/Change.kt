@@ -20,10 +20,10 @@ data class Change internal constructor(
         override val referenceValuePairs = addReferenceValuePairsDefinition(Change::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, Change>(
+    internal companion object: ReferencePairDataModel<Any, Change, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Change>) = Change(
+        override fun invoke(map: ValueMap<Change, Properties>) = Change(
             referenceValuePairs = map(0)
         )
 

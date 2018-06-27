@@ -366,7 +366,7 @@ data class CompleteMarykObject(
         ),
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<CompleteMarykObject>) = CompleteMarykObject(
+        override fun invoke(map: ValueMap<CompleteMarykObject, Properties>) = CompleteMarykObject(
             string = map(0),
             number = map(1),
             boolean = map(2),

@@ -23,7 +23,7 @@ data class SimpleMarykObject(
         name = "SimpleMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<SimpleMarykObject>) = SimpleMarykObject(
+        override fun invoke(map: ValueMap<SimpleMarykObject, Properties>) = SimpleMarykObject(
             value = map(0)
         )
     }

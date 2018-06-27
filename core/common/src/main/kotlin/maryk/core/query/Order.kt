@@ -53,7 +53,7 @@ data class Order internal constructor(
     internal companion object: QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Order>) = Order(
+        override fun invoke(map: ValueMap<Order, Properties>) = Order(
             propertyReference = map(0),
             direction = map(1)
         )
@@ -66,7 +66,7 @@ data class Order internal constructor(
             }
         }
 
-        override fun writeJson(map: ValueMap<Order>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ValueMap<Order, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             if (writer is YamlWriter) {
                 writeJsonOrderValue(map(0), map(1), writer, context)
             } else {
@@ -86,7 +86,7 @@ data class Order internal constructor(
             Properties.propertyReference.writeJsonValue(reference, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<Order> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<Order, Properties> {
             if (reader is IsYamlReader) {
                 var currentToken = reader.currentToken
 

@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
@@ -90,7 +90,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<SetDefinition<*, *>>) = SetDefinition(
+        override fun invoke(map: SimpleValueMap<SetDefinition<*, *>>) = SetDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

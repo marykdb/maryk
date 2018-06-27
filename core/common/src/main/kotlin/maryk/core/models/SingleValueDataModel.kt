@@ -15,11 +15,11 @@ import maryk.lib.exceptions.ParseException
  *
  * In JSON/YAML this model is represented as just that property.
  */
-internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropertyContext>(
-    properties: PropertyDefinitions<DO>,
+internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: PropertyDefinitions<DO>, CX: IsPropertyContext>(
+    properties: P,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, *, CX, DO>
-) : AbstractDataModel<DO, PropertyDefinitions<DO>, CX, CX>(properties) {
-    override fun writeJson(map: ValueMap<DO>, writer: IsJsonLikeWriter, context: CX?) {
+) : AbstractDataModel<DO, P, CX, CX>(properties) {
+    override fun writeJson(map: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         val value = map[singlePropertyDefinition.index] as T? ?: throw ParseException("Missing requests in Requests")
 
@@ -33,7 +33,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
         singlePropertyDefinition.capture(context, value)
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?): ValueMap<DO> {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): ValueMap<DO, P> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

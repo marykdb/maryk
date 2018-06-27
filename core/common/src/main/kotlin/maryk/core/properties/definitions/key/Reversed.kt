@@ -3,8 +3,8 @@ package maryk.core.properties.definitions.key
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.IsDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.models.IsDataModelWithPropertyDefinition
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -20,7 +20,8 @@ data class Reversed<T: Any>(
 ) : FixedBytesProperty<T>() {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
-    override fun <DO : Any> getValue(dataModel: IsDataModel<DO>, dataObject: DO) = this.reference.propertyDefinition.getValue(dataModel, dataObject)
+    override fun <DO : Any, P: PropertyDefinitions<DO>> getValue(dataModel: IsDataModelWithPropertyDefinition<DO, P>, dataObject: DO) =
+        this.reference.propertyDefinition.getValue(dataModel, dataObject)
 
     /** Convenience constructor to pass [definition] */
     constructor(definition: FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>) : this(definition.getRef())
@@ -52,7 +53,7 @@ data class Reversed<T: Any>(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<Reversed<out Any>>) = Reversed<Any>(
+        override fun invoke(map: SimpleValueMap<Reversed<out Any>>) = Reversed<Any>(
             reference = map(0)
         )
     }

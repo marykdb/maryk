@@ -22,10 +22,10 @@ data class Exists internal constructor(
         override val references = addReferenceListPropertyDefinition(Exists::references)
     }
 
-    internal companion object: ReferencesDataModel<Exists>(
+    internal companion object: ReferencesDataModel<Exists, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Exists>) = Exists(
+        override fun invoke(map: ValueMap<Exists, Properties>) = Exists(
             references = map(0)
         )
 

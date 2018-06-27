@@ -41,7 +41,7 @@ internal class TypeIdTest {
             ),
             properties = Properties
         ) {
-            override fun invoke(map: ValueMap<MarykObject>) = MarykObject(
+            override fun invoke(map: ValueMap<MarykObject, Properties>) = MarykObject(
                 map(0)
             )
         }

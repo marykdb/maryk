@@ -33,11 +33,11 @@ data class RootPropRefGraph<DO> internal constructor(
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(map: ValueMap<RootPropRefGraph<*>>) = RootPropRefGraph<Any>(
+        override fun invoke(map: ValueMap<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<Any>(
             properties = map(0)
         )
 
-        override fun writeJson(map: ValueMap<RootPropRefGraph<*>>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override fun writeJson(map: ValueMap<RootPropRefGraph<*>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
             @Suppress("UNCHECKED_CAST")
             val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
 
@@ -57,7 +57,7 @@ data class RootPropRefGraph<DO> internal constructor(
             writePropertiesToJson(listOfPropRefGraphables, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ValueMap<RootPropRefGraph<*>> {
+        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ValueMap<RootPropRefGraph<*>, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

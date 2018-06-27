@@ -34,11 +34,11 @@ data class SetChange internal constructor(
         containedDataModel = SetValueChanges,
         referenceProperty = SetValueChanges.Properties.reference
     ) {
-        override fun invoke(map: ValueMap<SetChange>) = SetChange(
+        override fun invoke(map: ValueMap<SetChange, SetChange.Properties>) = SetChange(
             setValueChanges = map(0)
         )
 
-        override fun writeJson(map: ValueMap<SetChange>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ValueMap<SetChange, SetChange.Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             writeReferenceValueMap(
                 writer,

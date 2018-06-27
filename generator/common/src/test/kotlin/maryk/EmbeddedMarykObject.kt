@@ -23,7 +23,7 @@ data class EmbeddedMarykObject(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<EmbeddedMarykObject>) = EmbeddedMarykObject(
+        override fun invoke(map: ValueMap<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
             value = map(0)
         )
     }

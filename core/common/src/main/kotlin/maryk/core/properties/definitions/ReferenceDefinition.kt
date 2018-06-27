@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -124,7 +124,7 @@ class ReferenceDefinition<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<ReferenceDefinition<*>>) = ReferenceDefinition(
+        override fun invoke(map: SimpleValueMap<ReferenceDefinition<*>>) = ReferenceDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

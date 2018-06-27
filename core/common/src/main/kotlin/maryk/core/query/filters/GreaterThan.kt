@@ -20,10 +20,10 @@ data class GreaterThan internal constructor(
         override val referenceValuePairs = addReferenceValuePairsDefinition(GreaterThan::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, GreaterThan>(
+    internal companion object: ReferencePairDataModel<Any, GreaterThan, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<GreaterThan>) = GreaterThan(
+        override fun invoke(map: ValueMap<GreaterThan, Properties>) = GreaterThan(
             referenceValuePairs = map(0)
         )
 

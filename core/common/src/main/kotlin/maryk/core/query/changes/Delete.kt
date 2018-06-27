@@ -22,10 +22,10 @@ data class Delete internal constructor(
         override val references = addReferenceListPropertyDefinition(Delete::references)
     }
 
-    internal companion object: ReferencesDataModel<Delete>(
+    internal companion object: ReferencesDataModel<Delete, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Delete>) = Delete(
+        override fun invoke(map: ValueMap<Delete, Properties>) = Delete(
             references = map(0)
         )
 

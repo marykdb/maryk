@@ -32,7 +32,7 @@ data class SimpleMarykObject(
         name = "SimpleMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<SimpleMarykObject>) = SimpleMarykObject(
+        override fun invoke(map: ValueMap<SimpleMarykObject, Properties>) = SimpleMarykObject(
             value = map(0)
         )
     }
@@ -408,7 +408,7 @@ data class CompleteMarykObject(
         ),
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<CompleteMarykObject>) = CompleteMarykObject(
+        override fun invoke(map: ValueMap<CompleteMarykObject, Properties>) = CompleteMarykObject(
             string = map(0),
             number = map(1),
             boolean = map(2),

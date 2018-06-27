@@ -20,10 +20,10 @@ data class Equals internal constructor(
         override val referenceValuePairs = addReferenceValuePairsDefinition(Equals::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, Equals>(
+    internal companion object: ReferencePairDataModel<Any, Equals, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Equals>) = Equals(
+        override fun invoke(map: ValueMap<Equals, Properties>) = Equals(
             referenceValuePairs = map(0)
         )
 

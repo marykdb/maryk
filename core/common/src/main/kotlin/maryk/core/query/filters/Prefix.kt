@@ -19,10 +19,10 @@ data class Prefix internal constructor(
         override val referenceValuePairs = addReferenceValuePairsDefinition(Prefix::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<String, Prefix>(
+    internal companion object: ReferencePairDataModel<String, Prefix, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Prefix>) = Prefix(
+        override fun invoke(map: ValueMap<Prefix, Properties>) = Prefix(
             referenceValuePairs = map(0)
         )
 

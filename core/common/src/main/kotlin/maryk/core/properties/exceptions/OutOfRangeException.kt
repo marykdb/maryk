@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -34,7 +34,7 @@ data class OutOfRangeException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<OutOfRangeException>) = OutOfRangeException(
+        override fun invoke(map: SimpleValueMap<OutOfRangeException>) = OutOfRangeException(
             reference = map(0),
             value = map(1),
             min = map(2),

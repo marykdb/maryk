@@ -158,7 +158,7 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
             is EmbeddedObjectDefinition<*, *, *, *, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
                 return it.generateKotlinValue(value, addImport)
             } ?: throw Exception("DataModel ${definition.dataModel} cannot be used to generate Kotlin code")
-            is ValueModelDefinition<*, *> -> definition.dataModel.let {
+            is ValueModelDefinition<*, *, *> -> definition.dataModel.let {
                 return it.generateKotlinValue(value, addImport)
             }
             else -> "$value"

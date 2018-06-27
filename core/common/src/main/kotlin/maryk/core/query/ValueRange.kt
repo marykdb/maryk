@@ -56,7 +56,7 @@ data class ValueRange<T: Any> internal constructor(
     internal companion object: QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<ValueRange<*>>) = ValueRange(
+        override fun invoke(map: ValueMap<ValueRange<*>, Properties>) = ValueRange(
             from = map(0),
             to = map(1),
             inclusiveFrom = map(2),
@@ -74,7 +74,7 @@ data class ValueRange<T: Any> internal constructor(
             )
         }
 
-        override fun writeJson(map: ValueMap<ValueRange<*>>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ValueMap<ValueRange<*>, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             writeJsonValues(
                 writer,
                 map[0] as Any,
@@ -85,7 +85,7 @@ data class ValueRange<T: Any> internal constructor(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<ValueRange<*>> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<ValueRange<*>, Properties> {
             return if (reader is IsYamlReader) {
                 if (reader.currentToken == JsonToken.StartDocument){
                     reader.nextToken()

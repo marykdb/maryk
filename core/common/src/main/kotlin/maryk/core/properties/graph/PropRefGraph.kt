@@ -67,12 +67,12 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             }
         }
     ) {
-        override fun invoke(map: ValueMap<PropRefGraph<*, *>>) = PropRefGraph<Any, Any>(
+        override fun invoke(map: ValueMap<PropRefGraph<*, *>, Properties>) = PropRefGraph<Any, Any>(
             parent = map(0),
             properties = map(1)
         )
 
-        override fun writeJson(map: ValueMap<PropRefGraph<*, *>>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override fun writeJson(map: ValueMap<PropRefGraph<*, *>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
             val reference = map[Properties.parent.index] as IsPropertyReference<*, *>
             @Suppress("UNCHECKED_CAST")
             val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
@@ -100,7 +100,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ValueMap<PropRefGraph<*, *>> {
+        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ValueMap<PropRefGraph<*, *>, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

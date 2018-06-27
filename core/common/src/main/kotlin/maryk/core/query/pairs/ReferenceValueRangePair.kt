@@ -32,7 +32,7 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
     internal companion object: SimpleDataModel<ReferenceValueRangePair<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<ReferenceValueRangePair<*>>) = ReferenceValueRangePair<Any>(
+        override fun invoke(map: ValueMap<ReferenceValueRangePair<*>, Properties>) = ReferenceValueRangePair<Any>(
             reference = map(0),
             range = map(1)
         )

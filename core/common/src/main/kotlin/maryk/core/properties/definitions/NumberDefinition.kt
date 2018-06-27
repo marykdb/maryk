@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.types.numeric.Float32
@@ -126,7 +126,7 @@ data class NumberDefinition<T: Comparable<T>>(
         }
     ) {
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: ValueMap<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
+        override fun invoke(map: SimpleValueMap<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
             indexed = map(0),
             required = map(1),
             final = map(2),

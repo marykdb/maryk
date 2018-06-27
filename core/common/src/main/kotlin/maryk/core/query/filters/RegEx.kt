@@ -19,10 +19,10 @@ data class RegEx internal constructor(
         override val referenceValuePairs = addReferenceValuePairsDefinition(RegEx::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<String, RegEx>(
+    internal companion object: ReferencePairDataModel<String, RegEx, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<RegEx>) = RegEx(
+        override fun invoke(map: ValueMap<RegEx, Properties>) = RegEx(
             referenceValuePairs = map(0)
         )
 

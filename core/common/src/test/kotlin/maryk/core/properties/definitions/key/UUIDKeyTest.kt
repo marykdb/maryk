@@ -24,7 +24,7 @@ internal class UUIDKeyTest {
             name = "MarykObject",
             properties = Properties
         ) {
-            override fun invoke(map: ValueMap<MarykObject>) = MarykObject(
+            override fun invoke(map: ValueMap<MarykObject, Properties>) = MarykObject(
                 value = map(0)
             )
         }
@@ -39,7 +39,7 @@ internal class UUIDKeyTest {
 
         val keyDef = MarykObject.key.keyDefinitions[0]
 
-        (keyDef is UUIDKey) shouldBe true
+        (keyDef === UUIDKey) shouldBe true
         val specificDef = keyDef as UUIDKey
 
         var index = 0

@@ -31,7 +31,7 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConvers
         newContext = dataModel.transformContext(context?.invoke())
     }
 
-    val converted = dataModel.readProtoBufToObject(byteLength, bc::read, newContext)
+    val converted = dataModel.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
 
     checker(converted, value)
 }
@@ -59,7 +59,7 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
 
     val chars = output.iterator()
     val reader = JsonReader { chars.nextChar() }
-    val converted = dataModel.readJsonToObject(reader, newContext)
+    val converted = dataModel.readJson(reader, newContext).toDataObject()
 
     checker(converted, value)
 
@@ -95,7 +95,7 @@ fun <T: Any, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
             }
         }
     }
-    val converted = dataModel.readJsonToObject(reader, newContext)
+    val converted = dataModel.readJson(reader, newContext).toDataObject()
 
     checker(converted, value)
 

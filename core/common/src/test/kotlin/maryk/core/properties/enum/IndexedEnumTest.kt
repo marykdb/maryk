@@ -60,9 +60,9 @@ class IndexedEnumTest {
             """.trimIndent()
         )
 
-        val enum = IndexedEnumDefinition.Model.readJsonToObject(
+        val enum = IndexedEnumDefinition.Model.readJson(
             reader
-        )
+        ).toDataObject()
 
         enum.name shouldBe "Option"
         enum.optionalValues shouldBe null

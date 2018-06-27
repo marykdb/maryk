@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -41,7 +42,7 @@ internal abstract class ReferencesDataModel<DO: Any>(
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<DO> {
         var currentToken = reader.currentToken
 
         if (currentToken == JsonToken.StartDocument){
@@ -52,11 +53,11 @@ internal abstract class ReferencesDataModel<DO: Any>(
             }
         }
 
-        when (currentToken) {
+        val valueMap = when (currentToken) {
             is JsonToken.Value<*> -> {
                 @Suppress("UNCHECKED_CAST")
                 (currentToken as JsonToken.Value<String>).let {
-                    return mapOf(
+                    mapOf(
                         Exists.Properties.references.index to listOf(
                             Exists.Properties.references.definition.valueDefinition.fromString(currentToken.value, context)
                         )
@@ -64,12 +65,14 @@ internal abstract class ReferencesDataModel<DO: Any>(
                 }
             }
             is JsonToken.StartArray -> {
-                return mapOf(
+                mapOf(
                     Exists.Properties.references.index to Exists.Properties.references.readJson(reader, context)
                 )
             }
             else -> throw ParseException("Expected a list or a single property reference in Exists filter")
         }
+
+        return DataObjectMap(this, valueMap)
     }
 }
 

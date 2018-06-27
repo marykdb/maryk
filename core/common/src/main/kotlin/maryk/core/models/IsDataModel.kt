@@ -21,4 +21,7 @@ interface IsDataModel<DO: Any> {
      * @throws ValidationUmbrellaException if input was invalid
      */
     fun validate(map: Map<Int, Any>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
+
+    /** Creates a Data Object by [map] */
+    operator fun invoke(map: Map<Int, *>): DO
 }

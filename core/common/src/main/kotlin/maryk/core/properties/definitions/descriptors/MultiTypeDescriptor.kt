@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.descriptors
 
 import maryk.core.models.SimpleDataModel
-import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -20,6 +20,7 @@ import maryk.core.properties.definitions.contextual.ContextCollectionTransformer
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
@@ -76,14 +77,15 @@ private data class MultiTypeDescriptor(
             definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(2).value
         )
 
-        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DataObjectMap<MultiTypeDescriptor> {
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 val valueMap: MutableMap<Int, Any> = mutableMapOf()
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
 
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext?)
-                valueMap
+
+                DataObjectMap(this, valueMap)
             } else {
                 super.readJson(reader, context)
             }

@@ -87,7 +87,7 @@ class GetRequestTest {
             }
         }
 
-        GetRequest.readJsonToObject(reader, this.context).apply {
+        GetRequest.readJson(reader, this.context).toDataObject().apply {
             dataModel shouldBe SimpleMarykObject
             filter shouldBe null
         }

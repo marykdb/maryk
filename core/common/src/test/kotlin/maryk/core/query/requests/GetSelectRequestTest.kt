@@ -104,9 +104,11 @@ class GetSelectRequestTest {
             }
         }
 
-        GetSelectRequest.readJsonToObject(reader, this.context).apply {
-            dataModel shouldBe SimpleMarykObject
-            filter shouldBe null
-        }
+        GetSelectRequest.readJson(reader, this.context)
+            .toDataObject()
+            .apply {
+                dataModel shouldBe SimpleMarykObject
+                filter shouldBe null
+            }
     }
 }

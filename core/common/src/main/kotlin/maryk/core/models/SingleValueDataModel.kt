@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -32,7 +33,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
         singlePropertyDefinition.capture(context, value)
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: CX?): Map<Int, Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: CX?): DataObjectMap<DO> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
@@ -40,8 +41,11 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
         val value = singlePropertyDefinition.readJson(reader, context)
         singlePropertyDefinition.capture(context, value)
 
-        return mapOf(
-            singlePropertyDefinition.index to value
+        return DataObjectMap(
+            this,
+            mapOf(
+                singlePropertyDefinition.index to value
+            )
         )
     }
 }

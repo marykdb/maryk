@@ -1,10 +1,11 @@
 package maryk.core.query.filters
 
 import maryk.core.models.SimpleFilterDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -71,7 +72,7 @@ data class ValueIn internal constructor(
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<ValueIn> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }
@@ -100,8 +101,11 @@ data class ValueIn internal constructor(
                 currentToken = reader.nextToken()
             }
 
-            return mapOf(
-                Properties.referenceValuePairs.index to list
+            return DataObjectMap(
+                this,
+                mapOf(
+                    Properties.referenceValuePairs.index to list
+                )
             )
         }
     }

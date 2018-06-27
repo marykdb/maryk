@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.SimpleDataModel
-import maryk.core.properties.graph.IsPropRefGraphable
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -15,6 +15,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.graph.IsPropRefGraphable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
@@ -148,7 +149,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DataObjectMap<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 val valueMap: MutableMap<Int, Any> = mutableMapOf()
@@ -156,7 +157,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext)
 
-                valueMap
+                DataObjectMap(this, valueMap)
             } else {
                 super.readJson(reader, context)
             }

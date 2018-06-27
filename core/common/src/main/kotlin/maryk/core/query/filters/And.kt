@@ -1,6 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -57,13 +58,16 @@ data class And(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<And> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }
 
-            return mapOf(
-                Properties.filters.index to Properties.filters.readJson(reader, context)
+            return DataObjectMap(
+                this,
+                mapOf(
+                    Properties.filters.index to Properties.filters.readJson(reader, context)
+                )
             )
         }
     }

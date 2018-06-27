@@ -74,9 +74,8 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
         this.dataModel.transformContext(context)
     )
 
-    override fun readJson(reader: IsJsonLikeReader, context: CXI?): DO {
-        return this.dataModel.readJsonToObject(reader, this.dataModel.transformContext(context))
-    }
+    override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
+        this.dataModel.readJson(reader, this.dataModel.transformContext(context)).toDataObject()
 
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?): Int {
         var totalByteLength = 0
@@ -104,7 +103,7 @@ class EmbeddedObjectDefinition<DO : Any, out P: PropertyDefinitions<DO>, out DM 
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?) =
-        this.dataModel.readProtoBufToObject(length, reader, this.dataModel.transformContext(context))
+        this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context)).toDataObject()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

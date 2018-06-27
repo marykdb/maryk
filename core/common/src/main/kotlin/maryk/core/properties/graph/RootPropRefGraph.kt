@@ -2,6 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
@@ -56,7 +57,7 @@ data class RootPropRefGraph<DO> internal constructor(
             writePropertiesToJson(listOfPropRefGraphables, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): DataObjectMap<RootPropRefGraph<*>> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }
@@ -75,7 +76,7 @@ data class RootPropRefGraph<DO> internal constructor(
                         properties.add(
                             TypedValue(
                                 PropRefGraphType.Graph,
-                                PropRefGraph.readJsonToObject(reader, context)
+                                PropRefGraph.readJson(reader, context).toDataObject()
                             )
                         )
                     }
@@ -98,8 +99,11 @@ data class RootPropRefGraph<DO> internal constructor(
 
             reader.nextToken()
 
-            return mapOf(
-                Properties.properties.index to properties
+            return DataObjectMap(
+                this,
+                mapOf(
+                    Properties.properties.index to properties
+                )
             )
         }
     }

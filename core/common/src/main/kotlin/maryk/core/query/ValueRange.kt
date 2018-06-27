@@ -2,6 +2,7 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsValueDefinition
@@ -84,7 +85,7 @@ data class ValueRange<T: Any> internal constructor(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<ValueRange<*>> {
             return if (reader is IsYamlReader) {
                 if (reader.currentToken == JsonToken.StartDocument){
                     reader.nextToken()
@@ -121,7 +122,7 @@ data class ValueRange<T: Any> internal constructor(
                     throw ParseException("Range should have two values")
                 }
 
-                valueMap
+                DataObjectMap(this, valueMap)
             } else {
                 super.readJson(reader, context)
             }

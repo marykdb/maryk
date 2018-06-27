@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelContext
@@ -33,9 +34,9 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
     ) {
         override fun invoke(map: Map<Int, *>) = UUIDKey
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelContext?): DataObjectMap<UUIDKey> {
             return if (reader is IsYamlReader) {
-                mapOf()
+                DataObjectMap(this, mapOf())
             } else {
                 super.readJson(reader, context)
             }

@@ -2,12 +2,13 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.references.IsPropertyReference
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -85,7 +86,7 @@ data class Order internal constructor(
             Properties.propertyReference.writeJsonValue(reference, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<Order> {
             if (reader is IsYamlReader) {
                 var currentToken = reader.currentToken
 
@@ -110,7 +111,7 @@ data class Order internal constructor(
                     valueMap[Properties.propertyReference.index] =
                             Properties.propertyReference.definition.fromString(it.value, context)
 
-                    return valueMap
+                    return DataObjectMap(this, valueMap)
                 } ?: throw ParseException("Expected only a property reference in Order")
             } else {
                 return super.readJson(reader, context)

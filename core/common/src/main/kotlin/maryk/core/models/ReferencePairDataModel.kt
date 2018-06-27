@@ -1,9 +1,10 @@
 package maryk.core.models
 
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -42,7 +43,7 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any>(
         writeEndObject()
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<DO> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
@@ -71,8 +72,11 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any>(
             currentToken = reader.nextToken()
         }
 
-        return mapOf(
-            this.properties.referenceValuePairs.index to list
+        return DataObjectMap(
+            this,
+            mapOf(
+                this.properties.referenceValuePairs.index to list
+            )
         )
     }
 }

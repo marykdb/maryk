@@ -3,6 +3,7 @@ package maryk.core.properties.enum
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.models.ContextualDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -121,7 +122,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: EnumNameContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: EnumNameContext?): DataObjectMap<IndexedEnumDefinition<IndexedEnum<Any>>>{
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }
@@ -130,8 +131,11 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 val value = Properties.name.readJson(reader, context)
                 Properties.name.capture(context, value)
 
-                mapOf(
-                    Properties.name.index to value
+                DataObjectMap(
+                    this,
+                    mapOf(
+                        Properties.name.index to value
+                    )
                 )
             } else {
                 super.readJson(reader, context)

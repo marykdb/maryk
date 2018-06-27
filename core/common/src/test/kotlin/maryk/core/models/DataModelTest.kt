@@ -1,7 +1,7 @@
 package maryk.core.models
 
-import maryk.Option
 import maryk.EmbeddedMarykObject
+import maryk.Option
 import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.checkJsonConversion
@@ -339,7 +339,7 @@ internal class DataModelTest {
 
         TestMarykObject.writeProtoBuf(testMap, cache, bc::write)
 
-        TestMarykObject.readProtoBuf(bc.size, bc::read) shouldBe testMap
+        TestMarykObject.readProtoBuf(bc.size, bc::read).map shouldBe testMap
     }
 
     @Test
@@ -353,7 +353,7 @@ internal class DataModelTest {
 
         TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
 
-        TestMarykObject.readProtoBufToObject(bc.size, bc::read) shouldBe testExtendedObject
+        TestMarykObject.readProtoBuf(bc.size, bc::read).toDataObject() shouldBe testExtendedObject
     }
 
     @Test
@@ -381,7 +381,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJsonToObject(reader = jsonReader()) shouldBe testExtendedObject
+            TestMarykObject.readJson(reader = jsonReader()).toDataObject() shouldBe testExtendedObject
         }
     }
 
@@ -398,7 +398,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJson(reader = jsonReader()) shouldBe testMap
+            TestMarykObject.readJson(reader = jsonReader()).map shouldBe testMap
         }
     }
 
@@ -415,7 +415,7 @@ internal class DataModelTest {
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykObject.readJson(reader = reader()) shouldBe testMap
+            TestMarykObject.readJson(reader = reader()).map shouldBe testMap
 
             output = ""
         }

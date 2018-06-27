@@ -1,10 +1,11 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -71,7 +72,7 @@ data class Range internal constructor(
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<Range> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }
@@ -109,8 +110,11 @@ data class Range internal constructor(
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            return mapOf(
-                Properties.ranges.index to listOfRanges
+            return DataObjectMap(
+                this,
+                mapOf(
+                    Properties.ranges.index to listOfRanges
+                )
             )
         }
     }

@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -53,7 +54,7 @@ internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReferenc
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Map<Int, Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): DataObjectMap<DO> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
@@ -96,8 +97,11 @@ internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReferenc
             reader.nextToken()
         } while (token !is JsonToken.Stopped)
 
-        return mapOf(
-            0 to items
+        return DataObjectMap(
+            this,
+            mapOf(
+                0 to items
+            )
         )
     }
 }

@@ -1,6 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -35,9 +36,6 @@ import maryk.lib.exceptions.ParseException
 abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     override val properties: P
 ) : IsDataModel<DO> {
-    /** Creates a Data Object by [map] */
-    abstract operator fun invoke(map: Map<Int, *>): DO
-
     /** For quick notation to return [T] that operates with [runner] on Properties */
     fun <T: Any> props(
         runner: P.() -> T
@@ -154,7 +152,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Read JSON from [reader] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): Map<Int, Any> {
+    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): DataObjectMap<DO> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
@@ -167,7 +165,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         reader.nextToken()
         walkJsonToRead(reader, valueMap, context)
 
-        return valueMap
+        return DataObjectMap(this, valueMap)
     }
 
     internal open fun walkJsonToRead(
@@ -206,12 +204,6 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             reader.nextToken()
         } while (token !is JsonToken.Stopped)
     }
-
-    /**
-     * Read JSON from [reader] to an object of this DataModel
-     * Optionally pass a [context] when needed to read more complex property types
-     */
-    fun readJsonToObject(reader: IsJsonLikeReader, context: CX? = null) = this(this.readJson(reader, context))
 
     /**
      * Calculates the byte length for the DataObject contained in [map]
@@ -281,7 +273,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
+    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): DataObjectMap<DO> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
         var byteCounter = 1
 
@@ -299,14 +291,8 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             )
         }
 
-        return valueMap
+        return DataObjectMap(this, valueMap)
     }
-
-    /**
-     * Read ProtoBuf bytes from [reader] until [length] to a DataObject
-     * Optionally pass a [context] to read more complex properties which depend on other properties
-     */
-    internal fun readProtoBufToObject(length: Int, reader: () -> Byte, context: CX? = null) = this(this.readProtoBuf(length, reader, context))
 
     /**
      * Read a single field of [key] from [byteReader] into [valueMap]

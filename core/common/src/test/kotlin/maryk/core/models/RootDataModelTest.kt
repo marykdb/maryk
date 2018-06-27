@@ -584,7 +584,7 @@ internal class RootDataModelTest {
         newContext.dataModels["TestMarykObject"] = { TestMarykObject }
         newContext.dataModels["TestValueObject"] = { TestValueObject }
 
-        RootDataModel.Model.readJsonToObject(reader, newContext).apply {
+        RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
             name shouldBe "SimpleModel"
 
             properties.getDefinition("string")!!.let {

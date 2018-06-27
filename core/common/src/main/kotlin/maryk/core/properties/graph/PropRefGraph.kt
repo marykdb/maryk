@@ -2,6 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -99,7 +100,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): Map<Int, Any> {
+        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): DataObjectMap<PropRefGraph<*, *>> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }
@@ -137,7 +138,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
                         properties.add(
                             TypedValue(
                                 PropRefGraphType.Graph,
-                                PropRefGraph.readJsonToObject(reader, newContext)
+                                PropRefGraph.readJson(reader, newContext).toDataObject()
                             )
                         )
                     }
@@ -160,10 +161,12 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
 
             reader.nextToken()
 
-
-            return mapOf(
-                Properties.parent.index to parent,
-                Properties.properties.index to properties
+            return DataObjectMap(
+                this,
+                mapOf(
+                    Properties.parent.index to parent,
+                    Properties.properties.index to properties
+                )
             )
         }
     }

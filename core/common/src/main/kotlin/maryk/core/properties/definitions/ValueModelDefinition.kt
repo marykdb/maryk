@@ -69,7 +69,7 @@ data class ValueModelDefinition<DO: ValueDataObject, out DM : ValueDataModel<DO,
     /** Writes a [value] to JSON with [writer] */
     override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: IsPropertyContext?) = dataModel.writeJson(value, writer, context)
 
-    override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DO = dataModel.readJsonToObject(reader, context)
+    override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DO = dataModel.readJson(reader, context).toDataObject()
 
     override fun fromNativeType(value: Any) =
         if(value is ByteArray && value.size == this.byteSize){

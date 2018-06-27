@@ -39,7 +39,7 @@ internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
         contextualResolver(context).writeJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(context).readJsonToObject(reader, context)
+        contextualResolver(context).readJson(reader, context).toDataObject()
 
     override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?) =
         contextualResolver(context).calculateProtoBufLength(value, cacher, context)
@@ -48,5 +48,5 @@ internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
         contextualResolver(context).writeProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        contextualResolver(context).readProtoBufToObject(length, reader, context)
+        contextualResolver(context).readProtoBuf(length, reader, context).toDataObject()
 }

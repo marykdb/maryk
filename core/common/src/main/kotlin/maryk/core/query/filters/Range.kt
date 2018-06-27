@@ -36,14 +36,14 @@ data class Range internal constructor(
         )
     }
 
-    internal companion object: QueryDataModel<Range>(
+    internal companion object: QueryDataModel<Range, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Range(
             referenceRangePairs = map(0)
         )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<Range>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             val ranges = map[0] as List<ReferenceValueRangePair<*>>
 
@@ -110,12 +110,11 @@ data class Range internal constructor(
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            return DataObjectMap(
-                this,
+            return this.map {
                 mapOf(
-                    Properties.ranges.index to listOfRanges
+                    ranges with listOfRanges
                 )
-            )
+            }
         }
     }
 }

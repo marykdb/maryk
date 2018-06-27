@@ -1,10 +1,10 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
@@ -16,7 +16,7 @@ data class DataObjectVersionedChange<out DO: Any>(
     val key: Key<DO>,
     val changes: List<VersionedChanges>
 ) {
-    internal companion object: QueryDataModel<DataObjectVersionedChange<*>>(
+    internal companion object: SimpleQueryDataModel<DataObjectVersionedChange<*>>(
         properties = object : PropertyDefinitions<DataObjectVersionedChange<*>>() {
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(

@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
@@ -21,7 +21,7 @@ data class InvalidSizeException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.INVALID_SIZE
 
-    internal companion object: QueryDataModel<InvalidSizeException>(
+    internal companion object: SimpleQueryDataModel<InvalidSizeException>(
         properties = object: PropertyDefinitions<InvalidSizeException>() {
             init {
                 ValidationException.addReference(this, InvalidSizeException::reference)

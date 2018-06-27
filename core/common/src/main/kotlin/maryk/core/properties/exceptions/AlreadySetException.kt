@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
@@ -16,7 +16,7 @@ data class AlreadySetException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.ALREADY_SET
 
-    internal companion object: QueryDataModel<AlreadySetException>(
+    internal companion object: SimpleQueryDataModel<AlreadySetException>(
         properties = object : PropertyDefinitions<AlreadySetException>() {
             init {
                 ValidationException.addReference(this, AlreadySetException::reference)

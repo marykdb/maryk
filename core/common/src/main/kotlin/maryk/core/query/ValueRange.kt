@@ -53,7 +53,7 @@ data class ValueRange<T: Any> internal constructor(
         val inclusiveTo = add(3, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
     }
 
-    internal companion object: QueryDataModel<ValueRange<*>>(
+    internal companion object: QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = ValueRange(
@@ -74,7 +74,7 @@ data class ValueRange<T: Any> internal constructor(
             )
         }
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<ValueRange<*>>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             writeJsonValues(
                 writer,
                 map[0] as Any,
@@ -91,38 +91,38 @@ data class ValueRange<T: Any> internal constructor(
                     reader.nextToken()
                 }
 
-                val valueMap: MutableMap<Int, Any> = mutableMapOf()
+                this.map {
+                    val valueMap = mutableMapOf<Int, Any>()
 
-                if (reader.currentToken !is JsonToken.StartArray) {
-                    throw ParseException("Range should be contained in an Array")
-                }
+                    if (reader.currentToken !is JsonToken.StartArray) {
+                        throw ParseException("Range should be contained in an Array")
+                    }
 
-                reader.nextToken().let {
-                    (it as? TokenWithType)?.type?.let {
-                        if (it is UnknownYamlTag && it.name == "Exclude") {
-                            valueMap[Properties.inclusiveFrom.index] = false
+                    reader.nextToken().let {
+                        (it as? TokenWithType)?.type?.let {
+                            if (it is UnknownYamlTag && it.name == "Exclude") {
+                                valueMap[Properties.inclusiveFrom.index] = false
+                            }
                         }
                     }
-                }
 
-                valueMap[Properties.from.index] = Properties.from.readJson(reader, context)
+                    valueMap += from with from.readJson(reader, context)
 
-                reader.nextToken().let {
-                    (it as? TokenWithType)?.type?.let {
-                        if (it is UnknownYamlTag && it.name == "Exclude") {
-                            valueMap[Properties.inclusiveTo.index] = false
+                    reader.nextToken().let {
+                        (it as? TokenWithType)?.type?.let {
+                            if (it is UnknownYamlTag && it.name == "Exclude") {
+                                valueMap[Properties.inclusiveTo.index] = false
+                            }
                         }
                     }
+
+                    valueMap += to with to.readJson(reader, context)
+
+                    if (reader.nextToken() !== JsonToken.EndArray) {
+                        throw ParseException("Range should have two values")
+                    }
+                    valueMap
                 }
-
-                valueMap[Properties.to.index] =
-                        Properties.to.readJson(reader, context)
-
-                if (reader.nextToken() !== JsonToken.EndArray) {
-                    throw ParseException("Range should have two values")
-                }
-
-                DataObjectMap(this, valueMap)
             } else {
                 super.readJson(reader, context)
             }

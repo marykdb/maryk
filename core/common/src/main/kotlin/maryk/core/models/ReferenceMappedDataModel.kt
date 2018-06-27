@@ -16,11 +16,11 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>>(
-    properties: PropertyDefinitions<DO>,
-    private val containedDataModel: QueryDataModel<CDO>,
+internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: PropertyDefinitions<DO>, CP: PropertyDefinitions<CDO>>(
+    properties: P,
+    private val containedDataModel: QueryDataModel<CDO, CP>,
     private val referenceProperty: PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, CDO>
-) : QueryDataModel<DO>(properties) {
+) : QueryDataModel<DO, P>(properties) {
 
     /** Write a map to [writer] with references mapped to the internal model for [items] within [context] */
     internal fun writeReferenceValueMap(
@@ -97,11 +97,10 @@ internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReferenc
             reader.nextToken()
         } while (token !is JsonToken.Stopped)
 
-        return DataObjectMap(
-            this,
+        return this.map {
             mapOf(
                 0 to items
             )
-        )
+        }
     }
 }

@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.numeric.UInt64
@@ -11,7 +11,7 @@ data class Success<DO: Any>(
 ) : IsChangeResponseStatus<DO>, IsDeleteResponseStatus<DO> {
     override val statusType = StatusType.SUCCESS
 
-    internal companion object: QueryDataModel<Success<*>>(
+    internal companion object: SimpleQueryDataModel<Success<*>>(
         properties = object : PropertyDefinitions<Success<*>>() {
             init {
                 add(0, "version", NumberDefinition(type = UInt64), Success<*>::version)

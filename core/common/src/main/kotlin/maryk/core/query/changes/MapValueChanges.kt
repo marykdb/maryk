@@ -58,7 +58,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
         }
     }
 
-    internal companion object: QueryDataModel<MapValueChanges<*, *>>(
+    internal companion object: QueryDataModel<MapValueChanges<*, *>, Properties>(
         properties = Properties
     ) {
         @Suppress("UNCHECKED_CAST")

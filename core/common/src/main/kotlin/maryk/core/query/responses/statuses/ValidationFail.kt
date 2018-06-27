@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -18,7 +18,7 @@ data class ValidationFail<DO: Any>(
 
     override val statusType = StatusType.VALIDATION_FAIL
 
-    internal companion object: QueryDataModel<ValidationFail<*>>(
+    internal companion object: SimpleQueryDataModel<ValidationFail<*>>(
         properties = object : PropertyDefinitions<ValidationFail<*>>() {
             init {
                 add(0, "exceptions",

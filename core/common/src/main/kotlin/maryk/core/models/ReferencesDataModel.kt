@@ -20,7 +20,7 @@ import maryk.lib.exceptions.ParseException
 internal abstract class ReferencesDataModel<DO: Any>(
     properties: ReferencesPropertyDefinitions<DO>
 ) : AbstractDataModel<DO, ReferencesPropertyDefinitions<DO>, DataModelPropertyContext, DataModelPropertyContext>(properties){
-    override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")
         val references = map[0] as List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>
 
@@ -72,7 +72,9 @@ internal abstract class ReferencesDataModel<DO: Any>(
             else -> throw ParseException("Expected a list or a single property reference in Exists filter")
         }
 
-        return DataObjectMap(this, valueMap)
+        return this.map {
+            valueMap
+        }
     }
 }
 

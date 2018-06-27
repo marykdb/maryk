@@ -97,7 +97,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 optionalValues = map(1)
             )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
+        override fun writeJson(map: DataObjectMap<IndexedEnumDefinition<IndexedEnum<Any>>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
             if (map[Properties.values.index] == null) {
                 // Write a single string name if no options was defined
                 @Suppress("UNCHECKED_CAST")
@@ -131,12 +131,11 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 val value = Properties.name.readJson(reader, context)
                 Properties.name.capture(context, value)
 
-                DataObjectMap(
-                    this,
+                this.map {
                     mapOf(
-                        Properties.name.index to value
+                        name with value
                     )
-                )
+                }
             } else {
                 super.readJson(reader, context)
             }

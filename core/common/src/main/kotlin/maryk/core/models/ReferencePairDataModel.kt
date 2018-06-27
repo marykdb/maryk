@@ -19,7 +19,7 @@ import maryk.lib.exceptions.ParseException
 internal abstract class ReferencePairDataModel<T: Any, DO: Any>(
     properties: ReferenceValuePairsPropertyDefinitions<T, DO>
 ) : AbstractDataModel<DO, ReferenceValuePairsPropertyDefinitions<T, DO>, DataModelPropertyContext, DataModelPropertyContext>(properties){
-    override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")
         (map[this.properties.referenceValuePairs.index] as List<ReferenceValuePair<*>>?)?.let {
             writer.writeJsonMapObject(it, context)
@@ -72,12 +72,11 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any>(
             currentToken = reader.nextToken()
         }
 
-        return DataObjectMap(
-            this,
+        return this.map {
             mapOf(
-                this.properties.referenceValuePairs.index to list
+                referenceValuePairs with list
             )
-        )
+        }
     }
 }
 

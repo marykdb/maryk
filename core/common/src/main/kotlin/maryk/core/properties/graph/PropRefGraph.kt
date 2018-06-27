@@ -72,7 +72,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             properties = map(1)
         )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override fun writeJson(map: DataObjectMap<PropRefGraph<*, *>>, writer: IsJsonLikeWriter, context: GraphContext?) {
             val reference = map[Properties.parent.index] as IsPropertyReference<*, *>
             @Suppress("UNCHECKED_CAST")
             val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
@@ -111,7 +111,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
 
             reader.nextToken()
 
-            val parent = reader.currentToken.let {
+            val parentValue = reader.currentToken.let {
                 if (it !is JsonToken.FieldName) {
                     throw ParseException("JSON value should be a FieldName")
                 }
@@ -120,7 +120,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
 
                 Properties.parent.definition.fromString(value, context)
             }
-            Properties.parent.capture(context, parent)
+            Properties.parent.capture(context, parentValue)
 
             if (reader.nextToken() !is JsonToken.StartArray) {
                 throw ParseException("JSON value should be an Array")
@@ -128,14 +128,14 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
 
             var currentToken = reader.nextToken()
 
-            val properties = mutableListOf<TypedValue<PropRefGraphType,*>>()
+            val propertiesValue = mutableListOf<TypedValue<PropRefGraphType,*>>()
 
             while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
                 when (currentToken) {
                     is JsonToken.StartObject -> {
                         val newContext = PropRefGraph.transformContext(context)
 
-                        properties.add(
+                        propertiesValue.add(
                             TypedValue(
                                 PropRefGraphType.Graph,
                                 PropRefGraph.readJson(reader, newContext).toDataObject()
@@ -145,7 +145,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
                     is JsonToken.Value<*> -> {
                         val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
 
-                        properties.add(
+                        propertiesValue.add(
                             TypedValue(
                                 PropRefGraphType.PropRef,
                                 multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
@@ -161,13 +161,12 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
 
             reader.nextToken()
 
-            return DataObjectMap(
-                this,
+            return this.map {
                 mapOf(
-                    Properties.parent.index to parent,
-                    Properties.properties.index to properties
+                    parent with parentValue,
+                    properties with propertiesValue
                 )
-            )
+            }
         }
     }
 }

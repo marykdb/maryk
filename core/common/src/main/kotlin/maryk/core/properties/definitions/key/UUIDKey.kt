@@ -36,7 +36,7 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
 
         override fun readJson(reader: IsJsonLikeReader, context: DataModelContext?): DataObjectMap<UUIDKey> {
             return if (reader is IsYamlReader) {
-                DataObjectMap(this, mapOf())
+                this.map { mapOf() }
             } else {
                 super.readJson(reader, context)
             }

@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -28,7 +28,7 @@ data class DataObjectChange<out DO: Any> internal constructor(
     val changes: List<IsChange>,
     val lastVersion: UInt64? = null
 ) {
-    internal companion object: QueryDataModel<DataObjectChange<*>>(
+    internal companion object: SimpleQueryDataModel<DataObjectChange<*>>(
         properties = object : PropertyDefinitions<DataObjectChange<*>>() {
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(

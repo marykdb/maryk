@@ -41,6 +41,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         runner: P.() -> T
     ) = runner(this.properties)
 
+    /** Create a DataObjectMap with given [createMap] function */
+    fun map(createMap: P.() -> Map<Int, Any>) = DataObjectMap(this, createMap(this.properties))
+
     /**
      * Get property reference fetcher of this DataModel with [referenceGetter]
      * Optionally pass an already resolved [parent]
@@ -90,7 +93,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         }
     }
 
-    override fun validate(map: Map<Int, Any>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+    override fun validate(map: DataObjectMap<DO>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         createValidationUmbrellaException(refGetter) { addException ->
             for ((key, value) in map) {
                 val definition = properties.getDefinition(key) ?: continue
@@ -126,7 +129,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * Write an [map] with values for this DataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    open fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX? = null) {
+    open fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for ((key, value) in map) {
             val definition = properties.getDefinition(key) ?: continue
@@ -165,7 +168,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
         reader.nextToken()
         walkJsonToRead(reader, valueMap, context)
 
-        return DataObjectMap(this, valueMap)
+        return this.map {
+            valueMap
+        }
     }
 
     internal open fun walkJsonToRead(
@@ -210,7 +215,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun calculateProtoBufLength(map: Map<Int, Any>, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    internal fun calculateProtoBufLength(map: DataObjectMap<DO>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for ((key, value) in map) {
             val def = properties.getDefinition(key) ?: continue
@@ -244,7 +249,7 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun writeProtoBuf(map: Map<Int, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    internal fun writeProtoBuf(map: DataObjectMap<DO>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for ((key, value) in map) {
             val definition = properties.getDefinition(key) ?: continue
 
@@ -291,7 +296,9 @@ abstract class AbstractDataModel<DO: Any, out P: PropertyDefinitions<DO>, in CXI
             )
         }
 
-        return DataObjectMap(this, valueMap)
+        return this.map {
+            valueMap
+        }
     }
 
     /**

@@ -46,6 +46,11 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val toSerializable: ((TO?, CX?) -> T?)?
     val fromSerializable: ((T?) -> TO?)?
 
+    /** Create an index [value] pair for maps */
+    infix fun with(value: Any): Pair<Int, Any> {
+        return Pair(this.index, value)
+    }
+
     /** Get a reference to this definition inside [parentRef] */
     fun getRef(parentRef: IsPropertyReference<*, *>? = null): IsPropertyReference<T, *>
 
@@ -157,7 +162,9 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext)
 
-                DataObjectMap(this, valueMap)
+                this.map {
+                    valueMap
+                }
             } else {
                 super.readJson(reader, context)
             }

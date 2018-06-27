@@ -34,14 +34,14 @@ data class Or(
         )
     }
 
-    internal companion object: QueryDataModel<Or>(
+    internal companion object: QueryDataModel<Or, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Or(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<Or>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             Properties.filters.writeJsonValue(
                 map[Properties.filters.index] as List<TypedValue<FilterType, Any>>? ?: throw ParseException("Missing filters in Or"),
@@ -63,12 +63,11 @@ data class Or(
                 reader.nextToken()
             }
 
-            return DataObjectMap(
-                this,
+            return this.map{
                 mapOf(
-                    Properties.filters.index to Properties.filters.readJson(reader, context)
+                    filters with filters.readJson(reader, context)
                 )
-            )
+            }
         }
     }
 }

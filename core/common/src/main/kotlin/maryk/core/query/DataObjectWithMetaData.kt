@@ -1,12 +1,12 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
+import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt64
 
@@ -17,7 +17,7 @@ data class DataObjectWithMetaData<out DO: Any>(
     val lastVersion: UInt64,
     val isDeleted: Boolean
 ) {
-    internal companion object: QueryDataModel<DataObjectWithMetaData<*>>(
+    internal companion object: SimpleQueryDataModel<DataObjectWithMetaData<*>>(
         properties = object : PropertyDefinitions<DataObjectWithMetaData<*>>() {
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(

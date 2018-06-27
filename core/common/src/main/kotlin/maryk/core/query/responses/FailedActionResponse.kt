@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -24,7 +24,7 @@ data class FailedActionResponse(
     val message: String,
     val failType: FailType
 ) : IsResponse {
-    internal companion object: QueryDataModel<FailedActionResponse>(
+    internal companion object: SimpleQueryDataModel<FailedActionResponse>(
         properties = object : PropertyDefinitions<FailedActionResponse>() {
             init {
                 add(0, "message", StringDefinition(), FailedActionResponse::message)

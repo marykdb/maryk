@@ -47,7 +47,7 @@ data class ListValueChanges<T: Any> internal constructor(
         ), ListValueChanges<*>::deleteAtIndex)
     }
 
-    internal companion object: QueryDataModel<ListValueChanges<*>>(
+    internal companion object: QueryDataModel<ListValueChanges<*>, Properties>(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")

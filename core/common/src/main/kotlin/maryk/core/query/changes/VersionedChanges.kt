@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -13,7 +13,7 @@ data class VersionedChanges(
     val version: UInt64,
     val changes: List<IsChange>
 ) {
-    internal companion object: QueryDataModel<VersionedChanges>(
+    internal companion object: SimpleQueryDataModel<VersionedChanges>(
         properties = object : PropertyDefinitions<VersionedChanges>() {
             init {
                 add(0, "version", NumberDefinition(

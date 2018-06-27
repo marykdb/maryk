@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 
@@ -10,7 +10,7 @@ data class DoesNotExist<DO: Any>(
 ) : IsChangeResponseStatus<DO>, IsDeleteResponseStatus<DO> {
     override val statusType = StatusType.DOES_NOT_EXIST
 
-    internal companion object: QueryDataModel<DoesNotExist<*>>(
+    internal companion object: SimpleQueryDataModel<DoesNotExist<*>>(
         properties = object : PropertyDefinitions<DoesNotExist<*>>() {
             init {
                 IsResponseStatus.addKey(this, DoesNotExist<*>::key)

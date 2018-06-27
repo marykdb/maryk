@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -20,7 +20,7 @@ data class AddSuccess<DO: Any>(
 ) : IsAddResponseStatus<DO> {
     override val statusType = StatusType.ADD_SUCCESS
 
-    internal companion object: QueryDataModel<AddSuccess<*>>(
+    internal companion object: SimpleQueryDataModel<AddSuccess<*>>(
         properties = object : PropertyDefinitions<AddSuccess<*>>(){
             init {
                 IsResponseStatus.addKey(this, AddSuccess<*>::key)

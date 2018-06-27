@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -39,7 +39,7 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
 ) : IsGetRequest<DO, DM> {
     override val requestType = RequestType.Get
 
-    internal companion object: QueryDataModel<GetRequest<*, *>>(
+    internal companion object: SimpleQueryDataModel<GetRequest<*, *>>(
         properties = object : PropertyDefinitions<GetRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, GetRequest<*, *>::dataModel)

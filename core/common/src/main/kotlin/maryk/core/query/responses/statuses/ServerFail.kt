@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
@@ -10,7 +10,7 @@ data class ServerFail<DO: Any>(
 ) : IsAddResponseStatus<DO>, IsChangeResponseStatus<DO>, IsDeleteResponseStatus<DO> {
     override val statusType = StatusType.SERVER_FAIL
 
-    internal companion object: QueryDataModel<ServerFail<*>>(
+    internal companion object: SimpleQueryDataModel<ServerFail<*>>(
         properties = object: PropertyDefinitions<ServerFail<*>>() {
             init {
                 add(0, "reason", StringDefinition(), ServerFail<*>::reason)

@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
@@ -20,7 +20,7 @@ data class NotEnoughItemsException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.NOT_ENOUGH_ITEMS
 
-    internal companion object: QueryDataModel<NotEnoughItemsException>(
+    internal companion object: SimpleQueryDataModel<NotEnoughItemsException>(
         properties = object : PropertyDefinitions<NotEnoughItemsException>() {
             init {
                 ValidationException.addReference(this, NotEnoughItemsException::reference)

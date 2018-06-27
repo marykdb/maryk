@@ -59,29 +59,31 @@ private val testExtendedObject = TestMarykObject(
     multi = TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
-private val testMap = listOf(
-    0 to "hay",
-    1 to 4,
-    2 to 32.toUInt32(),
-    3 to 3.555,
-    4 to DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-    5 to true,
-    6 to Option.V0,
-    7 to listOf(34, 2352, 3423, 766),
-    8 to setOf(
-        Date(2017, 12, 5),
-        Date(2016, 3, 2),
-        Date(1981, 12, 5)
-    ),
-    9 to mapOf(
-        Time(12,55) to "yes",
-        Time(10, 3) to "ahum"
-    ),
-    10 to TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
-    11 to EmbeddedMarykObject("test"),
-    12 to TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
-    14 to listOf("test1", "another test", "🤗")
-).toMap()
+private val testMap = TestMarykObject.map {
+    mapOf(
+        string with "hay",
+        int with 4,
+        uint with 32.toUInt32(),
+        double with 3.555,
+        dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
+        bool with true,
+        enum with Option.V0,
+        list with listOf(34, 2352, 3423, 766),
+        set with setOf(
+            Date(2017, 12, 5),
+            Date(2016, 3, 2),
+            Date(1981, 12, 5)
+        ),
+        map with mapOf(
+            Time(12, 55) to "yes",
+            Time(10, 3) to "ahum"
+        ),
+        valueObject with TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
+        embeddedObject with EmbeddedMarykObject("test"),
+        multi with TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
+        listOfString with listOf("test1", "another test", "🤗")
+    )
+}
 
 private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedObject\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
@@ -150,10 +152,12 @@ internal class DataModelTest {
     fun fail_validation_with_incorrect_values_in_map() {
         val e = shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(
-                mapOf(
-                    0 to "wrong",
-                    1 to 999
-                )
+                TestMarykObject.map {
+                    mapOf(
+                        string with "wrong",
+                        int with 999
+                    )
+                }
             )
         }
 
@@ -221,32 +225,32 @@ internal class DataModelTest {
         TestMarykObject.writeJson(testExtendedObject, writer)
 
         output shouldBe """{
-        |	"string": "hay",
-        |	"int": 4,
-        |	"uint": 32,
-        |	"double": "3.555",
-        |	"dateTime": "2017-12-04T12:13",
-        |	"bool": true,
-        |	"enum": "V0",
-        |	"list": [34, 2352, 3423, 766],
-        |	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
-        |	"map": {
-        |		"12:55": "yes",
-        |		"10:03": "ahum"
-        |	},
-        |	"valueObject": {
-        |		"int": 6,
-        |		"dateTime": "2017-04-01T12:55",
-        |		"bool": true
-        |	},
-        |	"embeddedObject": {
-        |		"value": "test"
-        |	},
-        |	"multi": ["V2", {
-        |		"value": "subInMulti!"
-        |	}],
-        |	"listOfString": ["test1", "another test", "🤗"]
-        |}""".trimMargin()
+    |	"string": "hay",
+    |	"int": 4,
+    |	"uint": 32,
+    |	"double": "3.555",
+    |	"dateTime": "2017-12-04T12:13",
+    |	"bool": true,
+    |	"enum": "V0",
+    |	"list": [34, 2352, 3423, 766],
+    |	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
+    |	"map": {
+    |		"12:55": "yes",
+    |		"10:03": "ahum"
+    |	},
+    |	"valueObject": {
+    |		"int": 6,
+    |		"dateTime": "2017-04-01T12:55",
+    |		"bool": true
+    |	},
+    |	"embeddedObject": {
+    |		"value": "test"
+    |	},
+    |	"multi": ["V2", {
+    |		"value": "subInMulti!"
+    |	}],
+    |	"listOfString": ["test1", "another test", "🤗"]
+    |}""".trimMargin()
     }
 
     @Test
@@ -259,28 +263,28 @@ internal class DataModelTest {
         TestMarykObject.writeJson(testExtendedObject, writer)
 
         output shouldBe """
-        |string: hay
-        |int: 4
-        |uint: 32
-        |double: 3.555
-        |dateTime: '2017-12-04T12:13'
-        |bool: true
-        |enum: V0
-        |list: [34, 2352, 3423, 766]
-        |set: [2017-12-05, 2016-03-02, 1981-12-05]
-        |map:
-        |  12:55: yes
-        |  10:03: ahum
-        |valueObject:
-        |  int: 6
-        |  dateTime: '2017-04-01T12:55'
-        |  bool: true
-        |embeddedObject:
-        |  value: test
-        |multi: !V2
-        |  value: subInMulti!
-        |listOfString: [test1, another test, 🤗]
-        |""".trimMargin()
+    |string: hay
+    |int: 4
+    |uint: 32
+    |double: 3.555
+    |dateTime: '2017-12-04T12:13'
+    |bool: true
+    |enum: V0
+    |list: [34, 2352, 3423, 766]
+    |set: [2017-12-05, 2016-03-02, 1981-12-05]
+    |map:
+    |  12:55: yes
+    |  10:03: ahum
+    |valueObject:
+    |  int: 6
+    |  dateTime: '2017-04-01T12:55'
+    |  bool: true
+    |embeddedObject:
+    |  value: test
+    |multi: !V2
+    |  value: subInMulti!
+    |listOfString: [test1, another test, 🤗]
+    |""".trimMargin()
     }
 
     @Test
@@ -288,16 +292,18 @@ internal class DataModelTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val map = mapOf(
-            0 to "hay",
-            1 to 4,
-            2 to 32.toUInt32(),
-            3 to 3.555,
-            4 to DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-            5 to true,
-            6 to Option.V2,
-            13 to TestMarykObject.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
-        )
+        val map = TestMarykObject.map {
+            mapOf(
+                0 to "hay",
+                1 to 4,
+                2 to 32.toUInt32(),
+                3 to 3.555,
+                4 to DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
+                5 to true,
+                6 to Option.V2,
+                13 to TestMarykObject.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
+            )
+        }
 
         bc.reserve(
             TestMarykObject.calculateProtoBufLength(map, cache)
@@ -322,7 +328,7 @@ internal class DataModelTest {
         map[1] shouldBe 4
         map[2] shouldBe 32.toUInt32()
         map[3] shouldBe 3.555
-        map[4] shouldBe  DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
+        map[4] shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
         map[5] shouldBe true
         map[6] shouldBe Option.V2
         (map[13] as Key<*>).bytes.toHex() shouldBe "010501050105010501"
@@ -339,7 +345,7 @@ internal class DataModelTest {
 
         TestMarykObject.writeProtoBuf(testMap, cache, bc::write)
 
-        TestMarykObject.readProtoBuf(bc.size, bc::read).map shouldBe testMap
+        TestMarykObject.readProtoBuf(bc.size, bc::read) shouldBe testMap
     }
 
     @Test
@@ -398,7 +404,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJson(reader = jsonReader()).map shouldBe testMap
+            TestMarykObject.readJson(reader = jsonReader()) shouldBe testMap
         }
     }
 
@@ -415,7 +421,7 @@ internal class DataModelTest {
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykObject.readJson(reader = reader()).map shouldBe testMap
+            TestMarykObject.readJson(reader = reader()) shouldBe testMap
 
             output = ""
         }
@@ -436,4 +442,3 @@ internal class DataModelTest {
         checkYamlConversion(EmbeddedMarykObject, DataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 }
-

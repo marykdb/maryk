@@ -1,7 +1,7 @@
 package maryk.core.query.responses
 
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.statuses.IsAddResponseStatus
@@ -12,7 +12,7 @@ data class AddResponse<DO: Any, out DM: RootDataModel<DO, *>> constructor(
     override val dataModel: DM,
     val statuses: List<IsAddResponseStatus<DO>>
 ): IsDataModelResponse<DO, DM> {
-    internal companion object: QueryDataModel<AddResponse<*, *>>(
+    internal companion object: SimpleQueryDataModel<AddResponse<*, *>>(
         properties = object : PropertyDefinitions<AddResponse<*, *>>() {
             init {
                 IsDataModelResponse.addDataModel(this, AddResponse<*, *>::dataModel)

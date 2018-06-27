@@ -1,9 +1,9 @@
 package maryk.core.query.requests
 
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
@@ -42,7 +42,7 @@ data class GetSelectRequest<DO: Any, out DM: RootDataModel<DO, *>> internal cons
 ) : IsGetRequest<DO, DM>, IsSelectRequest<DO, DM> {
     override val requestType = RequestType.Get
 
-    internal companion object: QueryDataModel<GetSelectRequest<*, *>>(
+    internal companion object: SimpleQueryDataModel<GetSelectRequest<*, *>>(
         properties = object : PropertyDefinitions<GetSelectRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, GetSelectRequest<*, *>::dataModel)

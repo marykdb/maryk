@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -19,7 +19,7 @@ data class ValidationUmbrellaException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.UMBRELLA
 
-    internal companion object: QueryDataModel<ValidationUmbrellaException>(
+    internal companion object: SimpleQueryDataModel<ValidationUmbrellaException>(
         properties = object : PropertyDefinitions<ValidationUmbrellaException>() {
             init {
                 ValidationException.addReference(this, ValidationUmbrellaException::reference)

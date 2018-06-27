@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
@@ -14,7 +14,7 @@ data class InvalidValueException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.INVALID_VALUE
 
-    internal companion object: QueryDataModel<InvalidValueException>(
+    internal companion object: SimpleQueryDataModel<InvalidValueException>(
         properties = object: PropertyDefinitions<InvalidValueException>() {
             init {
                 ValidationException.addReference(this, InvalidValueException::reference)

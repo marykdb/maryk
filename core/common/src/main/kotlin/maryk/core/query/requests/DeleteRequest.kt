@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -31,7 +31,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
 ) : IsObjectRequest<DO, DM> {
     override val requestType = RequestType.Delete
 
-    internal companion object: QueryDataModel<DeleteRequest<*, *>>(
+    internal companion object: SimpleQueryDataModel<DeleteRequest<*, *>>(
         properties = object : PropertyDefinitions<DeleteRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, DeleteRequest<*, *>::dataModel)

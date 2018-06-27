@@ -1,10 +1,10 @@
 package maryk.core.query.requests
 
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.SimpleQueryDataModel
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.query.changes.DataObjectChange
 
 /**
@@ -20,7 +20,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
 ) : IsObjectRequest<DO, DM> {
     override val requestType = RequestType.Change
 
-    internal companion object: QueryDataModel<ChangeRequest<*, *>>(
+    internal companion object: SimpleQueryDataModel<ChangeRequest<*, *>>(
         properties = object : PropertyDefinitions<ChangeRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, ChangeRequest<*, *>::dataModel)

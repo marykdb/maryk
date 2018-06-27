@@ -19,7 +19,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
     properties: PropertyDefinitions<DO>,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, *, CX, DO>
 ) : AbstractDataModel<DO, PropertyDefinitions<DO>, CX, CX>(properties) {
-    override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: CX?) {
+    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         val value = map[singlePropertyDefinition.index] as T? ?: throw ParseException("Missing requests in Requests")
 
@@ -41,11 +41,10 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, CX: IsPropert
         val value = singlePropertyDefinition.readJson(reader, context)
         singlePropertyDefinition.capture(context, value)
 
-        return DataObjectMap(
-            this,
+        return this.map {
             mapOf(
-                singlePropertyDefinition.index to value
+                singlePropertyDefinition with value
             )
-        )
+        }
     }
 }

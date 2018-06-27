@@ -50,7 +50,7 @@ data class Order internal constructor(
         ), Order::direction)
     }
 
-    internal companion object: QueryDataModel<Order>(
+    internal companion object: QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Order(
@@ -66,7 +66,7 @@ data class Order internal constructor(
             }
         }
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<Order>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             if (writer is YamlWriter) {
                 writeJsonOrderValue(map(0), map(1), writer, context)
             } else {
@@ -100,18 +100,19 @@ data class Order internal constructor(
 
                 @Suppress("UNCHECKED_CAST")
                 (currentToken as? JsonToken.Value<String>)?.let {
-                    val valueMap = mutableMapOf<Int, Any>()
+                    return this.map {
+                        val valueMap = mutableMapOf<Int, Any>()
 
-                    it.type.let {
-                        if (it is UnknownYamlTag && it.name == "Desc") {
-                            valueMap[Properties.direction.index] = Direction.DESC
+                        it.type.let {
+                            if (it is UnknownYamlTag && it.name == "Desc") {
+                                valueMap += direction with Direction.DESC
+                            }
                         }
+
+                        valueMap += propertyReference with propertyReference.definition.fromString(it.value, context)
+
+                        valueMap
                     }
-
-                    valueMap[Properties.propertyReference.index] =
-                            Properties.propertyReference.definition.fromString(it.value, context)
-
-                    return DataObjectMap(this, valueMap)
                 } ?: throw ParseException("Expected only a property reference in Order")
             } else {
                 return super.readJson(reader, context)

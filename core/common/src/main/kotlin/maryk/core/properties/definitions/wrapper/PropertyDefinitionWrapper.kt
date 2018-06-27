@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 

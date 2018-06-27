@@ -1,9 +1,9 @@
 package maryk.core.query.requests
 
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
@@ -52,7 +52,7 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> in
 ) : IsScanRequest<DO, DM>, IsVersionedChangesRequest<DO, DM> {
     override val requestType = RequestType.ScanVersionedChanges
 
-    internal companion object: QueryDataModel<ScanVersionedChangesRequest<*, *>>(
+    internal companion object: SimpleQueryDataModel<ScanVersionedChangesRequest<*, *>>(
         properties = object : PropertyDefinitions<ScanVersionedChangesRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, ScanVersionedChangesRequest<*, *>::dataModel)

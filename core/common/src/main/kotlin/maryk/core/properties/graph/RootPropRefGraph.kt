@@ -37,7 +37,7 @@ data class RootPropRefGraph<DO> internal constructor(
             properties = map(0)
         )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override fun writeJson(map: DataObjectMap<RootPropRefGraph<*>>, writer: IsJsonLikeWriter, context: GraphContext?) {
             @Suppress("UNCHECKED_CAST")
             val listOfGraphables = map[Properties.properties.index] as List<IsPropRefGraphable<*>>
 
@@ -68,12 +68,12 @@ data class RootPropRefGraph<DO> internal constructor(
 
             var currentToken = reader.nextToken()
 
-            val properties = mutableListOf<TypedValue<PropRefGraphType, *>>()
+            val propertiesList = mutableListOf<TypedValue<PropRefGraphType, *>>()
 
             while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
                 when (currentToken) {
                     is JsonToken.StartObject -> {
-                        properties.add(
+                        propertiesList.add(
                             TypedValue(
                                 PropRefGraphType.Graph,
                                 PropRefGraph.readJson(reader, context).toDataObject()
@@ -83,7 +83,7 @@ data class RootPropRefGraph<DO> internal constructor(
                     is JsonToken.Value<*> -> {
                         val multiTypeDefinition = Properties.properties.valueDefinition as MultiTypeDefinition<PropRefGraphType, GraphContext>
 
-                        properties.add(
+                        propertiesList.add(
                             TypedValue(
                                 PropRefGraphType.PropRef,
                                 multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
@@ -99,12 +99,11 @@ data class RootPropRefGraph<DO> internal constructor(
 
             reader.nextToken()
 
-            return DataObjectMap(
-                this,
+            return this.map {
                 mapOf(
-                    Properties.properties.index to properties
+                    properties with propertiesList
                 )
-            )
+            }
         }
     }
 }

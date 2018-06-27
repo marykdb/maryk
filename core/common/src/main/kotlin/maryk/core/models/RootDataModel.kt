@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsFixedBytesEncodable
@@ -181,7 +182,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<RootDataModel<*, *>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
             for ((key, value) in map) {
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last

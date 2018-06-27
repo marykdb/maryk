@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
@@ -13,7 +13,7 @@ data class RequiredException internal constructor(
 ) {
     override val validationExceptionType = ValidationExceptionType.REQUIRED
 
-    internal companion object: QueryDataModel<RequiredException>(
+    internal companion object: SimpleQueryDataModel<RequiredException>(
         properties = object : PropertyDefinitions<RequiredException>() {
             init {
                 ValidationException.addReference(this, RequiredException::reference)

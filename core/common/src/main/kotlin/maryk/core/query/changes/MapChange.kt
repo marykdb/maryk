@@ -1,9 +1,10 @@
 package maryk.core.query.changes
 
 import maryk.core.models.ReferenceMappedDataModel
+import maryk.core.objects.DataObjectMap
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeWriter
 
@@ -28,7 +29,7 @@ data class MapChange internal constructor(
         }
     }
 
-    internal companion object: ReferenceMappedDataModel<MapChange, MapValueChanges<*, *>>(
+    internal companion object: ReferenceMappedDataModel<MapChange, MapValueChanges<*, *>, Properties, MapValueChanges.Properties>(
         properties = MapChange.Properties,
         containedDataModel = MapValueChanges,
         referenceProperty = MapValueChanges.Properties.reference
@@ -38,7 +39,7 @@ data class MapChange internal constructor(
             mapValueChanges = map(0)
         )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<MapChange>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             writeReferenceValueMap(
                 writer,

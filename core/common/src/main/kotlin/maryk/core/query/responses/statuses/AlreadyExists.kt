@@ -1,6 +1,6 @@
 package maryk.core.query.responses.statuses
 
-import maryk.core.models.QueryDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 
@@ -10,7 +10,7 @@ data class AlreadyExists<DO: Any>(
 ) : IsAddResponseStatus<DO> {
     override val statusType = StatusType.ALREADY_EXISTS
 
-    internal companion object: QueryDataModel<AlreadyExists<*>>(
+    internal companion object: SimpleQueryDataModel<AlreadyExists<*>>(
         properties = object : PropertyDefinitions<AlreadyExists<*>>() {
             init {
                 IsResponseStatus.addKey(this, AlreadyExists<*>::key)

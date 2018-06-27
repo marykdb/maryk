@@ -1,9 +1,9 @@
 package maryk.core.query.requests
 
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
@@ -15,7 +15,7 @@ import maryk.core.query.filters.IsFilter
 
 /**
  * Creates a request to scan DataObjects by key from [startKey] [fromVersion] until [limit]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the changes [fromVersion] (Inclusive).
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
@@ -34,7 +34,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanChanges(
 /**
  * A Request to scan DataObjects by key from [startKey] [fromVersion] until [limit]
  * for specific [dataModel]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the changes [fromVersion] (Inclusive).
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
@@ -51,7 +51,7 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal co
 ) : IsScanRequest<DO, DM>, IsChangesRequest<DO, DM>, IsSelectRequest<DO, DM> {
     override val requestType = RequestType.ScanChanges
 
-    internal companion object: QueryDataModel<ScanChangesRequest<*, *>>(
+    internal companion object: SimpleQueryDataModel<ScanChangesRequest<*, *>>(
         properties = object : PropertyDefinitions<ScanChangesRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, ScanChangesRequest<*, *>::dataModel)

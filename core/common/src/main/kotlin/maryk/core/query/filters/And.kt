@@ -34,14 +34,14 @@ data class And(
         )
     }
 
-    internal companion object: QueryDataModel<And>(
+    internal companion object: QueryDataModel<And, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = And(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<And>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             Properties.filters.writeJsonValue(
                 map[Properties.filters.index] as List<TypedValue<FilterType, Any>>? ?: throw ParseException("Missing filters in And filter"),
@@ -63,12 +63,11 @@ data class And(
                 reader.nextToken()
             }
 
-            return DataObjectMap(
-                this,
+            return this.map {
                 mapOf(
-                    Properties.filters.index to Properties.filters.readJson(reader, context)
+                    filters with filters.readJson(reader, context)
                 )
-            )
+            }
         }
     }
 }

@@ -34,14 +34,14 @@ data class Not(
         )
     }
 
-    internal companion object: QueryDataModel<Not>(
+    internal companion object: QueryDataModel<Not, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = Not(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<Not>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             Properties.filters.writeJsonValue(
                 map[Properties.filters.index] as List<TypedValue<FilterType, Any>>? ?: throw ParseException("Missing filters in Not filter"),
@@ -63,12 +63,11 @@ data class Not(
                 reader.nextToken()
             }
 
-            return DataObjectMap(
-                this,
+            return this.map {
                 mapOf(
-                    Properties.filters.index to Properties.filters.readJson(reader, context)
+                    filters with filters.readJson(reader, context)
                 )
-            )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.objects.DataObjectMap
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -17,11 +18,11 @@ import maryk.lib.exceptions.ParseException
  * DataModel of type [DO] with [properties] definitions to contain
  * query actions so they can be validated and transported
  */
-internal abstract class SimpleFilterDataModel<DO: Any>(
-    properties: PropertyDefinitions<DO>
-) : AbstractDataModel<DO, PropertyDefinitions<DO>, DataModelPropertyContext, DataModelPropertyContext>(properties){
+internal abstract class SimpleFilterDataModel<DO: Any, P: PropertyDefinitions<DO>>(
+    properties: P
+) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
 
-    override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(map: DataObjectMap<DO>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")
         writer.writeJsonValues(
             this.properties.getDefinition(0) as PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, Any>,

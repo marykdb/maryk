@@ -68,7 +68,7 @@ private data class MultiTypeDescriptor(
         )
     }
 
-    internal object Model : SimpleDataModel<MultiTypeDescriptor, PropertyDefinitions<MultiTypeDescriptor>>(
+    internal object Model : SimpleDataModel<MultiTypeDescriptor, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = MultiTypeDescriptor(
@@ -80,12 +80,14 @@ private data class MultiTypeDescriptor(
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): DataObjectMap<MultiTypeDescriptor> {
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
-                val valueMap: MutableMap<Int, Any> = mutableMapOf()
-                reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
+                this.map {
+                    val valueMap: MutableMap<Int, Any> = mutableMapOf()
 
-                valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DataModelContext?)
+                    reader.readNamedIndexField(valueMap, name, index)
+                    valueMap += definition with definition.readJson(reader, context as DataModelContext?)
 
-                DataObjectMap(this, valueMap)
+                    valueMap
+                }
             } else {
                 super.readJson(reader, context)
             }

@@ -37,7 +37,7 @@ data class ValueIn internal constructor(
         )
     }
 
-    internal companion object: SimpleFilterDataModel<ValueIn>(
+    internal companion object: SimpleFilterDataModel<ValueIn, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, *>) = ValueIn(
@@ -48,7 +48,7 @@ data class ValueIn internal constructor(
             writer.writeJsonMapObject(obj.referenceValuePairs, context)
         }
 
-        override fun writeJson(map: Map<Int, Any>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: DataObjectMap<ValueIn>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             @Suppress("UNCHECKED_CAST")
             (map[Properties.referenceValuePairs.index] as List<ReferenceValueSetPair<*>>?)?.let {
                 writer.writeJsonMapObject(it, context)
@@ -101,12 +101,11 @@ data class ValueIn internal constructor(
                 currentToken = reader.nextToken()
             }
 
-            return DataObjectMap(
-                this,
+            return this.map {
                 mapOf(
-                    Properties.referenceValuePairs.index to list
+                    referenceValuePairs with list
                 )
-            )
+            }
         }
     }
 }

@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.QueryDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
@@ -19,7 +19,7 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
 ) : IsObjectRequest<DO, DM> {
     override val requestType = RequestType.Add
 
-    internal companion object: QueryDataModel<AddRequest<*, *>>(
+    internal companion object: SimpleQueryDataModel<AddRequest<*, *>>(
         properties = object : PropertyDefinitions<AddRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, AddRequest<*, *>::dataModel)

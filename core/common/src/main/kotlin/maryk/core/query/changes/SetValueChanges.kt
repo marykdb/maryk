@@ -35,7 +35,7 @@ data class SetValueChanges<T: Any> internal constructor(
         }
     }
 
-    internal companion object: QueryDataModel<SetValueChanges<out Any>>(
+    internal companion object: QueryDataModel<SetValueChanges<out Any>, Properties>(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")

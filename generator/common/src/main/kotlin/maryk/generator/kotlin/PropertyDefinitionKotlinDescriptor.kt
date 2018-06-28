@@ -3,16 +3,15 @@ package maryk.generator.kotlin
 import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.PropertyDefinitions
 
-/**
- * Describes the property definitions for translation to kotlin
- */
-internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportablePropertyDefinitionType<T>>(
+/** Describes the property definitions for translation to kotlin */
+internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportablePropertyDefinitionType<T>, P: PropertyDefinitions<D>>(
     val className: String,
     val kotlinTypeName: (D) -> String,
-    val definitionModel: IsDataModel<D>,
+    val definitionModel: IsDataModel<D, P>,
     val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String?> = mapOf(),
-    val propertyNameOverride: Map<String, String> = mapOf<String, String>(),
+    val propertyNameOverride: Map<String, String> = mapOf(),
     private val imports: ((D) -> Array<String>?)? = null
 ) {
     /** Get an array of all imports which are always needed for this property [definition] */

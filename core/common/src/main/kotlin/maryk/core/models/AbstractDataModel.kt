@@ -34,7 +34,7 @@ import maryk.lib.exceptions.ParseException
  */
 abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     override val properties: P
-) : IsDataModelWithPropertyDefinition<DO, P> {
+) : IsDataModel<DO, P> {
     /** For quick notation to return [T] that operates with [runner] on Properties */
     fun <T: Any> props(
         runner: P.() -> T

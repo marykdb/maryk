@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.IsDataModelWithPropertyDefinition
+import maryk.core.models.IsDataModel
 import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -20,7 +20,7 @@ data class Reversed<T: Any>(
 ) : FixedBytesProperty<T>() {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
-    override fun <DO : Any, P: PropertyDefinitions<DO>> getValue(dataModel: IsDataModelWithPropertyDefinition<DO, P>, dataObject: DO) =
+    override fun <DO : Any, P: PropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO) =
         this.reference.propertyDefinition.getValue(dataModel, dataObject)
 
     /** Convenience constructor to pass [definition] */

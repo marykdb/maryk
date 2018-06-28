@@ -6,10 +6,10 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
-typealias IsDataModel<DO> = IsDataModelWithPropertyDefinition<DO, PropertyDefinitions<DO>>
+typealias IsSimpleDataModel<DO> = IsDataModel<DO, PropertyDefinitions<DO>>
 
 /** A DataModel which holds properties and can be validated */
-interface IsDataModelWithPropertyDefinition<DO: Any, P: PropertyDefinitions<DO>> {
+interface IsDataModel<DO: Any, P: PropertyDefinitions<DO>> {
     /** Object which contains all property definitions. Can also be used to get property references. */
     val properties: P
 

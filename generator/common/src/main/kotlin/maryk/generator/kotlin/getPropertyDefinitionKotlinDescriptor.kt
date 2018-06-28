@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.core.models.DataModel
-import maryk.core.models.IsDataModel
+import maryk.core.models.IsSimpleDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
@@ -28,9 +28,9 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.NumberType
 
 /** Get the PropertyDefinitionKotlinDescriptor of the given property */
-internal fun <T: Any, D: IsTransportablePropertyDefinitionType<T>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D> {
+internal fun <T: Any, D: IsTransportablePropertyDefinitionType<T>, P: PropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
     @Suppress("UNCHECKED_CAST")
-    return definitionNamesMap[this.propertyDefinitionType] as PropertyDefinitionKotlinDescriptor<T, D>?
+    return definitionNamesMap[this.propertyDefinitionType] as PropertyDefinitionKotlinDescriptor<T, D, P>?
         ?: throw Exception("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
 }
 
@@ -75,7 +75,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Enum to PropertyDefinitionKotlinDescriptor(
         className = "EnumDefinition",
         kotlinTypeName = { it: EnumDefinition<*> -> it.enum.name },
-        definitionModel = EnumDefinition.Model as IsDataModel<EnumDefinition<IndexedEnum<IndexedEnum<*>>>>,
+        definitionModel = EnumDefinition.Model as IsSimpleDataModel<EnumDefinition<IndexedEnum<IndexedEnum<*>>>>,
         propertyValueOverride = mapOf(
             "maxValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
@@ -119,7 +119,7 @@ private val definitionNamesMap = mapOf(
             val kotlinDescriptorForValueDefinition = transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
             "List<$kotlinDescriptorForValueDefinition>"
         },
-        definitionModel = ListDefinition.Model as IsDataModel<ListDefinition<Any, *>>
+        definitionModel = ListDefinition.Model as IsSimpleDataModel<ListDefinition<Any, *>>
     ),
     PropertyDefinitionType.Map to PropertyDefinitionKotlinDescriptor(
         className = "MapDefinition",
@@ -130,12 +130,12 @@ private val definitionNamesMap = mapOf(
             val kotlinDescriptorForValueDefinition = transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
             "Map<$kotlinDescriptorForKeyDefinition, $kotlinDescriptorForValueDefinition>"
         },
-        definitionModel = MapDefinition.Model as IsDataModel<MapDefinition<Any, Any, *>>
+        definitionModel = MapDefinition.Model as IsSimpleDataModel<MapDefinition<Any, Any, *>>
     ),
     PropertyDefinitionType.MultiType to PropertyDefinitionKotlinDescriptor(
         className = "MultiTypeDefinition",
         kotlinTypeName = { "TypedValue<${it.typeEnum.name}, *>" },
-        definitionModel = MultiTypeDefinition.Model as IsDataModel<MultiTypeDefinition<IndexedEnum<Any>, *>>,
+        definitionModel = MultiTypeDefinition.Model as IsSimpleDataModel<MultiTypeDefinition<IndexedEnum<Any>, *>>,
         propertyValueOverride = mapOf(
             "definitionMap" to { definition, _, addImport ->
                 val multiTypeDefinition = definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
@@ -148,7 +148,7 @@ private val definitionNamesMap = mapOf(
                     @Suppress("UNCHECKED_CAST")
                     val value = typeDefinition.value as IsTransportablePropertyDefinitionType<Any>
                     val valueDefinition = value.getKotlinDescriptor()
-                    val valueAsString = valueDefinition.definitionToKotlin(value, {}).trimStart()
+                    val valueAsString = valueDefinition.definitionToKotlin(value) {}.trimStart()
                     typeValues.add("$typeName.${typeDefinition.key.name} to $valueAsString")
                 }
 
@@ -192,13 +192,13 @@ private val definitionNamesMap = mapOf(
                 NumberType.Float64 -> float64Imports
             }
         },
-        definitionModel = NumberDefinition.Model as IsDataModel<NumberDefinition<Comparable<Any>>>
+        definitionModel = NumberDefinition.Model as IsSimpleDataModel<NumberDefinition<Comparable<Any>>>
     ),
     PropertyDefinitionType.Reference to PropertyDefinitionKotlinDescriptor(
         className = "ReferenceDefinition",
         kotlinTypeName = { "Key<${it.dataModel.name}>" },
         imports = { keyImports },
-        definitionModel = ReferenceDefinition.Model as IsDataModel<ReferenceDefinition<Any>>
+        definitionModel = ReferenceDefinition.Model as IsSimpleDataModel<ReferenceDefinition<Any>>
     ),
     PropertyDefinitionType.Set to PropertyDefinitionKotlinDescriptor(
         className = "SetDefinition",
@@ -207,7 +207,7 @@ private val definitionNamesMap = mapOf(
             val kotlinDescriptorForValueDefinition = transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
             "Set<$kotlinDescriptorForValueDefinition>"
         },
-        definitionModel = SetDefinition.Model as IsDataModel<SetDefinition<Any, *>>
+        definitionModel = SetDefinition.Model as IsSimpleDataModel<SetDefinition<Any, *>>
     ),
     PropertyDefinitionType.String to PropertyDefinitionKotlinDescriptor(
         className = "StringDefinition",
@@ -217,7 +217,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Embed to PropertyDefinitionKotlinDescriptor(
         className = "EmbeddedObjectDefinition",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = EmbeddedObjectDefinition.Model as IsDataModel<EmbeddedObjectDefinition<Any, *, DataModel<Any, *>, *, *>>,
+        definitionModel = EmbeddedObjectDefinition.Model as IsSimpleDataModel<EmbeddedObjectDefinition<Any, *, DataModel<Any, *>, *, *>>,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition
         )
@@ -231,7 +231,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueModelDefinition",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = ValueModelDefinition.Model as IsDataModel<ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>, PropertyDefinitions<ValueDataObject>>>,
+        definitionModel = ValueModelDefinition.Model as IsSimpleDataModel<ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>, PropertyDefinitions<ValueDataObject>>>,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,
             "minValue" to generateKotlinValueWithDefinition,

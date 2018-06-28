@@ -1,6 +1,6 @@
 package maryk.core.objects
 
-import maryk.core.models.IsDataModelWithPropertyDefinition
+import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -13,7 +13,7 @@ typealias SimpleValueMap<DO> = ValueMap<DO, PropertyDefinitions<DO>>
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
 data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
-    val dataModel: IsDataModelWithPropertyDefinition<DO, P>,
+    val dataModel: IsDataModel<DO, P>,
     val map: Map<Int, Any?>
 ) : Map<Int, Any?> by map {
     /**

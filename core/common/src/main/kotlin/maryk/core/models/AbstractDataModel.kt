@@ -40,9 +40,6 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
         runner: P.() -> T
     ) = runner(this.properties)
 
-    /** Create a ValueMap with given [createMap] function */
-    fun map(createMap: P.() -> Map<Int, Any?>) = ValueMap(this, createMap(this.properties))
-
     /**
      * Get property reference fetcher of this DataModel with [referenceGetter]
      * Optionally pass an already resolved [parent]
@@ -69,8 +66,8 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
      * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
      * Optionally pass an already resolved [parent]
      */
-    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> graph(
-        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
+    override fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> graph(
+        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>?,
         propertyDefinitionGetter: P.()-> W
     ): IsPropertyReference<T, W> {
         @Suppress("UNCHECKED_CAST")

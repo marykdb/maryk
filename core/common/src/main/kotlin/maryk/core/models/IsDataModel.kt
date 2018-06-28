@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
@@ -27,4 +28,16 @@ interface IsDataModel<DO: Any, P: PropertyDefinitions<DO>> {
 
     /** Creates a Data Object by [map] */
     operator fun invoke(map: ValueMap<DO, P>): DO
+
+    /** Create a ValueMap with given [createMap] function */
+    fun map(createMap: P.() -> Map<Int, Any?>) = ValueMap(this, createMap(this.properties))
+
+    /**
+     * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
+     * Optionally pass an already resolved [parent]
+     */
+    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> graph(
+        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
+        propertyDefinitionGetter: P.()-> W
+    ): IsPropertyReference<T, W>
 }

@@ -42,8 +42,6 @@ data class And(
         )
 
         override fun writeJson(map: ValueMap<And, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            map { filters }
-            @Suppress("UNCHECKED_CAST")
             Properties.filters.writeJsonValue(
                 map.original { filters } ?: throw ParseException("Missing filters in And filter"),
                 writer,

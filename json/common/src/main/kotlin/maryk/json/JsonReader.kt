@@ -89,6 +89,9 @@ class JsonReader(
                 is JsonToken.Stopped -> {
                     return currentToken
                 }
+                JsonToken.StartComplexFieldName, JsonToken.EndComplexFieldName -> {
+                    throw Exception("Start and End ComplexFieldName not possible in JSON")
+                }
             }
         } catch (e: ExceptionWhileReadingJson) {
             currentToken = JsonToken.Suspended(currentToken, storedValue)

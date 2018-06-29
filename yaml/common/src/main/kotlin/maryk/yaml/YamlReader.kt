@@ -148,6 +148,9 @@ internal class YamlReaderImpl(
                     this.merges.add(Merge(this.tokenDepth))
                     return this.nextToken()
                 }
+                else -> {
+                    // Just continue
+                }
             }
 
             // Handle map merges

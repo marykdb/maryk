@@ -57,7 +57,10 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
      * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
      * Optionally pass an already resolved [parent]
      */
-    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null, propertyDefinitionGetter: P.()-> W): IsPropertyReference<T, W> {
+    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
+        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
+        propertyDefinitionGetter: P.()-> W
+    ): IsPropertyReference<T, W> {
         @Suppress("UNCHECKED_CAST")
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
     }
@@ -74,7 +77,10 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
     }
 
-    override fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+    override fun validate(
+        dataObject: DO,
+        refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
+    ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for (it in this.properties) {
                 try {
@@ -89,7 +95,10 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
         }
     }
 
-    override fun validate(map: ValueMap<DO, P>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+    override fun validate(
+        map: ValueMap<DO, P>,
+        refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
+    ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for ((key, value) in map) {
                 val definition = properties.getDefinition(key) ?: continue

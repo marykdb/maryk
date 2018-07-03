@@ -56,13 +56,11 @@ internal abstract class ReferencesDataModel<DO: Any, P: ReferencesPropertyDefini
         val valueMap = when (currentToken) {
             is JsonToken.Value<*> -> {
                 @Suppress("UNCHECKED_CAST")
-                (currentToken as JsonToken.Value<String>).let {
-                    mapOf(
-                        Exists.Properties.references.index to listOf(
-                            Exists.Properties.references.definition.valueDefinition.fromString(currentToken.value, context)
-                        )
+                mapOf(
+                    Exists.Properties.references.index to listOf(
+                        Exists.Properties.references.definition.valueDefinition.fromString(currentToken.value as String, context)
                     )
-                }
+                )
             }
             is JsonToken.StartArray -> {
                 mapOf(

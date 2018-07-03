@@ -4,6 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.SimpleDataModel
 import maryk.core.objects.SimpleValueMap
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -88,6 +89,21 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         if(this.capturer != null && context != null) {
             this.capturer!!.invoke(context, value)
         }
+    }
+
+    /**
+     * Transforms the serialized [value] to a proper value.
+     * Returns default value if unset
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun transformValue(value: T?): TO? {
+        if (value == null && this.definition is HasDefaultValueDefinition<*>) {
+            (this.definition as? HasDefaultValueDefinition<*>).let {
+                return it?.default as TO?
+            }
+        }
+
+        return this.fromSerializable?.invoke(value) ?: value as TO?
     }
 
     companion object {

@@ -48,7 +48,7 @@ data class RootMaryk(
     @Suppress("UNCHECKED_CAST")
     internal companion object: QuerySingleValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DataModelContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, *, DataModelContext, RootMaryk>
+        singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DataModelContext, RootMaryk>
     ) {
         override fun invoke(map: ValueMap<RootMaryk, Properties>) = RootMaryk(
             operations = map(0)

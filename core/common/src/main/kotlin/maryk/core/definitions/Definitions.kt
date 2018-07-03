@@ -102,7 +102,7 @@ data class Definitions(
     @Suppress("UNCHECKED_CAST")
     internal companion object: QuerySingleValueDataModel<List<MarykPrimitive>, Definitions, Properties, DataModelContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, *, DataModelContext, Definitions>
+        singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, List<MarykPrimitive>, DataModelContext, Definitions>
     ) {
         override fun invoke(map: ValueMap<Definitions, Properties>) = Definitions(
             definitions = map(0)

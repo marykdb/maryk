@@ -32,7 +32,7 @@ data class Requests(
     @Suppress("UNCHECKED_CAST")
     internal companion object: QuerySingleValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, DataModelPropertyContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, *, DataModelPropertyContext, Requests>
+        singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, DataModelPropertyContext, Requests>
     ) {
         override fun invoke(map: ValueMap<Requests, Properties>) = Requests(
             requests = map(0)

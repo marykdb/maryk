@@ -31,10 +31,8 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
     dataModel: () -> DM,
     override val default: DO? = null
 ) :
-    IsValueDefinition<DO, CXI>,
     IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX>,
-    IsTransportablePropertyDefinitionType<DO>,
-    HasDefaultValueDefinition<DO>
+    IsValueDefinition<DO, CXI>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val wireType = WireType.LENGTH_DELIMITED

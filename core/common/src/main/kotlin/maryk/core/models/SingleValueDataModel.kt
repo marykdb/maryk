@@ -17,11 +17,11 @@ import maryk.lib.exceptions.ParseException
  */
 internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: PropertyDefinitions<DO>, CX: IsPropertyContext>(
     properties: P,
-    private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, *, CX, DO>
+    private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, T, CX, DO>
 ) : AbstractDataModel<DO, P, CX, CX>(properties) {
     override fun writeJson(map: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
-        @Suppress("UNCHECKED_CAST")
-        val value = map[singlePropertyDefinition.index] as T? ?: throw ParseException("Missing requests in Requests")
+        // Input and output of singlePropertyDefinition has both to be T so can fetch original
+        val value = map.original { singlePropertyDefinition } ?: throw ParseException("Missing requests in Requests")
 
         singlePropertyDefinition.writeJsonValue(value, writer, context)
         singlePropertyDefinition.capture(context, value)

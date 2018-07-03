@@ -1,7 +1,6 @@
 package maryk.core.objects
 
 import maryk.core.models.IsDataModel
-import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -14,54 +13,59 @@ typealias SimpleValueMap<DO> = ValueMap<DO, PropertyDefinitions<DO>>
  */
 data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
     val dataModel: IsDataModel<DO, P>,
-    val map: Map<Int, Any?>
-) : Map<Int, Any?> by map {
+    private val map: Map<Int, Any?>
+) {
     /**
      * Converts map to a strong typed DataObject.
      * Will throw exception if map is missing values for a complete DataObject
      */
     fun toDataObject() = this.dataModel.invoke(this)
 
+    /** Retrieve the keys of the map */
+    val keys get() = map.keys
+
+    /** Retrieve the map size */
+    val size get() = map.size
+
     /**
      * Utility method to check and map a value to a constructor property
      */
     inline operator fun <reified T> invoke(index: Int): T {
-        val value = this[index]
+        val value = this.original(index)
 
         val valueDef = this.dataModel.properties.getDefinition(index)
                 ?: throw Exception("Value definition of index $index is missing")
 
-        val valueDefDefinition = valueDef.definition
-
-        if (value == null && valueDefDefinition is HasDefaultValueDefinition<*>) {
-            return valueDefDefinition.default as T
-        }
-
-        val transformedValue = valueDef.fromSerializable?.invoke(value) ?: value
+        val transformedValue = valueDef.transformValue(value)
 
         return if (transformedValue is T) {
             transformedValue
-        } else if (value != null && transformedValue == null) {
-            value as T
+        } else if (value is T) {
+            value
         } else {
             throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
         }
     }
 
     /** Get property from map with wrapper in [getProperty] and convert it to native usage */
-    inline operator fun <TI: Any, reified TO: Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<TI, TO, *, DO>): TO? =
-        invoke(
-            getProperty(
-                this.dataModel.properties
-            ).index
-        )
+    inline operator fun <TI: Any, reified TO: Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<TI, TO, *, DO>): TO? {
+        val index = getProperty(
+            this.dataModel.properties
+        ).index
+
+        return invoke(index)
+    }
 
     /** Get property from map with wrapper in [getProperty] and convert it to native usage */
-    @Suppress("UNCHECKED_CAST")
-    fun <T: Any> original(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? =
-        this[
-            getProperty(
-                this.dataModel.properties
-            ).index
-        ] as T?
+    fun <T: Any> original(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? {
+        val index = getProperty(
+            this.dataModel.properties
+        ).index
+
+        @Suppress("UNCHECKED_CAST")
+        return this.map[index] as T?
+    }
+
+    /** Get the original value by [index] */
+    fun original(index: Int) = this.map[index]
 }

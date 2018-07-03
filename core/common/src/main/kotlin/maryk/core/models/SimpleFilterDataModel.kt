@@ -26,9 +26,9 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: PropertyDefinitions<DO
         @Suppress("UNCHECKED_CAST")
         writer.writeJsonValues(
             this.properties.getDefinition(0) as PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, Any>,
-            map[0] as IsPropertyReference<*, *>,
+            map(0),
             this.properties.getDefinition(1) as PropertyDefinitionWrapper<Any, *, IsPropertyContext, *, *>,
-            map[1] as Any,
+            map(1),
             context
         )
     }

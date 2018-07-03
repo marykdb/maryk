@@ -35,48 +35,6 @@ import maryk.lib.exceptions.ParseException
 abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     override val properties: P
 ) : IsDataModel<DO, P> {
-    /** For quick notation to return [T] that operates with [runner] on Properties */
-    fun <T: Any> props(
-        runner: P.() -> T
-    ) = runner(this.properties)
-
-    /**
-     * Get property reference fetcher of this DataModel with [referenceGetter]
-     * Optionally pass an already resolved [parent]
-     * For Strongly typed reference notation
-     */
-    operator fun <T: Any, W: IsPropertyDefinition<T>> invoke(
-        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
-        referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W>
-    ): IsPropertyReference<T, W> {
-        return referenceGetter(this.properties)(parent)
-    }
-
-    /**
-     * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
-     * Optionally pass an already resolved [parent]
-     */
-    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
-        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>? = null,
-        propertyDefinitionGetter: P.()-> W
-    ): IsPropertyReference<T, W> {
-        @Suppress("UNCHECKED_CAST")
-        return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
-    }
-
-    /**
-     * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
-     * Optionally pass an already resolved [parent]
-     */
-    override fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> graph(
-        parent: IsPropertyReference<out Any, IsPropertyDefinition<*>>?,
-        propertyDefinitionGetter: P.()-> W
-    ): IsPropertyReference<T, W> {
-        @Suppress("UNCHECKED_CAST")
-        return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
-    }
-
     override fun validate(
         dataObject: DO,
         refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
@@ -100,8 +58,9 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
         refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
-            for ((key, value) in map) {
+            for (key in map.keys) {
                 val definition = properties.getDefinition(key) ?: continue
+                val value = map<Any?>(key) ?: continue // skip empty values
                 try {
                     definition.validate(
                         newValue = value,
@@ -136,8 +95,8 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
      */
     open fun writeJson(map: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
-        for ((key, value) in map) {
-            if (value == null) continue
+        for (key in map.keys) {
+            val value = map<Any?>(key) ?: continue // skip empty values
 
             val definition = properties.getDefinition(key) ?: continue
 
@@ -224,8 +183,8 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
      */
     internal fun calculateProtoBufLength(map: ValueMap<DO, P>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
-        for ((key, value) in map) {
-            if (value == null) continue // continue on empty values
+        for (key in map.keys) {
+            val value = map<Any?>(key) ?: continue // skip empty values
 
             val def = properties.getDefinition(key) ?: continue
 
@@ -259,8 +218,8 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
     internal fun writeProtoBuf(map: ValueMap<DO, P>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
-        for ((key, value) in map) {
-            if (value == null) continue // skip empty values
+        for (key in map.keys) {
+            val value = map<Any?>(key) ?: continue // skip empty values
 
             val definition = properties.getDefinition(key) ?: continue
 

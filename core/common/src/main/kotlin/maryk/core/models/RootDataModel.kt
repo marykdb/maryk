@@ -149,13 +149,13 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                     definitionMap = mapOfKeyPartDefinitions
                 )
             ),
-            getter = {
-                it.key.keyDefinitions.map {
-                    val def: Any = when(it) {
-                        is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *> -> it.getRef()
-                        else -> it
+            getter = { rootDataModel ->
+                rootDataModel.key.keyDefinitions.map { keyDef ->
+                    val def: Any = when(keyDef) {
+                        is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *> -> keyDef.getRef()
+                        else -> keyDef
                     }
-                    TypedValue(it.keyPartType, def)
+                    TypedValue(keyDef.keyPartType, def)
                 }
             }
         )
@@ -186,15 +186,15 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
          */
         override fun writeJson(map: ValueMap<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
-            for ((key, value) in map) {
+            for (key in map.keys) {
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last
-                if (value == null) continue // skip writing empty values
+                val value = map<Any?>(key) ?: continue // skip writing empty values
 
                 val def = properties.getDefinition(key) ?: continue
                 this.writeJsonValue(def, writer, value, context)
             }
             // Write properties last
-            map[RootModelProperties.properties.index]?.let {
+            map.original(RootModelProperties.properties.index)?.let {
                 this.writeJsonValue(
                     RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootDataModel<*, *>>,
                     writer,
@@ -271,14 +271,14 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            keyDefinitionsToProcessLater?.let {
+            keyDefinitionsToProcessLater?.let { jsonTokens ->
                 val lateReader = if (reader is IsYamlReader) {
-                    it.map { reader.pushToken(it) }
+                    jsonTokens.map { reader.pushToken(it) }
                     reader.pushToken(reader.currentToken)
                     reader.nextToken()
                     reader
                 } else {
-                    PresetJsonTokenReader(it)
+                    PresetJsonTokenReader(jsonTokens)
                 }
 
                 valueMap[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DataModelContext?)

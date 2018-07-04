@@ -36,7 +36,7 @@ data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
         val valueDef = this.dataModel.properties.getDefinition(index)
                 ?: throw Exception("Value definition of index $index is missing")
 
-        val transformedValue = valueDef.transformValue(value)
+        val transformedValue = valueDef.convertToCurrentValue(value)
 
         return if (transformedValue is T) {
             transformedValue

@@ -56,6 +56,14 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
 
+    override fun shouldTransformValues() = true
+
+    override fun transformValue(value: Any?): Any? {
+        return if (value is ValueMap<*, *>) {
+            value.toDataObject()
+        } else value
+    }
+
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {

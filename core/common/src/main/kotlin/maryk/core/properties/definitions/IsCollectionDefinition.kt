@@ -34,6 +34,28 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
+    @Suppress("UNCHECKED_CAST")
+    override fun transformValue(value: Any?): Any? {
+        if (this.valueDefinition.shouldTransformValues() && value != null) {
+            if (!(value as Collection<*>).isEmpty()) {
+                val newCollection = newMutableCollection(null)
+                for (it in value) {
+                    val newValue = this.valueDefinition.transformValue(it)
+                    if (newValue === it) break // Dont continue if nothing was converted
+                    newCollection.add(newValue as T)
+                }
+
+                if (!newCollection.isEmpty()) {
+                    return newCollection
+                }
+            }
+        }
+
+        return value
+    }
+
+    override fun shouldTransformValues() = this.valueDefinition.shouldTransformValues()
+
     override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?) {
         super<IsByteTransportableCollection>.validateWithRef(previousValue, newValue, refGetter)
 

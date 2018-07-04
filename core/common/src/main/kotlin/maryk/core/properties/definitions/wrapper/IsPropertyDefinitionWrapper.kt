@@ -92,18 +92,20 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     /**
-     * Transforms the serialized [value] to a proper value.
+     * Transforms the serialized [value] to current value.
      * Returns default value if unset
      */
     @Suppress("UNCHECKED_CAST")
-    fun transformValue(value: T?): TO? {
+    fun convertToCurrentValue(value: Any?): TO? {
         if (value == null && this.definition is HasDefaultValueDefinition<*>) {
             (this.definition as? HasDefaultValueDefinition<*>).let {
                 return it?.default as TO?
             }
         }
 
-        return this.fromSerializable?.invoke(value) ?: value as TO?
+        val transformed = this.definition.transformValue(value)
+
+        return this.fromSerializable?.invoke(transformed as T?) ?: transformed as TO?
     }
 
     companion object {

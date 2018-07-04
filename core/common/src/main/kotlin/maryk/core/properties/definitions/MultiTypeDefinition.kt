@@ -91,6 +91,26 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
+    @Suppress("UNCHECKED_CAST")
+    override fun transformValue(value: Any?): Any? {
+        val typedValue = value as? TypedValue<E, *>?
+
+        if (typedValue != null) {
+            val defMap = this.definitionMap[typedValue.type]!!
+            if (defMap.shouldTransformValues()) {
+                val newValue = defMap.transformValue(typedValue.value)!!
+
+                if (newValue != typedValue.value) {
+                    return TypedValue(typedValue.type, newValue)
+                }
+            }
+        }
+
+        return value
+    }
+
+    override fun shouldTransformValues() = true
+
     override fun writeJsonValue(value: TypedValue<E, Any>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         val definition = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?

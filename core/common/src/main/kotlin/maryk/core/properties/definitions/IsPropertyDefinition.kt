@@ -30,6 +30,12 @@ interface IsPropertyDefinition<T: Any> {
     /** To get embedded properties by [index] */
     fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>?
 
+    /** Converts a value if needed */
+    fun transformValue(value: Any?) = value
+
+    /** Return true if values should be converted */
+    fun shouldTransformValues() = false
+
     companion object {
         internal fun <DO:Any> addIndexed(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
             definitions.add(0, "indexed", BooleanDefinition(default = false), getter)

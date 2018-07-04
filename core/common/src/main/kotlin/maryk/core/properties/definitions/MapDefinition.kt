@@ -65,6 +65,28 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?) =
         MapValueReference(key, this, parentMap)
 
+    @Suppress("UNCHECKED_CAST")
+    override fun transformValue(value: Any?): Any? {
+        if (this.valueDefinition.shouldTransformValues() && value != null) {
+            if (!(value as Map<K, *>).isEmpty()) {
+                val newMap = mutableMapOf<K, V>()
+                for ((key, v) in value) {
+                    val newValue = this.valueDefinition.transformValue(v)
+                    if (newValue === v) break // Don't continue if nothing was converted
+                    newMap[key] = newValue as V
+                }
+
+                if (!newMap.isEmpty()) {
+                    return newMap
+                }
+            }
+        }
+
+        return value
+    }
+
+    override fun shouldTransformValues() = this.valueDefinition.shouldTransformValues()
+
     override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>>?) {
         super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
 

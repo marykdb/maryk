@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.models.DataModel
 import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -68,4 +69,12 @@ data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
 
     /** Get the original value by [index] */
     fun original(index: Int) = this.map[index]
+
+    override fun toString(): String {
+        val name = if (dataModel is DataModel<*, *>) {
+            dataModel.name
+        } else "ValueMap"
+
+        return "$name $map"
+    }
 }

@@ -31,8 +31,7 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
     dataModel: () -> DM,
     override val default: DO? = null
 ) :
-    IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX>,
-    IsValueDefinition<DO, CXI>
+    IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val wireType = WireType.LENGTH_DELIMITED
@@ -58,7 +57,7 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
-        super<IsValueDefinition>.validateWithRef(previousValue, newValue, refGetter)
+        super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.dataModel.validate(
                 refGetter = refGetter,
@@ -73,36 +72,83 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
         this.dataModel.transformContext(context)
     )
 
-    override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
-        this.dataModel.readJson(reader, this.dataModel.transformContext(context)).toDataObject()
+    override fun writeJsonValue(value: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.writeJson(
+        value,
+        writer,
+        this.dataModel.transformContext(context)
+    )
 
-    override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?): Int {
-        var totalByteLength = 0
-        val newContext = if (this.dataModel is ContextualDataModel<*, *, *, *>) {
-            this.dataModel.transformContext(context)?.apply {
+    override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
+        this.readJsonToMap(reader, context).toDataObject()
+
+    override fun readJsonToMap(reader: IsJsonLikeReader, context: CXI?) =
+        this.dataModel.readJson(reader, this.dataModel.transformContext(context))
+
+    override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?) =
+        this.dataModel.calculateProtoBufLength(
+            value,
+            cacher,
+            transformContext(context, cacher)
+        )
+
+    private fun transformContext(context: CXI?, cacher: WriteCacheWriter) =
+        if (dataModel is ContextualDataModel<*, *, *, *>) {
+            dataModel.transformContext(context)?.apply {
                 cacher.addContextToCache(this)
             }
         } else {
             @Suppress("UNCHECKED_CAST")
             context as CX?
         }
-        totalByteLength += this.dataModel.calculateProtoBufLength(value, cacher, newContext)
-        return totalByteLength
+
+    override fun writeTransportBytes(
+        value: DO,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CXI?
+    ) {
+        this.dataModel.writeProtoBuf(
+            value,
+            cacheGetter,
+            writer,
+            getTransformedContextFromCache(cacheGetter, context)
+        )
     }
 
-    override fun writeTransportBytes(value: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CXI?) {
-        @Suppress("UNCHECKED_CAST")
-        val newContext = if (this.dataModel is ContextualDataModel<*, *, *, *>) {
+    @Suppress("UNCHECKED_CAST")
+    private fun getTransformedContextFromCache(cacheGetter: WriteCacheReader, context: CXI?) =
+        if (dataModel is ContextualDataModel<*, *, *, *>) {
             cacheGetter.nextContextFromCache() as CX?
         } else {
             context as CX?
         }
 
-        this.dataModel.writeProtoBuf(value, cacheGetter, writer, newContext)
+    override fun calculateTransportByteLength(value: ValueMap<DO, P>, cacher: WriteCacheWriter, context: CXI?) =
+        this.dataModel.calculateProtoBufLength(
+            value,
+            cacher,
+            transformContext(context, cacher)
+        )
+
+    override fun writeTransportBytes(
+        value: ValueMap<DO, P>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CXI?
+    ) {
+        this.dataModel.writeProtoBuf(
+            value,
+            cacheGetter,
+            writer,
+            getTransformedContextFromCache(cacheGetter, context)
+        )
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?) =
-        this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context)).toDataObject()
+        this.readTransportBytesToMap(length, reader, context).toDataObject()
+
+    override fun readTransportBytesToMap(length: Int, reader: () -> Byte, context: CXI?) =
+        this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

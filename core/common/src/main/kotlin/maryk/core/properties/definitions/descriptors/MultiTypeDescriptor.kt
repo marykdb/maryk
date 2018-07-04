@@ -217,11 +217,11 @@ internal fun PropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropert
             }
         ),
         getter = {
-            it.definitionMap.map {
+            it.definitionMap.map { entry ->
                 MultiTypeDescriptor(
-                    index = it.key.index,
-                    name = it.key.name,
-                    definition = it.value
+                    index = entry.key.index,
+                    name = entry.key.name,
+                    definition = entry.value
                 )
             }.toList()
         },

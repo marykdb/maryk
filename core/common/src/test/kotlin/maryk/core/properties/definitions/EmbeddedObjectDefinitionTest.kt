@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.TestMarykObject.Properties.string
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,6 +12,8 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelContext
+import maryk.json.JsonReader
+import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
@@ -62,12 +65,55 @@ internal class EmbeddedObjectDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convert_object_to_JSON_and_back() {
+        var output = ""
+        val writer = JsonWriter(true) {
+           output += it
+        }
+        val value = MarykObject()
+
+        def.writeJsonValue(value, writer)
+
+        var index = 0
+        val reader = JsonReader {
+            output[index++]
+        }
+
+        def.readJson(reader) shouldBe value
+    }
+
+    @Test
+    fun convert_map_to_JSON_and_back() {
+        var output = ""
+        val writer = JsonWriter(true) {
+            output += it
+        }
+        val value = MarykObject.map {
+            mapOf(
+                string with "test"
+            )
+        }
+
+        def.writeJsonValue(value, writer)
+
+        var index = 0
+        val reader = JsonReader {
+            output[index++]
+        }
+
+        def.readJsonToMap(reader) shouldBe value
+    }
+
+    @Test
+    fun convert_map_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val value = MarykObject()
-        val asHex = "2a0502036a7572"
+        val value = MarykObject.map {
+            mapOf(
+                string with "jur"
+            )
+        }
 
         bc.reserve(
             def.calculateTransportByteLengthWithKey(5, value, cache)
@@ -75,7 +121,32 @@ internal class EmbeddedObjectDefinitionTest {
         bc.bytes!!.size shouldBe 7
         def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
 
-        bc.bytes!!.toHex() shouldBe asHex
+        bc.bytes!!.toHex() shouldBe "2a0502036a7572"
+
+        val key = ProtoBuf.readKey(bc::read)
+        key.wireType shouldBe WireType.LENGTH_DELIMITED
+        key.tag shouldBe 5
+
+        def.readTransportBytesToMap(
+            ProtoBuf.getLength(WireType.LENGTH_DELIMITED, bc::read),
+            bc::read
+        ) shouldBe value
+    }
+
+    @Test
+    fun convert_object_to_ProtoBuf_and_back() {
+        val bc = ByteCollector()
+        val cache = WriteCache()
+
+        val value = MarykObject()
+
+        bc.reserve(
+            def.calculateTransportByteLengthWithKey(5, value, cache)
+        )
+        bc.bytes!!.size shouldBe 7
+        def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
+
+        bc.bytes!!.toHex() shouldBe "2a0502036a7572"
 
         val key = ProtoBuf.readKey(bc::read)
         key.wireType shouldBe WireType.LENGTH_DELIMITED

@@ -131,8 +131,8 @@ class EnumDefinition<E : IndexedEnum<E>>(
                         ),
                         valueTransformer = { context, value ->
                             if (value.optionalValues == null) {
-                                context?.let {
-                                    it.dataModelContext?.let {
+                                context?.let { c ->
+                                    c.dataModelContext?.let {
                                         it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?
                                             ?: throw ParseException("Enum ${value.name} is not Defined")
                                     }

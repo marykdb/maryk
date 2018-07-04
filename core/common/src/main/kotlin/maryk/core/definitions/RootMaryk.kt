@@ -3,7 +3,6 @@ package maryk.core.definitions
 import maryk.core.models.QuerySingleValueDataModel
 import maryk.core.objects.ValueMap
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -19,7 +18,6 @@ data class RootMaryk(
     val operations: List<TypedValue<Operation, *>> = listOf()
 ) {
     internal object Properties : PropertyDefinitions<RootMaryk>() {
-        @Suppress("UNCHECKED_CAST")
         val operations = add(0, "operations",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -38,7 +36,7 @@ data class RootMaryk(
                                 }
                             }
                         )
-                    ) as Map<Operation, IsSubDefinition<out Any, DataModelContext>>
+                    )
                 )
             ),
             RootMaryk::operations

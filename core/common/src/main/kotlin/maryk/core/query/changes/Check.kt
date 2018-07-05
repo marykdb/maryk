@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsPropertyDefinitions
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
@@ -23,7 +23,7 @@ data class Check internal constructor(
     internal companion object: ReferencePairDataModel<Any, Check, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Check, Properties>) = Check(
+        override fun invoke(map: Values<Check, Properties>) = Check(
             referenceValuePairs = map(0)
         )
 

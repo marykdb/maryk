@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.PropertyDefinitions
 
 /** Authorization fail for this action */
@@ -15,6 +15,6 @@ class AuthFail<DO: Any> : IsAddResponseStatus<DO>, IsChangeResponseStatus<DO>, I
     internal companion object: SimpleQueryDataModel<AuthFail<*>>(
         properties = object : PropertyDefinitions<AuthFail<*>>() {}
     ) {
-        override fun invoke(map: SimpleValueMap<AuthFail<*>>) = AuthFail<Any>()
+        override fun invoke(map: SimpleValues<AuthFail<*>>) = AuthFail<Any>()
     }
 }

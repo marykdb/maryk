@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -53,7 +53,7 @@ data class Reversed<T: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<Reversed<out Any>>) = Reversed<Any>(
+        override fun invoke(map: SimpleValues<Reversed<out Any>>) = Reversed<Any>(
             reference = map(0)
         )
     }

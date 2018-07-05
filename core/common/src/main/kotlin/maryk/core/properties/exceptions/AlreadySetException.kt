@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
@@ -24,7 +24,7 @@ data class AlreadySetException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<AlreadySetException>) = AlreadySetException(
+        override fun invoke(map: SimpleValues<AlreadySetException>) = AlreadySetException(
             reference = map(0)
         )
     }

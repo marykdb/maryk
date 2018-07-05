@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -35,7 +35,7 @@ data class DataObjectVersionedChange<out DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<DataObjectVersionedChange<*>>) = DataObjectVersionedChange(
+        override fun invoke(map: SimpleValues<DataObjectVersionedChange<*>>) = DataObjectVersionedChange(
             key = map(0),
             changes = map(1)
         )

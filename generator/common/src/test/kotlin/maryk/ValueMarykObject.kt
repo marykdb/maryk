@@ -1,7 +1,7 @@
 package maryk
 
 import maryk.core.models.ValueDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -35,7 +35,7 @@ data class ValueMarykObject(
         name = "ValueMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<ValueMarykObject, Properties>) = ValueMarykObject(
+        override fun invoke(map: Values<ValueMarykObject, Properties>) = ValueMarykObject(
             int = map(0),
             date = map(1)
         )

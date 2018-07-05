@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
@@ -64,28 +64,6 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     /** Get a reference to a specific map value on [parentMap] by [key] */
     fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?) =
         MapValueReference(key, this, parentMap)
-
-    @Suppress("UNCHECKED_CAST")
-    override fun transformValue(value: Any?): Any? {
-        if (this.valueDefinition.shouldTransformValues() && value != null) {
-            if (!(value as Map<K, *>).isEmpty()) {
-                val newMap = mutableMapOf<K, V>()
-                for ((key, v) in value) {
-                    val newValue = this.valueDefinition.transformValue(v)
-                    if (newValue === v) break // Don't continue if nothing was converted
-                    newMap[key] = newValue as V
-                }
-
-                if (!newMap.isEmpty()) {
-                    return newMap
-                }
-            }
-        }
-
-        return value
-    }
-
-    override fun shouldTransformValues() = this.valueDefinition.shouldTransformValues()
 
     override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>>?) {
         super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
@@ -275,7 +253,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<MapDefinition<*, *, *>>) = MapDefinition(
+        override fun invoke(map: SimpleValues<MapDefinition<*, *, *>>) = MapDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

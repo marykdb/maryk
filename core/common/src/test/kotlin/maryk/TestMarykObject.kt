@@ -2,7 +2,7 @@ package maryk
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -215,7 +215,7 @@ data class TestMarykObject(
         ),
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<TestMarykObject, Properties>) = TestMarykObject(
+        override fun invoke(map: Values<TestMarykObject, Properties>) = TestMarykObject(
             string = map(0),
             int = map(1),
             uint = map(2),
@@ -279,7 +279,7 @@ data class EmbeddedMarykObject(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
+        override fun invoke(map: Values<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
             value = map(0),
             model = map(1),
             marykModel = map(2)

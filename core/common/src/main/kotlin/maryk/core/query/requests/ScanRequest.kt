@@ -2,7 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -60,7 +60,7 @@ data class ScanRequest<DO: Any, out DM: RootDataModel<DO, *>> internal construct
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<ScanRequest<*, *>>) = ScanRequest(
+        override fun invoke(map: SimpleValues<ScanRequest<*, *>>) = ScanRequest(
             dataModel = map<RootDataModel<Any, *>>(0),
             startKey = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,

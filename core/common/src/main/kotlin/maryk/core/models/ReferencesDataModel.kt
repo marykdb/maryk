@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 internal abstract class ReferencesDataModel<DO: Any, P: ReferencesPropertyDefinitions<DO>>(
     properties: P
 ) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
-    override fun writeJson(map: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+    override fun writeJson(map: Values<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         val references = map { references } ?: throw ParseException("References are missing from ReferencesDataModel")
 
         writer.writeJsonReferences(
@@ -42,7 +42,7 @@ internal abstract class ReferencesDataModel<DO: Any, P: ReferencesPropertyDefini
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<DO, P> {
+    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Values<DO, P> {
         var currentToken = reader.currentToken
 
         if (currentToken == JsonToken.StartDocument){

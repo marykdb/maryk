@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
@@ -90,26 +90,6 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-
-    @Suppress("UNCHECKED_CAST")
-    override fun transformValue(value: Any?): Any? {
-        val typedValue = value as? TypedValue<E, *>?
-
-        if (typedValue != null) {
-            val defMap = this.definitionMap[typedValue.type]!!
-            if (defMap.shouldTransformValues()) {
-                val newValue = defMap.transformValue(typedValue.value)!!
-
-                if (newValue != typedValue.value) {
-                    return TypedValue(typedValue.type, newValue)
-                }
-            }
-        }
-
-        return value
-    }
-
-    override fun shouldTransformValues() = true
 
     override fun writeJsonValue(value: TypedValue<E, Any>, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
@@ -281,7 +261,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> {
+        override fun invoke(map: SimpleValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> {
             val definitionMap = convertMultiTypeDescriptors(
                 map(4)
             )

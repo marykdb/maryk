@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -37,11 +37,11 @@ data class And(
     internal companion object: QueryDataModel<And, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<And, Properties>) = And(
+        override fun invoke(map: Values<And, Properties>) = And(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: ValueMap<And, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: Values<And, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
                 map.original { filters } ?: throw ParseException("Missing filters in And filter"),
                 writer,
@@ -57,7 +57,7 @@ data class And(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<And, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Values<And, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

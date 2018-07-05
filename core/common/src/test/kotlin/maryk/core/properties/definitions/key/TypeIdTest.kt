@@ -6,7 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
@@ -41,7 +41,7 @@ internal class TypeIdTest {
             ),
             properties = Properties
         ) {
-            override fun invoke(map: ValueMap<MarykObject, Properties>) = MarykObject(
+            override fun invoke(map: Values<MarykObject, Properties>) = MarykObject(
                 map(0)
             )
         }

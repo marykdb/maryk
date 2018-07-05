@@ -5,7 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.DataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
@@ -56,14 +56,6 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
 
-    override fun shouldTransformValues() = true
-
-    override fun transformValue(value: Any?): Any? {
-        return if (value is ValueMap<*, *>) {
-            value.toDataObject()
-        } else value
-    }
-
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
@@ -80,17 +72,8 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
         this.dataModel.transformContext(context)
     )
 
-    override fun writeJsonValue(value: ValueMap<DO, P>, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.writeJson(
-        value,
-        writer,
-        this.dataModel.transformContext(context)
-    )
-
     override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
-        this.readJsonToMap(reader, context).toDataObject()
-
-    override fun readJsonToMap(reader: IsJsonLikeReader, context: CXI?) =
-        this.dataModel.readJson(reader, this.dataModel.transformContext(context))
+        this.dataModel.readJson(reader, this.dataModel.transformContext(context)).toDataObject()
 
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?) =
         this.dataModel.calculateProtoBufLength(
@@ -131,32 +114,8 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
             context as CX?
         }
 
-    override fun calculateTransportByteLength(value: ValueMap<DO, P>, cacher: WriteCacheWriter, context: CXI?) =
-        this.dataModel.calculateProtoBufLength(
-            value,
-            cacher,
-            transformContext(context, cacher)
-        )
-
-    override fun writeTransportBytes(
-        value: ValueMap<DO, P>,
-        cacheGetter: WriteCacheReader,
-        writer: (byte: Byte) -> Unit,
-        context: CXI?
-    ) {
-        this.dataModel.writeProtoBuf(
-            value,
-            cacheGetter,
-            writer,
-            getTransformedContextFromCache(cacheGetter, context)
-        )
-    }
-
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?) =
-        this.readTransportBytesToMap(length, reader, context).toDataObject()
-
-    override fun readTransportBytesToMap(length: Int, reader: () -> Byte, context: CXI?) =
-        this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context))
+        this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context)).toDataObject()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -229,7 +188,7 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
             }
         }
     ) {
-        override fun invoke(map: ValueMap<EmbeddedObjectDefinition<*, *, *, *, *>, PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
+        override fun invoke(map: Values<EmbeddedObjectDefinition<*, *, *, *, *>, PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

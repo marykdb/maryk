@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -37,11 +37,11 @@ data class Or(
     internal companion object: QueryDataModel<Or, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<Or, Properties>) = Or(
+        override fun invoke(map: Values<Or, Properties>) = Or(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: ValueMap<Or, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: Values<Or, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
                 map.original { filters } ?: throw ParseException("Missing filters in Or"),
                 writer,
@@ -57,7 +57,7 @@ data class Or(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<Or, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Values<Or, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

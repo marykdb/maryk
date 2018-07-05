@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.SimpleFilterDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -40,7 +40,7 @@ data class ValueIn internal constructor(
     internal companion object: SimpleFilterDataModel<ValueIn, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<ValueIn, Properties>) = ValueIn(
+        override fun invoke(map: Values<ValueIn, Properties>) = ValueIn(
             referenceValuePairs = map(0)
         )
 
@@ -48,7 +48,7 @@ data class ValueIn internal constructor(
             writer.writeJsonMapObject(obj.referenceValuePairs, context)
         }
 
-        override fun writeJson(map: ValueMap<ValueIn, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: Values<ValueIn, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             map { referenceValuePairs }?.let {
                 writer.writeJsonMapObject(it, context)
             }
@@ -71,7 +71,7 @@ data class ValueIn internal constructor(
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ValueMap<ValueIn, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Values<ValueIn, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsPropertyDefinitions
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
@@ -23,7 +23,7 @@ data class GreaterThanEquals(
     internal companion object: ReferencePairDataModel<Any, GreaterThanEquals, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<GreaterThanEquals, Properties>) = GreaterThanEquals(
+        override fun invoke(map: Values<GreaterThanEquals, Properties>) = GreaterThanEquals(
             referenceValuePairs = map(0)
         )
 

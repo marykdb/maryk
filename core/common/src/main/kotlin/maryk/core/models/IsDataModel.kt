@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -54,13 +54,13 @@ interface IsDataModel<DO: Any, P: PropertyDefinitions<DO>> {
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
-    fun validate(map: ValueMap<DO, P>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
+    fun validate(map: Values<DO, P>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
 
     /** Creates a Data Object by [map] */
-    operator fun invoke(map: ValueMap<DO, P>): DO
+    operator fun invoke(map: Values<DO, P>): DO
 
-    /** Create a ValueMap with given [createMap] function */
-    fun map(createMap: P.() -> Map<Int, Any?>) = ValueMap(this, createMap(this.properties))
+    /** Create a Values with given [createMap] function */
+    fun map(createMap: P.() -> Map<Int, Any?>) = Values(this, createMap(this.properties))
 
     /**
      * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties

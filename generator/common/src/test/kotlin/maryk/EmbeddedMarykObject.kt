@@ -1,7 +1,7 @@
 package maryk
 
 import maryk.core.models.DataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
@@ -23,7 +23,7 @@ data class EmbeddedMarykObject(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
+        override fun invoke(map: Values<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
             value = map(0)
         )
     }

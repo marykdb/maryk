@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.TimePrecision
@@ -113,7 +113,7 @@ data class TimeDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<TimeDefinition>) = TimeDefinition(
+        override fun invoke(map: SimpleValues<TimeDefinition>) = TimeDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

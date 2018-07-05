@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.types.Key
 
@@ -18,7 +18,7 @@ data class AlreadyExists<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<AlreadyExists<*>>) = AlreadyExists(
+        override fun invoke(map: SimpleValues<AlreadyExists<*>>) = AlreadyExists(
             key = map(0)
         )
     }

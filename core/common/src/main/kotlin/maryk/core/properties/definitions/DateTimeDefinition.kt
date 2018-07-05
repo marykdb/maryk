@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.DateTime
@@ -110,7 +110,7 @@ data class DateTimeDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<DateTimeDefinition>) = DateTimeDefinition(
+        override fun invoke(map: SimpleValues<DateTimeDefinition>) = DateTimeDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

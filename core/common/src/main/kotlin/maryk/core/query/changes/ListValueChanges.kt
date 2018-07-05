@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.ValueMap
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -52,7 +52,7 @@ data class ListValueChanges<T: Any> internal constructor(
     internal companion object: QueryDataModel<ListValueChanges<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ValueMap<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
+        override fun invoke(map: Values<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
             reference = map(0),
             addValuesToEnd = map(1),
             addValuesAtIndex = map(2),

@@ -2,7 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.PropertyDefinitions
@@ -36,7 +36,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<ChangeRequest<*, *>>) = ChangeRequest(
+        override fun invoke(map: SimpleValues<ChangeRequest<*, *>>) = ChangeRequest(
             dataModel = map<RootDataModel<Any, *>>(0),
             objectChanges = map(1)
         )

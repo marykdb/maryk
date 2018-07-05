@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.SimpleDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -103,9 +103,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             }
         }
 
-        val transformed = this.definition.transformValue(value)
-
-        return this.fromSerializable?.invoke(transformed as T?) ?: transformed as TO?
+        return this.fromSerializable?.invoke(value as T?) ?: value as TO?
     }
 
     companion object {
@@ -142,7 +140,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
         properties = Properties
     ) {
-        override fun invoke(map: SimpleValueMap<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
+        override fun invoke(map: SimpleValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
                 map<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(2)
             val type = typedDefinition.type
@@ -172,7 +170,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): SimpleValueMap<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
+        override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): SimpleValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 val valueMap: MutableMap<Int, Any?> = mutableMapOf()

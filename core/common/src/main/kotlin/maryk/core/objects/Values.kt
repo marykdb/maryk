@@ -7,12 +7,12 @@ import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.lib.exceptions.ParseException
 
-typealias SimpleValueMap<DO> = ValueMap<DO, PropertyDefinitions<DO>>
+typealias SimpleValues<DO> = Values<DO, PropertyDefinitions<DO>>
 
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
+data class Values<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
     val dataModel: IsDataModel<DO, P>,
     private val map: Map<Int, Any?>
 ) {
@@ -73,7 +73,7 @@ data class ValueMap<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
     override fun toString(): String {
         val name = if (dataModel is DataModel<*, *>) {
             dataModel.name
-        } else "ValueMap"
+        } else "Values"
 
         return "$name $map"
     }

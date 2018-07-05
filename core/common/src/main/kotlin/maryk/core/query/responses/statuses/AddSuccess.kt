@@ -1,7 +1,7 @@
 package maryk.core.query.responses.statuses
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -41,7 +41,7 @@ data class AddSuccess<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValueMap<AddSuccess<*>>) = AddSuccess(
+        override fun invoke(map: SimpleValues<AddSuccess<*>>) = AddSuccess(
             key = map(0),
             version = map(1),
             changes = map(2)

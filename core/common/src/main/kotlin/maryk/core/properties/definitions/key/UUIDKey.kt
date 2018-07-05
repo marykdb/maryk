@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsDataModel
-import maryk.core.objects.SimpleValueMap
+import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.query.DataModelContext
@@ -32,9 +32,9 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
     internal object Model : DefinitionDataModel<UUIDKey>(
         properties = object : PropertyDefinitions<UUIDKey>() {}
     ) {
-        override fun invoke(map: SimpleValueMap<UUIDKey>) = UUIDKey
+        override fun invoke(map: SimpleValues<UUIDKey>) = UUIDKey
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelContext?): SimpleValueMap<UUIDKey> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelContext?): SimpleValues<UUIDKey> {
             return if (reader is IsYamlReader) {
                 this.map { mapOf() }
             } else {

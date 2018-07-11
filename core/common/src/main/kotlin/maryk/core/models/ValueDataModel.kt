@@ -2,8 +2,8 @@ package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.SimpleObjectValues
 import maryk.core.objects.ObjectValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.types.ValueDataObject
@@ -79,7 +79,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
                 IsNamedDataModel.addName(this) {
                     it.name
                 }
-                IsDataModel.addProperties(this)
+                ObjectDataModel.addProperties(this)
             }
         }
     ) {

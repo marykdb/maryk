@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -57,7 +57,7 @@ data class FlexBytesDefinition(
         }
     }
 
-    object Model : SimpleDataModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>(
+    object Model : SimpleObjectDataModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FlexBytesDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, FlexBytesDefinition::indexed)

@@ -1,11 +1,6 @@
 package maryk.core.models
 
-import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinition
-import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -55,27 +50,5 @@ interface IsDataModel<P: IsPropertyDefinitions> {
     ): IsPropertyReference<T, W> {
         @Suppress("UNCHECKED_CAST")
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
-    }
-
-    companion object {
-        internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
-            val wrapper = ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
-                1,
-                "properties",
-                ObjectPropertyDefinitionsCollectionDefinition(
-                    capturer = { context, propDefs ->
-                        context?.apply {
-                            this.propertyDefinitions = propDefs
-                        } ?: ContextNotFoundException()
-                    }
-                )
-            ) {
-                @Suppress("UNCHECKED_CAST")
-                it.properties as ObjectPropertyDefinitions<Any>
-            }
-
-            definitions.addSingle(wrapper)
-            return wrapper
-        }
     }
 }

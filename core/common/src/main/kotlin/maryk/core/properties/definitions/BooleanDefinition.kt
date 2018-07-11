@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -46,7 +46,7 @@ data class BooleanDefinition(
         writer.writeBoolean(value)
     }
 
-    object Model : SimpleDataModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>(
+    object Model : SimpleObjectDataModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>(
         properties = object : ObjectPropertyDefinitions<BooleanDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)

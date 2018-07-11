@@ -4,9 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.query.filters.FilterType
@@ -36,7 +36,7 @@ data class ValueRange<T: Any> internal constructor(
         val from = add(0, "from", ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
+                context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
                         ?: throw ContextNotFoundException()
             }
         ), ValueRange<*>::from)
@@ -44,7 +44,7 @@ data class ValueRange<T: Any> internal constructor(
         val to = add(1, "to", ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.reference?.propertyDefinition?.definition as IsValueDefinition<Any, IsPropertyContext>?
+                context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
                         ?: throw ContextNotFoundException()
             }
         ), ValueRange<*>::to)
@@ -99,8 +99,8 @@ data class ValueRange<T: Any> internal constructor(
                     }
 
                     reader.nextToken().let {
-                        (it as? TokenWithType)?.type?.let {
-                            if (it is UnknownYamlTag && it.name == "Exclude") {
+                        (it as? TokenWithType)?.type?.let { tokenType ->
+                            if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
                                 valueMap[Properties.inclusiveFrom.index] = false
                             }
                         }
@@ -109,8 +109,8 @@ data class ValueRange<T: Any> internal constructor(
                     valueMap += from with from.readJson(reader, context)
 
                     reader.nextToken().let {
-                        (it as? TokenWithType)?.type?.let {
-                            if (it is UnknownYamlTag && it.name == "Exclude") {
+                        (it as? TokenWithType)?.type?.let { tokenType ->
+                            if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
                                 valueMap[Properties.inclusiveTo.index] = false
                             }
                         }

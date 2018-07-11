@@ -1,8 +1,9 @@
 package maryk.core.properties.definitions.descriptors
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -14,7 +15,6 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
@@ -68,7 +68,7 @@ private data class MultiTypeDescriptor(
         )
     }
 
-    internal object Model : SimpleDataModel<MultiTypeDescriptor, Properties>(
+    internal object Model : SimpleObjectDataModel<MultiTypeDescriptor, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<MultiTypeDescriptor, Properties>) = MultiTypeDescriptor(

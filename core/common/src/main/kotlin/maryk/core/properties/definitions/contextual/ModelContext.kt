@@ -1,8 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelContext
 
 /**
@@ -11,5 +10,5 @@ import maryk.core.query.DataModelContext
 class ModelContext(
     val dataModelContext: DataModelContext?
 ) : IsPropertyContext {
-    var model: (() -> SimpleDataModel<Any, ObjectPropertyDefinitions<Any>>)? = null
+    var model: (() -> IsDataModel<*>)? = null
 }

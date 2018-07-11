@@ -2,7 +2,7 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -31,7 +31,7 @@ data class DataObjectWithMetaData<out DM: IsRootDataModel<*>, out DO>(
                 add(1, "dataObject", ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
                     contextualResolver = {
                         @Suppress("UNCHECKED_CAST")
-                        it?.dataModel as? SimpleDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
+                        it?.dataModel as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
                     }
                 ), DataObjectWithMetaData<*, *>::dataObject)
                 add(2, "firstVersion", NumberDefinition(type = UInt64), DataObjectWithMetaData<*, *>::firstVersion)

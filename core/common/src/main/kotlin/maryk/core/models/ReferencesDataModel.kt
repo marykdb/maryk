@@ -17,7 +17,7 @@ import maryk.lib.exceptions.ParseException
 /** For data models which contains only reference pairs */
 internal abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitions<DO>>(
     properties: P
-) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
+) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     override fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         val references = map { references } ?: throw ParseException("References are missing from ReferencesDataModel")
 

@@ -1,6 +1,6 @@
 package maryk.core.properties
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -42,7 +42,7 @@ internal class MutablePropertyDefinitions : PropertyDefinitions(), MutableCollec
 }
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
-private data class PropertyDefinitionsCollectionDefinition(
+internal data class PropertyDefinitionsCollectionDefinition(
     private val capturer: (DataModelContext?, PropertyDefinitions) -> Unit
 ) : IsCollectionDefinition<
     IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
@@ -51,7 +51,7 @@ private data class PropertyDefinitionsCollectionDefinition(
     EmbeddedObjectDefinition<
         IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
         ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>,
-        SimpleDataModel<
+        SimpleObjectDataModel<
                 IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
                 ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>
         >,
@@ -69,7 +69,7 @@ private data class PropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsPropertyDefinitionWrapper.Model as SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>
+            IsPropertyDefinitionWrapper.Model as SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>
         }
     )
 
@@ -123,13 +123,13 @@ private data class PropertyDefinitionsCollectionDefinition(
 }
 
 /** Wrapper specifically to wrap a PropertyDefinitionsCollectionDefinition */
-private data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
+internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
     override val index: Int,
     override val name: String,
     override val definition: PropertyDefinitionsCollectionDefinition,
     override val getter: (DO) -> PropertyDefinitions?
 ) :
-    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<PropertyDefinitions, PropertyDefinitions, DataModelContext, DO>
 {
     override val graphType = PropRefGraphType.PropRef

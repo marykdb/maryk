@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -47,7 +47,7 @@ data class FixedBytesDefinition(
             value as? Bytes
         }
 
-    object Model : SimpleDataModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>(
+    object Model : SimpleObjectDataModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FixedBytesDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, FixedBytesDefinition::indexed)

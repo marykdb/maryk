@@ -116,7 +116,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
                 it.name
             }
         }
-        val properties = IsDataModel.addProperties(this as ObjectPropertyDefinitions<RootObjectDataModelImpl>)
+        val properties = ObjectDataModel.addProperties(this as ObjectPropertyDefinitions<RootObjectDataModelImpl>)
         val key = add(2, "key",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -137,7 +137,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : SimpleDataModel<RootObjectDataModel<*, *, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>>(
+    object Model : SimpleObjectDataModel<RootObjectDataModel<*, *, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>>(
         properties = RootModelProperties
     ) {
         override fun invoke(map: ObjectValues<RootObjectDataModel<*, *, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>>) = object : RootObjectDataModelImpl(

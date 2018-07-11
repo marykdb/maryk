@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -44,7 +44,7 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions = mapOf<PropertyDefinitio
     PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
     PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
     PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),
-    PropertyDefinitionType.Enum to EmbeddedObjectDefinition<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, AbstractDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>, DataModelContext, EnumDefinitionContext>(dataModel = { EnumDefinition.Model }),
+    PropertyDefinitionType.Enum to EmbeddedObjectDefinition<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, AbstractObjectDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>, DataModelContext, EnumDefinitionContext>(dataModel = { EnumDefinition.Model }),
     PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
     PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model }),
     PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
@@ -53,7 +53,7 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions = mapOf<PropertyDefinitio
         @Suppress("UNCHECKED_CAST")
         MultiTypeDefinition.Model as ContextualDataModel<MultiTypeDefinition<out IndexedEnum<Any>, *>, ObjectPropertyDefinitions<MultiTypeDefinition<out IndexedEnum<Any>, *>>, DataModelContext, MultiTypeDefinitionContext>
     }),
-    PropertyDefinitionType.Number to EmbeddedObjectDefinition<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
+    PropertyDefinitionType.Number to EmbeddedObjectDefinition<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, AbstractObjectDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
     PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model }),
     PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
     PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
@@ -127,7 +127,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
         EmbeddedObjectPropertyDefinitionWrapper(
             index,
             name,
-            definition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, AbstractDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>,
+            definition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>,
             getter as (Any) -> Set<Any>?
         )
     },

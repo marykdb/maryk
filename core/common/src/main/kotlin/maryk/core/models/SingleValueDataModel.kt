@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
     properties: P,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, T, CX, DO>
-) : AbstractDataModel<DO, P, CX, CX>(properties) {
+) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {
     override fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
         // Input and output of singlePropertyDefinition has both to be T so can fetch original
         val value = map.original { singlePropertyDefinition } ?: throw ParseException("Missing requests in Requests")

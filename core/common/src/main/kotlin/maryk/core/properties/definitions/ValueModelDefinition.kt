@@ -3,8 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
@@ -121,7 +122,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                             } ?: throw ContextNotFoundException()
 
                             @Suppress("UNCHECKED_CAST")
-                            context.model = dataModel.get as () -> AbstractDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                            context.model = dataModel.get as () -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                         }
                     }
                 )
@@ -129,7 +130,8 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                 add(5, "minValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model?.invoke() ?: throw ContextNotFoundException()
+                            @Suppress("UNCHECKED_CAST")
+                            context?.model?.invoke() as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModelDefinition<*, *, *>::minValue
@@ -138,7 +140,8 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                 add(6, "maxValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model?.invoke() ?: throw ContextNotFoundException()
+                            @Suppress("UNCHECKED_CAST")
+                            context?.model?.invoke() as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModelDefinition<*, *, *>::maxValue
@@ -147,7 +150,8 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                 add(7, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model?.invoke() ?: throw ContextNotFoundException()
+                            @Suppress("UNCHECKED_CAST")
+                            context?.model?.invoke() as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>> ?: throw ContextNotFoundException()
                         }
                     ),
                     ValueModelDefinition<*, *, *>::default

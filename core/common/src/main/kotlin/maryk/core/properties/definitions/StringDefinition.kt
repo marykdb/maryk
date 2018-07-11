@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -76,7 +76,7 @@ data class StringDefinition(
         }
     }
 
-    object Model : SimpleDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
+    object Model : SimpleObjectDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
         properties = object : ObjectPropertyDefinitions<StringDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)

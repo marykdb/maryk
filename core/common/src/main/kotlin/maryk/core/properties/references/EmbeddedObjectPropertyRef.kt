@@ -4,7 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
@@ -19,7 +19,7 @@ class EmbeddedObjectPropertyRef<
     DO : Any,
     TO: Any,
     P: ObjectPropertyDefinitions<DO>,
-    out DM : AbstractDataModel<DO, P, CXI, CX>,
+    out DM : AbstractObjectDataModel<DO, P, CXI, CX>,
     CXI: IsPropertyContext,
     CX: IsPropertyContext
 > internal constructor(

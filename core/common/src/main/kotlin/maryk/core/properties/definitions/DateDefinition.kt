@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -60,7 +60,7 @@ data class DateDefinition(
         else -> null
     }
 
-    object Model : SimpleDataModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>(
+    object Model : SimpleObjectDataModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>(
         properties = object : ObjectPropertyDefinitions<DateDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)

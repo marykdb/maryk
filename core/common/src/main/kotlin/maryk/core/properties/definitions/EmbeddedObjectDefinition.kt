@@ -2,9 +2,10 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ObjectDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -25,7 +26,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -175,14 +176,15 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                         } ?: throw ContextNotFoundException()
 
                         @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel.get as () -> AbstractDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                        context.model = dataModel.get as () -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                     }
                 )
 
                 add(4, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model?.invoke() ?: throw ContextNotFoundException()
+                            @Suppress("UNCHECKED_CAST")
+                            context?.model?.invoke() as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
                         }
                     ),
                     EmbeddedObjectDefinition<*, *, *, *, *>::default

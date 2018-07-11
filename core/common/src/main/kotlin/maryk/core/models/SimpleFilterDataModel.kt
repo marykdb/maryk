@@ -20,7 +20,7 @@ import maryk.lib.exceptions.ParseException
  */
 internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     properties: P
-) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
+) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
 
     override fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")

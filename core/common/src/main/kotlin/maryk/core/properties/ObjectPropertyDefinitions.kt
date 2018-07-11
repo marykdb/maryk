@@ -1,7 +1,7 @@
 package maryk.core.properties
 
-import maryk.core.models.AbstractDataModel
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -167,7 +167,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
     }
 
     /** Add embedded object property [definition] with [name] and [index] and value [getter] */
-    fun <EODO: Any, P: ObjectPropertyDefinitions<EODO>, D: AbstractDataModel<EODO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
+    fun <EODO: Any, P: ObjectPropertyDefinitions<EODO>, D: AbstractObjectDataModel<EODO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> add(
         index: Int,
         name: String,
         definition: IsEmbeddedObjectDefinition<EODO, P, D, CXI, CX>,
@@ -208,14 +208,14 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
         EmbeddedObjectDefinition<
                 IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
                 ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>,
-                SimpleDataModel<
+                SimpleObjectDataModel<
                         IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
                         ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>
-                        >,
+                >,
                 IsPropertyContext,
                 IsPropertyContext
-                >
-        > {
+        >
+> {
     override val indexed = false
     override val required = true
     override val final = true
@@ -226,7 +226,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsPropertyDefinitionWrapper.Model as SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>
+            IsPropertyDefinitionWrapper.Model as SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>
         }
     )
 
@@ -286,7 +286,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO: 
     override val definition: ObjectPropertyDefinitionsCollectionDefinition,
     override val getter: (DO) -> ObjectPropertyDefinitions<Any>?
 ) :
-    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<Any>, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<Any>, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DataModelContext, DO>
 {
     override val graphType = PropRefGraphType.PropRef

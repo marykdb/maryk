@@ -1,10 +1,10 @@
 package maryk.core.query.pairs
 
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
@@ -29,7 +29,7 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
         )
     }
 
-    internal companion object: SimpleDataModel<ReferenceValueRangePair<*>, Properties>(
+    internal companion object: SimpleObjectDataModel<ReferenceValueRangePair<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ReferenceValueRangePair<*>, Properties>) = ReferenceValueRangePair<Any>(

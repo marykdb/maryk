@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -22,7 +22,7 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     EODO: Any,
     TO: Any,
     P: ObjectPropertyDefinitions<EODO>,
-    out DM: AbstractDataModel<EODO, P, CXI, CX>,
+    out DM: AbstractObjectDataModel<EODO, P, CXI, CX>,
     CXI: IsPropertyContext, CX: IsPropertyContext, in DO: Any
 > internal constructor(
     override val index: Int,

@@ -2,9 +2,9 @@ package maryk.core.models
 
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 /** For data models which contains only reference pairs */
 internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<T, DO>>(
     properties: P
-) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
+) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     override fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         map { referenceValuePairs }?.let {
             writer.writeJsonMapObject(it, context)
@@ -88,7 +88,7 @@ internal abstract class ReferenceValuePairsObjectPropertyDefinitions<T: Any, DO:
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = {
                         @Suppress("UNCHECKED_CAST")
-                        ReferenceValuePair as SimpleDataModel<ReferenceValuePair<T>, ObjectPropertyDefinitions<ReferenceValuePair<T>>>
+                        ReferenceValuePair as SimpleObjectDataModel<ReferenceValuePair<T>, ObjectPropertyDefinitions<ReferenceValuePair<T>>>
                     }
                 )
             ),

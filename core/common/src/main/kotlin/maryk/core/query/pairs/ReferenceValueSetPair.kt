@@ -1,11 +1,11 @@
 package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
@@ -35,7 +35,7 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
         ), ReferenceValueSetPair<*>::values)
     }
 
-    internal companion object: SimpleDataModel<ReferenceValueSetPair<*>, Properties>(
+    internal companion object: SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair(

@@ -2,7 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.RootObjectDataModel
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -29,7 +29,7 @@ data class AddRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal c
                     valueDefinition = ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
                         contextualResolver = {
                             @Suppress("UNCHECKED_CAST")
-                            it?.dataModel as? SimpleDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
+                            it?.dataModel as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
                         }
                     )
                 ), AddRequest<*, *>::objectsToAdd)

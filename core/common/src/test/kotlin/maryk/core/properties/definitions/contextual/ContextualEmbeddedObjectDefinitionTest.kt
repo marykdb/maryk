@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleDataModel
+import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -19,7 +19,7 @@ class ContextualEmbeddedObjectDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.dataModel!! as SimpleDataModel<Any, ObjectPropertyDefinitions<Any>> }
+        contextualResolver = { it!!.dataModel!! as SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>> }
     )
 
     @Suppress("UNCHECKED_CAST")

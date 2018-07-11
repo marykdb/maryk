@@ -1,7 +1,7 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractDataModel
+import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsDataModel
 import maryk.core.objects.ObjectValues
@@ -22,14 +22,14 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Get a graph for property references of an embedded object */
-fun <PDM: IsDataModel<*>, DM: AbstractDataModel<*, *, *, IsPropertyContext>> EmbeddedObjectPropertyDefinitionWrapper<*, *, *, DM, *, IsPropertyContext, *>.graph(
+fun <PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *, IsPropertyContext>> EmbeddedObjectPropertyDefinitionWrapper<*, *, *, DM, *, IsPropertyContext, *>.graph(
     vararg property: IsPropRefGraphable<DM>
 ) = PropRefGraph<PDM, DM>(this, property.toList())
 
 /**
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
  */
-data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractDataModel<*, *, *, IsPropertyContext>> internal constructor(
+data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *, IsPropertyContext>> internal constructor(
     val parent: EmbeddedObjectPropertyDefinitionWrapper<*, *, *, DM, *, IsPropertyContext, *>,
     val properties: List<IsPropRefGraphable<DM>>
 ) : IsPropRefGraphable<PDM> {
@@ -69,7 +69,7 @@ data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractDataModel<*, *, *, IsPr
             }
         }
     ) {
-        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsDataModel<*>, AbstractDataModel<*, *, *, IsPropertyContext>>(
+        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsDataModel<*>, AbstractObjectDataModel<*, *, *, IsPropertyContext>>(
             parent = map(0),
             properties = map(1)
         )

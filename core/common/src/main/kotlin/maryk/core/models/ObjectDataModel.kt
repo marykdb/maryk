@@ -2,8 +2,13 @@ package maryk.core.models
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.objects.ObjectValues
 import maryk.core.objects.SimpleObjectValues
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinition
+import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 
 /**
  * ObjectDataModel for non contextual models. Contains a [name] to identify the model and [properties] which define how the
@@ -13,7 +18,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 abstract class ObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     override val name: String,
     properties: P
-) : SimpleDataModel<DO, P>(
+) : SimpleObjectDataModel<DO, P>(
     properties
 ), MarykPrimitive, IsNamedDataModel<P> {
     override val primitiveType = PrimitiveType.Model
@@ -24,7 +29,7 @@ abstract class ObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
                 IsNamedDataModel.addName(this) {
                     it.name
                 }
-                IsDataModel.addProperties(this)
+                ObjectDataModel.addProperties(this)
             }
         }
     ) {
@@ -32,10 +37,32 @@ abstract class ObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
             name = map(0),
             properties = map(1)
         ) {
-            override fun invoke(map: SimpleObjectValues<Any>): Any {
+            override fun invoke(map: ObjectValues<Any, ObjectPropertyDefinitions<Any>>): Any {
                 // TODO: What is the right path here?
                 return object : Any(){}
             }
+        }
+    }
+
+    companion object {
+        internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
+            val wrapper = ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
+                1,
+                "properties",
+                ObjectPropertyDefinitionsCollectionDefinition(
+                    capturer = { context, propDefs ->
+                        context?.apply {
+                            this.propertyDefinitions = propDefs
+                        } ?: ContextNotFoundException()
+                    }
+                )
+            ) {
+                @Suppress("UNCHECKED_CAST")
+                it.properties as ObjectPropertyDefinitions<Any>
+            }
+
+            definitions.addSingle(wrapper)
+            return wrapper
         }
     }
 }

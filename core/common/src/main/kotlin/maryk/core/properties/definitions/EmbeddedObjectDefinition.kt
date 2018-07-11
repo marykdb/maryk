@@ -152,7 +152,8 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                         },
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let{
-                                it.dataModels[name]
+                                @Suppress("UNCHECKED_CAST")
+                                it.dataModels[name] as? () -> ObjectDataModel<*, *>
                                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }

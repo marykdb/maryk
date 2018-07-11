@@ -1,8 +1,8 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -19,7 +19,7 @@ interface DefinedByReference<T: Any> {
                 index = 0, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel?.properties ?: throw ContextNotFoundException()
+                        it?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,

@@ -35,7 +35,7 @@ import maryk.yaml.YamlWriter
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class ObjectPropertyDefinitions<DO: Any>(
     properties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
-) : Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+) : AbstractPropertyDefinitions<DO>(), Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
     override fun iterator() = _allProperties.iterator()
 
     private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
@@ -68,7 +68,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
     }
 
     /** Add a single property definition wrapper */
-    internal fun addSingle(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<out Any, *, *, DO>) {
+    final override fun addSingle(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<out Any, *, *, DO>) {
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
 

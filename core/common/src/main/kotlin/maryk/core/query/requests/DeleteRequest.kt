@@ -4,9 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
@@ -40,7 +40,7 @@ data class DeleteRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal c
                 add(1, "objectsToDelete", ListDefinition(
                     valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                         contextualResolver = {
-                            it?.dataModel?.key ?: throw ContextNotFoundException()
+                            it?.dataModel ?: throw ContextNotFoundException()
                         }
                     )
                 ), DeleteRequest<*, *>::objectsToDelete)

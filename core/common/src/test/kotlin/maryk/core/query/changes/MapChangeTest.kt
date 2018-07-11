@@ -5,8 +5,6 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.lib.time.Time
 import maryk.test.shouldBe
@@ -26,12 +24,11 @@ class MapChangeTest {
         )
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykObject.name to { EmbeddedMarykObject }
         ),
-        dataModel = TestMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = TestMarykObject
     )
 
     @Test

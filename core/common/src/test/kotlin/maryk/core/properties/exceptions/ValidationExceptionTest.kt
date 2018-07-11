@@ -4,8 +4,6 @@ import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
@@ -27,12 +25,11 @@ class ValidationExceptionTest {
         )
     ))
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
             SimpleMarykObject.name to { SimpleMarykObject }
         ),
-        dataModel = SimpleMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = SimpleMarykObject
     )
 
     @Test

@@ -15,23 +15,23 @@ abstract class ObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     properties: P
 ) : SimpleDataModel<DO, P>(
     properties
-), MarykPrimitive {
+), MarykPrimitive, IsNamedDataModel<P> {
     override val primitiveType = PrimitiveType.Model
 
     internal object Model : DefinitionDataModel<ObjectDataModel<*, *>>(
         properties = object : ObjectPropertyDefinitions<ObjectDataModel<*, *>>() {
             init {
-                AbstractDataModel.addName(this) {
+                IsNamedDataModel.addName(this) {
                     it.name
                 }
-                AbstractDataModel.addProperties(this)
+                IsDataModel.addProperties(this)
             }
         }
     ) {
         override fun invoke(map: SimpleValues<ObjectDataModel<*, *>>) = object : ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>(
             name = map(0),
             properties = map(1)
-        ){
+        ) {
             override fun invoke(map: SimpleValues<Any>): Any {
                 // TODO: What is the right path here?
                 return object : Any(){}

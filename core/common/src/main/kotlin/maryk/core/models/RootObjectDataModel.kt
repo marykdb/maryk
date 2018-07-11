@@ -46,10 +46,14 @@ abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     name: String,
     keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
-) : ObjectDataModel<DO, P>(name, properties){
+) : ObjectDataModel<DO, P>(name, properties), IsRootDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
 
     val key = KeyDefinition(*keyDefinitions)
+
+    override val keySize = this.key.size
+    override fun key(base64: String): Key<DO> = this.key.invoke(base64)
+    override fun key(reader: () -> Byte) = this.key.get(reader)
 
     /** Defines the structure of the Key by passing [keyDefinitions] */
     inner class KeyDefinition(vararg val keyDefinitions: FixedBytesProperty<out Any>) {
@@ -137,11 +141,11 @@ abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     @Suppress("UNCHECKED_CAST")
     private object RootModelProperties: ObjectPropertyDefinitions<RootObjectDataModel<*, *>>() {
         init {
-            AbstractDataModel.addName(this as ObjectPropertyDefinitions<RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>) {
+            IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>) {
                 it.name
             }
         }
-        val properties = AbstractDataModel.addProperties(this as ObjectPropertyDefinitions<RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>)
+        val properties = IsDataModel.addProperties(this as ObjectPropertyDefinitions<RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>)
         val key = add(2, "key",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(

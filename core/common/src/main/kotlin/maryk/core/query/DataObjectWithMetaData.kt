@@ -1,11 +1,12 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.SimpleDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
@@ -23,12 +24,13 @@ data class DataObjectWithMetaData<out DO: Any>(
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel?.key ?: throw ContextNotFoundException()
+                        it?.dataModel ?: throw ContextNotFoundException()
                     }
                 ), DataObjectWithMetaData<*>::key)
                 add(1, "dataObject", ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel ?: throw ContextNotFoundException()
+                        @Suppress("UNCHECKED_CAST")
+                        it?.dataModel as? SimpleDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
                     }
                 ), DataObjectWithMetaData<*>::dataObject)
                 add(2, "firstVersion", NumberDefinition(type = UInt64), DataObjectWithMetaData<*>::firstVersion)

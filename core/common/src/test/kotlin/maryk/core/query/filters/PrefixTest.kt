@@ -4,8 +4,6 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
@@ -16,12 +14,11 @@ class PrefixTest {
         TestMarykObject.ref { string } with "te"
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykObject.name to { TestMarykObject }
         ),
-        dataModel = TestMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = TestMarykObject
     )
 
     @Test

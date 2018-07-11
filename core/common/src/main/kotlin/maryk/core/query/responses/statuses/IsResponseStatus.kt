@@ -13,9 +13,9 @@ interface IsResponseStatus {
     companion object {
         internal fun <DO: Any> addKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<*>?) {
             definitions.add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = {
-                        it?.dataModel?.key ?: throw ContextNotFoundException()
-                    }
+                contextualResolver = {
+                    it?.dataModel ?: throw ContextNotFoundException()
+                }
             ), getter)
         }
     }

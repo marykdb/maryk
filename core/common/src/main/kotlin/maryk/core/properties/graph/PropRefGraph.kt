@@ -4,10 +4,10 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -37,7 +37,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
         val parent = add(0, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
-                    context?.dataModel?.properties ?: throw ContextNotFoundException()
+                    context?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                 }
             ),
             capturer = { context, value ->
@@ -53,7 +53,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
         )
 
         val properties = addProperties(1, PropRefGraph<*, *>::properties) { context: GraphContext? ->
-            context?.subDataModel?.properties ?: throw ContextNotFoundException()
+            context?.subDataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
         }
     }
 

@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.IsDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -9,7 +9,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportablePropertyDefinitionType<T>, P: ObjectPropertyDefinitions<D>>(
     val className: String,
     val kotlinTypeName: (D) -> String,
-    val definitionModel: IsDataModel<D, P>,
+    val definitionModel: IsObjectDataModel<D, P>,
     val propertyValueOverride: Map<String, (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String?> = mapOf(),
     val propertyNameOverride: Map<String, String> = mapOf(),
     private val imports: ((D) -> Array<String>?)? = null

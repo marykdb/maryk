@@ -1,8 +1,7 @@
 package maryk.core.query
 
-import maryk.core.models.ObjectDataModel
-import maryk.core.models.RootObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.IsNamedDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
@@ -11,7 +10,7 @@ import maryk.core.properties.references.IsPropertyReference
  * Context does not need to be cached since it is present in all phases.
  */
 internal class DataModelPropertyContext(
-    val dataModels: Map<String, () -> ObjectDataModel<*, *>>,
-    override var dataModel: RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? = null,
+    val dataModels: Map<String, () -> IsNamedDataModel<*>>,
+    override var dataModel: IsRootDataModel<*>? = null,
     var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>? = null
-) : ContainsDataModelContext<RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>
+) : ContainsDataModelContext<IsRootDataModel<*>>

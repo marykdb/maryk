@@ -2,11 +2,11 @@ package maryk.core.query.responses
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.TypedValue
@@ -22,22 +22,22 @@ import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 
 /** A response for a data operation on a DataModel */
-interface IsDataModelResponse<DO: Any, out DM: RootObjectDataModel<DO, *>>{
+interface IsDataModelResponse<out DM: IsRootDataModel<*>>{
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> RootObjectDataModel<*, *>?) {
+        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) {
             definitions.add(0, "dataModel",
-                ContextualModelReferenceDefinition<RootObjectDataModel<*, *>, DataModelPropertyContext>(
+                ContextualModelReferenceDefinition<IsRootDataModel<*>, DataModelPropertyContext>(
                     contextualResolver = { context, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
-                            it.dataModels[name] as (() -> RootObjectDataModel<*, *>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                            it.dataModels[name] as (() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,
-                toSerializable = { value: RootObjectDataModel<*, *>?, _ ->
+                toSerializable = { value: IsRootDataModel<*>?, _ ->
                     value?.let{
                         DataModelReference(it.name){ it }
                     }
@@ -45,7 +45,7 @@ interface IsDataModelResponse<DO: Any, out DM: RootObjectDataModel<DO, *>>{
                 fromSerializable = { it?.get?.invoke() },
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.dataModel = value.get() as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+                    context.dataModel = value.get()
                 }
             )
         }

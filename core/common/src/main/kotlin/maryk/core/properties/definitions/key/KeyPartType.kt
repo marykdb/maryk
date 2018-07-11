@@ -2,8 +2,9 @@ package maryk.core.properties.definitions.key
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.DefinitionDataModel
-import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -35,7 +36,7 @@ internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, Dat
     KeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
     KeyPartType.Reference to ContextualPropertyReferenceDefinition(
         contextualResolver = {
-            it?.propertyDefinitions ?: throw ContextNotFoundException()
+            it?.propertyDefinitions as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
         }
     ),
     KeyPartType.TypeId to EmbeddedObjectDefinition(dataModel = {

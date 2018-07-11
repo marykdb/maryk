@@ -1,16 +1,19 @@
 package maryk.core.models
 
-import maryk.core.objects.Values
+import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitionsCollectionDefinition
+import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
-typealias IsSimpleDataModel<DO> = IsDataModel<DO, ObjectPropertyDefinitions<DO>>
+typealias IsSimpleDataModel = IsDataModel<IsPropertyDefinitions>
 
 /** A DataModel which holds properties and can be validated */
-interface IsDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>> {
+interface IsDataModel<P: IsPropertyDefinitions> {
     /** Object which contains all property definitions. Can also be used to get property references. */
     val properties: P
 
@@ -45,24 +48,6 @@ interface IsDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>> {
     }
 
     /**
-     * Validate a [dataObject] and get reference from [refGetter] if exception needs to be thrown
-     * @throws ValidationUmbrellaException if input was invalid
-     */
-    fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
-
-    /**
-     * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
-     * @throws ValidationUmbrellaException if input was invalid
-     */
-    fun validate(map: Values<DO, P>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
-
-    /** Creates a Data Object by [map] */
-    operator fun invoke(map: Values<DO, P>): DO
-
-    /** Create a Values with given [createMap] function */
-    fun map(createMap: P.() -> Map<Int, Any?>) = Values(this, createMap(this.properties))
-
-    /**
      * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
      * Optionally pass an already resolved [parent]
      */
@@ -72,5 +57,27 @@ interface IsDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>> {
     ): IsPropertyReference<T, W> {
         @Suppress("UNCHECKED_CAST")
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W>
+    }
+
+    companion object {
+        internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
+            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
+                1,
+                "properties",
+                PropertyDefinitionsCollectionDefinition(
+                    capturer = { context, propDefs ->
+                        context?.apply {
+                            this.propertyDefinitions = propDefs
+                        } ?: ContextNotFoundException()
+                    }
+                )
+            ) {
+                @Suppress("UNCHECKED_CAST")
+                it.properties as ObjectPropertyDefinitions<Any>
+            }
+
+            definitions.addSingle(wrapper)
+            return wrapper
+        }
     }
 }

@@ -15,8 +15,9 @@ class ContextualModelReferenceDefinitionTest {
         EmbeddedMarykObject
     )
 
+    @Suppress("UNCHECKED_CAST")
     private val def = ContextualModelReferenceDefinition<ObjectDataModel<*, *>, DataModelPropertyContext>(
-        contextualResolver = { context, name -> context!!.dataModels[name]!! }
+        contextualResolver = { context, name -> context!!.dataModels[name] as () -> ObjectDataModel<*, *> }
     )
 
     @Suppress("UNCHECKED_CAST")

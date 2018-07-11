@@ -3,9 +3,9 @@ package maryk.core.query.requests
 import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.changes.DataObjectChange
 
 /**
@@ -15,7 +15,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.chang
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objectChanges] */
-data class ChangeRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
+data class ChangeRequest<DO: Any, out DM: RootObjectDataModel<*, *>> internal constructor(
     override val dataModel: DM,
     val objectChanges: List<DataObjectChange<DO>>
 ) : IsObjectRequest<DO, DM> {
@@ -32,7 +32,7 @@ data class ChangeRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal c
                         )
                     ),
                     getter = ChangeRequest<*, *>::objectChanges
-                );
+                )
             }
         }
     ) {

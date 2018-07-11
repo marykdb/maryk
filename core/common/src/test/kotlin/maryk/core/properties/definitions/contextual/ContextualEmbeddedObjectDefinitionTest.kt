@@ -2,8 +2,10 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.SimpleDataModel
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
@@ -15,8 +17,9 @@ class ContextualEmbeddedObjectDefinitionTest {
         SimpleMarykObject("test2")
     )
 
+    @Suppress("UNCHECKED_CAST")
     private val def = ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.dataModel!! }
+        contextualResolver = { it!!.dataModel!! as SimpleDataModel<Any, ObjectPropertyDefinitions<Any>> }
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -24,7 +27,7 @@ class ContextualEmbeddedObjectDefinitionTest {
         mapOf(
             SimpleMarykObject.name to { SimpleMarykObject }
         ),
-        dataModel = SimpleMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = SimpleMarykObject as IsRootDataModel<IsPropertyDefinitions>
     )
 
     @Test

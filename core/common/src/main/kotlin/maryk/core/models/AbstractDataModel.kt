@@ -1,17 +1,13 @@
 package maryk.core.models
 
-import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitionsCollectionDefinition
-import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
@@ -41,7 +37,7 @@ internal typealias SimpleQueryDataModel<DO> = AbstractDataModel<DO, ObjectProper
  */
 abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     override val properties: P
-) : IsDataModel<DO, P> {
+) : IsObjectDataModel<DO, P> {
     override fun validate(
         dataObject: DO,
         refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
@@ -382,29 +378,5 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
         }
 
         return transform(value as TI)
-    }
-
-    internal companion object {
-        internal fun <DO: ObjectDataModel<*, *>> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) {
-            definitions.add(0, "name", StringDefinition(), getter)
-        }
-
-        internal fun <DO: ObjectDataModel<*, *>> addProperties(definitions: ObjectPropertyDefinitions<DO>): PropertyDefinitionsCollectionDefinitionWrapper<DO> {
-            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DO>(1,
-                "properties",
-                PropertyDefinitionsCollectionDefinition(
-                    capturer = { context, propDefs ->
-                        context?.apply {
-                            this.propertyDefinitions = propDefs
-                        } ?: ContextNotFoundException()
-                    }
-                )) {
-                @Suppress("UNCHECKED_CAST")
-                it.properties as ObjectPropertyDefinitions<Any>
-            }
-
-            definitions.addSingle(wrapper)
-            return wrapper
-        }
     }
 }

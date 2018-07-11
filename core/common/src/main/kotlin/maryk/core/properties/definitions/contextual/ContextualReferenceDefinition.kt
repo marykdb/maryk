@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
@@ -15,7 +15,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject from a context resolved from [contextualResolver] */
 internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
-    val contextualResolver: (context: CX?) -> RootObjectDataModel<*, *>.KeyDefinition
+    val contextualResolver: (context: CX?) -> IsRootDataModel<*>
 ): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
     override val indexed = false
     override val required = true
@@ -23,7 +23,7 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     override val wireType = WireType.LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(context)(string)
+        contextualResolver(context).key(string)
 
     override fun asString(value: Key<*>, context: CX?): String = value.toString()
 
@@ -36,7 +36,7 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
                 val jsonValue = it.value
                 when (jsonValue) {
                     null -> throw ParseException("Reference cannot be null in JSON")
-                    is String -> contextualResolver(context)(jsonValue)
+                    is String -> contextualResolver(context).key(jsonValue)
                     else -> throw ParseException("Reference has to be a String")
                 }
             }
@@ -51,5 +51,5 @@ internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
         value.writeBytes(writer)
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?) =
-        contextualResolver(context).get(reader)
+        contextualResolver(context).key(reader)
 }

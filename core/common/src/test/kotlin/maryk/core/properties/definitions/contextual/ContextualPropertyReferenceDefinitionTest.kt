@@ -17,7 +17,7 @@ class ContextualPropertyReferenceDefinitionTest {
     )
 
     private val def = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.dataModel!!.properties }
+        contextualResolver = { it!!.dataModel!!.properties as ObjectPropertyDefinitions<*> }
     )
 
     @Suppress("UNCHECKED_CAST")

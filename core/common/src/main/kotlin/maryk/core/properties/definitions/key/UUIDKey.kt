@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.IsDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -17,7 +17,7 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
     override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
 
-    override fun <DO: Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO) = generateUUID()
+    override fun <DO: Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO) = generateUUID()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Pair(
         initLong(reader),

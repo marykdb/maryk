@@ -3,11 +3,9 @@ package maryk.core.properties.definitions.contextual
 import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -27,13 +25,12 @@ class ContextualValueDefinitionTest {
         }
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykObject.name to { TestMarykObject },
             EmbeddedMarykObject.name to { EmbeddedMarykObject }
         ),
-        dataModel = TestMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>,
+        dataModel = TestMarykObject,
         reference = TestMarykObject.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>
     )
 

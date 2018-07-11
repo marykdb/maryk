@@ -1,15 +1,17 @@
 package maryk.core.query.responses.statuses
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
-import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt64
 
 /** Action was completed successfully with [version] */
-data class Success<DO: Any>(
+data class Success<DM: IsRootDataModel<*>>(
     val version: UInt64
-) : IsChangeResponseStatus<DO>, IsDeleteResponseStatus<DO> {
+) : IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     override val statusType = StatusType.SUCCESS
 
     internal companion object: SimpleQueryDataModel<Success<*>>(
@@ -19,7 +21,7 @@ data class Success<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<Success<*>>) = Success<Any>(
+        override fun invoke(map: SimpleValues<Success<*>>) = Success<IsRootDataModel<IsPropertyDefinitions>>(
             version = map(0)
         )
     }

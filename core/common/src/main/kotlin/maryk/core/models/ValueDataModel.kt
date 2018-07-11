@@ -76,10 +76,10 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
     internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(
         properties = object : ObjectPropertyDefinitions<ValueDataModel<*, *>>() {
             init {
-                AbstractDataModel.addName(this) {
+                IsNamedDataModel.addName(this) {
                     it.name
                 }
-                AbstractDataModel.addProperties(this)
+                IsDataModel.addProperties(this)
             }
         }
     ) {

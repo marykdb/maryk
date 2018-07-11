@@ -4,11 +4,11 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.IsDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
@@ -29,7 +29,7 @@ data class TypeId<E: IndexedEnum<E>>(
 
     constructor(multiTypeDefinition: PropertyDefinitionWrapper<TypedValue<E, *>, TypedValue<E, *>, IsPropertyContext, *, *>) : this(reference = multiTypeDefinition.getRef())
 
-    override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO): Int {
+    override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO): Int {
         @Suppress("UNCHECKED_CAST")
         val multiType = dataModel.properties.getPropertyGetter(
             reference.propertyDefinition.index
@@ -50,7 +50,7 @@ data class TypeId<E: IndexedEnum<E>>(
                 add(0, "multiTypeDefinition",
                     ContextualPropertyReferenceDefinition<DataModelContext>(
                         contextualResolver = {
-                            it?.propertyDefinitions ?: throw ContextNotFoundException()
+                            it?.propertyDefinitions as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = TypeId<*>::reference

@@ -1,14 +1,16 @@
 package maryk.core.query.responses.statuses
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Key
 
 /** Given object with [key] already exists */
-data class AlreadyExists<DO: Any>(
-    val key: Key<DO>
-) : IsAddResponseStatus<DO> {
+data class AlreadyExists<DM: IsRootDataModel<*>>(
+    val key: Key<*>
+) : IsAddResponseStatus<DM> {
     override val statusType = StatusType.ALREADY_EXISTS
 
     internal companion object: SimpleQueryDataModel<AlreadyExists<*>>(
@@ -18,7 +20,7 @@ data class AlreadyExists<DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<AlreadyExists<*>>) = AlreadyExists(
+        override fun invoke(map: SimpleValues<AlreadyExists<*>>) = AlreadyExists<IsRootDataModel<IsPropertyDefinitions>>(
             key = map(0)
         )
     }

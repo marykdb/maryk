@@ -3,8 +3,8 @@ package maryk.core.properties.graph
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.Values
-import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
@@ -23,7 +23,7 @@ data class RootPropRefGraph<DO> internal constructor(
 
     internal object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
         val properties = this.addProperties(0, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
-            context?.dataModel?.properties ?: throw ContextNotFoundException()
+            context?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
         }
     }
 

@@ -5,8 +5,6 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.with
@@ -43,13 +41,12 @@ class DataObjectVersionedChangeTest {
         )
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         dataModels = mapOf(
             EmbeddedMarykObject.name to { EmbeddedMarykObject },
             TestMarykObject.name to { TestMarykObject }
         ),
-        dataModel = TestMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = TestMarykObject
     )
 
     @Test

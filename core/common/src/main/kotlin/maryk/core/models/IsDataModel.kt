@@ -4,13 +4,11 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitionsCollectionDefinition
-import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinition
+import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-
-typealias IsSimpleDataModel = IsDataModel<IsPropertyDefinitions>
 
 /** A DataModel which holds properties and can be validated */
 interface IsDataModel<P: IsPropertyDefinitions> {
@@ -60,11 +58,11 @@ interface IsDataModel<P: IsPropertyDefinitions> {
     }
 
     companion object {
-        internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
-            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
+        internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
+            val wrapper = ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(
                 1,
                 "properties",
-                PropertyDefinitionsCollectionDefinition(
+                ObjectPropertyDefinitionsCollectionDefinition(
                     capturer = { context, propDefs ->
                         context?.apply {
                             this.propertyDefinitions = propDefs

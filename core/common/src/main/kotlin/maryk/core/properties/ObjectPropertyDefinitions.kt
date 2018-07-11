@@ -1,7 +1,5 @@
 package maryk.core.properties
 
-import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.SimpleDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -22,7 +20,6 @@ import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType
-import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
@@ -35,55 +32,18 @@ import maryk.yaml.YamlWriter
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class ObjectPropertyDefinitions<DO: Any>(
     properties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
-) : AbstractPropertyDefinitions<DO>(), Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
-    override fun iterator() = _allProperties.iterator()
-
-    private val _allProperties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
-
-    private val indexToDefinition = mutableMapOf<Int, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
-    private val nameToDefinition = mutableMapOf<String, IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>()
-
-    // Implementation of Collection
-    override val size = _allProperties.size
-    override fun contains(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>) =
-        this._allProperties.contains(element)
-    override fun containsAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>>) =
-        this._allProperties.containsAll(elements)
-    override fun isEmpty() = this._allProperties.isEmpty()
-
-    /** Get the definition with a property [name] */
-    fun getDefinition(name: String) = nameToDefinition[name]
-    /** Get the definition with a property [index] */
-    fun getDefinition(index: Int) = indexToDefinition[index]
-
+) : AbstractPropertyDefinitions<DO>(properties) {
     /** Get a method to retrieve property from DataObject by [name] */
     fun getPropertyGetter(name: String): ((DO) -> Any?)? = { nameToDefinition[name]?.getPropertyAndSerialize(it, null) }
     /** Get a method to retrieve property from DataObject by [index] */
     fun getPropertyGetter(index: Int): ((DO) -> Any?)? = { indexToDefinition[index]?.getPropertyAndSerialize(it, null) }
-
-    init {
-        for (it in properties) {
-            addSingle(it)
-        }
-    }
-
-    /** Add a single property definition wrapper */
-    final override fun addSingle(propertyDefinitionWrapper: IsPropertyDefinitionWrapper<out Any, *, *, DO>) {
-        @Suppress("UNCHECKED_CAST")
-        _allProperties.add(propertyDefinitionWrapper as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
-
-        require(propertyDefinitionWrapper.index in (0..Short.MAX_VALUE)) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
-        require(indexToDefinition[propertyDefinitionWrapper.index] == null) { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" }
-        indexToDefinition[propertyDefinitionWrapper.index] = propertyDefinitionWrapper
-        nameToDefinition[propertyDefinitionWrapper.name] = propertyDefinitionWrapper
-    }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] and value [getter] */
     internal fun <T: Any, TO: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D,
-        getter: (DO) -> TO? = { null },
+        getter: (DO) -> TO?,
         toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?,
         capturer: ((CX, T) -> Unit)? = null
@@ -96,7 +56,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: D,
-        getter: (DO) -> T? = { null },
+        getter: (DO) -> T?,
         capturer: ((CX, T) -> Unit)? = null
     ) = PropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
@@ -107,7 +67,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: D,
-        getter: (DO) -> TO? = { null },
+        getter: (DO) -> TO?,
         capturer: ((CX, T) -> Unit)? = null,
         toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?
@@ -128,7 +88,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: D,
-        getter: (DO) -> T? = { null },
+        getter: (DO) -> T?,
         capturer: ((CX, T) -> Unit)? = null
     ) = FixedBytesPropertyDefinitionWrapper(index, name, definition, getter, capturer = capturer).apply {
         addSingle(this)
@@ -139,7 +99,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: ListDefinition<T, CX>,
-        getter: (DO) -> List<T>? = { null },
+        getter: (DO) -> List<T>?,
         capturer: ((CX, List<T>) -> Unit)? = null
     ) = ListPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
@@ -150,7 +110,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: ListDefinition<T, CX>,
-        getter: (DO) -> List<TO>? = { null },
+        getter: (DO) -> List<TO>?,
         capturer: ((CX, List<T>) -> Unit)? = null,
         toSerializable: (TO) -> T,
         fromSerializable: (T) -> TO
@@ -171,7 +131,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: SetDefinition<T, CX>,
-        getter: (DO) -> Set<T>? = { null },
+        getter: (DO) -> Set<T>?,
         capturer: ((CX, Set<T>) -> Unit)? = null
     ) = SetPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
@@ -182,7 +142,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: MapDefinition<K, V, CX>,
-        getter: (DO) -> Map<K, V>? = { null },
+        getter: (DO) -> Map<K, V>?,
         capturer: ((CX, Map<K, V>) -> Unit)? = null
     ) = MapPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
@@ -196,7 +156,7 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: MapDefinition<K, V, CX>,
-        getter: (DO) -> TO? = { null },
+        getter: (DO) -> TO?,
         capturer: ((CX, Map<K, V>) -> Unit)? = null,
         toSerializable: (TO?, CX?) -> Map<K, V>?,
         fromSerializable: (Map<K, V>?) -> TO?
@@ -216,50 +176,10 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
     ) = EmbeddedObjectPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
         addSingle(this)
     }
-
-    /** Get PropertyReference by [referenceName] */
-    fun getPropertyReferenceByName(referenceName: String): IsPropertyReference<*, IsPropertyDefinition<*>> {
-        val names = referenceName.split(".")
-
-        var propertyReference: IsPropertyReference<*, *>? = null
-        for (name in names) {
-            propertyReference = when (propertyReference) {
-                null -> this.getDefinition(name)?.getRef(propertyReference)
-                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
-                else -> throw DefNotFoundException("Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
-            } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
-        }
-
-        return propertyReference ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
-    }
-
-    /** Get PropertyReference by bytes from [reader] with [length] */
-    fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>> {
-        var readLength = 0
-
-        val lengthReader = {
-            readLength++
-            reader()
-        }
-
-        var propertyReference: IsPropertyReference<*, *>? = null
-        while (readLength < length) {
-            propertyReference = when (propertyReference) {
-                null -> {
-                    val index = initIntByVar(lengthReader)
-                    this.getDefinition(index)?.getRef(propertyReference)
-                }
-                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader)
-                else -> throw DefNotFoundException("More property references found on property that cannot have any ")
-            } ?: throw DefNotFoundException("Property reference does not exist")
-        }
-
-        return propertyReference ?: throw DefNotFoundException("Property reference does not exist")
-    }
 }
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-private class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), MutableCollection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
+internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>(), MutableCollection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {
     override fun add(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>): Boolean {
         this.addSingle(propertyDefinitionWrapper = element)
         return true
@@ -279,7 +199,7 @@ private class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefiniti
 }
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
-internal data class PropertyDefinitionsCollectionDefinition(
+internal data class ObjectPropertyDefinitionsCollectionDefinition(
     private val capturer: (DataModelContext?, ObjectPropertyDefinitions<Any>) -> Unit
 ) : IsCollectionDefinition<
         IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
@@ -316,11 +236,10 @@ internal data class PropertyDefinitionsCollectionDefinition(
         validator: (item: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, itemRefFactory: () -> IsPropertyReference<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, IsPropertyDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>?) -> Any
     ) {}
 
-    override fun newMutableCollection(context: DataModelContext?): MutableCollection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>> {
-        return MutableObjectPropertyDefinitions<Any>().apply {
+    override fun newMutableCollection(context: DataModelContext?) =
+        MutableObjectPropertyDefinitions<Any>().apply {
             capturer(context, this)
         }
-    }
 
     /**
      * Overridden to render definitions list in YAML as objects
@@ -346,7 +265,7 @@ internal data class PropertyDefinitionsCollectionDefinition(
             if (reader.currentToken !is JsonToken.StartObject) {
                 throw ParseException("Property definitions should be an Object")
             }
-            val collection = newMutableCollection(context) as MutableObjectPropertyDefinitions<Any>
+            val collection = newMutableCollection(context)
 
             while (reader.nextToken() !== JsonToken.EndObject) {
                 collection.add(
@@ -360,11 +279,11 @@ internal data class PropertyDefinitionsCollectionDefinition(
     }
 }
 
-/** Wrapper specifically to wrap a PropertyDefinitionsCollectionDefinition */
-internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
+/** Wrapper specifically to wrap a ObjectPropertyDefinitionsCollectionDefinition */
+internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
     override val index: Int,
     override val name: String,
-    override val definition: PropertyDefinitionsCollectionDefinition,
+    override val definition: ObjectPropertyDefinitionsCollectionDefinition,
     override val getter: (DO) -> ObjectPropertyDefinitions<Any>?
 ) :
     IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<Any>, DataModelContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,

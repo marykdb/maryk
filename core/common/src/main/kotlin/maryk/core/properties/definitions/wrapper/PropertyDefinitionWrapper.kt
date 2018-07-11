@@ -15,7 +15,7 @@ data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: I
     override val index: Int,
     override val name: String,
     override val definition: D,
-    override val getter: (DO) -> TO?,
+    override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, T) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> T?)? = null,
     override val fromSerializable: ((T?) -> TO?)? = null

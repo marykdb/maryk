@@ -8,7 +8,7 @@ import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.models.compareDataModels
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.compareEnumDefinitions
@@ -277,10 +277,10 @@ internal fun compareDefinitions(converted: Definitions, original: Definitions) {
     converted.definitions.size shouldBe original.definitions.size
 
     for ((index, item) in original.definitions.withIndex()) {
-        if (item is DataModel<*, *>) {
-            (converted.definitions[index] as? DataModel<*, *>)?.let {
+        if (item is ObjectDataModel<*, *>) {
+            (converted.definitions[index] as? ObjectDataModel<*, *>)?.let {
                 compareDataModels(it, item)
-            } ?: throw AssertionError("Converted Model should be a DataModel")
+            } ?: throw AssertionError("Converted Model should be a ObjectDataModel")
         } else if (item is IndexedEnumDefinition<*>) {
             (converted.definitions[index] as? IndexedEnumDefinition<*>)?.let {
                 compareEnumDefinitions(it, item)

@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -151,13 +151,13 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         when (definition) {
             is ContextualModelReferenceDefinition<*, *, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                (value as? () -> DataModel<*, *>)?.let {
+                (value as? () -> ObjectDataModel<*, *>)?.let {
                     """{ ${value().name} }"""
-                } ?: throw Exception("DataModel $value cannot be null")
+                } ?: throw Exception("ObjectDataModel $value cannot be null")
             }
-            is EmbeddedObjectDefinition<*, *, *, *, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
+            is EmbeddedObjectDefinition<*, *, *, *, *> -> (definition.dataModel as? ObjectDataModel<*, *>)?.let {
                 return it.generateKotlinValue(value, addImport)
-            } ?: throw Exception("DataModel ${definition.dataModel} cannot be used to generate Kotlin code")
+            } ?: throw Exception("ObjectDataModel ${definition.dataModel} cannot be used to generate Kotlin code")
             is ValueModelDefinition<*, *, *> -> definition.dataModel.let {
                 return it.generateKotlinValue(value, addImport)
             }
@@ -166,7 +166,7 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
     }
 }
 
-private fun DataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
+private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
     for(property in this.properties) {

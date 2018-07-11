@@ -5,7 +5,7 @@ import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Key
@@ -30,7 +30,7 @@ class ContextualReferenceDefinitionTest {
             TestMarykObject.name to { TestMarykObject },
             EmbeddedMarykObject.name to { EmbeddedMarykObject }
         ),
-        dataModel = TestMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

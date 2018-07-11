@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.ListDefinition
@@ -10,11 +10,11 @@ import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefi
 import maryk.core.query.DataModelPropertyContext
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.add(vararg objectToAdd: DO) =
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.add(vararg objectToAdd: DO) =
     AddRequest(this, objectToAdd.toList())
 
 /** A Request to add [objectsToAdd] to [dataModel] */
-data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
+data class AddRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     val objectsToAdd: List<DO>
 ) : IsObjectRequest<DO, DM> {
@@ -35,7 +35,7 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
         }
     ) {
         override fun invoke(map: SimpleValues<AddRequest<*, *>>) = AddRequest(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             objectsToAdd = map(1)
         )
     }

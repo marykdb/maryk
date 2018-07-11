@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,7 +18,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.getChanges(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.getChanges(
     vararg keys: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -35,7 +35,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.getChanges(
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
+data class GetChangesRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DO>>,
     override val filter: IsFilter? = null,
@@ -64,7 +64,7 @@ data class GetChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
         }
     ) {
         override fun invoke(map: SimpleValues<GetChangesRequest<*, *>>) = GetChangesRequest(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             keys = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
             order = map(3),

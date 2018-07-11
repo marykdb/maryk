@@ -14,16 +14,16 @@ internal fun <DM: AbstractDataModel<*, *, *, *>> compareDataModels(converted: DM
             comparePropertyDefinitionWrapper(convertedWrapper, originalWrapper)
         }
 
-    if (original is DataModel<*, *>) {
-        if(converted !is DataModel<*, *>) {
-            throw AssertionError("Converted model should be a DataModel")
+    if (original is ObjectDataModel<*, *>) {
+        if(converted !is ObjectDataModel<*, *>) {
+            throw AssertionError("Converted model should be a ObjectDataModel")
         }
         converted.name shouldBe original.name
     }
 
-    if (original is RootDataModel<*, *>) {
-        if(converted !is RootDataModel<*, *>) {
-            throw AssertionError("Converted model should be a RootDataModel")
+    if (original is RootObjectDataModel<*, *>) {
+        if(converted !is RootObjectDataModel<*, *>) {
+            throw AssertionError("Converted model should be a RootObjectDataModel")
         }
 
         converted.key.keyDefinitions.zip(original.key.keyDefinitions).forEach { (converted, original) ->

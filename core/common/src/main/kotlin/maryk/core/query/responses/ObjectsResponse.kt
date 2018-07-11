@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -9,7 +9,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataObjectWithMetaData
 
 /** Response with [objects] to an objects (Get/Scan) request to [dataModel] */
-data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO, *>>(
+data class ObjectsResponse<DO: Any, out DM: RootObjectDataModel<DO, *>>(
     override val dataModel: DM,
     val objects: List<DataObjectWithMetaData<DO>>
 ) : IsDataModelResponse<DO, DM> {
@@ -26,7 +26,7 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO, *>>(
         }
     ) {
         override fun invoke(map: SimpleValues<ObjectsResponse<*, *>>) = ObjectsResponse(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             objects = map(1)
         )
     }

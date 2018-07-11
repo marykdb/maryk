@@ -36,7 +36,7 @@ import maryk.lib.time.Time
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-internal class RootDataModelTest {
+internal class RootObjectDataModelTest {
     @Test
     fun testKey() {
         TestMarykObject.key(
@@ -83,14 +83,14 @@ internal class RootDataModelTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(TestMarykObject, RootDataModel.Model, { DataModelContext() }, ::compareDataModels)
+        checkProtoBufConversion(TestMarykObject, RootObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(
             TestMarykObject,
-            RootDataModel.Model,
+            RootObjectDataModel.Model,
             { DataModelContext() },
             ::compareDataModels
         ) shouldBe """
@@ -332,7 +332,7 @@ internal class RootDataModelTest {
     fun convert_definition_to_YAML_and_back() {
         checkYamlConversion(
             TestMarykObject,
-            RootDataModel.Model,
+            RootObjectDataModel.Model,
             { DataModelContext() },
             ::compareDataModels
         ) shouldBe """
@@ -584,7 +584,7 @@ internal class RootDataModelTest {
         newContext.dataModels["TestMarykObject"] = { TestMarykObject }
         newContext.dataModels["TestValueObject"] = { TestValueObject }
 
-        RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
+        RootObjectDataModel.Model.readJson(reader, newContext).toDataObject().apply {
             name shouldBe "SimpleModel"
 
             properties.getDefinition("string")!!.let {

@@ -1,8 +1,8 @@
 package maryk.core.models
 
 import maryk.core.objects.Values
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference

@@ -4,7 +4,7 @@ import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -20,7 +20,7 @@ class OrderTest {
         mapOf(
             SimpleMarykObject.name to { SimpleMarykObject }
         ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = SimpleMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

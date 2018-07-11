@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
@@ -15,7 +15,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject from a context resolved from [contextualResolver] */
 internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
-    val contextualResolver: (context: CX?) -> RootDataModel<*, *>.KeyDefinition
+    val contextualResolver: (context: CX?) -> RootObjectDataModel<*, *>.KeyDefinition
 ): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
     override val indexed = false
     override val required = true

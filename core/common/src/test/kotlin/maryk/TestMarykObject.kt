@@ -1,6 +1,6 @@
 package maryk
-import maryk.core.models.DataModel
-import maryk.core.models.RootDataModel
+import maryk.core.models.ObjectDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.definitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
@@ -206,7 +206,7 @@ data class TestMarykObject(
         )
     }
 
-    companion object: RootDataModel<TestMarykObject, Properties>(
+    companion object: RootObjectDataModel<TestMarykObject, Properties>(
         name = "TestMarykObject",
         keyDefinitions = definitions(
             Properties.uint,
@@ -234,10 +234,10 @@ data class TestMarykObject(
         )
 
         override fun equals(other: Any?): Boolean {
-            if (other !is DataModel<*, *>) return false
+            if (other !is ObjectDataModel<*, *>) return false
 
             @Suppress("UNCHECKED_CAST")
-            val otherModel = other as DataModel<Any, ObjectPropertyDefinitions<Any>>
+            val otherModel = other as ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
 
             if (this.name != otherModel.name) return false
             if (this.properties.size != otherModel.properties.size) return false
@@ -275,7 +275,7 @@ data class EmbeddedMarykObject(
             getter = EmbeddedMarykObject::marykModel
         )
     }
-    companion object: DataModel<EmbeddedMarykObject, Properties>(
+    companion object: ObjectDataModel<EmbeddedMarykObject, Properties>(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
@@ -286,10 +286,10 @@ data class EmbeddedMarykObject(
         )
 
         override fun equals(other: Any?): Boolean {
-            if (other !is DataModel<*, *>) return false
+            if (other !is ObjectDataModel<*, *>) return false
 
             @Suppress("UNCHECKED_CAST")
-            val otherModel = other as DataModel<Any, ObjectPropertyDefinitions<Any>>
+            val otherModel = other as ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
 
             if (this.name != otherModel.name) return false
             if (this.properties.size != otherModel.properties.size) return false

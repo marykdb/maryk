@@ -2,25 +2,25 @@ package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DataModelPropertyContext
 
 /** A request for a data operation */
-interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO, *>>: IsRequest {
+interface IsObjectRequest<DO: Any, out DM: RootObjectDataModel<DO, *>>: IsRequest {
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
+        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> RootObjectDataModel<*, *>?) {
             definitions.add(
                 0, "dataModel",
-                ContextualModelReferenceDefinition<RootDataModel<*, *>, DataModelPropertyContext>(
+                ContextualModelReferenceDefinition<RootObjectDataModel<*, *>, DataModelPropertyContext>(
                     contextualResolver = { context, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
-                            it.dataModels[name] as (() -> RootDataModel<*, *>)? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            it.dataModels[name] as (() -> RootObjectDataModel<*, *>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),
@@ -33,7 +33,7 @@ interface IsObjectRequest<DO: Any, out DM: RootDataModel<DO, *>>: IsRequest {
                 fromSerializable = { it?.get?.invoke() },
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.dataModel = value.get() as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
+                    context.dataModel = value.get() as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
                 }
             )
         }

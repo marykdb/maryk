@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -11,11 +11,11 @@ import maryk.core.query.changes.DataObjectChange
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.change(vararg objectChanges: DataObjectChange<DO>) =
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.change(vararg objectChanges: DataObjectChange<DO>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objectChanges] */
-data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
+data class ChangeRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     val objectChanges: List<DataObjectChange<DO>>
 ) : IsObjectRequest<DO, DM> {
@@ -37,7 +37,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
         }
     ) {
         override fun invoke(map: SimpleValues<ChangeRequest<*, *>>) = ChangeRequest(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             objectChanges = map(1)
         )
     }

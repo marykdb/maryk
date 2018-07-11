@@ -116,7 +116,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"listOfString": ["test1", "another test", "🤗"]
 }"""
 
-internal class DataModelTest {
+internal class ObjectDataModelTest {
     @Test
     fun construct_by_map() {
         TestMarykObject.map {
@@ -433,16 +433,16 @@ internal class DataModelTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(EmbeddedMarykObject, DataModel.Model, { DataModelContext() }, ::compareDataModels)
+        checkProtoBufConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(EmbeddedMarykObject, DataModel.Model, { DataModelContext() }, ::compareDataModels)
+        checkJsonConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(EmbeddedMarykObject, DataModel.Model, { DataModelContext() }, ::compareDataModels)
+        checkYamlConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 }

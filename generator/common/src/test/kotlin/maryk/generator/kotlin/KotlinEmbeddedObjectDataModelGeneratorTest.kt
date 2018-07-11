@@ -7,7 +7,7 @@ import kotlin.test.Test
 val generatedKotlinForEmbeddedDataModel = """
 package maryk
 
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -26,7 +26,7 @@ data class EmbeddedMarykObject(
         )
     }
 
-    companion object: DataModel<EmbeddedMarykObject, Properties>(
+    companion object: ObjectDataModel<EmbeddedMarykObject, Properties>(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
@@ -37,7 +37,7 @@ data class EmbeddedMarykObject(
 }
 """.trimIndent()
 
-class KotlinEmbeddedDataModelGeneratorTest {
+class KotlinEmbeddedObjectDataModelGeneratorTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""

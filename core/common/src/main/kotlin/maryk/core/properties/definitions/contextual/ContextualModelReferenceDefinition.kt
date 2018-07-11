@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 @Suppress("FunctionName")
-internal fun <DM: DataModel<*, *>, CX: IsPropertyContext> ContextualModelReferenceDefinition(
+internal fun <DM: ObjectDataModel<*, *>, CX: IsPropertyContext> ContextualModelReferenceDefinition(
     contextualResolver: (context: CX?, name: String) -> () -> DM
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
@@ -28,7 +28,7 @@ internal fun <DM: DataModel<*, *>, CX: IsPropertyContext> ContextualModelReferen
  * Definition for a reference to another DataObject resolved from context by [contextualResolver].
  * Has a [contextTransformer] to transform context.
  */
-data class ContextualModelReferenceDefinition<DM: DataModel<*, *>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
+data class ContextualModelReferenceDefinition<DM: ObjectDataModel<*, *>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
     val contextualResolver: (context: CXI?, name: String) -> () -> DM,
     val contextTransformer: (CX?) -> CXI?
 ): IsValueDefinition<IsDataModelReference<DM>, CX>, IsSerializableFlexBytesEncodable<IsDataModelReference<DM>, CX> {

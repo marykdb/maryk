@@ -4,19 +4,19 @@ import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.SimpleValues
 import maryk.core.objects.Values
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.types.ValueDataObject
 import maryk.lib.bytes.Base64
 
 /**
- * DataModel of type [DO] for objects that can be encoded in fixed length width.
+ * ObjectDataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
  */
 abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>>(
     name: String,
     properties: P
-) : DataModel<DO, P>(name, properties) {
+) : ObjectDataModel<DO, P>(name, properties) {
     override val primitiveType = PrimitiveType.ValueModel
 
     internal val byteSize: Int by lazy {

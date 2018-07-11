@@ -3,19 +3,19 @@ package maryk.core.properties.definitions.contextual
 import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ContextualModelReferenceDefinitionTest {
-    private val modelsToTest = listOf<DataModel<*, *>>(
+    private val modelsToTest = listOf<ObjectDataModel<*, *>>(
         TestMarykObject,
         EmbeddedMarykObject
     )
 
-    private val def = ContextualModelReferenceDefinition<DataModel<*, *>, DataModelPropertyContext>(
+    private val def = ContextualModelReferenceDefinition<ObjectDataModel<*, *>, DataModelPropertyContext>(
         contextualResolver = { context, name -> context!!.dataModels[name]!! }
     )
 

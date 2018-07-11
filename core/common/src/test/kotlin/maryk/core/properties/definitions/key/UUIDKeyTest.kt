@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -20,7 +20,7 @@ internal class UUIDKeyTest {
                 add(0, "value", StringDefinition(), MarykObject::value)
             }
         }
-        companion object: RootDataModel<MarykObject, Properties>(
+        companion object: RootObjectDataModel<MarykObject, Properties>(
             name = "MarykObject",
             properties = Properties
         ) {

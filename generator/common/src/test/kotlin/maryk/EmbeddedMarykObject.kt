@@ -1,6 +1,6 @@
 package maryk
 
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -19,7 +19,7 @@ data class EmbeddedMarykObject(
         )
     }
 
-    companion object: DataModel<EmbeddedMarykObject, Properties>(
+    companion object: ObjectDataModel<EmbeddedMarykObject, Properties>(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {

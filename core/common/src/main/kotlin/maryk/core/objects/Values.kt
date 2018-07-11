@@ -1,9 +1,9 @@
 package maryk.core.objects
 
-import maryk.core.models.DataModel
 import maryk.core.models.IsDataModel
-import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.models.ObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.lib.exceptions.ParseException
 
@@ -71,7 +71,7 @@ data class Values<DO: Any, P: ObjectPropertyDefinitions<DO>> internal constructo
     fun original(index: Int) = this.map[index]
 
     override fun toString(): String {
-        val name = if (dataModel is DataModel<*, *>) {
+        val name = if (dataModel is ObjectDataModel<*, *>) {
             dataModel.name
         } else "Values"
 

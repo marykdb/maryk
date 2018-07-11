@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -153,20 +153,20 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let{
                                 it.dataModels[name]
-                                        ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                        ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = { it: EmbeddedObjectDefinition<*, *, *, *, *> ->
-                        { it.dataModel as DataModel<*, *> }
+                        { it.dataModel as ObjectDataModel<*, *> }
                     },
-                    toSerializable = { value: (() -> DataModel<*, *>)?, _ ->
+                    toSerializable = { value: (() -> ObjectDataModel<*, *>)?, _ ->
                         value?.invoke()?.let{ model ->
                             DataModelReference(model.name, value)
                         }
                     },
-                    fromSerializable = { it: IsDataModelReference<DataModel<*, *>>? -> it?.get },
-                    capturer = { context: ModelContext, dataModel: IsDataModelReference<DataModel<*, *>> ->
+                    fromSerializable = { it: IsDataModelReference<ObjectDataModel<*, *>>? -> it?.get },
+                    capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
                         context.dataModelContext?.let {
                             if (!it.dataModels.containsKey(dataModel.name)) {
                                 it.dataModels[dataModel.name] = dataModel.get
@@ -193,7 +193,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
             indexed = map(0),
             required = map(1),
             final = map(2),
-            dataModel = map<() -> DataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
+            dataModel = map<() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
             default = map(4)
         )
     }

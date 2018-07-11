@@ -4,7 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 
 /**
- * DataModel of type [DO] which create contexts so [properties] know the values of other properties.
+ * ObjectDataModel of type [DO] which create contexts so [properties] know the values of other properties.
  * Use it to create a context on starting an action which needs a context.
  * This context is cached if it is needed to read multiple times
  */

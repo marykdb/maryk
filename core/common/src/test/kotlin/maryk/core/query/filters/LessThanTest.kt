@@ -4,7 +4,7 @@ import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.with
@@ -23,7 +23,7 @@ class LessThanTest {
         mapOf(
             TestMarykObject.name to { TestMarykObject }
         ),
-        dataModel = TestMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

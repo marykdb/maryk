@@ -32,7 +32,7 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
-/** A collection of Property Definitions which can be used to model a DataModel */
+/** A collection of Property Definitions which can be used to model a ObjectDataModel */
 abstract class ObjectPropertyDefinitions<DO: Any>(
     properties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
 ) : Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> {

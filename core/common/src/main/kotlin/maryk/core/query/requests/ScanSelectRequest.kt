@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -20,7 +20,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.scanSelect(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.scanSelect(
     startKey: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -38,7 +38,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.scanSelect(
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanSelectRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
+data class ScanSelectRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DO>,
     override val filter: IsFilter? = null,
@@ -67,7 +67,7 @@ data class ScanSelectRequest<DO: Any, out DM: RootDataModel<DO, *>> internal con
         }
     ) {
         override fun invoke(map: SimpleValues<ScanSelectRequest<*, *>>) = ScanSelectRequest(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             startKey = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
             order = map(3),

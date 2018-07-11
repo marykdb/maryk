@@ -9,7 +9,7 @@ import kotlin.test.Test
 val generatedKotlinForSimpleDataModel = """
 package maryk
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -28,7 +28,7 @@ data class SimpleMarykObject(
         )
     }
 
-    companion object: RootDataModel<SimpleMarykObject, Properties>(
+    companion object: RootObjectDataModel<SimpleMarykObject, Properties>(
         name = "SimpleMarykObject",
         properties = Properties
     ) {
@@ -42,7 +42,7 @@ data class SimpleMarykObject(
 val generatedKotlinForCompleteDataModel = """
 package maryk
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.definitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
@@ -398,7 +398,7 @@ data class CompleteMarykObject(
         )
     }
 
-    companion object: RootDataModel<CompleteMarykObject, Properties>(
+    companion object: RootObjectDataModel<CompleteMarykObject, Properties>(
         name = "CompleteMarykObject",
         keyDefinitions = definitions(
             UUIDKey,
@@ -434,7 +434,7 @@ data class CompleteMarykObject(
 }
 """.trimIndent()
 
-class KotlinRootDataModelGeneratorTest {
+class KotlinRootObjectDataModelGeneratorTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""

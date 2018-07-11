@@ -3,14 +3,14 @@ package maryk.core.models
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitionsCollectionDefinition
+import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitionsCollectionDefinition
-import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
@@ -20,16 +20,23 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.DataModelContext
+import maryk.core.query.DataModelPropertyContext
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
+typealias SimpleDataModel<DO, P> = AbstractDataModel<DO, P, IsPropertyContext, IsPropertyContext>
+typealias DefinitionDataModel<DO> = AbstractDataModel<DO, ObjectPropertyDefinitions<DO>, DataModelContext, DataModelContext>
+internal typealias QueryDataModel<DO, P> = AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>
+internal typealias SimpleQueryDataModel<DO> = AbstractDataModel<DO, ObjectPropertyDefinitions<DO>, DataModelPropertyContext, DataModelPropertyContext>
+
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for
  * this Model. [DO] is the type of DataObjects described by this model and [CX] the context to be used on the properties
- * to read and write. [CXI] is the input Context for properties. This can be different because the DataModel can create
+ * to read and write. [CXI] is the input Context for properties. This can be different because the ObjectDataModel can create
  * its own context by transforming the given context.
  */
 abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
@@ -74,7 +81,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
     }
 
     /**
-     * Write an [obj] of this DataModel to JSON with [writer]
+     * Write an [obj] of this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
     open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
@@ -90,7 +97,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
     }
 
     /**
-     * Write an [map] with values for this DataModel to JSON with [writer]
+     * Write an [map] with values for this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
     open fun writeJson(map: Values<DO, P>, writer: IsJsonLikeWriter, context: CX? = null) {
@@ -348,7 +355,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
         }
     }
 
-    /** Transform [context] into context specific to DataModel. Override for specific implementation */
+    /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")
     internal open fun transformContext(context: CXI?): CX?  = context as CX?
 
@@ -378,11 +385,11 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
     }
 
     internal companion object {
-        internal fun <DO: DataModel<*, *>> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) {
+        internal fun <DO: ObjectDataModel<*, *>> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) {
             definitions.add(0, "name", StringDefinition(), getter)
         }
 
-        internal fun <DO: DataModel<*, *>> addProperties(definitions: ObjectPropertyDefinitions<DO>): PropertyDefinitionsCollectionDefinitionWrapper<DO> {
+        internal fun <DO: ObjectDataModel<*, *>> addProperties(definitions: ObjectPropertyDefinitions<DO>): PropertyDefinitionsCollectionDefinitionWrapper<DO> {
             val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DO>(1,
                 "properties",
                 PropertyDefinitionsCollectionDefinition(

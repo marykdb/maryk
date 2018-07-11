@@ -6,11 +6,11 @@ import maryk.core.objects.SimpleValues
 import maryk.core.properties.ObjectPropertyDefinitions
 
 /**
- * DataModel for non contextual models. Contains a [name] to identify the model and [properties] which define how the
+ * ObjectDataModel for non contextual models. Contains a [name] to identify the model and [properties] which define how the
  * properties should be validated. It models the DataObjects of type [DO] which can be validated. And it contains a
  * reference to the propertyDefinitions of type [P] which can be used for the references to the properties.
  */
-abstract class DataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
+abstract class ObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     override val name: String,
     properties: P
 ) : SimpleDataModel<DO, P>(
@@ -18,8 +18,8 @@ abstract class DataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
 ), MarykPrimitive {
     override val primitiveType = PrimitiveType.Model
 
-    internal object Model : DefinitionDataModel<DataModel<*, *>>(
-        properties = object : ObjectPropertyDefinitions<DataModel<*, *>>() {
+    internal object Model : DefinitionDataModel<ObjectDataModel<*, *>>(
+        properties = object : ObjectPropertyDefinitions<ObjectDataModel<*, *>>() {
             init {
                 AbstractDataModel.addName(this) {
                     it.name
@@ -28,7 +28,7 @@ abstract class DataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<DataModel<*, *>>) = object : DataModel<Any, ObjectPropertyDefinitions<Any>>(
+        override fun invoke(map: SimpleValues<ObjectDataModel<*, *>>) = object : ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>(
             name = map(0),
             properties = map(1)
         ){

@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -11,7 +11,7 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.DataModelPropertyContext
 
 /** Defines a Scan from key request. */
-interface IsScanRequest<DO: Any, out DM: RootDataModel<DO, *>> : IsFetchRequest<DO, DM> {
+interface IsScanRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> : IsFetchRequest<DO, DM> {
     val startKey: Key<DO>
     val limit: UInt32
 

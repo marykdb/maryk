@@ -12,8 +12,8 @@ import maryk.core.properties.references.IsPropertyReference
 
 /**
  * Contains a Embedded Object property [definition] containing DataObjects of [EODO] and Properties described by [P]
- * in a DataModel of [DM]
- * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
+ * in a ObjectDataModel of [DM]
+ * It contains an [index] and [name] to which it is referred inside ObjectDataModel and a [getter]
  * function to retrieve value on dataObject of [DO]
  * It has an input context of [CXI] and the functions take context of [CX] so contexts can be transformed
  * to be relevant to the Embedded Object

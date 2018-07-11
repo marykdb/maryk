@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -24,7 +24,7 @@ class ReferenceDefinition<DO: Any>(
     override val minValue: Key<DO>? = null,
     override val maxValue: Key<DO>? = null,
     override val default: Key<DO>? = null,
-    dataModel: () -> RootDataModel<DO, *>
+    dataModel: () -> RootObjectDataModel<DO, *>
 ):
     IsComparableDefinition<Key<DO>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
@@ -36,7 +36,7 @@ class ReferenceDefinition<DO: Any>(
     override val byteSize get() = dataModel.key.size
 
     private val internalDataModel = lazy(dataModel)
-    val dataModel: RootDataModel<DO, *> get() = internalDataModel.value
+    val dataModel: RootObjectDataModel<DO, *> get() = internalDataModel.value
 
     override fun calculateStorageByteLength(value: Key<DO>) = this.byteSize
 
@@ -100,7 +100,7 @@ class ReferenceDefinition<DO: Any>(
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let {
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as (() -> RootDataModel<*, *>)? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                                it.dataModels[name] as (() -> RootObjectDataModel<*, *>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -108,7 +108,7 @@ class ReferenceDefinition<DO: Any>(
                         { it.dataModel }
                     },
                     toSerializable = { value, _ ->
-                        value?.invoke()?.let{ model: RootDataModel<*, *> ->
+                        value?.invoke()?.let{ model: RootObjectDataModel<*, *> ->
                             DataModelReference(model.name, value)
                         }
                     },

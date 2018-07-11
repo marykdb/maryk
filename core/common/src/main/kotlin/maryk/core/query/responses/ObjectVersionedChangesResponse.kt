@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -9,7 +9,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 
 /** Response with [changes] with all versioned changes since version in request to [dataModel] */
-data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO, *>>(
+data class ObjectVersionedChangesResponse<DO: Any, out DM: RootObjectDataModel<DO, *>>(
     override val dataModel: DM,
     val changes: List<DataObjectVersionedChange<DO>>
 ) : IsDataModelResponse<DO, DM> {
@@ -26,7 +26,7 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO, *>>
         }
     ) {
         override fun invoke(map: SimpleValues<ObjectVersionedChangesResponse<*, *>>) = ObjectVersionedChangesResponse(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             changes = map(1)
         )
     }

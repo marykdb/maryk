@@ -1,6 +1,6 @@
 package maryk
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -19,7 +19,7 @@ data class SimpleMarykObject(
         )
     }
 
-    companion object: RootDataModel<SimpleMarykObject, Properties>(
+    companion object: RootObjectDataModel<SimpleMarykObject, Properties>(
         name = "SimpleMarykObject",
         properties = Properties
     ) {

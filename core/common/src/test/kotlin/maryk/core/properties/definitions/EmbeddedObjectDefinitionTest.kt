@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -30,7 +30,7 @@ internal class EmbeddedObjectDefinitionTest {
                 ), MarykObject::string)
             }
         }
-        companion object: DataModel<MarykObject, Properties>(
+        companion object: ObjectDataModel<MarykObject, Properties>(
             name = "MarykObject",
             properties = Properties
         ) {

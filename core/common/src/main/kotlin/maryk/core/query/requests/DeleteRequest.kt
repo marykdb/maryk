@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.BooleanDefinition
@@ -16,7 +16,7 @@ import maryk.core.query.DataModelPropertyContext
  * Creates a Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.delete(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.delete(
     vararg objectsToDelete: Key<DO>,
     hardDelete: Boolean = false
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
@@ -25,7 +25,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.delete(
  * A Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
+data class DeleteRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     val objectsToDelete: List<Key<DO>>,
     val hardDelete: Boolean
@@ -53,7 +53,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
         }
     ) {
         override fun invoke(map: SimpleValues<DeleteRequest<*, *>>) = DeleteRequest(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             objectsToDelete = map(1),
             hardDelete = map(2)
         )

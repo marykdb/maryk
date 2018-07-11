@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.DataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.models.IsSimpleDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
@@ -217,7 +217,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Embed to PropertyDefinitionKotlinDescriptor(
         className = "EmbeddedObjectDefinition",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = EmbeddedObjectDefinition.Model as IsSimpleDataModel<EmbeddedObjectDefinition<Any, *, DataModel<Any, *>, *, *>>,
+        definitionModel = EmbeddedObjectDefinition.Model as IsSimpleDataModel<EmbeddedObjectDefinition<Any, *, ObjectDataModel<Any, *>, *, *>>,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition
         )

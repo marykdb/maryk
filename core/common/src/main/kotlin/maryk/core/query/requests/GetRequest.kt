@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -16,7 +16,7 @@ import maryk.core.query.filters.IsFilter
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.get(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.get(
     vararg keys: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -30,7 +30,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.get(
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructor(
+data class GetRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DO>>,
     override val filter: IsFilter?,
@@ -55,7 +55,7 @@ data class GetRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
         }
     ) {
         override fun invoke(map: SimpleValues<GetRequest<*, *>>) = GetRequest(
-            dataModel = map<RootDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<Any, *>>(0),
             keys = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
             order = map(3),

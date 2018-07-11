@@ -1,6 +1,6 @@
 package maryk
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.models.definitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
@@ -356,7 +356,7 @@ data class CompleteMarykObject(
         )
     }
 
-    companion object: RootDataModel<CompleteMarykObject, Properties>(
+    companion object: RootObjectDataModel<CompleteMarykObject, Properties>(
         name = "CompleteMarykObject",
         keyDefinitions = definitions(
             UUIDKey,

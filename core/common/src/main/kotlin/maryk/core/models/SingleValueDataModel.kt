@@ -10,7 +10,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
- * DataModel of type [DO] with [properties] definitions with a single property to contain
+ * ObjectDataModel of type [DO] with [properties] definitions with a single property to contain
  * query actions so they can be validated and transported.
  *
  * In JSON/YAML this model is represented as just that property.

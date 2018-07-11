@@ -1,6 +1,6 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.RootDataModel
+import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.key.Reversed
@@ -9,13 +9,13 @@ import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.generateKotlin(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.generateKotlin(
     packageName: String,
     generationContext: KotlinGenerationContext? = null,
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.models.RootDataModel",
+        "maryk.core.models.RootObjectDataModel",
         "maryk.core.objects.Values",
         "maryk.core.properties.ObjectPropertyDefinitions"
     )
@@ -46,7 +46,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.generateKot
             ${propertiesKotlin.generateDefinitionsForProperties(modelName = name).prependIndent().trimStart()}
         }
 
-        companion object: RootDataModel<$name, Properties>(
+        companion object: RootObjectDataModel<$name, Properties>(
             name = "$name",
             ${keyDefAsKotlin}properties = Properties
         ) {

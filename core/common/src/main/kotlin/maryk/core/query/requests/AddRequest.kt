@@ -11,11 +11,11 @@ import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefi
 import maryk.core.query.DataModelPropertyContext
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.add(vararg objectToAdd: DO) =
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.add(vararg objectToAdd: DO) =
     AddRequest(this, objectToAdd.toList())
 
 /** A Request to add [objectsToAdd] to [dataModel] */
-data class AddRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
+data class AddRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal constructor(
     override val dataModel: DM,
     val objectsToAdd: List<DO>
 ) : IsObjectRequest<DO, DM> {
@@ -37,7 +37,7 @@ data class AddRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal cons
         }
     ) {
         override fun invoke(map: SimpleObjectValues<AddRequest<*, *>>) = AddRequest(
-            dataModel = map<RootObjectDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<*, Any, *>>(0),
             objectsToAdd = map(1)
         )
     }

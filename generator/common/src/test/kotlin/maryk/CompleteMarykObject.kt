@@ -4,6 +4,7 @@ import maryk.core.models.RootObjectDataModel
 import maryk.core.models.definitions
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -16,7 +17,6 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -356,7 +356,7 @@ data class CompleteMarykObject(
         )
     }
 
-    companion object: RootObjectDataModel<CompleteMarykObject, Properties>(
+    companion object: RootObjectDataModel<CompleteMarykObject.Companion, CompleteMarykObject, Properties>(
         name = "CompleteMarykObject",
         keyDefinitions = definitions(
             UUIDKey,

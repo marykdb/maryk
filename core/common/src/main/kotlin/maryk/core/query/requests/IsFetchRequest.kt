@@ -1,11 +1,11 @@
 package maryk.core.query.requests
 
 import maryk.core.models.RootObjectDataModel
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
@@ -14,7 +14,7 @@ import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.mapOfFilterDefinitions
 
 /** Defines a fetch. */
-interface IsFetchRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> : IsObjectRequest<DO, DM> {
+interface IsFetchRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> : IsObjectRequest<DO, DM> {
     val filter: IsFilter?
     val order: Order?
     val toVersion: UInt64?

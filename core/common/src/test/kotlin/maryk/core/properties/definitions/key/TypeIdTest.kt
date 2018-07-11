@@ -34,7 +34,7 @@ internal class TypeIdTest {
                 )
             ), MarykObject::multi)
         }
-        companion object: RootObjectDataModel<MarykObject, Properties>(
+        companion object: RootObjectDataModel<MarykObject.Companion, MarykObject, Properties>(
             name = "MarykObject",
             keyDefinitions = definitions(
                 TypeId(Properties.multi)

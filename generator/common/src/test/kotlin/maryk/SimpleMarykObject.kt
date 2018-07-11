@@ -19,7 +19,7 @@ data class SimpleMarykObject(
         )
     }
 
-    companion object: RootObjectDataModel<SimpleMarykObject, Properties>(
+    companion object: RootObjectDataModel<SimpleMarykObject.Companion, SimpleMarykObject, Properties>(
         name = "SimpleMarykObject",
         properties = Properties
     ) {

@@ -206,7 +206,7 @@ data class TestMarykObject(
         )
     }
 
-    companion object: RootObjectDataModel<TestMarykObject, Properties>(
+    companion object: RootObjectDataModel<TestMarykObject.Companion, TestMarykObject, Properties>(
         name = "TestMarykObject",
         keyDefinitions = definitions(
             Properties.uint,

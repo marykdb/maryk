@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.contextual
 import maryk.EmbeddedMarykObject
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.models.RootObjectDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
@@ -26,7 +25,7 @@ class ContextualPropertyReferenceDefinitionTest {
             TestMarykObject.name to { TestMarykObject },
             EmbeddedMarykObject.name to { EmbeddedMarykObject }
         ),
-        dataModel = TestMarykObject as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
+        dataModel = TestMarykObject
     )
 
     @Test

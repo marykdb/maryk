@@ -20,9 +20,9 @@ fun Definitions.generateKotlin(packageName: String, writerConstructor: (String) 
                 (obj as IndexedEnumDefinition<IndexedEnum<Any>>).generateKotlin(packageName, writer)
                 kotlinGenerationContext.enums.add(obj)
             }
-            is RootObjectDataModel<*, *> -> {
+            is RootObjectDataModel<*, *, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>).generateKotlin(packageName, kotlinGenerationContext, writer)
+                (obj as RootObjectDataModel<*, Any, ObjectPropertyDefinitions<Any>>).generateKotlin(packageName, kotlinGenerationContext, writer)
             }
             is ValueDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)

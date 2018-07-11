@@ -20,7 +20,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.scanChanges(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.scanChanges(
     startKey: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -39,7 +39,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.scanC
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanChangesRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
+data class ScanChangesRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DO>,
     override val filter: IsFilter? = null,
@@ -70,7 +70,7 @@ data class ScanChangesRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> inter
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ScanChangesRequest<*, *>>) = ScanChangesRequest(
-            dataModel = map<RootObjectDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<*, Any, *>>(0),
             startKey = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
             order = map(3),

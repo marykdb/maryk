@@ -18,7 +18,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.scan(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.scan(
     startKey: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -34,7 +34,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.scan(
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal constructor(
+data class ScanRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DO>,
     override val filter: IsFilter? = null,
@@ -61,7 +61,7 @@ data class ScanRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal con
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ScanRequest<*, *>>) = ScanRequest(
-            dataModel = map<RootObjectDataModel<Any, *>>(0),
+            dataModel = map<RootObjectDataModel<*, Any, *>>(0),
             startKey = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
             order = map(3),

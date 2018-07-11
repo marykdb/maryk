@@ -9,7 +9,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
 
 /** Defines a Get by keys request. */
-interface IsGetRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> : IsFetchRequest<DO, DM> {
+interface IsGetRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> : IsFetchRequest<DO, DM> {
     val keys: List<Key<DO>>
 
     companion object {

@@ -11,11 +11,11 @@ import maryk.core.query.changes.DataObjectChange
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.change(vararg objectChanges: DataObjectChange<DO>) =
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.change(vararg objectChanges: DataObjectChange<DO>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objectChanges] */
-data class ChangeRequest<DO: Any, out DM: RootObjectDataModel<*, *>> internal constructor(
+data class ChangeRequest<DO: Any, out DM: RootObjectDataModel<*, *, *>> internal constructor(
     override val dataModel: DM,
     val objectChanges: List<DataObjectChange<DO>>
 ) : IsObjectRequest<DO, DM> {
@@ -37,7 +37,7 @@ data class ChangeRequest<DO: Any, out DM: RootObjectDataModel<*, *>> internal co
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ChangeRequest<*, *>>) = ChangeRequest(
-            dataModel = map<RootObjectDataModel<Any, *>>(0),
+            dataModel = map(0),
             objectChanges = map(1)
         )
     }

@@ -28,7 +28,7 @@ internal class ReversedTest {
                 final = true
             ), MarykObject::dateTime)
         }
-        companion object: RootObjectDataModel<MarykObject, Properties>(
+        companion object: RootObjectDataModel<MarykObject.Companion, MarykObject, Properties>(
             name = "MarykObject",
             keyDefinitions = definitions(
                 Reversed(Properties.boolean),

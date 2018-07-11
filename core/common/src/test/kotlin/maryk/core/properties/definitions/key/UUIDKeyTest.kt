@@ -20,7 +20,7 @@ internal class UUIDKeyTest {
                 add(0, "value", StringDefinition(), MarykObject::value)
             }
         }
-        companion object: RootObjectDataModel<MarykObject, Properties>(
+        companion object: RootObjectDataModel<MarykObject.Companion, MarykObject, Properties>(
             name = "MarykObject",
             properties = Properties
         ) {

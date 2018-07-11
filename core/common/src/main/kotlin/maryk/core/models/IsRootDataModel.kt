@@ -1,9 +1,11 @@
 package maryk.core.models
 
 import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.types.Key
 
 interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
+    val keyDefinitions: Array<FixedBytesProperty<out Any>>
     val keySize: Int
 
     /** Get Key by [base64] bytes as string representation */

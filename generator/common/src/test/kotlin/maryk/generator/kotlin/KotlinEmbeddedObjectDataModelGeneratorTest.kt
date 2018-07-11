@@ -8,7 +8,7 @@ val generatedKotlinForEmbeddedDataModel = """
 package maryk
 
 import maryk.core.models.ObjectDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
@@ -30,7 +30,7 @@ data class EmbeddedMarykObject(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: Values<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
+        override fun invoke(map: ObjectValues<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
             value = map(0)
         )
     }

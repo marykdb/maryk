@@ -2,7 +2,7 @@ package maryk.core.query.responses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -25,7 +25,7 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<ObjectVersionedChangesResponse<*, *>>) = ObjectVersionedChangesResponse(
+        override fun invoke(map: SimpleObjectValues<ObjectVersionedChangesResponse<*, *>>) = ObjectVersionedChangesResponse(
             dataModel = map(0),
             changes = map(1)
         )

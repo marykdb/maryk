@@ -4,7 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -254,7 +254,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<MapDefinition<*, *, *>>) = MapDefinition(
+        override fun invoke(map: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

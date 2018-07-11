@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.models.ReferenceMappedDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -33,11 +33,11 @@ data class SetChange internal constructor(
         containedDataModel = SetValueChanges,
         referenceProperty = SetValueChanges.Properties.reference
     ) {
-        override fun invoke(map: Values<SetChange, SetChange.Properties>) = SetChange(
+        override fun invoke(map: ObjectValues<SetChange, SetChange.Properties>) = SetChange(
             setValueChanges = map(0)
         )
 
-        override fun writeJson(map: Values<SetChange, SetChange.Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ObjectValues<SetChange, SetChange.Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             writeReferenceValueMap(
                 writer,
                 map { setValueChanges } ?: throw ParseException("SetChange needs changes"),

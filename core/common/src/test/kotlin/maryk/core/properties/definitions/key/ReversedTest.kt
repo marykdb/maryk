@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootObjectDataModel
 import maryk.core.models.definitions
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -36,7 +36,7 @@ internal class ReversedTest {
             ),
             properties = Properties
         ) {
-            override fun invoke(map: Values<MarykObject, Properties>) = MarykObject(
+            override fun invoke(map: ObjectValues<MarykObject, Properties>) = MarykObject(
                 map(0),
                 map(1)
             )

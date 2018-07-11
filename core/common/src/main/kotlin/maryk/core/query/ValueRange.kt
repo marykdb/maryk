@@ -2,7 +2,7 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsValueDefinition
@@ -56,7 +56,7 @@ data class ValueRange<T: Any> internal constructor(
     internal companion object: QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Values<ValueRange<*>, Properties>) = ValueRange(
+        override fun invoke(map: ObjectValues<ValueRange<*>, Properties>) = ValueRange(
             from = map(0),
             to = map(1),
             inclusiveFrom = map(2),
@@ -74,7 +74,7 @@ data class ValueRange<T: Any> internal constructor(
             )
         }
 
-        override fun writeJson(map: Values<ValueRange<*>, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ObjectValues<ValueRange<*>, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             writeJsonValues(
                 writer,
                 map { from } ?: throw ParseException("From is mandatory in a ValueRange"),
@@ -85,7 +85,7 @@ data class ValueRange<T: Any> internal constructor(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Values<ValueRange<*>, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<ValueRange<*>, Properties> {
             return if (reader is IsYamlReader) {
                 if (reader.currentToken == JsonToken.StartDocument){
                     reader.nextToken()

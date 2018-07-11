@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -57,7 +57,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
     }
 
     override fun validate(
-        map: Values<DO, P>,
+        map: ObjectValues<DO, P>,
         refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
@@ -96,7 +96,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
      * Write an [map] with values for this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    open fun writeJson(map: Values<DO, P>, writer: IsJsonLikeWriter, context: CX? = null) {
+    open fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
@@ -124,7 +124,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
      * Read JSON from [reader] to a Map with values
      * Optionally pass a [context] when needed to read more complex property types
      */
-    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): Values<DO, P> {
+    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): ObjectValues<DO, P> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
@@ -184,7 +184,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun calculateProtoBufLength(map: Values<DO, P>, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    internal fun calculateProtoBufLength(map: ObjectValues<DO, P>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
@@ -220,7 +220,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun writeProtoBuf(map: Values<DO, P>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    internal fun writeProtoBuf(map: ObjectValues<DO, P>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
@@ -251,7 +251,7 @@ abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in C
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Values<DO, P> {
+    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): ObjectValues<DO, P> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
         var byteCounter = 1
 

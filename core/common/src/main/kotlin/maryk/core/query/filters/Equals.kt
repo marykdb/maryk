@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
@@ -23,7 +23,7 @@ data class Equals internal constructor(
     internal companion object: ReferencePairDataModel<Any, Equals, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Values<Equals, Properties>) = Equals(
+        override fun invoke(map: ObjectValues<Equals, Properties>) = Equals(
             referenceValuePairs = map(0)
         )
 

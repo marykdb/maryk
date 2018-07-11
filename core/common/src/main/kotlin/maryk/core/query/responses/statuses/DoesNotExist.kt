@@ -2,7 +2,7 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Key
@@ -20,7 +20,7 @@ data class DoesNotExist<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<DoesNotExist<*>>) = DoesNotExist<IsRootDataModel<IsPropertyDefinitions>>(
+        override fun invoke(map: SimpleObjectValues<DoesNotExist<*>>) = DoesNotExist<IsRootDataModel<IsPropertyDefinitions>>(
             key = map(0)
         )
     }

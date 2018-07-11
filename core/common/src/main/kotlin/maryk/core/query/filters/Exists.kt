@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -25,7 +25,7 @@ data class Exists internal constructor(
     internal companion object: ReferencesDataModel<Exists, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Values<Exists, Properties>) = Exists(
+        override fun invoke(map: ObjectValues<Exists, Properties>) = Exists(
             references = map(0)
         )
 

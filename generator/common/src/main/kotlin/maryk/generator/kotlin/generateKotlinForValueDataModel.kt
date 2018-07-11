@@ -11,7 +11,7 @@ fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P
 ) {
     val importsToAdd = mutableSetOf(
         "maryk.core.models.ValueDataModel",
-        "maryk.core.objects.Values",
+        "maryk.core.objects.ObjectValues",
         "maryk.core.properties.ObjectPropertyDefinitions",
         "maryk.core.properties.types.ValueDataObject"
     )
@@ -34,7 +34,7 @@ fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P
             name = "$name",
             properties = Properties
         ) {
-            override fun invoke(map: Values<$name, Properties>) = $name(
+            override fun invoke(map: ObjectValues<$name, Properties>) = $name(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

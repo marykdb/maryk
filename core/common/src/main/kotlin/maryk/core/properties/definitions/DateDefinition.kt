@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SimpleDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Date
@@ -74,7 +74,7 @@ data class DateDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<DateDefinition>) = DateDefinition(
+        override fun invoke(map: SimpleObjectValues<DateDefinition>) = DateDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

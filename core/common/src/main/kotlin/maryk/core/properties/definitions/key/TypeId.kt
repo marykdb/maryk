@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
@@ -58,7 +58,7 @@ data class TypeId<E: IndexedEnum<E>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<TypeId<*>>) = TypeId<IndexedEnum<Any>>(
+        override fun invoke(map: SimpleObjectValues<TypeId<*>>) = TypeId<IndexedEnum<Any>>(
             reference = map(0)
         )
     }

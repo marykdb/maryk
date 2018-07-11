@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -36,7 +36,7 @@ data class VersionedChanges(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<VersionedChanges>) = VersionedChanges(
+        override fun invoke(map: SimpleObjectValues<VersionedChanges>) = VersionedChanges(
             version = map(0),
             changes = map(1)
         )

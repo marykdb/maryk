@@ -1,6 +1,6 @@
 package maryk
 import maryk.core.models.RootObjectDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
@@ -22,7 +22,7 @@ data class SimpleMarykObject(
         name = "SimpleMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: Values<SimpleMarykObject, Properties>) = SimpleMarykObject(
+        override fun invoke(map: ObjectValues<SimpleMarykObject, Properties>) = SimpleMarykObject(
             value = map(0)
         )
     }

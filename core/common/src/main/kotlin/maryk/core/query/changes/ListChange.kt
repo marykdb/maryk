@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.models.ReferenceMappedDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -33,11 +33,11 @@ data class ListChange internal constructor(
         containedDataModel = ListValueChanges,
         referenceProperty = ListValueChanges.Properties.reference
     ) {
-        override fun invoke(map: Values<ListChange, Properties>) = ListChange(
+        override fun invoke(map: ObjectValues<ListChange, Properties>) = ListChange(
             listValueChanges = map(0)
         )
 
-        override fun writeJson(map: Values<ListChange, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ObjectValues<ListChange, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             writeReferenceValueMap(
                 writer,
                 map { referenceListValueChangesPairs } ?: throw ParseException("Missing referenceListValueChangesPairs in ListChange"),

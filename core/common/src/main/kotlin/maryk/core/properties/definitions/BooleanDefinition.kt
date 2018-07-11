@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.SimpleDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WireType
@@ -56,7 +56,7 @@ data class BooleanDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<BooleanDefinition>) = BooleanDefinition(
+        override fun invoke(map: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

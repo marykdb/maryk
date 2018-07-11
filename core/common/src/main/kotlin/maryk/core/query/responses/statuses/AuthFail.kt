@@ -2,7 +2,7 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 
@@ -21,6 +21,6 @@ class AuthFail<DM: IsRootDataModel<*>> :
     internal companion object: SimpleQueryDataModel<AuthFail<*>>(
         properties = object : ObjectPropertyDefinitions<AuthFail<*>>() {}
     ) {
-        override fun invoke(map: SimpleValues<AuthFail<*>>) = AuthFail<IsRootDataModel<IsPropertyDefinitions>>()
+        override fun invoke(map: SimpleObjectValues<AuthFail<*>>) = AuthFail<IsRootDataModel<IsPropertyDefinitions>>()
     }
 }

@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -37,11 +37,11 @@ data class Not(
     internal companion object: QueryDataModel<Not, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Values<Not, Properties>) = Not(
+        override fun invoke(map: ObjectValues<Not, Properties>) = Not(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: Values<Not, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(map: ObjectValues<Not, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
                 map.original { filters } ?: throw ParseException("Missing filters in Not filter"),
                 writer,
@@ -57,7 +57,7 @@ data class Not(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): Values<Not, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<Not, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

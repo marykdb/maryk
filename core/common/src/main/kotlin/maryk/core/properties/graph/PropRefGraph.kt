@@ -2,7 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -67,12 +67,12 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             }
         }
     ) {
-        override fun invoke(map: Values<PropRefGraph<*, *>, Properties>) = PropRefGraph<Any, Any>(
+        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<Any, Any>(
             parent = map(0),
             properties = map(1)
         )
 
-        override fun writeJson(map: Values<PropRefGraph<*, *>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override fun writeJson(map: ObjectValues<PropRefGraph<*, *>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
             val reference = map.original { parent } ?: throw ParseException("Parent missing in PropRefGraph")
             val listOfGraphables = map { properties } ?: throw ParseException("Properties missing in PropRefGraph")
 
@@ -99,7 +99,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): Values<PropRefGraph<*, *>, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ObjectValues<PropRefGraph<*, *>, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

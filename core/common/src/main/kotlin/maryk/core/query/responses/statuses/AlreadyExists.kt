@@ -2,7 +2,7 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Key
@@ -20,7 +20,7 @@ data class AlreadyExists<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<AlreadyExists<*>>) = AlreadyExists<IsRootDataModel<IsPropertyDefinitions>>(
+        override fun invoke(map: SimpleObjectValues<AlreadyExists<*>>) = AlreadyExists<IsRootDataModel<IsPropertyDefinitions>>(
             key = map(0)
         )
     }

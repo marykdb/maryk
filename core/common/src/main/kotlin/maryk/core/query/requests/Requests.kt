@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.models.QuerySingleValueDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -34,7 +34,7 @@ data class Requests(
         properties = Properties,
         singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, DataModelPropertyContext, Requests>
     ) {
-        override fun invoke(map: Values<Requests, Properties>) = Requests(
+        override fun invoke(map: ObjectValues<Requests, Properties>) = Requests(
             requests = map(0)
         )
     }

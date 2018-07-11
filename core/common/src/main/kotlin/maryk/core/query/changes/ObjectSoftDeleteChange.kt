@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
 
@@ -18,7 +18,7 @@ data class ObjectSoftDeleteChange(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<ObjectSoftDeleteChange>) = ObjectSoftDeleteChange(
+        override fun invoke(map: SimpleObjectValues<ObjectSoftDeleteChange>) = ObjectSoftDeleteChange(
             isDeleted = map(0)
         )
     }

@@ -1,7 +1,7 @@
 package maryk.core.query.responses
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
@@ -33,7 +33,7 @@ data class FailedActionResponse(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<FailedActionResponse>) = FailedActionResponse(
+        override fun invoke(map: SimpleObjectValues<FailedActionResponse>) = FailedActionResponse(
             message = map(0),
             failType = map(1)
         )

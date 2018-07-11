@@ -7,7 +7,7 @@ import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -181,7 +181,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnum<Any>>(
+        override fun invoke(map: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnum<Any>>(
             indexed = map(0),
             required = map(1),
             final = map(2),

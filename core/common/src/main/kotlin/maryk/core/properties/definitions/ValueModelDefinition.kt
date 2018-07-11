@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
@@ -156,7 +156,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
         }
     ) {
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: SimpleValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
+        override fun invoke(map: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),

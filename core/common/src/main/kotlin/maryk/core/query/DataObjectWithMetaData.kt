@@ -3,7 +3,7 @@ package maryk.core.query
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.SimpleDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -39,7 +39,7 @@ data class DataObjectWithMetaData<out DO: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<DataObjectWithMetaData<*>>) = DataObjectWithMetaData(
+        override fun invoke(map: SimpleObjectValues<DataObjectWithMetaData<*>>) = DataObjectWithMetaData(
             key = map(0),
             dataObject = map(1),
             firstVersion = map(2),

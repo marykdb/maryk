@@ -2,7 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -40,7 +40,7 @@ data class SetValueChanges<T: Any> internal constructor(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")
-        override fun invoke(map: Values<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
+        override fun invoke(map: ObjectValues<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
             reference = map(0),
             addValues = map(1),
             deleteValues = map(2)

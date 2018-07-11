@@ -3,8 +3,8 @@ package maryk.core.models
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
-import maryk.core.objects.SimpleValues
-import maryk.core.objects.Values
+import maryk.core.objects.SimpleObjectValues
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
@@ -169,7 +169,7 @@ abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     object Model : SimpleDataModel<RootObjectDataModel<*, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *>>>(
         properties = RootModelProperties
     ) {
-        override fun invoke(map: SimpleValues<RootObjectDataModel<*, *>>) = object : RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>(
+        override fun invoke(map: SimpleObjectValues<RootObjectDataModel<*, *>>) = object : RootObjectDataModel<Any, ObjectPropertyDefinitions<Any>>(
             name = map(0),
             properties = map(1),
             keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(2))?.map {
@@ -179,7 +179,7 @@ abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
                 }
             }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<FixedBytesProperty<out Any>>
         ){
-            override fun invoke(map: SimpleValues<Any>): Any {
+            override fun invoke(map: SimpleObjectValues<Any>): Any {
                 // TODO: What to do here?
                 return object : Any(){}
             }
@@ -188,7 +188,7 @@ abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(map: Values<RootObjectDataModel<*, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override fun writeJson(map: ObjectValues<RootObjectDataModel<*, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
             for (key in map.keys) {
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last

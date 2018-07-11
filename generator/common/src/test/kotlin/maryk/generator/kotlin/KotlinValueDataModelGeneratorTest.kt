@@ -8,7 +8,7 @@ val generatedKotlinForValueDataModel = """
 package maryk
 
 import maryk.core.models.ValueDataModel
-import maryk.core.objects.Values
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -42,7 +42,7 @@ data class ValueMarykObject(
         name = "ValueMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: Values<ValueMarykObject, Properties>) = ValueMarykObject(
+        override fun invoke(map: ObjectValues<ValueMarykObject, Properties>) = ValueMarykObject(
             int = map(0),
             date = map(1)
         )

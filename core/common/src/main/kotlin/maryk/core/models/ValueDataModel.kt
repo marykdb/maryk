@@ -2,8 +2,8 @@ package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.SimpleValues
-import maryk.core.objects.Values
+import maryk.core.objects.SimpleObjectValues
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.types.ValueDataObject
@@ -83,11 +83,11 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>(
+        override fun invoke(map: SimpleObjectValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>(
             name = map(0),
             properties = map(1)
         ){
-            override fun invoke(map: Values<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>): ValueDataObject {
+            override fun invoke(map: ObjectValues<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>): ValueDataObject {
                 return object : ValueDataObject(ByteArray(0)){}
             }
         }

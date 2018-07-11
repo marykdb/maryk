@@ -3,9 +3,11 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsTypedRootDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -16,43 +18,46 @@ import maryk.core.query.DataModelContext
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject*/
-class ReferenceDefinition<DO: Any>(
+class ReferenceDefinition<DM: IsRootDataModel<*>>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
-    override val minValue: Key<DO>? = null,
-    override val maxValue: Key<DO>? = null,
-    override val default: Key<DO>? = null,
-    dataModel: () -> RootObjectDataModel<*, DO, *>
+    override val minValue: Key<DM>? = null,
+    override val maxValue: Key<DM>? = null,
+    override val default: Key<DM>? = null,
+    dataModel: () -> DM
 ):
-    IsComparableDefinition<Key<DO>, IsPropertyContext>,
-    IsSerializableFixedBytesEncodable<Key<DO>, IsPropertyContext>,
-    IsTransportablePropertyDefinitionType<Key<DO>>,
-    HasDefaultValueDefinition<Key<DO>>
+    IsComparableDefinition<Key<DM>, IsPropertyContext>,
+    IsSerializableFixedBytesEncodable<Key<DM>, IsPropertyContext>,
+    IsTransportablePropertyDefinitionType<Key<DM>>,
+    HasDefaultValueDefinition<Key<DM>>
 {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize get() = dataModel.keySize
 
     private val internalDataModel = lazy(dataModel)
-    val dataModel: RootObjectDataModel<*, DO, *> get() = internalDataModel.value
+    val dataModel: DM get() = internalDataModel.value
 
-    override fun calculateStorageByteLength(value: Key<DO>) = this.byteSize
+    override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
 
-    override fun writeStorageBytes(value: Key<DO>, writer: (byte: Byte) -> Unit)  = value.writeBytes(writer)
+    override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit)  = value.writeBytes(writer)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader)
+    @Suppress("UNCHECKED_CAST")
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader) as Key<DM>
 
-    override fun calculateTransportByteLength(value: Key<DO>) = this.byteSize
+    override fun calculateTransportByteLength(value: Key<DM>) = this.byteSize
 
     override fun fromString(string: String) = try {
-        dataModel.key(string)
+        @Suppress("UNCHECKED_CAST")
+        dataModel.key(string) as Key<DM>
     } catch (e: Throwable) { throw ParseException(string, e) }
 
     override fun fromNativeType(value: Any) =
-        if(value is ByteArray && value.size == this.byteSize){
-            dataModel.key(value)
+        if (value is ByteArray && value.size == this.byteSize) {
+            @Suppress("UNCHECKED_CAST")
+            dataModel.key(value) as Key<DM>
         } else {
             null
         }
@@ -100,7 +105,7 @@ class ReferenceDefinition<DO: Any>(
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let {
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as (() -> RootObjectDataModel<*, *, *>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                                it.dataModels[name] as (() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -108,7 +113,7 @@ class ReferenceDefinition<DO: Any>(
                         { it.dataModel }
                     },
                     toSerializable = { value, _ ->
-                        value?.invoke()?.let { model: RootObjectDataModel<*, *, *> ->
+                        value?.invoke()?.let { model: IsRootDataModel<*> ->
                             DataModelReference(model.name, value)
                         }
                     },
@@ -130,9 +135,9 @@ class ReferenceDefinition<DO: Any>(
             required = map(1),
             final = map(2),
             unique = map(3),
-            minValue = map<Bytes?>(4)?.let { Key<Any>(it.bytes) },
-            maxValue = map<Bytes?>(5)?.let { Key<Any>(it.bytes) },
-            default = map<Bytes?>(6)?.let { Key<Any>(it.bytes) },
+            minValue = map<Bytes?>(4)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            maxValue = map<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            default = map<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
             dataModel = map(7)
         )
     }

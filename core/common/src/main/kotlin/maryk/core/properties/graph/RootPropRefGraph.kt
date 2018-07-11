@@ -2,6 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -16,10 +17,10 @@ import maryk.lib.exceptions.ParseException
 /**
  * Create a Root graph with references to [properties]
  */
-data class RootPropRefGraph<DO> internal constructor(
-    val properties: List<IsPropRefGraphable<DO>>
+data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
+    val properties: List<IsPropRefGraphable<DM>>
 ) {
-    constructor(vararg property: IsPropRefGraphable<DO>) : this(property.toList())
+    constructor(vararg property: IsPropRefGraphable<DM>) : this(property.toList())
 
     internal object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
         val properties = this.addProperties(0, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
@@ -33,7 +34,7 @@ data class RootPropRefGraph<DO> internal constructor(
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(map: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<Any>(
+        override fun invoke(map: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<IsDataModel<*>>(
             properties = map(0)
         )
 

@@ -11,7 +11,7 @@ import maryk.core.query.DataObjectWithMetaData
 /** Response with [objects] to an objects (Get/Scan) request to [dataModel] */
 data class ObjectsResponse<DO: Any, out DM: IsRootDataModel<*>>(
     override val dataModel: DM,
-    val objects: List<DataObjectWithMetaData<DO>>
+    val objects: List<DataObjectWithMetaData<DM, DO>>
 ) : IsDataModelResponse<DM> {
     internal companion object: SimpleQueryDataModel<ObjectsResponse<*, *>>(
         properties = object : ObjectPropertyDefinitions<ObjectsResponse<*, *>>() {
@@ -27,7 +27,7 @@ data class ObjectsResponse<DO: Any, out DM: IsRootDataModel<*>>(
     ) {
         override fun invoke(map: SimpleObjectValues<ObjectsResponse<*, *>>) = ObjectsResponse(
             dataModel = map(0),
-            objects = map<List<DataObjectWithMetaData<Any>>>(1)
+            objects = map<List<DataObjectWithMetaData<IsRootDataModel<*>, Any>>>(1)
         )
     }
 }

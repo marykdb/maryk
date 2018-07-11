@@ -18,7 +18,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.ad
 data class AddRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal constructor(
     override val dataModel: DM,
     val objectsToAdd: List<DO>
-) : IsObjectRequest<DO, DM> {
+) : IsObjectRequest<DM> {
     override val requestType = RequestType.Add
 
     internal companion object: SimpleQueryDataModel<AddRequest<*, *>>(

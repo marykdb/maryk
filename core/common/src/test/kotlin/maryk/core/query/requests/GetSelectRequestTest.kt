@@ -20,7 +20,7 @@ internal val getSelectRequest = SimpleMarykObject.getSelect(
     key1,
     key2,
     select = SimpleMarykObject.props {
-        RootPropRefGraph(
+        RootPropRefGraph<SimpleMarykObject.Companion>(
             value
         )
     }
@@ -35,7 +35,7 @@ internal val getMaxSelectRequest = SimpleMarykObject.run {
         toVersion = 333L.toUInt64(),
         filterSoftDeleted = true,
         select = props {
-            RootPropRefGraph(
+            RootPropRefGraph<SimpleMarykObject.Companion>(
                 value
             )
         }

@@ -1,9 +1,11 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.ObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsSimpleObjectDataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -17,7 +19,6 @@ import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -198,7 +199,7 @@ private val definitionNamesMap = mapOf(
         className = "ReferenceDefinition",
         kotlinTypeName = { "Key<${it.dataModel.name}>" },
         imports = { keyImports },
-        definitionModel = ReferenceDefinition.Model as IsSimpleObjectDataModel<ReferenceDefinition<Any>>
+        definitionModel = ReferenceDefinition.Model as IsSimpleObjectDataModel<ReferenceDefinition<IsRootDataModel<*>>>
     ),
     PropertyDefinitionType.Set to PropertyDefinitionKotlinDescriptor(
         className = "SetDefinition",

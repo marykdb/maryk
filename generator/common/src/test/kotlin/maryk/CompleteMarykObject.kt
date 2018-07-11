@@ -60,7 +60,7 @@ data class CompleteMarykObject(
     val time: Time = Time(10, 11, 12),
     val fixedBytes: Bytes = Bytes("AAECAwQ"),
     val flexBytes: Bytes = Bytes("AAECAw"),
-    val reference: Key<SimpleMarykObject> = Key("AAECAw"),
+    val reference: Key<SimpleMarykObject.Companion> = Key("AAECAw"),
     val subModel: SimpleMarykObject = SimpleMarykObject(
         value = "a default"
     ),

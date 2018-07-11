@@ -1,12 +1,12 @@
 package maryk.core.query.requests
 
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt64
 
 /** Request for all changes from a version and later */
-interface IsChangesRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> : IsFetchRequest<DO, DM>, IsSelectRequest<DO, DM> {
+interface IsChangesRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM>, IsSelectRequest<DM> {
     val fromVersion: UInt64
 
     companion object {

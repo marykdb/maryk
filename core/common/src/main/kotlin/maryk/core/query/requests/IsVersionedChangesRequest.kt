@@ -1,13 +1,13 @@
 package maryk.core.query.requests
 
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 
 /** Request for all versioned changes from a version and later */
-interface IsVersionedChangesRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> : IsChangesRequest<DO, DM> {
+interface IsVersionedChangesRequest<DM: IsRootDataModel<*>> : IsChangesRequest<DM> {
     val maxVersions: UInt32
 
     companion object {

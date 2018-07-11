@@ -1,6 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -16,7 +17,7 @@ import maryk.core.query.DataModelPropertyContext
 /**
  * Creates a DataObjectChange which contains [change] until [lastVersion] for a specific DataObject
  */
-fun <DO:Any> Key<DO>.change(
+fun <DM: IsRootDataModel<*>> Key<DM>.change(
     vararg change: IsChange,
     lastVersion: UInt64? = null
 ) = DataObjectChange(this, change.toList(), lastVersion)
@@ -24,8 +25,8 @@ fun <DO:Any> Key<DO>.change(
 /**
  * Contains [changes] until [lastVersion] for a specific DataObject by [key]
  */
-data class DataObjectChange<out DO: Any> internal constructor(
-    val key: Key<DO>,
+data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
+    val key: Key<DM>,
     val changes: List<IsChange>,
     val lastVersion: UInt64? = null
 ) {

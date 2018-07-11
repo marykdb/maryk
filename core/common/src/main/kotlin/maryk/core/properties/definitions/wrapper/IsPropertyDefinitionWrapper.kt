@@ -1,9 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.models.IsDataModel
 import maryk.core.models.SimpleDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -11,7 +13,6 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
@@ -37,7 +38,7 @@ import maryk.yaml.YamlWriter
  */
 interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, in DO> :
     IsSerializablePropertyDefinition<T, CX>,
-    IsPropRefGraphable<DO>
+    IsPropRefGraphable<IsDataModel<*>>
 {
     val index: Int
     val name: String

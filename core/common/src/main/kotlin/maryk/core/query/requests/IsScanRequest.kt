@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -11,12 +11,12 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.DataModelPropertyContext
 
 /** Defines a Scan from key request. */
-interface IsScanRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> : IsFetchRequest<DO, DM> {
-    val startKey: Key<DO>
+interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
+    val startKey: Key<DM>
     val limit: UInt32
 
     companion object {
-        internal fun <DO: Any> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<Any>?) {
+        internal fun <DO: IsScanRequest<*>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) {
             definitions.add(1, "startKey", ContextualReferenceDefinition<DataModelPropertyContext>(
                 contextualResolver = {
                     it?.dataModel ?: throw ContextNotFoundException()

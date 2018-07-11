@@ -33,7 +33,7 @@ internal val getVersionedChangesMaxRequest = SimpleMarykObject.run {
         maxVersions = 5.toUInt32(),
         filterSoftDeleted = true,
         select = SimpleMarykObject.props {
-            RootPropRefGraph(
+            RootPropRefGraph<SimpleMarykObject.Companion>(
                 value
             )
         }

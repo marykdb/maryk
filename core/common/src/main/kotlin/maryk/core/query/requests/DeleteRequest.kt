@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -13,11 +13,11 @@ import maryk.core.query.DataModelPropertyContext
 
 
 /**
- * Creates a Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
+ * Creates a Request to delete [objectsToDelete] from [DM]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.delete(
-    vararg objectsToDelete: Key<DO>,
+fun <DM: IsRootDataModel<P>, P: ObjectPropertyDefinitions<*>> IsRootDataModel<P>.delete(
+    vararg objectsToDelete: Key<DM>,
     hardDelete: Boolean = false
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
 
@@ -25,17 +25,17 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.de
  * A Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-data class DeleteRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal constructor(
+data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
-    val objectsToDelete: List<Key<DO>>,
+    val objectsToDelete: List<Key<DM>>,
     val hardDelete: Boolean
-) : IsObjectRequest<DO, DM> {
+) : IsObjectRequest<DM> {
     override val requestType = RequestType.Delete
 
-    internal companion object: SimpleQueryDataModel<DeleteRequest<*, *>>(
-        properties = object : ObjectPropertyDefinitions<DeleteRequest<*, *>>() {
+    internal companion object: SimpleQueryDataModel<DeleteRequest<*>>(
+        properties = object : ObjectPropertyDefinitions<DeleteRequest<*>>() {
             init {
-                IsObjectRequest.addDataModel(this, DeleteRequest<*, *>::dataModel)
+                IsObjectRequest.addDataModel(this, DeleteRequest<*>::dataModel)
 
                 add(1, "objectsToDelete", ListDefinition(
                     valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
@@ -43,17 +43,17 @@ data class DeleteRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> interna
                             it?.dataModel ?: throw ContextNotFoundException()
                         }
                     )
-                ), DeleteRequest<*, *>::objectsToDelete)
+                ), DeleteRequest<*>::objectsToDelete)
 
                 add(2, "hardDelete",
                     BooleanDefinition(default = false),
-                    DeleteRequest<*,*>::hardDelete
+                    DeleteRequest<*>::hardDelete
                 )
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<DeleteRequest<*, *>>) = DeleteRequest(
-            dataModel = map<RootObjectDataModel<*, Any, *>>(0),
+        override fun invoke(map: SimpleObjectValues<DeleteRequest<*>>) = DeleteRequest(
+            dataModel = map(0),
             objectsToDelete = map(1),
             hardDelete = map(2)
         )

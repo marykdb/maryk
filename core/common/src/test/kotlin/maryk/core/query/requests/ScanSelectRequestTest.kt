@@ -19,7 +19,7 @@ internal val scanSelectRequest = SimpleMarykObject.run {
     scanSelect(
         startKey = key1,
         select = props {
-            RootPropRefGraph(
+            RootPropRefGraph<SimpleMarykObject.Companion>(
                 value
             )
         }
@@ -35,7 +35,7 @@ internal val scanSelectMaxRequest = SimpleMarykObject.run {
         filterSoftDeleted = true,
         toVersion = 2345L.toUInt64(),
         select = props {
-            RootPropRefGraph(
+            RootPropRefGraph<SimpleMarykObject.Companion>(
                 value
             )
         }

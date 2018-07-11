@@ -2,7 +2,6 @@ package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.initByteArray
 import maryk.core.objects.ObjectValues
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
@@ -29,7 +28,6 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.json.PresetJsonTokenReader
-import maryk.lib.bytes.Base64
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
@@ -49,7 +47,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
     name: String,
     final override val keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
-) : ObjectDataModel<DO, P>(name, properties), IsRootDataModel<P> {
+) : ObjectDataModel<DO, P>(name, properties), IsTypedRootDataModel<DM, P> {
     override val primitiveType = PrimitiveType.RootModel
 
     final override val keySize: Int
@@ -77,21 +75,8 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
         this.keySize = totalBytes
     }
 
-    override fun key(base64: String): Key<DO> = this.key(Base64.decode(base64))
-
-    override fun key(reader: () -> Byte) = Key<DO>(
-        initByteArray(keySize, reader)
-    )
-
-    override fun key(bytes: ByteArray): Key<DO> {
-        if (bytes.size != this.keySize) {
-            throw ParseException("Invalid byte length for key")
-        }
-        return Key(bytes)
-    }
-
     /** Get Key based on [dataObject] */
-    fun key(dataObject: DO): Key<DO> {
+    fun key(dataObject: DO): Key<DM> {
         val bytes = ByteArray(this.keySize)
         var index = 0
         for (it in this.keyDefinitions) {

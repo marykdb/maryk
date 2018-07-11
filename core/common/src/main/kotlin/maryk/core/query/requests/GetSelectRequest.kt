@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
@@ -17,14 +18,14 @@ import maryk.core.query.filters.IsFilter
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.getSelect(
-    vararg keys: Key<DO>,
+fun <DM: IsRootDataModel<P>, P: ObjectPropertyDefinitions<*>> DM.getSelect(
+    vararg keys: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
     toVersion: UInt64? = null,
-    select: RootPropRefGraph<DO>,
+    select: RootPropRefGraph<DM>,
     filterSoftDeleted: Boolean = true
-    ) =
+) =
     GetSelectRequest(this, keys.toList(), filter, order, toVersion, select, filterSoftDeleted)
 
 /**
@@ -32,33 +33,33 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.ge
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-data class GetSelectRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal constructor(
+data class GetSelectRequest<DM: IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
-    override val keys: List<Key<DO>>,
+    override val keys: List<Key<DM>>,
     override val filter: IsFilter?,
     override val order: Order?,
     override val toVersion: UInt64?,
-    override val select: RootPropRefGraph<DO>,
+    override val select: RootPropRefGraph<DM>,
     override val filterSoftDeleted: Boolean
-) : IsGetRequest<DO, DM>, IsSelectRequest<DO, DM> {
+) : IsGetRequest<DM>, IsSelectRequest<DM> {
     override val requestType = RequestType.Get
 
-    internal companion object: SimpleQueryDataModel<GetSelectRequest<*, *>>(
-        properties = object : ObjectPropertyDefinitions<GetSelectRequest<*, *>>() {
+    internal companion object: SimpleQueryDataModel<GetSelectRequest<*>>(
+        properties = object : ObjectPropertyDefinitions<GetSelectRequest<*>>() {
             init {
-                IsObjectRequest.addDataModel(this, GetSelectRequest<*, *>::dataModel)
-                IsGetRequest.addKeys(this, GetSelectRequest<*, *>::keys)
+                IsObjectRequest.addDataModel(this, GetSelectRequest<*>::dataModel)
+                IsGetRequest.addKeys(this, GetSelectRequest<*>::keys)
                 IsFetchRequest.addFilter(this) { request ->
                     request.filter?.let { TypedValue(it.filterType, it) }
                 }
-                IsFetchRequest.addOrder(this, GetSelectRequest<*, *>::order)
-                IsFetchRequest.addToVersion(this, GetSelectRequest<*, *>::toVersion)
-                IsFetchRequest.addFilterSoftDeleted(this, GetSelectRequest<*, *>::filterSoftDeleted)
-                IsSelectRequest.addSelect(6, this, GetSelectRequest<*, *>::select)
+                IsFetchRequest.addOrder(this, GetSelectRequest<*>::order)
+                IsFetchRequest.addToVersion(this, GetSelectRequest<*>::toVersion)
+                IsFetchRequest.addFilterSoftDeleted(this, GetSelectRequest<*>::filterSoftDeleted)
+                IsSelectRequest.addSelect(6, this, GetSelectRequest<*>::select)
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<GetSelectRequest<*, *>>) = GetSelectRequest(
+        override fun invoke(map: SimpleObjectValues<GetSelectRequest<*>>) = GetSelectRequest(
             dataModel = map<RootObjectDataModel<*, Any, *>>(0),
             keys = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,

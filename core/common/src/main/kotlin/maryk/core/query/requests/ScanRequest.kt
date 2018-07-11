@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
@@ -18,8 +19,8 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.scan(
-    startKey: Key<DO>,
+fun <DM: IsRootDataModel<P>, P: ObjectPropertyDefinitions<*>> DM.scan(
+    startKey: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
     limit: UInt32 = 100.toUInt32(),
@@ -34,33 +35,33 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.sc
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanRequest<DO: Any, out DM: RootObjectDataModel<*, DO, *>> internal constructor(
+data class ScanRequest<DM: IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
-    override val startKey: Key<DO>,
+    override val startKey: Key<DM>,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
     override val limit: UInt32 = 100.toUInt32(),
     override val toVersion: UInt64? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DO, DM> {
+) : IsScanRequest<DM> {
     override val requestType = RequestType.Scan
 
-    internal companion object: SimpleQueryDataModel<ScanRequest<*, *>>(
-        properties = object : ObjectPropertyDefinitions<ScanRequest<*, *>>() {
+    internal companion object: SimpleQueryDataModel<ScanRequest<*>>(
+        properties = object : ObjectPropertyDefinitions<ScanRequest<*>>() {
             init {
-                IsObjectRequest.addDataModel(this, ScanRequest<*, *>::dataModel)
-                IsScanRequest.addStartKey(this, ScanRequest<*, *>::startKey)
+                IsObjectRequest.addDataModel(this, ScanRequest<*>::dataModel)
+                IsScanRequest.addStartKey(this, ScanRequest<*>::startKey)
                 IsFetchRequest.addFilter(this) { request ->
                     request.filter?.let { TypedValue(it.filterType, it) }
                 }
-                IsFetchRequest.addOrder(this, ScanRequest<*, *>::order)
-                IsFetchRequest.addToVersion(this, ScanRequest<*, *>::toVersion)
-                IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*, *>::filterSoftDeleted)
-                IsScanRequest.addLimit(this, ScanRequest<*, *>::limit)
+                IsFetchRequest.addOrder(this, ScanRequest<*>::order)
+                IsFetchRequest.addToVersion(this, ScanRequest<*>::toVersion)
+                IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*>::filterSoftDeleted)
+                IsScanRequest.addLimit(this, ScanRequest<*>::limit)
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ScanRequest<*, *>>) = ScanRequest(
+        override fun invoke(map: SimpleObjectValues<ScanRequest<*>>) = ScanRequest(
             dataModel = map<RootObjectDataModel<*, Any, *>>(0),
             startKey = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,

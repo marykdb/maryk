@@ -1,6 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -13,8 +14,8 @@ import maryk.core.query.DataModelPropertyContext
 /**
  * Contains versioned [changes] for a specific DataObject by [key]
  */
-data class DataObjectVersionedChange<out DO: Any>(
-    val key: Key<DO>,
+data class DataObjectVersionedChange<out DM: IsRootDataModel<*>>(
+    val key: Key<DM>,
     val changes: List<VersionedChanges>
 ) {
     internal companion object: SimpleQueryDataModel<DataObjectVersionedChange<*>>(

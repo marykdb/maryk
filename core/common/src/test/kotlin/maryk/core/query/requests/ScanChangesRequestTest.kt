@@ -29,7 +29,7 @@ internal val scanChangeMaxRequest = SimpleMarykObject.scanChanges(
     toVersion = 2345L.toUInt64(),
     fromVersion = 1234L.toUInt64(),
     select = SimpleMarykObject.props {
-        RootPropRefGraph(
+        RootPropRefGraph<SimpleMarykObject.Companion>(
             value
         )
     }

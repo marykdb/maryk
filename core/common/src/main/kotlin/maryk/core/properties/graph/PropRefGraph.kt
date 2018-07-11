@@ -1,7 +1,9 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -20,17 +22,17 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Get a graph for property references of an embedded object */
-fun <PDO: Any, DO: Any> IsPropertyDefinitionWrapper<DO, DO, IsPropertyContext, PDO>.graph(
-    vararg property: IsPropRefGraphable<DO>
-) = PropRefGraph(this, property.toList())
+fun <PDM: IsDataModel<*>, DM: AbstractDataModel<*, *, *, IsPropertyContext>> EmbeddedObjectPropertyDefinitionWrapper<*, *, *, DM, *, IsPropertyContext, *>.graph(
+    vararg property: IsPropRefGraphable<DM>
+) = PropRefGraph<PDM, DM>(this, property.toList())
 
 /**
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
  */
-data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
-    val parent: IsPropertyDefinitionWrapper<DO, DO, IsPropertyContext, PDO>,
-    val properties: List<IsPropRefGraphable<DO>>
-) : IsPropRefGraphable<PDO> {
+data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractDataModel<*, *, *, IsPropertyContext>> internal constructor(
+    val parent: EmbeddedObjectPropertyDefinitionWrapper<*, *, *, DM, *, IsPropertyContext, *>,
+    val properties: List<IsPropRefGraphable<DM>>
+) : IsPropRefGraphable<PDM> {
     override val graphType = PropRefGraphType.Graph
 
     internal object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *>>() {
@@ -67,7 +69,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
             }
         }
     ) {
-        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<Any, Any>(
+        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsDataModel<*>, AbstractDataModel<*, *, *, IsPropertyContext>>(
             parent = map(0),
             properties = map(1)
         )

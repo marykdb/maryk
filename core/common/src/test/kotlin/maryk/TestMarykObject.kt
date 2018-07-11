@@ -52,9 +52,9 @@ data class TestMarykObject(
     val valueObject: TestValueObject? = null,
     val embeddedObject: EmbeddedMarykObject? = null,
     val multi: TypedValue<Option, *>? = null,
-    val reference: Key<TestMarykObject>? = null,
+    val reference: Key<TestMarykObject.Companion>? = null,
     val listOfString: List<String>? = null,
-    val selfReference: Key<TestMarykObject>? = null
+    val selfReference: Key<TestMarykObject.Companion>? = null
 ) {
     object Properties: ObjectPropertyDefinitions<TestMarykObject>() {
         val string = add(
@@ -196,6 +196,7 @@ data class TestMarykObject(
             getter = TestMarykObject::listOfString
         )
 
+        @Suppress("unused")
         val selfReference = add(
             index = 15, name = "selfReference",
             definition = ReferenceDefinition(

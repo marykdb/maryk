@@ -2,11 +2,10 @@ package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.objects.ObjectValues
-import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
@@ -16,7 +15,6 @@ import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
-import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
@@ -26,53 +24,32 @@ import maryk.json.PresetJsonTokenReader
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
-typealias SimpleRootObjectDataModel<DO> = RootObjectDataModel<IsRootDataModel<ObjectPropertyDefinitions<DO>>, DO, ObjectPropertyDefinitions<DO>>
-typealias RootObjectDataModelImpl = RootObjectDataModel<IsRootDataModel<ObjectPropertyDefinitions<Any>>, Any, ObjectPropertyDefinitions<Any>>
+typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /**
- * ObjectDataModel defining data objects of type [DO] which is on root level so it can be stored and thus can have a [key].
+ * DataModel defining data objects of model of type [DM] which is on root level so it can be stored and thus can have a [key].
  * The key is defined by passing an ordered array of key definitions.
  * If no key is defined the data model will get a UUID.
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
-abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPropertyDefinitions<DO>>(
+abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     name: String,
     final override val keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
-) : ObjectDataModel<DO, P>(name, properties), IsTypedRootDataModel<DM, P> {
+) : DataModel<DM, P>(name, properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
 
     final override val keySize = IsRootDataModel.calculateKeySize(keyDefinitions)
 
-    /** Get Key based on [dataObject] */
-    fun key(dataObject: DO): Key<DM> {
-        val bytes = ByteArray(this.keySize)
-        var index = 0
-        for (it in this.keyDefinitions) {
-            val value = it.getValue(this, dataObject)
-
-            @Suppress("UNCHECKED_CAST")
-            (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
-                bytes[index++] = it
-            }
-
-            // Add separator
-            if (index < this.keySize) {
-                bytes[index++] = 1
-            }
-        }
-        return Key(bytes)
-    }
-
     @Suppress("UNCHECKED_CAST")
-    private object RootModelProperties: ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>() {
+    private object RootModelProperties: ObjectPropertyDefinitions<RootDataModel<*, *>>() {
         init {
-            IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootObjectDataModelImpl>) {
+            IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModelImpl>) {
                 it.name
             }
         }
-        val properties = ObjectDataModel.addProperties(this as ObjectPropertyDefinitions<RootObjectDataModelImpl>)
+        val properties = ObjectDataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModelImpl>)
         val key = add(2, "key",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -93,10 +70,10 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : SimpleObjectDataModel<RootObjectDataModel<*, *, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>>(
+    object Model : SimpleObjectDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>(
         properties = RootModelProperties
     ) {
-        override fun invoke(map: ObjectValues<RootObjectDataModel<*, *, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>>) = object : RootObjectDataModelImpl(
+        override fun invoke(map: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
             name = map(0),
             properties = map(1),
             keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(2))?.map {
@@ -105,17 +82,12 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
                     else -> it.value as FixedBytesProperty<*>
                 }
             }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<FixedBytesProperty<out Any>>
-        ){
-            override fun invoke(map: SimpleObjectValues<Any>): Any {
-                // TODO: What to do here?
-                return object : Any(){}
-            }
-        } as SimpleRootObjectDataModel<*>
+        ){}
 
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(map: ObjectValues<RootObjectDataModel<*, *, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override fun writeJson(map: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
             for (key in map.keys) {
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last
@@ -127,7 +99,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
             // Write properties last
             map.original(RootModelProperties.properties.index)?.let {
                 this.writeJsonValue(
-                    RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootObjectDataModel<*, *, *>>,
+                    RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootDataModel<*, *>>,
                     writer,
                     it,
                     context
@@ -140,7 +112,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(obj: RootObjectDataModel<*, *, *>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override fun writeJson(obj: RootDataModel<*, *>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
             for (def in this.properties) {
                 if (def == RootModelProperties.properties) continue // skip properties to write last
@@ -149,7 +121,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
                 this.writeJsonValue(def, writer, value, context)
             }
             this.writeJsonValue(
-                RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootObjectDataModel<*, *, *>>,
+                RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootDataModel<*, *>>,
                 writer,
                 obj.properties,
                 context

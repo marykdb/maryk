@@ -9,7 +9,7 @@ import maryk.core.properties.references.IsPropertyReference
 interface IsValuesDataModel<P: PropertyDefinitions>: IsDataModel<P>
 
 /** A DataModel which holds properties and can be validated */
-interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>: IsDataModel<P> {
+interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>: IsValuesDataModel<P> {
     /**
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid

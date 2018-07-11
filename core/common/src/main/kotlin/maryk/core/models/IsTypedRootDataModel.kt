@@ -2,11 +2,12 @@ package maryk.core.models
 
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.properties.IsPropertyDefinitions
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.types.Key
 import maryk.lib.bytes.Base64
 import maryk.lib.exceptions.ParseException
 
-typealias IsTypedRootDataModelImpl = IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>
+fun definitions(vararg keys: FixedBytesProperty<*>) = arrayOf(*keys)
 
 interface IsTypedRootDataModel<DM: IsRootDataModel<P>, P: IsPropertyDefinitions> : IsRootDataModel<P> {
     override fun key(base64: String): Key<DM> = this.key(Base64.decode(base64))

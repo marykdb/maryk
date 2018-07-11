@@ -57,8 +57,8 @@ data class ScanChangesRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> inter
             init {
                 IsObjectRequest.addDataModel(this, ScanChangesRequest<*, *>::dataModel)
                 IsScanRequest.addStartKey(this, ScanChangesRequest<*, *>::startKey)
-                IsFetchRequest.addFilter(this) {
-                    it.filter?.let { TypedValue(it.filterType, it) }
+                IsFetchRequest.addFilter(this) { request ->
+                    request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, ScanChangesRequest<*, *>::order)
                 IsFetchRequest.addToVersion(this, ScanChangesRequest<*, *>::toVersion)

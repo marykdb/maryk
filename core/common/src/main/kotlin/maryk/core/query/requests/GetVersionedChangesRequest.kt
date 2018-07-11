@@ -56,8 +56,8 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootObjectDataModel<DO, *
             init {
                 IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*, *>::dataModel)
                 IsGetRequest.addKeys(this, GetVersionedChangesRequest<*, *>::keys)
-                IsFetchRequest.addFilter(this) {
-                    it.filter?.let { TypedValue(it.filterType, it) }
+                IsFetchRequest.addFilter(this) { request ->
+                    request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*, *>::order)
                 IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*, *>::toVersion)

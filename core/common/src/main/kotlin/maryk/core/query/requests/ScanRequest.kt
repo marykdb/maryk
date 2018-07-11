@@ -50,8 +50,8 @@ data class ScanRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal con
             init {
                 IsObjectRequest.addDataModel(this, ScanRequest<*, *>::dataModel)
                 IsScanRequest.addStartKey(this, ScanRequest<*, *>::startKey)
-                IsFetchRequest.addFilter(this) {
-                    it.filter?.let { TypedValue(it.filterType, it) }
+                IsFetchRequest.addFilter(this) { request ->
+                    request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, ScanRequest<*, *>::order)
                 IsFetchRequest.addToVersion(this, ScanRequest<*, *>::toVersion)

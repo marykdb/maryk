@@ -48,8 +48,8 @@ data class GetSelectRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> interna
             init {
                 IsObjectRequest.addDataModel(this, GetSelectRequest<*, *>::dataModel)
                 IsGetRequest.addKeys(this, GetSelectRequest<*, *>::keys)
-                IsFetchRequest.addFilter(this) {
-                    it.filter?.let { TypedValue(it.filterType, it) }
+                IsFetchRequest.addFilter(this) { request ->
+                    request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, GetSelectRequest<*, *>::order)
                 IsFetchRequest.addToVersion(this, GetSelectRequest<*, *>::toVersion)

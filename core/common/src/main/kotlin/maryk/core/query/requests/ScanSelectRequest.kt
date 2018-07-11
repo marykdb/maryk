@@ -55,8 +55,8 @@ data class ScanSelectRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> intern
             init {
                 IsObjectRequest.addDataModel(this, ScanSelectRequest<*, *>::dataModel)
                 IsScanRequest.addStartKey(this, ScanSelectRequest<*, *>::startKey)
-                IsFetchRequest.addFilter(this) {
-                    it.filter?.let { TypedValue(it.filterType, it) }
+                IsFetchRequest.addFilter(this) { request ->
+                    request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, ScanSelectRequest<*, *>::order)
                 IsFetchRequest.addToVersion(this, ScanSelectRequest<*, *>::toVersion)

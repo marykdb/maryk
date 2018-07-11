@@ -45,8 +45,8 @@ data class GetRequest<DO: Any, out DM: RootObjectDataModel<DO, *>> internal cons
             init {
                 IsObjectRequest.addDataModel(this, GetRequest<*, *>::dataModel)
                 IsGetRequest.addKeys(this, GetRequest<*, *>::keys)
-                IsFetchRequest.addFilter(this) {
-                    it.filter?.let { TypedValue(it.filterType, it) }
+                IsFetchRequest.addFilter(this) { request ->
+                    request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, GetRequest<*, *>::order)
                 IsFetchRequest.addToVersion(this, GetRequest<*, *>::toVersion)

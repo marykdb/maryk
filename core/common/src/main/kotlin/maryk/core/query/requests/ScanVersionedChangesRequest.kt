@@ -58,8 +58,8 @@ data class ScanVersionedChangesRequest<DO: Any, out DM: RootObjectDataModel<DO, 
             init {
                 IsObjectRequest.addDataModel(this, ScanVersionedChangesRequest<*, *>::dataModel)
                 IsScanRequest.addStartKey(this, ScanVersionedChangesRequest<*, *>::startKey)
-                IsFetchRequest.addFilter(this) {
-                    it.filter?.let { TypedValue(it.filterType, it) }
+                IsFetchRequest.addFilter(this) { request ->
+                    request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, ScanVersionedChangesRequest<*, *>::order)
                 IsFetchRequest.addToVersion(this, ScanVersionedChangesRequest<*, *>::toVersion)

@@ -3,8 +3,8 @@ package maryk.core.models
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initByteArray
-import maryk.core.objects.SimpleObjectValues
 import maryk.core.objects.ObjectValues
+import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
@@ -44,84 +44,67 @@ fun definitions(vararg keys: FixedBytesProperty<*>) = arrayOf(*keys)
  */
 abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     name: String,
-    keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
+    val keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
 ) : ObjectDataModel<DO, P>(name, properties), IsRootDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
 
-    val key = KeyDefinition(*keyDefinitions)
+    final override val keySize: Int
 
-    override val keySize = this.key.size
-    override fun key(base64: String): Key<DO> = this.key.invoke(base64)
-    override fun key(reader: () -> Byte) = this.key.get(reader)
+    init {
+        var totalBytes = keyDefinitions.size - 1 // Start with adding size of separators
 
-    /** Defines the structure of the Key by passing [keyDefinitions] */
-    inner class KeyDefinition(vararg val keyDefinitions: FixedBytesProperty<out Any>) {
-        val size: Int
-
-        init {
-            var totalBytes = keyDefinitions.size - 1 // Start with adding size of separators
-
-            for (it in keyDefinitions) {
-                when {
-                    it is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *>
-                            && it.definition is IsValueDefinition<*, *>-> {
-                        checkDefinition(it.name, it.definition as IsValueDefinition<*, *>)
-                    }
-                    it is Reversed<out Any> -> {
-                        val reference = it.reference as ValueWithFixedBytesPropertyReference<out Any, *, *>
-                        checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
-                    }
-                    it is TypeId<*> -> {
-                        val reference = it.reference
-                        checkDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
-                    }
+        for (it in keyDefinitions) {
+            when {
+                it is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *>
+                        && it.definition is IsValueDefinition<*, *>-> {
+                    checkKeyDefinition(it.name, it.definition as IsValueDefinition<*, *>)
                 }
-                totalBytes += it.byteSize
-            }
-            this.size = totalBytes
-        }
-
-        private fun checkDefinition(name: String, it: IsPropertyDefinition<*>) {
-            require(it.required) { "Definition of $name should be required" }
-            require(it.final) { "Definition of $name should be final" }
-        }
-
-        /** Get Key by [bytes] array */
-        operator fun invoke(bytes: ByteArray): Key<DO> {
-            if (bytes.size != this.size) {
-                throw ParseException("Invalid byte length for key")
-            }
-            return Key(bytes)
-        }
-
-        /** Get Key by [base64] bytes as string representation */
-        operator fun invoke(base64: String): Key<DO> = this(Base64.decode(base64))
-
-        /** Get Key by byte [reader] */
-        internal fun get(reader: () -> Byte): Key<DO> = Key(
-            initByteArray(size, reader)
-        )
-
-        /** Get Key based on [dataObject] */
-        operator fun invoke(dataObject: DO): Key<DO> {
-            val bytes = ByteArray(this.size)
-            var index = 0
-            for (it in keyDefinitions) {
-                val value = it.getValue(this@RootObjectDataModel, dataObject)
-
-                @Suppress("UNCHECKED_CAST")
-                (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
-                    bytes[index++] = it
+                it is Reversed<out Any> -> {
+                    val reference = it.reference as ValueWithFixedBytesPropertyReference<out Any, *, *>
+                    checkKeyDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                 }
-
-                // Add separator
-                if (index < this.size) {
-                    bytes[index++] = 1
+                it is TypeId<*> -> {
+                    val reference = it.reference
+                    checkKeyDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                 }
             }
-            return Key(bytes)
+            totalBytes += it.byteSize
         }
+        this.keySize = totalBytes
+    }
+
+    override fun key(base64: String): Key<DO> = this.key(Base64.decode(base64))
+
+    override fun key(reader: () -> Byte) = Key<DO>(
+        initByteArray(keySize, reader)
+    )
+
+    override fun key(bytes: ByteArray): Key<DO> {
+        if (bytes.size != this.keySize) {
+            throw ParseException("Invalid byte length for key")
+        }
+        return Key(bytes)
+    }
+
+    /** Get Key based on [dataObject] */
+    fun key(dataObject: DO): Key<DO> {
+        val bytes = ByteArray(this.keySize)
+        var index = 0
+        for (it in this.keyDefinitions) {
+            val value = it.getValue(this, dataObject)
+
+            @Suppress("UNCHECKED_CAST")
+            (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
+                bytes[index++] = it
+            }
+
+            // Add separator
+            if (index < this.keySize) {
+                bytes[index++] = 1
+            }
+        }
+        return Key(bytes)
     }
 
     /** Get PropertyReference by [referenceName] */
@@ -154,7 +137,7 @@ abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
                 )
             ),
             getter = { rootDataModel ->
-                rootDataModel.key.keyDefinitions.map { keyDef ->
+                rootDataModel.keyDefinitions.map { keyDef ->
                     val def: Any = when(keyDef) {
                         is FixedBytesPropertyDefinitionWrapper<*, *, *, *, *> -> keyDef.getRef()
                         else -> keyDef
@@ -293,4 +276,9 @@ abstract class RootObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
             }
         }
     }
+}
+
+private fun checkKeyDefinition(name: String, it: IsPropertyDefinition<*>) {
+    require(it.required) { "Definition of $name should be required" }
+    require(it.final) { "Definition of $name should be final" }
 }

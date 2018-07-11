@@ -33,7 +33,7 @@ class ReferenceDefinition<DO: Any>(
 {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = WireType.LENGTH_DELIMITED
-    override val byteSize get() = dataModel.key.size
+    override val byteSize get() = dataModel.keySize
 
     private val internalDataModel = lazy(dataModel)
     val dataModel: RootObjectDataModel<DO, *> get() = internalDataModel.value
@@ -42,7 +42,7 @@ class ReferenceDefinition<DO: Any>(
 
     override fun writeStorageBytes(value: Key<DO>, writer: (byte: Byte) -> Unit)  = value.writeBytes(writer)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key.get(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader)
 
     override fun calculateTransportByteLength(value: Key<DO>) = this.byteSize
 

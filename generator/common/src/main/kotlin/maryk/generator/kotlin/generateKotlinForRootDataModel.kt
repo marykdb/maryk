@@ -1,8 +1,8 @@
 package maryk.generator.kotlin
 
 import maryk.core.models.RootObjectDataModel
-import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.key.UUIDKey
@@ -22,8 +22,8 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<DO, P>.gener
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
     // Add key definitions if they are not the default UUID key
-    val keyDefAsKotlin = if (this.key.keyDefinitions.size != 1 || this.key.keyDefinitions[0] != UUIDKey) {
-        val keyDefs = this.key.keyDefinitions.generateKotlin(addImport)
+    val keyDefAsKotlin = if (this.keyDefinitions.size != 1 || this.keyDefinitions[0] != UUIDKey) {
+        val keyDefs = this.keyDefinitions.generateKotlin(addImport)
 
         addImport("maryk.core.models.definitions")
 

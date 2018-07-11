@@ -9,10 +9,10 @@ import maryk.core.models.definitions
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
@@ -56,7 +56,7 @@ internal class TypeIdTest {
         val key = MarykObject.key(obj)
         key.bytes.toHex() shouldBe "0001"
 
-        val keyDef = MarykObject.key.keyDefinitions[0]
+        val keyDef = MarykObject.keyDefinitions[0]
 
         (keyDef is TypeId<*>) shouldBe true
         val specificDef = keyDef as TypeId<*>

@@ -37,7 +37,7 @@ internal class UUIDKeyTest {
         val key = MarykObject.key(obj)
         key.bytes.size shouldBe 16
 
-        val keyDef = MarykObject.key.keyDefinitions[0]
+        val keyDef = MarykObject.keyDefinitions[0]
 
         (keyDef === UUIDKey) shouldBe true
         val specificDef = keyDef as UUIDKey

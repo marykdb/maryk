@@ -26,7 +26,7 @@ internal fun <DM: AbstractDataModel<*, *, *, *>> compareDataModels(converted: DM
             throw AssertionError("Converted model should be a RootObjectDataModel")
         }
 
-        converted.key.keyDefinitions.zip(original.key.keyDefinitions).forEach { (converted, original) ->
+        converted.keyDefinitions.zip(original.keyDefinitions).forEach { (converted, original) ->
             when(converted) {
                 is IsPropertyDefinitionWrapper<*, *, *, *> -> {
                     comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *, *>)

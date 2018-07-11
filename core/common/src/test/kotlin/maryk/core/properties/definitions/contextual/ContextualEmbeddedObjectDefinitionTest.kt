@@ -4,7 +4,7 @@ import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.models.RootDataModel
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -24,7 +24,7 @@ class ContextualEmbeddedObjectDefinitionTest {
         mapOf(
             SimpleMarykObject.name to { SimpleMarykObject }
         ),
-        dataModel = SimpleMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = SimpleMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

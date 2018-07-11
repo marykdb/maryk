@@ -9,13 +9,13 @@ package maryk
 
 import maryk.core.models.DataModel
 import maryk.core.objects.Values
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
 data class EmbeddedMarykObject(
     val value: String = "haha"
 ) {
-    object Properties: PropertyDefinitions<EmbeddedMarykObject>() {
+    object Properties: ObjectPropertyDefinitions<EmbeddedMarykObject>() {
         val value = add(
             index = 0, name = "value",
             definition = StringDefinition(

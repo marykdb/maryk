@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.models.ReferencesDataModel
-import maryk.core.models.ReferencesPropertyDefinitions
+import maryk.core.models.ReferencesObjectPropertyDefinitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
@@ -18,7 +18,7 @@ data class Delete internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>): this(reference.toList())
 
-    internal object Properties : ReferencesPropertyDefinitions<Delete>() {
+    internal object Properties : ReferencesObjectPropertyDefinitions<Delete>() {
         override val references = addReferenceListPropertyDefinition(Delete::references)
     }
 

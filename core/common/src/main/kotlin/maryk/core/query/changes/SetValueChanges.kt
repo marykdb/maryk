@@ -6,7 +6,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -20,7 +20,7 @@ data class SetValueChanges<T: Any> internal constructor(
     val addValues: Set<T>? = null,
     val deleteValues: Set<T>? = null
 ) : DefinedByReference<Set<T>> {
-    internal object Properties : PropertyDefinitions<SetValueChanges<*>>() {
+    internal object Properties : ObjectPropertyDefinitions<SetValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, SetValueChanges<*>::reference)
 
         init {

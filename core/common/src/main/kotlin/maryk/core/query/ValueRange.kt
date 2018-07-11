@@ -6,7 +6,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.query.filters.FilterType
@@ -32,7 +32,7 @@ data class ValueRange<T: Any> internal constructor(
 ) : IsFilter {
     override val filterType = FilterType.Range
 
-    internal object Properties : PropertyDefinitions<ValueRange<*>>() {
+    internal object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
         val from = add(0, "from", ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
                 @Suppress("UNCHECKED_CAST")

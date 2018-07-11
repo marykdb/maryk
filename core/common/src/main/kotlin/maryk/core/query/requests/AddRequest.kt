@@ -5,12 +5,12 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.query.DataModelPropertyContext
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.add(vararg objectToAdd: DO) =
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.add(vararg objectToAdd: DO) =
     AddRequest(this, objectToAdd.toList())
 
 /** A Request to add [objectsToAdd] to [dataModel] */
@@ -21,7 +21,7 @@ data class AddRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constructo
     override val requestType = RequestType.Add
 
     internal companion object: SimpleQueryDataModel<AddRequest<*, *>>(
-        properties = object : PropertyDefinitions<AddRequest<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<AddRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, AddRequest<*, *>::dataModel)
                 add(1, "objectsToAdd", ListDefinition(

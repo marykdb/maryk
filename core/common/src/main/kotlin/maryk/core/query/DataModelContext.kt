@@ -2,7 +2,7 @@ package maryk.core.query
 
 import maryk.core.models.DataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.enum.IndexedEnumDefinition
 
 /**
@@ -12,5 +12,5 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 open class DataModelContext(
     internal val dataModels: MutableMap<String, () -> DataModel<*, *>> = mutableMapOf(),
     internal val enums: MutableMap<String, IndexedEnumDefinition<*>> = mutableMapOf(),
-    internal var propertyDefinitions: PropertyDefinitions<*>? = null
+    internal var propertyDefinitions: ObjectPropertyDefinitions<*>? = null
 ) : IsPropertyContext

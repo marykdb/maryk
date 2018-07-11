@@ -6,7 +6,7 @@ import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -30,7 +30,7 @@ data class DataObjectChange<out DO: Any> internal constructor(
     val lastVersion: UInt64? = null
 ) {
     internal companion object: SimpleQueryDataModel<DataObjectChange<*>>(
-        properties = object : PropertyDefinitions<DataObjectChange<*>>() {
+        properties = object : ObjectPropertyDefinitions<DataObjectChange<*>>() {
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {

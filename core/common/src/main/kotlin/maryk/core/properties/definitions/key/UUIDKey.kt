@@ -6,7 +6,7 @@ import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.FixedBytesProperty
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
 import maryk.lib.uuid.generateUUID
@@ -17,7 +17,7 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
     override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
 
-    override fun <DO: Any, P: PropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO) = generateUUID()
+    override fun <DO: Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO) = generateUUID()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Pair(
         initLong(reader),
@@ -30,7 +30,7 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
     }
 
     internal object Model : DefinitionDataModel<UUIDKey>(
-        properties = object : PropertyDefinitions<UUIDKey>() {}
+        properties = object : ObjectPropertyDefinitions<UUIDKey>() {}
     ) {
         override fun invoke(map: SimpleValues<UUIDKey>) = UUIDKey
 

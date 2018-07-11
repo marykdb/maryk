@@ -8,6 +8,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.descriptors.addDescriptorPropertyWrapperWrapper
 import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
@@ -223,9 +224,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         return result
     }
 
-    object Model : ContextualDataModel<MultiTypeDefinition<*, *>, PropertyDefinitions<MultiTypeDefinition<*, *>>, DataModelContext, MultiTypeDefinitionContext>(
+    object Model : ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, DataModelContext, MultiTypeDefinitionContext>(
         contextTransformer = { MultiTypeDefinitionContext(it) },
-        properties = object : PropertyDefinitions<MultiTypeDefinition<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)

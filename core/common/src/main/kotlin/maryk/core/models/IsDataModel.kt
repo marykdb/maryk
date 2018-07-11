@@ -2,15 +2,15 @@ package maryk.core.models
 
 import maryk.core.objects.Values
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
-typealias IsSimpleDataModel<DO> = IsDataModel<DO, PropertyDefinitions<DO>>
+typealias IsSimpleDataModel<DO> = IsDataModel<DO, ObjectPropertyDefinitions<DO>>
 
 /** A DataModel which holds properties and can be validated */
-interface IsDataModel<DO: Any, P: PropertyDefinitions<DO>> {
+interface IsDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>> {
     /** Object which contains all property definitions. Can also be used to get property references. */
     val properties: P
 

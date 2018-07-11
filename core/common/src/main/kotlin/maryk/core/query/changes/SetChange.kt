@@ -4,7 +4,7 @@ import maryk.core.models.ReferenceMappedDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
@@ -17,7 +17,7 @@ data class SetChange internal constructor(
 
     constructor(vararg setValueChange: SetValueChanges<*>): this(setValueChange.toList())
 
-    internal object Properties : PropertyDefinitions<SetChange>() {
+    internal object Properties : ObjectPropertyDefinitions<SetChange>() {
         val setValueChanges = add(0, "setValueChanges",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(

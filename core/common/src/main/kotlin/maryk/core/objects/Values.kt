@@ -3,16 +3,16 @@ package maryk.core.objects
 import maryk.core.models.DataModel
 import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.lib.exceptions.ParseException
 
-typealias SimpleValues<DO> = Values<DO, PropertyDefinitions<DO>>
+typealias SimpleValues<DO> = Values<DO, ObjectPropertyDefinitions<DO>>
 
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-data class Values<DO: Any, P: PropertyDefinitions<DO>> internal constructor(
+data class Values<DO: Any, P: ObjectPropertyDefinitions<DO>> internal constructor(
     val dataModel: IsDataModel<DO, P>,
     private val map: Map<Int, Any?>
 ) {

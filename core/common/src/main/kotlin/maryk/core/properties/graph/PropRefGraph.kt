@@ -7,7 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -33,7 +33,7 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
 ) : IsPropRefGraphable<PDO> {
     override val graphType = PropRefGraphType.Graph
 
-    internal object Properties : PropertyDefinitions<PropRefGraph<*, *>>() {
+    internal object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *>>() {
         val parent = add(0, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
@@ -173,10 +173,10 @@ data class PropRefGraph<PDO: Any, DO: Any> internal constructor(
 /**
  * Add properties to Property Reference PropRefGraph objects so they are encodable
  */
-internal fun <DO: Any> PropertyDefinitions<DO>.addProperties(
+internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
     index: Int,
     getter: (DO) -> List<IsPropRefGraphable<*>>,
-    contextResolver: (GraphContext?) -> PropertyDefinitions<*>
+    contextResolver: (GraphContext?) -> ObjectPropertyDefinitions<*>
 ) =
     add(index, "properties",
         ListDefinition(

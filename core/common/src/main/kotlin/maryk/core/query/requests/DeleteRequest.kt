@@ -6,7 +6,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
@@ -16,7 +16,7 @@ import maryk.core.query.DataModelPropertyContext
  * Creates a Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.delete(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.delete(
     vararg objectsToDelete: Key<DO>,
     hardDelete: Boolean = false
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
@@ -33,7 +33,7 @@ data class DeleteRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
     override val requestType = RequestType.Delete
 
     internal companion object: SimpleQueryDataModel<DeleteRequest<*, *>>(
-        properties = object : PropertyDefinitions<DeleteRequest<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<DeleteRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, DeleteRequest<*, *>::dataModel)
 

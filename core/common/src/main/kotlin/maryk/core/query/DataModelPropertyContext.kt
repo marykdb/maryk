@@ -2,7 +2,7 @@ package maryk.core.query
 
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
@@ -12,6 +12,6 @@ import maryk.core.properties.references.IsPropertyReference
  */
 internal class DataModelPropertyContext(
     val dataModels: Map<String, () -> DataModel<*, *>>,
-    override var dataModel: RootDataModel<Any, PropertyDefinitions<Any>>? = null,
+    override var dataModel: RootDataModel<Any, ObjectPropertyDefinitions<Any>>? = null,
     var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>? = null
-) : ContainsDataModelContext<RootDataModel<Any, PropertyDefinitions<Any>>>
+) : ContainsDataModelContext<RootDataModel<Any, ObjectPropertyDefinitions<Any>>>

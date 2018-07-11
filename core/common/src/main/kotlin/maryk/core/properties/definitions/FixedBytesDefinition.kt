@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
 import maryk.lib.extensions.randomBytes
@@ -46,8 +47,8 @@ data class FixedBytesDefinition(
             value as? Bytes
         }
 
-    object Model : SimpleDataModel<FixedBytesDefinition, PropertyDefinitions<FixedBytesDefinition>>(
-        properties = object : PropertyDefinitions<FixedBytesDefinition>() {
+    object Model : SimpleDataModel<FixedBytesDefinition, ObjectPropertyDefinitions<FixedBytesDefinition>>(
+        properties = object : ObjectPropertyDefinitions<FixedBytesDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, FixedBytesDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, FixedBytesDefinition::required)

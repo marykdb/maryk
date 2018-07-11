@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -43,9 +44,9 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<ListDefinition<*, *>, PropertyDefinitions<ListDefinition<*, *>>, DataModelContext, ListDefinitionContext>(
+    object Model : ContextualDataModel<ListDefinition<*, *>, ObjectPropertyDefinitions<ListDefinition<*, *>>, DataModelContext, ListDefinitionContext>(
         contextTransformer = { it: DataModelContext? -> ListDefinitionContext(it) },
-        properties = object : PropertyDefinitions<ListDefinition<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<ListDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, ListDefinition<*, *>::required)

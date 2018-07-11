@@ -1,7 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -25,7 +25,7 @@ abstract class ValidationException internal constructor(
     internal abstract val validationExceptionType: ValidationExceptionType
 
     internal companion object {
-        internal fun <DO: ValidationException> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
+        internal fun <DO: ValidationException> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
                 index = 0, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
@@ -41,7 +41,7 @@ abstract class ValidationException internal constructor(
                 }
             )
         }
-        internal fun <DO: ValidationException> addValue(definitions: PropertyDefinitions<DO>, getter: (DO) -> String?) {
+        internal fun <DO: ValidationException> addValue(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String?) {
             definitions.add(
                 1, "value",
                 StringDefinition(),

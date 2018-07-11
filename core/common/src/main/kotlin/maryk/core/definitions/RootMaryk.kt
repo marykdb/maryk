@@ -5,7 +5,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
@@ -17,7 +17,7 @@ import maryk.core.query.requests.Requests
 data class RootMaryk(
     val operations: List<TypedValue<Operation, *>> = listOf()
 ) {
-    internal object Properties : PropertyDefinitions<RootMaryk>() {
+    internal object Properties : ObjectPropertyDefinitions<RootMaryk>() {
         val operations = add(0, "operations",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(

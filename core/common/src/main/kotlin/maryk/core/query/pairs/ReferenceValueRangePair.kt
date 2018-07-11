@@ -4,7 +4,7 @@ import maryk.core.models.SimpleDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
@@ -15,7 +15,7 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     val range: ValueRange<T>
 ) : DefinedByReference<T> {
-    internal object Properties: PropertyDefinitions<ReferenceValueRangePair<*>>() {
+    internal object Properties: ObjectPropertyDefinitions<ReferenceValueRangePair<*>>() {
         val reference = DefinedByReference.addReference(
             this,
             ReferenceValueRangePair<*>::reference

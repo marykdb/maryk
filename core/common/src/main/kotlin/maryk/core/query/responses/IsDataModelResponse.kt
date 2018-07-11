@@ -6,7 +6,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.TypedValue
@@ -26,7 +26,7 @@ interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: PropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
+        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> RootDataModel<*, *>?) {
             definitions.add(0, "dataModel",
                 ContextualModelReferenceDefinition<RootDataModel<*, *>, DataModelPropertyContext>(
                     contextualResolver = { context, name ->
@@ -45,11 +45,11 @@ interface IsDataModelResponse<DO: Any, out DM: RootDataModel<DO, *>>{
                 fromSerializable = { it?.get?.invoke() },
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.dataModel = value.get() as RootDataModel<Any, PropertyDefinitions<Any>>
+                    context.dataModel = value.get() as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
                 }
             )
         }
-        internal fun <DM: Any> addStatuses(definitions: PropertyDefinitions<DM>, getter: (DM) -> List<TypedValue<StatusType, *>>?){
+        internal fun <DM: Any> addStatuses(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> List<TypedValue<StatusType, *>>?){
             definitions.add(1, "statuses", listOfStatuses, getter)
         }
     }

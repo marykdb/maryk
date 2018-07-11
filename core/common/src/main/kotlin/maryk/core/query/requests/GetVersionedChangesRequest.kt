@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -20,7 +20,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.getVersionedChanges(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.getVersionedChanges(
     vararg keys: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -52,7 +52,7 @@ data class GetVersionedChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> int
     override val requestType = RequestType.GetVersionedChanges
 
     internal companion object: SimpleQueryDataModel<GetVersionedChangesRequest<*, *>>(
-        properties = object : PropertyDefinitions<GetVersionedChangesRequest<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<GetVersionedChangesRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*, *>::dataModel)
                 IsGetRequest.addKeys(this, GetVersionedChangesRequest<*, *>::keys)

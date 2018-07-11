@@ -16,7 +16,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -77,7 +77,7 @@ data class CompleteMarykObject(
     val multiForKey: TypedValue<MarykEnum, *>,
     val enumEmbedded: MarykEnumEmbedded
 ) {
-    object Properties: PropertyDefinitions<CompleteMarykObject>() {
+    object Properties: ObjectPropertyDefinitions<CompleteMarykObject>() {
         val string = add(
             index = 0, name = "string",
             definition = StringDefinition(

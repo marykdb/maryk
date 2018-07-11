@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -29,7 +29,7 @@ data class Definitions(
 ) {
     constructor(vararg definition: MarykPrimitive): this(definition.toList())
 
-    internal object Properties : PropertyDefinitions<Definitions>() {
+    internal object Properties : ObjectPropertyDefinitions<Definitions>() {
         @Suppress("UNCHECKED_CAST")
         val definitions = add(0, "definitions",
             ListDefinition(

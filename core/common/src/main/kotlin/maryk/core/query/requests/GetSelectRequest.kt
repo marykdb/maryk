@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -17,7 +17,7 @@ import maryk.core.query.filters.IsFilter
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.getSelect(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.getSelect(
     vararg keys: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -44,7 +44,7 @@ data class GetSelectRequest<DO: Any, out DM: RootDataModel<DO, *>> internal cons
     override val requestType = RequestType.Get
 
     internal companion object: SimpleQueryDataModel<GetSelectRequest<*, *>>(
-        properties = object : PropertyDefinitions<GetSelectRequest<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<GetSelectRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, GetSelectRequest<*, *>::dataModel)
                 IsGetRequest.addKeys(this, GetSelectRequest<*, *>::keys)

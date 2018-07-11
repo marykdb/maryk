@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -47,9 +48,9 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<SetDefinition<*, *>, PropertyDefinitions<SetDefinition<*, *>>, DataModelContext, SetDefinitionContext>(
+    object Model : ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, DataModelContext, SetDefinitionContext>(
         contextTransformer = { it: DataModelContext? -> SetDefinitionContext(it) },
-        properties = object : PropertyDefinitions<SetDefinition<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, SetDefinition<*, *>::required)

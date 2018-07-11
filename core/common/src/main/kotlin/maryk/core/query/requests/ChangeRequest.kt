@@ -5,13 +5,13 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.changes.DataObjectChange
 
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.change(vararg objectChanges: DataObjectChange<DO>) =
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.change(vararg objectChanges: DataObjectChange<DO>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objectChanges] */
@@ -22,7 +22,7 @@ data class ChangeRequest<DO: Any, out DM: RootDataModel<DO, *>> internal constru
     override val requestType = RequestType.Change
 
     internal companion object: SimpleQueryDataModel<ChangeRequest<*, *>>(
-        properties = object : PropertyDefinitions<ChangeRequest<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<ChangeRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, ChangeRequest<*, *>::dataModel)
                 add(1, "objectChanges",

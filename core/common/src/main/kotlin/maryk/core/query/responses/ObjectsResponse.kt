@@ -5,7 +5,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataObjectWithMetaData
 
 /** Response with [objects] to an objects (Get/Scan) request to [dataModel] */
@@ -14,7 +14,7 @@ data class ObjectsResponse<DO: Any, out DM: RootDataModel<DO, *>>(
     val objects: List<DataObjectWithMetaData<DO>>
 ) : IsDataModelResponse<DO, DM> {
     internal companion object: SimpleQueryDataModel<ObjectsResponse<*, *>>(
-        properties = object : PropertyDefinitions<ObjectsResponse<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<ObjectsResponse<*, *>>() {
             init {
                 IsDataModelResponse.addDataModel(this, ObjectsResponse<*, *>::dataModel)
                 add(1, "objects", ListDefinition(

@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.Values
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -15,7 +15,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-internal abstract class ReferencesDataModel<DO: Any, P: ReferencesPropertyDefinitions<DO>>(
+internal abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitions<DO>>(
     properties: P
 ) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     override fun writeJson(map: Values<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
@@ -76,7 +76,7 @@ internal abstract class ReferencesDataModel<DO: Any, P: ReferencesPropertyDefini
     }
 }
 
-internal abstract class ReferencesPropertyDefinitions<DO: Any> : PropertyDefinitions<DO>() {
+internal abstract class ReferencesObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>() {
     abstract val references: ListPropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, DO>
 
     internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<IsPropertyReference<*, *>>) =

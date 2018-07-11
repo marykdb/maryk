@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
@@ -18,7 +18,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scan(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.scan(
     startKey: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -46,7 +46,7 @@ data class ScanRequest<DO: Any, out DM: RootDataModel<DO, *>> internal construct
     override val requestType = RequestType.Scan
 
     internal companion object: SimpleQueryDataModel<ScanRequest<*, *>>(
-        properties = object : PropertyDefinitions<ScanRequest<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<ScanRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, ScanRequest<*, *>::dataModel)
                 IsScanRequest.addStartKey(this, ScanRequest<*, *>::startKey)

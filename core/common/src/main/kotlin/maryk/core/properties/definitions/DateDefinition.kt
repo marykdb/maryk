@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SimpleDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.fromByteReader
@@ -59,8 +60,8 @@ data class DateDefinition(
         else -> null
     }
 
-    object Model : SimpleDataModel<DateDefinition, PropertyDefinitions<DateDefinition>>(
-        properties = object : PropertyDefinitions<DateDefinition>() {
+    object Model : SimpleDataModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>(
+        properties = object : ObjectPropertyDefinitions<DateDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, DateDefinition::required)

@@ -2,7 +2,7 @@ package maryk.core.models
 
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
@@ -16,7 +16,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: PropertyDefinitions<DO>, CP: PropertyDefinitions<CDO>>(
+internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: ObjectPropertyDefinitions<DO>, CP: ObjectPropertyDefinitions<CDO>>(
     properties: P,
     private val containedDataModel: QueryDataModel<CDO, CP>,
     private val referenceProperty: PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, CDO>

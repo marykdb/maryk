@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.lib.time.DateTime
@@ -39,7 +39,7 @@ class DataObjectWithMetaDataTest {
         mapOf(
             TestMarykObject.name to { TestMarykObject }
         ),
-        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

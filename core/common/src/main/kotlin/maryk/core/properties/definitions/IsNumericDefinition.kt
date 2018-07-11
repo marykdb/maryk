@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 
 /**
  * Property Definition of [T] to define numeric properties.
@@ -14,7 +15,7 @@ interface IsNumericDefinition<T: Comparable<T>> : IsComparableDefinition<T, IsPr
     fun createRandom(): T
 
     companion object {
-        internal fun <DO:Any> addRandom(index: Int, definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+        internal fun <DO:Any> addRandom(index: Int, definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
             definitions.add(index, "random", BooleanDefinition(default = false), getter)
         }
     }

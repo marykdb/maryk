@@ -8,6 +8,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -21,10 +22,10 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
 private typealias GenericValueModelDefinition = ValueModelDefinition<*, *, *>
-//private typealias GenericValueModelDefinition2 = ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>>
+//private typealias GenericValueModelDefinition2 = ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>
 
 /** Definition for value model properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
-data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>, P: PropertyDefinitions<DO>>(
+data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -83,9 +84,9 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
             }
         } else { null }
 
-    object Model : ContextualDataModel<ValueModelDefinition<*, *, *>, PropertyDefinitions<ValueModelDefinition<*, *, *>>, DataModelContext, ModelContext>(
+    object Model : ContextualDataModel<ValueModelDefinition<*, *, *>, ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>, DataModelContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
-        properties = object : PropertyDefinitions<ValueModelDefinition<*, *, *>>() {
+        properties = object : ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *, *>::indexed)
                 IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *, *>::required)
@@ -120,7 +121,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                             } ?: throw ContextNotFoundException()
 
                             @Suppress("UNCHECKED_CAST")
-                            context.model = dataModel.get as () -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                            context.model = dataModel.get as () -> AbstractDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                         }
                     }
                 )
@@ -160,7 +161,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
             required = map(1),
             final = map(2),
             unique = map(3),
-            dataModel = map<ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>>(4),
+            dataModel = map<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(4),
             minValue = map(5),
             maxValue = map(6),
             default = map(7)

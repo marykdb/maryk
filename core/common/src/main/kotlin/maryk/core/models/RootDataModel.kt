@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.initByteArray
 import maryk.core.objects.SimpleValues
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -13,7 +14,6 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
@@ -42,7 +42,7 @@ fun definitions(vararg keys: FixedBytesProperty<*>) = arrayOf(*keys)
  *
  * The dataModel can be referenced by the [name] and the properties are defined by a [properties]
  */
-abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
+abstract class RootDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     name: String,
     keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
@@ -135,13 +135,13 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private object RootModelProperties: PropertyDefinitions<RootDataModel<*, *>>() {
+    private object RootModelProperties: ObjectPropertyDefinitions<RootDataModel<*, *>>() {
         init {
-            AbstractDataModel.addName(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>) {
+            AbstractDataModel.addName(this as ObjectPropertyDefinitions<RootDataModel<Any, ObjectPropertyDefinitions<Any>>>) {
                 it.name
             }
         }
-        val properties = AbstractDataModel.addProperties(this as PropertyDefinitions<RootDataModel<Any, PropertyDefinitions<Any>>>)
+        val properties = AbstractDataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModel<Any, ObjectPropertyDefinitions<Any>>>)
         val key = add(2, "key",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -162,10 +162,10 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : SimpleDataModel<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>(
+    object Model : SimpleDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>(
         properties = RootModelProperties
     ) {
-        override fun invoke(map: SimpleValues<RootDataModel<*, *>>) = object : RootDataModel<Any, PropertyDefinitions<Any>>(
+        override fun invoke(map: SimpleValues<RootDataModel<*, *>>) = object : RootDataModel<Any, ObjectPropertyDefinitions<Any>>(
             name = map(0),
             properties = map(1),
             keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(2))?.map {
@@ -184,7 +184,7 @@ abstract class RootDataModel<DO: Any, P: PropertyDefinitions<DO>>(
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(map: Values<RootDataModel<*, *>, PropertyDefinitions<RootDataModel<*, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override fun writeJson(map: Values<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
             for (key in map.keys) {
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last

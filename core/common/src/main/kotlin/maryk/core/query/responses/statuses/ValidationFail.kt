@@ -4,7 +4,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -20,7 +20,7 @@ data class ValidationFail<DO: Any>(
     override val statusType = StatusType.VALIDATION_FAIL
 
     internal companion object: SimpleQueryDataModel<ValidationFail<*>>(
-        properties = object : PropertyDefinitions<ValidationFail<*>>() {
+        properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {
             init {
                 add(0, "exceptions",
                     ListDefinition(

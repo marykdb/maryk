@@ -5,7 +5,7 @@ import maryk.core.models.SimpleDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
@@ -18,7 +18,7 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
     val values: Set<T>
 ) : DefinedByReference<T> {
-    internal object Properties: PropertyDefinitions<ReferenceValueSetPair<*>>() {
+    internal object Properties: ObjectPropertyDefinitions<ReferenceValueSetPair<*>>() {
         val reference = DefinedByReference.addReference(
             this,
             ReferenceValueSetPair<*>::reference

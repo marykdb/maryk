@@ -5,7 +5,7 @@ import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.models.RootDataModel
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -26,7 +26,7 @@ class ContextualPropertyReferenceDefinitionTest {
             TestMarykObject.name to { TestMarykObject },
             EmbeddedMarykObject.name to { EmbeddedMarykObject }
         ),
-        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

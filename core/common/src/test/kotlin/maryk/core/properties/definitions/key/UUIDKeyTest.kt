@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -15,7 +15,7 @@ internal class UUIDKeyTest {
     private data class MarykObject(
         val value: String
     ){
-        object Properties : PropertyDefinitions<MarykObject>() {
+        object Properties : ObjectPropertyDefinitions<MarykObject>() {
             init {
                 add(0, "value", StringDefinition(), MarykObject::value)
             }

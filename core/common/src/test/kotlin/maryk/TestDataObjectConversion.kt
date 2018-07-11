@@ -3,7 +3,7 @@ package maryk
 import maryk.core.models.AbstractDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WriteCache
 import maryk.core.yaml.MarykYamlReader
 import maryk.json.JsonReader
@@ -11,7 +11,7 @@ import maryk.json.JsonWriter
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 
-fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
+fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
     value: T,
     dataModel: AbstractDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
@@ -36,7 +36,7 @@ fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyCo
     checker(converted, value)
 }
 
-fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
+fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
     value: T,
     dataModel: AbstractDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
@@ -66,7 +66,7 @@ fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyCo
     return output
 }
 
-fun <T: Any, P: PropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
+fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
     value: T,
     dataModel: AbstractDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,

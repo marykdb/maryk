@@ -5,7 +5,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -24,7 +24,7 @@ data class ValueIn internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValueSetPair<*>): this(referenceValuePair.toList() as List<ReferenceValueSetPair<Any>>)
 
-    internal object Properties : PropertyDefinitions<ValueIn>() {
+    internal object Properties : ObjectPropertyDefinitions<ValueIn>() {
         val referenceValuePairs = add(0, "referenceValuePairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(

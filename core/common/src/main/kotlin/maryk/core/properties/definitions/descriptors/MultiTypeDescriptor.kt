@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.MultiTypeDefinitionContext
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCollectionTransformerDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
@@ -46,7 +46,7 @@ private data class MultiTypeDescriptor(
     val name: String,
     val definition: IsSubDefinition<out Any, DataModelContext>
 ) {
-    private object Properties: PropertyDefinitions<MultiTypeDescriptor>() {
+    private object Properties: ObjectPropertyDefinitions<MultiTypeDescriptor>() {
         val index = add(0, "index",
             NumberDefinition(type = UInt32),
             MultiTypeDescriptor::index,
@@ -197,10 +197,10 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
 }
 
 /**
- * Add a descriptor of multi types to a MultiTypeDefinition PropertyDefinitions
+ * Add a descriptor of multi types to a MultiTypeDefinition ObjectPropertyDefinitions
  * Set [index] and [name] to append it to model
  */
-internal fun PropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropertyWrapperWrapper(
+internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorPropertyWrapperWrapper(
     index: Int,
     name: String
 ) {

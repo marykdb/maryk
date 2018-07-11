@@ -9,7 +9,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelContext
 import maryk.lib.time.DateTime
 import maryk.test.shouldBe
@@ -20,7 +20,7 @@ internal class ReversedTest {
         val boolean: Boolean,
         val dateTime: DateTime
     ){
-        object Properties : PropertyDefinitions<MarykObject>() {
+        object Properties : ObjectPropertyDefinitions<MarykObject>() {
             val boolean = add(0, "bool", BooleanDefinition(
                 final = true
             ), MarykObject::boolean)

@@ -2,7 +2,7 @@ package maryk.core.models
 
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -15,7 +15,7 @@ import maryk.lib.exceptions.ParseException
  *
  * In JSON/YAML this model is represented as just that property.
  */
-internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: PropertyDefinitions<DO>, CX: IsPropertyContext>(
+internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
     properties: P,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, T, CX, DO>
 ) : AbstractDataModel<DO, P, CX, CX>(properties) {

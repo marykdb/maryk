@@ -8,9 +8,9 @@ import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
-import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinition
-import maryk.core.properties.definitions.PropertyDefinitionsCollectionDefinitionWrapper
+import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitionsCollectionDefinition
+import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
@@ -32,7 +32,7 @@ import maryk.lib.exceptions.ParseException
  * to read and write. [CXI] is the input Context for properties. This can be different because the DataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
+abstract class AbstractDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     override val properties: P
 ) : IsDataModel<DO, P> {
     override fun validate(
@@ -378,20 +378,22 @@ abstract class AbstractDataModel<DO: Any, P: PropertyDefinitions<DO>, in CXI: Is
     }
 
     internal companion object {
-        internal fun <DO: DataModel<*, *>> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) {
+        internal fun <DO: DataModel<*, *>> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) {
             definitions.add(0, "name", StringDefinition(), getter)
         }
 
-        internal fun <DO: DataModel<*, *>> addProperties(definitions: PropertyDefinitions<DO>): PropertyDefinitionsCollectionDefinitionWrapper<DO> {
-            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DO>(1, "properties", PropertyDefinitionsCollectionDefinition(
-                capturer = { context, propDefs ->
-                    context?.apply {
-                        this.propertyDefinitions = propDefs
-                    } ?: ContextNotFoundException()
-                }
-            )) {
+        internal fun <DO: DataModel<*, *>> addProperties(definitions: ObjectPropertyDefinitions<DO>): PropertyDefinitionsCollectionDefinitionWrapper<DO> {
+            val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DO>(1,
+                "properties",
+                PropertyDefinitionsCollectionDefinition(
+                    capturer = { context, propDefs ->
+                        context?.apply {
+                            this.propertyDefinitions = propDefs
+                        } ?: ContextNotFoundException()
+                    }
+                )) {
                 @Suppress("UNCHECKED_CAST")
-                it.properties as PropertyDefinitions<Any>
+                it.properties as ObjectPropertyDefinitions<Any>
             }
 
             definitions.addSingle(wrapper)

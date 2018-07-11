@@ -4,7 +4,7 @@ import maryk.core.models.QuerySingleValueDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelPropertyContext
@@ -15,7 +15,7 @@ data class Requests(
 ) {
     constructor(vararg request: IsRequest): this(request.toList())
 
-    internal object Properties: PropertyDefinitions<Requests>() {
+    internal object Properties: ObjectPropertyDefinitions<Requests>() {
         val requests = add(0, "requests",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(

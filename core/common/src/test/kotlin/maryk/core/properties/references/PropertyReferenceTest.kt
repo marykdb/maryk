@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.TestMarykObject
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.protobuf.WriteCache
@@ -11,7 +11,7 @@ import maryk.test.shouldBe
 import maryk.test.shouldNotBe
 import kotlin.test.Test
 
-private object Properties : PropertyDefinitions<Any>()
+private object Properties : ObjectPropertyDefinitions<Any>()
 
 private val modelDefinition = Properties.add(2, "embeddedObject", EmbeddedObjectDefinition(
     dataModel = { TestMarykObject }

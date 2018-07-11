@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -30,7 +30,7 @@ data class ListValueChanges<T: Any> internal constructor(
     val deleteAtIndex: Set<Int>? = null
 ) : DefinedByReference<List<T>> {
     @Suppress("unused")
-    internal object Properties : PropertyDefinitions<ListValueChanges<*>>() {
+    internal object Properties : ObjectPropertyDefinitions<ListValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, ListValueChanges<*>::reference)
 
         val addValuesToEnd = add(1, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)

@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
@@ -69,9 +70,9 @@ data class NumberDefinition<T: Comparable<T>>(
         else -> super.writeJsonValue(value, writer, context)
     }
 
-    object Model : ContextualDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
+    object Model : ContextualDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
         contextTransformer = { NumericContext },
-        properties = object : PropertyDefinitions<NumberDefinition<*>>() {
+        properties = object : ObjectPropertyDefinitions<NumberDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, NumberDefinition<*>::indexed)
                 IsPropertyDefinition.addRequired(this, NumberDefinition<*>::required)

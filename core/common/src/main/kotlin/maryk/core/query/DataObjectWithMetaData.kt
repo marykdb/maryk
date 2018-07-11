@@ -5,7 +5,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
@@ -19,7 +19,7 @@ data class DataObjectWithMetaData<out DO: Any>(
     val isDeleted: Boolean
 ) {
     internal companion object: SimpleQueryDataModel<DataObjectWithMetaData<*>>(
-        properties = object : PropertyDefinitions<DataObjectWithMetaData<*>>() {
+        properties = object : ObjectPropertyDefinitions<DataObjectWithMetaData<*>>() {
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {

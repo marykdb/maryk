@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.core.models.RootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -20,7 +20,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DO: Any, P: PropertyDefinitions<DO>> RootDataModel<DO, P>.scanChanges(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootDataModel<DO, P>.scanChanges(
     startKey: Key<DO>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -53,7 +53,7 @@ data class ScanChangesRequest<DO: Any, out DM: RootDataModel<DO, *>> internal co
     override val requestType = RequestType.ScanChanges
 
     internal companion object: SimpleQueryDataModel<ScanChangesRequest<*, *>>(
-        properties = object : PropertyDefinitions<ScanChangesRequest<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<ScanChangesRequest<*, *>>() {
             init {
                 IsObjectRequest.addDataModel(this, ScanChangesRequest<*, *>::dataModel)
                 IsScanRequest.addStartKey(this, ScanChangesRequest<*, *>::startKey)

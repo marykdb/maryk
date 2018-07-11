@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
@@ -56,8 +57,8 @@ data class FlexBytesDefinition(
         }
     }
 
-    object Model : SimpleDataModel<FlexBytesDefinition, PropertyDefinitions<FlexBytesDefinition>>(
-        properties = object : PropertyDefinitions<FlexBytesDefinition>() {
+    object Model : SimpleDataModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>(
+        properties = object : ObjectPropertyDefinitions<FlexBytesDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, FlexBytesDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, FlexBytesDefinition::required)

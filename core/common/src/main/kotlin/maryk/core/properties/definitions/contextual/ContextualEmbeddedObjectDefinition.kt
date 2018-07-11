@@ -4,7 +4,7 @@ import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -15,7 +15,7 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
-    val contextualResolver: (context: CX?) -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+    val contextualResolver: (context: CX?) -> AbstractDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
 ): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
     override val indexed = false
     override val required = true

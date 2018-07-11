@@ -5,7 +5,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.changes.DataObjectVersionedChange
 
 /** Response with [changes] with all versioned changes since version in request to [dataModel] */
@@ -14,7 +14,7 @@ data class ObjectVersionedChangesResponse<DO: Any, out DM: RootDataModel<DO, *>>
     val changes: List<DataObjectVersionedChange<DO>>
 ) : IsDataModelResponse<DO, DM> {
     internal companion object: SimpleQueryDataModel<ObjectVersionedChangesResponse<*, *>>(
-        properties = object : PropertyDefinitions<ObjectVersionedChangesResponse<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<ObjectVersionedChangesResponse<*, *>>() {
             init {
                 IsDataModelResponse.addDataModel(this, ObjectVersionedChangesResponse<*, *>::dataModel)
                 add(1, "changes", ListDefinition(

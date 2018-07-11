@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.ReferencesDataModel
-import maryk.core.models.ReferencesPropertyDefinitions
+import maryk.core.models.ReferencesObjectPropertyDefinitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
@@ -18,7 +18,7 @@ data class Exists internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>): this(reference.toList())
 
-    internal object Properties : ReferencesPropertyDefinitions<Exists>() {
+    internal object Properties : ReferencesObjectPropertyDefinitions<Exists>() {
         override val references = addReferenceListPropertyDefinition(Exists::references)
     }
 

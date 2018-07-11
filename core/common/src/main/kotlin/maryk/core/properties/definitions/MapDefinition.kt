@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -182,9 +183,9 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return Pair(key, value)
     }
 
-    object Model : ContextualDataModel<MapDefinition<*, *, *>, PropertyDefinitions<MapDefinition<*, *, *>>, DataModelContext, KeyValueDefinitionContext>(
+    object Model : ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, DataModelContext, KeyValueDefinitionContext>(
         contextTransformer = { it: DataModelContext? -> KeyValueDefinitionContext(it) },
-        properties = object : PropertyDefinitions<MapDefinition<*, *, *>>() {
+        properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)
                 IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)

@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
  * DataModel of type [DO] with [properties] definitions to contain
  * query actions so they can be validated and transported
  */
-internal abstract class SimpleFilterDataModel<DO: Any, P: PropertyDefinitions<DO>>(
+internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     properties: P
 ) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
 

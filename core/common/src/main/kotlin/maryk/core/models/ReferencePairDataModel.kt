@@ -4,7 +4,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -16,7 +16,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsPropertyDefinitions<T, DO>>(
+internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<T, DO>>(
     properties: P
 ) : AbstractDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     override fun writeJson(map: Values<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
@@ -79,7 +79,7 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValu
     }
 }
 
-internal abstract class ReferenceValuePairsPropertyDefinitions<T: Any, DO: Any> : PropertyDefinitions<DO>() {
+internal abstract class ReferenceValuePairsObjectPropertyDefinitions<T: Any, DO: Any> : ObjectPropertyDefinitions<DO>() {
     abstract val referenceValuePairs: ListPropertyDefinitionWrapper<ReferenceValuePair<T>, ReferenceValuePair<T>, IsPropertyContext, DO>
 
     protected fun <T: Any> addReferenceValuePairsDefinition(getter: (DO) -> List<ReferenceValuePair<T>>?) =
@@ -88,7 +88,7 @@ internal abstract class ReferenceValuePairsPropertyDefinitions<T: Any, DO: Any> 
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = {
                         @Suppress("UNCHECKED_CAST")
-                        ReferenceValuePair as SimpleDataModel<ReferenceValuePair<T>, PropertyDefinitions<ReferenceValuePair<T>>>
+                        ReferenceValuePair as SimpleDataModel<ReferenceValuePair<T>, ObjectPropertyDefinitions<ReferenceValuePair<T>>>
                     }
                 )
             ),

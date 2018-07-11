@@ -4,7 +4,7 @@ import maryk.core.models.IsDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.IsPropertyReference
@@ -36,7 +36,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
         ValueWithFixedBytesPropertyReference(this, parentRef)
 
     /** Get the value to be used in a key from [dataObject] defined by [dataModel] */
-    override fun <DO : Any, P: PropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO): T {
+    override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO): T {
         @Suppress("UNCHECKED_CAST")
         return dataModel.properties.getPropertyGetter(
             this.index

@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
@@ -107,7 +107,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     companion object {
-        private fun <DO:Any> addIndex(definitions: PropertyDefinitions<DO>, getter: (DO) -> Int) =
+        private fun <DO:Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) =
             definitions.add(0, "index",
                 NumberDefinition(type = UInt32),
                 getter,
@@ -115,10 +115,10 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 fromSerializable = { it?.toInt() }
             )
 
-        private fun <DO:Any> addName(definitions: PropertyDefinitions<DO>, getter: (DO) -> String) =
+        private fun <DO:Any> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) =
             definitions.add(1, "name", StringDefinition(), getter)
 
-        private fun <DO:Any> addDefinition(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) =
+        private fun <DO:Any> addDefinition(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) =
             definitions.add(2, "definition",
                 MultiTypeDefinition(
                     typeEnum = PropertyDefinitionType,
@@ -131,13 +131,13 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             )
     }
 
-    private object Properties: PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
+    private object Properties: ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>() {
         val index = IsPropertyDefinitionWrapper.addIndex(this, IsPropertyDefinitionWrapper<*, *, *, *>::index)
         val name = IsPropertyDefinitionWrapper.addName(this, IsPropertyDefinitionWrapper<*, *, *, *>::name)
         val definition = IsPropertyDefinitionWrapper.addDefinition(this, IsPropertyDefinitionWrapper<*, *, *, *>::definition)
     }
 
-    object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, PropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
+    object Model : SimpleDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
         properties = Properties
     ) {
         override fun invoke(map: SimpleValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {

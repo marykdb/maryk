@@ -9,6 +9,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -110,9 +111,9 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    object Model : ContextualDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>(
+    object Model : ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>(
         contextTransformer = { EnumDefinitionContext(it) },
-        properties = object : PropertyDefinitions<EnumDefinition<*>>() {
+        properties = object : ObjectPropertyDefinitions<EnumDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, EnumDefinition<*>::indexed)
                 IsPropertyDefinition.addRequired(this, EnumDefinition<*>::required)

@@ -1,10 +1,10 @@
 package maryk.generator.kotlin
 
 import maryk.core.models.ValueDataModel
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
-fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlin(
+fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlin(
     packageName: String,
     generationContext: KotlinGenerationContext? = null,
     writer: (String) -> Unit
@@ -12,7 +12,7 @@ fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.gene
     val importsToAdd = mutableSetOf(
         "maryk.core.models.ValueDataModel",
         "maryk.core.objects.Values",
-        "maryk.core.properties.definitions.PropertyDefinitions",
+        "maryk.core.properties.ObjectPropertyDefinitions",
         "maryk.core.properties.types.ValueDataObject"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
@@ -26,7 +26,7 @@ fun <DO: ValueDataObject, P: PropertyDefinitions<DO>> ValueDataModel<DO, P>.gene
     data class $name(
         ${propertiesKotlin.generateValuesForProperties().prependIndent().prependIndent().trimStart()}
     ): ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
-        object Properties: PropertyDefinitions<$name>() {
+        object Properties: ObjectPropertyDefinitions<$name>() {
             ${propertiesKotlin.generateDefinitionsForProperties(modelName = name).prependIndent().trimStart()}
         }
 

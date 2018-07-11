@@ -4,7 +4,7 @@ import maryk.core.definitions.Definitions
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.ValueDataObject
@@ -22,15 +22,15 @@ fun Definitions.generateKotlin(packageName: String, writerConstructor: (String) 
             }
             is RootDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as RootDataModel<Any, PropertyDefinitions<Any>>).generateKotlin(packageName, kotlinGenerationContext, writer)
+                (obj as RootDataModel<Any, ObjectPropertyDefinitions<Any>>).generateKotlin(packageName, kotlinGenerationContext, writer)
             }
             is ValueDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>).generateKotlin(packageName, kotlinGenerationContext, writer)
+                (obj as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>).generateKotlin(packageName, kotlinGenerationContext, writer)
             }
             is DataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as DataModel<Any, PropertyDefinitions<Any>>).generateKotlin(packageName, kotlinGenerationContext, writer)
+                (obj as DataModel<Any, ObjectPropertyDefinitions<Any>>).generateKotlin(packageName, kotlinGenerationContext, writer)
             }
             else -> throw Exception("Unknown Maryk Primitive $obj")
         }

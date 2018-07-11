@@ -6,7 +6,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.SInt32
@@ -27,7 +27,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
 
     override val primitiveType = PrimitiveType.EnumDefinition
 
-    internal object Properties : PropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
+    internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
         val name = add(0, "name",
             ContextCaptureDefinition(
                 definition = StringDefinition(),

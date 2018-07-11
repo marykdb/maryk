@@ -17,7 +17,7 @@ import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -28,7 +28,7 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.NumberType
 
 /** Get the PropertyDefinitionKotlinDescriptor of the given property */
-internal fun <T: Any, D: IsTransportablePropertyDefinitionType<T>, P: PropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
+internal fun <T: Any, D: IsTransportablePropertyDefinitionType<T>, P: ObjectPropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
     @Suppress("UNCHECKED_CAST")
     return definitionNamesMap[this.propertyDefinitionType] as PropertyDefinitionKotlinDescriptor<T, D, P>?
         ?: throw Exception("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
@@ -231,7 +231,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueModelDefinition",
         kotlinTypeName = { it.dataModel.name },
-        definitionModel = ValueModelDefinition.Model as IsSimpleDataModel<ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>, PropertyDefinitions<ValueDataObject>>>,
+        definitionModel = ValueModelDefinition.Model as IsSimpleDataModel<ValueModelDefinition<ValueDataObject, ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>, ObjectPropertyDefinitions<ValueDataObject>>>,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,
             "minValue" to generateKotlinValueWithDefinition,

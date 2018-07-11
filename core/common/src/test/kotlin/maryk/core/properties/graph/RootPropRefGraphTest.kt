@@ -5,7 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -35,7 +35,7 @@ class RootPropRefGraphTest {
         dataModels = mapOf(
             TestMarykObject.name to { TestMarykObject }
         ),
-        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

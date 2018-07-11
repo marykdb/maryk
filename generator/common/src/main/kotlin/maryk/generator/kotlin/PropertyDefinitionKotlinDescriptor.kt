@@ -3,10 +3,10 @@ package maryk.generator.kotlin
 import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 
 /** Describes the property definitions for translation to kotlin */
-internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportablePropertyDefinitionType<T>, P: PropertyDefinitions<D>>(
+internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportablePropertyDefinitionType<T>, P: ObjectPropertyDefinitions<D>>(
     val className: String,
     val kotlinTypeName: (D) -> String,
     val definitionModel: IsDataModel<D, P>,

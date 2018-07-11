@@ -6,6 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.models.DataModel
 import maryk.core.objects.Values
 import maryk.core.properties.ByteCollector
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -22,7 +23,7 @@ internal class EmbeddedObjectDefinitionTest {
     private data class MarykObject(
         val string: String = "jur"
     ){
-        object Properties : PropertyDefinitions<MarykObject>() {
+        object Properties : ObjectPropertyDefinitions<MarykObject>() {
             init {
                 add(0, "string", StringDefinition(
                     regEx = "jur"

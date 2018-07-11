@@ -5,7 +5,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
 import maryk.lib.time.DateTime
@@ -15,7 +15,7 @@ data class TestValueObject(
     val dateTime: DateTime,
     val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
-    object Properties : PropertyDefinitions<TestValueObject>() {
+    object Properties : ObjectPropertyDefinitions<TestValueObject>() {
         val int = add(0, "int", NumberDefinition(
             type = SInt32,
             maxValue = 6
@@ -40,7 +40,7 @@ data class TestValueObject(
             if (other !is ValueDataModel<*, *>) return false
 
             @Suppress("UNCHECKED_CAST")
-            val otherModel = other as ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>
+            val otherModel = other as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
 
             if (this.name != otherModel.name) return false
             if (this.properties.size != otherModel.properties.size) return false

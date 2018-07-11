@@ -7,6 +7,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.byteSize
@@ -71,9 +72,9 @@ data class TimeDefinition(
         else -> value as? Time
     }
 
-    object Model : ContextualDataModel<TimeDefinition, PropertyDefinitions<TimeDefinition>, DataModelContext, TimeDefinitionContext>(
+    object Model : ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, DataModelContext, TimeDefinitionContext>(
         contextTransformer = { TimeDefinitionContext() },
-        properties = object : PropertyDefinitions<TimeDefinition>() {
+        properties = object : ObjectPropertyDefinitions<TimeDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, TimeDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, TimeDefinition::required)

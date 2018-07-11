@@ -5,7 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.SimpleValues
 import maryk.core.objects.Values
 import maryk.core.properties.definitions.IsFixedBytesEncodable
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 import maryk.lib.bytes.Base64
 
@@ -13,7 +13,7 @@ import maryk.lib.bytes.Base64
  * DataModel of type [DO] for objects that can be encoded in fixed length width.
  * Contains [properties] definitions.
  */
-abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
+abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>>(
     name: String,
     properties: P
 ) : DataModel<DO, P>(name, properties) {
@@ -74,7 +74,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
     }
 
     internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(
-        properties = object : PropertyDefinitions<ValueDataModel<*, *>>() {
+        properties = object : ObjectPropertyDefinitions<ValueDataModel<*, *>>() {
             init {
                 AbstractDataModel.addName(this) {
                     it.name
@@ -83,11 +83,11 @@ abstract class ValueDataModel<DO: ValueDataObject, P: PropertyDefinitions<DO>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, PropertyDefinitions<ValueDataObject>>(
+        override fun invoke(map: SimpleValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>(
             name = map(0),
             properties = map(1)
         ){
-            override fun invoke(map: Values<ValueDataObject, PropertyDefinitions<ValueDataObject>>): ValueDataObject {
+            override fun invoke(map: Values<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>): ValueDataObject {
                 return object : ValueDataObject(ByteArray(0)){}
             }
         }

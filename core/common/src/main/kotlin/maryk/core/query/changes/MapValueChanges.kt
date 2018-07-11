@@ -6,7 +6,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -25,7 +25,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
     val valuesToAdd: Map<K, V>? = null,
     val keysToDelete: Set<K>? = null
 ) : DefinedByReference<Map<K, V>> {
-    internal object Properties : PropertyDefinitions<MapValueChanges<out Any, out Any>>() {
+    internal object Properties : ObjectPropertyDefinitions<MapValueChanges<out Any, out Any>>() {
         val reference = DefinedByReference.addReference(this, MapValueChanges<*, *>::reference)
 
         init {

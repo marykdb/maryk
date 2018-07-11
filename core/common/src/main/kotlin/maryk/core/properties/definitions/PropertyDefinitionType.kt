@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.models.AbstractDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -43,16 +44,16 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions = mapOf<PropertyDefinitio
     PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
     PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
     PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),
-    PropertyDefinitionType.Enum to EmbeddedObjectDefinition<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, AbstractDataModel<EnumDefinition<*>, PropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>, DataModelContext, EnumDefinitionContext>(dataModel = { EnumDefinition.Model }),
+    PropertyDefinitionType.Enum to EmbeddedObjectDefinition<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, AbstractDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>, DataModelContext, EnumDefinitionContext>(dataModel = { EnumDefinition.Model }),
     PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
     PropertyDefinitionType.FlexBytes to EmbeddedObjectDefinition(dataModel = { FlexBytesDefinition.Model }),
     PropertyDefinitionType.List to EmbeddedObjectDefinition(dataModel = { ListDefinition.Model }),
     PropertyDefinitionType.Map to EmbeddedObjectDefinition(dataModel = { MapDefinition.Model }),
     PropertyDefinitionType.MultiType to EmbeddedObjectDefinition(dataModel = {
         @Suppress("UNCHECKED_CAST")
-        MultiTypeDefinition.Model as ContextualDataModel<MultiTypeDefinition<out IndexedEnum<Any>, *>, PropertyDefinitions<MultiTypeDefinition<out IndexedEnum<Any>, *>>, DataModelContext, MultiTypeDefinitionContext>
+        MultiTypeDefinition.Model as ContextualDataModel<MultiTypeDefinition<out IndexedEnum<Any>, *>, ObjectPropertyDefinitions<MultiTypeDefinition<out IndexedEnum<Any>, *>>, DataModelContext, MultiTypeDefinitionContext>
     }),
-    PropertyDefinitionType.Number to EmbeddedObjectDefinition<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, PropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
+    PropertyDefinitionType.Number to EmbeddedObjectDefinition<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, AbstractDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>, IsPropertyContext, NumericContext>(dataModel = { NumberDefinition.Model }),
     PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model }),
     PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
     PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
@@ -126,7 +127,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
         EmbeddedObjectPropertyDefinitionWrapper(
             index,
             name,
-            definition as EmbeddedObjectDefinition<Any, PropertyDefinitions<Any>, AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>,
+            definition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, AbstractDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>,
             getter as (Any) -> Set<Any>?
         )
     },

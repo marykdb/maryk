@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.models.SimpleDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.IsPropertyReference
@@ -75,8 +76,8 @@ data class StringDefinition(
         }
     }
 
-    object Model : SimpleDataModel<StringDefinition, PropertyDefinitions<StringDefinition>>(
-        properties = object : PropertyDefinitions<StringDefinition>() {
+    object Model : SimpleDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
+        properties = object : ObjectPropertyDefinitions<StringDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, StringDefinition::required)

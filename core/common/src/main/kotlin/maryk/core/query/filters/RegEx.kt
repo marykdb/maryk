@@ -1,7 +1,7 @@
 package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
-import maryk.core.models.ReferenceValuePairsPropertyDefinitions
+import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
 import maryk.core.objects.Values
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.pairs.ReferenceValuePair
@@ -15,7 +15,7 @@ data class RegEx internal constructor(
 
     constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())
 
-    internal object Properties : ReferenceValuePairsPropertyDefinitions<String, RegEx>() {
+    internal object Properties : ReferenceValuePairsObjectPropertyDefinitions<String, RegEx>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(RegEx::referenceValuePairs)
     }
 

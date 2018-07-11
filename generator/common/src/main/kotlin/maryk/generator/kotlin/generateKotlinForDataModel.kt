@@ -1,9 +1,9 @@
 package maryk.generator.kotlin
 
 import maryk.core.models.DataModel
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 
-fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(
     packageName: String,
     generationContext: KotlinGenerationContext? = null,
     writer: (String) -> Unit
@@ -11,7 +11,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(
     val importsToAdd = mutableSetOf(
         "maryk.core.models.DataModel",
         "maryk.core.objects.Values",
-        "maryk.core.properties.definitions.PropertyDefinitions"
+        "maryk.core.properties.ObjectPropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
@@ -24,7 +24,7 @@ fun <DO: Any, P: PropertyDefinitions<DO>> DataModel<DO, P>.generateKotlin(
     data class $name(
         ${propertiesKotlin.generateValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) {
-        object Properties: PropertyDefinitions<$name>() {
+        object Properties: ObjectPropertyDefinitions<$name>() {
             ${propertiesKotlin.generateDefinitionsForProperties(modelName = name).prependIndent().trimStart()}
         }
 

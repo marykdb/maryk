@@ -12,7 +12,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
@@ -24,7 +24,7 @@ internal class TypeIdTest {
     private data class MarykObject(
         val multi: TypedValue<Option, *>
     ){
-        object Properties : PropertyDefinitions<MarykObject>() {
+        object Properties : ObjectPropertyDefinitions<MarykObject>() {
             val multi = add(0, "multi", MultiTypeDefinition(
                 final = true,
                 typeEnum = Option,

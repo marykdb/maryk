@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
@@ -42,7 +43,7 @@ interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : I
     }
 
     companion object {
-        internal fun <DO : Any> addUnique(definitions: PropertyDefinitions<DO>, getter: (DO) -> Boolean) {
+        internal fun <DO : Any> addUnique(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
             definitions.add(3, "unique", BooleanDefinition(default = false), getter)
         }
     }

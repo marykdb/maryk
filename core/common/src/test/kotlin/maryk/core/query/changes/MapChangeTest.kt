@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.lib.time.Time
 import maryk.test.shouldBe
@@ -31,7 +31,7 @@ class MapChangeTest {
         mapOf(
             TestMarykObject.name to { EmbeddedMarykObject }
         ),
-        dataModel = TestMarykObject as RootDataModel<Any, PropertyDefinitions<Any>>
+        dataModel = TestMarykObject as RootDataModel<Any, ObjectPropertyDefinitions<Any>>
     )
 
     @Test

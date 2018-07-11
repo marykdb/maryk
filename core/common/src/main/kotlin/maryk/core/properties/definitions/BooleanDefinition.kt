@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.SimpleDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WireType
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
@@ -45,8 +46,8 @@ data class BooleanDefinition(
         writer.writeBoolean(value)
     }
 
-    object Model : SimpleDataModel<BooleanDefinition, PropertyDefinitions<BooleanDefinition>>(
-        properties = object : PropertyDefinitions<BooleanDefinition>() {
+    object Model : SimpleDataModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>(
+        properties = object : ObjectPropertyDefinitions<BooleanDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, BooleanDefinition::required)

@@ -6,6 +6,7 @@ import maryk.core.models.DefinitionDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Bytes
@@ -85,7 +86,7 @@ class ReferenceDefinition<DO: Any>(
     }
 
     object Model : DefinitionDataModel<ReferenceDefinition<*>>(
-        properties = object : PropertyDefinitions<ReferenceDefinition<*>>() {
+        properties = object : ObjectPropertyDefinitions<ReferenceDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ReferenceDefinition<*>::indexed)
                 IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)

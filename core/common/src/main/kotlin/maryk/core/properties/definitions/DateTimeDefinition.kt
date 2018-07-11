@@ -7,6 +7,7 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.types.DateTime
 import maryk.core.properties.types.TimePrecision
@@ -68,9 +69,9 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? DateTime
 
-    object Model : ContextualDataModel<DateTimeDefinition, PropertyDefinitions<DateTimeDefinition>, DataModelContext, DateTimeDefinitionContext>(
+    object Model : ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, DataModelContext, DateTimeDefinitionContext>(
         contextTransformer = { DateTimeDefinitionContext() },
-        properties = object : PropertyDefinitions<DateTimeDefinition>() {
+        properties = object : ObjectPropertyDefinitions<DateTimeDefinition>() {
             init {
                 IsPropertyDefinition.addIndexed(this, DateTimeDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)

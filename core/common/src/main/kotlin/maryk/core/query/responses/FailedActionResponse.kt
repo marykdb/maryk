@@ -3,7 +3,7 @@ package maryk.core.query.responses
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.EnumDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -26,7 +26,7 @@ data class FailedActionResponse(
     val failType: FailType
 ) : IsResponse {
     internal companion object: SimpleQueryDataModel<FailedActionResponse>(
-        properties = object : PropertyDefinitions<FailedActionResponse>() {
+        properties = object : ObjectPropertyDefinitions<FailedActionResponse>() {
             init {
                 add(0, "message", StringDefinition(), FailedActionResponse::message)
                 add(1, "failType", EnumDefinition(enum = FailType), FailedActionResponse::failType)

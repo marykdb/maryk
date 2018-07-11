@@ -2,7 +2,7 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -14,7 +14,7 @@ interface DefinedByReference<T: Any> {
     val reference: IsPropertyReference<T, IsPropertyDefinition<T>>
 
     companion object {
-        internal fun <DO: Any> addReference(definitions: PropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) =
+        internal fun <DO: Any> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) =
             definitions.add(
                 index = 0, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(

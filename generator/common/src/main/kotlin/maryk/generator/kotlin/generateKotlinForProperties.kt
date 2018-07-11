@@ -4,11 +4,11 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.enum.IndexedEnum
 
 @Suppress("UNCHECKED_CAST")
-internal fun <DO: Any> PropertyDefinitions<DO>.generateKotlin(
+internal fun <DO: Any> ObjectPropertyDefinitions<DO>.generateKotlin(
     addImport: (String) -> Unit,
     generationContext: KotlinGenerationContext? = null,
     addEnumDefinition: ((String) -> Unit)? = null

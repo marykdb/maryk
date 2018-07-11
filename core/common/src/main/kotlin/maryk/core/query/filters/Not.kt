@@ -4,7 +4,7 @@ import maryk.core.models.QueryDataModel
 import maryk.core.objects.Values
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeReader
@@ -20,7 +20,7 @@ data class Not(
 
     override val filterType = FilterType.Not
 
-    internal object Properties : PropertyDefinitions<Not>() {
+    internal object Properties : ObjectPropertyDefinitions<Not>() {
         val filters = Properties.add(0, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(

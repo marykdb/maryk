@@ -5,7 +5,7 @@ import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 
@@ -15,7 +15,7 @@ data class VersionedChanges(
     val changes: List<IsChange>
 ) {
     internal companion object: SimpleQueryDataModel<VersionedChanges>(
-        properties = object : PropertyDefinitions<VersionedChanges>() {
+        properties = object : ObjectPropertyDefinitions<VersionedChanges>() {
             init {
                 add(0, "version", NumberDefinition(
                     type = UInt64

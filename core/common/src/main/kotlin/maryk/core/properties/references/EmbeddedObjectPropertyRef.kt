@@ -6,19 +6,19 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.AbstractDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 /**
- * Reference to a Embed property containing type [DO] DataObjects, [P] PropertyDefinitions. Which is defined by
+ * Reference to a Embed property containing type [DO] DataObjects, [P] ObjectPropertyDefinitions. Which is defined by
  * DataModel of type [DM] and expects context of type [CX] which is transformed into context [CXI] for properties.
  */
 class EmbeddedObjectPropertyRef<
     DO : Any,
     TO: Any,
-    P: PropertyDefinitions<DO>,
+    P: ObjectPropertyDefinitions<DO>,
     out DM : AbstractDataModel<DO, P, CXI, CX>,
     CXI: IsPropertyContext,
     CX: IsPropertyContext

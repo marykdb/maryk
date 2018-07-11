@@ -6,7 +6,7 @@ import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsDataModel
 import maryk.core.objects.SimpleValues
 import maryk.core.properties.definitions.FixedBytesProperty
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -20,7 +20,7 @@ data class Reversed<T: Any>(
 ) : FixedBytesProperty<T>() {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
-    override fun <DO : Any, P: PropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO) =
+    override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsDataModel<DO, P>, dataObject: DO) =
         this.reference.propertyDefinition.getValue(dataModel, dataObject)
 
     /** Convenience constructor to pass [definition] */
@@ -39,7 +39,7 @@ data class Reversed<T: Any>(
     }
 
     internal object Model : DefinitionDataModel<Reversed<out Any>>(
-        properties = object : PropertyDefinitions<Reversed<out Any>>() {
+        properties = object : ObjectPropertyDefinitions<Reversed<out Any>>() {
             init {
                 add(0, "multiTypeDefinition",
                     ContextualPropertyReferenceDefinition<DataModelContext>(

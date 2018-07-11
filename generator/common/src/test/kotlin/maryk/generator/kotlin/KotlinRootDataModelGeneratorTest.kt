@@ -11,13 +11,13 @@ package maryk
 
 import maryk.core.models.RootDataModel
 import maryk.core.objects.Values
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
 data class SimpleMarykObject(
     val value: String = "haha"
 ) {
-    object Properties: PropertyDefinitions<SimpleMarykObject>() {
+    object Properties: ObjectPropertyDefinitions<SimpleMarykObject>() {
         val value = add(
             index = 0, name = "value",
             definition = StringDefinition(
@@ -46,6 +46,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -58,7 +59,6 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -119,7 +119,7 @@ data class CompleteMarykObject(
     val multiForKey: TypedValue<MarykEnum, *>,
     val enumEmbedded: MarykEnumEmbedded
 ) {
-    object Properties: PropertyDefinitions<CompleteMarykObject>() {
+    object Properties: ObjectPropertyDefinitions<CompleteMarykObject>() {
         val string = add(
             index = 0, name = "string",
             definition = StringDefinition(

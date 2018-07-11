@@ -7,6 +7,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.DataModel
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -24,7 +25,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -137,9 +138,9 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
         return result
     }
 
-    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, DataModelContext, ModelContext>(
+    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, DataModelContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
-        properties = object : PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
+        properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, EmbeddedObjectDefinition<*, *, *, *, *>::indexed)
                 IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
@@ -173,7 +174,7 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
                         } ?: throw ContextNotFoundException()
 
                         @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel.get as () -> AbstractDataModel<Any, PropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                        context.model = dataModel.get as () -> AbstractDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                     }
                 )
 
@@ -188,11 +189,11 @@ class EmbeddedObjectDefinition<DO : Any, P: PropertyDefinitions<DO>, out DM : Ab
             }
         }
     ) {
-        override fun invoke(map: Values<EmbeddedObjectDefinition<*, *, *, *, *>, PropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
+        override fun invoke(map: Values<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
             indexed = map(0),
             required = map(1),
             final = map(2),
-            dataModel = map<() -> DataModel<Any, PropertyDefinitions<Any>>>(3),
+            dataModel = map<() -> DataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
             default = map(4)
         )
     }

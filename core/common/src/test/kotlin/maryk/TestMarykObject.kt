@@ -4,6 +4,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -13,7 +14,6 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.PropertyDefinitions
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -56,7 +56,7 @@ data class TestMarykObject(
     val listOfString: List<String>? = null,
     val selfReference: Key<TestMarykObject>? = null
 ) {
-    object Properties: PropertyDefinitions<TestMarykObject>() {
+    object Properties: ObjectPropertyDefinitions<TestMarykObject>() {
         val string = add(
             index = 0, name = "string",
             definition = StringDefinition(
@@ -237,7 +237,7 @@ data class TestMarykObject(
             if (other !is DataModel<*, *>) return false
 
             @Suppress("UNCHECKED_CAST")
-            val otherModel = other as DataModel<Any, PropertyDefinitions<Any>>
+            val otherModel = other as DataModel<Any, ObjectPropertyDefinitions<Any>>
 
             if (this.name != otherModel.name) return false
             if (this.properties.size != otherModel.properties.size) return false
@@ -252,7 +252,7 @@ data class EmbeddedMarykObject(
     val model: EmbeddedMarykObject? = null,
     val marykModel: TestMarykObject? = null
 ){
-    object Properties : PropertyDefinitions<EmbeddedMarykObject>() {
+    object Properties : ObjectPropertyDefinitions<EmbeddedMarykObject>() {
         val value = add(
             index = 0, name = "value",
             definition = StringDefinition(),
@@ -289,7 +289,7 @@ data class EmbeddedMarykObject(
             if (other !is DataModel<*, *>) return false
 
             @Suppress("UNCHECKED_CAST")
-            val otherModel = other as DataModel<Any, PropertyDefinitions<Any>>
+            val otherModel = other as DataModel<Any, ObjectPropertyDefinitions<Any>>
 
             if (this.name != otherModel.name) return false
             if (this.properties.size != otherModel.properties.size) return false

@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 
@@ -26,7 +27,7 @@ interface HasSizeDefinition {
     companion object {
         internal fun <DO: Any> addMinSize(
             index: Int,
-            definitions: PropertyDefinitions<DO>,
+            definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> Int?
         ) {
             definitions.add(
@@ -41,7 +42,7 @@ interface HasSizeDefinition {
 
         internal fun <DO: Any> addMaxSize(
             index: Int,
-            definitions: PropertyDefinitions<DO>,
+            definitions: ObjectPropertyDefinitions<DO>,
             getter: (DO) -> Int?
         ) {
             definitions.add(

@@ -2,7 +2,7 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleValues
-import maryk.core.properties.definitions.PropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 
 /** Exception if a required property referred by [reference] was not set or is being unset. */
@@ -15,7 +15,7 @@ data class RequiredException internal constructor(
     override val validationExceptionType = ValidationExceptionType.REQUIRED
 
     internal companion object: SimpleQueryDataModel<RequiredException>(
-        properties = object : PropertyDefinitions<RequiredException>() {
+        properties = object : ObjectPropertyDefinitions<RequiredException>() {
             init {
                 ValidationException.addReference(this, RequiredException::reference)
             }

@@ -2,12 +2,15 @@ package maryk.core.properties
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
@@ -91,6 +94,15 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         name: String,
         definition: MapDefinition<K, V, CX>
     ) = MapPropertyDefinitionWrapper<K, V, Map<K,V>, CX, Any>(index, name, definition).apply {
+        addSingle(this)
+    }
+
+    /** Add embedded object property [definition] with [name] and [index] */
+    fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, CX: IsPropertyContext> add(
+        index: Int,
+        name: String,
+        definition: IsEmbeddedValuesDefinition<DM, P, CX>
+    ) = EmbeddedValuesPropertyDefinitionWrapper(index, name, definition, { null }).apply {
         addSingle(this)
     }
 

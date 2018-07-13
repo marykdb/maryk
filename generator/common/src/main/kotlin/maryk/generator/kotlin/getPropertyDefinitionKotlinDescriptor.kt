@@ -1,15 +1,19 @@
 package maryk.generator.kotlin
 
+import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsSimpleObjectDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
@@ -216,6 +220,14 @@ private val definitionNamesMap = mapOf(
         definitionModel = StringDefinition.Model
     ),
     PropertyDefinitionType.Embed to PropertyDefinitionKotlinDescriptor(
+        className = "EmbeddedValuesDefinition",
+        kotlinTypeName = { (it.dataModel as IsNamedDataModel<*>).name },
+        definitionModel = EmbeddedValuesDefinition.Model as IsSimpleObjectDataModel<EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>,
+        propertyValueOverride = mapOf(
+            "default" to generateKotlinValueWithDefinition
+        )
+    ),
+    PropertyDefinitionType.EmbedObject to PropertyDefinitionKotlinDescriptor(
         className = "EmbeddedObjectDefinition",
         kotlinTypeName = { it.dataModel.name },
         definitionModel = EmbeddedObjectDefinition.Model as IsSimpleObjectDataModel<EmbeddedObjectDefinition<Any, *, ObjectDataModel<Any, *>, *, *>>,

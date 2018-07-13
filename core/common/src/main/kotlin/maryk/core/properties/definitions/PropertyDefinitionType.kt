@@ -2,9 +2,13 @@ package maryk.core.properties.definitions
 
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.objects.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
@@ -34,8 +38,9 @@ enum class PropertyDefinitionType(
     Set(11),
     String(12),
     Embed(13),
-    Time(14),
-    Value(15);
+    EmbedObject(14),
+    Time(15),
+    Value(16);
 
     companion object: IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
 }
@@ -57,7 +62,8 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions = mapOf<PropertyDefinitio
     PropertyDefinitionType.Reference to EmbeddedObjectDefinition(dataModel = { ReferenceDefinition.Model }),
     PropertyDefinitionType.Set to EmbeddedObjectDefinition(dataModel = { SetDefinition.Model }),
     PropertyDefinitionType.String to EmbeddedObjectDefinition(dataModel = { StringDefinition.Model }),
-    PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedObjectDefinition.Model }),
+    PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
+    PropertyDefinitionType.EmbedObject to EmbeddedObjectDefinition(dataModel = { EmbeddedObjectDefinition.Model }),
     PropertyDefinitionType.Time to EmbeddedObjectDefinition(dataModel = { TimeDefinition.Model }),
     PropertyDefinitionType.Value to EmbeddedObjectDefinition(dataModel = { ValueModelDefinition.Model })
 )
@@ -124,11 +130,20 @@ internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.String to createFlexBytesWrapper,
     PropertyDefinitionType.Embed to { index, name, definition, getter ->
         @Suppress("UNCHECKED_CAST")
+        EmbeddedValuesPropertyDefinitionWrapper(
+            index,
+            name,
+            definition as EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>,
+            getter as (Any) -> ValuesImpl?
+        )
+    },
+    PropertyDefinitionType.EmbedObject to { index, name, definition, getter ->
+        @Suppress("UNCHECKED_CAST")
         EmbeddedObjectPropertyDefinitionWrapper(
             index,
             name,
             definition as EmbeddedObjectDefinition<Any, ObjectPropertyDefinitions<Any>, AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>, IsPropertyContext, IsPropertyContext>,
-            getter as (Any) -> Set<Any>?
+            getter
         )
     },
     PropertyDefinitionType.Time to createFixedBytesWrapper,

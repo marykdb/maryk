@@ -26,7 +26,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
 
     override fun validate(
         map: Values<DM, P>,
-        refGetter: () -> IsPropertyReference<IsValuesDataModel<P>, IsPropertyDefinition<IsValuesDataModel<P>>>?
+        refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for (key in map.keys) {

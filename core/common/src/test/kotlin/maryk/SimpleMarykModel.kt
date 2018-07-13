@@ -6,16 +6,8 @@ import maryk.core.properties.definitions.StringDefinition
 
 object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Properties>(
     name = "SimpleMarykModel",
-    properties = SimpleMarykModel.Properties
+    properties = Properties
 ) {
-    operator fun invoke(
-        value: String = "haha"
-    ) = this.map {
-        mapOf(
-            this.value with value
-        )
-    }
-
     object Properties : PropertyDefinitions() {
         val value = add(
             index = 0, name = "value",
@@ -23,6 +15,14 @@ object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Proper
                 default = "haha",
                 regEx = "ha.*"
             )
+        )
+    }
+
+    operator fun invoke(
+        value: String = "haha"
+    ) = this.map {
+        mapOf(
+            this.value with value
         )
     }
 }

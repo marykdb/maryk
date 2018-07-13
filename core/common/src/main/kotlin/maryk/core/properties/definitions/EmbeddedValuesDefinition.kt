@@ -2,14 +2,16 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.ContextualDataModel
-import maryk.core.models.ObjectDataModel
-import maryk.core.models.SimpleObjectDataModel
+import maryk.core.models.DataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.ObjectValues
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
+import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.IsDataModelReference
@@ -25,23 +27,27 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
-/** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
-class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
+/** Definition for embedded object properties [P] to [dataModel] of type [DM] within context [CX] */
+class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: () -> DM,
-    override val default: DO? = null
+    override val default: Values<DM, P>? = null
 ) :
-    IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX>
+    IsEmbeddedValuesDefinition<DM, P, IsPropertyContext>
 {
-    override val propertyDefinitionType = PropertyDefinitionType.EmbedObject
+    override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val wireType = WireType.LENGTH_DELIMITED
 
     private val internalDataModel = lazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value
 
-    override fun asString(value: DO, context: CXI?): String {
+    @Suppress("UNCHECKED_CAST")
+    // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
+    internal val typedDataModel: AbstractValuesDataModel<DM, P, IsPropertyContext> get() = internalDataModel.value as AbstractValuesDataModel<DM, P, IsPropertyContext>
+
+    override fun asString(value: Values<DM, P>, context: IsPropertyContext?): String {
         var string = ""
         this.writeJsonValue(value, JsonWriter {
             string += it
@@ -49,7 +55,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         return string
     }
 
-    override fun fromString(string: String, context: CXI?): DO {
+    override fun fromString(string: String, context: IsPropertyContext?): Values<DM, P> {
         val stringIterator = string.iterator()
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
@@ -58,70 +64,52 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
 
-    override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
+    override fun validateWithRef(previousValue: Values<DM, P>?, newValue: Values<DM, P>?, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>>?) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
-            this.dataModel.validate(
-                refGetter = refGetter,
-                dataObject = newValue
+            this.typedDataModel.validate(
+                map = newValue,
+                refGetter = refGetter
             )
         }
     }
 
-    override fun writeJsonValue(value: DO, writer: IsJsonLikeWriter, context: CXI?) = this.dataModel.writeJson(
+    override fun writeJsonValue(value: Values<DM, P>, writer: IsJsonLikeWriter, context: IsPropertyContext?) = this.typedDataModel.writeJson(
         value,
         writer,
-        this.dataModel.transformContext(context)
+        context
     )
 
-    override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
-        this.dataModel.readJson(reader, this.dataModel.transformContext(context)).toDataObject()
+    override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?) =
+        this.typedDataModel.readJson(reader, context)
 
-    override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?) =
-        this.dataModel.calculateProtoBufLength(
+    override fun calculateTransportByteLength(value: Values<DM, P>, cacher: WriteCacheWriter, context: IsPropertyContext?) =
+        this.typedDataModel.calculateProtoBufLength(
             value,
             cacher,
-            transformContext(context, cacher)
+            context
         )
 
-    private fun transformContext(context: CXI?, cacher: WriteCacheWriter) =
-        if (dataModel is ContextualDataModel<*, *, *, *>) {
-            dataModel.transformContext(context)?.apply {
-                cacher.addContextToCache(this)
-            }
-        } else {
-            @Suppress("UNCHECKED_CAST")
-            context as CX?
-        }
-
     override fun writeTransportBytes(
-        value: DO,
+        value: Values<DM, P>,
         cacheGetter: WriteCacheReader,
         writer: (byte: Byte) -> Unit,
-        context: CXI?
+        context: IsPropertyContext?
     ) {
-        this.dataModel.writeProtoBuf(
+        this.typedDataModel.writeProtoBuf(
             value,
             cacheGetter,
             writer,
-            getTransformedContextFromCache(cacheGetter, context)
+            context
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun getTransformedContextFromCache(cacheGetter: WriteCacheReader, context: CXI?) =
-        if (dataModel is ContextualDataModel<*, *, *, *>) {
-            cacheGetter.nextContextFromCache() as CX?
-        } else {
-            context as CX?
-        }
-
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?) =
-        this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context)).toDataObject()
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
+        this.typedDataModel.readProtoBuf(length, reader, context)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is EmbeddedObjectDefinition<*, *, *, *, *>) return false
+        if (other !is EmbeddedValuesDefinition<*, *>) return false
 
         if (indexed != other.indexed) return false
         if (required != other.required) return false
@@ -139,13 +127,13 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         return result
     }
 
-    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, DataModelContext, ModelContext>(
+    object Model : ContextualDataModel<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>, DataModelContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
-        properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
+        properties = object : ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, EmbeddedObjectDefinition<*, *, *, *, *>::indexed)
-                IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
-                IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
+                IsPropertyDefinition.addIndexed(this, EmbeddedValuesDefinition<*, *>::indexed)
+                IsPropertyDefinition.addRequired(this, EmbeddedValuesDefinition<*, *>::required)
+                IsPropertyDefinition.addFinal(this, EmbeddedValuesDefinition<*, *>::final)
                 add(3, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextTransformer = {context: ModelContext? ->
@@ -154,49 +142,49 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let{
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? () -> ObjectDataModel<*, *>
+                                it.dataModels[name] as? () -> DataModel<*, *>
                                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = { it: EmbeddedObjectDefinition<*, *, *, *, *> ->
-                        { it.dataModel as ObjectDataModel<*, *> }
+                    getter = { it: EmbeddedValuesDefinition<*, *> ->
+                        { it.dataModel as DataModel<*, *> }
                     },
-                    toSerializable = { value: (() -> ObjectDataModel<*, *>)?, _ ->
+                    toSerializable = { value: (() -> DataModel<*, *>)?, _ ->
                         value?.invoke()?.let{ model ->
                             DataModelReference(model.name, value)
                         }
                     },
-                    fromSerializable = { it: IsDataModelReference<ObjectDataModel<*, *>>? -> it?.get },
-                    capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
+                    fromSerializable = { it: IsDataModelReference<DataModel<*, *>>? -> it?.get },
+                    capturer = { context: ModelContext, dataModel: IsDataModelReference<DataModel<*, *>> ->
                         context.dataModelContext?.let {
                             if (!it.dataModels.containsKey(dataModel.name)) {
                                 it.dataModels[dataModel.name] = dataModel.get
                             }
                         } ?: throw ContextNotFoundException()
 
-                        @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel.get as () -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                        context.model = dataModel.get
                     }
                 )
 
+                @Suppress("UNCHECKED_CAST")
                 add(4, "default",
-                    ContextualEmbeddedObjectDefinition(
+                    ContextualEmbeddedValuesDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
-                            context?.model?.invoke() as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
+                            context?.model?.invoke() as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>? ?: throw ContextNotFoundException()
                         }
-                    ),
-                    EmbeddedObjectDefinition<*, *, *, *, *>::default
+                    ) as IsSerializableFlexBytesEncodable<Values<*, *>, ModelContext>,
+                    EmbeddedValuesDefinition<*, *>::default
                 )
             }
         }
     ) {
-        override fun invoke(map: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
+        override fun invoke(map: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) = EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
             indexed = map(0),
             required = map(1),
             final = map(2),
-            dataModel = map<() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
+            dataModel = map(3),
             default = map(4)
         )
     }

@@ -1,0 +1,56 @@
+package maryk
+
+import maryk.core.models.DataModel
+import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.StringDefinition
+
+object EmbeddedMarykModel: DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Properties>(
+    name = "EmbeddedMarykModel",
+    properties = EmbeddedMarykModel.Properties
+) {
+    object Properties : PropertyDefinitions() {
+        val value = add(
+            index = 0, name = "value",
+            definition = StringDefinition()
+        )
+        val model = add(
+            index = 1, name = "model",
+            definition = EmbeddedValuesDefinition(
+                required = false,
+                dataModel = { EmbeddedMarykModel }
+            )
+        )
+        val marykModel = add(
+            index = 2, name = "marykModel",
+            definition = EmbeddedValuesDefinition(
+                required = false,
+                dataModel = { TestMarykModel }
+            )
+        )
+    }
+
+    operator fun invoke(
+        value: String,
+        model: EmbeddedMarykModel? = null,
+        marykModel: TestMarykObject? = null
+    ) = this.map {
+        mapOf(
+            this.value with value,
+            this.model with model,
+            this.marykModel with marykModel
+        )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is DataModel<*, *>) return false
+
+        @Suppress("UNCHECKED_CAST")
+        val otherModel = other as DataModel<*, PropertyDefinitions>
+
+        if (this.name != otherModel.name) return false
+        if (this.properties.size != otherModel.properties.size) return false
+
+        return true
+    }
+}

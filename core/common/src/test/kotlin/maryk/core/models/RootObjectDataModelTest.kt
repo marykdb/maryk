@@ -245,7 +245,7 @@ internal class RootObjectDataModelTest {
         	}, {
         		"index": 11,
         		"name": "embeddedObject",
-        		"definition": ["Embed", {
+        		"definition": ["EmbedObject", {
         			"indexed": false,
         			"required": false,
         			"final": false,
@@ -282,7 +282,7 @@ internal class RootObjectDataModelTest {
         			}, {
         				"index": 2,
         				"name": "V2",
-        				"definition": ["Embed", {
+        				"definition": ["EmbedObject", {
         					"indexed": false,
         					"required": true,
         					"final": false,
@@ -449,7 +449,7 @@ internal class RootObjectDataModelTest {
             unique: false
             dataModel: TestValueObject
           ? 11: embeddedObject
-          : !Embed
+          : !EmbedObject
             indexed: false
             required: false
             final: false
@@ -476,7 +476,7 @@ internal class RootObjectDataModelTest {
                 type: SInt32
                 random: false
               ? 2: V2
-              : !Embed
+              : !EmbedObject
                 indexed: false
                 required: true
                 final: false
@@ -549,7 +549,7 @@ internal class RootObjectDataModelTest {
             keyDefinition: !Date
             valueDefinition: !String
           ? 11: embedded
-          : !Embed
+          : !EmbedObject
             dataModel: TestMarykObject
           ? 12: value
           : !Value

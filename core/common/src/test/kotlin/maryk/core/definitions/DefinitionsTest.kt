@@ -92,13 +92,13 @@ class DefinitionsTest {
               final: false
               unique: false
             ? 1: model
-            : !Embed
+            : !EmbedObject
               indexed: false
               required: false
               final: false
               dataModel: EmbeddedMarykObject
             ? 2: marykModel
-            : !Embed
+            : !EmbedObject
               indexed: false
               required: false
               final: false
@@ -212,7 +212,7 @@ class DefinitionsTest {
               unique: false
               dataModel: TestValueObject
             ? 11: embeddedObject
-            : !Embed
+            : !EmbedObject
               indexed: false
               required: false
               final: false
@@ -239,7 +239,7 @@ class DefinitionsTest {
                   type: SInt32
                   random: false
                 ? 2: V2
-                : !Embed
+                : !EmbedObject
                   indexed: false
                   required: true
                   final: false

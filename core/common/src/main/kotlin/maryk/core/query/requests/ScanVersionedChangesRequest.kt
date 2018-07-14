@@ -20,7 +20,7 @@ import maryk.core.query.filters.IsFilter
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootDataModel<P>, P: ObjectPropertyDefinitions<*>> DM.scanVersionedChanges(
+fun <DM: IsRootDataModel<*>> DM.scanVersionedChanges(
     startKey: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,

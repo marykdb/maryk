@@ -5,25 +5,25 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
-data class EmbeddedMarykObject(
+data class EmbeddedObject(
     val value: String = "haha"
 ) {
-    object Properties: ObjectPropertyDefinitions<EmbeddedMarykObject>() {
+    object Properties: ObjectPropertyDefinitions<EmbeddedObject>() {
         val value = add(
             index = 0, name = "value",
             definition = StringDefinition(
                 regEx = "ha.*",
                 default = "haha"
             ),
-            getter = EmbeddedMarykObject::value
+            getter = EmbeddedObject::value
         )
     }
 
-    companion object: ObjectDataModel<EmbeddedMarykObject, Properties>(
-        name = "EmbeddedMarykObject",
+    companion object: ObjectDataModel<EmbeddedObject, Properties>(
+        name = "EmbeddedObject",
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<EmbeddedMarykObject, Properties>) = EmbeddedMarykObject(
+        override fun invoke(map: ObjectValues<EmbeddedObject, Properties>) = EmbeddedObject(
             value = map(0)
         )
     }

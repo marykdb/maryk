@@ -16,7 +16,7 @@ import maryk.core.query.DataModelPropertyContext
  * Creates a Request to delete [objectsToDelete] from [DM]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-fun <DM: IsRootDataModel<P>, P: ObjectPropertyDefinitions<*>> IsRootDataModel<P>.delete(
+fun <DM: IsRootDataModel<*>> DM.delete(
     vararg objectsToDelete: Key<DM>,
     hardDelete: Boolean = false
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)

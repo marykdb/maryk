@@ -1,7 +1,6 @@
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.RootObjectDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,7 +17,7 @@ import maryk.core.query.filters.IsFilter
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-fun <DM: IsRootDataModel<P>, P: ObjectPropertyDefinitions<*>> DM.getSelect(
+fun <DM: IsRootDataModel<*>> DM.getSelect(
     vararg keys: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -60,7 +59,7 @@ data class GetSelectRequest<DM: IsRootDataModel<*>> internal constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<GetSelectRequest<*>>) = GetSelectRequest(
-            dataModel = map<RootObjectDataModel<*, Any, *>>(0),
+            dataModel = map(0),
             keys = map(1),
             filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
             order = map(3),

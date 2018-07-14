@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -13,16 +13,16 @@ import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-private val key1 = SimpleMarykObject.key("WWurg6ysTsozoMei/SurOw")
-private val key2 = SimpleMarykObject.key("awfbjYrVQ+cdXblfQKV10A")
+private val key1 = SimpleMarykModel.key("WWurg6ysTsozoMei/SurOw")
+private val key2 = SimpleMarykModel.key("awfbjYrVQ+cdXblfQKV10A")
 
-internal val getVersionedChangesRequest = SimpleMarykObject.getVersionedChanges(
+internal val getVersionedChangesRequest = SimpleMarykModel.getVersionedChanges(
     key1,
     key2,
     fromVersion = 1234L.toUInt64()
 )
 
-internal val getVersionedChangesMaxRequest = SimpleMarykObject.run {
+internal val getVersionedChangesMaxRequest = SimpleMarykModel.run {
     getVersionedChanges(
         key1,
         key2,
@@ -32,8 +32,8 @@ internal val getVersionedChangesMaxRequest = SimpleMarykObject.run {
         toVersion = 12345L.toUInt64(),
         maxVersions = 5.toUInt32(),
         filterSoftDeleted = true,
-        select = SimpleMarykObject.props {
-            RootPropRefGraph<SimpleMarykObject.Companion>(
+        select = SimpleMarykModel.props {
+            RootPropRefGraph<SimpleMarykModel>(
                 value
             )
         }
@@ -42,7 +42,7 @@ internal val getVersionedChangesMaxRequest = SimpleMarykObject.run {
 
 class GetVersionedChangesRequestTest {
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to { SimpleMarykObject }
+        SimpleMarykModel.name to { SimpleMarykModel }
     ))
 
     @Test
@@ -60,7 +60,7 @@ class GetVersionedChangesRequestTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(getVersionedChangesRequest, GetVersionedChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filterSoftDeleted: true
         fromVersion: 1234
@@ -69,7 +69,7 @@ class GetVersionedChangesRequestTest {
         """.trimIndent()
 
         checkYamlConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filter: !Exists value
         order: !Desc value

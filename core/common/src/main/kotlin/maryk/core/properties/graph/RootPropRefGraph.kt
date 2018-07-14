@@ -5,6 +5,7 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -24,7 +25,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
 
     internal object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
         val properties = this.addProperties(0, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
-            context?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+            context?.dataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
     }
 

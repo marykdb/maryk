@@ -7,7 +7,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -139,8 +138,8 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
                 definitionMap = mapOf(
                     Option.V0 to StringDefinition(),
                     Option.V1 to NumberDefinition(type = SInt32),
-                    Option.V2 to EmbeddedObjectDefinition(
-                        dataModel = { EmbeddedMarykObject }
+                    Option.V2 to EmbeddedValuesDefinition(
+                        dataModel = { EmbeddedMarykModel }
                     )
                 )
             )
@@ -150,7 +149,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 13, name = "reference",
             definition = ReferenceDefinition(
                 required = false,
-                dataModel = { TestMarykObject }
+                dataModel = { TestMarykModel }
             )
         )
 
@@ -167,7 +166,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 15, name = "selfReference",
             definition = ReferenceDefinition(
                 required = false,
-                dataModel = { TestMarykObject }
+                dataModel = { TestMarykModel }
             )
         )
     }

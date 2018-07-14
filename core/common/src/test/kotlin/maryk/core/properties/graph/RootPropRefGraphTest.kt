@@ -1,52 +1,59 @@
 package maryk.core.properties.graph
 
+import maryk.TestMarykModel
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
+import maryk.checkYamlConversion
+import maryk.core.query.DataModelPropertyContext
+import maryk.test.shouldBe
+import kotlin.test.Test
 
 
 class RootPropRefGraphTest {
-//    private val graph = TestMarykObject.props {
-//        RootPropRefGraph(
-//            string,
-//            set,
-//            embeddedObject.props {
-//                it.graph(
-//                    value,
-//                    model.props {
-//                        it.graph(
-//                            value
-//                        )
-//                    }
-//                )
-//            }
-//        )
-//    }
-//
-//    private val context = DataModelPropertyContext(
-//        dataModels = mapOf(
-//            TestMarykObject.name to { TestMarykObject }
-//        ),
-//        dataModel = TestMarykObject
-//    )
-//
-//    @Test
-//    fun convert_to_ProtoBuf_and_back() {
-//        checkProtoBufConversion(this.graph, RootPropRefGraph, { this.context })
-//    }
-//
-//    @Test
-//    fun convert_to_JSON_and_back() {
-//        checkJsonConversion(this.graph, RootPropRefGraph, { this.context })
-//    }
-//
-//    @Test
-//    fun convert_to_YAML_and_back() {
-//        checkYamlConversion(this.graph, RootPropRefGraph, { this.context }) shouldBe """
-//        - string
-//        - set
-//        - embeddedObject:
-//          - value
-//          - model:
-//            - value
-//
-//        """.trimIndent()
-//    }
+    private val graph = TestMarykModel.props {
+        RootPropRefGraph(
+            string,
+            set,
+            embeddedValues.props { embeddedValuesProps ->
+                embeddedValuesProps.graph(
+                    value,
+                    model.props {
+                        it.graph(
+                            value
+                        )
+                    }
+                )
+            }
+        )
+    }
+
+    private val context = DataModelPropertyContext(
+        dataModels = mapOf(
+            TestMarykModel.name to { TestMarykModel }
+        ),
+        dataModel = TestMarykModel
+    )
+
+    @Test
+    fun convert_to_ProtoBuf_and_back() {
+        checkProtoBufConversion(this.graph, RootPropRefGraph, { this.context })
+    }
+
+    @Test
+    fun convert_to_JSON_and_back() {
+        checkJsonConversion(this.graph, RootPropRefGraph, { this.context })
+    }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.graph, RootPropRefGraph, { this.context }) shouldBe """
+        - string
+        - set
+        - embeddedValues:
+          - value
+          - model:
+            - value
+
+        """.trimIndent()
+    }
 }

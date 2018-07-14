@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -13,20 +13,20 @@ import maryk.core.yaml.MarykYamlReader
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-private val key1 = SimpleMarykObject.key("dR9gVdRcSPw2molM1AiOng")
-private val key2 = SimpleMarykObject.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
+private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
 
-internal val getSelectRequest = SimpleMarykObject.getSelect(
+internal val getSelectRequest = SimpleMarykModel.getSelect(
     key1,
     key2,
-    select = SimpleMarykObject.props {
-        RootPropRefGraph<SimpleMarykObject.Companion>(
+    select = SimpleMarykModel.props {
+        RootPropRefGraph<SimpleMarykModel>(
             value
         )
     }
 )
 
-internal val getMaxSelectRequest = SimpleMarykObject.run {
+internal val getMaxSelectRequest = SimpleMarykModel.run {
     getSelect(
         key1,
         key2,
@@ -35,7 +35,7 @@ internal val getMaxSelectRequest = SimpleMarykObject.run {
         toVersion = 333L.toUInt64(),
         filterSoftDeleted = true,
         select = props {
-            RootPropRefGraph<SimpleMarykObject.Companion>(
+            RootPropRefGraph<SimpleMarykModel>(
                 value
             )
         }
@@ -44,7 +44,7 @@ internal val getMaxSelectRequest = SimpleMarykObject.run {
 
 class GetSelectRequestTest {
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to { SimpleMarykObject }
+        SimpleMarykModel.name to { SimpleMarykModel }
     ))
 
     @Test
@@ -62,7 +62,7 @@ class GetSelectRequestTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(getSelectRequest, GetSelectRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filterSoftDeleted: true
         select:
@@ -71,7 +71,7 @@ class GetSelectRequestTest {
         """.trimIndent()
 
         checkYamlConversion(getMaxSelectRequest, GetSelectRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filter: !Exists value
         order: !Desc value
@@ -86,7 +86,7 @@ class GetSelectRequestTest {
     @Test
     fun convert_basic_definition_from_YAML() {
         val simpleYaml = """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filter:
         select:
@@ -107,7 +107,7 @@ class GetSelectRequestTest {
         GetSelectRequest.readJson(reader, this.context)
             .toDataObject()
             .apply {
-                dataModel shouldBe SimpleMarykObject
+                dataModel shouldBe SimpleMarykModel
                 filter shouldBe null
             }
     }

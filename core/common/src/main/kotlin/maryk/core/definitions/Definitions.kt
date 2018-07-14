@@ -1,16 +1,16 @@
 package maryk.core.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.ObjectDataModel
+import maryk.core.models.DataModel
 import maryk.core.models.QuerySingleValueDataModel
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.objects.ObjectValues
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -38,7 +38,7 @@ data class Definitions(
                     definitionMap = mapOf(
                         PrimitiveType.Model to ContextCaptureDefinition(
                             definition = EmbeddedObjectDefinition(
-                                dataModel = { ObjectDataModel.Model }
+                                dataModel = { DataModel.Model }
                             ),
                             capturer = { context, model ->
                                 context?.let {
@@ -58,7 +58,7 @@ data class Definitions(
                         ),
                         PrimitiveType.RootModel to ContextCaptureDefinition(
                             definition = EmbeddedObjectDefinition(
-                                dataModel = { RootObjectDataModel.Model }
+                                dataModel = { RootDataModel.Model }
                             ),
                             capturer = { context: DataModelContext?, model ->
                                 context?.let {

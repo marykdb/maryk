@@ -2,6 +2,7 @@ package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.objects.ObjectValues
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -84,7 +85,7 @@ internal abstract class ReferencesObjectPropertyDefinitions<DO: Any> : ObjectPro
             ListDefinition(
                 valueDefinition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                     }
                 )
             ),

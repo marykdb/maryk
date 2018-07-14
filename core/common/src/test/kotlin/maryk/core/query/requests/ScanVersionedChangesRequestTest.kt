@@ -1,6 +1,6 @@
 package maryk.core.query.requests
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -13,14 +13,14 @@ import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-private val key1 = SimpleMarykObject.key("Zk6m4QpZQegUg5s13JVYlQ")
+private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
-internal val scanVersionedChangesRequest = SimpleMarykObject.scanVersionedChanges(
+internal val scanVersionedChangesRequest = SimpleMarykModel.scanVersionedChanges(
     startKey = key1,
     fromVersion = 1234L.toUInt64()
 )
 
-internal val scanVersionedChangesMaxRequest = SimpleMarykObject.run {
+internal val scanVersionedChangesMaxRequest = SimpleMarykModel.run {
     scanVersionedChanges(
         startKey = key1,
         filter = Exists(ref { value }),
@@ -29,8 +29,8 @@ internal val scanVersionedChangesMaxRequest = SimpleMarykObject.run {
         toVersion = 2345L.toUInt64(),
         fromVersion = 1234L.toUInt64(),
         maxVersions = 10.toUInt32(),
-        select = SimpleMarykObject.props {
-            RootPropRefGraph<SimpleMarykObject.Companion>(
+        select = SimpleMarykModel.props {
+            RootPropRefGraph<SimpleMarykModel>(
                 value
             )
         }
@@ -39,7 +39,7 @@ internal val scanVersionedChangesMaxRequest = SimpleMarykObject.run {
 
 class ScanVersionedChangesRequestTest {
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to { SimpleMarykObject }
+        SimpleMarykModel.name to { SimpleMarykModel }
     ))
 
     @Test
@@ -57,7 +57,7 @@ class ScanVersionedChangesRequestTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
         limit: 100
@@ -67,7 +67,7 @@ class ScanVersionedChangesRequestTest {
         """.trimIndent()
 
         checkYamlConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value
         order: !Desc value

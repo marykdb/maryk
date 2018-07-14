@@ -19,11 +19,12 @@ import maryk.core.protobuf.WriteCacheWriter
 class EmbeddedValuesPropertyRef<
     DM : IsValuesDataModel<P>,
     P: PropertyDefinitions,
-    CX: IsPropertyContext
+    CX: IsPropertyContext,
+    PDM: IsValuesDataModel<P>
 > internal constructor(
-    propertyDefinition: EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>,
+    propertyDefinition: EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX, PDM>,
     parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveComplexChildReference<Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *>>(
+): CanHaveComplexChildReference<Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX, PDM>, CanHaveComplexChildReference<*, *, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<Values<DM, P>> {
     val name = this.propertyDefinition.name

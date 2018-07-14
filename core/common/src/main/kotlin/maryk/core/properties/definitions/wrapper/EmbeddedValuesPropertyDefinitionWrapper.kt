@@ -20,12 +20,13 @@ import maryk.core.properties.references.IsPropertyReference
 data class EmbeddedValuesPropertyDefinitionWrapper<
     DM: IsValuesDataModel<P>,
     P: PropertyDefinitions,
-    CX: IsPropertyContext
+    CX: IsPropertyContext,
+    PDM: IsValuesDataModel<P>
 > internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: IsEmbeddedValuesDefinition<DM, P, CX>,
-    override val getter: (Any) -> Values<DM, P>?,
+    override val getter: (Any) -> Values<DM, P>? = { null },
     override val capturer: ((CX, Values<DM, P>) -> Unit)? = null,
     override val toSerializable: ((Values<DM, P>?, CX?) -> Values<DM, P>?)? = null,
     override val fromSerializable: ((Values<DM, P>?) -> Values<DM, P>?)? = null
@@ -60,7 +61,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
 
     /** For quick notation to return [T] that operates with [runner] on Properties */
     fun <T: Any> props(
-        runner: P.(EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>) -> T
+        runner: P.(EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX, PDM>) -> T
     ): T {
         return runner(this.definition.dataModel.properties, this)
     }

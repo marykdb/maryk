@@ -13,6 +13,7 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
 typealias SimpleDataModel<DM, P> = AbstractValuesDataModel<DM, P, IsPropertyContext>
+typealias ValuesDataModelImpl<CX> = AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
 
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for

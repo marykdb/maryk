@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
 import maryk.CompleteMarykObject
-import maryk.EmbeddedMarykObject
+import maryk.EmbeddedObject
 import maryk.MarykEnum
 import maryk.SimpleMarykObject
 import maryk.ValueMarykObject
@@ -16,7 +16,7 @@ class MixedKotlinGenerationTest {
         val mapOfWriters = mutableMapOf(
             "MarykEnum" to Writer(),
             "SimpleMarykObject" to Writer(),
-            "EmbeddedMarykObject" to Writer(),
+            "EmbeddedObject" to Writer(),
             "CompleteMarykObject" to Writer(),
             "ValueMarykObject" to Writer()
         )
@@ -26,7 +26,7 @@ class MixedKotlinGenerationTest {
         Definitions(
             MarykEnum,
             SimpleMarykObject,
-            EmbeddedMarykObject,
+            EmbeddedObject,
             CompleteMarykObject,
             ValueMarykObject
         ).generateKotlin("maryk") { name ->
@@ -40,7 +40,7 @@ class MixedKotlinGenerationTest {
 
         mapOfWriters["MarykEnum"]!!.output shouldBe generatedKotlinForEnum
         mapOfWriters["SimpleMarykObject"]!!.output shouldBe generatedKotlinForSimpleDataModel
-        mapOfWriters["EmbeddedMarykObject"]!!.output shouldBe generatedKotlinForEmbeddedDataModel
+        mapOfWriters["EmbeddedObject"]!!.output shouldBe generatedKotlinForEmbeddedDataModel
         mapOfWriters["CompleteMarykObject"]!!.output shouldBe generatedKotlinForCompleteDataModel
         mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedKotlinForValueDataModel
     }

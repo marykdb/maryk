@@ -40,6 +40,11 @@ class YamlWriter(
                 || this.lastType == JsonType.COMPLEX_FIELD_NAME_END
             ) {
                 writer(" ")
+            } else if (this.lastType == JsonType.END_OBJ) {
+                val lastEmbedType= this.typeStack.lastOrNull()
+                if(lastEmbedType is JsonEmbedType.Array) {
+                    writer(", ")
+                }
             }
             writer("{")
 

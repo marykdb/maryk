@@ -1,17 +1,18 @@
 package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
-import maryk.core.models.IsDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.ObjectValues
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -22,15 +23,15 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Get a graph for property references of an embedded object */
-fun <PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *, IsPropertyContext>> EmbeddedObjectPropertyDefinitionWrapper<*, *, *, DM, *, IsPropertyContext, *>.graph(
+fun <PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> EmbeddedValuesPropertyDefinitionWrapper<DM, *, IsPropertyContext, PDM>.graph(
     vararg property: IsPropRefGraphable<DM>
-) = PropRefGraph<PDM, DM>(this, property.toList())
+) = PropRefGraph(this, property.toList())
 
 /**
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
  */
-data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *, IsPropertyContext>> internal constructor(
-    val parent: EmbeddedObjectPropertyDefinitionWrapper<*, *, *, DM, *, IsPropertyContext, *>,
+data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> internal constructor(
+    val parent: EmbeddedValuesPropertyDefinitionWrapper<DM, *, IsPropertyContext, PDM>,
     val properties: List<IsPropRefGraphable<DM>>
 ) : IsPropRefGraphable<PDM> {
     override val graphType = PropRefGraphType.Graph
@@ -39,11 +40,11 @@ data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *
         val parent = add(0, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
-                    context?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                    context?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                 }
             ),
             capturer = { context, value ->
-                context.subDataModel = (value.propertyDefinition as EmbeddedObjectPropertyDefinitionWrapper<*, *, *, *, *, *, *>).dataModel
+                context.subDataModel = (value.propertyDefinition as EmbeddedValuesPropertyDefinitionWrapper<*, *, *, *>).dataModel
             },
             toSerializable = { value: IsPropertyDefinitionWrapper<*, *, *, *>?, _ ->
                 value?.getRef()
@@ -55,7 +56,7 @@ data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *
         )
 
         val properties = addProperties(1, PropRefGraph<*, *>::properties) { context: GraphContext? ->
-            context?.subDataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+            context?.subDataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
     }
 
@@ -69,7 +70,7 @@ data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *
             }
         }
     ) {
-        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsDataModel<*>, AbstractObjectDataModel<*, *, *, IsPropertyContext>>(
+        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsValuesDataModel<*>, IsValuesDataModel<*>>(
             parent = map(0),
             properties = map(1)
         )
@@ -178,7 +179,7 @@ data class PropRefGraph<PDM: IsDataModel<*>, DM: AbstractObjectDataModel<*, *, *
 internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
     index: Int,
     getter: (DO) -> List<IsPropRefGraphable<*>>,
-    contextResolver: (GraphContext?) -> ObjectPropertyDefinitions<*>
+    contextResolver: (GraphContext?) -> PropertyDefinitions
 ) =
     add(index, "properties",
         ListDefinition(

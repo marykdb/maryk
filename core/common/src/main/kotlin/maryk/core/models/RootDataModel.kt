@@ -49,7 +49,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                 it.name
             }
         }
-        val properties = ObjectDataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModelImpl>)
+        val properties = DataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModelImpl>)
         val key = add(2, "key",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(

@@ -102,7 +102,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         index: Int,
         name: String,
         definition: IsEmbeddedValuesDefinition<DM, P, CX>
-    ) = EmbeddedValuesPropertyDefinitionWrapper(index, name, definition, { null }).apply {
+    ) = EmbeddedValuesPropertyDefinitionWrapper(index, name, definition).apply {
         addSingle(this)
     }
 

@@ -11,7 +11,7 @@ import maryk.core.query.changes.DataObjectChange
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DM: IsRootDataModel<P>, P: ObjectPropertyDefinitions<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
+fun <DM: IsRootDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objectChanges] */

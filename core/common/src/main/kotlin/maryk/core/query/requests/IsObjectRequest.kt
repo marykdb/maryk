@@ -21,13 +21,13 @@ interface IsObjectRequest<out DM: IsRootDataModel<*>>: IsRequest {
                     contextualResolver = { context, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
-                            it.dataModels[name] as (() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                            it.dataModels[name] as (() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,
                 toSerializable = { value, _ ->
-                    value?.let{
+                    value?.let {
                         DataModelReference(it.name){ it }
                     }
                 },

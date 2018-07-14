@@ -1,9 +1,9 @@
 package maryk.core.definitions
 
-import maryk.EmbeddedMarykObject
+import maryk.EmbeddedMarykModel
 import maryk.Option
-import maryk.SimpleMarykObject
-import maryk.TestMarykObject
+import maryk.SimpleMarykModel
+import maryk.TestMarykModel
 import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -20,9 +20,9 @@ class DefinitionsTest {
     private val definitions = Definitions(
         Option,
         TestValueObject,
-        SimpleMarykObject,
-        EmbeddedMarykObject,
-        TestMarykObject
+        SimpleMarykModel,
+        EmbeddedMarykModel,
+        TestMarykModel
     )
 
     @Test
@@ -70,7 +70,7 @@ class DefinitionsTest {
               required: true
               final: false
         - !RootModel
-          name: SimpleMarykObject
+          name: SimpleMarykModel
           key:
           - !UUID
           properties:
@@ -83,7 +83,7 @@ class DefinitionsTest {
               default: haha
               regEx: ha.*
         - !Model
-          name: EmbeddedMarykObject
+          name: EmbeddedMarykModel
           properties:
             ? 0: value
             : !String
@@ -92,19 +92,19 @@ class DefinitionsTest {
               final: false
               unique: false
             ? 1: model
-            : !EmbedObject
+            : !Embed
               indexed: false
               required: false
               final: false
-              dataModel: EmbeddedMarykObject
+              dataModel: EmbeddedMarykModel
             ? 2: marykModel
-            : !EmbedObject
+            : !Embed
               indexed: false
               required: false
               final: false
-              dataModel: TestMarykObject
+              dataModel: TestMarykModel
         - !RootModel
-          name: TestMarykObject
+          name: TestMarykModel
           key:
           - !Ref uint
           - !Ref bool
@@ -211,12 +211,12 @@ class DefinitionsTest {
               final: false
               unique: false
               dataModel: TestValueObject
-            ? 11: embeddedObject
-            : !EmbedObject
+            ? 11: embeddedValues
+            : !Embed
               indexed: false
               required: false
               final: false
-              dataModel: EmbeddedMarykObject
+              dataModel: EmbeddedMarykModel
             ? 12: multi
             : !MultiType
               indexed: false
@@ -239,18 +239,18 @@ class DefinitionsTest {
                   type: SInt32
                   random: false
                 ? 2: V2
-                : !EmbedObject
+                : !Embed
                   indexed: false
                   required: true
                   final: false
-                  dataModel: EmbeddedMarykObject
+                  dataModel: EmbeddedMarykModel
             ? 13: reference
             : !Reference
               indexed: false
               required: false
               final: false
               unique: false
-              dataModel: TestMarykObject
+              dataModel: TestMarykModel
             ? 14: listOfString
             : !List
               indexed: false
@@ -267,7 +267,7 @@ class DefinitionsTest {
               required: false
               final: false
               unique: false
-              dataModel: TestMarykObject
+              dataModel: TestMarykModel
 
         """.trimIndent()
     }

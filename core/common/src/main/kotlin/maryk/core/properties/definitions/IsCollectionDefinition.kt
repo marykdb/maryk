@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
+import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
@@ -70,9 +71,11 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     /** Write [value] to JSON [writer] with [context] */
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
-        val renderCompact = this.valueDefinition !is EmbeddedObjectDefinition<*, *, *, *, *>
+        val renderCompact = this.valueDefinition !is EmbeddedValuesDefinition<*, *>
+                && this.valueDefinition !is IsEmbeddedObjectDefinition<*, *, *, *, *>
                 && this.valueDefinition !is ValueModelDefinition<*, *, *>
                 && this.valueDefinition !is ContextualEmbeddedObjectDefinition<*>
+                && this.valueDefinition !is ContextualEmbeddedValuesDefinition<*>
                 && this.valueDefinition !is MultiTypeDefinition<*, *>
                 && value.size < 5
         writer.writeStartArray(renderCompact)

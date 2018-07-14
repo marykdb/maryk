@@ -1,7 +1,7 @@
 package maryk.core.definitions
 
 import maryk.Option
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -20,7 +20,7 @@ class RootMarykTest {
                 Operation.Define,
                 Definitions(
                     Option,
-                    SimpleMarykObject
+                    SimpleMarykModel
                 )
             ),
             TypedValue(
@@ -55,7 +55,7 @@ class RootMarykTest {
               1: V1
               2: V2
           - !RootModel
-            name: SimpleMarykObject
+            name: SimpleMarykModel
             key:
             - !UUID
             properties:
@@ -69,12 +69,12 @@ class RootMarykTest {
                 regEx: ha.*
         - !Request
           - !Add
-            dataModel: SimpleMarykObject
+            dataModel: SimpleMarykModel
             objectsToAdd:
             - value: haha1
             - value: haha2
           - !Get
-            dataModel: SimpleMarykObject
+            dataModel: SimpleMarykModel
             keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
             filter: !Exists value
             order: !Desc value

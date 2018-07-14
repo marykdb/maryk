@@ -3,6 +3,7 @@ package maryk.core.query
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -40,7 +41,7 @@ data class Order internal constructor(
     internal object Properties : ObjectPropertyDefinitions<Order>() {
         val propertyReference = add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
             contextualResolver = {
-                it?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
             }
         ), Order::propertyReference)
 

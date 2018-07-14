@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.SimpleMarykModel
 import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -13,14 +14,14 @@ import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-private val key1 = SimpleMarykObject.key("Zk6m4QpZQegUg5s13JVYlQ")
+private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
-internal val scanChangesRequest = SimpleMarykObject.scanChanges(
+internal val scanChangesRequest = SimpleMarykModel.scanChanges(
     startKey = key1,
     fromVersion = 1234L.toUInt64()
 )
 
-internal val scanChangeMaxRequest = SimpleMarykObject.scanChanges(
+internal val scanChangeMaxRequest = SimpleMarykModel.scanChanges(
     startKey = key1,
     filter = Exists(SimpleMarykObject.ref { value }),
     order = Order(SimpleMarykObject.ref { value }),
@@ -28,8 +29,8 @@ internal val scanChangeMaxRequest = SimpleMarykObject.scanChanges(
     filterSoftDeleted = true,
     toVersion = 2345L.toUInt64(),
     fromVersion = 1234L.toUInt64(),
-    select = SimpleMarykObject.props {
-        RootPropRefGraph<SimpleMarykObject.Companion>(
+    select = SimpleMarykModel.props {
+        RootPropRefGraph<SimpleMarykModel>(
             value
         )
     }
@@ -37,7 +38,7 @@ internal val scanChangeMaxRequest = SimpleMarykObject.scanChanges(
 
 class ScanChangesRequestTest {
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to { SimpleMarykObject }
+        SimpleMarykModel.name to { SimpleMarykModel }
     ))
 
     @Test
@@ -55,7 +56,7 @@ class ScanChangesRequestTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(scanChangesRequest, ScanChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
         limit: 100
@@ -64,7 +65,7 @@ class ScanChangesRequestTest {
         """.trimIndent()
 
         checkYamlConversion(scanChangeMaxRequest, ScanChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         filter: !Exists value
         order: value

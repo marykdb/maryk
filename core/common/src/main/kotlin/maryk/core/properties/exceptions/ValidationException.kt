@@ -1,6 +1,7 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -31,7 +32,7 @@ abstract class ValidationException internal constructor(
                 definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                     required = false,
                     contextualResolver = {
-                        it?.dataModel?.properties as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                        it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                     }
                 ),
                 getter = getter,

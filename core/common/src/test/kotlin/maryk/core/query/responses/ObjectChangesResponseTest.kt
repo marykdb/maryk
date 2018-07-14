@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -14,21 +14,21 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ObjectChangesResponseTest {
-    private val key = SimpleMarykObject.key("+1xO4zD4R5sIMcS9pXTZEA")
+    private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
     private val objectChangesResponse = ObjectChangesResponse(
-        SimpleMarykObject,
+        SimpleMarykModel,
         listOf(
             key.change(
-                Change(SimpleMarykObject.ref { value } with "hoho"),
-                Delete(SimpleMarykObject.ref { value }),
+                Change(SimpleMarykModel.ref { value } with "hoho"),
+                Delete(SimpleMarykModel.ref { value }),
                 lastVersion = 14141L.toUInt64()
             )
         )
     )
 
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to { SimpleMarykObject }
+        SimpleMarykModel.name to { SimpleMarykModel }
     ))
 
     @Test
@@ -44,7 +44,7 @@ class ObjectChangesResponseTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.objectChangesResponse, ObjectChangesResponse, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         changes:
         - key: +1xO4zD4R5sIMcS9pXTZEA
           changes:

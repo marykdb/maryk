@@ -1,6 +1,6 @@
 package maryk.core.query.responses
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -14,10 +14,10 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DeleteResponseTest {
-    private val key = SimpleMarykObject.key("+1xO4zD4R5sIMcS9pXTZEA")
+    private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
     private val deleteResponse = DeleteResponse(
-        SimpleMarykObject,
+        SimpleMarykModel,
         listOf(
             Success(32352L.toUInt64()),
             DoesNotExist(key),
@@ -27,7 +27,7 @@ class DeleteResponseTest {
     )
 
     private val context = DataModelPropertyContext(mapOf(
-        SimpleMarykObject.name to { SimpleMarykObject }
+        SimpleMarykModel.name to { SimpleMarykModel }
     ))
 
     @Test
@@ -43,7 +43,7 @@ class DeleteResponseTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.deleteResponse, DeleteResponse, { this.context }) shouldBe """
-        dataModel: SimpleMarykObject
+        dataModel: SimpleMarykModel
         statuses:
         - !SUCCESS
           version: 32352

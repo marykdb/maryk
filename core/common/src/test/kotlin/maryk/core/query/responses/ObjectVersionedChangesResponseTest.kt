@@ -1,6 +1,7 @@
 package maryk.core.query.responses
 
-import maryk.EmbeddedMarykObject
+import maryk.EmbeddedMarykModel
+import maryk.TestMarykModel
 import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -22,12 +23,12 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ObjectVersionedChangesResponseTest {
-    private val key = TestMarykObject.key("AAACKwEBAQAC")
+    private val key = TestMarykModel.key("AAACKwEBAQAC")
 
-    private val subModel = TestMarykObject.ref { embeddedObject }
+    private val subModel = TestMarykModel.ref { embeddedValues }
 
     private val objectVersionedChangesResponse = ObjectVersionedChangesResponse(
-        TestMarykObject,
+        TestMarykModel,
         listOf(
             DataObjectVersionedChange(
                 key = key,
@@ -36,17 +37,17 @@ class ObjectVersionedChangesResponseTest {
                         219674127L.toUInt64(),
                         listOf(
                             ObjectSoftDeleteChange(true),
-                            ListChange(TestMarykObject.ref { list }.change()),
-                            SetChange(TestMarykObject.ref { set }.change()),
-                            MapChange(TestMarykObject.ref { map }.change())
+                            ListChange(TestMarykModel.ref { list }.change()),
+                            SetChange(TestMarykModel.ref { set }.change()),
+                            MapChange(TestMarykModel.ref { map }.change())
                         )
                     ),
                     VersionedChanges(
                         319674127L.toUInt64(),
                         listOf(
-                            Change(EmbeddedMarykObject.ref(subModel) { value } with "new"),
-                            Delete(EmbeddedMarykObject.ref(subModel) { value }),
-                            Check(EmbeddedMarykObject.ref(subModel) { value } with "current")
+                            Change(EmbeddedMarykModel.ref(subModel) { value } with "new"),
+                            Delete(EmbeddedMarykModel.ref(subModel) { value }),
+                            Check(EmbeddedMarykModel.ref(subModel) { value } with "current")
                         )
                     )
                 )
@@ -56,8 +57,8 @@ class ObjectVersionedChangesResponseTest {
 
     private val context = DataModelPropertyContext(
         dataModels = mapOf(
-            EmbeddedMarykObject.name to { EmbeddedMarykObject },
-            TestMarykObject.name to { TestMarykObject }
+            EmbeddedMarykModel.name to { EmbeddedMarykModel },
+            TestMarykModel.name to { TestMarykModel }
         ),
         dataModel = TestMarykObject
     )
@@ -75,7 +76,7 @@ class ObjectVersionedChangesResponseTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.objectVersionedChangesResponse, ObjectVersionedChangesResponse, { this.context }) shouldBe """
-        dataModel: TestMarykObject
+        dataModel: TestMarykModel
         changes:
         - key: AAACKwEBAQAC
           changes:
@@ -92,10 +93,10 @@ class ObjectVersionedChangesResponseTest {
           - version: 319674127
             changes:
             - !Change
-              embeddedObject.value: new
-            - !Delete embeddedObject.value
+              embeddedValues.value: new
+            - !Delete embeddedValues.value
             - !Check
-              embeddedObject.value: current
+              embeddedValues.value: current
 
         """.trimIndent()
     }

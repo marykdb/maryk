@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,14 +11,14 @@ import kotlin.test.Test
 
 class PrefixTest {
     private val prefix = Prefix(
-        TestMarykObject.ref { string } with "te"
+        TestMarykModel.ref { string } with "te"
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,15 +11,15 @@ import kotlin.test.Test
 
 class CheckTest {
     private val valueCheck = Check(
-        TestMarykObject.ref { string } with "test",
-        TestMarykObject.ref { int } with 42
+        TestMarykModel.ref { string } with "test",
+        TestMarykModel.ref { int } with 42
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

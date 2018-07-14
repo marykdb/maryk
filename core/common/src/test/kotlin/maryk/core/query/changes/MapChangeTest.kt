@@ -1,7 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.EmbeddedMarykObject
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -12,7 +11,7 @@ import kotlin.test.Test
 
 class MapChangeTest {
     private val mapPropertyChange = MapChange(
-        TestMarykObject.ref { map }.change(
+        TestMarykModel.ref { map }.change(
             keysToDelete = setOf(
                 Time(12, 33, 12)
             ),
@@ -26,9 +25,9 @@ class MapChangeTest {
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { EmbeddedMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

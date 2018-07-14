@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,14 +11,14 @@ import kotlin.test.Test
 
 class RegExTest {
     private val regEx = RegEx(
-        TestMarykObject.ref { string } with ".*"
+        TestMarykModel.ref { string } with ".*"
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.EmbeddedMarykObject
-import maryk.TestMarykObject
+import maryk.EmbeddedMarykModel
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -12,32 +12,32 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class DataObjectChangeTest {
-    private val key1 = TestMarykObject.key(
+    private val key1 = TestMarykModel.key(
         byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
     )
 
-    private val subModel = TestMarykObject.ref { embeddedObject }
+    private val subModel = TestMarykModel.ref { embeddedValues }
 
     private val dataObjectChange = key1.change(
-        Change(EmbeddedMarykObject.ref(subModel) { value } with  "new"),
-        Delete(EmbeddedMarykObject.ref(subModel) { value }),
-        Check(EmbeddedMarykObject.ref(subModel) { value } with "current"),
+        Change(EmbeddedMarykModel.ref(subModel) { value } with  "new"),
+        Delete(EmbeddedMarykModel.ref(subModel) { value }),
+        Check(EmbeddedMarykModel.ref(subModel) { value } with "current"),
         ObjectSoftDeleteChange(true),
         ListChange(
-            TestMarykObject.ref { list }.change(
+            TestMarykModel.ref { list }.change(
                 addValuesToEnd = listOf(1,2,3)
             )
         ),
-        SetChange(TestMarykObject.ref { set }.change()),
-        MapChange(TestMarykObject.ref { map }.change()),
+        SetChange(TestMarykModel.ref { set }.change()),
+        MapChange(TestMarykModel.ref { map }.change()),
         lastVersion = 12345L.toUInt64()
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test
@@ -56,10 +56,10 @@ class DataObjectChangeTest {
         key: AAACKwEBAQAC
         changes:
         - !Change
-          embeddedObject.value: new
-        - !Delete embeddedObject.value
+          embeddedValues.value: new
+        - !Delete embeddedValues.value
         - !Check
-          embeddedObject.value: current
+          embeddedValues.value: current
         - !ObjectDelete
           isDeleted: true
         - !ListChange

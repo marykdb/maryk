@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,15 +11,15 @@ import kotlin.test.Test
 
 class OrTest {
     private val or = Or(
-        Exists(SimpleMarykObject.ref { value }),
-        Equals(SimpleMarykObject.ref { value } with "hoi")
+        Exists(SimpleMarykModel.ref { value }),
+        Equals(SimpleMarykModel.ref { value } with "hoi")
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to { SimpleMarykObject }
+            SimpleMarykModel.name to { SimpleMarykModel }
         ),
-        dataModel = SimpleMarykObject
+        dataModel = SimpleMarykModel
     )
 
     @Test

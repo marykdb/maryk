@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -10,20 +10,20 @@ import kotlin.test.Test
 
 class DeleteTest {
     private val propertyDelete = Delete(
-        TestMarykObject.ref { string }
+        TestMarykModel.ref { string }
     )
 
     private val propertyDeleteMultiple = Delete(
-        TestMarykObject.ref { string },
-        TestMarykObject.ref { int },
-        TestMarykObject.ref { dateTime }
+        TestMarykModel.ref { string },
+        TestMarykModel.ref { int },
+        TestMarykModel.ref { dateTime }
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

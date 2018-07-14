@@ -1,6 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -12,20 +12,20 @@ import kotlin.test.Test
 
 class RangeTest {
     private val range = Range(
-        TestMarykObject.ref { string } with ValueRange(
+        TestMarykModel.ref { string } with ValueRange(
             from = "test",
             to = "test999",
             inclusiveFrom = false,
             inclusiveTo = false
         ),
-        TestMarykObject.ref { int } with 3..5
+        TestMarykModel.ref { int } with 3..5
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

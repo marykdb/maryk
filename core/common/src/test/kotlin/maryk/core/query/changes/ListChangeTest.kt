@@ -1,6 +1,6 @@
 package maryk.core.query.changes
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class ListChangeTest {
     private val listPropertyChange = ListChange(
-        TestMarykObject.ref { listOfString }.change(
+        TestMarykModel.ref { listOfString }.change(
             addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
             addValuesToEnd = listOf("four", "five"),
             deleteAtIndex = setOf(0, 1),
@@ -20,9 +20,9 @@ class ListChangeTest {
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

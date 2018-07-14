@@ -1,6 +1,6 @@
 package maryk.core.query
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -9,21 +9,21 @@ import kotlin.test.Test
 
 class OrderTest {
     private val order = Order(
-        SimpleMarykObject.ref { value },
+        SimpleMarykModel.ref { value },
         Direction.DESC
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to { SimpleMarykObject }
+            SimpleMarykModel.name to { SimpleMarykModel }
         ),
-        dataModel = SimpleMarykObject
+        dataModel = SimpleMarykModel
     )
 
     @Test
     fun testOrder() {
         this.order.direction shouldBe Direction.DESC
-        this.order.propertyReference shouldBe SimpleMarykObject.ref { value }
+        this.order.propertyReference shouldBe SimpleMarykModel.ref { value }
     }
 
     @Test

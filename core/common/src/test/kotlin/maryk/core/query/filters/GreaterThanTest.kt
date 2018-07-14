@@ -1,7 +1,6 @@
 package maryk.core.query.filters
 
-import maryk.SimpleMarykObject
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -12,15 +11,15 @@ import kotlin.test.Test
 
 class GreaterThanTest {
     private val greaterThan = GreaterThan(
-        TestMarykObject.ref { string } with "test",
-        TestMarykObject.ref { int } with 5
+        TestMarykModel.ref { string } with "test",
+        TestMarykModel.ref { int } with 5
     )
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { SimpleMarykObject }
+            TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

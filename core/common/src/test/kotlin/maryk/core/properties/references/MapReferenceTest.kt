@@ -1,16 +1,16 @@
 package maryk.core.properties.references
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.core.properties.ByteCollector
-import maryk.lib.time.Time
 import maryk.core.protobuf.WriteCache
+import maryk.lib.time.Time
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class MapReferenceTest {
-    private val mapReference = TestMarykObject.ref { map }
-    private val keyReference = TestMarykObject { map key Time(12, 0, 1) }
-    private val valReference = TestMarykObject { map at Time(15, 22, 55) }
+    private val mapReference = TestMarykModel.ref { map }
+    private val keyReference = TestMarykModel { map key Time(12, 0, 1) }
+    private val valReference = TestMarykModel { map at Time(15, 22, 55) }
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
@@ -23,7 +23,7 @@ class MapReferenceTest {
             )
             it.writeTransportBytes(cache, bc::write)
 
-            val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
+            val converted = TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read)
             converted shouldBe it
             bc.reset()
         }
@@ -36,7 +36,7 @@ class MapReferenceTest {
         valReference.completeName shouldBe "map.@15:22:55"
 
         for (it in arrayOf(mapReference, keyReference, valReference)) {
-            val converted = TestMarykObject.getPropertyReferenceByName(it.completeName)
+            val converted = TestMarykModel.getPropertyReferenceByName(it.completeName)
             converted shouldBe it
         }
     }

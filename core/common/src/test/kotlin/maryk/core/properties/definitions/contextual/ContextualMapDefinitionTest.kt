@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
@@ -30,7 +30,7 @@ class ContextualMapDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(),
-        reference = TestMarykObject.ref { map } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>
+        reference = TestMarykModel.ref { map } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>
     )
 
     @Test

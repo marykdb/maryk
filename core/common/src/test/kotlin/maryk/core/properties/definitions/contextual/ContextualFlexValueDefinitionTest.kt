@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.EmbeddedMarykObject
-import maryk.TestMarykObject
+import maryk.EmbeddedMarykModel
+import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
@@ -27,11 +27,11 @@ class ContextualValueDefinitionTest {
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject },
-            EmbeddedMarykObject.name to { EmbeddedMarykObject }
+            TestMarykModel.name to { TestMarykModel },
+            EmbeddedMarykModel.name to { EmbeddedMarykModel }
         ),
-        dataModel = TestMarykObject,
-        reference = TestMarykObject.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>
+        dataModel = TestMarykModel,
+        reference = TestMarykModel.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>
     )
 
     @Test

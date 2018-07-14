@@ -1,7 +1,6 @@
 package maryk.core.query.filters
 
 import maryk.TestMarykModel
-import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -18,7 +17,7 @@ class EqualsTest {
 
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykModel }
+            TestMarykModel.name to { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

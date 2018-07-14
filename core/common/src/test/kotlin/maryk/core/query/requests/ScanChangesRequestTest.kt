@@ -1,7 +1,6 @@
 package maryk.core.query.requests
 
 import maryk.SimpleMarykModel
-import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -23,8 +22,8 @@ internal val scanChangesRequest = SimpleMarykModel.scanChanges(
 
 internal val scanChangeMaxRequest = SimpleMarykModel.scanChanges(
     startKey = key1,
-    filter = Exists(SimpleMarykObject.ref { value }),
-    order = Order(SimpleMarykObject.ref { value }),
+    filter = Exists(SimpleMarykModel.ref { value }),
+    order = Order(SimpleMarykModel.ref { value }),
     limit = 100.toUInt32(),
     filterSoftDeleted = true,
     toVersion = 2345L.toUInt64(),

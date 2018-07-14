@@ -2,7 +2,6 @@ package maryk.core.query.responses
 
 import maryk.EmbeddedMarykModel
 import maryk.TestMarykModel
-import maryk.TestMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -60,7 +59,7 @@ class ObjectVersionedChangesResponseTest {
             EmbeddedMarykModel.name to { EmbeddedMarykModel },
             TestMarykModel.name to { TestMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

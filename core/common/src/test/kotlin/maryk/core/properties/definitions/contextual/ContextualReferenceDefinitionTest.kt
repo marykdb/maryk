@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.EmbeddedMarykObject
-import maryk.TestMarykObject
+import maryk.EmbeddedMarykModel
+import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
@@ -12,7 +12,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ContextualReferenceDefinitionTest {
-    private val refsToTest = arrayOf<Key<TestMarykObject.Companion>>(
+    private val refsToTest = arrayOf<Key<TestMarykModel>>(
         Key(ByteArray(9) { ZERO_BYTE }),
         Key(ByteArray(9) { MAX_BYTE }),
         Key(ByteArray(9) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
@@ -25,10 +25,10 @@ class ContextualReferenceDefinitionTest {
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject },
-            EmbeddedMarykObject.name to { EmbeddedMarykObject }
+            TestMarykModel.name to { TestMarykModel },
+            EmbeddedMarykModel.name to { EmbeddedMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

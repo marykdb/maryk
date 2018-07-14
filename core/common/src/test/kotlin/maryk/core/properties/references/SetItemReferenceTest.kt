@@ -1,14 +1,14 @@
 package maryk.core.properties.references
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.core.properties.ByteCollector
-import maryk.lib.time.Date
 import maryk.core.protobuf.WriteCache
+import maryk.lib.time.Date
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class SetItemReferenceTest {
-    val reference = TestMarykObject.Properties.set.getItemRef(Date(2001, 4, 2))
+    val reference = TestMarykModel.Properties.set.getItemRef(Date(2001, 4, 2))
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
@@ -20,7 +20,7 @@ class SetItemReferenceTest {
         )
         this.reference.writeTransportBytes(cache, bc::write)
 
-        val converted = TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read)
+        val converted = TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read)
         converted shouldBe this.reference
     }
 
@@ -28,7 +28,7 @@ class SetItemReferenceTest {
     fun testStringConversion() {
         this.reference.completeName shouldBe "set.$2001-04-02"
 
-        val converted = TestMarykObject.getPropertyReferenceByName(this.reference.completeName)
+        val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)
         converted shouldBe this.reference
     }
 }

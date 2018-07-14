@@ -1,31 +1,31 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.EmbeddedMarykObject
-import maryk.TestMarykObject
+import maryk.EmbeddedMarykModel
+import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ContextualPropertyReferenceDefinitionTest {
     private val refsToTest = listOf(
-        TestMarykObject.ref { string },
-        TestMarykObject { embeddedObject ref { value } }
+        TestMarykModel.ref { string },
+        TestMarykModel { embeddedValues ref { value } }
     )
 
     private val def = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.dataModel!!.properties as ObjectPropertyDefinitions<*> }
+        contextualResolver = { it!!.dataModel!!.properties as AbstractPropertyDefinitions<*> }
     )
 
     @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
-            TestMarykObject.name to { TestMarykObject },
-            EmbeddedMarykObject.name to { EmbeddedMarykObject }
+            TestMarykModel.name to { TestMarykModel },
+            EmbeddedMarykModel.name to { EmbeddedMarykModel }
         ),
-        dataModel = TestMarykObject
+        dataModel = TestMarykModel
     )
 
     @Test

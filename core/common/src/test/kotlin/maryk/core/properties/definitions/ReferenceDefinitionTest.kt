@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions
 
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -15,14 +15,14 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class ReferenceDefinitionTest {
-    private val refToTest = arrayOf<Key<TestMarykObject.Companion>>(
+    private val refToTest = arrayOf<Key<TestMarykModel>>(
         Key(ByteArray(9) { ZERO_BYTE }),
         Key(ByteArray(9) { MAX_BYTE }),
         Key(ByteArray(9) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
     )
 
     val def = ReferenceDefinition(
-        dataModel = { TestMarykObject }
+        dataModel = { TestMarykModel }
     )
     val defMaxDefined = ReferenceDefinition(
         indexed = true,
@@ -31,13 +31,13 @@ internal class ReferenceDefinitionTest {
         unique = true,
         minValue = refToTest[0],
         maxValue = refToTest[1],
-        dataModel = { TestMarykObject },
+        dataModel = { TestMarykModel },
         default = Key(ByteArray(9) { 1 })
     )
 
     @Test
     fun hasValues() {
-        def.dataModel shouldBe TestMarykObject
+        def.dataModel shouldBe TestMarykModel
     }
 
     @Test
@@ -98,7 +98,7 @@ internal class ReferenceDefinitionTest {
         minValue: AAAAAAAAAAAA
         maxValue: ////////////
         default: AQEBAQEBAQEB
-        dataModel: TestMarykObject
+        dataModel: TestMarykModel
 
         """.trimIndent()
     }

@@ -1,6 +1,6 @@
 package maryk.core.properties.exceptions
 
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -8,7 +8,7 @@ import maryk.core.query.DataModelPropertyContext
 import kotlin.test.Test
 
 class ValidationExceptionTest {
-    private val ref = SimpleMarykObject.ref { value }
+    private val ref = SimpleMarykModel.ref { value }
 
     private val validationUmbrellaException = ValidationUmbrellaException(null, listOf(
         AlreadySetException(ref),
@@ -27,9 +27,9 @@ class ValidationExceptionTest {
 
     private val context = DataModelPropertyContext(
         mapOf(
-            SimpleMarykObject.name to { SimpleMarykObject }
+            SimpleMarykModel.name to { SimpleMarykModel }
         ),
-        dataModel = SimpleMarykObject
+        dataModel = SimpleMarykModel
     )
 
     @Test

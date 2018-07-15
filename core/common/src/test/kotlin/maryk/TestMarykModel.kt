@@ -2,6 +2,7 @@ package maryk
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -171,7 +172,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
     }
 
-    fun invoke(
+    operator fun invoke(
         string: String = "haha",
         int: Int,
         uint: UInt32,
@@ -183,13 +184,13 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         set: Set<Date>? = null,
         map: Map<Time, String>? = null,
         valueObject: TestValueObject? = null,
-        embeddedValues: EmbeddedMarykModel? = null,
+        embeddedValues: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
         multi: TypedValue<Option, *>? = null,
         reference: Key<TestMarykObject.Companion>? = null,
         listOfString: List<String>? = null,
         selfReference: Key<TestMarykObject.Companion>? = null
     ) = this.map {
-        mapOf(
+        mapNonNulls(
             this.string with string,
             this.int with int,
             this.uint with uint,

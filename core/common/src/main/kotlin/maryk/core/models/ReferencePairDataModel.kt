@@ -72,7 +72,7 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValu
         }
 
         return this.map {
-            mapOf(
+            mapNonNulls(
                 referenceValuePairs with list
             )
         }

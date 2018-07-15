@@ -42,15 +42,19 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     override fun isEmpty() = this._allProperties.isEmpty()
 
     /** Get the definition with a property [name] */
-    fun getDefinition(name: String) = nameToDefinition[name]
+    fun get(name: String) = nameToDefinition[name]
     /** Get the definition with a property [index] */
-    fun getDefinition(index: Int) = indexToDefinition[index]
+    operator fun get(index: Int) = indexToDefinition[index]
 
     init {
         for (it in properties) {
             addSingle(it)
         }
     }
+
+    /** Converts a list of optional [pairs] to map */
+    fun <K, V> mapNonNulls(vararg pairs: Pair<K, V>?): Map<K, V> =
+        mapOf(*pairs.mapNotNull { it }.toTypedArray())
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
     internal fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
@@ -124,7 +128,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         var propertyReference: IsPropertyReference<*, *>? = null
         for (name in names) {
             propertyReference = when (propertyReference) {
-                null -> this.getDefinition(name)?.getRef(propertyReference)
+                null -> this.get(name)?.getRef(propertyReference)
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
                 else -> throw DefNotFoundException("Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
@@ -147,7 +151,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
             propertyReference = when (propertyReference) {
                 null -> {
                     val index = initIntByVar(lengthReader)
-                    this.getDefinition(index)?.getRef(propertyReference)
+                    this.get(index)?.getRef(propertyReference)
                 }
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader)
                 else -> throw DefNotFoundException("More property references found on property that cannot have any ")

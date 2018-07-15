@@ -52,7 +52,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for (key in map.keys) {
-                val definition = properties.getDefinition(key) ?: continue
+                val definition = properties.get(key) ?: continue
                 val value = map<Any?>(key) ?: continue // skip empty values
                 try {
                     definition.validate(
@@ -91,7 +91,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
-            val definition = properties.getDefinition(key) ?: continue
+            val definition = properties.get(key) ?: continue
 
             definition.capture(context, value)
 
@@ -120,7 +120,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
-            val def = properties.getDefinition(key) ?: continue
+            val def = properties.get(key) ?: continue
 
             def.capture(context, value)
 
@@ -155,7 +155,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
-            val definition = properties.getDefinition(key) ?: continue
+            val definition = properties.get(key) ?: continue
 
             definition.capture(context, value)
 

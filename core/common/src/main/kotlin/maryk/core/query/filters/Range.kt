@@ -3,9 +3,9 @@ package maryk.core.query.filters
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -110,7 +110,7 @@ data class Range internal constructor(
             } while (token !is JsonToken.Stopped)
 
             return this.map {
-                mapOf(
+                mapNonNulls(
                     ranges with listOfRanges
                 )
             }

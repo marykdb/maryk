@@ -58,9 +58,9 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
 
     override fun fromString(string: String) = this.dataModel.fromString(string)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(name)
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.get(name)
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
     override fun validateWithRef(previousValue: DO?, newValue: DO?, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?) {
         super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
@@ -115,9 +115,9 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     },
                     capturer = { context, dataModel ->
                         context.let {
-                            context.dataModelContext?.let {
-                                if (!it.dataModels.containsKey(dataModel.name)) {
-                                    it.dataModels[dataModel.name] = dataModel.get
+                            context.dataModelContext?.let { modelContext ->
+                                if (!modelContext.dataModels.containsKey(dataModel.name)) {
+                                    modelContext.dataModels[dataModel.name] = dataModel.get
                                 }
                             } ?: throw ContextNotFoundException()
 

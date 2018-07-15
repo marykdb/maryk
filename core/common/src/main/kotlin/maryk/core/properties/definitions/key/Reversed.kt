@@ -4,7 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.SimpleObjectValues
+import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -22,6 +24,9 @@ data class Reversed<T: Any>(
     override val byteSize = this.reference.propertyDefinition.byteSize
     override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO) =
         this.reference.propertyDefinition.getValue(dataModel, dataObject)
+
+    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) =
+        this.reference.propertyDefinition.getValue(dataModel, values)
 
     /** Convenience constructor to pass [definition] */
     constructor(definition: FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>) : this(definition.getRef())

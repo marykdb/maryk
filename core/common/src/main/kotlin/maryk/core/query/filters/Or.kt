@@ -2,9 +2,9 @@ package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeReader
@@ -62,8 +62,8 @@ data class Or(
                 reader.nextToken()
             }
 
-            return this.map{
-                mapOf(
+            return this.map {
+                mapNonNulls(
                     filters with filters.readJson(reader, context)
                 )
             }

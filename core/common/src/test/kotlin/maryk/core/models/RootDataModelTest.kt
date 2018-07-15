@@ -2,7 +2,7 @@ package maryk.core.models
 
 import maryk.EmbeddedMarykObject
 import maryk.Option
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -12,7 +12,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
@@ -36,11 +36,11 @@ import maryk.lib.time.Time
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-internal class RootObjectDataModelTest {
+internal class RootDataModelTest {
     @Test
     fun testKey() {
-        TestMarykObject.key(
-            TestMarykObject(
+        TestMarykModel.key(
+            TestMarykModel(
                 string = "name",
                 int = 5123123,
                 uint = 555.toUInt32(),
@@ -54,14 +54,16 @@ internal class RootObjectDataModelTest {
         )
     }
 
-    private val subModelRef = EmbeddedMarykObject.Properties.value.getRef(TestMarykObject.Properties.embeddedObject.getRef())
-    private val mapRef = TestMarykObject.ref { map }
-    private val mapKeyRef = TestMarykObject { map key Time(12, 33, 44) }
+    private val subModelRef = EmbeddedMarykObject.Properties.value.getRef(
+        TestMarykModel.Properties.embeddedValues.getRef()
+    )
+    private val mapRef = TestMarykModel.ref { map }
+    private val mapKeyRef = TestMarykModel { map key Time(12, 33, 44) }
 
     @Test
     fun testPropertyReferenceByName() {
-        TestMarykObject.getPropertyReferenceByName(mapRef.completeName) shouldBe mapRef
-        TestMarykObject.getPropertyReferenceByName(subModelRef.completeName) shouldBe subModelRef
+        TestMarykModel.getPropertyReferenceByName(mapRef.completeName) shouldBe mapRef
+        TestMarykModel.getPropertyReferenceByName(subModelRef.completeName) shouldBe subModelRef
     }
 
     @Test
@@ -75,7 +77,7 @@ internal class RootObjectDataModelTest {
             )
             it.writeTransportBytes(cache, bc::write)
 
-            TestMarykObject.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe it
+            TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe it
 
             bc.reset()
         }
@@ -83,19 +85,19 @@ internal class RootObjectDataModelTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(TestMarykObject, RootObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
+        checkProtoBufConversion(TestMarykModel, RootDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
         checkJsonConversion(
-            TestMarykObject,
-            RootObjectDataModel.Model,
+            TestMarykModel,
+            RootDataModel.Model,
             { DataModelContext() },
             ::compareDataModels
         ) shouldBe """
         {
-        	"name": "TestMarykObject",
+        	"name": "TestMarykModel",
         	"key": [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]],
         	"properties": [{
         		"index": 0,
@@ -244,12 +246,12 @@ internal class RootObjectDataModelTest {
         		}]
         	}, {
         		"index": 11,
-        		"name": "embeddedObject",
-        		"definition": ["EmbedObject", {
+        		"name": "embeddedValues",
+        		"definition": ["Embed", {
         			"indexed": false,
         			"required": false,
         			"final": false,
-        			"dataModel": "EmbeddedMarykObject"
+        			"dataModel": "EmbeddedMarykModel"
         		}]
         	}, {
         		"index": 12,
@@ -282,11 +284,11 @@ internal class RootObjectDataModelTest {
         			}, {
         				"index": 2,
         				"name": "V2",
-        				"definition": ["EmbedObject", {
+        				"definition": ["Embed", {
         					"indexed": false,
         					"required": true,
         					"final": false,
-        					"dataModel": "EmbeddedMarykObject"
+        					"dataModel": "EmbeddedMarykModel"
         				}]
         			}]
         		}]
@@ -298,7 +300,7 @@ internal class RootObjectDataModelTest {
         			"required": false,
         			"final": false,
         			"unique": false,
-        			"dataModel": "TestMarykObject"
+        			"dataModel": "TestMarykModel"
         		}]
         	}, {
         		"index": 14,
@@ -322,7 +324,7 @@ internal class RootObjectDataModelTest {
         			"required": false,
         			"final": false,
         			"unique": false,
-        			"dataModel": "TestMarykObject"
+        			"dataModel": "TestMarykModel"
         		}]
         	}]
         }""".trimIndent()
@@ -331,12 +333,12 @@ internal class RootObjectDataModelTest {
     @Test
     fun convert_definition_to_YAML_and_back() {
         checkYamlConversion(
-            TestMarykObject,
-            RootObjectDataModel.Model,
+            TestMarykModel,
+            RootDataModel.Model,
             { DataModelContext() },
             ::compareDataModels
         ) shouldBe """
-        name: TestMarykObject
+        name: TestMarykModel
         key:
         - !Ref uint
         - !Ref bool
@@ -448,12 +450,12 @@ internal class RootObjectDataModelTest {
             final: false
             unique: false
             dataModel: TestValueObject
-          ? 11: embeddedObject
-          : !EmbedObject
+          ? 11: embeddedValues
+          : !Embed
             indexed: false
             required: false
             final: false
-            dataModel: EmbeddedMarykObject
+            dataModel: EmbeddedMarykModel
           ? 12: multi
           : !MultiType
             indexed: false
@@ -476,18 +478,18 @@ internal class RootObjectDataModelTest {
                 type: SInt32
                 random: false
               ? 2: V2
-              : !EmbedObject
+              : !Embed
                 indexed: false
                 required: true
                 final: false
-                dataModel: EmbeddedMarykObject
+                dataModel: EmbeddedMarykModel
           ? 13: reference
           : !Reference
             indexed: false
             required: false
             final: false
             unique: false
-            dataModel: TestMarykObject
+            dataModel: TestMarykModel
           ? 14: listOfString
           : !List
             indexed: false
@@ -504,7 +506,7 @@ internal class RootObjectDataModelTest {
             required: false
             final: false
             unique: false
-            dataModel: TestMarykObject
+            dataModel: TestMarykModel
 
         """.trimIndent()
     }
@@ -549,14 +551,14 @@ internal class RootObjectDataModelTest {
             keyDefinition: !Date
             valueDefinition: !String
           ? 11: embedded
-          : !EmbedObject
-            dataModel: TestMarykObject
+          : !Embed
+            dataModel: TestMarykModel
           ? 12: value
           : !Value
             dataModel: TestValueObject
           ? 13: ref
           : !Reference
-            dataModel: TestMarykObject
+            dataModel: TestMarykModel
           ? 14: multi
           : !MultiType
             typeEnum: Option
@@ -581,10 +583,10 @@ internal class RootObjectDataModelTest {
         }
 
         val newContext = DataModelContext()
-        newContext.dataModels["TestMarykObject"] = { TestMarykObject }
+        newContext.dataModels["TestMarykModel"] = { TestMarykModel }
         newContext.dataModels["TestValueObject"] = { TestValueObject }
 
-        RootObjectDataModel.Model.readJson(reader, newContext).toDataObject().apply {
+        RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
             name shouldBe "SimpleModel"
 
             properties.get("string")!!.let {
@@ -640,8 +642,8 @@ internal class RootObjectDataModelTest {
             }
             properties.get("embedded")!!.let {
                 it.index shouldBe 11
-                it.definition shouldBe EmbeddedObjectDefinition(
-                    dataModel = { TestMarykObject }
+                it.definition shouldBe EmbeddedValuesDefinition(
+                    dataModel = { TestMarykModel }
                 )
             }
             properties.get("value")!!.let {
@@ -653,7 +655,7 @@ internal class RootObjectDataModelTest {
             properties.get("ref")!!.let {
                 it.index shouldBe 13
                 it.definition shouldBe ReferenceDefinition(
-                    dataModel = { TestMarykObject }
+                    dataModel = { TestMarykModel }
                 )
             }
             properties.get("multi")!!.let {

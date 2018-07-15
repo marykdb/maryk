@@ -26,7 +26,7 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
     inline operator fun <reified T> invoke(index: Int): T {
         val value = this.original(index)
 
-        val valueDef = this.dataModel.properties.getDefinition(index)
+        val valueDef = this.dataModel.properties.get(index)
                 ?: throw Exception("Value definition of index $index is missing")
 
         val transformedValue = valueDef.convertToCurrentValue(value)

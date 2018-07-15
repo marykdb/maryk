@@ -1,8 +1,9 @@
 package maryk.core.models
 
+import maryk.EmbeddedMarykModel
 import maryk.EmbeddedMarykObject
 import maryk.Option
-import maryk.TestMarykObject
+import maryk.TestMarykModel
 import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -27,7 +28,7 @@ import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
-private val testObject = TestMarykObject(
+private val testObject = TestMarykModel(
     string = "haas",
     int = 4,
     uint = 53.toUInt32(),
@@ -36,7 +37,7 @@ private val testObject = TestMarykObject(
     dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
 )
 
-private val testExtendedObject = TestMarykObject(
+private val testExtendedObject = TestMarykModel(
     string = "hay",
     int = 4,
     double = 3.555,
@@ -54,37 +55,12 @@ private val testExtendedObject = TestMarykObject(
         Time(10, 3) to "ahum"
     ),
     valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
-    embeddedObject = EmbeddedMarykObject("test"),
-    multi = TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
+    embeddedValues = EmbeddedMarykModel("test"),
+    multi = TypedValue(Option.V2, EmbeddedMarykModel("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
-private val testMap = TestMarykObject.map {
-    mapNonNulls(
-        string with "hay",
-        int with 4,
-        uint with 32.toUInt32(),
-        double with 3.555,
-        dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-        bool with true,
-        enum with Option.V0,
-        list with listOf(34, 2352, 3423, 766),
-        set with setOf(
-            Date(2017, 12, 5),
-            Date(2016, 3, 2),
-            Date(1981, 12, 5)
-        ),
-        map with mapOf(
-            Time(12, 55) to "yes",
-            Time(10, 3) to "ahum"
-        ),
-        valueObject with TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
-        embeddedObject with EmbeddedMarykObject("test"),
-        multi with TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
-        listOfString with listOf("test1", "another test", "🤗")
-    )
-}
 
-private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedObject\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
+private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedValues\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
@@ -107,7 +83,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 		"dateTime": "2017-04-01T12:55",
 		"bool": true
 	},
-	"embeddedObject": {
+	"embeddedValues": {
 		"value": "test"
 	},
 	"multi": ["V2", {
@@ -116,44 +92,48 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"listOfString": ["test1", "another test", "🤗"]
 }"""
 
-internal class ObjectDataModelTest {
+internal class DataModelTest {
     @Test
     fun construct_by_map() {
-        TestMarykObject.map {
+        TestMarykModel.map {
             mapNonNulls(
-                string with testObject.string,
-                int with testObject.int,
-                uint with testObject.uint,
-                double with testObject.double,
-                dateTime with testObject.dateTime,
-                bool with testObject.bool,
-                enum with testObject.enum
+                string with testObject { string },
+                int with testObject { int },
+                uint with testObject { uint },
+                double with testObject { double },
+                dateTime with testObject { dateTime },
+                bool with testObject { bool },
+                enum with testObject { enum }
             )
-        }.toDataObject() shouldBe testObject
+        } shouldBe testObject
     }
 
     @Test
-    fun validate_by_DataObject() {
-        TestMarykObject.validate(testObject)
-    }
-
-    @Test
-    fun validate_by_Map() {
-        TestMarykObject.validate(testMap)
+    fun validate() {
+        TestMarykModel.validate(testObject)
     }
 
     @Test
     fun fail_validation_with_incorrect_values_in_DataObject() {
         shouldThrow<ValidationUmbrellaException> {
-            TestMarykObject.validate(testObject.copy(int = 9))
+            TestMarykModel.validate(
+                TestMarykModel(
+                    string = "haas",
+                    int = 9,
+                    uint = 53.toUInt32(),
+                    double = 3.5555,
+                    bool = true,
+                    dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
+                )
+            )
         }
     }
 
     @Test
     fun fail_validation_with_incorrect_values_in_map() {
         val e = shouldThrow<ValidationUmbrellaException> {
-            TestMarykObject.validate(
-                TestMarykObject.map {
+            TestMarykModel.validate(
+                TestMarykModel.map {
                     mapNonNulls(
                         string with "wrong",
                         int with 999
@@ -170,38 +150,20 @@ internal class ObjectDataModelTest {
 
     @Test
     fun get_property_definition_by_name() {
-        TestMarykObject.properties.get("string") shouldBe TestMarykObject.Properties.string
-        TestMarykObject.properties.get("int") shouldBe TestMarykObject.Properties.int
-        TestMarykObject.properties.get("dateTime") shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.properties.get("bool") shouldBe TestMarykObject.Properties.bool
+        TestMarykModel.properties.get("string") shouldBe TestMarykModel.Properties.string
+        TestMarykModel.properties.get("int") shouldBe TestMarykModel.Properties.int
+        TestMarykModel.properties.get("dateTime") shouldBe TestMarykModel.Properties.dateTime
+        TestMarykModel.properties.get("bool") shouldBe TestMarykModel.Properties.bool
     }
 
     @Test
     fun get_property_definition_by_index() {
-        TestMarykObject.properties[0] shouldBe TestMarykObject.Properties.string
-        TestMarykObject.properties[1] shouldBe TestMarykObject.Properties.int
-        TestMarykObject.properties[2] shouldBe TestMarykObject.Properties.uint
-        TestMarykObject.properties[3] shouldBe TestMarykObject.Properties.double
-        TestMarykObject.properties[4] shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.properties[5] shouldBe TestMarykObject.Properties.bool
-    }
-
-    @Test
-    fun get_properties_by_name() {
-        TestMarykObject.properties.getPropertyGetter("string")!!.invoke(testExtendedObject) shouldBe "hay"
-        TestMarykObject.properties.getPropertyGetter("int")!!.invoke(testExtendedObject) shouldBe 4
-        TestMarykObject.properties.getPropertyGetter("dateTime")!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        TestMarykObject.properties.getPropertyGetter("bool")!!.invoke(testExtendedObject) shouldBe true
-    }
-
-    @Test
-    fun get_properties_by_index() {
-        TestMarykObject.properties.getPropertyGetter(0)!!.invoke(testExtendedObject) shouldBe "hay"
-        TestMarykObject.properties.getPropertyGetter(1)!!.invoke(testExtendedObject) shouldBe 4
-        TestMarykObject.properties.getPropertyGetter(2)!!.invoke(testExtendedObject) shouldBe 32.toUInt32()
-        TestMarykObject.properties.getPropertyGetter(3)!!.invoke(testExtendedObject) shouldBe 3.555
-        TestMarykObject.properties.getPropertyGetter(4)!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        TestMarykObject.properties.getPropertyGetter(5)!!.invoke(testExtendedObject) shouldBe true
+        TestMarykModel.properties[0] shouldBe TestMarykModel.Properties.string
+        TestMarykModel.properties[1] shouldBe TestMarykModel.Properties.int
+        TestMarykModel.properties[2] shouldBe TestMarykModel.Properties.uint
+        TestMarykModel.properties[3] shouldBe TestMarykModel.Properties.double
+        TestMarykModel.properties[4] shouldBe TestMarykModel.Properties.dateTime
+        TestMarykModel.properties[5] shouldBe TestMarykModel.Properties.bool
     }
 
     @Test
@@ -211,7 +173,7 @@ internal class ObjectDataModelTest {
             output += it
         }
 
-        TestMarykObject.writeJson(testExtendedObject, writer)
+        TestMarykModel.writeJson(testExtendedObject, writer)
 
         output shouldBe JSON
     }
@@ -223,7 +185,7 @@ internal class ObjectDataModelTest {
             output += it
         }
 
-        TestMarykObject.writeJson(testExtendedObject, writer)
+        TestMarykModel.writeJson(testExtendedObject, writer)
 
         output shouldBe """
         {
@@ -245,7 +207,7 @@ internal class ObjectDataModelTest {
         		"dateTime": "2017-04-01T12:55",
         		"bool": true
         	},
-        	"embeddedObject": {
+        	"embeddedValues": {
         		"value": "test"
         	},
         	"multi": ["V2", {
@@ -263,7 +225,7 @@ internal class ObjectDataModelTest {
             output += it
         }
 
-        TestMarykObject.writeJson(testExtendedObject, writer)
+        TestMarykModel.writeJson(testExtendedObject, writer)
 
         output shouldBe """
         string: hay
@@ -282,7 +244,7 @@ internal class ObjectDataModelTest {
           int: 6
           dateTime: '2017-04-01T12:55'
           bool: true
-        embeddedObject:
+        embeddedValues:
           value: test
         multi: !V2
           value: subInMulti!
@@ -292,11 +254,11 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun write_map_to_ProtoBuf_bytes() {
+    fun write_to_ProtoBuf_bytes() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val map = TestMarykObject.map {
+        val map = TestMarykModel.map {
             mapNonNulls(
                 string with "hay",
                 int with 4,
@@ -305,25 +267,25 @@ internal class ObjectDataModelTest {
                 dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
                 bool with true,
                 enum with Option.V2,
-                reference with TestMarykObject.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
+                reference with TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
             )
         }
 
         bc.reserve(
-            TestMarykObject.calculateProtoBufLength(map, cache)
+            TestMarykModel.calculateProtoBufLength(map, cache)
         )
 
-        TestMarykObject.writeProtoBuf(map, cache, bc::write)
+        TestMarykModel.writeProtoBuf(map, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501"
     }
 
     @Test
-    fun convert_ProtoBuf_bytes_to_map() {
+    fun convert_from_ProtoBuf_bytes() {
         val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
-        val map = TestMarykObject.readProtoBuf(bytes.size, {
+        val map = TestMarykModel.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 
@@ -339,31 +301,17 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun convert_map_to_ProtoBuf_and_back() {
+    fun convert_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
         bc.reserve(
-            TestMarykObject.calculateProtoBufLength(testMap, cache)
+            TestMarykModel.calculateProtoBufLength(testExtendedObject, cache)
         )
 
-        TestMarykObject.writeProtoBuf(testMap, cache, bc::write)
+        TestMarykModel.writeProtoBuf(testExtendedObject, cache, bc::write)
 
-        TestMarykObject.readProtoBuf(bc.size, bc::read) shouldBe testMap
-    }
-
-    @Test
-    fun convert_DataObject_to_ProtoBuf_and_back() {
-        val bc = ByteCollector()
-        val cache = WriteCache()
-
-        bc.reserve(
-            TestMarykObject.calculateProtoBufLength(testExtendedObject, cache)
-        )
-
-        TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
-
-        TestMarykObject.readProtoBuf(bc.size, bc::read).toDataObject() shouldBe testExtendedObject
+        TestMarykModel.readProtoBuf(bc.size, bc::read) shouldBe testExtendedObject
     }
 
     @Test
@@ -371,7 +319,7 @@ internal class ObjectDataModelTest {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
-        val map = TestMarykObject.readProtoBuf(bytes.size, {
+        val map = TestMarykModel.readProtoBuf(bytes.size, {
             bytes[index++]
         })
 
@@ -379,7 +327,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun convert_JSON_to_DataObject() {
+    fun convert_from_JSON() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -391,24 +339,7 @@ internal class ObjectDataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykObject.readJson(reader = jsonReader()).toDataObject() shouldBe testExtendedObject
-        }
-    }
-
-    @Test
-    fun convert_JSON_to_map() {
-        var input = ""
-        var index = 0
-        val reader = { input[index++] }
-        val jsonReader = { JsonReader(reader = reader) }
-
-        listOf(
-            JSON,
-            PRETTY_JSON_WITH_SKIP
-        ).forEach { jsonInput ->
-            input = jsonInput
-            index = 0
-            TestMarykObject.readJson(reader = jsonReader()) shouldBe testMap
+            TestMarykModel.readJson(reader = jsonReader()) shouldBe testExtendedObject
         }
     }
 
@@ -421,11 +352,11 @@ internal class ObjectDataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.writeJson(testMap, generator)
+            TestMarykModel.writeJson(testExtendedObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykObject.readJson(reader = reader()) shouldBe testMap
+            TestMarykModel.readJson(reader = reader()) shouldBe testExtendedObject
 
             output = ""
         }

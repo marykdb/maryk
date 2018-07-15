@@ -5,7 +5,9 @@ import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.SimpleObjectValues
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
@@ -13,6 +15,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
@@ -35,6 +38,12 @@ data class TypeId<E: IndexedEnum<E>>(
             reference.propertyDefinition.index
         )?.invoke(dataObject) as TypedValue<*, *>
         return multiType.type.index
+    }
+
+    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>): Int {
+        val typedValue = values<TypedValue<*, *>?>(reference.propertyDefinition.index)
+                ?: throw RequiredException(reference)
+        return typedValue.type.index
     }
 
     override fun writeStorageBytes(value: Int, writer: (byte: Byte) -> Unit) {

@@ -42,7 +42,7 @@ internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectProp
         singlePropertyDefinition.capture(context, value)
 
         return this.map {
-            mapOf(
+            mapNonNulls(
                 singlePropertyDefinition with value
             )
         }

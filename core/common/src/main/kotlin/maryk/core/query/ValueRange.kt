@@ -106,7 +106,7 @@ data class ValueRange<T: Any> internal constructor(
                         }
                     }
 
-                    valueMap += from with from.readJson(reader, context)
+                    valueMap += from withNotNull from.readJson(reader, context)
 
                     reader.nextToken().let {
                         (it as? TokenWithType)?.type?.let { tokenType ->
@@ -116,7 +116,7 @@ data class ValueRange<T: Any> internal constructor(
                         }
                     }
 
-                    valueMap += to with to.readJson(reader, context)
+                    valueMap += to withNotNull to.readJson(reader, context)
 
                     if (reader.nextToken() !== JsonToken.EndArray) {
                         throw ParseException("Range should have two values")

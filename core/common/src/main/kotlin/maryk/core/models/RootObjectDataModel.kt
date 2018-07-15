@@ -121,7 +121,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last
                 val value = map<Any?>(key) ?: continue // skip writing empty values
 
-                val def = properties.getDefinition(key) ?: continue
+                val def = properties.get(key) ?: continue
                 this.writeJsonValue(def, writer, value, context)
             }
             // Write properties last
@@ -174,7 +174,7 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
                     is JsonToken.FieldName -> {
                         val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                        val definition = properties.getDefinition(value)
+                        val definition = properties.get(value)
                         if (definition == null) {
                             reader.skipUntilNextField()
                             continue@walker

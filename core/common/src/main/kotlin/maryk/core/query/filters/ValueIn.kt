@@ -3,9 +3,9 @@ package maryk.core.query.filters
 import maryk.core.models.SimpleFilterDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
@@ -101,7 +101,7 @@ data class ValueIn internal constructor(
             }
 
             return this.map {
-                mapOf(
+                mapNonNulls(
                     referenceValuePairs with list
                 )
             }

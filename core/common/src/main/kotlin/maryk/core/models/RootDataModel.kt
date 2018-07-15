@@ -2,10 +2,12 @@ package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
 import maryk.core.objects.ObjectValues
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
@@ -15,6 +17,7 @@ import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
@@ -41,6 +44,26 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
     override val primitiveType = PrimitiveType.RootModel
 
     final override val keySize = IsRootDataModel.calculateKeySize(keyDefinitions)
+
+    /** Get Key based on [values] */
+    @Suppress("UNCHECKED_CAST")
+    fun key(values: Values<DM, P>): Key<DM> {
+        val bytes = ByteArray(this.keySize)
+        var index = 0
+        for (it in this.keyDefinitions) {
+            val value = it.getValue(this as DM, values)
+
+            (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
+                bytes[index++] = it
+            }
+
+            // Add separator
+            if (index < this.keySize) {
+                bytes[index++] = 1
+            }
+        }
+        return Key(bytes)
+    }
 
     @Suppress("UNCHECKED_CAST")
     private object RootModelProperties: ObjectPropertyDefinitions<RootDataModel<*, *>>() {
@@ -93,7 +116,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                 if (key == RootModelProperties.properties.index) continue // skip properties to write last
                 val value = map<Any?>(key) ?: continue // skip writing empty values
 
-                val def = properties.getDefinition(key) ?: continue
+                val def = properties[key] ?: continue
                 this.writeJsonValue(def, writer, value, context)
             }
             // Write properties last
@@ -146,7 +169,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                     is JsonToken.FieldName -> {
                         val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                        val definition = properties.getDefinition(value)
+                        val definition = properties.get(value)
                         if (definition == null) {
                             reader.skipUntilNextField()
                             continue@walker

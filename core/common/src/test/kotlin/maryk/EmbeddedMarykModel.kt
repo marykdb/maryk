@@ -35,7 +35,7 @@ object EmbeddedMarykModel: DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Prop
         model: EmbeddedMarykModel? = null,
         marykModel: TestMarykObject? = null
     ) = this.map {
-        mapOf(
+        mapNonNulls(
             this.value with value,
             this.model with model,
             this.marykModel with marykModel

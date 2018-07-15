@@ -25,9 +25,9 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefiniti
     override fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
         @Suppress("UNCHECKED_CAST")
         writer.writeJsonValues(
-            this.properties.getDefinition(0) as PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, Any>,
+            this.properties.get(0) as PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, Any>,
             map(0),
-            this.properties.getDefinition(1) as PropertyDefinitionWrapper<Any, *, IsPropertyContext, *, *>,
+            this.properties.get(1) as PropertyDefinitionWrapper<Any, *, IsPropertyContext, *, *>,
             map(1),
             context
         )
@@ -39,7 +39,7 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefiniti
         context: DataModelPropertyContext?
     ) {
         val referenceProperty =
-            this.properties.getDefinition(0)
+            this.properties.get(0)
         val referencePropertyDefinition = referenceProperty?.definition as? IsValueDefinition<*, DataModelPropertyContext>
             ?: throw Exception("No first property found")
 
@@ -51,7 +51,7 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefiniti
         reader.nextToken()
 
         val valueProperty =
-            this.properties.getDefinition(1) ?: throw Exception("No property for value found")
+            this.properties.get(1) ?: throw Exception("No property for value found")
 
         valueMap[valueProperty.index] =
                 valueProperty.readJson(reader, context)

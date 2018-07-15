@@ -24,7 +24,7 @@ internal class SimpleDataModelTest {
     @Test
     fun construct_by_map() {
         SimpleMarykModel.map {
-            mapOf(
+            mapNonNulls(
                 value with testValues { value }
             )
         } shouldBe testValues

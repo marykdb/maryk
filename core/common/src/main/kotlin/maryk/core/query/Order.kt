@@ -104,13 +104,16 @@ data class Order internal constructor(
                     return this.map {
                         val valueMap = mutableMapOf<Int, Any?>()
 
-                        it.type.let {
-                            if (it is UnknownYamlTag && it.name == "Desc") {
-                                valueMap += direction with Direction.DESC
+                        it.type.let { valueType ->
+                            if (valueType is UnknownYamlTag && valueType.name == "Desc") {
+                                valueMap += direction withNotNull Direction.DESC
                             }
                         }
 
-                        valueMap += propertyReference with propertyReference.definition.fromString(it.value, context)
+                        valueMap += propertyReference withNotNull propertyReference.definition.fromString(
+                            it.value,
+                            context
+                        )
 
                         valueMap
                     }

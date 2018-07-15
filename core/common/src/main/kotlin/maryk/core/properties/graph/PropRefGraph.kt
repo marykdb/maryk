@@ -164,7 +164,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             reader.nextToken()
 
             return this.map {
-                mapOf(
+                mapNonNulls(
                     parent with parentValue,
                     properties with propertiesValue
                 )

@@ -1,8 +1,11 @@
 package maryk.core.properties.definitions.contextual
 
+import maryk.EmbeddedMarykModel
 import maryk.EmbeddedMarykObject
+import maryk.TestMarykModel
 import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
+import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.properties.ByteCollector
 import maryk.core.query.DataModelPropertyContext
@@ -10,13 +13,15 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ContextualModelReferenceDefinitionTest {
-    private val modelsToTest = listOf<ObjectDataModel<*, *>>(
+    private val modelsToTest = listOf<IsNamedDataModel<*>>(
         TestMarykObject,
-        EmbeddedMarykObject
+        EmbeddedMarykObject,
+        TestMarykModel,
+        EmbeddedMarykModel
     )
 
     @Suppress("UNCHECKED_CAST")
-    private val def = ContextualModelReferenceDefinition<ObjectDataModel<*, *>, DataModelPropertyContext>(
+    private val def = ContextualModelReferenceDefinition<IsNamedDataModel<*>, DataModelPropertyContext>(
         contextualResolver = { context, name -> context!!.dataModels[name] as () -> ObjectDataModel<*, *> }
     )
 
@@ -24,7 +29,9 @@ class ContextualModelReferenceDefinitionTest {
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykObject.name to { TestMarykObject },
-            EmbeddedMarykObject.name to { EmbeddedMarykObject }
+            EmbeddedMarykObject.name to { EmbeddedMarykObject },
+            TestMarykModel.name to { TestMarykModel },
+            EmbeddedMarykModel.name to { EmbeddedMarykModel }
         )
     )
 
@@ -32,7 +39,7 @@ class ContextualModelReferenceDefinitionTest {
     fun testTransportConversion() {
         val bc = ByteCollector()
         for (value in modelsToTest) {
-            checkProtoBufConversion(bc, DataModelReference(value.name){ value }, this.def, this.context) { converted, original ->
+            checkProtoBufConversion(bc, DataModelReference(value.name) { value }, this.def, this.context) { converted, original ->
                 converted.get() shouldBe original.get()
             }
         }
@@ -41,7 +48,7 @@ class ContextualModelReferenceDefinitionTest {
     @Test
     fun convertString() {
         for (it in modelsToTest) {
-            val b = def.asString(DataModelReference(it.name){ it }, this.context)
+            val b = def.asString(DataModelReference(it.name) { it }, this.context)
             def.fromString(b, this.context).get.invoke() shouldBe it
         }
     }

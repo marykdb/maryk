@@ -1,11 +1,14 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.key.KeyPartType
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
@@ -41,5 +44,10 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
         return dataModel.properties.getPropertyGetter(
             this.index
         )?.invoke(dataObject) as T
+    }
+
+    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>): T {
+        @Suppress("UNCHECKED_CAST")
+        return values.original(this.index) as T? ?: throw RequiredException(this.getRef())
     }
 }

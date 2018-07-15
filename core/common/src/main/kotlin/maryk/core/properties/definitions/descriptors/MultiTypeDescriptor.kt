@@ -84,7 +84,7 @@ private data class MultiTypeDescriptor(
                     val valueMap: MutableMap<Int, Any?> = mutableMapOf()
 
                     reader.readNamedIndexField(valueMap, name, index)
-                    valueMap += definition with definition.readJson(reader, context as DataModelContext?)
+                    valueMap += definition withNotNull definition.readJson(reader, context as DataModelContext?)
 
                     valueMap
                 }

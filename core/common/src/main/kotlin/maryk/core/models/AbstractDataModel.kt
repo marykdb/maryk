@@ -65,7 +65,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, in
                 is JsonToken.FieldName -> {
                     val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                    val definition = properties.getDefinition(value)
+                    val definition = properties.get(value)
                     if (definition == null) {
                         reader.skipUntilNextField()
                         continue@walker
@@ -121,7 +121,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, in
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
-        val dataObjectPropertyDefinition = properties.getDefinition(key.tag)
+        val dataObjectPropertyDefinition = properties.get(key.tag)
         val propertyDefinition = dataObjectPropertyDefinition?.definition
 
         if (propertyDefinition == null) {
@@ -200,7 +200,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, in
         val value: Any? = this[index]
 
         if (value !is TI?) {
-            val valueDef = this@AbstractDataModel.properties.getDefinition(index)!!
+            val valueDef = this@AbstractDataModel.properties.get(index)!!
             throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
         }
 
@@ -208,7 +208,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, in
             return when {
                 default != null -> default
                 value !is TI -> {
-                    val valueDef = this@AbstractDataModel.properties.getDefinition(index)!!
+                    val valueDef = this@AbstractDataModel.properties.get(index)!!
                     throw ParseException("Property '${valueDef.name}' with value '$value' cannot be null")
                 }
                 else -> value

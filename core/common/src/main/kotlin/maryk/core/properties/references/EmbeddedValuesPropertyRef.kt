@@ -35,12 +35,12 @@ class EmbeddedValuesPropertyRef<
     } ?: name
 
     override fun getEmbedded(name: String) =
-        this.propertyDefinition.definition.dataModel.properties.getDefinition(name)?.getRef(this)
+        this.propertyDefinition.definition.dataModel.properties.get(name)?.getRef(this)
             ?: throw DefNotFoundException("Embedded Definition with $name not found")
 
     override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
         val index = initIntByVar(reader)
-        return this.propertyDefinition.definition.dataModel.properties.getDefinition(index)?.getRef(this)
+        return this.propertyDefinition.definition.dataModel.properties[index]?.getRef(this)
                 ?: throw DefNotFoundException("Embedded Definition with $name not found")
     }
 

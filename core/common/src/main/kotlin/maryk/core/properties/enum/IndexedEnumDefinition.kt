@@ -4,9 +4,9 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.ObjectValues
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.SInt32
@@ -131,7 +131,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 Properties.name.capture(context, value)
 
                 this.map {
-                    mapOf(
+                    mapNonNulls(
                         name with value
                     )
                 }

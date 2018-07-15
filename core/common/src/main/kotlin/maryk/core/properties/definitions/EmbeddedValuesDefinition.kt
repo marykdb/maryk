@@ -27,7 +27,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
-/** Definition for embedded object properties [P] to [dataModel] of type [DM] within context [CX] */
+/** Definition for embedded object properties [P] to [dataModel] of type [DM] */
 class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
@@ -60,9 +60,9 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(name)
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.get(name)
 
-    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.getDefinition(index)
+    override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
     override fun validateWithRef(previousValue: Values<DM, P>?, newValue: Values<DM, P>?, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>>?) {
         super.validateWithRef(previousValue, newValue, refGetter)

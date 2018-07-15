@@ -21,7 +21,7 @@ object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Proper
     operator fun invoke(
         value: String = "haha"
     ) = this.map {
-        mapOf(
+        mapNonNulls(
             this.value with value
         )
     }

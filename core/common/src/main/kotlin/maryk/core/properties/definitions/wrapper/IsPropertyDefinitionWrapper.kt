@@ -49,8 +49,13 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val fromSerializable: ((T?) -> TO?)?
 
     /** Create an index [value] pair for maps */
-    infix fun with(value: Any?): Pair<Int, Any?> {
+    infix fun withNotNull(value: Any): Pair<Int, Any> {
         return Pair(this.index, value)
+    }
+
+    /** Create an index [value] pair for maps */
+    infix fun with(value: Any?) = value?.let {
+        Pair(this.index, value)
     }
 
     /** Get a reference to this definition inside [parentRef] */

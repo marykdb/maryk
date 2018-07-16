@@ -4,6 +4,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
@@ -15,7 +16,7 @@ import kotlin.test.Test
 private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
 private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
 
-internal val getRequest = SimpleMarykModel.get(
+val getRequest = SimpleMarykModel.get(
     key1,
     key2
 )
@@ -27,7 +28,12 @@ internal val getMaxRequest = SimpleMarykModel.run {
         filter = Exists(ref { value }),
         order = ref { value }.descending(),
         toVersion = 333L.toUInt64(),
-        filterSoftDeleted = true
+        filterSoftDeleted = true,
+        select = props {
+            RootPropRefGraph<SimpleMarykModel>(
+                value
+            )
+        }
     )
 }
 
@@ -64,6 +70,8 @@ class GetRequestTest {
         order: !Desc value
         toVersion: 333
         filterSoftDeleted: true
+        select:
+        - value
 
         """.trimIndent()
     }
@@ -74,6 +82,8 @@ class GetRequestTest {
         dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filter:
+        select:
+        - value
 
         """.trimIndent()
 
@@ -87,9 +97,11 @@ class GetRequestTest {
             }
         }
 
-        GetRequest.readJson(reader, this.context).toDataObject().apply {
-            dataModel shouldBe SimpleMarykModel
-            filter shouldBe null
-        }
+        GetRequest.readJson(reader, this.context)
+            .toDataObject()
+            .apply {
+                dataModel shouldBe SimpleMarykModel
+                filter shouldBe null
+            }
     }
 }

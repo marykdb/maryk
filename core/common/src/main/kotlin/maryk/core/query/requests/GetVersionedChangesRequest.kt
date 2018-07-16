@@ -64,7 +64,7 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
                 IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
                 IsChangesRequest.addFromVersion(6, this, GetVersionedChangesRequest<*>::fromVersion)
                 IsVersionedChangesRequest.addMaxVersions(7, this, GetVersionedChangesRequest<*>::maxVersions)
-                IsSelectRequest.addSelect(8, this, GetVersionedChangesRequest<*>::select)
+                IsFetchRequest.addSelect(8, this, GetVersionedChangesRequest<*>::select)
             }
         }
     ) {

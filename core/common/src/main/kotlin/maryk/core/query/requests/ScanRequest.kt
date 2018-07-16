@@ -4,6 +4,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
@@ -14,29 +15,33 @@ import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
- * Creates a Request to scan DataObjects by key from [startKey] until [limit]
+ * Creates a Request to scan DataObjects by key from [startKey] until [limit] and only return [select]
+ * values of properties.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
 fun <DM: IsRootDataModel<*>> DM.scan(
     startKey: Key<DM>,
+    select: RootPropRefGraph<DM>? = null,
     filter: IsFilter? = null,
     order: Order? = null,
     limit: UInt32 = 100.toUInt32(),
     toVersion: UInt64? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    ScanRequest(this, startKey, filter, order, limit, toVersion, filterSoftDeleted)
+    ScanRequest(this, startKey, select, filter, order, limit, toVersion, filterSoftDeleted)
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]
- * for specific [dataModel]
+ * for specific [dataModel] and only return [select]
+ * values of properties.
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
 data class ScanRequest<DM: IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>,
+    override val select: RootPropRefGraph<DM>? = null,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
     override val limit: UInt32 = 100.toUInt32(),
@@ -57,6 +62,7 @@ data class ScanRequest<DM: IsRootDataModel<*>> internal constructor(
                 IsFetchRequest.addToVersion(this, ScanRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*>::filterSoftDeleted)
                 IsScanRequest.addLimit(this, ScanRequest<*>::limit)
+                IsFetchRequest.addSelect(7, this, ScanRequest<*>::select)
             }
         }
     ) {
@@ -67,7 +73,8 @@ data class ScanRequest<DM: IsRootDataModel<*>> internal constructor(
             order = map(3),
             toVersion = map(4),
             filterSoftDeleted = map(5),
-            limit = map(6)
+            limit = map(6),
+            select = map(7)
         )
     }
 }

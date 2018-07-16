@@ -9,23 +9,23 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.query.changes.DataObjectChange
 
 /** Response with all [changes] since version in request to [dataModel] */
-data class ObjectChangesResponse<out DM: IsRootDataModel<*>>(
+data class ChangesResponse<out DM: IsRootDataModel<*>>(
     override val dataModel: DM,
     val changes: List<DataObjectChange<DM>>
 ) : IsDataModelResponse<DM> {
-    internal companion object: SimpleQueryDataModel<ObjectChangesResponse<*>>(
-        properties = object : ObjectPropertyDefinitions<ObjectChangesResponse<*>>() {
+    internal companion object: SimpleQueryDataModel<ChangesResponse<*>>(
+        properties = object : ObjectPropertyDefinitions<ChangesResponse<*>>() {
             init {
-                IsDataModelResponse.addDataModel(this, ObjectChangesResponse<*>::dataModel)
+                IsDataModelResponse.addDataModel(this, ChangesResponse<*>::dataModel)
                 add(1, "changes", ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { DataObjectChange }
                     )
-                ), ObjectChangesResponse<*>::changes)
+                ), ChangesResponse<*>::changes)
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ObjectChangesResponse<*>>) = ObjectChangesResponse(
+        override fun invoke(map: SimpleObjectValues<ChangesResponse<*>>) = ChangesResponse(
             dataModel = map(0),
             changes = map(1)
         )

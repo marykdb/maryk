@@ -49,7 +49,7 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
     override val toVersion: UInt64? = null,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM>, IsChangesRequest<DM>, IsSelectRequest<DM> {
+) : IsScanRequest<DM>, IsChangesRequest<DM> {
     override val requestType = RequestType.ScanChanges
 
     internal companion object: SimpleQueryDataModel<ScanChangesRequest<*>>(
@@ -65,7 +65,7 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
                 IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*>::filterSoftDeleted)
                 IsScanRequest.addLimit(this, ScanChangesRequest<*>::limit)
                 IsChangesRequest.addFromVersion(7, this, ScanChangesRequest<*>::fromVersion)
-                IsSelectRequest.addSelect(8, this, ScanChangesRequest<*>::select)
+                IsFetchRequest.addSelect(8, this, ScanChangesRequest<*>::select)
             }
         }
     ) {

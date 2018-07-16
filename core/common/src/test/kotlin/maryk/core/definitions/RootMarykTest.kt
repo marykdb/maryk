@@ -80,6 +80,8 @@ class RootMarykTest {
             order: !Desc value
             toVersion: 333
             filterSoftDeleted: true
+            select:
+            - value
 
         """.trimIndent()
     }

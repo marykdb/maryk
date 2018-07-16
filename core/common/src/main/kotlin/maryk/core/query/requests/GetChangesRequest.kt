@@ -59,7 +59,7 @@ data class GetChangesRequest<DM: IsRootDataModel<*>> internal constructor(
                 IsFetchRequest.addToVersion(this, GetChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*>::filterSoftDeleted)
                 IsChangesRequest.addFromVersion(6, this, GetChangesRequest<*>::fromVersion)
-                IsSelectRequest.addSelect(7, this, GetChangesRequest<*>::select)
+                IsFetchRequest.addSelect(7, this, GetChangesRequest<*>::select)
             }
         }
     ) {

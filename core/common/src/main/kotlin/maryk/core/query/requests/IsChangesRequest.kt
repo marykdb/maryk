@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt64
 
 /** Request for all changes from a version and later */
-interface IsChangesRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM>, IsSelectRequest<DM> {
+interface IsChangesRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
     val fromVersion: UInt64
 
     companion object {

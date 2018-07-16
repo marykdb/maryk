@@ -9,11 +9,11 @@ import maryk.core.properties.types.Key
 import maryk.core.query.DataModelPropertyContext
 
 /** Defines a Get by keys request. */
-interface IsGetRequest<out DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
+interface IsGetRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
     val keys: List<Key<DM>>
 
     companion object {
-        internal fun <REQ: IsGetRequest<DM>, DM: IsRootDataModel<*>> addKeys(definitions: ObjectPropertyDefinitions<REQ>, getter: (REQ) -> List<Key<DM>>?) {
+        internal fun <REQ: IsGetRequest<*>> addKeys(definitions: ObjectPropertyDefinitions<REQ>, getter: (REQ) -> List<Key<*>>?) {
             definitions.add(1, "keys", ListDefinition(
                 valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {

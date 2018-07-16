@@ -13,10 +13,10 @@ import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class ObjectChangesResponseTest {
+class ChangesResponseTest {
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
-    private val objectChangesResponse = ObjectChangesResponse(
+    private val objectChangesResponse = ChangesResponse(
         SimpleMarykModel,
         listOf(
             key.change(
@@ -33,17 +33,17 @@ class ObjectChangesResponseTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.objectChangesResponse, ObjectChangesResponse, { this.context })
+        checkProtoBufConversion(this.objectChangesResponse, ChangesResponse, { this.context })
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.objectChangesResponse, ObjectChangesResponse, { this.context })
+        checkJsonConversion(this.objectChangesResponse, ChangesResponse, { this.context })
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.objectChangesResponse, ObjectChangesResponse, { this.context }) shouldBe """
+        checkYamlConversion(this.objectChangesResponse, ChangesResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         changes:
         - key: +1xO4zD4R5sIMcS9pXTZEA

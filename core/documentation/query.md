@@ -264,7 +264,7 @@ or [`ScanChangesRequest`](../common/src/main/kotlin/maryk/core/query/requests/Sc
 by defining the `fromVersion` parameter. For the rest this call is the same
 as [`GetRequest`](#get) / [`ScanRequest`](#scan)
 
-When applied it will deliver an [`ObjectChangesResponse`](../common/src/main/kotlin/maryk/core/query/responses/ObjectChangesResponse.kt)
+When applied it will deliver an [`ChangesResponse`](../common/src/main/kotlin/maryk/core/query/responses/ChangesResponse.kt)
 with a list with [`DataObjectChange`](../common/src/main/kotlin/maryk/core/query/changes/DataObjectChange.kt)
 containing the `key`, the `lastVersion` and a list of `changes`.
 
@@ -346,7 +346,7 @@ or [`ScanVersionedChangesRequest`](../common/src/main/kotlin/maryk/core/query/re
 at maximum.  
 For the rest this call is the same as [`GetChangesRequest`/`ScanChangesRequest`](#scan/get-changes)
 
-When applied it will deliver an [`ObjectVersionedChangesResponse`](../common/src/main/kotlin/maryk/core/query/responses/ObjectVersionedChangesResponse.kt)
+When applied it will deliver an [`VersionedChangesResponse`](../common/src/main/kotlin/maryk/core/query/responses/VersionedChangesResponse.kt)
 with a list with [`DataObjectVersionedChange`](../common/src/main/kotlin/maryk/core/query/changes/DataObjectVersionedChange.kt)
 containing the `key` and `changes` with a list of objects containing the version and changes.
 

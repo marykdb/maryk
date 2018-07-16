@@ -4,6 +4,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
@@ -14,9 +15,11 @@ import kotlin.test.Test
 
 private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
-internal val scanRequest = SimpleMarykModel.scan(
-    startKey = key1
-)
+internal val scanRequest = SimpleMarykModel.run {
+    scan(
+        startKey = key1
+    )
+}
 
 internal val scanMaxRequest = SimpleMarykModel.run {
     scan(
@@ -25,11 +28,16 @@ internal val scanMaxRequest = SimpleMarykModel.run {
         order = ref { value }.ascending(),
         limit = 200.toUInt32(),
         filterSoftDeleted = true,
-        toVersion = 2345L.toUInt64()
+        toVersion = 2345L.toUInt64(),
+        select = props {
+            RootPropRefGraph<SimpleMarykModel>(
+                value
+            )
+        }
     )
 }
 
-class ScanRequestTest {
+class ScanSelectRequestTest {
     private val context = DataModelPropertyContext(mapOf(
         SimpleMarykModel.name to { SimpleMarykModel }
     ))
@@ -64,6 +72,8 @@ class ScanRequestTest {
         toVersion: 2345
         filterSoftDeleted: true
         limit: 200
+        select:
+        - value
 
         """.trimIndent()
     }

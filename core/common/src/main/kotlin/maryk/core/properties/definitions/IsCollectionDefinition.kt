@@ -97,7 +97,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
         }
         val collection: MutableCollection<T> = newMutableCollection(context)
 
-        while (reader.nextToken() !== JsonToken.EndArray) {
+        while (reader.nextToken() !== JsonToken.EndArray && reader.currentToken !is JsonToken.Stopped) {
             collection.add(
                 valueDefinition.readJson(reader, context)
             )

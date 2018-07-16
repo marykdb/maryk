@@ -67,7 +67,7 @@ data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal construc
                 IsScanRequest.addLimit(this, ScanVersionedChangesRequest<*>::limit)
                 IsChangesRequest.addFromVersion(7, this, ScanVersionedChangesRequest<*>::fromVersion)
                 IsVersionedChangesRequest.addMaxVersions(8, this, ScanVersionedChangesRequest<*>::maxVersions)
-                IsSelectRequest.addSelect(9, this, ScanVersionedChangesRequest<*>::select)
+                IsFetchRequest.addSelect(9, this, ScanVersionedChangesRequest<*>::select)
             }
         }
     ) {

@@ -8,6 +8,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.objects.Values
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
@@ -59,7 +60,7 @@ data class TypeId<E: IndexedEnum<E>>(
                 add(0, "multiTypeDefinition",
                     ContextualPropertyReferenceDefinition<DataModelContext>(
                         contextualResolver = {
-                            it?.propertyDefinitions as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                            it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = TypeId<*>::reference

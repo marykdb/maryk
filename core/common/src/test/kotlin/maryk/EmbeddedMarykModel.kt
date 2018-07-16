@@ -1,6 +1,7 @@
 package maryk
 
 import maryk.core.models.DataModel
+import maryk.core.objects.Values
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -32,8 +33,8 @@ object EmbeddedMarykModel: DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Prop
 
     operator fun invoke(
         value: String,
-        model: EmbeddedMarykModel? = null,
-        marykModel: TestMarykObject? = null
+        model: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
+        marykModel: Values<TestMarykModel, TestMarykModel.Properties>? = null
     ) = this.map {
         mapNonNulls(
             this.value with value,

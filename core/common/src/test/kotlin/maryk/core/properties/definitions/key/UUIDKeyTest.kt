@@ -3,41 +3,43 @@ package maryk.core.properties.definitions.key
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.models.RootObjectDataModel
-import maryk.core.objects.ObjectValues
+import maryk.core.models.RootDataModel
+import maryk.core.models.definitions
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UUIDKeyTest {
-    private data class MarykObject(
-        val value: String
-    ){
-        object Properties : ObjectPropertyDefinitions<MarykObject>() {
-            init {
-                add(0, "value", StringDefinition(), MarykObject::value)
-            }
+    object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
+        name = "MarykModel",
+        keyDefinitions = definitions(
+            UUIDKey
+        ),
+        properties = Properties
+    ) {
+        object Properties : PropertyDefinitions() {
+            val value = add(0, "value", StringDefinition())
         }
-        companion object: RootObjectDataModel<MarykObject.Companion, MarykObject, Properties>(
-            name = "MarykObject",
-            properties = Properties
-        ) {
-            override fun invoke(map: ObjectValues<MarykObject, Properties>) = MarykObject(
-                value = map(0)
+
+        operator fun invoke(
+            value: String
+        ) = this.map {
+            Properties.mapNonNulls(
+                this.value with value
             )
         }
     }
 
     @Test
     fun testKey(){
-        val obj = MarykObject("test")
+        val obj = MarykModel("test")
 
-        val key = MarykObject.key(obj)
+        val key = MarykModel.key(obj)
         key.bytes.size shouldBe 16
 
-        val keyDef = MarykObject.keyDefinitions[0]
+        val keyDef = MarykModel.keyDefinitions[0]
 
         (keyDef === UUIDKey) shouldBe true
         val specificDef = keyDef as UUIDKey

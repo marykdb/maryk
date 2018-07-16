@@ -186,9 +186,9 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         valueObject: TestValueObject? = null,
         embeddedValues: Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>? = null,
         multi: TypedValue<Option, *>? = null,
-        reference: Key<TestMarykObject.Companion>? = null,
+        reference: Key<TestMarykModel>? = null,
         listOfString: List<String>? = null,
-        selfReference: Key<TestMarykObject.Companion>? = null
+        selfReference: Key<TestMarykModel>? = null
     ) = this.map {
         mapNonNulls(
             this.string with string,

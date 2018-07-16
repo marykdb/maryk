@@ -21,8 +21,8 @@ internal fun <DM: AbstractDataModel<*, *, *, *>> compareDataModels(converted: DM
         converted.name shouldBe original.name
     }
 
-    if (original is RootObjectDataModel<*, *, *>) {
-        if(converted !is RootObjectDataModel<*, *, *>) {
+    if (original is IsRootDataModel<*>) {
+        if(converted !is IsRootDataModel<*>) {
             throw AssertionError("Converted model should be a RootObjectDataModel")
         }
 

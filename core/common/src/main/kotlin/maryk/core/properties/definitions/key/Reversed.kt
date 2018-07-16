@@ -7,6 +7,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.objects.Values
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -48,7 +49,7 @@ data class Reversed<T: Any>(
             init {
                 add(0, "multiTypeDefinition",
                     ContextualPropertyReferenceDefinition<DataModelContext>(
-                        contextualResolver = { it?.propertyDefinitions as? ObjectPropertyDefinitions<*>? ?: throw ContextNotFoundException() }
+                        contextualResolver = { it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException() }
                     ),
                     getter = {
                         @Suppress("UNCHECKED_CAST")

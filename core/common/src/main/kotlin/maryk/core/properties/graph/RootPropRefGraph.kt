@@ -99,8 +99,6 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
                 currentToken = reader.nextToken()
             }
 
-            reader.nextToken()
-
             return this.map {
                 mapNonNulls(
                     properties with propertiesList

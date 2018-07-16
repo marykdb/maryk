@@ -48,24 +48,24 @@ data class GetRequest<DM: IsRootDataModel<*>> internal constructor(
             init {
                 IsObjectRequest.addDataModel(this, GetRequest<*>::dataModel)
                 IsGetRequest.addKeys(this, GetRequest<*>::keys)
+                IsFetchRequest.addSelect(this, GetRequest<*>::select)
                 IsFetchRequest.addFilter(this) { request ->
                     request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, GetRequest<*>::order)
                 IsFetchRequest.addToVersion(this, GetRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, GetRequest<*>::filterSoftDeleted)
-                IsFetchRequest.addSelect(6, this, GetRequest<*>::select)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<GetRequest<*>>) = GetRequest(
             dataModel = map(0),
             keys = map(1),
-            filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
-            order = map(3),
-            toVersion = map(4),
-            filterSoftDeleted = map(5),
-            select = map(6)
+            select = map(2),
+            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
+            order = map(4),
+            toVersion = map(5),
+            filterSoftDeleted = map(6)
         )
     }
 }

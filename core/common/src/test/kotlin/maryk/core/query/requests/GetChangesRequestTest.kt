@@ -70,13 +70,13 @@ class GetChangesRequestTest {
         checkYamlConversion(getChangesMaxRequest, GetChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
+        select:
+        - value
         filter: !Exists value
         order: value
         toVersion: 3456
         filterSoftDeleted: true
         fromVersion: 1234
-        select:
-        - value
 
         """.trimIndent()
     }

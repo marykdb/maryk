@@ -66,12 +66,12 @@ class GetRequestTest {
         checkYamlConversion(getMaxRequest, GetRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+        select:
+        - value
         filter: !Exists value
         order: !Desc value
         toVersion: 333
         filterSoftDeleted: true
-        select:
-        - value
 
         """.trimIndent()
     }

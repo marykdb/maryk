@@ -58,6 +58,7 @@ data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal construc
             init {
                 IsObjectRequest.addDataModel(this, ScanVersionedChangesRequest<*>::dataModel)
                 IsScanRequest.addStartKey(this, ScanVersionedChangesRequest<*>::startKey)
+                IsFetchRequest.addSelect(this, ScanVersionedChangesRequest<*>::select)
                 IsFetchRequest.addFilter(this) { request ->
                     request.filter?.let { TypedValue(it.filterType, it) }
                 }
@@ -65,23 +66,22 @@ data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal construc
                 IsFetchRequest.addToVersion(this, ScanVersionedChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, ScanVersionedChangesRequest<*>::filterSoftDeleted)
                 IsScanRequest.addLimit(this, ScanVersionedChangesRequest<*>::limit)
-                IsChangesRequest.addFromVersion(7, this, ScanVersionedChangesRequest<*>::fromVersion)
-                IsVersionedChangesRequest.addMaxVersions(8, this, ScanVersionedChangesRequest<*>::maxVersions)
-                IsFetchRequest.addSelect(9, this, ScanVersionedChangesRequest<*>::select)
+                IsChangesRequest.addFromVersion(8, this, ScanVersionedChangesRequest<*>::fromVersion)
+                IsVersionedChangesRequest.addMaxVersions(9, this, ScanVersionedChangesRequest<*>::maxVersions)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ScanVersionedChangesRequest<*>>) = ScanVersionedChangesRequest(
             dataModel = map(0),
             startKey = map(1),
-            filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
-            order = map(3),
-            toVersion = map(4),
-            filterSoftDeleted = map(5),
-            limit = map(6),
-            fromVersion = map(7),
-            maxVersions = map(8),
-            select = map(9)
+            select = map(2),
+            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
+            order = map(4),
+            toVersion = map(5),
+            filterSoftDeleted = map(6),
+            limit = map(7),
+            fromVersion = map(8),
+            maxVersions = map(9)
         )
     }
 }

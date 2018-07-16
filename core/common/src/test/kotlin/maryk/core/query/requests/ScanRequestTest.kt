@@ -67,13 +67,13 @@ class ScanSelectRequestTest {
         checkYamlConversion(scanMaxRequest, ScanRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
+        select:
+        - value
         filter: !Exists value
         order: value
         toVersion: 2345
         filterSoftDeleted: true
         limit: 200
-        select:
-        - value
 
         """.trimIndent()
     }

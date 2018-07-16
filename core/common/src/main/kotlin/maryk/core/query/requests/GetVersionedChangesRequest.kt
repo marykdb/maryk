@@ -56,28 +56,28 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
             init {
                 IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
                 IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)
+                IsFetchRequest.addSelect(this, GetVersionedChangesRequest<*>::select)
                 IsFetchRequest.addFilter(this) { request ->
                     request.filter?.let { TypedValue(it.filterType, it) }
                 }
                 IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
                 IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
-                IsChangesRequest.addFromVersion(6, this, GetVersionedChangesRequest<*>::fromVersion)
-                IsVersionedChangesRequest.addMaxVersions(7, this, GetVersionedChangesRequest<*>::maxVersions)
-                IsFetchRequest.addSelect(8, this, GetVersionedChangesRequest<*>::select)
+                IsChangesRequest.addFromVersion(7, this, GetVersionedChangesRequest<*>::fromVersion)
+                IsVersionedChangesRequest.addMaxVersions(8, this, GetVersionedChangesRequest<*>::maxVersions)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<GetVersionedChangesRequest<*>>) = GetVersionedChangesRequest(
             dataModel = map(0),
             keys = map(1),
-            filter = map<TypedValue<FilterType, IsFilter>?>(2)?.value,
-            order = map(3),
-            toVersion = map(4),
-            filterSoftDeleted = map(5),
-            fromVersion = map(6),
-            maxVersions = map(7),
-            select = map(8)
+            select = map(2),
+            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
+            order = map(4),
+            toVersion = map(5),
+            filterSoftDeleted = map(6),
+            fromVersion = map(7),
+            maxVersions = map(8)
         )
     }
 }

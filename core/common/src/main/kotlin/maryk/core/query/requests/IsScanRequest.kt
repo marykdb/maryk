@@ -25,7 +25,7 @@ interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
         }
 
         internal fun <DO: Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
-            definitions.add(6, "limit", NumberDefinition(
+            definitions.add(7, "limit", NumberDefinition(
                 default = 100.toUInt32(),
                 type = UInt32
             ), getter)

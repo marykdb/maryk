@@ -134,7 +134,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         } else {
             reader.nextToken().let {
                 if (it !is JsonToken.Value<*>) {
-                    throw ParseException("Expected a value at start")
+                    throw ParseException("Expected a value at start, not ${it.name}")
                 }
 
                 val type = this.typeByName[it.value] ?: throw ParseException("Invalid multi type name ${it.value}")

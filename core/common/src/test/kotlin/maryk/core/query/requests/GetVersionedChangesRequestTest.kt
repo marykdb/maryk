@@ -71,14 +71,14 @@ class GetVersionedChangesRequestTest {
         checkYamlConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
+        select:
+        - value
         filter: !Exists value
         order: !Desc value
         toVersion: 12345
         filterSoftDeleted: true
         fromVersion: 1234
         maxVersions: 5
-        select:
-        - value
 
         """.trimIndent()
     }

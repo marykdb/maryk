@@ -23,8 +23,8 @@ interface IsFetchRequest<DM: IsRootDataModel<*>> : IsObjectRequest<DM> {
     val filterSoftDeleted: Boolean
 
     companion object {
-        internal fun <DM: Any> addSelect(index: Int, definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> RootPropRefGraph<*>?) {
-            definitions.add(index, "select",
+        internal fun <DM: Any> addSelect(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> RootPropRefGraph<*>?) {
+            definitions.add(2, "select",
                 EmbeddedObjectDefinition(
                     dataModel = { RootPropRefGraph }
                 ),
@@ -33,7 +33,7 @@ interface IsFetchRequest<DM: IsRootDataModel<*>> : IsObjectRequest<DM> {
         }
 
         internal fun <DM: Any> addFilter(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> TypedValue<FilterType, Any>?) {
-            definitions.add(2, "filter",
+            definitions.add(3, "filter",
                 MultiTypeDefinition(
                     required = false,
                     typeEnum = FilterType,
@@ -44,7 +44,7 @@ interface IsFetchRequest<DM: IsRootDataModel<*>> : IsObjectRequest<DM> {
         }
 
         internal fun <DM: Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> Order?) {
-            definitions.add(3, "order",
+            definitions.add(4, "order",
                 EmbeddedObjectDefinition(
                     required = false,
                     dataModel = { Order }
@@ -54,7 +54,7 @@ interface IsFetchRequest<DM: IsRootDataModel<*>> : IsObjectRequest<DM> {
         }
 
         internal fun <DM: Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> UInt64?) {
-            definitions.add(4, "toVersion",
+            definitions.add(5, "toVersion",
                 NumberDefinition(
                     required = false,
                     type = UInt64
@@ -62,7 +62,7 @@ interface IsFetchRequest<DM: IsRootDataModel<*>> : IsObjectRequest<DM> {
         }
 
         internal fun <DM: Any> addFilterSoftDeleted(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> Boolean?) {
-            definitions.add(5, "filterSoftDeleted",
+            definitions.add(6, "filterSoftDeleted",
                 BooleanDefinition(
                     default = true
                 ),

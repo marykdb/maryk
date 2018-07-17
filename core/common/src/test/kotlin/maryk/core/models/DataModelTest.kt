@@ -1,13 +1,9 @@
 package maryk.core.models
 
 import maryk.EmbeddedMarykModel
-import maryk.EmbeddedMarykObject
 import maryk.Option
 import maryk.TestMarykModel
 import maryk.TestValueObject
-import maryk.checkJsonConversion
-import maryk.checkProtoBufConversion
-import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
@@ -15,7 +11,6 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DataModelContext
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
@@ -360,20 +355,5 @@ internal class DataModelTest {
 
             output = ""
         }
-    }
-
-    @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
-    }
-
-    @Test
-    fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
-    }
-
-    @Test
-    fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 }

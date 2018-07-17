@@ -1,13 +1,8 @@
 package maryk.core.models
 
-import maryk.EmbeddedMarykObject
 import maryk.SimpleMarykModel
-import maryk.checkJsonConversion
-import maryk.checkProtoBufConversion
-import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DataModelContext
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
@@ -140,20 +135,5 @@ internal class SimpleDataModelTest {
 
             output = ""
         }
-    }
-
-    @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
-    }
-
-    @Test
-    fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
-    }
-
-    @Test
-    fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(EmbeddedMarykObject, ObjectDataModel.Model, { DataModelContext() }, ::compareDataModels)
     }
 }

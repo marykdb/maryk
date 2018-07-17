@@ -115,31 +115,6 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(map: ObjectValues<RootObjectDataModel<*, *, *>, ObjectPropertyDefinitions<RootObjectDataModel<*, *, *>>>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
-            writer.writeStartObject()
-            for (key in map.keys) {
-                if (key == RootModelProperties.properties.index) continue // skip properties to write last
-                val value = map<Any?>(key) ?: continue // skip writing empty values
-
-                val def = properties.get(key) ?: continue
-                this.writeJsonValue(def, writer, value, context)
-            }
-            // Write properties last
-            map.original(RootModelProperties.properties.index)?.let {
-                this.writeJsonValue(
-                    RootModelProperties.properties as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, RootObjectDataModel<*, *, *>>,
-                    writer,
-                    it,
-                    context
-                )
-            }
-
-            writer.writeEndObject()
-        }
-
-        /**
-         * Overridden to handle earlier definition of keys compared to Properties
-         */
         override fun writeJson(obj: RootObjectDataModel<*, *, *>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             writer.writeStartObject()
             for (def in this.properties) {

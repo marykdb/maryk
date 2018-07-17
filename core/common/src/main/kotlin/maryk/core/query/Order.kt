@@ -67,14 +67,6 @@ data class Order internal constructor(
             }
         }
 
-        override fun writeJson(map: ObjectValues<Order, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            if (writer is YamlWriter) {
-                writeJsonOrderValue(map(0), map(1), writer, context)
-            } else {
-                super.writeJson(map, writer, context)
-            }
-        }
-
         private fun writeJsonOrderValue(
             reference: IsPropertyReference<*, *>,
             direction: Direction,

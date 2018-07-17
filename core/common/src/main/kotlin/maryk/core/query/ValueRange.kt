@@ -64,25 +64,33 @@ data class ValueRange<T: Any> internal constructor(
         )
 
         override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            writeJsonValues(
-                writer,
-                obj.from,
-                obj.to,
-                obj.inclusiveFrom,
-                obj.inclusiveTo,
-                context
-            )
-        }
+            @Suppress("UNCHECKED_CAST")
+            if (writer is YamlWriter) {
+                writer.writeStartArray(true)
 
-        override fun writeJson(map: ObjectValues<ValueRange<*>, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            writeJsonValues(
-                writer,
-                map { from } ?: throw ParseException("From is mandatory in a ValueRange"),
-                map { to } ?: throw ParseException("To is mandatory in a ValueRange"),
-                map { inclusiveFrom } ?: throw ParseException("InclusiveFrom is mandatory in a ValueRange"),
-                map { inclusiveTo } ?: throw ParseException("InclusiveFrom is mandatory in a ValueRange"),
-                context
-            )
+                if (!obj.inclusiveFrom) {
+                    writer.writeTag("!Exclude")
+                }
+
+                Properties.from.definition.writeJsonValue(obj.from, writer, context)
+
+                if (!obj.inclusiveTo) {
+                    writer.writeTag("!Exclude")
+                }
+
+                Properties.to.definition.writeJsonValue(obj.to, writer, context)
+
+                writer.writeEndArray()
+            } else {
+                writer.writeStartObject()
+
+                writeJsonValue(Properties.from as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.from, context)
+                writeJsonValue(Properties.inclusiveFrom as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.inclusiveFrom, context)
+                writeJsonValue(Properties.to as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.to, context)
+                writeJsonValue(Properties.inclusiveTo as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, obj.inclusiveTo, context)
+
+                writer.writeEndObject()
+            }
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<ValueRange<*>, Properties> {
@@ -125,43 +133,6 @@ data class ValueRange<T: Any> internal constructor(
                 }
             } else {
                 super.readJson(reader, context)
-            }
-        }
-
-        private fun <T: Any> writeJsonValues(
-            writer: IsJsonLikeWriter,
-            from: T,
-            to: T,
-            inclusiveFrom: Boolean,
-            inclusiveTo: Boolean,
-            context: DataModelPropertyContext?
-        ) {
-            @Suppress("UNCHECKED_CAST")
-            if (writer is YamlWriter) {
-                writer.writeStartArray(true)
-
-                if (!inclusiveFrom) {
-                    writer.writeTag("!Exclude")
-                }
-
-                Properties.from.definition.writeJsonValue(from, writer, context)
-
-                if (!inclusiveTo) {
-                    writer.writeTag("!Exclude")
-                }
-
-                Properties.to.definition.writeJsonValue(to, writer, context)
-
-                writer.writeEndArray()
-            } else {
-                writer.writeStartObject()
-
-                writeJsonValue(Properties.from as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, from, context)
-                writeJsonValue(Properties.inclusiveFrom as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, inclusiveFrom, context)
-                writeJsonValue(Properties.to as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, to, context)
-                writeJsonValue(Properties.inclusiveTo as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, ValueRange<*>>, writer, inclusiveTo, context)
-
-                writer.writeEndObject()
             }
         }
     }

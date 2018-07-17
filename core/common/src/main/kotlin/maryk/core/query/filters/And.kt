@@ -41,14 +41,6 @@ data class And(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: ObjectValues<And, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            Properties.filters.writeJsonValue(
-                map.original { filters } ?: throw ParseException("Missing filters in And filter"),
-                writer,
-                context
-            )
-        }
-
         override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
                 Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in And filter"),

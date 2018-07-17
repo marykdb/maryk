@@ -39,13 +39,6 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
             properties = map(0)
         )
 
-        override fun writeJson(map: ObjectValues<RootPropRefGraph<*>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
-            @Suppress("UNCHECKED_CAST")
-            val listOfGraphables = map { properties } ?: throw ParseException("RootPropRefGraph needs items in graph")
-
-            writeJsonValues(listOfGraphables, writer, context)
-        }
-
         override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
             writeJsonValues(obj.properties, writer, context)
         }

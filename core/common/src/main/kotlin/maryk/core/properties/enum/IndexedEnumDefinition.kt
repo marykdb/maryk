@@ -97,18 +97,6 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 optionalValues = map(1)
             )
 
-        override fun writeJson(map: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
-            if (map { values } == null) {
-                // Write a single string name if no options was defined
-                val value = map { name } ?: throw ParseException("Missing name in Enum")
-
-                Properties.name.writeJsonValue(value, writer, context)
-                Properties.name.capture(context, value)
-            } else {
-                super.writeJson(map, writer, context)
-            }
-        }
-
         override fun writeJson(obj: IndexedEnumDefinition<IndexedEnum<Any>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
             if (context?.dataModelContext?.enums?.containsKey(obj.name) == true) {
                 // Write a single string name if no options was defined

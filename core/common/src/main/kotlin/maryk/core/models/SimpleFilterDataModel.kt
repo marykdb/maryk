@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsValueDefinition
@@ -21,18 +20,6 @@ import maryk.lib.exceptions.ParseException
 internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     properties: P
 ) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
-
-    override fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-        @Suppress("UNCHECKED_CAST")
-        writer.writeJsonValues(
-            this.properties.get(0) as PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, Any>,
-            map(0),
-            this.properties.get(1) as PropertyDefinitionWrapper<Any, *, IsPropertyContext, *, *>,
-            map(1),
-            context
-        )
-    }
-
     override fun walkJsonToRead(
         reader: IsJsonLikeReader,
         valueMap: MutableMap<Int, Any>,

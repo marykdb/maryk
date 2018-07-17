@@ -41,14 +41,6 @@ data class Or(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: ObjectValues<Or, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            Properties.filters.writeJsonValue(
-                map.original { filters } ?: throw ParseException("Missing filters in Or"),
-                writer,
-                context
-            )
-        }
-
         override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
                 Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in Or"),

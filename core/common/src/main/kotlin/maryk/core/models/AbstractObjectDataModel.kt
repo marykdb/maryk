@@ -46,26 +46,6 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         }
     }
 
-    override fun validate(
-        map: ObjectValues<DO, P>,
-        refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
-    ) {
-        createValidationUmbrellaException(refGetter) { addException ->
-            for (key in map.keys) {
-                val definition = properties.get(key) ?: continue
-                val value = map<Any?>(key) ?: continue // skip empty values
-                try {
-                    definition.validate(
-                        newValue = value,
-                        parentRefFactory = refGetter
-                    )
-                } catch (e: ValidationException) {
-                    addException(e)
-                }
-            }
-        }
-    }
-
     /**
      * Write an [obj] of this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
@@ -74,24 +54,6 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         writer.writeStartObject()
         for (definition in this.properties) {
             val value = definition.getPropertyAndSerialize(obj, context) ?: continue
-
-            definition.capture(context, value)
-
-            writeJsonValue(definition, writer, value, context)
-        }
-        writer.writeEndObject()
-    }
-
-    /**
-     * Write an [map] with values for this ObjectDataModel to JSON with [writer]
-     * Optionally pass a [context] when needed for more complex property types
-     */
-    open fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX? = null) {
-        writer.writeStartObject()
-        for (key in map.keys) {
-            val value = map<Any?>(key) ?: continue // skip empty values
-
-            val definition = properties.get(key) ?: continue
 
             definition.capture(context, value)
 
@@ -111,25 +73,6 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
     }
 
     /**
-     * Calculates the byte length for the DataObject contained in [map]
-     * The [cacher] caches any values needed to write later.
-     * Optionally pass a [context] to write more complex properties which depend on other properties
-     */
-    internal fun calculateProtoBufLength(map: ObjectValues<DO, P>, cacher: WriteCacheWriter, context: CX? = null) : Int {
-        var totalByteLength = 0
-        for (key in map.keys) {
-            val value = map<Any?>(key) ?: continue // skip empty values
-
-            val def = properties.get(key) ?: continue
-
-            def.capture(context, value)
-
-            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
-        }
-        return totalByteLength
-    }
-
-    /**
      * Calculates the byte length for [dataObject]
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
@@ -144,23 +87,6 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
             totalByteLength += definition.definition.calculateTransportByteLengthWithKey(definition.index, value, cacher, context)
         }
         return totalByteLength
-    }
-
-    /**
-     * Write a ProtoBuf from a [map] with values to [writer] and get
-     * possible cached values from [cacheGetter]
-     * Optionally pass a [context] to write more complex properties which depend on other properties
-     */
-    internal fun writeProtoBuf(map: ObjectValues<DO, P>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
-        for (key in map.keys) {
-            val value = map<Any?>(key) ?: continue // skip empty values
-
-            val definition = properties.get(key) ?: continue
-
-            definition.capture(context, value)
-
-            definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
-        }
     }
 
     /**

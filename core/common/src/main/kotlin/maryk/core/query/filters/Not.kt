@@ -41,14 +41,6 @@ data class Not(
             filters = map<List<IsFilter>>(0)
         )
 
-        override fun writeJson(map: ObjectValues<Not, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            Properties.filters.writeJsonValue(
-                map.original { filters } ?: throw ParseException("Missing filters in Not filter"),
-                writer,
-                context
-            )
-        }
-
         override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             Properties.filters.writeJsonValue(
                 Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in Not filter"),

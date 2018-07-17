@@ -8,8 +8,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.exceptions.InvalidValueException
-import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
@@ -58,31 +56,6 @@ private val testExtendedObject = TestMarykObject(
     multi = TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
-private val testMap = TestMarykObject.map {
-    mapNonNulls(
-        string with "hay",
-        int with 4,
-        uint with 32.toUInt32(),
-        double with 3.555,
-        dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-        bool with true,
-        enum with Option.V0,
-        list with listOf(34, 2352, 3423, 766),
-        set with setOf(
-            Date(2017, 12, 5),
-            Date(2016, 3, 2),
-            Date(1981, 12, 5)
-        ),
-        map with mapOf(
-            Time(12, 55) to "yes",
-            Time(10, 3) to "ahum"
-        ),
-        valueObject with TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
-        embeddedObject with EmbeddedMarykObject("test"),
-        multi with TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
-        listOfString with listOf("test1", "another test", "🤗")
-    )
-}
 
 private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedObject\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
@@ -133,39 +106,15 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun validate_by_DataObject() {
+    fun validate() {
         TestMarykObject.validate(testObject)
     }
 
     @Test
-    fun validate_by_Map() {
-        TestMarykObject.validate(testMap)
-    }
-
-    @Test
-    fun fail_validation_with_incorrect_values_in_DataObject() {
+    fun fail_validation_with_incorrect_values() {
         shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(testObject.copy(int = 9))
         }
-    }
-
-    @Test
-    fun fail_validation_with_incorrect_values_in_map() {
-        val e = shouldThrow<ValidationUmbrellaException> {
-            TestMarykObject.validate(
-                TestMarykObject.map {
-                    mapNonNulls(
-                        string with "wrong",
-                        int with 999
-                    )
-                }
-            )
-        }
-
-        e.exceptions.size shouldBe 2
-
-        (e.exceptions[0] is InvalidValueException) shouldBe true
-        (e.exceptions[1] is OutOfRangeException) shouldBe true
     }
 
     @Test
@@ -292,33 +241,6 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun write_map_to_ProtoBuf_bytes() {
-        val bc = ByteCollector()
-        val cache = WriteCache()
-
-        val map = TestMarykObject.map {
-            mapNonNulls(
-                string with "hay",
-                int with 4,
-                uint with 32.toUInt32(),
-                double with 3.555,
-                dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-                bool with true,
-                enum with Option.V2,
-                reference with TestMarykObject.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
-            )
-        }
-
-        bc.reserve(
-            TestMarykObject.calculateProtoBufLength(map, cache)
-        )
-
-        TestMarykObject.writeProtoBuf(map, cache, bc::write)
-
-        bc.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501"
-    }
-
-    @Test
     fun convert_ProtoBuf_bytes_to_map() {
         val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
@@ -339,21 +261,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun convert_map_to_ProtoBuf_and_back() {
-        val bc = ByteCollector()
-        val cache = WriteCache()
-
-        bc.reserve(
-            TestMarykObject.calculateProtoBufLength(testMap, cache)
-        )
-
-        TestMarykObject.writeProtoBuf(testMap, cache, bc::write)
-
-        TestMarykObject.readProtoBuf(bc.size, bc::read) shouldBe testMap
-    }
-
-    @Test
-    fun convert_DataObject_to_ProtoBuf_and_back() {
+    fun convert_to_ProtoBuf_and_back() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -396,24 +304,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun convert_JSON_to_map() {
-        var input = ""
-        var index = 0
-        val reader = { input[index++] }
-        val jsonReader = { JsonReader(reader = reader) }
-
-        listOf(
-            JSON,
-            PRETTY_JSON_WITH_SKIP
-        ).forEach { jsonInput ->
-            input = jsonInput
-            index = 0
-            TestMarykObject.readJson(reader = jsonReader()) shouldBe testMap
-        }
-    }
-
-    @Test
-    fun convert_map_to_JSON_and_back_to_map() {
+    fun convert_to_JSON_and_back() {
         var output = ""
         val writer = { string: String -> output += string }
 
@@ -421,11 +312,11 @@ internal class ObjectDataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykObject.writeJson(testMap, generator)
+            TestMarykObject.writeJson(testExtendedObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykObject.readJson(reader = reader()) shouldBe testMap
+            TestMarykObject.readJson(reader = reader()).toDataObject() shouldBe testExtendedObject
 
             output = ""
         }

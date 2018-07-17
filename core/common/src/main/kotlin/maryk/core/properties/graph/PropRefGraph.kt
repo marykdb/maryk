@@ -75,13 +75,6 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             properties = map(1)
         )
 
-        override fun writeJson(map: ObjectValues<PropRefGraph<*, *>, Properties>, writer: IsJsonLikeWriter, context: GraphContext?) {
-            val reference = map.original { parent } ?: throw ParseException("Parent missing in PropRefGraph")
-            val listOfGraphables = map { properties } ?: throw ParseException("Properties missing in PropRefGraph")
-
-            writeJsonValues(reference, listOfGraphables, writer, context)
-        }
-
         override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
             writeJsonValues(obj.parent.getRef(), obj.properties, writer, context)
         }

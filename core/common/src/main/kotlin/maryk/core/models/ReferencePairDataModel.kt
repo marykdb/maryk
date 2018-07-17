@@ -19,12 +19,6 @@ import maryk.lib.exceptions.ParseException
 internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<T, DO>>(
     properties: P
 ) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
-    override fun writeJson(map: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-        map { referenceValuePairs }?.let {
-            writer.writeJsonMapObject(it, context)
-        }
-    }
-
     internal fun IsJsonLikeWriter.writeJsonMapObject(
         listOfPairs: List<ReferenceValuePair<*>>,
         context: DataModelPropertyContext?

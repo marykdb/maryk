@@ -43,12 +43,6 @@ data class Range internal constructor(
             referenceRangePairs = map(0)
         )
 
-        override fun writeJson(map: ObjectValues<Range, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            val ranges = map { ranges } ?: throw ParseException("Ranges missing in Range")
-
-            writer.writeJsonRanges(ranges, context)
-        }
-
         override fun writeJson(obj: Range, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
             val ranges = obj.referenceRangePairs
 

@@ -16,12 +16,6 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
      */
     fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
 
-    /**
-     * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
-     * @throws ValidationUmbrellaException if input was invalid
-     */
-    fun validate(map: ObjectValues<DO, P>, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>? = { null })
-
     /** Creates a Data Object by [map] */
     operator fun invoke(map: ObjectValues<DO, P>): DO
 

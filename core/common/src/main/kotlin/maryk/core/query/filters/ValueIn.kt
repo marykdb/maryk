@@ -48,12 +48,6 @@ data class ValueIn internal constructor(
             writer.writeJsonMapObject(obj.referenceValuePairs, context)
         }
 
-        override fun writeJson(map: ObjectValues<ValueIn, Properties>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
-            map { referenceValuePairs }?.let {
-                writer.writeJsonMapObject(it, context)
-            }
-        }
-
         internal fun IsJsonLikeWriter.writeJsonMapObject(
             listOfPairs: List<ReferenceValueSetPair<*>>,
             context: DataModelPropertyContext?

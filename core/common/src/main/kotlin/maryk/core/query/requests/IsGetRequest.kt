@@ -17,7 +17,7 @@ interface IsGetRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
             definitions.add(1, "keys", ListDefinition(
                 valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel ?: throw ContextNotFoundException()
+                        it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }
                 )
             ), getter)

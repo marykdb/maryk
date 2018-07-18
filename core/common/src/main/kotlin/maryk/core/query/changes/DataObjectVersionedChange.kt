@@ -23,7 +23,7 @@ data class DataObjectVersionedChange<out DM: IsRootDataModel<*>>(
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel ?: throw ContextNotFoundException()
+                        it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }
                 ), DataObjectVersionedChange<*>::key)
 

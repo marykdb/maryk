@@ -2,6 +2,7 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.AbstractValuesDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleQueryDataModel
@@ -29,7 +30,7 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel ?: throw ContextNotFoundException()
+                        it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }
                 ), ValuesWithMetaData<*, *>::key)
 

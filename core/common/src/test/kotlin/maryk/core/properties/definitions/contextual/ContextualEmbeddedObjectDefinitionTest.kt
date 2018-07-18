@@ -2,10 +2,8 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ByteCollector
-import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DataModelPropertyContext
 import maryk.test.shouldBe
@@ -27,7 +25,7 @@ class ContextualEmbeddedObjectDefinitionTest {
         mapOf(
             SimpleMarykObject.name to { SimpleMarykObject }
         ),
-        dataModel = SimpleMarykObject as IsRootDataModel<IsPropertyDefinitions>
+        dataModel = SimpleMarykObject
     )
 
     @Test

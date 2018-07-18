@@ -19,7 +19,7 @@ interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
         internal fun <DO: IsScanRequest<*>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) {
             definitions.add(1, "startKey", ContextualReferenceDefinition<DataModelPropertyContext>(
                 contextualResolver = {
-                    it?.dataModel ?: throw ContextNotFoundException()
+                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             ), getter)
         }

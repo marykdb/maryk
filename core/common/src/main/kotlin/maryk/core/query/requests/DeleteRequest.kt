@@ -40,7 +40,7 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
                 add(1, "objectsToDelete", ListDefinition(
                     valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                         contextualResolver = {
-                            it?.dataModel ?: throw ContextNotFoundException()
+                            it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                         }
                     )
                 ), DeleteRequest<*>::objectsToDelete)

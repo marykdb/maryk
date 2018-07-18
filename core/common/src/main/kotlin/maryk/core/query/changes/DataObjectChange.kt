@@ -35,7 +35,7 @@ data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
             init {
                 add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
-                        it?.dataModel ?: throw ContextNotFoundException()
+                        it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }
                 ), DataObjectChange<*>::key)
 

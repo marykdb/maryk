@@ -1,7 +1,5 @@
 package maryk
 import maryk.core.models.ObjectDataModel
-import maryk.core.models.RootObjectDataModel
-import maryk.core.models.definitions
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -42,9 +40,8 @@ data class TestMarykObject(
     val valueObject: TestValueObject? = null,
     val embeddedObject: EmbeddedMarykObject? = null,
     val multi: TypedValue<Option, *>? = null,
-    val reference: Key<TestMarykObject.Companion>? = null,
-    val listOfString: List<String>? = null,
-    val selfReference: Key<TestMarykObject.Companion>? = null
+    val reference: Key<TestMarykModel>? = null,
+    val listOfString: List<String>? = null
 ) {
     object Properties: ObjectPropertyDefinitions<TestMarykObject>() {
         val string = add(
@@ -172,7 +169,7 @@ data class TestMarykObject(
             index = 13, name = "reference",
             definition = ReferenceDefinition(
                 required = false,
-                dataModel = { TestMarykObject }
+                dataModel = { TestMarykModel }
             ),
             getter = TestMarykObject::reference
         )
@@ -185,25 +182,10 @@ data class TestMarykObject(
             ),
             getter = TestMarykObject::listOfString
         )
-
-        @Suppress("unused")
-        val selfReference = add(
-            index = 15, name = "selfReference",
-            definition = ReferenceDefinition(
-                required = false,
-                dataModel = { TestMarykObject }
-            ),
-            getter = TestMarykObject::selfReference
-        )
     }
 
-    companion object: RootObjectDataModel<TestMarykObject.Companion, TestMarykObject, Properties>(
+    companion object: ObjectDataModel<TestMarykObject, Properties>(
         name = "TestMarykObject",
-        keyDefinitions = definitions(
-            Properties.uint,
-            Properties.bool,
-            Properties.enum
-        ),
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<TestMarykObject, Properties>) = TestMarykObject(

@@ -1,8 +1,11 @@
 package maryk.generator.kotlin
 
+import maryk.CompleteMarykModel
 import maryk.CompleteMarykObject
+import maryk.EmbeddedModel
 import maryk.EmbeddedObject
 import maryk.MarykEnum
+import maryk.SimpleMarykModel
 import maryk.SimpleMarykObject
 import maryk.ValueMarykObject
 import maryk.core.definitions.Definitions
@@ -18,7 +21,10 @@ class MixedKotlinGenerationTest {
             "SimpleMarykObject" to Writer(),
             "EmbeddedObject" to Writer(),
             "CompleteMarykObject" to Writer(),
-            "ValueMarykObject" to Writer()
+            "ValueMarykObject" to Writer(),
+            "EmbeddedModel" to Writer(),
+            "CompleteMarykModel" to Writer(),
+            "SimpleMarykModel" to Writer()
         )
 
         val setOfNames = mutableSetOf<String>()
@@ -28,7 +34,10 @@ class MixedKotlinGenerationTest {
             SimpleMarykObject,
             EmbeddedObject,
             CompleteMarykObject,
-            ValueMarykObject
+            ValueMarykObject,
+            EmbeddedModel,
+            CompleteMarykModel,
+            SimpleMarykModel
         ).generateKotlin("maryk") { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]
@@ -36,13 +45,17 @@ class MixedKotlinGenerationTest {
             writer::writer
         }
 
-        setOfNames.size shouldBe 5
+        setOfNames.size shouldBe 8
 
         mapOfWriters["MarykEnum"]!!.output shouldBe generatedKotlinForEnum
-        mapOfWriters["SimpleMarykObject"]!!.output shouldBe generatedKotlinForSimpleDataModel
-        mapOfWriters["EmbeddedObject"]!!.output shouldBe generatedKotlinForEmbeddedDataModel
-        mapOfWriters["CompleteMarykObject"]!!.output shouldBe generatedKotlinForCompleteDataModel
+        mapOfWriters["SimpleMarykObject"]!!.output shouldBe generatedKotlinForSimpleObjectDataModel
+        mapOfWriters["EmbeddedObject"]!!.output shouldBe generatedKotlinForEmbeddedObjectDataModel
+        mapOfWriters["CompleteMarykObject"]!!.output shouldBe generatedKotlinForCompleteObjectDataModel
         mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedKotlinForValueDataModel
+
+        mapOfWriters["EmbeddedModel"]!!.output shouldBe generatedKotlinForEmbeddedDataModel
+        mapOfWriters["CompleteMarykModel"]!!.output shouldBe generatedKotlinForCompleteDataModel
+        mapOfWriters["SimpleMarykModel"]!!.output shouldBe generatedKotlinForSimpleDataModel
     }
 }
 

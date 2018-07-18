@@ -1,7 +1,7 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.RootDataModel
-import maryk.core.properties.PropertyDefinitions
+import maryk.core.models.RootObjectDataModel
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
@@ -9,14 +9,15 @@ import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 
-fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> RootObjectDataModel<*, DO, P>.generateKotlin(
     packageName: String,
     generationContext: KotlinGenerationContext? = null,
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.models.RootDataModel",
-        "maryk.core.properties.PropertyDefinitions"
+        "maryk.core.models.RootObjectDataModel",
+        "maryk.core.objects.ObjectValues",
+        "maryk.core.properties.ObjectPropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
@@ -33,24 +34,24 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     } else ""
 
     val enumKotlinDefinitions = mutableListOf<String>()
-    val propertiesKotlin = this.properties.generateKotlin(addImport, generationContext) {
+    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 
     val code = """
-    object $name: RootDataModel<$name, $name.Properties>(
-        name = "$name",
-        ${keyDefAsKotlin}properties = Properties
+    data class $name(
+        ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) {
-        object Properties: PropertyDefinitions() {
-            ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}
+        object Properties: ObjectPropertyDefinitions<$name>() {
+            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = name).prependIndent().trimStart()}
         }
 
-        operator fun invoke(
-            ${propertiesKotlin.generateValuesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
-        ) = map {
-            mapNonNulls(
-                ${propertiesKotlin.generateAssignsForProperties().prependIndent().prependIndent().prependIndent().prependIndent().trimStart()}
+        companion object: RootObjectDataModel<$name, Properties>(
+            name = "$name",
+            ${keyDefAsKotlin}properties = Properties
+        ) {
+            override fun invoke(map: ObjectValues<$name, Properties>) = $name(
+                ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }
     }

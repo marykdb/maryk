@@ -1,19 +1,17 @@
 package maryk.generator.kotlin
 
-import maryk.core.models.ValueDataModel
+import maryk.core.models.ObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.types.ValueDataObject
 
-fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlin(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>> ObjectDataModel<DO, P>.generateKotlin(
     packageName: String,
     generationContext: KotlinGenerationContext? = null,
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.models.ValueDataModel",
+        "maryk.core.models.ObjectDataModel",
         "maryk.core.objects.ObjectValues",
-        "maryk.core.properties.ObjectPropertyDefinitions",
-        "maryk.core.properties.types.ValueDataObject"
+        "maryk.core.properties.ObjectPropertyDefinitions"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
@@ -25,12 +23,12 @@ fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P
     val code = """
     data class $name(
         ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
-    ): ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
+    ) {
         object Properties: ObjectPropertyDefinitions<$name>() {
             ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = name).prependIndent().trimStart()}
         }
 
-        companion object: ValueDataModel<$name, Properties>(
+        companion object: ObjectDataModel<$name, Properties>(
             name = "$name",
             properties = Properties
         ) {
@@ -44,10 +42,33 @@ fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P
     writeKotlinFile(packageName, importsToAdd, enumKotlinDefinitions, code, writer)
 }
 
-private fun List<KotlinForProperty>.generatePropertyNamesForConstructor(): String {
-    val properties = mutableListOf<String>()
+internal fun List<KotlinForProperty>.generateInvokesForProperties(): String {
+    var properties = ""
     for (it in this) {
-        properties.add(it.name)
+        if (!properties.isEmpty()) properties += ",\n"
+        properties += """${it.name} = ${it.invoke}"""
     }
-    return properties.joinToString(", ")
+    return properties.prependIndent()
+}
+
+internal fun List<KotlinForProperty>.generateDefinitionsForObjectProperties(modelName: String): String {
+    var properties = ""
+    for (it in this) {
+        properties += """
+        val ${it.name} = add(
+            index = ${it.index}, name = "${it.name}",
+            definition = ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()},
+            getter = $modelName::${it.name}
+        )"""
+    }
+    return properties
+}
+
+internal fun List<KotlinForProperty>.generateObjectValuesForProperties(): String {
+    var properties = ""
+    for (it in this) {
+        if (!properties.isEmpty()) properties += ",\n"
+        properties += "val ${it.value}"
+    }
+    return properties
 }

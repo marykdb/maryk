@@ -5,6 +5,7 @@ internal class KotlinForProperty(
     val name: String,
     val index: Int,
     val value: String,
+    val assign: String,
     val definition: String,
     val invoke: String
 )

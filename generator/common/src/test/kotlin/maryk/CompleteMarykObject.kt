@@ -38,18 +38,6 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
-enum class MarykEnumEmbedded(
-    override val index: Int
-): IndexedEnum<MarykEnumEmbedded> {
-    E1(1),
-    E2(2),
-    E3(3);
-
-    companion object: IndexedEnumDefinition<MarykEnumEmbedded>(
-        "MarykEnumEmbedded", MarykEnumEmbedded::values
-    )
-}
-
 data class CompleteMarykObject(
     val string: String = "string",
     val number: UInt32 = 42.toUInt32(),

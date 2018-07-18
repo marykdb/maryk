@@ -1,56 +1,54 @@
 package maryk.generator.kotlin
 
-import maryk.CompleteMarykObject
+import maryk.CompleteMarykModel
 import maryk.MarykEnum
-import maryk.SimpleMarykObject
+import maryk.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-val generatedKotlinForSimpleObjectDataModel = """
+val generatedKotlinForSimpleDataModel = """
 package maryk
 
-import maryk.core.models.RootObjectDataModel
-import maryk.core.objects.ObjectValues
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.RootDataModel
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
-data class SimpleMarykObject(
-    val value: String = "haha"
+object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Properties>(
+    name = "SimpleMarykModel",
+    properties = Properties
 ) {
-    object Properties: ObjectPropertyDefinitions<SimpleMarykObject>() {
+    object Properties: PropertyDefinitions() {
         val value = add(
             index = 0, name = "value",
             definition = StringDefinition(
                 default = "haha",
                 regEx = "ha.*"
-            ),
-            getter = SimpleMarykObject::value
+            )
         )
     }
 
-    companion object: RootObjectDataModel<SimpleMarykObject, Properties>(
-        name = "SimpleMarykObject",
-        properties = Properties
-    ) {
-        override fun invoke(map: ObjectValues<SimpleMarykObject, Properties>) = SimpleMarykObject(
-            value = map(0)
+    operator fun invoke(
+        value: String = "haha"
+    ) = map {
+        mapNonNulls(
+            this.value with value
         )
     }
 }
 """.trimIndent()
 
-val generatedKotlinForCompleteObjectDataModel = """
+val generatedKotlinForCompleteDataModel = """
 package maryk
 
-import maryk.core.models.RootObjectDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
-import maryk.core.objects.ObjectValues
+import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
@@ -92,34 +90,17 @@ enum class MarykEnumEmbedded(
     )
 }
 
-data class CompleteMarykObject(
-    val string: String = "string",
-    val number: UInt32 = 42.toUInt32(),
-    val boolean: Boolean = true,
-    val enum: MarykEnum = MarykEnum.O1,
-    val date: Date = Date(2018, 5, 2),
-    val dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
-    val time: Time = Time(10, 11, 12),
-    val fixedBytes: Bytes = Bytes("AAECAwQ"),
-    val flexBytes: Bytes = Bytes("AAECAw"),
-    val reference: Key<SimpleMarykObject> = Key("AAECAw"),
-    val subModel: SimpleMarykObject = SimpleMarykObject(
-        value = "a default"
-    ),
-    val valueModel: ValueMarykObject = ValueMarykObject(
-        int = 10,
-        date = Date(2010, 10, 10)
-    ),
-    val list: List<String> = listOf("ha1", "ha2", "ha3"),
-    val set: Set<Int> = setOf(1, 2, 3),
-    val map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
-    val multi: TypedValue<MarykEnum, *> = TypedValue(MarykEnum.O1, "a value"),
-    val booleanForKey: Boolean,
-    val dateForKey: Date,
-    val multiForKey: TypedValue<MarykEnum, *>,
-    val enumEmbedded: MarykEnumEmbedded
+object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
+    name = "CompleteMarykModel",
+    keyDefinitions = definitions(
+            UUIDKey,
+            TypeId(Properties.multiForKey.getRef()),
+            Properties.booleanForKey,
+            Reversed(Properties.dateForKey.getRef())
+        ),
+        properties = Properties
 ) {
-    object Properties: ObjectPropertyDefinitions<CompleteMarykObject>() {
+    object Properties: PropertyDefinitions() {
         val string = add(
             index = 0, name = "string",
             definition = StringDefinition(
@@ -133,8 +114,7 @@ data class CompleteMarykObject(
                 minSize = 1,
                 maxSize = 10,
                 regEx = "ha.*"
-            ),
-            getter = CompleteMarykObject::string
+            )
         )
         val number = add(
             index = 1, name = "number",
@@ -147,8 +127,7 @@ data class CompleteMarykObject(
                 maxValue = 34.toUInt32(),
                 default = 42.toUInt32(),
                 random = true
-            ),
-            getter = CompleteMarykObject::number
+            )
         )
         val boolean = add(
             index = 2, name = "boolean",
@@ -157,8 +136,7 @@ data class CompleteMarykObject(
                 required = false,
                 final = true,
                 default = true
-            ),
-            getter = CompleteMarykObject::boolean
+            )
         )
         val enum = add(
             index = 3, name = "enum",
@@ -171,8 +149,7 @@ data class CompleteMarykObject(
                 minValue = MarykEnum.O1,
                 maxValue = MarykEnum.O3,
                 default = MarykEnum.O1
-            ),
-            getter = CompleteMarykObject::enum
+            )
         )
         val date = add(
             index = 4, name = "date",
@@ -185,8 +162,7 @@ data class CompleteMarykObject(
                 maxValue = Date(2200, 12, 31),
                 default = Date(2018, 5, 2),
                 fillWithNow = true
-            ),
-            getter = CompleteMarykObject::date
+            )
         )
         val dateTime = add(
             index = 5, name = "dateTime",
@@ -200,8 +176,7 @@ data class CompleteMarykObject(
                 maxValue = DateTime(2200, 12, 31, 23, 59, 59),
                 default = DateTime(2018, 5, 2, 10, 11, 12),
                 fillWithNow = true
-            ),
-            getter = CompleteMarykObject::dateTime
+            )
         )
         val time = add(
             index = 6, name = "time",
@@ -215,8 +190,7 @@ data class CompleteMarykObject(
                 maxValue = Time(23, 59, 59, 999),
                 default = Time(10, 11, 12),
                 fillWithNow = true
-            ),
-            getter = CompleteMarykObject::time
+            )
         )
         val fixedBytes = add(
             index = 7, name = "fixedBytes",
@@ -230,8 +204,7 @@ data class CompleteMarykObject(
                 default = Bytes("AAECAwQ"),
                 random = true,
                 byteSize = 5
-            ),
-            getter = CompleteMarykObject::fixedBytes
+            )
         )
         val flexBytes = add(
             index = 8, name = "flexBytes",
@@ -245,8 +218,7 @@ data class CompleteMarykObject(
                 default = Bytes("AAECAw"),
                 minSize = 1,
                 maxSize = 7
-            ),
-            getter = CompleteMarykObject::flexBytes
+            )
         )
         val reference = add(
             index = 9, name = "reference",
@@ -258,22 +230,20 @@ data class CompleteMarykObject(
                 minValue = Key("AA"),
                 maxValue = Key("f39/f39/fw"),
                 default = Key("AAECAw"),
-                dataModel = { SimpleMarykObject }
-            ),
-            getter = CompleteMarykObject::reference
+                dataModel = { SimpleMarykModel }
+            )
         )
         val subModel = add(
             index = 10, name = "subModel",
-            definition = EmbeddedObjectDefinition(
+            definition = EmbeddedValuesDefinition(
                 indexed = true,
                 required = false,
                 final = true,
-                dataModel = { SimpleMarykObject },
-                default = SimpleMarykObject(
+                dataModel = { SimpleMarykModel },
+                default = SimpleMarykModel(
                     value = "a default"
                 )
-            ),
-            getter = CompleteMarykObject::subModel
+            )
         )
         val valueModel = add(
             index = 11, name = "valueModel",
@@ -294,8 +264,7 @@ data class CompleteMarykObject(
                     int = 10,
                     date = Date(2010, 10, 10)
                 )
-            ),
-            getter = CompleteMarykObject::valueModel
+            )
         )
         val list = add(
             index = 12, name = "list",
@@ -309,8 +278,7 @@ data class CompleteMarykObject(
                     regEx = "ha.*"
                 ),
                 default = listOf("ha1", "ha2", "ha3")
-            ),
-            getter = CompleteMarykObject::list
+            )
         )
         val set = add(
             index = 13, name = "set",
@@ -324,8 +292,7 @@ data class CompleteMarykObject(
                     type = SInt32
                 ),
                 default = setOf(1, 2, 3)
-            ),
-            getter = CompleteMarykObject::set
+            )
         )
         val map = add(
             index = 14, name = "map",
@@ -340,8 +307,7 @@ data class CompleteMarykObject(
                     type = SInt32
                 ),
                 default = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1)
-            ),
-            getter = CompleteMarykObject::map
+            )
         )
         val multi = add(
             index = 15, name = "multi",
@@ -357,22 +323,19 @@ data class CompleteMarykObject(
                     MarykEnum.O2 to BooleanDefinition()
                 ),
                 default = TypedValue(MarykEnum.O1, "a value")
-            ),
-            getter = CompleteMarykObject::multi
+            )
         )
         val booleanForKey = add(
             index = 16, name = "booleanForKey",
             definition = BooleanDefinition(
                 final = true
-            ),
-            getter = CompleteMarykObject::booleanForKey
+            )
         )
         val dateForKey = add(
             index = 17, name = "dateForKey",
             definition = DateDefinition(
                 final = true
-            ),
-            getter = CompleteMarykObject::dateForKey
+            )
         )
         val multiForKey = add(
             index = 18, name = "multiForKey",
@@ -385,65 +348,80 @@ data class CompleteMarykObject(
                     ),
                     MarykEnum.O2 to BooleanDefinition()
                 )
-            ),
-            getter = CompleteMarykObject::multiForKey
+            )
         )
         val enumEmbedded = add(
             index = 19, name = "enumEmbedded",
             definition = EnumDefinition(
                 enum = MarykEnumEmbedded,
                 minValue = MarykEnumEmbedded.E1
-            ),
-            getter = CompleteMarykObject::enumEmbedded
+            )
         )
     }
 
-    companion object: RootObjectDataModel<CompleteMarykObject, Properties>(
-        name = "CompleteMarykObject",
-        keyDefinitions = definitions(
-            UUIDKey,
-            TypeId(Properties.multiForKey.getRef()),
-            Properties.booleanForKey,
-            Reversed(Properties.dateForKey.getRef())
+    operator fun invoke(
+        string: String = "string",
+        number: UInt32 = 42.toUInt32(),
+        boolean: Boolean = true,
+        enum: MarykEnum = MarykEnum.O1,
+        date: Date = Date(2018, 5, 2),
+        dateTime: DateTime = DateTime(2018, 5, 2, 10, 11, 12),
+        time: Time = Time(10, 11, 12),
+        fixedBytes: Bytes = Bytes("AAECAwQ"),
+        flexBytes: Bytes = Bytes("AAECAw"),
+        reference: Key<SimpleMarykModel> = Key("AAECAw"),
+        subModel: Values<SimpleMarykModel, SimpleMarykModel.Properties> = SimpleMarykModel(
+            value = "a default"
         ),
-        properties = Properties
-    ) {
-        override fun invoke(map: ObjectValues<CompleteMarykObject, Properties>) = CompleteMarykObject(
-            string = map(0),
-            number = map(1),
-            boolean = map(2),
-            enum = map(3),
-            date = map(4),
-            dateTime = map(5),
-            time = map(6),
-            fixedBytes = map(7),
-            flexBytes = map(8),
-            reference = map(9),
-            subModel = map(10),
-            valueModel = map(11),
-            list = map(12),
-            set = map(13),
-            map = map(14),
-            multi = map(15),
-            booleanForKey = map(16),
-            dateForKey = map(17),
-            multiForKey = map(18),
-            enumEmbedded = map(19)
+        valueModel: ValueMarykObject = ValueMarykObject(
+            int = 10,
+            date = Date(2010, 10, 10)
+        ),
+        list: List<String> = listOf("ha1", "ha2", "ha3"),
+        set: Set<Int> = setOf(1, 2, 3),
+        map: Map<Date, Int> = mapOf(Date(2010, 11, 12) to 1, Date(2011, 12, 13) to 1),
+        multi: TypedValue<MarykEnum, *> = TypedValue(MarykEnum.O1, "a value"),
+        booleanForKey: Boolean,
+        dateForKey: Date,
+        multiForKey: TypedValue<MarykEnum, *>,
+        enumEmbedded: MarykEnumEmbedded
+    ) = map {
+        mapNonNulls(
+            this.string with string,
+            this.number with number,
+            this.boolean with boolean,
+            this.enum with enum,
+            this.date with date,
+            this.dateTime with dateTime,
+            this.time with time,
+            this.fixedBytes with fixedBytes,
+            this.flexBytes with flexBytes,
+            this.reference with reference,
+            this.subModel with subModel,
+            this.valueModel with valueModel,
+            this.list with list,
+            this.set with set,
+            this.map with map,
+            this.multi with multi,
+            this.booleanForKey with booleanForKey,
+            this.dateForKey with dateForKey,
+            this.multiForKey with multiForKey,
+            this.enumEmbedded with enumEmbedded
         )
     }
 }
 """.trimIndent()
 
-class KotlinRootObjectDataModelGeneratorTest {
+class KotlinRootDataModelGeneratorTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        SimpleMarykObject.generateKotlin("maryk") {
+        SimpleMarykModel.generateKotlin("maryk") {
             output += it
         }
 
-        output shouldBe generatedKotlinForSimpleObjectDataModel
+        output shouldBe generatedKotlinForSimpleDataModel
     }
 
     @Test
@@ -454,10 +432,10 @@ class KotlinRootObjectDataModelGeneratorTest {
             enums = mutableListOf(MarykEnum)
         )
 
-        CompleteMarykObject.generateKotlin("maryk", generationContext) {
+        CompleteMarykModel.generateKotlin("maryk", generationContext) {
             output += it
         }
 
-        output shouldBe generatedKotlinForCompleteObjectDataModel
+        output shouldBe generatedKotlinForCompleteDataModel
     }
 }

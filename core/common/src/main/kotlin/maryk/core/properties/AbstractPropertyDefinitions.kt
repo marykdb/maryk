@@ -57,7 +57,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         mapOf(*pairs.mapNotNull { it }.toTypedArray())
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
-    internal fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
+    fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(
         index: Int,
         name: String,
         definition: D

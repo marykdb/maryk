@@ -1,9 +1,13 @@
 package maryk.generator.kotlin
 
+import maryk.core.models.DataModel
+import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
+import maryk.core.objects.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -151,13 +155,17 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         when (definition) {
             is ContextualModelReferenceDefinition<*, *, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                (value as? () -> ObjectDataModel<*, *>)?.let {
+                (value as? () -> IsNamedDataModel<*>)?.let {
                     """{ ${value().name} }"""
-                } ?: throw Exception("ObjectDataModel $value cannot be null")
+                } ?: throw Exception("NamedDataModel $value cannot be null")
             }
             is EmbeddedObjectDefinition<*, *, *, *, *> -> (definition.dataModel as? ObjectDataModel<*, *>)?.let {
                 return it.generateKotlinValue(value, addImport)
             } ?: throw Exception("ObjectDataModel ${definition.dataModel} cannot be used to generate Kotlin code")
+            is EmbeddedValuesDefinition<*, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
+                @Suppress("UNCHECKED_CAST")
+                return it.generateKotlinValue(value as ValuesImpl, addImport)
+            } ?: throw Exception("DataModel ${definition.dataModel} cannot be used to generate Kotlin code")
             is ValueModelDefinition<*, *, *> -> definition.dataModel.let {
                 return it.generateKotlinValue(value, addImport)
             }
@@ -173,6 +181,25 @@ private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (St
         @Suppress("UNCHECKED_CAST")
         val wrapper = property as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>
         property.getter(value)?.let {
+            values.add("${property.name} = ${generateKotlinValue(wrapper.definition, it, addImport)}")
+        }
+    }
+
+    return if (values.isEmpty()) {
+        "${this.name}()"
+    } else {
+        "${this.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
+    }
+
+}
+
+private fun DataModel<*, *>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
+    val values = mutableListOf<String>()
+
+    for(property in this.properties) {
+        val wrapper = property
+
+        value.original(property.index)?.let {
             values.add("${property.name} = ${generateKotlinValue(wrapper.definition, it, addImport)}")
         }
     }

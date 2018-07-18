@@ -39,6 +39,7 @@ internal fun <T: Any, D: IsTransportablePropertyDefinitionType<T>, P: ObjectProp
         ?: throw Exception("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
 }
 
+
 private val dateImports = arrayOf("maryk.lib.time.Date")
 private val dateTimeImports = arrayOf("maryk.lib.time.DateTime")
 private val timeImports = arrayOf("maryk.lib.time.Time")
@@ -53,6 +54,7 @@ private val sInt32Imports = arrayOf("maryk.core.properties.types.numeric.SInt32"
 private val sInt64Imports = arrayOf("maryk.core.properties.types.numeric.SInt64")
 private val float32Imports = arrayOf("maryk.core.properties.types.numeric.Float32")
 private val float64Imports = arrayOf("maryk.core.properties.types.numeric.Float64")
+private val valuesImports = arrayOf("maryk.core.objects.Values")
 
 private val generateKotlinValueWithDefinition: (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String = { definition, value, addImport ->
     generateKotlinValue(definition, value, addImport)
@@ -221,7 +223,11 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.Embed to PropertyDefinitionKotlinDescriptor(
         className = "EmbeddedValuesDefinition",
-        kotlinTypeName = { (it.dataModel as IsNamedDataModel<*>).name },
+        kotlinTypeName = {
+            val modelName = (it.dataModel as IsNamedDataModel<*>).name
+            "Values<$modelName, $modelName.Properties>"
+        },
+        imports = { valuesImports },
         definitionModel = EmbeddedValuesDefinition.Model as IsSimpleObjectDataModel<EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition

@@ -1,14 +1,14 @@
 package maryk.generator.kotlin
 
+import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.enum.IndexedEnum
 
 @Suppress("UNCHECKED_CAST")
-internal fun <DO: Any> ObjectPropertyDefinitions<DO>.generateKotlin(
+internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlin(
     addImport: (String) -> Unit,
     generationContext: KotlinGenerationContext? = null,
     addEnumDefinition: ((String) -> Unit)? = null
@@ -50,7 +50,8 @@ internal fun <DO: Any> ObjectPropertyDefinitions<DO>.generateKotlin(
             KotlinForProperty(
                 name = propertyDefinitionWrapper.name,
                 index = propertyDefinitionWrapper.index,
-                value = """val ${propertyDefinitionWrapper.name}: $nativeTypeName$default""",
+                value = """${propertyDefinitionWrapper.name}: $nativeTypeName$default""",
+                assign = """this.${propertyDefinitionWrapper.name} with ${propertyDefinitionWrapper.name}""",
                 definition = kotlinDescriptor.definitionToKotlin(definition, addImport),
                 invoke = "map(${propertyDefinitionWrapper.index})"
             )

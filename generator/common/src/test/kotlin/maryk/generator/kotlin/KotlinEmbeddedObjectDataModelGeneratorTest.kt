@@ -4,7 +4,7 @@ import maryk.EmbeddedObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-val generatedKotlinForEmbeddedDataModel = """
+val generatedKotlinForEmbeddedObjectDataModel = """
 package maryk
 
 import maryk.core.models.ObjectDataModel
@@ -46,6 +46,6 @@ class KotlinEmbeddedObjectDataModelGeneratorTest {
             output += it
         }
 
-        output shouldBe generatedKotlinForEmbeddedDataModel
+        output shouldBe generatedKotlinForEmbeddedObjectDataModel
     }
 }

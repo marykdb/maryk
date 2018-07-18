@@ -4,6 +4,7 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
@@ -36,7 +37,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
             for (it in this.properties) {
                 try {
                     it.validate(
-                        newValue = it.getPropertyAndSerialize(dataObject, null),
+                        newValue = getValueFromDefinition(it, dataObject, null),
                         parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
@@ -53,7 +54,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
     open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (definition in this.properties) {
-            val value = definition.getPropertyAndSerialize(obj, context) ?: continue
+            val value = getValueFromDefinition(definition, obj, context) ?: continue
 
             definition.capture(context, value)
 
@@ -80,7 +81,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
     internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (definition in this.properties) {
-            val value = definition.getPropertyAndSerialize(dataObject, context) ?: continue
+            val value = getValueFromDefinition(definition, dataObject, context) ?: continue
 
             definition.capture(context, value)
 
@@ -96,13 +97,19 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
      */
     internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (definition in this.properties) {
-            val value = definition.getPropertyAndSerialize(dataObject, context) ?: continue
+            val value = getValueFromDefinition(definition, dataObject, context) ?: continue
 
             definition.capture(context, value)
 
             definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
         }
     }
+
+    protected open fun getValueFromDefinition(
+        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        obj: DO,
+        context: CX?
+    ) = definition.getPropertyAndSerialize(obj, context)
 
     /**
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values

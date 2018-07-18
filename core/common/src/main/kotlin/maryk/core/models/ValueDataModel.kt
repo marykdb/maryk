@@ -5,9 +5,12 @@ import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.ObjectValues
 import maryk.core.objects.SimpleObjectValues
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
+import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.lib.bytes.Base64
 
 /**
@@ -41,6 +44,37 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
         return this(this.map { values })
+    }
+
+
+    /** Creates bytes for given [values] */
+    protected fun toBytes(values: ObjectValues<DO, P>): ByteArray {
+        val bytes =  ByteArray(this.byteSize)
+        var offset = 0
+
+        this.properties.forEachIndexed { index, it ->
+            @Suppress("UNCHECKED_CAST")
+            val def = it as IsFixedBytesEncodable<in Any>
+            def.writeStorageBytes(values(index)) {
+                bytes[offset++] = it
+            }
+
+            if(offset < bytes.size) {
+                bytes[offset++] = 1 // separator byte
+            }
+        }
+
+        return bytes
+    }
+
+    override fun getValueFromDefinition(
+        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        obj: DO,
+        context: IsPropertyContext?
+    ) = if (obj is ValueDataObjectWithValues) {
+        obj.values(definition.index)
+    } else {
+        super.getValueFromDefinition(definition, obj, context)
     }
 
     /** Creates bytes for given [inputs] */
@@ -84,12 +118,12 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>(
+        override fun invoke(map: SimpleObjectValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>(
             name = map(0),
             properties = map(1)
         ){
-            override fun invoke(map: ObjectValues<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>): ValueDataObject {
-                return object : ValueDataObject(ByteArray(0)){}
+            override fun invoke(map: ObjectValues<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>): ValueDataObjectWithValues {
+                return ValueDataObjectWithValues(toBytes(map), map)
             }
         }
     }

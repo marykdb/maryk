@@ -6,7 +6,6 @@ import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.objects.ValuesImpl
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -159,9 +158,6 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
                     """{ ${value().name} }"""
                 } ?: throw Exception("NamedDataModel $value cannot be null")
             }
-            is EmbeddedObjectDefinition<*, *, *, *, *> -> (definition.dataModel as? ObjectDataModel<*, *>)?.let {
-                return it.generateKotlinValue(value, addImport)
-            } ?: throw Exception("ObjectDataModel ${definition.dataModel} cannot be used to generate Kotlin code")
             is EmbeddedValuesDefinition<*, *> -> (definition.dataModel as? DataModel<*, *>)?.let {
                 @Suppress("UNCHECKED_CAST")
                 return it.generateKotlinValue(value as ValuesImpl, addImport)

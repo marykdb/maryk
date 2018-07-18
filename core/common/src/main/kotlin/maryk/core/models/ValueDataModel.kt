@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.objects.ObjectValues
@@ -16,7 +17,7 @@ import maryk.lib.bytes.Base64
 abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>>(
     name: String,
     properties: P
-) : ObjectDataModel<DO, P>(name, properties) {
+) : ObjectDataModel<DO, P>(name, properties), MarykPrimitive {
     override val primitiveType = PrimitiveType.ValueModel
 
     internal val byteSize: Int by lazy {

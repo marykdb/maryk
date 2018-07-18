@@ -1,7 +1,5 @@
 package maryk.core.models
 
-import maryk.core.definitions.MarykPrimitive
-import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,9 +16,7 @@ abstract class ObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     properties: P
 ) : SimpleObjectDataModel<DO, P>(
     properties
-), MarykPrimitive, IsNamedDataModel<P> {
-    override val primitiveType = PrimitiveType.Model
-
+), IsNamedDataModel<P> {
     companion object {
         internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM> {
             val wrapper = ObjectPropertyDefinitionsCollectionDefinitionWrapper<DM>(

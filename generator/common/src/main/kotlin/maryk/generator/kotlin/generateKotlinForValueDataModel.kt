@@ -51,3 +51,34 @@ private fun List<KotlinForProperty>.generatePropertyNamesForConstructor(): Strin
     }
     return properties.joinToString(", ")
 }
+
+private fun List<KotlinForProperty>.generateObjectValuesForProperties(): String {
+    var properties = ""
+    for (it in this) {
+        if (!properties.isEmpty()) properties += ",\n"
+        properties += "val ${it.value}"
+    }
+    return properties
+}
+
+private fun List<KotlinForProperty>.generateInvokesForProperties(): String {
+    var properties = ""
+    for (it in this) {
+        if (!properties.isEmpty()) properties += ",\n"
+        properties += """${it.name} = ${it.invoke}"""
+    }
+    return properties.prependIndent()
+}
+
+private fun List<KotlinForProperty>.generateDefinitionsForObjectProperties(modelName: String): String {
+    var properties = ""
+    for (it in this) {
+        properties += """
+        val ${it.name} = add(
+            index = ${it.index}, name = "${it.name}",
+            definition = ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()},
+            getter = $modelName::${it.name}
+        )"""
+    }
+    return properties
+}

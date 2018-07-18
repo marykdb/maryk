@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.definitions.PrimitiveType
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsFixedBytesEncodable
@@ -22,8 +21,6 @@ abstract class RootObjectDataModel<DM: IsRootDataModel<P>, DO: Any, P: ObjectPro
     final override val keyDefinitions: Array<FixedBytesProperty<out Any>> = arrayOf(UUIDKey),
     properties: P
 ) : ObjectDataModel<DO, P>(name, properties), IsTypedRootDataModel<DM, P> {
-    override val primitiveType = PrimitiveType.RootModel
-
     final override val keySize = IsRootDataModel.calculateKeySize(keyDefinitions)
 
     /** Get Key based on [dataObject] */

@@ -18,7 +18,8 @@ class RequestsTest {
         getVersionedChangesRequest,
         scanRequest,
         scanChangesRequest,
-        scanVersionedChangesRequest
+        scanVersionedChangesRequest,
+        collectRequest
     )
 
     private val context = DataModelPropertyContext(mapOf(
@@ -88,6 +89,11 @@ class RequestsTest {
           limit: 100
           fromVersion: 1234
           maxVersions: 1000
+        - !Collect
+          testName: !Get
+            dataModel: SimpleMarykModel
+            keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+            filterSoftDeleted: true
 
         """.trimIndent()
     }

@@ -13,7 +13,8 @@ enum class RequestType(override val index: Int): IndexedEnum<RequestType> {
     GetVersionedChanges(6),
     Scan(7),
     ScanChanges(8),
-    ScanVersionedChanges(9);
+    ScanVersionedChanges(9),
+	Collect(10);
 
     companion object: IndexedEnumDefinition<RequestType>(
         "RequestType", RequestType::values
@@ -30,5 +31,6 @@ internal val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
     RequestType.GetVersionedChanges to EmbeddedObjectDefinition(dataModel = { GetVersionedChangesRequest }),
     RequestType.Scan to EmbeddedObjectDefinition(dataModel = { ScanRequest }),
     RequestType.ScanChanges to EmbeddedObjectDefinition(dataModel = { ScanChangesRequest }),
-    RequestType.ScanVersionedChanges to EmbeddedObjectDefinition(dataModel = { ScanVersionedChangesRequest })
+    RequestType.ScanVersionedChanges to EmbeddedObjectDefinition(dataModel = { ScanVersionedChangesRequest }),
+    RequestType.Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest })
 )

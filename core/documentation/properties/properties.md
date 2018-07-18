@@ -23,7 +23,7 @@ and stored.
 |[List](types/list.md)                    |false   |false  |false    |false  |true        |
 |[Set](types/set.md)                      |false   |false  |false    |false  |true        |
 |[Map](types/map.md)                      |false   |false  |false    |false  |key only    |
-|[EmbeddedObject](types/embeddedObject.md)|false   |false  |true     |false  |subProp only|
+|[Embed](types/embeddedValues.md)         |false   |false  |true     |false  |subProp only|
 |[ValueModel](types/valueModel.md)        |false   |true   |true     |true   |true        |
 
 \* All numeric properties like Int8/16/32/64, UInt8/16/32/64, Float, Double 

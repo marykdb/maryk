@@ -132,8 +132,9 @@ val changeRequest = Person.delete(
 
 ### Get 
 With [`GetRequest`](../common/src/main/kotlin/maryk/core/query/requests/GetRequest.kt)
-multiple specific objects can be queried by their [key](key.md). It is possible to
-filter the results with [filters](filters.md), order the results or to include
+multiple specific objects can be queried by their [key](key.md). 
+To select a subset of values in the query use `select`.
+It is possible to filter the results with [filters](filters.md), order the results or to include
 soft deleted results by passing `filterSoftDeleted=false`. 
 
 It is also possible to view the objects at a certain version with `toVersion`
@@ -170,6 +171,9 @@ Maryk YAML:
   keys: 
   - WWurg6ysTsozoMei/SurOw
   - awfbjYrVQ+cdXblfQKV10A
+  select:
+  - firstName
+  - lastName
   filter: !And
   - !Equals
     firstName: Clark
@@ -201,6 +205,7 @@ val getRequest = Person.run{
 ### Scan
 With [`ScanRequest`](../common/src/main/kotlin/maryk/core/query/requests/ScanRequest.kt)
 multiple objects can be queried by passing a startKey to scan from and filters on key parts to end it.
+To select a subset of values in the query use `select`
 It is possible to filter the results with [filters](filters.md), order or limit the results (default= 100).
 It is also possible to include soft deleted results by passing `filterSoftDeleted=false`.
 
@@ -232,6 +237,10 @@ Maryk YAML:
 !Scan
   dataModel: Logs
   startKey: Zk6m4QpZQegUg5s13JVYlQ
+  select:
+    - timeStamp
+    - severity
+    - message
   filter: !GreaterThanEquals
     severity: ERROR
   order: !Desc timeStamp
@@ -276,6 +285,9 @@ Maryk YAML:
   keys: 
   - WWurg6ysTsozoMei/SurOw
   - awfbjYrVQ+cdXblfQKV10A
+  select:
+  - firstName
+  - lastName
   filter: !And
   - !Equals
     firstName: Clark
@@ -294,6 +306,12 @@ val getRequest = Person.run {
     getChanges(
         person1Key,
         person2Key,
+        select = props {
+            RootPropRefGraph<Person>(
+                firstName,
+                lastName
+            )
+        },
         filter = And(
             Equals(ref { firstName } with "Clark"),
             Exists(ref { lastName })
@@ -312,6 +330,10 @@ Maryk YAML:
 !ScanChanges
   dataModel: Logs
   startKey: Zk6m4QpZQegUg5s13JVYlQ
+  select:
+  - timeStamp
+  - severity
+  - message
   filter: !GreaterThanEquals
     severity: ERROR
   order: !Desc timeStamp
@@ -326,6 +348,13 @@ val timedKey // Key which start at certain time
 
 val scanRequest = Logs.scanChanges(
     startKey = timedKey,
+    select = props {
+        RootPropRefGraph<Person>(
+            timeStamp,
+            severity,
+            message
+        )
+    },
     filter = GreaterThanEquals(
         Logs.ref { severity } with Severity.ERROR
     ),
@@ -377,6 +406,12 @@ val getRequest = Person.run {
     getVersionedChanges(
         person1Key,
         person2Key,
+        select = props {
+            RootPropRefGraph<Person>(
+                firstName,
+                lastName
+            )
+        },
         filter = And(
             Equals(ref { firstName } with "Clark"),
             Exists(ref { lastName })
@@ -411,6 +446,13 @@ val timedKey // Key which start at certain time
 
 val scanRequest = Logs.scanVersionedChanges(
     startKey = timedKey,
+    select = props {
+        RootPropRefGraph<Person>(
+            timeStamp,
+            severity,
+            message
+        )
+    },
     filter = GreaterThanEquals(
         Logs.ref { severity } with Severity.ERROR
     ),

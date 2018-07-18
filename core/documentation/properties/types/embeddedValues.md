@@ -1,13 +1,10 @@
 # EmbeddedObject Property
-*NOTE* This type can only be used in Object DataModels which can only be defined in code
-and cannot be used for queries.
-
-A property which contains another DataModel as embedded object. See 
+A property which contains values from selected DataModel. See 
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
-- Maryk Yaml Definition: `EmbedObject`
-- Kotlin Definition: `EmbeddedObjectDefinition`
-- Kotlin Value: `T` T stands for the DataModel data class 
+- Maryk Yaml Definition: `Embed`
+- Kotlin Definition: `EmbeddedValuesDefinition<DM, P>` DM is DataModel and P the properties
+- Kotlin Value: `Values<DM, P>` DM is DataModel and P the properties 
 
 ## Usage options
 - Value
@@ -24,9 +21,17 @@ A property which contains another DataModel as embedded object. See
 
 ## Examples
 
+**Example of a YAML EmbeddedObject property definition**
+```yaml
+!Embed
+  dataModel: Address
+  required: false
+  final: true
+```
+
 **Example of a Kotlin EmbeddedObject property definition**
 ```kotlin
-val def = EmbeddedObjectDefinition(
+val def = EmbeddedValuesDefinition(
     required = false,
     final = true,
     dataModel = Address

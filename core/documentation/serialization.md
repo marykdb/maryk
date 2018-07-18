@@ -41,7 +41,7 @@ email: john.smith@gmail.com
 
 Serializing a User to YAML
 ```kotlin
-val user: User // instance of a user
+val user: Values<User, User.Properties> // instance of a user
 val yamlWriter: YamlWriter // instance of YAML writer
 
 User.writeJson(user, yamlWriter)
@@ -52,11 +52,7 @@ Serializing a User from YAML
 ```kotlin
 val yamlReader: YamlReader // instance of YAML reader
 
-val user: User = User.readJsonToObject(yamlReader)
-
-// It is also possible to get only a map of index:value pairs.
-// This is useful if there is not a generated model.
-val valuesInMap: Map<Int, Any> = User.readJson(yamlReader)
+val user: Values<User, User.Properties> = User.readJson(yamlReader)
 ```
 
 ### JSON
@@ -104,7 +100,7 @@ Example User object
 
 Serializing a User to JSON
 ```kotlin
-val user: User // instance of a user
+val user: Values<User, User.Properties> // instance of a user
 val jsonWriter: JsonWriter // instance of JSON writer
 
 User.writeJson(user, jsonWriter)
@@ -115,11 +111,7 @@ Serializing a User from JSON
 ```kotlin
 val jsonReader: JsonReader // instance of JSON reader
 
-val user: User = User.readJsonToObject(reader)
-
-// It is also possible to get only a map of index:value pairs.
-// This is useful if there is not a generated model.
-val valuesInMap: Map<Int, Any> = User.readJson(reader)
+val user: Values<User, User.Properties> = User.readJson(reader)
 ```
 
 ### ProtoBuf
@@ -129,7 +121,7 @@ faster parsing and less memory usage. [Read more here.](protobuf.md)
 
 Serializing a User to ProtoBuf
 ```kotlin
-val user: User // instance of a user
+val user: Values<User, User.Properties> // instance of a user
 val byteWriter: (Byte) -> Unit // instance of byte writer writer
 
 val cache = WriteCache()
@@ -149,9 +141,9 @@ val jsonReader: JsonReader // instance of JSON reader
 val byteReader: () -> Byte 
 val byteLength: Int // Amount of bytes to read, was probably in request
 
-val user = User.readProtoBufToObject(byteLength, byteReader)
+val user = User.readProtoBuf(byteLength, byteReader)
 
 // It is also possible to get only a map of index:value pairs.
 // This is useful if there is not a generated model.
-val valuesInMap: Map<Int, Any> = User.readProtoBuf(byteLength, byteReader)
+val user: Values<User, User.Properties> = User.readProtoBuf(byteLength, byteReader)
 ```

@@ -33,23 +33,24 @@ properties:
 
 **Kotlin implementation.** Can be generated from Maryk Model YAML
 ```kotlin
-data class Person(
-    val firstName: String,
-    val lastName: String,
-    val dateOfBirth: Date
-){
-    object Properties: PropertyDefinitions<Person>() {
-        val firstName = add(0, "firstname", StringDefinition(), MarykObject::firstName)
-        val lastName = add(1, "lastName", StringDefinition(), MarykObject::lastName)
-        val dateOfBirth = add(2, "dateOfBirth", DateDefinition(), MarykObject::dateOfBirth)
+object Person : RootDataModel<Person, Person.Properties>(
+    properties = Properties
+){ 
+    object Properties: PropertyDefinitions() {
+        val firstName = add(0, "firstname", StringDefinition(), Person::firstName)
+        val lastName = add(1, "lastName", StringDefinition(), Person::lastName)
+        val dateOfBirth = add(2, "dateOfBirth", DateDefinition(), Person::dateOfBirth)
     }
-    companion object: RootDataModel<Person>(
-        properties = Properties
-    ){ 
-        override fun invoke(map: DataObjectMap<Person>) = Person(
-            firstName = map(0),
-            lastName = map(1),
-            dateOfBirth = map(2)
+
+    operator fun invoke(
+        firstName: String,
+        lastName: String,
+        dateOfBirth: Date
+    ) = map {
+        mapNonNulls(
+            this.firstName with firstName,
+            this.lastName with lastName,
+            this.dateOfBirth with dateOfBirth
         )
     }
 }
@@ -156,14 +157,14 @@ data class PersonRoleInPeriod(
     val startDate: Date,
     val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
-    object Properties {
+    object Properties : ObjectProperties<PersonRoleInPeriod>() {
         val person = add(0, "person", ReferenceDefinition(dataModel = Person), PersonRoleInPeriod::person)
         val role = add(1, "role", EnumProperty(values = Role.values()), PersonRoleInPeriod::role)
         val startDate = add(2, "startDate", DateDefinition(), PersonRoleInPeriod::startDate)
         val endDate = add(3, "endDate". DateDefinition(), PersonRoleInPeriod::endDate)
     }
 
-    companion object: ValueDataModel<TestValueObject>(
+    companion object: ValueDataModel<TestValueObject, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, Any>) = TestValueObject(
@@ -193,15 +194,18 @@ data class Post ...
 data class Event ...
 data class Advertisement ...
 
-data class TimelineItem(
-    val dateOfPosting: DateTime,
-    val item: TypedValue
-){
-    object Properties: PropertyDefinitions<TimelineItem>() {
+object TimelineItem: RootDataModel<TimelineItem>(
+    keyDefinitions = definitions(
+        Reversed(Properties.dateOfPosting),
+        TypeId(Properties.item)
+    ),
+    properties = Properties
+) {
+    object Properties: PropertyDefinitions() {
         val dateOfPosting = add(0, "dateOfPosting", DateTimeDefinition(
             final = true,
             precision = TimePrecision.SECONDS
-        ), TimelineItem::dateOfPosting)
+        ))
         
         val item = add(1, "item", MultiTypeDefinition(
             final = true,
@@ -210,18 +214,16 @@ data class TimelineItem(
                 1 to EmbeddedObjectDefinition(dataModel = Event),
                 2 to EmbeddedObjectDefinition(dataModel = Advertisement)
             )
-        ), TimeLineItem::item)
+        ))
     }
-    companion object: RootDataModel<TimelineItem>(
-        keyDefinitions = definitions(
-            Reversed(Properties.dateOfPosting),
-            TypeId(Properties.item)
-        ),
-        properties = Properties
-    ) {
-        override fun invoke(map: Map<Int, Any>) = TimelineItem(
-            dateOfPosting = map(0),
-            item = map(1)
+
+    operator fun invoke(
+        dateOfPosting: DateTime,
+        item: TypedValue
+    ) = map {
+        mapNonNulls(
+            this.dataOfPosting with dateOfPosting,
+            this.item with item
         )
     }
 }

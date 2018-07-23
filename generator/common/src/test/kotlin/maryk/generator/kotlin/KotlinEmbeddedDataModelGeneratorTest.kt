@@ -17,7 +17,7 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
 ) {
     object Properties: PropertyDefinitions() {
         val value = add(
-            index = 0, name = "value",
+            index = 1, name = "value",
             definition = StringDefinition(
                 default = "haha",
                 regEx = "ha.*"

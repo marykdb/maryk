@@ -62,7 +62,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
 ) {
     object Properties: PropertyDefinitions() {
         val string = add(
-            index = 0, name = "string",
+            index = 1, name = "string",
             definition = StringDefinition(
                 indexed = true,
                 required = false,
@@ -77,7 +77,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val number = add(
-            index = 1, name = "number",
+            index = 2, name = "number",
             definition = NumberDefinition(
                 indexed = true,
                 final = true,
@@ -90,7 +90,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val boolean = add(
-            index = 2, name = "boolean",
+            index = 3, name = "boolean",
             definition = BooleanDefinition(
                 indexed = true,
                 required = false,
@@ -99,7 +99,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val enum = add(
-            index = 3, name = "enum",
+            index = 4, name = "enum",
             definition = EnumDefinition(
                 indexed = true,
                 required = false,
@@ -112,7 +112,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val date = add(
-            index = 4, name = "date",
+            index = 5, name = "date",
             definition = DateDefinition(
                 indexed = true,
                 required = false,
@@ -125,7 +125,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val dateTime = add(
-            index = 5, name = "dateTime",
+            index = 6, name = "dateTime",
             definition = DateTimeDefinition(
                 indexed = true,
                 required = false,
@@ -139,7 +139,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val time = add(
-            index = 6, name = "time",
+            index = 7, name = "time",
             definition = TimeDefinition(
                 indexed = true,
                 required = false,
@@ -153,7 +153,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val fixedBytes = add(
-            index = 7, name = "fixedBytes",
+            index = 8, name = "fixedBytes",
             definition = FixedBytesDefinition(
                 indexed = true,
                 required = false,
@@ -167,7 +167,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val flexBytes = add(
-            index = 8, name = "flexBytes",
+            index = 9, name = "flexBytes",
             definition = FlexBytesDefinition(
                 indexed = true,
                 required = false,
@@ -181,7 +181,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val reference = add(
-            index = 9, name = "reference",
+            index = 10, name = "reference",
             definition = ReferenceDefinition(
                 indexed = true,
                 required = false,
@@ -194,7 +194,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val subModel = add(
-            index = 10, name = "subModel",
+            index = 11, name = "subModel",
             definition = EmbeddedValuesDefinition(
                 indexed = true,
                 required = false,
@@ -206,7 +206,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val valueModel = add(
-            index = 11, name = "valueModel",
+            index = 12, name = "valueModel",
             definition = ValueModelDefinition(
                 indexed = true,
                 required = false,
@@ -227,7 +227,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val list = add(
-            index = 12, name = "list",
+            index = 13, name = "list",
             definition = ListDefinition(
                 indexed = true,
                 required = false,
@@ -241,7 +241,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val set = add(
-            index = 13, name = "set",
+            index = 14, name = "set",
             definition = SetDefinition(
                 indexed = true,
                 required = false,
@@ -255,7 +255,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val map = add(
-            index = 14, name = "map",
+            index = 15, name = "map",
             definition = MapDefinition(
                 indexed = true,
                 required = false,
@@ -270,7 +270,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val multi = add(
-            index = 15, name = "multi",
+            index = 16, name = "multi",
             definition = MultiTypeDefinition(
                 indexed = true,
                 required = false,
@@ -286,19 +286,19 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val booleanForKey = add(
-            index = 16, name = "booleanForKey",
+            index = 17, name = "booleanForKey",
             definition = BooleanDefinition(
                 final = true
             )
         )
         val dateForKey = add(
-            index = 17, name = "dateForKey",
+            index = 18, name = "dateForKey",
             definition = DateDefinition(
                 final = true
             )
         )
         val multiForKey = add(
-            index = 18, name = "multiForKey",
+            index = 19, name = "multiForKey",
             definition = MultiTypeDefinition(
                 final = true,
                 typeEnum = MarykEnum,
@@ -311,10 +311,25 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             )
         )
         val enumEmbedded = add(
-            index = 19, name = "enumEmbedded",
+            index = 20, name = "enumEmbedded",
             definition = EnumDefinition(
                 enum = MarykEnumEmbedded,
                 minValue = MarykEnumEmbedded.E1
+            )
+        )
+        val mapWithEnum = add(
+            index = 21, name = "mapWithEnum",
+            definition = MapDefinition(
+                indexed = true,
+                required = false,
+                final = true,
+                minSize = 1,
+                maxSize = 5,
+                keyDefinition = EnumDefinition(
+                    enum = MarykEnumEmbedded
+                ),
+                valueDefinition = StringDefinition(),
+                default = mapOf(MarykEnumEmbedded.E1 to "value")
             )
         )
     }
@@ -344,7 +359,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         booleanForKey: Boolean,
         dateForKey: Date,
         multiForKey: TypedValue<MarykEnum, *>,
-        enumEmbedded: MarykEnumEmbedded
+        enumEmbedded: MarykEnumEmbedded,
+        mapWithEnum: Map<MarykEnumEmbedded, String>
     ) = map {
         mapNonNulls(
             this.string with string,
@@ -366,7 +382,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             this.booleanForKey with booleanForKey,
             this.dateForKey with dateForKey,
             this.multiForKey with multiForKey,
-            this.enumEmbedded with enumEmbedded
+            this.enumEmbedded with enumEmbedded,
+            this.mapWithEnum with mapWithEnum
         )
     }
 }

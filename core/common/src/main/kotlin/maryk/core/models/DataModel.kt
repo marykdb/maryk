@@ -20,7 +20,7 @@ abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
     properties: P
 ) : SimpleDataModel<DM, P>(
     properties
-), MarykPrimitive, IsNamedDataModel<P>, IsTypedValuesDataModel<DM, P> {
+), MarykPrimitive, IsTypedValuesDataModel<DM, P> {
     override val primitiveType = PrimitiveType.Model
 
     internal object Model : DefinitionDataModel<DataModel<*, *>>(

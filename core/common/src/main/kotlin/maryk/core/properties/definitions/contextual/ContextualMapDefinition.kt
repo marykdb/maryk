@@ -10,7 +10,7 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific map property value definition based on context from [contextualResolver] */
-internal class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
+class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
     private val contextualResolver: (context: CX?) -> IsByteTransportableMap<K, V, CX>,
     override val required: Boolean = true
 ) : IsByteTransportableMap<K, V, CX>, IsSerializableFlexBytesEncodable<Map<K, V>, CX> {

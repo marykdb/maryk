@@ -8,6 +8,7 @@ import maryk.core.objects.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -29,6 +30,7 @@ import maryk.core.properties.types.numeric.UInt8
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
+@Suppress("UNCHECKED_CAST")
 internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: Any, addImport: (String) -> Unit): String = when(value) {
     is String -> """"$value""""
     is TimePrecision -> {
@@ -127,11 +129,12 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         @Suppress("UNCHECKED_CAST")
         val mapValues = value as Map<Any, Any>
         val kotlinStringValues = mutableListOf<String>()
+        val mapDefinition = definition as IsMapDefinition<Any, Any, *>
 
         for (v in mapValues) {
             @Suppress("UNCHECKED_CAST")
             kotlinStringValues.add(
-                "${generateKotlinValue(definition, v.key, addImport)} to ${generateKotlinValue(definition, v.value, addImport)}"
+                "${generateKotlinValue(mapDefinition.keyDefinition, v.key, addImport)} to ${generateKotlinValue(mapDefinition.valueDefinition, v.value, addImport)}"
             )
         }
 

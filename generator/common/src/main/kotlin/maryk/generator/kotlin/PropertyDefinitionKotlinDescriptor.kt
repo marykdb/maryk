@@ -1,9 +1,11 @@
 package maryk.generator.kotlin
 
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.definitions.HasDefaultValueDefinition
-import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.HasDefaultValueDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 
 /** Describes the property definitions for translation to kotlin */
 internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportablePropertyDefinitionType<T>, P: ObjectPropertyDefinitions<D>>(
@@ -45,7 +47,13 @@ internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportabl
                         output.add("""$propertyName = $it""")
                     }
                 } else {
-                    output.add("""${property.name} = ${generateKotlinValue(def, value, addImport)}""")
+                    @Suppress("UNCHECKED_CAST")
+                    val defToSend = if (def is ContextualMapDefinition<*, *, *>) {
+                        definition as IsPropertyDefinition<Any>
+                    } else {
+                        def
+                    }
+                    output.add("""${property.name} = ${generateKotlinValue(defToSend, value, addImport)}""")
                 }
             }
         }

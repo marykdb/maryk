@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 
-interface IsValuesDataModel<P: PropertyDefinitions>: IsDataModel<P>
+interface IsValuesDataModel<P: PropertyDefinitions>: IsDataModel<P>, IsNamedDataModel<P>
 
 /** A DataModel which holds properties and can be validated */
 interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>: IsValuesDataModel<P> {

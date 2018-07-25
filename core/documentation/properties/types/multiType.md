@@ -77,8 +77,7 @@ native form.
 
 ## Transport Byte representation
 The multitype is encoded as an embedded object within a length delimited tag/value. It then 
-contains 2 tag/value pairs with the first one with `tag=1` being the type index encoded in VarInt and 
-secondly a `tag=2` with the value itself. 
+contains 1 tag/value pair in which the tag is the type index and the value contains the actual value. 
 
 ## String representation
 TypeID as a `UInt16` encoded to string.

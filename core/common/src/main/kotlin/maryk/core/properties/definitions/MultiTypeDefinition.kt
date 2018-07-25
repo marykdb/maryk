@@ -2,9 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
@@ -151,15 +148,11 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): TypedValue<E, Any> {
-        // First the type value
-        ProtoBuf.readKey(reader)
-        val typeIndex = initIntByVar(reader)
-
-        val type = this.typeByIndex[typeIndex] ?: throw ParseException("Unknown multi type index $typeIndex")
-
-        // Second the data itself
+        // Read the protobuf where the key tag is the type
         val key = ProtoBuf.readKey(reader)
-        val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type  $typeIndex")
+
+        val type = this.typeByIndex[key.tag] ?: throw ParseException("Unknown multi type index ${key.tag}")
+        val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type ${key.tag}")
 
         val value = def.readTransportBytes(
             ProtoBuf.getLength(key.wireType, reader),
@@ -172,27 +165,21 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
     override fun calculateTransportByteLength(value: TypedValue<E, Any>, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
-        // Type index
-        totalByteLength += ProtoBuf.calculateKeyLength(1)
-        totalByteLength += value.type.index.calculateVarByteLength()
 
-        // value
+        // stored as value below an index of the type id
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        totalByteLength += def.calculateTransportByteLengthWithKey(2, value.value, cacher, context)
+        totalByteLength += def.calculateTransportByteLengthWithKey(value.type.index, value.value, cacher, context)
 
         return totalByteLength
     }
 
     override fun writeTransportBytes(value: TypedValue<E, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
-        ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
-        value.type.index.writeVarBytes(writer)
-
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        def.writeTransportBytesWithKey(2, value.value, cacheGetter, writer, context)
+        def.writeTransportBytesWithKey(value.type.index, value.value, cacheGetter, writer, context)
     }
 
     override fun equals(other: Any?): Boolean {

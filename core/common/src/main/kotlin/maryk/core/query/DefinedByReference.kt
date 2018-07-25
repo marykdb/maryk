@@ -17,7 +17,7 @@ interface DefinedByReference<T: Any> {
     companion object {
         internal fun <DO: Any> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) =
             definitions.add(
-                index = 0, name = "reference",
+                index = 1, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
                         it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()

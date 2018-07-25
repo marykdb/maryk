@@ -97,10 +97,10 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
                 IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, ReferenceDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
-                add(4, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
-                add(5, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
-                add(6, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
-                add(7, "dataModel",
+                add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
+                add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
+                add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
+                add(8, "dataModel",
                     definition = ContextualModelReferenceDefinition(
                         contextualResolver = { context: DataModelContext?, name ->
                             context?.let {
@@ -131,14 +131,14 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ReferenceDefinition<*>>) = ReferenceDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            unique = map(3),
-            minValue = map<Bytes?>(4)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            maxValue = map<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            default = map<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            dataModel = map(7)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
+            minValue = map<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            maxValue = map<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            default = map<Bytes?>(7)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            dataModel = map(8)
         )
     }
 }

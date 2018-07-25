@@ -30,7 +30,7 @@ data class AddRequest<DM: IsRootValuesDataModel<*>> internal constructor(
             init {
                 IsObjectRequest.addDataModel(this, AddRequest<*>::dataModel)
                 @Suppress("UNCHECKED_CAST")
-                add(1, "objectsToAdd", ListDefinition(
+                add(2, "objectsToAdd", ListDefinition(
                     valueDefinition = ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
                         contextualResolver = {
                             @Suppress("UNCHECKED_CAST")
@@ -42,8 +42,8 @@ data class AddRequest<DM: IsRootValuesDataModel<*>> internal constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<AddRequest<*>>) = AddRequest(
-            dataModel = map(0),
-            objectsToAdd = map(1)
+            dataModel = map(1),
+            objectsToAdd = map(2)
         )
     }
 }

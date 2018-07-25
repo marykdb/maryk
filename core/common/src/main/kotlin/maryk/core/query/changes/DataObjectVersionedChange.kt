@@ -21,13 +21,13 @@ data class DataObjectVersionedChange<out DM: IsRootDataModel<*>>(
     internal companion object: SimpleQueryDataModel<DataObjectVersionedChange<*>>(
         properties = object : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
             init {
-                add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+                add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
                         it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }
                 ), DataObjectVersionedChange<*>::key)
 
-                add(1, "changes", ListDefinition(
+                add(2, "changes", ListDefinition(
                     default = emptyList(),
                     valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { VersionedChanges }
@@ -37,8 +37,8 @@ data class DataObjectVersionedChange<out DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<DataObjectVersionedChange<*>>) = DataObjectVersionedChange(
-            key = map(0),
-            changes = map(1)
+            key = map(1),
+            changes = map(2)
         )
     }
 }

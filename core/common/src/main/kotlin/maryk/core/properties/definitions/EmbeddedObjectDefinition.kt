@@ -146,7 +146,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                 IsPropertyDefinition.addIndexed(this, EmbeddedObjectDefinition<*, *, *, *, *>::indexed)
                 IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
                 IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
-                add(3, "dataModel",
+                add(4, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextTransformer = {context: ModelContext? ->
                             context?.dataModelContext
@@ -180,7 +180,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                     }
                 )
 
-                add(4, "default",
+                add(5, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -193,11 +193,11 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         }
     ) {
         override fun invoke(map: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            dataModel = map<() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
-            default = map(4)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            dataModel = map<() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(4),
+            default = map(5)
         )
     }
 }

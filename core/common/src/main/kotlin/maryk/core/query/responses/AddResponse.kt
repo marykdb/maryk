@@ -25,8 +25,8 @@ data class AddResponse<DM: IsRootDataModel<*>> constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<AddResponse<*>>) = AddResponse(
-            dataModel = map(0),
-            statuses = map<List<TypedValue<StatusType, IsAddResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(1)?.map { it.value } ?: emptyList()
+            dataModel = map(1),
+            statuses = map<List<TypedValue<StatusType, IsAddResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(2)?.map { it.value } ?: emptyList()
         )
     }
 }

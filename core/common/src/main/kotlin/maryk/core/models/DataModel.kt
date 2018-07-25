@@ -35,15 +35,15 @@ abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
     ) {
         override fun invoke(map: SimpleObjectValues<DataModel<*, *>>) =
             object : DataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                name = map(0),
-                properties = map(1)
+                name = map(1),
+                properties = map(2)
             ) {}
     }
 
     companion object {
         internal fun <DM: IsDataModel<*>> addProperties(definitions: AbstractPropertyDefinitions<DM>): PropertyDefinitionsCollectionDefinitionWrapper<DM> {
             val wrapper = PropertyDefinitionsCollectionDefinitionWrapper<DM>(
-                1,
+                2,
                 "properties",
                 PropertyDefinitionsCollectionDefinition(
                     capturer = { context, propDefs ->

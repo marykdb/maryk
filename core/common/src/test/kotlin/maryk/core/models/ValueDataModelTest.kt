@@ -26,9 +26,9 @@ internal class ValueDataModelTest {
 
             val value = converted.map {
                 mapOf(
-                   convertedValueModel.properties[0]!! withNotNull 5,
-                   convertedValueModel.properties[1]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),
-                   convertedValueModel.properties[2]!! withNotNull true
+                   convertedValueModel.properties[1]!! withNotNull 5,
+                   convertedValueModel.properties[2]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),
+                   convertedValueModel.properties[3]!! withNotNull true
                 )
             }.toDataObject()
 
@@ -56,7 +56,7 @@ internal class ValueDataModelTest {
         checkYamlConversion(TestValueObject, ValueDataModel.Model, { DataModelContext() }, ::compareDataModels) shouldBe  """
         name: TestValueObject
         properties:
-          ? 0: int
+          ? 1: int
           : !Number
             indexed: false
             required: true
@@ -65,7 +65,7 @@ internal class ValueDataModelTest {
             type: SInt32
             maxValue: 6
             random: false
-          ? 1: dateTime
+          ? 2: dateTime
           : !DateTime
             indexed: false
             required: true
@@ -73,7 +73,7 @@ internal class ValueDataModelTest {
             unique: false
             precision: SECONDS
             fillWithNow: false
-          ? 2: bool
+          ? 3: bool
           : !Boolean
             indexed: false
             required: true

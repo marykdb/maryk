@@ -20,7 +20,7 @@ import kotlin.experimental.xor
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
     val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>, *>
-) : FixedBytesProperty<T>() {
+) : FixedBytesProperty<T> {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
     override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO) =
@@ -47,7 +47,7 @@ data class Reversed<T: Any>(
     internal object Model : DefinitionDataModel<Reversed<out Any>>(
         properties = object : ObjectPropertyDefinitions<Reversed<out Any>>() {
             init {
-                add(0, "multiTypeDefinition",
+                add(1, "multiTypeDefinition",
                     ContextualPropertyReferenceDefinition<DataModelContext>(
                         contextualResolver = { it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException() }
                     ),
@@ -60,7 +60,7 @@ data class Reversed<T: Any>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<Reversed<out Any>>) = Reversed<Any>(
-            reference = map(0)
+            reference = map(1)
         )
     }
 }

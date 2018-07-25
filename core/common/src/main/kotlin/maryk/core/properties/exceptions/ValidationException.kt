@@ -28,7 +28,7 @@ abstract class ValidationException internal constructor(
     internal companion object {
         internal fun <DO: ValidationException> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
             definitions.add(
-                index = 0, name = "reference",
+                index = 1, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                     required = false,
                     contextualResolver = {
@@ -44,7 +44,7 @@ abstract class ValidationException internal constructor(
         }
         internal fun <DO: ValidationException> addValue(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String?) {
             definitions.add(
-                1, "value",
+                2, "value",
                 StringDefinition(),
                 getter
             )

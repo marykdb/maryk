@@ -18,7 +18,7 @@ data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         properties = object : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
             init {
                 IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)
-                add(1, "values", ListDefinition(
+                add(2, "values", ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { ValuesWithMetaData }
                     )
@@ -27,8 +27,8 @@ data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ValuesResponse<*, *>>) = ValuesResponse(
-            dataModel = map(0),
-            values = map<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(1)
+            dataModel = map(1),
+            values = map<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2)
         )
     }
 }

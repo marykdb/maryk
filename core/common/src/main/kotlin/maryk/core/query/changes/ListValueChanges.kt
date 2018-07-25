@@ -4,12 +4,12 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -33,17 +33,17 @@ data class ListValueChanges<T: Any> internal constructor(
     internal object Properties : ObjectPropertyDefinitions<ListValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, ListValueChanges<*>::reference)
 
-        val addValuesToEnd = add(1, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)
+        val addValuesToEnd = add(2, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)
 
-        val addValuesAtIndex = add(2, "addValuesAtIndex", MapDefinition(
+        val addValuesAtIndex = add(3, "addValuesAtIndex", MapDefinition(
             required = false,
             keyDefinition = NumberDefinition(type = SInt32),
             valueDefinition = valueDefinition
         ), ListValueChanges<*>::addValuesAtIndex)
 
-        val deleteValues = add(3, "deleteValues", valueListDefinition, ListValueChanges<*>::deleteValues)
+        val deleteValues = add(4, "deleteValues", valueListDefinition, ListValueChanges<*>::deleteValues)
 
-        val deleteAtIndex = add(4, "deleteAtIndex", SetDefinition(
+        val deleteAtIndex = add(5, "deleteAtIndex", SetDefinition(
             required = false,
             valueDefinition = NumberDefinition(type = SInt32)
         ), ListValueChanges<*>::deleteAtIndex)
@@ -53,11 +53,11 @@ data class ListValueChanges<T: Any> internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
-            reference = map(0),
-            addValuesToEnd = map(1),
-            addValuesAtIndex = map(2),
-            deleteValues = map(3),
-            deleteAtIndex = map(4)
+            reference = map(1),
+            addValuesToEnd = map(2),
+            addValuesAtIndex = map(3),
+            deleteValues = map(4),
+            deleteAtIndex = map(5)
         )
     }
 }

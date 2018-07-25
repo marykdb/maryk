@@ -9,7 +9,7 @@ data class SimpleMarykObject(
 ) {
     object Properties: ObjectPropertyDefinitions<SimpleMarykObject>() {
         val value = add(
-            index = 0, name = "value",
+            index = 1, name = "value",
             definition = StringDefinition(
                 default = "haha",
                 regEx = "ha.*"
@@ -23,7 +23,7 @@ data class SimpleMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<SimpleMarykObject, Properties>) = SimpleMarykObject(
-            value = map(0)
+            value = map(1)
         )
     }
 }

@@ -21,7 +21,7 @@ data class Or(
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
     internal object Properties : ObjectPropertyDefinitions<Or>() {
-        val filters = add(0, "filters",
+        val filters = add(1, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = FilterType,
@@ -38,7 +38,7 @@ data class Or(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Or, Properties>) = Or(
-            filters = map<List<IsFilter>>(0)
+            filters = map<List<IsFilter>>(1)
         )
 
         override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

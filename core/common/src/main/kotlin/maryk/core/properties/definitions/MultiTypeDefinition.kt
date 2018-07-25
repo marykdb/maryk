@@ -232,7 +232,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                 IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
 
-                add(3, "typeEnum",
+                add(4, "typeEnum",
                     StringDefinition(),
                     getter = MultiTypeDefinition<*, *>::typeEnum,
                     capturer = { context: MultiTypeDefinitionContext, value ->
@@ -244,10 +244,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                     fromSerializable = { null }
                 )
 
-                this.addDescriptorPropertyWrapperWrapper(4, "definitionMap")
+                this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
 
                 @Suppress("UNCHECKED_CAST")
-                add(5, "default",
+                add(6, "default",
                     ContextualValueDefinition(
                         required = false,
                         contextTransformer = { context: MultiTypeDefinitionContext? ->
@@ -264,22 +264,22 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     ) {
         override fun invoke(map: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> {
             val definitionMap = convertMultiTypeDescriptors(
-                map(4)
+                map(5)
             )
 
             val typeOptions = definitionMap.keys.toTypedArray()
 
             val typeEnum = IndexedEnumDefinition(
-                map(3)
+                map(4)
             ) { typeOptions }
 
             return MultiTypeDefinition(
-                indexed = map(0),
-                required = map(1),
-                final = map(2),
+                indexed = map(1),
+                required = map(2),
+                final = map(3),
                 typeEnum = typeEnum,
                 definitionMap = definitionMap,
-                default = map(5)
+                default = map(6)
             )
         }
     }

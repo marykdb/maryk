@@ -18,7 +18,7 @@ class ValuesWithMetaDataTest {
         uint = 555.toUInt32(),
         double = 6.33,
         bool = true,
-        enum = Option.V2,
+        enum = Option.V3,
         dateTime = DateTime(2017, 12, 5, 1, 33, 55)
     )
 
@@ -52,7 +52,7 @@ class ValuesWithMetaDataTest {
     @Test
     fun convert_to_YAML_and_back() {
         checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context }) shouldBe """
-        key: AAACKwEBAQAC
+        key: AAACKwEBAQAD
         values:
           string: name
           int: 5123123
@@ -60,7 +60,7 @@ class ValuesWithMetaDataTest {
           double: 6.33
           dateTime: '2017-12-05T01:33:55'
           bool: true
-          enum: V2
+          enum: V3
         firstVersion: 12
         lastVersion: 12345
         isDeleted: false

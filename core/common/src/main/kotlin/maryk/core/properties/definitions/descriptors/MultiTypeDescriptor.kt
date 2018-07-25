@@ -47,16 +47,16 @@ private data class MultiTypeDescriptor(
     val definition: IsSubDefinition<out Any, DataModelContext>
 ) {
     private object Properties: ObjectPropertyDefinitions<MultiTypeDescriptor>() {
-        val index = add(0, "index",
+        val index = add(1, "index",
             NumberDefinition(type = UInt32),
             MultiTypeDescriptor::index,
             toSerializable = { value, _ -> value?.toUInt32() },
             fromSerializable = { it?.toInt() }
         )
-        val name = add(1, "name", StringDefinition(), MultiTypeDescriptor::name)
+        val name = add(2, "name", StringDefinition(), MultiTypeDescriptor::name)
 
         val definition = add(
-            2, "definition",
+            3, "definition",
             MultiTypeDefinition(
                 typeEnum = PropertyDefinitionType,
                 definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -72,9 +72,9 @@ private data class MultiTypeDescriptor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<MultiTypeDescriptor, Properties>) = MultiTypeDescriptor(
-            index = map(0),
-            name = map(1),
-            definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(2).value
+            index = map(1),
+            name = map(2),
+            definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(3).value
         )
 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): ObjectValues<MultiTypeDescriptor, Properties> {

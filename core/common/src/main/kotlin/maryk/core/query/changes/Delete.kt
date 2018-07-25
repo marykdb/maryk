@@ -26,7 +26,7 @@ data class Delete internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Delete, Properties>) = Delete(
-            references = map(0)
+            references = map(1)
         )
 
         override fun writeJson(obj: Delete, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

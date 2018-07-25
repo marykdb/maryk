@@ -20,7 +20,7 @@ import maryk.yaml.YamlWriter
 
 /** Direction Enumeration */
 enum class Direction(override val index: Int) : IndexedEnum<Direction> {
-    ASC(0), DESC(1);
+    ASC(1), DESC(2);
 
     companion object: IndexedEnumDefinition<Direction>("Direction", Direction::values)
 }
@@ -39,13 +39,13 @@ data class Order internal constructor(
     val direction: Direction = Direction.ASC
 ) {
     internal object Properties : ObjectPropertyDefinitions<Order>() {
-        val propertyReference = add(0, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+        val propertyReference = add(1, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
             contextualResolver = {
                 it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
             }
         ), Order::propertyReference)
 
-        val direction = add(1, "direction", EnumDefinition(
+        val direction = add(2, "direction", EnumDefinition(
             enum = Direction,
             default = Direction.ASC
         ), Order::direction)
@@ -55,8 +55,8 @@ data class Order internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Order, Properties>) = Order(
-            propertyReference = map(0),
-            direction = map(1)
+            propertyReference = map(1),
+            direction = map(2)
         )
 
         override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

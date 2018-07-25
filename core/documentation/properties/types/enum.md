@@ -42,9 +42,9 @@ Contains an enumaration value. Is limited to one of the values in an enum
   enum:
     name: Role
     values:
-      0: Admin
-      1: Moderator
-      2: User
+      1: Admin
+      2: Moderator
+      3: User
   required: false
   unique: false
   final: true
@@ -56,7 +56,7 @@ Contains an enumaration value. Is limited to one of the values in an enum
 **Example of a Kotlin Enum property definition**
 ```kotlin
 enum class Role(override val index: Int): IndexedEnum<Option> {
-    Admin(0), Moderator(1), User(2);
+    Admin(1), Moderator(2), User(3);
     
     companion object: IndexedEnumDefinition<Role>("Role", Role.values())
 }

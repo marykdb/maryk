@@ -37,7 +37,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
     override val graphType = PropRefGraphType.Graph
 
     internal object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *>>() {
-        val parent = add(0, "parent",
+        val parent = add(1, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
                     context?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
@@ -55,7 +55,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             getter = PropRefGraph<*, *>::parent
         )
 
-        val properties = addProperties(1, PropRefGraph<*, *>::properties) { context: GraphContext? ->
+        val properties = addProperties(2, PropRefGraph<*, *>::properties) { context: GraphContext? ->
             context?.subDataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
     }
@@ -71,8 +71,8 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
         }
     ) {
         override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsValuesDataModel<*>, IsValuesDataModel<*>>(
-            parent = map(0),
-            properties = map(1)
+            parent = map(1),
+            properties = map(2)
         )
 
         override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {

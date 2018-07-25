@@ -6,7 +6,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 enum class Operation(
     override val index: Int
 ) : IndexedEnum<Operation> {
-    Define(0), Request(1);
+    Define(1), Request(2);
 
     companion object : IndexedEnumDefinition<Operation>(
         "Operation", { Operation.values() }

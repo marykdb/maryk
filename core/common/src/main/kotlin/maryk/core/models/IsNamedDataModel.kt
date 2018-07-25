@@ -9,7 +9,7 @@ interface IsNamedDataModel<P: IsPropertyDefinitions>: IsDataModel<P> {
 
     companion object {
         internal fun <DM: IsNamedDataModel<*>> addName(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> String) {
-            definitions.add(0, "name", StringDefinition(), getter)
+            definitions.add(1, "name", StringDefinition(), getter)
         }
     }
 }

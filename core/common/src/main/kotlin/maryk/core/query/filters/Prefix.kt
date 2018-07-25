@@ -23,7 +23,7 @@ data class Prefix internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Prefix, Properties>) = Prefix(
-            referenceValuePairs = map(0)
+            referenceValuePairs = map(1)
         )
 
         override fun writeJson(obj: Prefix, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

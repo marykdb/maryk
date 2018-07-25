@@ -4,9 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -30,7 +30,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
 
         init {
             @Suppress("UNCHECKED_CAST")
-            add(1, "valuesToAdd",
+            add(2, "valuesToAdd",
                 ContextualMapDefinition(
                     required = false,
                     contextualResolver = { context: DataModelPropertyContext? ->
@@ -43,7 +43,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
             )
 
             @Suppress("UNCHECKED_CAST")
-            add(2, "keysToDelete",
+            add(3, "keysToDelete",
                 SetDefinition(
                     required = false,
                     valueDefinition = ContextualValueDefinition(
@@ -63,9 +63,9 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<MapValueChanges<*, *>, Properties>) = MapValueChanges<Any, Any>(
-            reference = map(0),
-            valuesToAdd = map(1),
-            keysToDelete = map(2)
+            reference = map(1),
+            valuesToAdd = map(2),
+            keysToDelete = map(3)
         )
     }
 }

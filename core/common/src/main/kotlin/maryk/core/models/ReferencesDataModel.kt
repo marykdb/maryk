@@ -72,7 +72,7 @@ internal abstract class ReferencesObjectPropertyDefinitions<DO: Any> : ObjectPro
     abstract val references: ListPropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, DO>
 
     internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<IsPropertyReference<*, *>>) =
-        this.add(0, "references",
+        this.add(1, "references",
             ListDefinition(
                 valueDefinition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {

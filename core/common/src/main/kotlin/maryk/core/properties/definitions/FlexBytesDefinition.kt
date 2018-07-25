@@ -64,24 +64,24 @@ data class FlexBytesDefinition(
                 IsPropertyDefinition.addRequired(this, FlexBytesDefinition::required)
                 IsPropertyDefinition.addFinal(this, FlexBytesDefinition::final)
                 IsComparableDefinition.addUnique(this, FlexBytesDefinition::unique)
-                add(4, "minValue", FlexBytesDefinition(), FlexBytesDefinition::minValue)
-                add(5, "maxValue", FlexBytesDefinition(), FlexBytesDefinition::maxValue)
-                add(6, "default", FlexBytesDefinition(), FlexBytesDefinition::default)
-                HasSizeDefinition.addMinSize(7, this, FlexBytesDefinition::minSize)
-                HasSizeDefinition.addMaxSize(8, this, FlexBytesDefinition::maxSize)
+                add(5, "minValue", FlexBytesDefinition(), FlexBytesDefinition::minValue)
+                add(6, "maxValue", FlexBytesDefinition(), FlexBytesDefinition::maxValue)
+                add(7, "default", FlexBytesDefinition(), FlexBytesDefinition::default)
+                HasSizeDefinition.addMinSize(8, this, FlexBytesDefinition::minSize)
+                HasSizeDefinition.addMaxSize(9, this, FlexBytesDefinition::maxSize)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<FlexBytesDefinition>) = FlexBytesDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            unique = map(3),
-            minValue = map(4),
-            maxValue = map(5),
-            default = map(6),
-            minSize = map(7),
-            maxSize = map(8)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            minSize = map(8),
+            maxSize = map(9)
         )
     }
 }

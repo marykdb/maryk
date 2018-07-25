@@ -27,8 +27,8 @@ data class AddSuccess<DM: IsRootDataModel<*>>(
         properties = object : ObjectPropertyDefinitions<AddSuccess<*>>(){
             init {
                 IsResponseStatus.addKey(this, AddSuccess<*>::key)
-                add(1,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
-                add(2,"changes",
+                add(2,"version", NumberDefinition(type = UInt64), AddSuccess<*>::version)
+                add(3,"changes",
                     ListDefinition(
                         default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
@@ -44,9 +44,9 @@ data class AddSuccess<DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<AddSuccess<*>>) = AddSuccess<IsRootDataModel<IsPropertyDefinitions>>(
-            key = map(0),
-            version = map(1),
-            changes = map(2)
+            key = map(1),
+            version = map(2),
+            changes = map(3)
         )
     }
 }

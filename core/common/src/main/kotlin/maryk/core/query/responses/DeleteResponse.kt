@@ -25,8 +25,8 @@ data class DeleteResponse<DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<DeleteResponse<*>>) = DeleteResponse(
-            dataModel = map(0),
-            statuses = map<List<TypedValue<StatusType, IsDeleteResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(1)?.map { it.value } ?: emptyList()
+            dataModel = map(1),
+            statuses = map<List<TypedValue<StatusType, IsDeleteResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(2)?.map { it.value } ?: emptyList()
         )
     }
 }

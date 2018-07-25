@@ -49,11 +49,11 @@ private val testExtendedObject = TestMarykObject(
     ),
     valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
     embeddedObject = EmbeddedMarykObject("test"),
-    multi = TypedValue(Option.V2, EmbeddedMarykObject("subInMulti!")),
+    multi = TypedValue(Option.V3, EmbeddedMarykObject("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
 
-private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedObject\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
+private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V1\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedObject\":{\"value\":\"test\"},\"multi\":[\"V3\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
@@ -63,7 +63,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"double": "3.555",
 	"bool": true,
 	"dateTime": "2017-12-04T12:13",
-	"enum": "V0",
+	"enum": "V1",
 	"list": [34, 2352, 3423, 766],
 	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
 	"map": {
@@ -79,7 +79,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"embeddedObject": {
 		"value": "test"
 	},
-	"multi": ["V2", {
+	"multi": ["V3", {
 		"value": "subInMulti!"
 	}],
 	"listOfString": ["test1", "another test", "🤗"]
@@ -123,12 +123,12 @@ internal class ObjectDataModelTest {
 
     @Test
     fun get_property_definition_by_index() {
-        TestMarykObject.properties[0] shouldBe TestMarykObject.Properties.string
-        TestMarykObject.properties[1] shouldBe TestMarykObject.Properties.int
-        TestMarykObject.properties[2] shouldBe TestMarykObject.Properties.uint
-        TestMarykObject.properties[3] shouldBe TestMarykObject.Properties.double
-        TestMarykObject.properties[4] shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.properties[5] shouldBe TestMarykObject.Properties.bool
+        TestMarykObject.properties[1] shouldBe TestMarykObject.Properties.string
+        TestMarykObject.properties[2] shouldBe TestMarykObject.Properties.int
+        TestMarykObject.properties[3] shouldBe TestMarykObject.Properties.uint
+        TestMarykObject.properties[4] shouldBe TestMarykObject.Properties.double
+        TestMarykObject.properties[5] shouldBe TestMarykObject.Properties.dateTime
+        TestMarykObject.properties[6] shouldBe TestMarykObject.Properties.bool
     }
 
     @Test
@@ -141,12 +141,12 @@ internal class ObjectDataModelTest {
 
     @Test
     fun get_properties_by_index() {
-        TestMarykObject.properties.getPropertyGetter(0)!!.invoke(testExtendedObject) shouldBe "hay"
-        TestMarykObject.properties.getPropertyGetter(1)!!.invoke(testExtendedObject) shouldBe 4
-        TestMarykObject.properties.getPropertyGetter(2)!!.invoke(testExtendedObject) shouldBe 32.toUInt32()
-        TestMarykObject.properties.getPropertyGetter(3)!!.invoke(testExtendedObject) shouldBe 3.555
-        TestMarykObject.properties.getPropertyGetter(4)!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        TestMarykObject.properties.getPropertyGetter(5)!!.invoke(testExtendedObject) shouldBe true
+        TestMarykObject.properties.getPropertyGetter(1)!!.invoke(testExtendedObject) shouldBe "hay"
+        TestMarykObject.properties.getPropertyGetter(2)!!.invoke(testExtendedObject) shouldBe 4
+        TestMarykObject.properties.getPropertyGetter(3)!!.invoke(testExtendedObject) shouldBe 32.toUInt32()
+        TestMarykObject.properties.getPropertyGetter(4)!!.invoke(testExtendedObject) shouldBe 3.555
+        TestMarykObject.properties.getPropertyGetter(5)!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
+        TestMarykObject.properties.getPropertyGetter(6)!!.invoke(testExtendedObject) shouldBe true
     }
 
     @Test
@@ -178,7 +178,7 @@ internal class ObjectDataModelTest {
         	"double": "3.555",
         	"dateTime": "2017-12-04T12:13",
         	"bool": true,
-        	"enum": "V0",
+        	"enum": "V1",
         	"list": [34, 2352, 3423, 766],
         	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
         	"map": {
@@ -193,7 +193,7 @@ internal class ObjectDataModelTest {
         	"embeddedObject": {
         		"value": "test"
         	},
-        	"multi": ["V2", {
+        	"multi": ["V3", {
         		"value": "subInMulti!"
         	}],
         	"listOfString": ["test1", "another test", "🤗"]
@@ -217,7 +217,7 @@ internal class ObjectDataModelTest {
         double: 3.555
         dateTime: '2017-12-04T12:13'
         bool: true
-        enum: V0
+        enum: V1
         list: [34, 2352, 3423, 766]
         set: [2017-12-05, 2016-03-02, 1981-12-05]
         map:
@@ -229,31 +229,11 @@ internal class ObjectDataModelTest {
           bool: true
         embeddedObject:
           value: test
-        multi: !V2
+        multi: !V3
           value: subInMulti!
         listOfString: [test1, another test, 🤗]
 
         """.trimIndent()
-    }
-
-    @Test
-    fun convert_ProtoBuf_bytes_to_map() {
-        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
-        var index = 0
-
-        val map = TestMarykObject.readProtoBuf(bytes.size, {
-            bytes[index++]
-        })
-
-        map.size shouldBe 8
-        map { string } shouldBe "hay"
-        map { int } shouldBe 4
-        map { uint } shouldBe 32.toUInt32()
-        map { double } shouldBe 3.555
-        map { dateTime } shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        map { bool } shouldBe true
-        map { enum } shouldBe Option.V2
-        map { reference }!!.bytes.toHex() shouldBe "010501050105010501"
     }
 
     @Test
@@ -266,6 +246,8 @@ internal class ObjectDataModelTest {
         )
 
         TestMarykObject.writeProtoBuf(testExtendedObject, cache, bc::write)
+
+        bc.bytes!!.toHex() shouldBe "0a036861791008182021400c70a3d70a3d7228ccf794d10530013801420744e024be35fc0b4a08e18801de83018422520a08a4eb021203796573520b08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a110803120d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497"
 
         TestMarykObject.readProtoBuf(bc.size, bc::read).toDataObject() shouldBe testExtendedObject
     }

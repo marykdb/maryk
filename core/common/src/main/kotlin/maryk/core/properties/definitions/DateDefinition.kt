@@ -67,22 +67,22 @@ data class DateDefinition(
                 IsPropertyDefinition.addRequired(this, DateDefinition::required)
                 IsPropertyDefinition.addFinal(this, DateDefinition::final)
                 IsComparableDefinition.addUnique(this, DateDefinition::unique)
-                add(4, "minValue", DateDefinition(), DateDefinition::minValue)
-                add(5, "maxValue", DateDefinition(), DateDefinition::maxValue)
-                add(6, "default", DateDefinition(), DateDefinition::default)
-                IsMomentDefinition.addFillWithNow(7, this, DateDefinition::fillWithNow)
+                add(5, "minValue", DateDefinition(), DateDefinition::minValue)
+                add(6, "maxValue", DateDefinition(), DateDefinition::maxValue)
+                add(7, "default", DateDefinition(), DateDefinition::default)
+                IsMomentDefinition.addFillWithNow(8, this, DateDefinition::fillWithNow)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<DateDefinition>) = DateDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            unique = map(3),
-            minValue = map(4),
-            maxValue = map(5),
-            default = map(6),
-            fillWithNow = map(7)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            fillWithNow = map(8)
         )
     }
 }

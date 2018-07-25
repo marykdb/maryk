@@ -25,7 +25,7 @@ internal class EmbeddedValuesDefinitionTest {
     ) {
         object Properties : PropertyDefinitions() {
             val string = add(
-                0, "string",
+                1, "string",
                 StringDefinition(
                     regEx = "jur"
                 )
@@ -96,7 +96,7 @@ internal class EmbeddedValuesDefinitionTest {
         bc.bytes!!.size shouldBe 7
         def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
 
-        bc.bytes!!.toHex() shouldBe "2a0502036a7572"
+        bc.bytes!!.toHex() shouldBe "2a050a036a7572"
 
         val key = ProtoBuf.readKey(bc::read)
         key.wireType shouldBe WireType.LENGTH_DELIMITED

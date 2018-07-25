@@ -25,6 +25,7 @@ data class ListPropertyDefinitionWrapper<T: Any, TO: Any, CX: IsPropertyContext,
     override val toSerializable: ((List<TO>?, CX?) -> List<T>?)? = null,
     override val fromSerializable: ((List<T>?) -> List<TO>?)? = null
 ) :
+    AbstractPropertyDefinitionWrapper(index, name),
     IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>> by definition,
     IsPropertyDefinitionWrapper<List<T>, List<TO>, CX, DO>
 {

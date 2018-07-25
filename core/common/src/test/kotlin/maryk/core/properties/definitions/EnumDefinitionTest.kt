@@ -16,8 +16,8 @@ import kotlin.test.Test
 
 internal class EnumDefinitionTest {
     private val enumsToTest = arrayOf(
-        Option.V0,
-        Option.V1
+        Option.V1,
+        Option.V2
     )
 
     val def = EnumDefinition(
@@ -29,10 +29,10 @@ internal class EnumDefinitionTest {
         required = false,
         final = true,
         unique = true,
-        minValue = Option.V0,
-        maxValue = Option.V2,
+        minValue = Option.V1,
+        maxValue = Option.V3,
         enum = Option,
-        default = Option.V1
+        default = Option.V2
     )
 
     @Test
@@ -54,8 +54,8 @@ internal class EnumDefinitionTest {
         val cacheFailer = WriteCacheFailer()
 
         val expectedEnums = arrayOf(
-            "7000",
-            "7001"
+            "7001",
+            "7002"
         )
 
         for ((enum, expected) in enumsToTest.zip(expectedEnums)) {
@@ -115,12 +115,12 @@ internal class EnumDefinitionTest {
         enum:
           name: Option
           values:
-            0: V0
             1: V1
             2: V2
-        minValue: V0
-        maxValue: V2
-        default: V1
+            3: V3
+        minValue: V1
+        maxValue: V3
+        default: V2
 
         """.trimIndent()
     }

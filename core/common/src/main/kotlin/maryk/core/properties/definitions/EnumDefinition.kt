@@ -120,7 +120,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                 IsPropertyDefinition.addFinal(this, EnumDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, EnumDefinition<*>::unique)
                 @Suppress("UNCHECKED_CAST")
-                add(4, "enum",
+                add(5, "enum",
                     ContextValueTransformDefinition(
                         definition = ContextTransformerDefinition(
                             definition = EmbeddedObjectDefinition(
@@ -149,7 +149,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(5, "minValue",
+                add(6, "minValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: EnumDefinitionContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -159,7 +159,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                     getter = EnumDefinition<*>::minValue
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(6, "maxValue",
+                add(7, "maxValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: EnumDefinitionContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -169,7 +169,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                     getter = EnumDefinition<*>::maxValue
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(7, "default",
+                add(8, "default",
                     ContextualValueDefinition(
                         contextualResolver = { context: EnumDefinitionContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -182,14 +182,14 @@ class EnumDefinition<E : IndexedEnum<E>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnum<Any>>(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            unique = map(3),
-            enum = map(4),
-            minValue = map(5),
-            maxValue = map(6),
-            default = map(7)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
+            enum = map(5),
+            minValue = map(6),
+            maxValue = map(7),
+            default = map(8)
         )
     }
 }

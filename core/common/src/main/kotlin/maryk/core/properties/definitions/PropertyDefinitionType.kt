@@ -24,23 +24,23 @@ import maryk.json.MapType
 enum class PropertyDefinitionType(
     override val index: Int
 ): IndexedEnum<PropertyDefinitionType>, MapType {
-    Boolean(0),
-    Date(1),
-    DateTime(2),
-    Enum(3),
-    FixedBytes(4),
-    FlexBytes(5),
-    List(6),
-    Map(7),
-    MultiType(8),
-    Number(9),
-    Reference(10),
-    Set(11),
-    String(12),
-    Embed(13),
-    EmbedObject(14),
-    Time(15),
-    Value(16);
+    Boolean(1),
+    Date(2),
+    DateTime(3),
+    Enum(4),
+    FixedBytes(5),
+    FlexBytes(6),
+    List(7),
+    Map(8),
+    MultiType(9),
+    Number(10),
+    Reference(11),
+    Set(12),
+    String(13),
+    Embed(14),
+    EmbedObject(15),
+    Time(16),
+    Value(17);
 
     companion object: IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
 }

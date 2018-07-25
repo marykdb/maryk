@@ -15,7 +15,7 @@ import maryk.lib.uuid.generateUUID
 import maryk.yaml.IsYamlReader
 
 /** A key with a Universally Unique ID */
-object UUIDKey: FixedBytesProperty<Pair<Long, Long>>() {
+object UUIDKey: FixedBytesProperty<Pair<Long, Long>> {
     override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
 

@@ -114,7 +114,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
 
     companion object {
         private fun <DO:Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) =
-            definitions.add(0, "index",
+            definitions.add(1, "index",
                 NumberDefinition(type = UInt32),
                 getter,
                 toSerializable = { value, _ -> value?.toUInt32() },
@@ -122,10 +122,10 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             )
 
         private fun <DO:Any> addName(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> String) =
-            definitions.add(1, "name", StringDefinition(), getter)
+            definitions.add(2, "name", StringDefinition(), getter)
 
         private fun <DO:Any> addDefinition(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsSerializablePropertyDefinition<*, *>) =
-            definitions.add(2, "definition",
+            definitions.add(3, "definition",
                 MultiTypeDefinition(
                     typeEnum = PropertyDefinitionType,
                     definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -148,12 +148,12 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     ) {
         override fun invoke(map: SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
-                map<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(2)
+                map<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(3)
             val type = typedDefinition.type
 
             return mapOfPropertyDefWrappers[type]?.invoke(
-                map(0),
                 map(1),
+                map(2),
                 typedDefinition.value
             ) { _: Any -> null } ?: throw DefNotFoundException("Property type $type not found")
         }

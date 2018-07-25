@@ -21,7 +21,7 @@ data class DoesNotExist<DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<DoesNotExist<*>>) = DoesNotExist<IsRootDataModel<IsPropertyDefinitions>>(
-            key = map(0)
+            key = map(1)
         )
     }
 }

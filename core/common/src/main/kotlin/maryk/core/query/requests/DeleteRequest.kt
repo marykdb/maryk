@@ -37,7 +37,7 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
             init {
                 IsObjectRequest.addDataModel(this, DeleteRequest<*>::dataModel)
 
-                add(1, "objectsToDelete", ListDefinition(
+                add(2, "objectsToDelete", ListDefinition(
                     valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                         contextualResolver = {
                             it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
@@ -45,7 +45,7 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
                     )
                 ), DeleteRequest<*>::objectsToDelete)
 
-                add(2, "hardDelete",
+                add(3, "hardDelete",
                     BooleanDefinition(default = false),
                     DeleteRequest<*>::hardDelete
                 )
@@ -53,9 +53,9 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<DeleteRequest<*>>) = DeleteRequest(
-            dataModel = map(0),
-            objectsToDelete = map(1),
-            hardDelete = map(2)
+            dataModel = map(1),
+            objectsToDelete = map(2),
+            hardDelete = map(3)
         )
     }
 }

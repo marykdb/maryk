@@ -16,7 +16,7 @@ interface IsObjectRequest<out DM: IsRootDataModel<*>>: IsRequest {
     companion object {
         internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) {
             definitions.add(
-                0, "dataModel",
+                1, "dataModel",
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, DataModelPropertyContext>(
                     contextualResolver = { context, name ->
                         context?.let {

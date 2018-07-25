@@ -21,12 +21,12 @@ class ValuesTest {
         val copy = original.copy {
             arrayOf(
                 string withNotNull "bye world",
-                enum withNotNull Option.V1
+                enum withNotNull Option.V2
             )
         }
 
         copy.size shouldBe 6
         copy { string } shouldBe "bye world"
-        copy { enum } shouldBe Option.V1
+        copy { enum } shouldBe Option.V2
     }
 }

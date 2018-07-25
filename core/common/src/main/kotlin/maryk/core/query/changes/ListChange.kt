@@ -17,7 +17,7 @@ data class ListChange internal constructor(
     constructor(vararg listValueChange: ListValueChanges<*>): this(listValueChange.toList())
 
     internal object Properties : ObjectPropertyDefinitions<ListChange>() {
-        val referenceListValueChangesPairs = add(0, "referenceListValueChangesPairs",
+        val referenceListValueChangesPairs = add(1, "referenceListValueChangesPairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { ListValueChanges }
@@ -33,7 +33,7 @@ data class ListChange internal constructor(
         referenceProperty = ListValueChanges.Properties.reference
     ) {
         override fun invoke(map: ObjectValues<ListChange, Properties>) = ListChange(
-            listValueChanges = map(0)
+            listValueChanges = map(1)
         )
 
         override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

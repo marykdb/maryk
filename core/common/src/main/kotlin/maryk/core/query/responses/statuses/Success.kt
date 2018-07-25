@@ -17,12 +17,12 @@ data class Success<DM: IsRootDataModel<*>>(
     internal companion object: SimpleQueryDataModel<Success<*>>(
         properties = object : ObjectPropertyDefinitions<Success<*>>() {
             init {
-                add(0, "version", NumberDefinition(type = UInt64), Success<*>::version)
+                add(1, "version", NumberDefinition(type = UInt64), Success<*>::version)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<Success<*>>) = Success<IsRootDataModel<IsPropertyDefinitions>>(
-            version = map(0)
+            version = map(1)
         )
     }
 }

@@ -20,7 +20,7 @@ internal class UUIDKeyTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val value = add(0, "value", StringDefinition())
+            val value = add(1, "value", StringDefinition())
         }
 
         operator fun invoke(

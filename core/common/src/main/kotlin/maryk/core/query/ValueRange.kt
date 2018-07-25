@@ -33,7 +33,7 @@ data class ValueRange<T: Any> internal constructor(
     override val filterType = FilterType.Range
 
     internal object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
-        val from = add(0, "from", ContextualValueDefinition(
+        val from = add(1, "from", ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
@@ -41,7 +41,7 @@ data class ValueRange<T: Any> internal constructor(
             }
         ), ValueRange<*>::from)
 
-        val to = add(1, "to", ContextualValueDefinition(
+        val to = add(2, "to", ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
@@ -49,18 +49,18 @@ data class ValueRange<T: Any> internal constructor(
             }
         ), ValueRange<*>::to)
 
-        val inclusiveFrom = add(2, "inclusiveFrom", BooleanDefinition(default = true), ValueRange<*>::inclusiveFrom)
-        val inclusiveTo = add(3, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
+        val inclusiveFrom = add(3, "inclusiveFrom", BooleanDefinition(default = true), ValueRange<*>::inclusiveFrom)
+        val inclusiveTo = add(4, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
     }
 
     internal companion object: QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ValueRange<*>, Properties>) = ValueRange(
-            from = map(0),
-            to = map(1),
-            inclusiveFrom = map(2),
-            inclusiveTo = map(3)
+            from = map(1),
+            to = map(2),
+            inclusiveFrom = map(3),
+            inclusiveTo = map(4)
         )
 
         override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

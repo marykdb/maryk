@@ -52,15 +52,15 @@ data class BooleanDefinition(
                 IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
                 IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
-                add(3, "default", BooleanDefinition(), BooleanDefinition::default)
+                add(4, "default", BooleanDefinition(), BooleanDefinition::default)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            default = map(3)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            default = map(4)
         )
     }
 }

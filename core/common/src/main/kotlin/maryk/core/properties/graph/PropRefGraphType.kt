@@ -7,8 +7,8 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 enum class PropRefGraphType(
     override val index: Int
 ): IndexedEnum<PropRefGraphType> {
-    PropRef(0),
-    Graph(1);
+    PropRef(1),
+    Graph(2);
 
     companion object: IndexedEnumDefinition<PropRefGraphType>(
         "PropRefGraphType", PropRefGraphType::values

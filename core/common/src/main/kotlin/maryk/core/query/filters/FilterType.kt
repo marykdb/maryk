@@ -7,19 +7,19 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 enum class FilterType(
     override val index: Int
 ): IndexedEnum<FilterType> {
-    And(0),
-    Or(1),
-    Not(2),
-    Exists(3),
-    Equals(4),
-    LessThan(5),
-    LessThanEquals(6),
-    GreaterThan(7),
-    GreaterThanEquals(8),
-    Prefix(9),
-    Range(10),
-    RegEx(11),
-    ValueIn(12);
+    And(1),
+    Or(2),
+    Not(3),
+    Exists(4),
+    Equals(5),
+    LessThan(6),
+    LessThanEquals(7),
+    GreaterThan(8),
+    GreaterThanEquals(9),
+    Prefix(10),
+    Range(11),
+    RegEx(12),
+    ValueIn(13);
 
     companion object: IndexedEnumDefinition<FilterType>(
         "FilterType", FilterType::values

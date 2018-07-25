@@ -26,7 +26,7 @@ data class Range internal constructor(
     constructor(vararg range: ReferenceValueRangePair<*>): this(range.toList())
 
     internal object Properties : ObjectPropertyDefinitions<Range>() {
-        val ranges = Properties.add(0, "referenceRangePairs",
+        val ranges = Properties.add(1, "referenceRangePairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { ReferenceValueRangePair }
@@ -40,7 +40,7 @@ data class Range internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Range, Properties>) = Range(
-            referenceRangePairs = map(0)
+            referenceRangePairs = map(1)
         )
 
         override fun writeJson(obj: Range, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

@@ -39,7 +39,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
 ) {
     object Properties: PropertyDefinitions() {
         val string = add(
-            index = 0, name = "string",
+            index = 1, name = "string",
             definition = StringDefinition(
                 default = "haha",
                 regEx = "ha.*"
@@ -47,7 +47,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val int = add(
-            index = 1, name = "int",
+            index = 2, name = "int",
             definition = NumberDefinition(
                 type = SInt32,
                 maxValue = 6
@@ -55,7 +55,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val uint = add(
-            index = 2, name = "uint",
+            index = 3, name = "uint",
             definition = NumberDefinition(
                 type = UInt32,
                 final = true
@@ -63,33 +63,33 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val double = add(
-            index = 3, name = "double",
+            index = 4, name = "double",
             definition = NumberDefinition(type = Float64)
         )
 
         val dateTime = add(
-            index = 4, name = "dateTime",
+            index = 5, name = "dateTime",
             definition = DateTimeDefinition()
         )
 
         val bool = add(
-            index = 5, name = "bool",
+            index = 6, name = "bool",
             definition = BooleanDefinition(
                 final = true
             )
         )
 
         val enum = add(
-            index = 6, name = "enum",
+            index = 7, name = "enum",
             definition = EnumDefinition(
                 enum = Option,
-                default = Option.V0,
+                default = Option.V1,
                 final = true
             )
         )
 
         val list = add(
-            index = 7, name = "list",
+            index = 8, name = "list",
             definition = ListDefinition(
                 required = false,
                 valueDefinition = NumberDefinition(
@@ -99,7 +99,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val set = add(
-            index = 8, name = "set",
+            index = 9, name = "set",
             definition = SetDefinition(
                 required = false,
                 valueDefinition = DateDefinition()
@@ -107,7 +107,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val map = add(
-            index = 9, name = "map",
+            index = 10, name = "map",
             definition = MapDefinition(
                 required = false,
                 keyDefinition = TimeDefinition(),
@@ -116,7 +116,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val valueObject = add(
-            index = 10, name = "valueObject",
+            index = 11, name = "valueObject",
             definition = ValueModelDefinition(
                 required = false,
                 dataModel = TestValueObject
@@ -124,7 +124,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val embeddedValues = add(
-            index = 11, name = "embeddedValues",
+            index = 12, name = "embeddedValues",
             definition = EmbeddedValuesDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykModel }
@@ -132,14 +132,14 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val multi = add(
-            index = 12, name = "multi",
+            index = 13, name = "multi",
             definition = MultiTypeDefinition<Option, IsPropertyContext>(
                 required = false,
                 typeEnum = Option,
                 definitionMap = mapOf(
-                    Option.V0 to StringDefinition(),
-                    Option.V1 to NumberDefinition(type = SInt32),
-                    Option.V2 to EmbeddedValuesDefinition(
+                    Option.V1 to StringDefinition(),
+                    Option.V2 to NumberDefinition(type = SInt32),
+                    Option.V3 to EmbeddedValuesDefinition(
                         dataModel = { EmbeddedMarykModel }
                     )
                 )
@@ -147,7 +147,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val reference = add(
-            index = 13, name = "reference",
+            index = 14, name = "reference",
             definition = ReferenceDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
@@ -155,7 +155,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         )
 
         val listOfString = add(
-            index = 14, name = "listOfString",
+            index = 15, name = "listOfString",
             definition = ListDefinition(
                 required = false,
                 valueDefinition = StringDefinition()
@@ -164,7 +164,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
 
         @Suppress("unused")
         val selfReference = add(
-            index = 15, name = "selfReference",
+            index = 16, name = "selfReference",
             definition = ReferenceDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
@@ -179,7 +179,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         double: Double,
         dateTime: DateTime,
         bool: Boolean? = null,
-        enum: Option = Option.V0,
+        enum: Option = Option.V1,
         list: List<Int>? = null,
         set: Set<Date>? = null,
         map: Map<Time, String>? = null,

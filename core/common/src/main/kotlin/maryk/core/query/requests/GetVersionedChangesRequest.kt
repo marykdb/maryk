@@ -63,21 +63,21 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
                 IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
                 IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
-                IsChangesRequest.addFromVersion(7, this, GetVersionedChangesRequest<*>::fromVersion)
-                IsVersionedChangesRequest.addMaxVersions(8, this, GetVersionedChangesRequest<*>::maxVersions)
+                IsChangesRequest.addFromVersion(8, this, GetVersionedChangesRequest<*>::fromVersion)
+                IsVersionedChangesRequest.addMaxVersions(9, this, GetVersionedChangesRequest<*>::maxVersions)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<GetVersionedChangesRequest<*>>) = GetVersionedChangesRequest(
-            dataModel = map(0),
-            keys = map(1),
-            select = map(2),
-            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
-            order = map(4),
-            toVersion = map(5),
-            filterSoftDeleted = map(6),
-            fromVersion = map(7),
-            maxVersions = map(8)
+            dataModel = map(1),
+            keys = map(2),
+            select = map(3),
+            filter = map<TypedValue<FilterType, IsFilter>?>(4)?.value,
+            order = map(5),
+            toVersion = map(6),
+            filterSoftDeleted = map(7),
+            fromVersion = map(8),
+            maxVersions = map(9)
         )
     }
 }

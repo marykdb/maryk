@@ -27,10 +27,11 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
     override val toSerializable: ((TO?, CX?) -> T?)? = null,
     override val fromSerializable: ((T?) -> TO?)? = null
 ) :
+    AbstractPropertyDefinitionWrapper(index, name),
     IsSerializableFixedBytesEncodable<T, CX> by definition,
     IsPropertyDefinitionWrapper<T, TO, CX, DO>,
     IsValuePropertyDefinitionWrapper<T, TO, CX, DO>,
-    FixedBytesProperty<T>()
+    FixedBytesProperty<T>
 {
     override val graphType = PropRefGraphType.PropRef
     override val keyPartType = KeyPartType.Reference

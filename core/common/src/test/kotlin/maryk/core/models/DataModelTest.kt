@@ -51,11 +51,11 @@ private val testExtendedObject = TestMarykModel(
     ),
     valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
     embeddedValues = EmbeddedMarykModel("test"),
-    multi = TypedValue(Option.V2, EmbeddedMarykModel("subInMulti!")),
+    multi = TypedValue(Option.V3, EmbeddedMarykModel("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
 
-private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V0\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedValues\":{\"value\":\"test\"},\"multi\":[\"V2\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
+private const val JSON = "{\"string\":\"hay\",\"int\":4,\"uint\":32,\"double\":\"3.555\",\"dateTime\":\"2017-12-04T12:13\",\"bool\":true,\"enum\":\"V1\",\"list\":[34,2352,3423,766],\"set\":[\"2017-12-05\",\"2016-03-02\",\"1981-12-05\"],\"map\":{\"12:55\":\"yes\",\"10:03\":\"ahum\"},\"valueObject\":{\"int\":6,\"dateTime\":\"2017-04-01T12:55\",\"bool\":true},\"embeddedValues\":{\"value\":\"test\"},\"multi\":[\"V3\",{\"value\":\"subInMulti!\"}],\"listOfString\":[\"test1\",\"another test\",\"\uD83E\uDD17\"]}"
 
 // Test if unknown values will be skipped
 private const val PRETTY_JSON_WITH_SKIP = """{
@@ -65,7 +65,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"double": "3.555",
 	"bool": true,
 	"dateTime": "2017-12-04T12:13",
-	"enum": "V0",
+	"enum": "V1",
 	"list": [34, 2352, 3423, 766],
 	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
 	"map": {
@@ -81,7 +81,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 	"embeddedValues": {
 		"value": "test"
 	},
-	"multi": ["V2", {
+	"multi": ["V3", {
 		"value": "subInMulti!"
 	}],
 	"listOfString": ["test1", "another test", "🤗"]
@@ -153,12 +153,12 @@ internal class DataModelTest {
 
     @Test
     fun get_property_definition_by_index() {
-        TestMarykModel.properties[0] shouldBe TestMarykModel.Properties.string
-        TestMarykModel.properties[1] shouldBe TestMarykModel.Properties.int
-        TestMarykModel.properties[2] shouldBe TestMarykModel.Properties.uint
-        TestMarykModel.properties[3] shouldBe TestMarykModel.Properties.double
-        TestMarykModel.properties[4] shouldBe TestMarykModel.Properties.dateTime
-        TestMarykModel.properties[5] shouldBe TestMarykModel.Properties.bool
+        TestMarykModel.properties[1] shouldBe TestMarykModel.Properties.string
+        TestMarykModel.properties[2] shouldBe TestMarykModel.Properties.int
+        TestMarykModel.properties[3] shouldBe TestMarykModel.Properties.uint
+        TestMarykModel.properties[4] shouldBe TestMarykModel.Properties.double
+        TestMarykModel.properties[5] shouldBe TestMarykModel.Properties.dateTime
+        TestMarykModel.properties[6] shouldBe TestMarykModel.Properties.bool
     }
 
     @Test
@@ -190,7 +190,7 @@ internal class DataModelTest {
         	"double": "3.555",
         	"dateTime": "2017-12-04T12:13",
         	"bool": true,
-        	"enum": "V0",
+        	"enum": "V1",
         	"list": [34, 2352, 3423, 766],
         	"set": ["2017-12-05", "2016-03-02", "1981-12-05"],
         	"map": {
@@ -205,7 +205,7 @@ internal class DataModelTest {
         	"embeddedValues": {
         		"value": "test"
         	},
-        	"multi": ["V2", {
+        	"multi": ["V3", {
         		"value": "subInMulti!"
         	}],
         	"listOfString": ["test1", "another test", "🤗"]
@@ -229,7 +229,7 @@ internal class DataModelTest {
         double: 3.555
         dateTime: '2017-12-04T12:13'
         bool: true
-        enum: V0
+        enum: V1
         list: [34, 2352, 3423, 766]
         set: [2017-12-05, 2016-03-02, 1981-12-05]
         map:
@@ -241,7 +241,7 @@ internal class DataModelTest {
           bool: true
         embeddedValues:
           value: test
-        multi: !V2
+        multi: !V3
           value: subInMulti!
         listOfString: [test1, another test, 🤗]
 
@@ -261,7 +261,7 @@ internal class DataModelTest {
                 double with 3.555,
                 dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
                 bool with true,
-                enum with Option.V2,
+                enum with Option.V3,
                 reference with TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
             )
         }
@@ -272,12 +272,12 @@ internal class DataModelTest {
 
         TestMarykModel.writeProtoBuf(map, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501"
+        bc.bytes!!.toHex() shouldBe "0a036861791008182021400c70a3d70a3d7228ccf794d105300138037209010501050105010501"
     }
 
     @Test
     fun convert_from_ProtoBuf_bytes() {
-        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
+        val bytes = initByteArrayByHex("0a036861791008182021400c70a3d70a3d7228ccf794d105300138027209010501050105010501")
         var index = 0
 
         val map = TestMarykModel.readProtoBuf(bytes.size, {

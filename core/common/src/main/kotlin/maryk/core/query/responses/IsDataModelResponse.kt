@@ -27,7 +27,7 @@ interface IsDataModelResponse<out DM: IsRootDataModel<*>>{
 
     companion object {
         internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) {
-            definitions.add(0, "dataModel",
+            definitions.add(1, "dataModel",
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, DataModelPropertyContext>(
                     contextualResolver = { context, name ->
                         context?.let {
@@ -50,7 +50,7 @@ interface IsDataModelResponse<out DM: IsRootDataModel<*>>{
             )
         }
         internal fun <DM: Any> addStatuses(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> List<TypedValue<StatusType, *>>?){
-            definitions.add(1, "statuses", listOfStatuses, getter)
+            definitions.add(2, "statuses", listOfStatuses, getter)
         }
     }
 }

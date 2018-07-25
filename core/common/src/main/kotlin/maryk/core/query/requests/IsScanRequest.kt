@@ -17,7 +17,7 @@ interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
 
     companion object {
         internal fun <DO: IsScanRequest<*>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) {
-            definitions.add(1, "startKey", ContextualReferenceDefinition<DataModelPropertyContext>(
+            definitions.add(2, "startKey", ContextualReferenceDefinition<DataModelPropertyContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
@@ -25,7 +25,7 @@ interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
         }
 
         internal fun <DO: Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
-            definitions.add(7, "limit", NumberDefinition(
+            definitions.add(8, "limit", NumberDefinition(
                 default = 100.toUInt32(),
                 type = UInt32
             ), getter)

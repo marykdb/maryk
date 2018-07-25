@@ -14,7 +14,7 @@ interface IsGetRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
 
     companion object {
         internal fun <REQ: IsGetRequest<*>> addKeys(definitions: ObjectPropertyDefinitions<REQ>, getter: (REQ) -> List<Key<*>>?) {
-            definitions.add(1, "keys", ListDefinition(
+            definitions.add(2, "keys", ListDefinition(
                 valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
                         it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()

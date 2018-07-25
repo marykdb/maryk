@@ -20,10 +20,10 @@ sealed class KeyPartType(
     override fun compareTo(other: KeyPartType) =
         this.index.compareTo(other.index)
 
-    object UUID: KeyPartType("UUID", 0), ValueType.IsNullValueType
-    object Reference: KeyPartType("Ref", 1), ValueType<String>
-    object TypeId: KeyPartType("TypeId", 2), ValueType<String>
-    object Reversed: KeyPartType("Reversed", 3), ValueType<String>
+    object UUID: KeyPartType("UUID", 1), ValueType.IsNullValueType
+    object Reference: KeyPartType("Ref", 2), ValueType<String>
+    object TypeId: KeyPartType("TypeId", 3), ValueType<String>
+    object Reversed: KeyPartType("Reversed", 4), ValueType<String>
 
     companion object: IndexedEnumDefinition<KeyPartType>(
         "KeyPartType", { keyPartValues }

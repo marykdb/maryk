@@ -17,7 +17,7 @@ data class MapChange internal constructor(
     constructor(vararg mapValueChange: MapValueChanges<*, *>): this(mapValueChange.toList())
 
     internal object Properties : ObjectPropertyDefinitions<MapChange>() {
-        val mapValueChanges = add(0, "mapValueChanges",
+        val mapValueChanges = add(1, "mapValueChanges",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { MapValueChanges }
@@ -33,7 +33,7 @@ data class MapChange internal constructor(
         referenceProperty = MapValueChanges.Properties.reference
     ) {
         override fun invoke(map: ObjectValues<MapChange, MapChange.Properties>) = MapChange(
-            mapValueChanges = map(0)
+            mapValueChanges = map(1)
         )
 
         override fun writeJson(obj: MapChange, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

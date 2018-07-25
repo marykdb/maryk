@@ -66,22 +66,22 @@ data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal construc
                 IsFetchRequest.addToVersion(this, ScanVersionedChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, ScanVersionedChangesRequest<*>::filterSoftDeleted)
                 IsScanRequest.addLimit(this, ScanVersionedChangesRequest<*>::limit)
-                IsChangesRequest.addFromVersion(8, this, ScanVersionedChangesRequest<*>::fromVersion)
-                IsVersionedChangesRequest.addMaxVersions(9, this, ScanVersionedChangesRequest<*>::maxVersions)
+                IsChangesRequest.addFromVersion(9, this, ScanVersionedChangesRequest<*>::fromVersion)
+                IsVersionedChangesRequest.addMaxVersions(10, this, ScanVersionedChangesRequest<*>::maxVersions)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ScanVersionedChangesRequest<*>>) = ScanVersionedChangesRequest(
-            dataModel = map(0),
-            startKey = map(1),
-            select = map(2),
-            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
-            order = map(4),
-            toVersion = map(5),
-            filterSoftDeleted = map(6),
-            limit = map(7),
-            fromVersion = map(8),
-            maxVersions = map(9)
+            dataModel = map(1),
+            startKey = map(2),
+            select = map(3),
+            filter = map<TypedValue<FilterType, IsFilter>?>(4)?.value,
+            order = map(5),
+            toVersion = map(6),
+            filterSoftDeleted = map(7),
+            limit = map(8),
+            fromVersion = map(9),
+            maxVersions = map(10)
         )
     }
 }

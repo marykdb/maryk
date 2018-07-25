@@ -24,8 +24,8 @@ data class InvalidValueException internal constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<InvalidValueException>) = InvalidValueException(
-            reference = map(0),
-            value = map(1)
+            reference = map(1),
+            value = map(2)
         )
     }
 }

@@ -21,7 +21,7 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
             ReferenceValueRangePair<*>::reference
         )
         val range = add(
-            index = 1, name = "range",
+            index = 2, name = "range",
             definition = EmbeddedObjectDefinition(
                 dataModel = { ValueRange }
             ),
@@ -33,8 +33,8 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ReferenceValueRangePair<*>, Properties>) = ReferenceValueRangePair<Any>(
-            reference = map(0),
-            range = map(1)
+            reference = map(1),
+            range = map(2)
         )
     }
 }

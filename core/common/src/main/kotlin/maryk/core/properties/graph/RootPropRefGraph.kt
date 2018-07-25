@@ -24,7 +24,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
     constructor(vararg property: IsPropRefGraphable<DM>) : this(property.toList())
 
     internal object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
-        val properties = this.addProperties(0, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
+        val properties = this.addProperties(1, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
             context?.dataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
     }
@@ -36,7 +36,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
         }
     ) {
         override fun invoke(map: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<IsDataModel<*>>(
-            properties = map(0)
+            properties = map(1)
         )
 
         override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {

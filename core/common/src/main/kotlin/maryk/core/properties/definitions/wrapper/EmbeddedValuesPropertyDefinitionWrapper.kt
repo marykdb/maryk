@@ -31,6 +31,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
     override val toSerializable: ((Values<DM, P>?, CX?) -> Values<DM, P>?)? = null,
     override val fromSerializable: ((Values<DM, P>?) -> Values<DM, P>?)? = null
 ) :
+    AbstractPropertyDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, P, CX> by definition,
     IsPropertyDefinitionWrapper<Values<DM, P>, Values<DM, P>, CX, Any>
 {

@@ -20,6 +20,7 @@ data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: I
     override val toSerializable: ((TO?, CX?) -> T?)? = null,
     override val fromSerializable: ((T?) -> TO?)? = null
 ) :
+    AbstractPropertyDefinitionWrapper(index, name),
     IsSerializableFlexBytesEncodable<T, CX> by definition,
     IsValuePropertyDefinitionWrapper<T, TO, CX, DO>
 {

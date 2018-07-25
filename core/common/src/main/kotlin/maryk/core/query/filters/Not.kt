@@ -21,7 +21,7 @@ data class Not(
     override val filterType = FilterType.Not
 
     internal object Properties : ObjectPropertyDefinitions<Not>() {
-        val filters = Properties.add(0, "filters",
+        val filters = Properties.add(1, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = FilterType,
@@ -38,7 +38,7 @@ data class Not(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Not, Properties>) = Not(
-            filters = map<List<IsFilter>>(0)
+            filters = map<List<IsFilter>>(1)
         )
 
         override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

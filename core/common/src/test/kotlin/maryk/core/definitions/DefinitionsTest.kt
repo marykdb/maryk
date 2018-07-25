@@ -41,13 +41,13 @@ class DefinitionsTest {
         - !EnumDefinition
           name: Option
           values:
-            0: V0
             1: V1
             2: V2
+            3: V3
         - !ValueModel
           name: TestValueObject
           properties:
-            ? 0: int
+            ? 1: int
             : !Number
               indexed: false
               required: true
@@ -56,7 +56,7 @@ class DefinitionsTest {
               type: SInt32
               maxValue: 6
               random: false
-            ? 1: dateTime
+            ? 2: dateTime
             : !DateTime
               indexed: false
               required: true
@@ -64,7 +64,7 @@ class DefinitionsTest {
               unique: false
               precision: SECONDS
               fillWithNow: false
-            ? 2: bool
+            ? 3: bool
             : !Boolean
               indexed: false
               required: true
@@ -74,7 +74,7 @@ class DefinitionsTest {
           key:
           - !UUID
           properties:
-            ? 0: value
+            ? 1: value
             : !String
               indexed: false
               required: true
@@ -85,19 +85,19 @@ class DefinitionsTest {
         - !Model
           name: EmbeddedMarykModel
           properties:
-            ? 0: value
+            ? 1: value
             : !String
               indexed: false
               required: true
               final: false
               unique: false
-            ? 1: model
+            ? 2: model
             : !Embed
               indexed: false
               required: false
               final: false
               dataModel: EmbeddedMarykModel
-            ? 2: marykModel
+            ? 3: marykModel
             : !Embed
               indexed: false
               required: false
@@ -110,7 +110,7 @@ class DefinitionsTest {
           - !Ref bool
           - !Ref enum
           properties:
-            ? 0: string
+            ? 1: string
             : !String
               indexed: false
               required: true
@@ -118,7 +118,7 @@ class DefinitionsTest {
               unique: false
               default: haha
               regEx: ha.*
-            ? 1: int
+            ? 2: int
             : !Number
               indexed: false
               required: true
@@ -127,7 +127,7 @@ class DefinitionsTest {
               type: SInt32
               maxValue: 6
               random: false
-            ? 2: uint
+            ? 3: uint
             : !Number
               indexed: false
               required: true
@@ -135,7 +135,7 @@ class DefinitionsTest {
               unique: false
               type: UInt32
               random: false
-            ? 3: double
+            ? 4: double
             : !Number
               indexed: false
               required: true
@@ -143,7 +143,7 @@ class DefinitionsTest {
               unique: false
               type: Float64
               random: false
-            ? 4: dateTime
+            ? 5: dateTime
             : !DateTime
               indexed: false
               required: true
@@ -151,20 +151,20 @@ class DefinitionsTest {
               unique: false
               precision: SECONDS
               fillWithNow: false
-            ? 5: bool
+            ? 6: bool
             : !Boolean
               indexed: false
               required: true
               final: true
-            ? 6: enum
+            ? 7: enum
             : !Enum
               indexed: false
               required: true
               final: true
               unique: false
               enum: Option
-              default: V0
-            ? 7: list
+              default: V1
+            ? 8: list
             : !List
               indexed: false
               required: false
@@ -176,7 +176,7 @@ class DefinitionsTest {
                 unique: false
                 type: SInt32
                 random: false
-            ? 8: set
+            ? 9: set
             : !Set
               indexed: false
               required: false
@@ -187,7 +187,7 @@ class DefinitionsTest {
                 final: false
                 unique: false
                 fillWithNow: false
-            ? 9: map
+            ? 10: map
             : !Map
               indexed: false
               required: false
@@ -204,33 +204,33 @@ class DefinitionsTest {
                 required: true
                 final: false
                 unique: false
-            ? 10: valueObject
+            ? 11: valueObject
             : !Value
               indexed: false
               required: false
               final: false
               unique: false
               dataModel: TestValueObject
-            ? 11: embeddedValues
+            ? 12: embeddedValues
             : !Embed
               indexed: false
               required: false
               final: false
               dataModel: EmbeddedMarykModel
-            ? 12: multi
+            ? 13: multi
             : !MultiType
               indexed: false
               required: false
               final: false
               typeEnum: Option
               definitionMap:
-                ? 0: V0
+                ? 1: V1
                 : !String
                   indexed: false
                   required: true
                   final: false
                   unique: false
-                ? 1: V1
+                ? 2: V2
                 : !Number
                   indexed: false
                   required: true
@@ -238,20 +238,20 @@ class DefinitionsTest {
                   unique: false
                   type: SInt32
                   random: false
-                ? 2: V2
+                ? 3: V3
                 : !Embed
                   indexed: false
                   required: true
                   final: false
                   dataModel: EmbeddedMarykModel
-            ? 13: reference
+            ? 14: reference
             : !Reference
               indexed: false
               required: false
               final: false
               unique: false
               dataModel: TestMarykModel
-            ? 14: listOfString
+            ? 15: listOfString
             : !List
               indexed: false
               required: false
@@ -261,7 +261,7 @@ class DefinitionsTest {
                 required: true
                 final: false
                 unique: false
-            ? 15: selfReference
+            ? 16: selfReference
             : !Reference
               indexed: false
               required: false

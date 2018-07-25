@@ -83,26 +83,26 @@ data class StringDefinition(
                 IsPropertyDefinition.addRequired(this, StringDefinition::required)
                 IsPropertyDefinition.addFinal(this, StringDefinition::final)
                 IsComparableDefinition.addUnique(this, StringDefinition::unique)
-                add(4, "minValue", StringDefinition(), StringDefinition::minValue)
-                add(5, "maxValue", StringDefinition(), StringDefinition::maxValue)
-                add(6, "default", StringDefinition(), StringDefinition::default)
-                HasSizeDefinition.addMinSize(7, this, StringDefinition::minSize)
-                HasSizeDefinition.addMaxSize(8, this, StringDefinition::maxSize)
-                add(9, "regEx", StringDefinition(), StringDefinition::regEx)
+                add(5, "minValue", StringDefinition(), StringDefinition::minValue)
+                add(6, "maxValue", StringDefinition(), StringDefinition::maxValue)
+                add(7, "default", StringDefinition(), StringDefinition::default)
+                HasSizeDefinition.addMinSize(8, this, StringDefinition::minSize)
+                HasSizeDefinition.addMaxSize(9, this, StringDefinition::maxSize)
+                add(10, "regEx", StringDefinition(), StringDefinition::regEx)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<StringDefinition>) = StringDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            unique = map(3),
-            minValue = map(4),
-            maxValue = map(5),
-            default = map(6),
-            minSize = map(7),
-            maxSize = map(8),
-            regEx = map(9)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
+            minValue = map(5),
+            maxValue = map(6),
+            default = map(7),
+            minSize = map(8),
+            maxSize = map(9),
+            regEx = map(10)
         )
     }
 }

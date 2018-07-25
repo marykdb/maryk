@@ -17,7 +17,7 @@ data class VersionedChangesResponse<out DM: IsRootDataModel<*>>(
         properties = object : ObjectPropertyDefinitions<VersionedChangesResponse<*>>() {
             init {
                 IsDataModelResponse.addDataModel(this, VersionedChangesResponse<*>::dataModel)
-                add(1, "changes", ListDefinition(
+                add(2, "changes", ListDefinition(
                     valueDefinition = EmbeddedObjectDefinition(
                         dataModel = { DataObjectVersionedChange }
                     )
@@ -26,8 +26,8 @@ data class VersionedChangesResponse<out DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<VersionedChangesResponse<*>>) = VersionedChangesResponse(
-            dataModel = map(0),
-            changes = map(1)
+            dataModel = map(1),
+            changes = map(2)
         )
     }
 }

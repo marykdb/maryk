@@ -45,9 +45,9 @@ class IndexedEnumTest {
         ) shouldBe """
         name: Option
         values:
-          0: V0
           1: V1
           2: V2
+          3: V3
 
         """.trimIndent()
     }

@@ -17,7 +17,7 @@ data class SetChange internal constructor(
     constructor(vararg setValueChange: SetValueChanges<*>): this(setValueChange.toList())
 
     internal object Properties : ObjectPropertyDefinitions<SetChange>() {
-        val setValueChanges = add(0, "setValueChanges",
+        val setValueChanges = add(1, "setValueChanges",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { SetValueChanges }
@@ -33,7 +33,7 @@ data class SetChange internal constructor(
         referenceProperty = SetValueChanges.Properties.reference
     ) {
         override fun invoke(map: ObjectValues<SetChange, SetChange.Properties>) = SetChange(
-            setValueChanges = map(0)
+            setValueChanges = map(1)
         )
 
         override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

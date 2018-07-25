@@ -33,13 +33,13 @@ data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
     internal companion object: SimpleQueryDataModel<DataObjectChange<*>>(
         properties = object : ObjectPropertyDefinitions<DataObjectChange<*>>() {
             init {
-                add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+                add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
                         it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }
                 ), DataObjectChange<*>::key)
 
-                add(1, "changes",
+                add(2, "changes",
                     ListDefinition(
                         default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
@@ -52,16 +52,16 @@ data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
                     fromSerializable = { it.value as IsChange }
                 )
 
-                add(2, "lastVersion", NumberDefinition(
+                add(3, "lastVersion", NumberDefinition(
                     type = UInt64
                 ), DataObjectChange<*>::lastVersion)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<DataObjectChange<*>>) = DataObjectChange(
-            key = map(0),
-            changes = map(1),
-            lastVersion = map(2)
+            key = map(1),
+            changes = map(2),
+            lastVersion = map(3)
         )
     }
 }

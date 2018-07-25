@@ -2,8 +2,8 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
@@ -27,16 +27,16 @@ data class InvalidSizeException internal constructor(
             init {
                 ValidationException.addReference(this, InvalidSizeException::reference)
                 ValidationException.addValue(this, InvalidSizeException::value)
-                add(2, "min", NumberDefinition(type = SInt32, required = false), InvalidSizeException::min)
-                add(3, "max", NumberDefinition(type = SInt32, required = false), InvalidSizeException::max)
+                add(3, "min", NumberDefinition(type = SInt32, required = false), InvalidSizeException::min)
+                add(4, "max", NumberDefinition(type = SInt32, required = false), InvalidSizeException::max)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<InvalidSizeException>) = InvalidSizeException(
-            reference = map(0),
-            value = map(1),
-            min = map(2),
-            max = map(3)
+            reference = map(1),
+            value = map(2),
+            min = map(3),
+            max = map(4)
         )
     }
 }

@@ -28,8 +28,8 @@ internal class MultiTypeDefinitionTest {
     val def = MultiTypeDefinition<Option, IsPropertyContext>(
         typeEnum = Option,
         definitionMap = mapOf(
-            Option.V0 to stringDef,
-            Option.V1 to intDef
+            Option.V1 to stringDef,
+            Option.V2 to intDef
         )
     )
 
@@ -39,40 +39,40 @@ internal class MultiTypeDefinitionTest {
         required = false,
         typeEnum = Option,
         definitionMap = mapOf(
-            Option.V0 to stringDef,
-            Option.V1 to intDef
+            Option.V1 to stringDef,
+            Option.V2 to intDef
         ),
-        default = TypedValue(Option.V0, "test")
+        default = TypedValue(Option.V1, "test")
     )
 
     private val multisToTest = arrayOf(
-        TypedValue(Option.V0, "#test"),
-        TypedValue(Option.V1, 400)
+        TypedValue(Option.V1, "#test"),
+        TypedValue(Option.V2, 400)
     )
 
     @Test
     fun get_properties() {
-        def.definitionMap[Option.V0] shouldBe stringDef
-        def.definitionMap[Option.V1] shouldBe intDef
+        def.definitionMap[Option.V1] shouldBe stringDef
+        def.definitionMap[Option.V2] shouldBe intDef
     }
 
     @Test
     fun validate_content() {
-        def.validateWithRef(newValue = TypedValue(Option.V0, "#test"))
-        def.validateWithRef(newValue = TypedValue(Option.V1, 400))
+        def.validateWithRef(newValue = TypedValue(Option.V1, "#test"))
+        def.validateWithRef(newValue = TypedValue(Option.V2, 400))
 
         shouldThrow<OutOfRangeException> {
-            def.validateWithRef(newValue = TypedValue(Option.V1, 3000))
+            def.validateWithRef(newValue = TypedValue(Option.V2, 3000))
         }
         shouldThrow<InvalidValueException> {
-            def.validateWithRef(newValue = TypedValue(Option.V0, "WRONG"))
+            def.validateWithRef(newValue = TypedValue(Option.V1, "WRONG"))
         }
     }
 
     @Test
     fun invalid_field_should_throw_exception() {
         shouldThrow<DefNotFoundException> {
-            def.validateWithRef(newValue = TypedValue(Option.V2, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(Option.V3, "NonExistingField"))
         }
     }
 
@@ -103,14 +103,14 @@ internal class MultiTypeDefinitionTest {
         final: true
         typeEnum: Option
         definitionMap:
-          ? 0: V0
+          ? 1: V1
           : !String
             indexed: false
             required: true
             final: false
             unique: false
             regEx: '#.*'
-          ? 1: V1
+          ? 2: V2
           : !Number
             indexed: false
             required: true
@@ -119,7 +119,7 @@ internal class MultiTypeDefinitionTest {
             type: SInt32
             maxValue: 1000
             random: false
-        default: !V0 test
+        default: !V1 test
 
         """.trimIndent()
     }

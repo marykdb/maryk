@@ -24,7 +24,7 @@ data class Change internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Change, Properties>) = Change(
-            referenceValuePairs = map(0)
+            referenceValuePairs = map(1)
         )
 
         override fun writeJson(obj: Change, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

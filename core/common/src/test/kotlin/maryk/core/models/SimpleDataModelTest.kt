@@ -88,12 +88,12 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.writeProtoBuf(map, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0203686179"
+        bc.bytes!!.toHex() shouldBe "0a03686179"
     }
 
     @Test
     fun convert_ProtoBuf_bytes_to_map() {
-        val bytes = initByteArrayByHex("02036861790808102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
+        val bytes = initByteArrayByHex("0a036861790008102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
         val map = SimpleMarykModel.readProtoBuf(bytes.size, {
@@ -114,6 +114,8 @@ internal class SimpleDataModelTest {
         )
 
         SimpleMarykModel.writeProtoBuf(testValues, cache, bc::write)
+
+        bc.bytes!!.toHex() shouldBe "0a0468616173"
 
         SimpleMarykModel.readProtoBuf(bc.size, bc::read) shouldBe testValues
     }

@@ -7,13 +7,13 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 enum class ChangeType(
     override val index: Int
 ): IndexedEnum<ChangeType> {
-    Check(0),
-    Change(1),
-    Delete(2),
-    ObjectDelete(3),
-    ListChange(4),
-    SetChange(5),
-    MapChange(6);
+    Check(1),
+    Change(2),
+    Delete(3),
+    ObjectDelete(4),
+    ListChange(5),
+    SetChange(6),
+    MapChange(7);
 
     companion object: IndexedEnumDefinition<ChangeType>(
         "ChangeType", ChangeType::values

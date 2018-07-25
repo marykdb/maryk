@@ -24,7 +24,7 @@ data class ValidationFail<DM: IsRootDataModel<*>>(
     internal companion object: SimpleQueryDataModel<ValidationFail<*>>(
         properties = object : ObjectPropertyDefinitions<ValidationFail<*>>() {
             init {
-                add(0, "exceptions",
+                add(1, "exceptions",
                     ListDefinition(
                         default = emptyList(),
                         valueDefinition = MultiTypeDefinition(
@@ -40,7 +40,7 @@ data class ValidationFail<DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ValidationFail<*>>) = ValidationFail<IsRootDataModel<IsPropertyDefinitions>>(
-            exceptions = map(0)
+            exceptions = map(1)
         )
     }
 }

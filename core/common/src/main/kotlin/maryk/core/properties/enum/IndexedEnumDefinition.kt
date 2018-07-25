@@ -28,7 +28,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
     override val primitiveType = PrimitiveType.EnumDefinition
 
     internal object Properties : ObjectPropertyDefinitions<IndexedEnumDefinition<IndexedEnum<Any>>>() {
-        val name = add(0, "name",
+        val name = add(1, "name",
             ContextCaptureDefinition(
                 definition = StringDefinition(),
                 capturer = { context: EnumNameContext?, value ->
@@ -41,7 +41,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         )
 
         @Suppress("UNCHECKED_CAST")
-        val values = add(1, "values",
+        val values = add(2, "values",
             MapDefinition(
                 keyDefinition = NumberDefinition(
                     type = SInt32
@@ -75,10 +75,10 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             fromSerializable = {
                 {
                     @Suppress("UNCHECKED_CAST")
-                    it?.map {
+                    it?.map { entry ->
                         IndexedEnum(
-                            it.key,
-                            it.value
+                            entry.key,
+                            entry.value
                         )
                     }?.toTypedArray() as Array<IndexedEnum<*>>
                 }
@@ -93,8 +93,8 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
     ) {
         override fun invoke(map: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
-                name = map(0),
-                optionalValues = map(1)
+                name = map(1),
+                optionalValues = map(2)
             )
 
         override fun writeJson(obj: IndexedEnumDefinition<IndexedEnum<Any>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {

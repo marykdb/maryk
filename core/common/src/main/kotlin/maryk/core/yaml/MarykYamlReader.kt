@@ -24,7 +24,7 @@ fun MarykYamlModelReader(
 
 /** Creates a Yaml reader preset to read Maryk */
 @Suppress("FunctionName")
-fun MarykYamlReader(
+fun MarykYamlReaders(
     reader: () -> Char
 ) : IsJsonLikeReader =
     YamlReader(

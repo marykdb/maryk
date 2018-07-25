@@ -27,7 +27,7 @@ import maryk.core.query.DataModelContext
  */
 data class TypeId<E: IndexedEnum<E>>(
     val reference: ValuePropertyReference<TypedValue<E, *>, TypedValue<E, *>, IsPropertyDefinitionWrapper<TypedValue<E, *>, TypedValue<E, *>, IsPropertyContext, *>, *>
-) : FixedBytesProperty<Int>() {
+) : FixedBytesProperty<Int> {
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
 
@@ -57,7 +57,7 @@ data class TypeId<E: IndexedEnum<E>>(
     internal object Model : DefinitionDataModel<TypeId<*>>(
         properties = object : ObjectPropertyDefinitions<TypeId<*>>() {
             init {
-                add(0, "multiTypeDefinition",
+                add(1, "multiTypeDefinition",
                     ContextualPropertyReferenceDefinition<DataModelContext>(
                         contextualResolver = {
                             it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
@@ -69,7 +69,7 @@ data class TypeId<E: IndexedEnum<E>>(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<TypeId<*>>) = TypeId<IndexedEnum<Any>>(
-            reference = map(0)
+            reference = map(1)
         )
     }
 }

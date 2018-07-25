@@ -23,7 +23,7 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
             this,
             ReferenceValueSetPair<*>::reference
         )
-        val values = add(1, "values", SetDefinition(
+        val values = add(2, "values", SetDefinition(
             valueDefinition = ContextualValueDefinition(
                 contextualResolver = { context: DataModelPropertyContext? ->
                     context?.reference?.let {
@@ -39,8 +39,8 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair(
-            reference = map(0),
-            values = map(1)
+            reference = map(1),
+            values = map(2)
         )
     }
 }

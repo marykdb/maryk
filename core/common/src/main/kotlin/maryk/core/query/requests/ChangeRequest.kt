@@ -25,7 +25,7 @@ data class ChangeRequest<out DM: IsRootDataModel<*>> internal constructor(
         properties = object : ObjectPropertyDefinitions<ChangeRequest<*>>() {
             init {
                 IsObjectRequest.addDataModel(this, ChangeRequest<*>::dataModel)
-                add(1, "objectChanges",
+                add(2, "objectChanges",
                     ListDefinition(
                         valueDefinition = EmbeddedObjectDefinition(
                             dataModel = { DataObjectChange }
@@ -37,8 +37,8 @@ data class ChangeRequest<out DM: IsRootDataModel<*>> internal constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ChangeRequest<*>>) = ChangeRequest(
-            dataModel = map(0),
-            objectChanges = map(1)
+            dataModel = map(1),
+            objectChanges = map(2)
         )
     }
 }

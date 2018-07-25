@@ -25,7 +25,7 @@ data class ValueIn internal constructor(
     constructor(vararg referenceValuePair: ReferenceValueSetPair<*>): this(referenceValuePair.toList() as List<ReferenceValueSetPair<Any>>)
 
     internal object Properties : ObjectPropertyDefinitions<ValueIn>() {
-        val referenceValuePairs = add(0, "referenceValuePairs",
+        val referenceValuePairs = add(1, "referenceValuePairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = {
@@ -41,7 +41,7 @@ data class ValueIn internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ValueIn, Properties>) = ValueIn(
-            referenceValuePairs = map(0)
+            referenceValuePairs = map(1)
         )
 
         override fun writeJson(obj: ValueIn, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

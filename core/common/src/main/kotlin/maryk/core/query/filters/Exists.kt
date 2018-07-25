@@ -26,7 +26,7 @@ data class Exists internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Exists, Properties>) = Exists(
-            references = map(0)
+            references = map(1)
         )
 
         override fun writeJson(obj: Exists, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

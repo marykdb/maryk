@@ -25,6 +25,7 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
     override val toSerializable: ((TO?, CX?) -> Map<K, V>?)? = null,
     override val fromSerializable: ((Map<K, V>?) -> TO?)? = null
 ) :
+    AbstractPropertyDefinitionWrapper(index, name),
     IsMapDefinition<K, V, CX> by definition,
     IsPropertyDefinitionWrapper<Map<K,V>, TO, CX, DO>
 {

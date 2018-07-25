@@ -59,13 +59,13 @@ data class GetRequest<DM: IsRootDataModel<*>> internal constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<GetRequest<*>>) = GetRequest(
-            dataModel = map(0),
-            keys = map(1),
-            select = map(2),
-            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
-            order = map(4),
-            toVersion = map(5),
-            filterSoftDeleted = map(6)
+            dataModel = map(1),
+            keys = map(2),
+            select = map(3),
+            filter = map<TypedValue<FilterType, IsFilter>?>(4)?.value,
+            order = map(5),
+            toVersion = map(6),
+            filterSoftDeleted = map(7)
         )
     }
 }

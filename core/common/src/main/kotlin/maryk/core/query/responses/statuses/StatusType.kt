@@ -7,14 +7,14 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 enum class StatusType(
         override val index: Int
 ): IndexedEnum<StatusType> {
-    SUCCESS(0),
-    ADD_SUCCESS(1),
-    AUTH_FAIL(2),
-    REQUEST_FAIL(3),
-    SERVER_FAIL(4),
-    VALIDATION_FAIL(5),
-    ALREADY_EXISTS(6),
-    DOES_NOT_EXIST(7);
+    SUCCESS(1),
+    ADD_SUCCESS(2),
+    AUTH_FAIL(3),
+    REQUEST_FAIL(4),
+    SERVER_FAIL(5),
+    VALIDATION_FAIL(6),
+    ALREADY_EXISTS(7),
+    DOES_NOT_EXIST(8);
 
     companion object: IndexedEnumDefinition<StatusType>(
         "StatusType", StatusType::values

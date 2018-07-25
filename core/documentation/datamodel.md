@@ -23,11 +23,11 @@ contains methods to generate a key.
 ```yaml
 name: Person
 properties:
-  ? 0: firstName
+  ? 1: firstName
   : !String
-  ? 1: lastName
+  ? 2: lastName
   : !String
-  ? 2: dateOfBirth
+  ? 3: dateOfBirth
   : !Date
 ```
 
@@ -37,9 +37,9 @@ object Person : RootDataModel<Person, Person.Properties>(
     properties = Properties
 ){ 
     object Properties: PropertyDefinitions() {
-        val firstName = add(0, "firstname", StringDefinition(), Person::firstName)
-        val lastName = add(1, "lastName", StringDefinition(), Person::lastName)
-        val dateOfBirth = add(2, "dateOfBirth", DateDefinition(), Person::dateOfBirth)
+        val firstName = add(1, "firstname", StringDefinition(), Person::firstName)
+        val lastName = add(2, "lastName", StringDefinition(), Person::lastName)
+        val dateOfBirth = add(3, "dateOfBirth", DateDefinition(), Person::dateOfBirth)
     }
 
     operator fun invoke(
@@ -87,11 +87,11 @@ A generic DataModel extends from DataModel class. In Yaml you add ```embeddable 
 ```yaml
 name: Address
 properties:
-  ? 0: streetName
+  ? 1: streetName
   : !String
-  ? 1: city
+  ? 2: city
   : !String
-  ? 2: zipCode
+  ? 3: zipCode
   : !String
 ```
 
@@ -123,31 +123,31 @@ this would make them lose their fixed amount of bytes.
 ```yaml
 name: PersonRoleInPeriod
 properties:
-  ? 0: person
+  ? 1: person
   : !Reference
     dataModel: Person
-  ? 1: role
+  ? 2: role
   : !Enum
     dataModel: Role
-  ? 2: startDate
+  ? 3: startDate
   : !Date
-  ? 3: endDate:
+  ? 4: endDate:
   : !Date
 ```
  
 ```yaml
 // Role.enum.yml
 values:
-  Admin: 0
-  Moderator: 1
-  User: 2
+  Admin: 1
+  Moderator: 2
+  User: 3
 ```
  
 **Kotlin description** 
 
 ```kotlin
 enum class Role(override val index: Int): IndexedEnum<Option> {
-    Admin(0), Moderator(1), User(2)
+    Admin(1), Moderator(2), User(3)
 }
 
  
@@ -158,20 +158,20 @@ data class PersonRoleInPeriod(
     val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
     object Properties : ObjectProperties<PersonRoleInPeriod>() {
-        val person = add(0, "person", ReferenceDefinition(dataModel = Person), PersonRoleInPeriod::person)
-        val role = add(1, "role", EnumProperty(values = Role.values()), PersonRoleInPeriod::role)
-        val startDate = add(2, "startDate", DateDefinition(), PersonRoleInPeriod::startDate)
-        val endDate = add(3, "endDate". DateDefinition(), PersonRoleInPeriod::endDate)
+        val person = add(1, "person", ReferenceDefinition(dataModel = Person), PersonRoleInPeriod::person)
+        val role = add(2, "role", EnumProperty(values = Role.values()), PersonRoleInPeriod::role)
+        val startDate = add(3, "startDate", DateDefinition(), PersonRoleInPeriod::startDate)
+        val endDate = add(4, "endDate". DateDefinition(), PersonRoleInPeriod::endDate)
     }
 
     companion object: ValueDataModel<TestValueObject, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: Map<Int, Any>) = TestValueObject(
-            person = map(0),
-            role = map(1),
-            startDate = map(2),
-            endDate = map(3)
+            person = map(1),
+            role = map(2),
+            startDate = map(3),
+            endDate = map(4)
         )
     }
 }
@@ -202,17 +202,17 @@ object TimelineItem: RootDataModel<TimelineItem>(
     properties = Properties
 ) {
     object Properties: PropertyDefinitions() {
-        val dateOfPosting = add(0, "dateOfPosting", DateTimeDefinition(
+        val dateOfPosting = add(1, "dateOfPosting", DateTimeDefinition(
             final = true,
             precision = TimePrecision.SECONDS
         ))
         
-        val item = add(1, "item", MultiTypeDefinition(
+        val item = add(2, "item", MultiTypeDefinition(
             final = true,
             typeMap = mapOf(
-                0 to EmbeddedObjectDefinition(dataModel = Post),
-                1 to EmbeddedObjectDefinition(dataModel = Event),
-                2 to EmbeddedObjectDefinition(dataModel = Advertisement)
+                1 to EmbeddedObjectDefinition(dataModel = Post),
+                2 to EmbeddedObjectDefinition(dataModel = Event),
+                3 to EmbeddedObjectDefinition(dataModel = Advertisement)
             )
         ))
     }

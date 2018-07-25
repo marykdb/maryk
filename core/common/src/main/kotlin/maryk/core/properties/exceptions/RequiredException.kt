@@ -22,7 +22,7 @@ data class RequiredException internal constructor(
         }
     ) {
         override fun invoke(map: SimpleObjectValues<RequiredException>) = RequiredException(
-            reference = map(0)
+            reference = map(1)
         )
     }
 }

@@ -9,7 +9,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.protobuf.WriteCache
-import maryk.core.yaml.MarykYamlReader
+import maryk.core.yaml.MarykYamlReaders
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.test.shouldBe
@@ -119,7 +119,7 @@ fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsProp
     }
 
     val chars = output.iterator()
-    val reader = MarykYamlReader {
+    val reader = MarykYamlReaders {
         chars.nextChar().also {
             if (it == '\u0000') {
                 throw Throwable("0 char encountered")

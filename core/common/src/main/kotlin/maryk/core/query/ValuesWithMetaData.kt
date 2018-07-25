@@ -28,14 +28,14 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     internal companion object: SimpleQueryDataModel<ValuesWithMetaData<*, *>>(
         properties = object : ObjectPropertyDefinitions<ValuesWithMetaData<*, *>>() {
             init {
-                add(0, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+                add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
                         it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }
                 ), ValuesWithMetaData<*, *>::key)
 
                 @Suppress("UNCHECKED_CAST")
-                add(1, "values",
+                add(2, "values",
                     ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
                         contextualResolver = {
                             it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, DataModelPropertyContext>? ?: throw ContextNotFoundException()
@@ -43,18 +43,18 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
                     ) as IsSerializableFlexBytesEncodable<Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>, DataModelPropertyContext>,
                     ValuesWithMetaData<*, *>::values as (ValuesWithMetaData<*, *>) -> Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
                 )
-                add(2, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)
-                add(3, "lastVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::lastVersion)
-                add(4, "isDeleted", BooleanDefinition(), ValuesWithMetaData<*, *>::isDeleted)
+                add(3, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)
+                add(4, "lastVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::lastVersion)
+                add(5, "isDeleted", BooleanDefinition(), ValuesWithMetaData<*, *>::isDeleted)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ValuesWithMetaData<*, *>>) = ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            key = map(0),
-            values = map(1),
-            firstVersion = map(2),
-            lastVersion = map(3),
-            isDeleted = map(4)
+            key = map(1),
+            values = map(2),
+            firstVersion = map(3),
+            lastVersion = map(4),
+            isDeleted = map(5)
         )
     }
 }

@@ -134,7 +134,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                 IsPropertyDefinition.addIndexed(this, EmbeddedValuesDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, EmbeddedValuesDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, EmbeddedValuesDefinition<*, *>::final)
-                add(3, "dataModel",
+                add(4, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextTransformer = {context: ModelContext? ->
                             context?.dataModelContext
@@ -168,7 +168,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                 )
 
                 @Suppress("UNCHECKED_CAST")
-                add(4, "default",
+                add(5, "default",
                     ContextualEmbeddedValuesDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -181,11 +181,11 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         }
     ) {
         override fun invoke(map: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) = EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            dataModel = map(3),
-            default = map(4)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            dataModel = map(4),
+            default = map(5)
         )
     }
 }

@@ -51,15 +51,15 @@ class RootMarykTest {
           - !EnumDefinition
             name: Option
             values:
-              0: V0
               1: V1
               2: V2
+              3: V3
           - !RootModel
             name: SimpleMarykModel
             key:
             - !UUID
             properties:
-              ? 0: value
+              ? 1: value
               : !String
                 indexed: false
                 required: true

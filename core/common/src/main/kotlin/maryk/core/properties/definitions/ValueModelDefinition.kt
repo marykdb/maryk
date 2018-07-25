@@ -94,7 +94,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                 IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *, *>::final)
                 IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *, *>::unique)
 
-                add(4, "dataModel",
+                add(5, "dataModel",
                     ContextualModelReferenceDefinition<ValueDataModel<*, *>,ModelContext, DataModelContext>(
                         contextTransformer = { it?.dataModelContext },
                         contextualResolver = { context, name ->
@@ -127,7 +127,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     }
                 )
 
-                add(5, "minValue",
+                add(6, "minValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -137,7 +137,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     ValueModelDefinition<*, *, *>::minValue
                 )
 
-                add(6, "maxValue",
+                add(7, "maxValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -147,7 +147,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     ValueModelDefinition<*, *, *>::maxValue
                 )
 
-                add(7, "default",
+                add(8, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -161,14 +161,14 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(map: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            unique = map(3),
-            dataModel = map<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(4),
-            minValue = map(5),
-            maxValue = map(6),
-            default = map(7)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
+            dataModel = map<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(5),
+            minValue = map(6),
+            maxValue = map(7),
+            default = map(8)
         ) as GenericValueModelDefinition
     }
 }

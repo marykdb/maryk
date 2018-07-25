@@ -105,7 +105,7 @@ internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReferenc
 
         return this.map {
             mapOf(
-                0 to items
+                referenceProperty.index to items
             )
         }
     }

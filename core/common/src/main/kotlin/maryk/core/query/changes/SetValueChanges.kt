@@ -4,9 +4,9 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
@@ -24,12 +24,12 @@ data class SetValueChanges<T: Any> internal constructor(
         val reference = DefinedByReference.addReference(this, SetValueChanges<*>::reference)
 
         init {
-            add(1, "addValues", SetDefinition(
+            add(2, "addValues", SetDefinition(
                 required = false,
                 valueDefinition = valueDefinition
             ), SetValueChanges<*>::addValues)
 
-            add(2, "deleteValues", SetDefinition(
+            add(3, "deleteValues", SetDefinition(
                 required = false,
                 valueDefinition = valueDefinition
             ), SetValueChanges<*>::deleteValues)
@@ -41,9 +41,9 @@ data class SetValueChanges<T: Any> internal constructor(
     ) {
         @Suppress("RemoveExplicitTypeArguments")
         override fun invoke(map: ObjectValues<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
-            reference = map(0),
-            addValues = map(1),
-            deleteValues = map(2)
+            reference = map(1),
+            addValues = map(2),
+            deleteValues = map(3)
         )
     }
 }

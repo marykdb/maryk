@@ -77,7 +77,7 @@ internal abstract class ReferenceValuePairsObjectPropertyDefinitions<T: Any, DO:
     abstract val referenceValuePairs: ListPropertyDefinitionWrapper<ReferenceValuePair<T>, ReferenceValuePair<T>, IsPropertyContext, DO>
 
     protected fun <T: Any> addReferenceValuePairsDefinition(getter: (DO) -> List<ReferenceValuePair<T>>?) =
-        this.add(0, "referenceValuePairs",
+        this.add(1, "referenceValuePairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = {

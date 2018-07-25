@@ -73,7 +73,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
             }
         }
         val properties = DataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModelImpl>)
-        val key = add(2, "key",
+        val key = add(3, "key",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = KeyPartType,
@@ -97,9 +97,9 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         properties = RootModelProperties
     ) {
         override fun invoke(map: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
-            name = map(0),
-            properties = map(1),
-            keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(2))?.map {
+            name = map(1),
+            properties = map(2),
+            keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(3))?.map {
                 when(it.value) {
                     is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
                     else -> it.value as FixedBytesProperty<*>

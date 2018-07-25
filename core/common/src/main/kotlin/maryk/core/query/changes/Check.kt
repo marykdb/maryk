@@ -24,7 +24,7 @@ data class Check internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Check, Properties>) = Check(
-            referenceValuePairs = map(0)
+            referenceValuePairs = map(1)
         )
 
         override fun writeJson(obj: Check, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

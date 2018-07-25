@@ -21,7 +21,7 @@ data class And(
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
     internal object Properties : ObjectPropertyDefinitions<And>() {
-        val filters = add(0, "filters",
+        val filters = add(1, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = FilterType,
@@ -38,7 +38,7 @@ data class And(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<And, Properties>) = And(
-            filters = map<List<IsFilter>>(0)
+            filters = map<List<IsFilter>>(1)
         )
 
         override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

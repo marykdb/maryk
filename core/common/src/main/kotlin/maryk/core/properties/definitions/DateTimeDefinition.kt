@@ -77,13 +77,13 @@ data class DateTimeDefinition(
                 IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
                 IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
                 IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
-                IsTimeDefinition.addPrecision(4, this,
+                IsTimeDefinition.addPrecision(5, this,
                     DateTimeDefinition::precision,
                     capturer = { context: TimePrecisionContext, timePrecision ->
                         context.precision = timePrecision
                     }
                 )
-                add(5, "minValue",
+                add(6, "minValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: DateTimeDefinitionContext? ->
                             context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -91,7 +91,7 @@ data class DateTimeDefinition(
                     ),
                     DateTimeDefinition::minValue
                 )
-                add(6, "maxValue",
+                add(7, "maxValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: DateTimeDefinitionContext? ->
                             context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -99,7 +99,7 @@ data class DateTimeDefinition(
                     ),
                     DateTimeDefinition::maxValue
                 )
-                add(7, "default",
+                add(8, "default",
                     ContextualValueDefinition(
                         contextualResolver = { context: DateTimeDefinitionContext? ->
                             context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -107,20 +107,20 @@ data class DateTimeDefinition(
                     ),
                     DateTimeDefinition::default
                 )
-                IsMomentDefinition.addFillWithNow(8, this, DateTimeDefinition::fillWithNow)
+                IsMomentDefinition.addFillWithNow(9, this, DateTimeDefinition::fillWithNow)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<DateTimeDefinition>) = DateTimeDefinition(
-            indexed = map(0),
-            required = map(1),
-            final = map(2),
-            unique = map(3),
-            precision = map(4),
-            minValue = map(5),
-            maxValue = map(6),
-            default = map(7),
-            fillWithNow = map(8)
+            indexed = map(1),
+            required = map(2),
+            final = map(3),
+            unique = map(4),
+            precision = map(5),
+            minValue = map(6),
+            maxValue = map(7),
+            default = map(8),
+            fillWithNow = map(9)
         )
     }
 }

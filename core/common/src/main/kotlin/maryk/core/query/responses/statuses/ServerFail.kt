@@ -16,12 +16,12 @@ data class ServerFail<DM: IsRootDataModel<*>>(
     internal companion object: SimpleQueryDataModel<ServerFail<*>>(
         properties = object: ObjectPropertyDefinitions<ServerFail<*>>() {
             init {
-                add(0, "reason", StringDefinition(), ServerFail<*>::reason)
+                add(1, "reason", StringDefinition(), ServerFail<*>::reason)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ServerFail<*>>) = ServerFail<IsRootDataModel<IsPropertyDefinitions>>(
-            map(0)
+            map(1)
         )
     }
 }

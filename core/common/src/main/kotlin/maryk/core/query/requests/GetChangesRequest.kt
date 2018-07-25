@@ -59,19 +59,19 @@ data class GetChangesRequest<DM: IsRootDataModel<*>> internal constructor(
                 IsFetchRequest.addOrder(this, GetChangesRequest<*>::order)
                 IsFetchRequest.addToVersion(this, GetChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*>::filterSoftDeleted)
-                IsChangesRequest.addFromVersion(7, this, GetChangesRequest<*>::fromVersion)
+                IsChangesRequest.addFromVersion(8, this, GetChangesRequest<*>::fromVersion)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<GetChangesRequest<*>>) = GetChangesRequest(
-            dataModel = map(0),
-            keys = map(1),
-            select = map(2),
-            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
-            order = map(4),
-            toVersion = map(5),
-            filterSoftDeleted = map(6),
-            fromVersion = map(7)
+            dataModel = map(1),
+            keys = map(2),
+            select = map(3),
+            filter = map<TypedValue<FilterType, IsFilter>?>(4)?.value,
+            order = map(5),
+            toVersion = map(6),
+            filterSoftDeleted = map(7),
+            fromVersion = map(8)
         )
     }
 }

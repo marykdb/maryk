@@ -31,7 +31,7 @@ data class Definitions(
 
     internal object Properties : ObjectPropertyDefinitions<Definitions>() {
         @Suppress("UNCHECKED_CAST")
-        val definitions = add(0, "definitions",
+        val definitions = add(1, "definitions",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = PrimitiveType,
@@ -105,7 +105,7 @@ data class Definitions(
         singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, List<MarykPrimitive>, DataModelContext, Definitions>
     ) {
         override fun invoke(map: ObjectValues<Definitions, Properties>) = Definitions(
-            definitions = map(0)
+            definitions = map(1)
         )
     }
 }

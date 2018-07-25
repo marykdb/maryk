@@ -29,14 +29,14 @@ internal class TypeIdTest {
     ) {
         object Properties : PropertyDefinitions() {
             val multi = MarykModel.Properties.add(
-                0,
+                1,
                 "multi",
                 MultiTypeDefinition(
                     final = true,
                     typeEnum = Option,
                     definitionMap = mapOf<Option, IsSubDefinition<*, IsPropertyContext>>(
-                        Option.V0 to StringDefinition(),
-                        Option.V1 to BooleanDefinition()
+                        Option.V1 to StringDefinition(),
+                        Option.V2 to BooleanDefinition()
                     )
                 )
             )
@@ -54,11 +54,11 @@ internal class TypeIdTest {
     @Test
     fun testKey(){
         val obj = MarykModel(
-            multi = TypedValue(Option.V1, true)
+            multi = TypedValue(Option.V2, true)
         )
 
         val key = MarykModel.key(obj)
-        key.bytes.toHex() shouldBe "0001"
+        key.bytes.toHex() shouldBe "0002"
 
         val keyDef = MarykModel.keyDefinitions[0]
 
@@ -66,7 +66,7 @@ internal class TypeIdTest {
         val specificDef = keyDef as TypeId<*>
         specificDef.reference shouldBe MarykModel.Properties.multi.getRef()
 
-        specificDef.getValue(MarykModel, obj) shouldBe 1
+        specificDef.getValue(MarykModel, obj) shouldBe 2
 
         val bc = ByteCollector()
         bc.reserve(2)

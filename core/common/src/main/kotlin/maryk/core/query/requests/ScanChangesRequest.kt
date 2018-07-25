@@ -65,20 +65,20 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
                 IsFetchRequest.addToVersion(this, ScanChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*>::filterSoftDeleted)
                 IsScanRequest.addLimit(this, ScanChangesRequest<*>::limit)
-                IsChangesRequest.addFromVersion(8, this, ScanChangesRequest<*>::fromVersion)
+                IsChangesRequest.addFromVersion(9, this, ScanChangesRequest<*>::fromVersion)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<ScanChangesRequest<*>>) = ScanChangesRequest(
-            dataModel = map(0),
-            startKey = map(1),
-            select = map(2),
-            filter = map<TypedValue<FilterType, IsFilter>?>(3)?.value,
-            order = map(4),
-            toVersion = map(5),
-            filterSoftDeleted = map(6),
-            limit = map(7),
-            fromVersion = map(8)
+            dataModel = map(1),
+            startKey = map(2),
+            select = map(3),
+            filter = map<TypedValue<FilterType, IsFilter>?>(4)?.value,
+            order = map(5),
+            toVersion = map(6),
+            filterSoftDeleted = map(7),
+            limit = map(8),
+            fromVersion = map(9)
         )
     }
 }

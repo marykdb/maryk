@@ -2,8 +2,8 @@ package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
-import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
@@ -25,15 +25,15 @@ data class NotEnoughItemsException internal constructor(
         properties = object : ObjectPropertyDefinitions<NotEnoughItemsException>() {
             init {
                 ValidationException.addReference(this, NotEnoughItemsException::reference)
-                add(1, "size", NumberDefinition(type = SInt32), NotEnoughItemsException::size)
-                add(2, "minSize", NumberDefinition(type = SInt32), NotEnoughItemsException::minSize)
+                add(2, "size", NumberDefinition(type = SInt32), NotEnoughItemsException::size)
+                add(3, "minSize", NumberDefinition(type = SInt32), NotEnoughItemsException::minSize)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<NotEnoughItemsException>) = NotEnoughItemsException(
-            reference = map(0),
-            size = map(1),
-            minSize = map(2)
+            reference = map(1),
+            size = map(2),
+            minSize = map(3)
         )
     }
 }

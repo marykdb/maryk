@@ -24,10 +24,10 @@ internal class ReversedTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val boolean = add(0, "bool", BooleanDefinition(
+            val boolean = add(1, "bool", BooleanDefinition(
                 final = true
             ))
-            val dateTime = add(1, "dateTime", DateTimeDefinition(
+            val dateTime = add(2, "dateTime", DateTimeDefinition(
                 final = true
             ))
         }

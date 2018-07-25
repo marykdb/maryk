@@ -2,8 +2,8 @@ package maryk.core.query.responses
 
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
-import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -12,10 +12,10 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 enum class FailType(
     override val index: Int
 ) : IndexedEnum<FailType> {
-    CONNECTION(0), // Problems with Connection at the server
-    STORE_STATE(1), // Problems with the state of the store
-    REQUEST(2), // Problems with the request content
-    AUTH(3); // Problems with the Authentication
+    CONNECTION(1), // Problems with Connection at the server
+    STORE_STATE(2), // Problems with the state of the store
+    REQUEST(3), // Problems with the request content
+    AUTH(4); // Problems with the Authentication
 
     companion object: IndexedEnumDefinition<FailType>("FailType", FailType::values)
 }
@@ -28,14 +28,14 @@ data class FailedActionResponse(
     internal companion object: SimpleQueryDataModel<FailedActionResponse>(
         properties = object : ObjectPropertyDefinitions<FailedActionResponse>() {
             init {
-                add(0, "message", StringDefinition(), FailedActionResponse::message)
-                add(1, "failType", EnumDefinition(enum = FailType), FailedActionResponse::failType)
+                add(1, "message", StringDefinition(), FailedActionResponse::message)
+                add(2, "failType", EnumDefinition(enum = FailType), FailedActionResponse::failType)
             }
         }
     ) {
         override fun invoke(map: SimpleObjectValues<FailedActionResponse>) = FailedActionResponse(
-            message = map(0),
-            failType = map(1)
+            message = map(1),
+            failType = map(2)
         )
     }
 }

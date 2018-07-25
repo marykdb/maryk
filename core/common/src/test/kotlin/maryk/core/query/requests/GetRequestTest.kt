@@ -9,7 +9,7 @@ import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
-import maryk.core.yaml.MarykYamlReader
+import maryk.core.yaml.MarykYamlReaders
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -89,7 +89,7 @@ class GetRequestTest {
 
         var index = 0
 
-        val reader = MarykYamlReader {
+        val reader = MarykYamlReaders {
             simpleYaml[index++].also {
                 if (it == '\u0000') {
                     throw Throwable("0 char encountered")

@@ -33,7 +33,7 @@ data class TestMarykObject(
     val double: Double,
     val dateTime: DateTime,
     val bool: Boolean? = null,
-    val enum: Option = Option.V0,
+    val enum: Option = Option.V1,
     val list: List<Int>? = null,
     val set: Set<Date>? = null,
     val map: Map<Time, String>? = null,
@@ -45,7 +45,7 @@ data class TestMarykObject(
 ) {
     object Properties: ObjectPropertyDefinitions<TestMarykObject>() {
         val string = add(
-            index = 0, name = "string",
+            index = 1, name = "string",
             definition = StringDefinition(
                 default = "haha",
                 regEx = "ha.*"
@@ -54,7 +54,7 @@ data class TestMarykObject(
         )
 
         val int = add(
-            index = 1, name = "int",
+            index = 2, name = "int",
             definition = NumberDefinition(
                 type = SInt32,
                 maxValue = 6
@@ -63,7 +63,7 @@ data class TestMarykObject(
         )
 
         val uint = add(
-            index = 2, name = "uint",
+            index = 3, name = "uint",
             definition = NumberDefinition(
                 type = UInt32,
                 final = true
@@ -72,19 +72,19 @@ data class TestMarykObject(
         )
 
         val double = add(
-            index = 3, name = "double",
+            index = 4, name = "double",
             definition = NumberDefinition(type = Float64),
             getter = TestMarykObject::double
         )
 
         val dateTime = add(
-            index = 4, name = "dateTime",
+            index = 5, name = "dateTime",
             definition = DateTimeDefinition(),
             getter = TestMarykObject::dateTime
         )
 
         val bool = add(
-            index = 5, name = "bool",
+            index = 6, name = "bool",
             definition = BooleanDefinition(
                 final = true
             ),
@@ -92,17 +92,17 @@ data class TestMarykObject(
         )
 
         val enum = add(
-            index = 6, name = "enum",
+            index = 7, name = "enum",
             definition = EnumDefinition(
                 enum = Option,
-                default = Option.V0,
+                default = Option.V1,
                 final = true
             ),
             getter = TestMarykObject::enum
         )
 
         val list = add(
-            index = 7, name = "list",
+            index = 8, name = "list",
             definition = ListDefinition(
                 required = false,
                 valueDefinition = NumberDefinition(
@@ -113,7 +113,7 @@ data class TestMarykObject(
         )
 
         val set = add(
-            index = 8, name = "set",
+            index = 9, name = "set",
             definition = SetDefinition(
                 required = false,
                 valueDefinition = DateDefinition()
@@ -122,7 +122,7 @@ data class TestMarykObject(
         )
 
         val map = add(
-            index = 9, name = "map",
+            index = 10, name = "map",
             definition = MapDefinition(
                 required = false,
                 keyDefinition = TimeDefinition(),
@@ -132,7 +132,7 @@ data class TestMarykObject(
         )
 
         val valueObject = add(
-            index = 10, name = "valueObject",
+            index = 11, name = "valueObject",
             definition = ValueModelDefinition(
                 required = false,
                 dataModel = TestValueObject
@@ -141,7 +141,7 @@ data class TestMarykObject(
         )
 
         val embeddedObject = add(
-            index = 11, name = "embeddedObject",
+            index = 12, name = "embeddedObject",
             definition = EmbeddedObjectDefinition(
                 required = false,
                 dataModel = { EmbeddedMarykObject }
@@ -150,14 +150,14 @@ data class TestMarykObject(
         )
 
         val multi = add(
-            index = 12, name = "multi",
+            index = 13, name = "multi",
             definition = MultiTypeDefinition<Option, IsPropertyContext>(
                 required = false,
                 typeEnum = Option,
                 definitionMap = mapOf(
-                    Option.V0 to StringDefinition(),
-                    Option.V1 to NumberDefinition(type = SInt32),
-                    Option.V2 to EmbeddedObjectDefinition(
+                    Option.V1 to StringDefinition(),
+                    Option.V2 to NumberDefinition(type = SInt32),
+                    Option.V3 to EmbeddedObjectDefinition(
                         dataModel = { EmbeddedMarykObject }
                     )
                 )
@@ -166,7 +166,7 @@ data class TestMarykObject(
         )
 
         val reference = add(
-            index = 13, name = "reference",
+            index = 14, name = "reference",
             definition = ReferenceDefinition(
                 required = false,
                 dataModel = { TestMarykModel }
@@ -175,7 +175,7 @@ data class TestMarykObject(
         )
 
         val listOfString = add(
-            index = 14, name = "listOfString",
+            index = 15, name = "listOfString",
             definition = ListDefinition(
                 required = false,
                 valueDefinition = StringDefinition()
@@ -189,21 +189,21 @@ data class TestMarykObject(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<TestMarykObject, Properties>) = TestMarykObject(
-            string = map(0),
-            int = map(1),
-            uint = map(2),
-            double = map(3),
-            dateTime = map(4),
-            bool = map(5),
-            enum = map(6),
-            list = map(7),
-            set = map(8),
-            map = map(9),
-            valueObject = map(10),
-            embeddedObject = map(11),
-            multi = map(12),
-            reference = map(13),
-            listOfString = map(14)
+            string = map(1),
+            int = map(2),
+            uint = map(3),
+            double = map(4),
+            dateTime = map(5),
+            bool = map(6),
+            enum = map(7),
+            list = map(8),
+            set = map(9),
+            map = map(10),
+            valueObject = map(11),
+            embeddedObject = map(12),
+            multi = map(13),
+            reference = map(14),
+            listOfString = map(15)
         )
 
         override fun equals(other: Any?): Boolean {

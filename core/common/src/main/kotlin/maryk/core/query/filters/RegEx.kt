@@ -23,7 +23,7 @@ data class RegEx internal constructor(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<RegEx, Properties>) = RegEx(
-            referenceValuePairs = map(0)
+            referenceValuePairs = map(1)
         )
 
         override fun writeJson(obj: RegEx, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {

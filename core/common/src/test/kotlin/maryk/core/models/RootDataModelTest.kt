@@ -30,7 +30,7 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelContext
-import maryk.core.yaml.MarykYamlReader
+import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.shouldBe
@@ -46,11 +46,11 @@ internal class RootDataModelTest {
                 uint = 555.toUInt32(),
                 double = 6.33,
                 bool = true,
-                enum = Option.V2,
+                enum = Option.V3,
                 dateTime = DateTime.nowUTC()
             )
         ) shouldBe Bytes(
-            byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 2)
+            byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 3)
         )
     }
 
@@ -100,7 +100,7 @@ internal class RootDataModelTest {
         	"name": "TestMarykModel",
         	"key": [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]],
         	"properties": [{
-        		"index": 0,
+        		"index": 1,
         		"name": "string",
         		"definition": ["String", {
         			"indexed": false,
@@ -111,7 +111,7 @@ internal class RootDataModelTest {
         			"regEx": "ha.*"
         		}]
         	}, {
-        		"index": 1,
+        		"index": 2,
         		"name": "int",
         		"definition": ["Number", {
         			"indexed": false,
@@ -123,7 +123,7 @@ internal class RootDataModelTest {
         			"random": false
         		}]
         	}, {
-        		"index": 2,
+        		"index": 3,
         		"name": "uint",
         		"definition": ["Number", {
         			"indexed": false,
@@ -134,7 +134,7 @@ internal class RootDataModelTest {
         			"random": false
         		}]
         	}, {
-        		"index": 3,
+        		"index": 4,
         		"name": "double",
         		"definition": ["Number", {
         			"indexed": false,
@@ -145,7 +145,7 @@ internal class RootDataModelTest {
         			"random": false
         		}]
         	}, {
-        		"index": 4,
+        		"index": 5,
         		"name": "dateTime",
         		"definition": ["DateTime", {
         			"indexed": false,
@@ -156,7 +156,7 @@ internal class RootDataModelTest {
         			"fillWithNow": false
         		}]
         	}, {
-        		"index": 5,
+        		"index": 6,
         		"name": "bool",
         		"definition": ["Boolean", {
         			"indexed": false,
@@ -164,7 +164,7 @@ internal class RootDataModelTest {
         			"final": true
         		}]
         	}, {
-        		"index": 6,
+        		"index": 7,
         		"name": "enum",
         		"definition": ["Enum", {
         			"indexed": false,
@@ -174,15 +174,15 @@ internal class RootDataModelTest {
         			"enum": {
         				"name": "Option",
         				"values": {
-        					"0": "V0",
         					"1": "V1",
-        					"2": "V2"
+        					"2": "V2",
+        					"3": "V3"
         				}
         			},
-        			"default": "V0"
+        			"default": "V1"
         		}]
         	}, {
-        		"index": 7,
+        		"index": 8,
         		"name": "list",
         		"definition": ["List", {
         			"indexed": false,
@@ -198,7 +198,7 @@ internal class RootDataModelTest {
         			}]
         		}]
         	}, {
-        		"index": 8,
+        		"index": 9,
         		"name": "set",
         		"definition": ["Set", {
         			"indexed": false,
@@ -213,7 +213,7 @@ internal class RootDataModelTest {
         			}]
         		}]
         	}, {
-        		"index": 9,
+        		"index": 10,
         		"name": "map",
         		"definition": ["Map", {
         			"indexed": false,
@@ -235,7 +235,7 @@ internal class RootDataModelTest {
         			}]
         		}]
         	}, {
-        		"index": 10,
+        		"index": 11,
         		"name": "valueObject",
         		"definition": ["Value", {
         			"indexed": false,
@@ -245,7 +245,7 @@ internal class RootDataModelTest {
         			"dataModel": "TestValueObject"
         		}]
         	}, {
-        		"index": 11,
+        		"index": 12,
         		"name": "embeddedValues",
         		"definition": ["Embed", {
         			"indexed": false,
@@ -254,7 +254,7 @@ internal class RootDataModelTest {
         			"dataModel": "EmbeddedMarykModel"
         		}]
         	}, {
-        		"index": 12,
+        		"index": 13,
         		"name": "multi",
         		"definition": ["MultiType", {
         			"indexed": false,
@@ -262,8 +262,8 @@ internal class RootDataModelTest {
         			"final": false,
         			"typeEnum": "Option",
         			"definitionMap": [{
-        				"index": 0,
-        				"name": "V0",
+        				"index": 1,
+        				"name": "V1",
         				"definition": ["String", {
         					"indexed": false,
         					"required": true,
@@ -271,8 +271,8 @@ internal class RootDataModelTest {
         					"unique": false
         				}]
         			}, {
-        				"index": 1,
-        				"name": "V1",
+        				"index": 2,
+        				"name": "V2",
         				"definition": ["Number", {
         					"indexed": false,
         					"required": true,
@@ -282,8 +282,8 @@ internal class RootDataModelTest {
         					"random": false
         				}]
         			}, {
-        				"index": 2,
-        				"name": "V2",
+        				"index": 3,
+        				"name": "V3",
         				"definition": ["Embed", {
         					"indexed": false,
         					"required": true,
@@ -293,7 +293,7 @@ internal class RootDataModelTest {
         			}]
         		}]
         	}, {
-        		"index": 13,
+        		"index": 14,
         		"name": "reference",
         		"definition": ["Reference", {
         			"indexed": false,
@@ -303,7 +303,7 @@ internal class RootDataModelTest {
         			"dataModel": "TestMarykModel"
         		}]
         	}, {
-        		"index": 14,
+        		"index": 15,
         		"name": "listOfString",
         		"definition": ["List", {
         			"indexed": false,
@@ -317,7 +317,7 @@ internal class RootDataModelTest {
         			}]
         		}]
         	}, {
-        		"index": 15,
+        		"index": 16,
         		"name": "selfReference",
         		"definition": ["Reference", {
         			"indexed": false,
@@ -344,7 +344,7 @@ internal class RootDataModelTest {
         - !Ref bool
         - !Ref enum
         properties:
-          ? 0: string
+          ? 1: string
           : !String
             indexed: false
             required: true
@@ -352,7 +352,7 @@ internal class RootDataModelTest {
             unique: false
             default: haha
             regEx: ha.*
-          ? 1: int
+          ? 2: int
           : !Number
             indexed: false
             required: true
@@ -361,7 +361,7 @@ internal class RootDataModelTest {
             type: SInt32
             maxValue: 6
             random: false
-          ? 2: uint
+          ? 3: uint
           : !Number
             indexed: false
             required: true
@@ -369,7 +369,7 @@ internal class RootDataModelTest {
             unique: false
             type: UInt32
             random: false
-          ? 3: double
+          ? 4: double
           : !Number
             indexed: false
             required: true
@@ -377,7 +377,7 @@ internal class RootDataModelTest {
             unique: false
             type: Float64
             random: false
-          ? 4: dateTime
+          ? 5: dateTime
           : !DateTime
             indexed: false
             required: true
@@ -385,12 +385,12 @@ internal class RootDataModelTest {
             unique: false
             precision: SECONDS
             fillWithNow: false
-          ? 5: bool
+          ? 6: bool
           : !Boolean
             indexed: false
             required: true
             final: true
-          ? 6: enum
+          ? 7: enum
           : !Enum
             indexed: false
             required: true
@@ -399,11 +399,11 @@ internal class RootDataModelTest {
             enum:
               name: Option
               values:
-                0: V0
                 1: V1
                 2: V2
-            default: V0
-          ? 7: list
+                3: V3
+            default: V1
+          ? 8: list
           : !List
             indexed: false
             required: false
@@ -415,7 +415,7 @@ internal class RootDataModelTest {
               unique: false
               type: SInt32
               random: false
-          ? 8: set
+          ? 9: set
           : !Set
             indexed: false
             required: false
@@ -426,7 +426,7 @@ internal class RootDataModelTest {
               final: false
               unique: false
               fillWithNow: false
-          ? 9: map
+          ? 10: map
           : !Map
             indexed: false
             required: false
@@ -443,33 +443,33 @@ internal class RootDataModelTest {
               required: true
               final: false
               unique: false
-          ? 10: valueObject
+          ? 11: valueObject
           : !Value
             indexed: false
             required: false
             final: false
             unique: false
             dataModel: TestValueObject
-          ? 11: embeddedValues
+          ? 12: embeddedValues
           : !Embed
             indexed: false
             required: false
             final: false
             dataModel: EmbeddedMarykModel
-          ? 12: multi
+          ? 13: multi
           : !MultiType
             indexed: false
             required: false
             final: false
             typeEnum: Option
             definitionMap:
-              ? 0: V0
+              ? 1: V1
               : !String
                 indexed: false
                 required: true
                 final: false
                 unique: false
-              ? 1: V1
+              ? 2: V2
               : !Number
                 indexed: false
                 required: true
@@ -477,20 +477,20 @@ internal class RootDataModelTest {
                 unique: false
                 type: SInt32
                 random: false
-              ? 2: V2
+              ? 3: V3
               : !Embed
                 indexed: false
                 required: true
                 final: false
                 dataModel: EmbeddedMarykModel
-          ? 13: reference
+          ? 14: reference
           : !Reference
             indexed: false
             required: false
             final: false
             unique: false
             dataModel: TestMarykModel
-          ? 14: listOfString
+          ? 15: listOfString
           : !List
             indexed: false
             required: false
@@ -500,7 +500,7 @@ internal class RootDataModelTest {
               required: true
               final: false
               unique: false
-          ? 15: selfReference
+          ? 16: selfReference
           : !Reference
             indexed: false
             required: false
@@ -516,65 +516,65 @@ internal class RootDataModelTest {
         val simpleYaml = """
         name: SimpleModel
         properties:
-          ? 0: string
+          ? 1: string
           : !String
-          ? 1: int
+          ? 2: int
           : !Number
             type: SInt32
-          ? 2: date
+          ? 3: date
           : !Date
-          ? 3: time
+          ? 4: time
           : !Time
-          ? 4: dateTime
+          ? 5: dateTime
           : !DateTime
-          ? 5: options
+          ? 6: options
           : !Enum
             enum:
               name: Option
               values:
-                0: V0
                 1: V1
                 2: V2
-          ? 6: fixed
+                3: V3
+          ? 7: fixed
           : !FixedBytes
             byteSize: 4
-          ? 7: flex
+          ? 8: flex
           : !FlexBytes
-          ? 8: list
+          ? 9: list
           : !List
             valueDefinition: !String
-          ? 9: set
+          ? 10: set
           : !Set
             valueDefinition: !Boolean
-          ? 10: map
+          ? 11: map
           : !Map
             keyDefinition: !Date
             valueDefinition: !String
-          ? 11: embedded
+          ? 12: embedded
           : !Embed
             dataModel: TestMarykModel
-          ? 12: value
+          ? 13: value
           : !Value
             dataModel: TestValueObject
-          ? 13: ref
+          ? 14: ref
           : !Reference
             dataModel: TestMarykModel
-          ? 14: multi
+          ? 15: multi
           : !MultiType
             typeEnum: Option
             definitionMap:
-              ? 0: V0
-              : !String
               ? 1: V1
+              : !String
+              ? 2: V2
               : !Boolean
-          ? 15: isTrue
+          ? 16: isTrue
           : !Boolean
 
         """.trimIndent()
 
         var index = 0
 
-        val reader = MarykYamlReader {
+        val reader = MarykYamlReaders {
             simpleYaml[index++].also {
                 if (it == '\u0000') {
                     throw Throwable("0 char encountered")
@@ -590,86 +590,86 @@ internal class RootDataModelTest {
             name shouldBe "SimpleModel"
 
             properties.get("string")!!.let {
-                it.index shouldBe 0
+                it.index shouldBe 1
                 it.definition shouldBe StringDefinition()
             }
             properties.get("int")!!.let {
-                it.index shouldBe 1
+                it.index shouldBe 2
                 it.definition shouldBe NumberDefinition(type = SInt32)
             }
             properties.get("date")!!.let {
-                it.index shouldBe 2
+                it.index shouldBe 3
                 it.definition shouldBe DateDefinition()
             }
             properties.get("time")!!.let {
-                it.index shouldBe 3
+                it.index shouldBe 4
                 it.definition shouldBe TimeDefinition()
             }
             properties.get("dateTime")!!.let {
-                it.index shouldBe 4
+                it.index shouldBe 5
                 it.definition shouldBe DateTimeDefinition()
             }
             properties.get("options")!!.let {
-                it.index shouldBe 5
+                it.index shouldBe 6
                 it.definition shouldBe EnumDefinition(enum = Option)
             }
             properties.get("fixed")!!.let {
-                it.index shouldBe 6
+                it.index shouldBe 7
                 it.definition shouldBe FixedBytesDefinition(byteSize = 4)
             }
             properties.get("flex")!!.let {
-                it.index shouldBe 7
+                it.index shouldBe 8
                 it.definition shouldBe FlexBytesDefinition()
             }
             properties.get("list")!!.let {
-                it.index shouldBe 8
+                it.index shouldBe 9
                 it.definition shouldBe ListDefinition(
                     valueDefinition = StringDefinition()
                 )
             }
             properties.get("set")!!.let {
-                it.index shouldBe 9
+                it.index shouldBe 10
                 it.definition shouldBe SetDefinition(
                     valueDefinition = BooleanDefinition()
                 )
             }
             properties.get("map")!!.let {
-                it.index shouldBe 10
+                it.index shouldBe 11
                 it.definition shouldBe MapDefinition(
                     keyDefinition = DateDefinition(),
                     valueDefinition = StringDefinition()
                 )
             }
             properties.get("embedded")!!.let {
-                it.index shouldBe 11
+                it.index shouldBe 12
                 it.definition shouldBe EmbeddedValuesDefinition(
                     dataModel = { TestMarykModel }
                 )
             }
             properties.get("value")!!.let {
-                it.index shouldBe 12
+                it.index shouldBe 13
                 it.definition shouldBe ValueModelDefinition(
                     dataModel = TestValueObject
                 )
             }
             properties.get("ref")!!.let {
-                it.index shouldBe 13
+                it.index shouldBe 14
                 it.definition shouldBe ReferenceDefinition(
                     dataModel = { TestMarykModel }
                 )
             }
             properties.get("multi")!!.let {
-                it.index shouldBe 14
+                it.index shouldBe 15
                 it.definition shouldBe MultiTypeDefinition<Option, IsPropertyContext>(
                     typeEnum = Option,
                     definitionMap = mapOf(
-                        Option.V0 to StringDefinition(),
-                        Option.V1 to BooleanDefinition()
+                        Option.V1 to StringDefinition(),
+                        Option.V2 to BooleanDefinition()
                     )
                 )
             }
             properties.get("isTrue")!!.let {
-                it.index shouldBe 15
+                it.index shouldBe 16
                 it.definition shouldBe BooleanDefinition()
             }
         }

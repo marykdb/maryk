@@ -429,12 +429,12 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
 }
 """.trimIndent()
 
-class KotlinRootDataModelGeneratorTest {
+class GenerateKotlinForRootDataModelTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        SimpleMarykModel.generateKotlin("maryk") {
+        SimpleMarykModel.generateKotlins("maryk") {
             output += it
         }
 
@@ -445,11 +445,11 @@ class KotlinRootDataModelGeneratorTest {
     fun generate_kotlin_for_complete_model(){
         var output = ""
 
-        val generationContext = KotlinGenerationContext(
+        val generationContext = GenerationContext(
             enums = mutableListOf(MarykEnum)
         )
 
-        CompleteMarykModel.generateKotlin("maryk", generationContext) {
+        CompleteMarykModel.generateKotlins("maryk", generationContext) {
             output += it
         }
 

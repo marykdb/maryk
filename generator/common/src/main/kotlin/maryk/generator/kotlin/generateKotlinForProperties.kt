@@ -8,9 +8,9 @@ import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.enum.IndexedEnum
 
 @Suppress("UNCHECKED_CAST")
-internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlin(
+internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlins(
     addImport: (String) -> Unit,
-    generationContext: KotlinGenerationContext? = null,
+    generationContext: GenerationContext? = null,
     addEnumDefinition: ((String) -> Unit)? = null
 ): List<KotlinForProperty> {
     val propertiesKotlin = mutableListOf<KotlinForProperty>()

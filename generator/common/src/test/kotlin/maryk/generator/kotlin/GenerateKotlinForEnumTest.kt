@@ -23,12 +23,12 @@ enum class MarykEnum(
 }
 """.trimIndent()
 
-class KotlinEnumGeneratorTest {
+class GenerateKotlinForEnumTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        MarykEnum.generateKotlin("maryk") {
+        MarykEnum.generateKotlins("maryk") {
             output += it
         }
 

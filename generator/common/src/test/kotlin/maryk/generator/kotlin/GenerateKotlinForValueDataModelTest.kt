@@ -50,12 +50,12 @@ data class ValueMarykObject(
 }
 """.trimIndent()
 
-class KotlinValueDataModelGeneratorTest {
+class GenerateKotlinForValueDataModelTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        ValueMarykObject.generateKotlin("maryk") {
+        ValueMarykObject.generateKotlins("maryk") {
             output += it
         }
 

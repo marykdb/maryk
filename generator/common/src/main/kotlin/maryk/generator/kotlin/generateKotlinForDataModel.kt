@@ -3,9 +3,9 @@ package maryk.generator.kotlin
 import maryk.core.models.DataModel
 import maryk.core.properties.PropertyDefinitions
 
-fun <P: PropertyDefinitions> DataModel<*, P>.generateKotlin(
+fun <P: PropertyDefinitions> DataModel<*, P>.generateKotlins(
     packageName: String,
-    generationContext: KotlinGenerationContext? = null,
+    generationContext: GenerationContext? = null,
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
@@ -15,7 +15,7 @@ fun <P: PropertyDefinitions> DataModel<*, P>.generateKotlin(
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
     val enumKotlinDefinitions = mutableListOf<String>()
-    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
+    val propertiesKotlin = properties.generateKotlins(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 

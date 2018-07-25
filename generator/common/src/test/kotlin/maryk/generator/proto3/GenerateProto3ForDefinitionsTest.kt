@@ -1,9 +1,7 @@
-package maryk.generator.kotlin
+package maryk.generator.proto3
 
 import maryk.CompleteMarykModel
-import maryk.EmbeddedModel
 import maryk.MarykEnum
-import maryk.SimpleMarykModel
 import maryk.ValueMarykObject
 import maryk.core.definitions.Definitions
 import maryk.test.shouldBe
@@ -16,9 +14,7 @@ class MixedKotlinGenerationTest {
         val mapOfWriters = mutableMapOf(
             "MarykEnum" to Writer(),
             "ValueMarykObject" to Writer(),
-            "EmbeddedModel" to Writer(),
-            "CompleteMarykModel" to Writer(),
-            "SimpleMarykModel" to Writer()
+            "CompleteMarykModel" to Writer()
         )
 
         val setOfNames = mutableSetOf<String>()
@@ -26,23 +22,19 @@ class MixedKotlinGenerationTest {
         Definitions(
             MarykEnum,
             ValueMarykObject,
-            EmbeddedModel,
-            CompleteMarykModel,
-            SimpleMarykModel
-        ).generateKotlin("maryk") { name ->
+            CompleteMarykModel
+        ).generateProto3("maryk") { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]
                     ?: fail("Called for not known writer $name")
             writer::writer
         }
 
-        setOfNames.size shouldBe 5
+        setOfNames.size shouldBe 3
 
-        mapOfWriters["MarykEnum"]!!.output shouldBe generatedKotlinForEnum
-        mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedKotlinForValueDataModel
-        mapOfWriters["EmbeddedModel"]!!.output shouldBe generatedKotlinForEmbeddedDataModel
-        mapOfWriters["CompleteMarykModel"]!!.output shouldBe generatedKotlinForCompleteDataModel
-        mapOfWriters["SimpleMarykModel"]!!.output shouldBe generatedKotlinForSimpleDataModel
+        mapOfWriters["MarykEnum"]!!.output shouldBe generatedProto3ForMarykEnum
+        mapOfWriters["ValueMarykObject"]!!.output shouldBe generatedProto3ForValueDataModel
+        mapOfWriters["CompleteMarykModel"]!!.output shouldBe generatedProto3ForCompleteMarykModel
     }
 }
 

@@ -1,9 +1,7 @@
 package maryk.generator.proto3
 
-import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
@@ -27,16 +25,23 @@ import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberType
+import maryk.generator.kotlin.GenerationContext
 
-fun <P: PropertyDefinitions> DataModel<*, P>.generateProto3Schema(
+fun <P: AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
     packageName: String,
+    generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {
     val subMessages = mutableListOf<String>()
 
     val messageAdder: (String) -> Unit = { subMessages.add(it) }
 
-    val properties = this.properties.generateSchemaForProperties(messageAdder)
+    val properties = this.properties.generateSchemaForProperties(generationContext, messageAdder)
+
+    val precedingMessages = if (subMessages.isNotEmpty()) {
+        subMessages.joinToString("\n").plus("\n")
+            .prependIndent().prependIndent("  ").trimStart().plus("  ")
+    } else ""
 
     val schema = """
     syntax = "proto3";
@@ -44,26 +49,32 @@ fun <P: PropertyDefinitions> DataModel<*, P>.generateProto3Schema(
     option java_package = "$packageName";
 
     message $name {
-      ${subMessages.joinToString("\n").prependIndent().prependIndent("  ").trimStart()}
-      ${properties.prependIndent().prependIndent("  ").trimStart()}
+      $precedingMessages${properties.prependIndent().prependIndent("  ").trimStart()}
     }
     """.trimIndent()
 
     writer(schema)
 }
 
-private fun AbstractPropertyDefinitions<*>.generateSchemaForProperties(messageAdder: (String) -> Unit): String {
+private fun AbstractPropertyDefinitions<*>.generateSchemaForProperties(
+    generationContext: GenerationContext,
+    messageAdder: (String) -> Unit
+): String {
     var properties = ""
 
     for (it in this) {
         val optionality = if(it.definition.required) "required" else "optional"
-        val type = it.definition.toProtoBufType(it.name, messageAdder)
+        val type = it.definition.toProtoBufType(it.name, generationContext, messageAdder)
         properties += "$optionality $type ${it.name} = ${it.index};\n"
     }
     return properties.trimEnd()
 }
 
-private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(name: String, messageAdder: (String) -> Unit): String {
+private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
+    name: String,
+    generationContext: GenerationContext,
+    messageAdder: (String) -> Unit
+): String {
     return when(this) {
         is StringDefinition -> "string"
         is BooleanDefinition -> "bool"
@@ -86,19 +97,29 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(name: String, 
             NumberType.Float32 -> "float"
             NumberType.Float64 -> "double"
         }
-        is EnumDefinition<*> -> this.enum.name
-        is SetDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(name, messageAdder)}"
-        is ListDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(name, messageAdder)}"
+        is EnumDefinition<*> -> {
+            if (!generationContext.enums.contains(this.enum)) {
+                var enumSchema = ""
+                this.enum.generateProto3Schema {
+                    enumSchema += it
+                }
+
+                messageAdder(enumSchema)
+            }
+            this.enum.name
+        }
+        is SetDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}"
+        is ListDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}"
         is MapDefinition<*, *, *> -> {
             val keyDefinition = this.keyDefinition
             when(keyDefinition) {
                 is EnumDefinition<*>,
                 is FlexBytesDefinition,
                 is FixedBytesDefinition,
-                is ReferenceDefinition<*> -> return createEmbeddedMapModel(name, keyDefinition, valueDefinition, messageAdder)
+                is ReferenceDefinition<*> -> return createEmbeddedMapModel(name, keyDefinition, valueDefinition, generationContext, messageAdder)
                 is NumberDefinition<*> -> when (keyDefinition.type) {
                     is Float32,
-                    is Float64 -> return createEmbeddedMapModel(name, keyDefinition, valueDefinition, messageAdder)
+                    is Float64 -> return createEmbeddedMapModel(name, keyDefinition, valueDefinition, generationContext, messageAdder)
                 }
                 else -> {
                     //continue
@@ -106,7 +127,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(name: String, 
             }
 
             // Separate object
-            "map<${this.keyDefinition.toProtoBufType(name, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, messageAdder)}>"
+            "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
         is EmbeddedValuesDefinition<*, *> -> this.dataModel.name
         is EmbeddedObjectDefinition<*, *, *, *, *> -> (this.dataModel as IsNamedDataModel<*>).name
@@ -115,7 +136,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(name: String, 
 
             val multiTypes = mutableListOf<String>()
             for (it in this.definitionMap.keys) {
-                val type = this.definitionMap[it]!!.toProtoBufType(it.name, messageAdder)
+                val type = this.definitionMap[it]!!.toProtoBufType(it.name, generationContext, messageAdder)
                 multiTypes += "$type ${it.name.decapitalize()} = ${it.index};"
             }
             messageAdder("""
@@ -136,10 +157,11 @@ private fun createEmbeddedMapModel(
     name: String,
     keyDefinition: IsSimpleValueDefinition<*, *>,
     valueDefinition: IsSubDefinition<out Any, Nothing>,
+    generationContext: GenerationContext,
     messageAdder: (String) -> Unit
 ): String {
-    val keyType = keyDefinition.toProtoBufType(name, messageAdder)
-    val valueType = valueDefinition.toProtoBufType(name, messageAdder)
+    val keyType = keyDefinition.toProtoBufType(name, generationContext, messageAdder)
+    val valueType = valueDefinition.toProtoBufType(name, generationContext, messageAdder)
     val entryObjectName = "${name.capitalize()}Entry"
     messageAdder("""
     message $entryObjectName {

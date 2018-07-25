@@ -1,4 +1,4 @@
-package maryk.generator.kotlin
+package maryk.generator.proto3
 
 import maryk.core.definitions.Definitions
 import maryk.core.models.DataModel
@@ -8,9 +8,9 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.properties.types.ValueDataObject
+import maryk.generator.kotlin.GenerationContext
 
-fun Definitions.generateKotlins(
+fun Definitions.generateProto3(
     packageName: String,
     writerConstructor: (String) -> ((String) -> Unit)
 ) {
@@ -21,20 +21,20 @@ fun Definitions.generateKotlins(
         when (obj) {
             is IndexedEnumDefinition<*> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as IndexedEnumDefinition<IndexedEnum<Any>>).generateKotlins(packageName, writer)
+                (obj as IndexedEnumDefinition<IndexedEnum<Any>>).generateProto3Schema(writer)
                 kotlinGenerationContext.enums.add(obj)
             }
             is ValueDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>).generateKotlins(packageName, kotlinGenerationContext, writer)
+                (obj as ValueDataModel<*, ObjectPropertyDefinitions<*>>).generateProto3Schema(packageName, kotlinGenerationContext, writer)
             }
             is RootDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as RootDataModel<*, PropertyDefinitions>).generateKotlins(packageName, kotlinGenerationContext, writer)
+                (obj as RootDataModel<*, PropertyDefinitions>).generateProto3Schema(packageName, kotlinGenerationContext, writer)
             }
             is DataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as DataModel<*, PropertyDefinitions>).generateKotlins(packageName, kotlinGenerationContext, writer)
+                (obj as DataModel<*, PropertyDefinitions>).generateProto3Schema(packageName, kotlinGenerationContext, writer)
             }
             else -> throw Exception("Unknown Maryk Primitive $obj")
         }

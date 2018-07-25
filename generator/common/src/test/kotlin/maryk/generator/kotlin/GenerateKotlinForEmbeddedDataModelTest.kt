@@ -35,12 +35,12 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
 }
 """.trimIndent()
 
-class KotlinEmbeddedDataModelGeneratorTest {
+class GenerateKotlinForEmbeddedDataModelTest {
     @Test
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        EmbeddedModel.generateKotlin("maryk") {
+        EmbeddedModel.generateKotlins("maryk") {
             output += it
         }
 

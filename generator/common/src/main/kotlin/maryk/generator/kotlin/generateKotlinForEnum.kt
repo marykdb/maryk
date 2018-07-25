@@ -6,7 +6,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 /**
  * Generates kotlin code to [writer] for IndexedEnumDefinition in [packageName]
  */
-fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlin(packageName: String, writer: (String) -> Unit) {
+fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlins(packageName: String, writer: (String) -> Unit) {
     val importsToAdd = mutableSetOf<String>()
 
     val code = this.generateKotlinClass {

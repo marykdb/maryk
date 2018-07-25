@@ -2,9 +2,9 @@ package maryk.core.protobuf
 
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.properties.ByteCollector
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

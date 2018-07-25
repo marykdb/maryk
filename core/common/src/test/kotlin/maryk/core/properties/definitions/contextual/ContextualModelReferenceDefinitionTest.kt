@@ -7,8 +7,8 @@ import maryk.TestMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
-import maryk.core.properties.ByteCollector
 import maryk.core.query.DataModelPropertyContext
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

@@ -7,7 +7,6 @@ import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -33,6 +32,7 @@ import maryk.core.query.DataModelContext
 import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

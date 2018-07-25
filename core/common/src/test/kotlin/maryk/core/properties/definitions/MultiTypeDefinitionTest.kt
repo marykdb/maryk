@@ -5,12 +5,12 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

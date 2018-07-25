@@ -1,10 +1,10 @@
 package maryk
 
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCache
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 
 fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(

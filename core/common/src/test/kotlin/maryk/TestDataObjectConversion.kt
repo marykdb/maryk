@@ -4,7 +4,6 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.Values
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -12,6 +11,7 @@ import maryk.core.protobuf.WriteCache
 import maryk.core.yaml.MarykYamlReaders
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 

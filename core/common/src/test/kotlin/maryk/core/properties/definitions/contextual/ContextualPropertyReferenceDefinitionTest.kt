@@ -4,8 +4,8 @@ import maryk.EmbeddedMarykModel
 import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.properties.ByteCollector
 import maryk.core.query.DataModelPropertyContext
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

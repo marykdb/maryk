@@ -4,7 +4,6 @@ import maryk.EmbeddedMarykModel
 import maryk.Option
 import maryk.TestMarykModel
 import maryk.TestValueObject
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -18,6 +17,7 @@ import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter

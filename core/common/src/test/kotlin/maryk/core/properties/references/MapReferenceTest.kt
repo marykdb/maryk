@@ -1,9 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.TestMarykModel
-import maryk.core.properties.ByteCollector
 import maryk.core.protobuf.WriteCache
 import maryk.lib.time.Time
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

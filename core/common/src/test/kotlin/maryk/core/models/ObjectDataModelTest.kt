@@ -4,7 +4,6 @@ import maryk.EmbeddedMarykObject
 import maryk.Option
 import maryk.TestMarykObject
 import maryk.TestValueObject
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.toUInt32
@@ -16,6 +15,7 @@ import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter

@@ -3,12 +3,12 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.TimePrecision
 import maryk.lib.exceptions.ParseException
 import maryk.lib.time.Instant
 import maryk.lib.time.Time
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

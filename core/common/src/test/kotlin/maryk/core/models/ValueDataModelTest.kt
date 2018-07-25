@@ -4,12 +4,12 @@ import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DataModelContext
 import maryk.lib.time.DateTime
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

@@ -6,7 +6,6 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -16,6 +15,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DataModelContext
 import maryk.lib.extensions.toHex
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

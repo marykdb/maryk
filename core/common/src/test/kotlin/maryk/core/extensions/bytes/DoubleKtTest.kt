@@ -1,6 +1,6 @@
 package maryk.core.extensions.bytes
 
-import maryk.core.properties.ByteCollector
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 

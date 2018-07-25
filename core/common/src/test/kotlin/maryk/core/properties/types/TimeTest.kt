@@ -1,9 +1,9 @@
 package maryk.core.properties.types
 
-import maryk.core.properties.ByteCollector
+import maryk.lib.time.Time
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
-import maryk.lib.time.Time
 import kotlin.test.Test
 
 internal class TimeTest {

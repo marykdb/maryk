@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.ByteCollector
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.protobuf.ProtoBuf
@@ -11,6 +10,7 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
 import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.extensions.toHex
+import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

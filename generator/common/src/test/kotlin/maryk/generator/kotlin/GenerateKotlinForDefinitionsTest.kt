@@ -29,7 +29,7 @@ class GenerateKotlinForDefinitionsTest {
             EmbeddedModel,
             CompleteMarykModel,
             SimpleMarykModel
-        ).generateKotlins("maryk") { name ->
+        ).generateKotlin("maryk") { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]
                     ?: fail("Called for not known writer $name")

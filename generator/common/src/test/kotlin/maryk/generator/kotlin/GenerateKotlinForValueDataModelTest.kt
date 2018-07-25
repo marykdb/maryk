@@ -52,10 +52,10 @@ data class ValueMarykObject(
 
 class GenerateKotlinForValueDataModelTest {
     @Test
-    fun generate_kotlin_for_simple_model(){
+    fun generateKotlinForSimpleModel(){
         var output = ""
 
-        ValueMarykObject.generateKotlins("maryk") {
+        ValueMarykObject.generateKotlin("maryk") {
             output += it
         }
 

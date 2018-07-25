@@ -4,7 +4,7 @@ import maryk.core.models.ValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 
-fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlins(
+fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -18,7 +18,7 @@ fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
     val enumKotlinDefinitions = mutableListOf<String>()
-    val propertiesKotlin = properties.generateKotlins(addImport, generationContext) {
+    val propertiesKotlin = properties.generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 

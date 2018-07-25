@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.enum.IndexedEnum
 
 @Suppress("UNCHECKED_CAST")
-internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlins(
+internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlin(
     addImport: (String) -> Unit,
     generationContext: GenerationContext? = null,
     addEnumDefinition: ((String) -> Unit)? = null

@@ -434,7 +434,7 @@ class GenerateKotlinForRootDataModelTest {
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        SimpleMarykModel.generateKotlins("maryk") {
+        SimpleMarykModel.generateKotlin("maryk") {
             output += it
         }
 
@@ -449,7 +449,7 @@ class GenerateKotlinForRootDataModelTest {
             enums = mutableListOf(MarykEnum)
         )
 
-        CompleteMarykModel.generateKotlins("maryk", generationContext) {
+        CompleteMarykModel.generateKotlin("maryk", generationContext) {
             output += it
         }
 

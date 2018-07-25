@@ -28,7 +28,7 @@ class GenerateKotlinForEnumTest {
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        MarykEnum.generateKotlins("maryk") {
+        MarykEnum.generateKotlin("maryk") {
             output += it
         }
 

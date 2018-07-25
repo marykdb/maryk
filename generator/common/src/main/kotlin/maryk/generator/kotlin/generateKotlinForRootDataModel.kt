@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 
-fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlins(
+fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -22,7 +22,7 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlins(
 
     // Add key definitions if they are not the default UUID key
     val keyDefAsKotlin = if (this.keyDefinitions.size != 1 || this.keyDefinitions[0] != UUIDKey) {
-        val keyDefs = this.keyDefinitions.generateKotlins(addImport)
+        val keyDefs = this.keyDefinitions.generateKotlin(addImport)
 
         addImport("maryk.core.models.definitions")
 
@@ -33,7 +33,7 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlins(
     } else ""
 
     val enumKotlinDefinitions = mutableListOf<String>()
-    val propertiesKotlin = this.properties.generateKotlins(addImport, generationContext) {
+    val propertiesKotlin = this.properties.generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 
@@ -62,7 +62,7 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlins(
 /**
  * Generate the kotlin for key definitions and adds imports with [addImport]
  */
-private fun Array<out FixedBytesProperty<out Any>>.generateKotlins(addImport: (String) -> Unit): String {
+private fun Array<out FixedBytesProperty<out Any>>.generateKotlin(addImport: (String) -> Unit): String {
     val output = mutableListOf<String>()
 
     for (keyPart in this) {

@@ -40,7 +40,7 @@ class GenerateKotlinForEmbeddedDataModelTest {
     fun generate_kotlin_for_simple_model(){
         var output = ""
 
-        EmbeddedModel.generateKotlins("maryk") {
+        EmbeddedModel.generateKotlin("maryk") {
             output += it
         }
 

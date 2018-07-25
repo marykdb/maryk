@@ -7,10 +7,6 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 val generatedProto3ForValueDataModel = """
-syntax = "proto3";
-
-option java_package = "maryk";
-
 message ValueMarykObject {
   sint32 int = 1;
   sint64 date = 2;
@@ -23,7 +19,6 @@ class GenerateProto3ForValueDataModelTest {
         var output = ""
 
         ValueMarykObject.generateProto3Schema(
-            "maryk",
             GenerationContext(
                 enums = mutableListOf(MarykEnum)
             )

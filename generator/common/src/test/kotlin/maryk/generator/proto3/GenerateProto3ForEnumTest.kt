@@ -5,10 +5,6 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 val generatedProto3ForMarykEnum = """
-syntax = "proto3";
-
-option java_package = "maryk";
-
 enum MarykEnum {
   UNKNOWN = 0;
   O1 = 1;
@@ -22,7 +18,7 @@ class GenerateProto3ForEnumTest {
     fun generateProto3SchemaForEnum(){
         var output = ""
 
-        MarykEnum.generateProto3SchemaFile("maryk") {
+        MarykEnum.generateProto3Schema {
             output += it
         }
 

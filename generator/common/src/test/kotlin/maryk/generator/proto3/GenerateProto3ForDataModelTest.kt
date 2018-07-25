@@ -8,20 +8,12 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 val generatedProto3ForSimpleMarykModel: String = """
-syntax = "proto3";
-
-option java_package = "maryk";
-
 message SimpleMarykModel {
   string value = 1;
 }
 """.trimIndent()
 
 val generatedProto3ForCompleteMarykModel = """
-syntax = "proto3";
-
-option java_package = "maryk";
-
 message CompleteMarykModel {
   message MultiType {
     oneof multi {
@@ -75,7 +67,6 @@ class GenerateProto3ForDataModelTest {
         var output = ""
 
         CompleteMarykModel.generateProto3Schema(
-            "maryk",
             GenerationContext(
                 enums = mutableListOf(MarykEnum)
             )
@@ -91,7 +82,6 @@ class GenerateProto3ForDataModelTest {
         var output = ""
 
         SimpleMarykModel.generateProto3Schema(
-            "maryk",
             GenerationContext(
                 enums = mutableListOf(MarykEnum)
             )

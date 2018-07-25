@@ -23,7 +23,7 @@ class MixedKotlinGenerationTest {
             MarykEnum,
             ValueMarykObject,
             CompleteMarykModel
-        ).generateProto3("maryk") { name ->
+        ).generateProto3 { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]
                     ?: fail("Called for not known writer $name")

@@ -28,7 +28,6 @@ import maryk.core.properties.types.numeric.NumberType
 import maryk.generator.kotlin.GenerationContext
 
 fun <P: AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
-    packageName: String,
     generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {
@@ -48,10 +47,6 @@ fun <P: AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema
     } else ""
 
     val schema = """
-    syntax = "proto3";
-
-    option java_package = "$packageName";
-
     message $name {
       $precedingMessages${properties.prependIndent().prependIndent("  ").trimStart()}
     }

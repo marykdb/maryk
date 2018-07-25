@@ -147,8 +147,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             var fieldLength = 0
             fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, cacher, context)
             fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
-            fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
             container.length = fieldLength // set length for value
+            fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
 
             totalByteLength += fieldLength
         }

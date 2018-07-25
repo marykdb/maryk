@@ -1,6 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.decodeZigZag
+import maryk.core.extensions.bytes.encodeZigZag
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SimpleObjectDataModel
@@ -43,13 +45,13 @@ data class DateDefinition(
 
     override fun writeStorageBytes(value: Date, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = Date.ofEpochDay(initLongByVar(reader))
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = Date.ofEpochDay(initLongByVar(reader).decodeZigZag())
 
-    override fun calculateTransportByteLength(value: Date) = value.epochDay.calculateVarByteLength()
+    override fun calculateTransportByteLength(value: Date) = value.epochDay.encodeZigZag().calculateVarByteLength()
 
     override fun writeTransportBytes(value: Date, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: IsPropertyContext?) {
         val epochDay = value.epochDay
-        epochDay.writeVarBytes(writer)
+        epochDay.encodeZigZag().writeVarBytes(writer)
     }
 
     override fun fromString(string: String) = Date.parse(string)

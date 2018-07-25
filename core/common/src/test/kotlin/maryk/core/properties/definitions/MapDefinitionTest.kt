@@ -129,7 +129,7 @@ internal class MapDefinitionTest {
         )
         def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "220c08181207237477656c7665220c083c120723746869727479220e08c80112082368756e64726564220f08d00f12092374686f7573616e64"
+        bc.bytes!!.toHex() shouldBe "220b08181207237477656c7665220b083c120723746869727479220d08c80112082368756e64726564220e08d00f12092374686f7573616e64"
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)

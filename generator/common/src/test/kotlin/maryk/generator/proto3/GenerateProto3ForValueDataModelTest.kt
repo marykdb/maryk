@@ -12,8 +12,8 @@ syntax = "proto3";
 option java_package = "maryk";
 
 message ValueMarykObject {
-  required sint32 int = 1;
-  required sint64 date = 2;
+  sint32 int = 1;
+  sint64 date = 2;
 }
 """.trimIndent()
 

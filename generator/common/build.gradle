@@ -1,5 +1,5 @@
-apply {
-    plugin("kotlin-platform-common")
+plugins {
+    id "kotlin-platform-common"
 }
 
 evaluationDependsOn(':test-common')

@@ -21,7 +21,7 @@ fun Definitions.generateProto3(
         when (obj) {
             is IndexedEnumDefinition<*> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as IndexedEnumDefinition<IndexedEnum<Any>>).generateProto3Schema(writer)
+                (obj as IndexedEnumDefinition<IndexedEnum<Any>>).generateProto3SchemaFile(packageName, writer)
                 kotlinGenerationContext.enums.add(obj)
             }
             is ValueDataModel<*, *> -> {

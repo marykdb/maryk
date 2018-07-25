@@ -1,7 +1,20 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-apply {
-    plugin("kotlin-platform-jvm")
+plugins {
+    id "com.google.protobuf" version "0.8.6"
+    id "kotlin-platform-jvm"
+    id "idea"
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.6.0'
+    }
+    generatedFilesBaseDir = "$projectDir/gen"
+}
+
+clean {
+    delete protobuf.generatedFilesBaseDir
 }
 
 dependencies {
@@ -10,6 +23,7 @@ dependencies {
     compile(project(":core-jvm"))
 
     testCompile(project(":test-jvm"))
+    testCompile("com.google.protobuf:protobuf-java:3.6.0")
 }
 
 tasks.withType(KotlinCompile) {

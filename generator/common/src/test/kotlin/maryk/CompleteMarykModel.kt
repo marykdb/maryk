@@ -344,7 +344,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         time: Time = Time(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),
-        reference: Key<SimpleMarykModel> = Key("AAECAw"),
+        reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEC"),
         subModel: Values<SimpleMarykModel, SimpleMarykModel.Properties> = SimpleMarykModel(
             value = "a default"
         ),

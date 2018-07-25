@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+option java_package = "maryk";
+
+enum MarykEnum {
+    UNKNOWN = 0;
+    O1 = 1;
+    O2 = 2;
+    O3 = 3;
+}
+
+message SimpleMarykModel {
+    string value = 1;
+}
+
+message ValueMarykObject {
+    sint32 int = 1;
+    sint64 date = 2;
+}
+
+message CompleteMarykModel {
+    message MultiType {
+        oneof multi {
+            string o1 = 1;
+            bool o2 = 2;
+        }
+    }
+    message MultiForKeyType {
+        oneof multiForKey {
+            string o1 = 1;
+            bool o2 = 2;
+        }
+    }
+    enum MarykEnumEmbedded {
+        UNKNOWN = 0;
+        E1 = 1;
+        E2 = 2;
+        E3 = 3;
+    }
+    message MapWithEnumEntry {
+        MarykEnumEmbedded key = 1;
+        string value = 2;
+    }
+    string string = 1;
+    uint64 number = 2;
+    bool boolean = 3;
+    MarykEnum enum = 4;
+    sint64 date = 5;
+    int64 dateTime = 6;
+    uint32 time = 7;
+    bytes fixedBytes = 8;
+    bytes flexBytes = 9;
+    bytes reference = 10;
+    SimpleMarykModel subModel = 11;
+    bytes valueModel = 12;
+    repeated string list = 13;
+    repeated sint32 set = 14;
+    map<sint64, sint32> map = 15;
+    MultiType multi = 16;
+    bool booleanForKey = 17;
+    sint64 dateForKey = 18;
+    MultiForKeyType multiForKey = 19;
+    MarykEnumEmbedded enumEmbedded = 20;
+    repeated MapWithEnumEntry mapWithEnum = 21;
+}

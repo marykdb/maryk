@@ -34,7 +34,11 @@ fun <P: AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema
 ) {
     val subMessages = mutableListOf<String>()
 
-    val messageAdder: (String) -> Unit = { subMessages.add(it) }
+    val messageAdder: (String) -> Unit = {
+        if (!subMessages.contains(it)) {
+            subMessages.add(it)
+        }
+    }
 
     val properties = this.properties.generateSchemaForProperties(generationContext, messageAdder)
 
@@ -63,9 +67,8 @@ private fun AbstractPropertyDefinitions<*>.generateSchemaForProperties(
     var properties = ""
 
     for (it in this) {
-        val optionality = if(it.definition.required) "required" else "optional"
         val type = it.definition.toProtoBufType(it.name, generationContext, messageAdder)
-        properties += "$optionality $type ${it.name} = ${it.index};\n"
+        properties += "$type ${it.name} = ${it.index};\n"
     }
     return properties.trimEnd()
 }
@@ -82,9 +85,9 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is FlexBytesDefinition,
         is ValueModelDefinition<*, *, *>,
         is ReferenceDefinition<*> -> "bytes"
-        is TimeDefinition -> "sint32"
-        is DateDefinition,
-        is DateTimeDefinition -> "sint64"
+        is TimeDefinition -> "uint32"
+        is DateDefinition -> "sint64"
+        is DateTimeDefinition -> "int64"
         is NumberDefinition<*> -> when(this.type.type) {
             NumberType.SInt8,
             NumberType.SInt16,

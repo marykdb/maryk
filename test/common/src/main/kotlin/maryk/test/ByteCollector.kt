@@ -4,7 +4,7 @@ package maryk.test
 open class ByteCollector {
     var bytes: ByteArray? = null
     private var writeIndex = 0
-    internal var readIndex = 0
+    var readIndex = 0
 
     val size: Int get() = bytes!!.size
 

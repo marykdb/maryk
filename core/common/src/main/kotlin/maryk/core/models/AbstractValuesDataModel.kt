@@ -78,7 +78,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun calculateProtoBufLength(map: Values<DM, P>, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    fun calculateProtoBufLength(map: Values<DM, P>, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
@@ -97,7 +97,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun writeProtoBuf(map: Values<DM, P>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    fun writeProtoBuf(map: Values<DM, P>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
@@ -113,7 +113,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
      * Read ProtoBuf bytes from [reader] until [length] to a Map of values
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Values<DM, P> {
+    fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): Values<DM, P> {
         return this.map {
             this@AbstractValuesDataModel.readProtoBufToMap(length, reader, context)
         }

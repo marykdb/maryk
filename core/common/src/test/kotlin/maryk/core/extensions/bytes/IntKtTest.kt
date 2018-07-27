@@ -95,6 +95,21 @@ internal class IntKtTest {
         testZigZagByteContent(bc, Int.MIN_VALUE, "ffffffff0f")
     }
 
+    @Test
+    fun testStreamingLittleEndianIntConversion() {
+        val bc = ByteCollector()
+
+        testLittleEndianByteContent(bc, 2222, "ae080000")
+        testLittleEndianByteContent(bc, -2222, "52f7ffff")
+        testLittleEndianByteContent(bc, 1, "01000000")
+        testLittleEndianByteContent(bc, 0, "00000000")
+        testLittleEndianByteContent(bc, -1, "ffffffff")
+        testLittleEndianByteContent(bc, -1933587636, "4ccbbf8c")
+        testLittleEndianByteContent(bc, 923587636, "34d40c37")
+        testLittleEndianByteContent(bc, Int.MAX_VALUE, "ffffff7f")
+        testLittleEndianByteContent(bc, Int.MIN_VALUE, "00000080")
+    }
+
     private fun testZigZagByteContent(bc: ByteCollector, it: Int, hexValue: String) {
         this.testByteContent(bc, it.encodeZigZag(), hexValue)
     }
@@ -104,6 +119,16 @@ internal class IntKtTest {
         it.writeVarBytes(bc::write)
 
         initIntByVar(bc::read) shouldBe it
+
+        bc.bytes!!.toHex() shouldBe hexValue
+        bc.reset()
+    }
+
+    private fun testLittleEndianByteContent(bc: ByteCollector, it: Int, hexValue: String) {
+        bc.reserve(4)
+        it.writeLittleEndianBytes(bc::write)
+
+        initIntLittleEndian(bc::read) shouldBe it
 
         bc.bytes!!.toHex() shouldBe hexValue
         bc.reset()

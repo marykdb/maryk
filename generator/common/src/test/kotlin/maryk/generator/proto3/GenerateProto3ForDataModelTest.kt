@@ -2,14 +2,30 @@ package maryk.generator.proto3
 
 import maryk.CompleteMarykModel
 import maryk.MarykEnum
+import maryk.NumericMarykModel
 import maryk.SimpleMarykModel
 import maryk.generator.kotlin.GenerationContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-val generatedProto3ForSimpleMarykModel: String = """
+val generatedProto3ForSimpleMarykModel = """
 message SimpleMarykModel {
   string value = 1;
+}
+""".trimIndent()
+
+val generatedProto3ForNumericMarykModel = """
+message NumericMarykModel {
+  sint32 sInt8 = 1;
+  sint32 sInt16 = 2;
+  sint32 sInt32 = 3;
+  sint64 sInt64 = 4;
+  uint64 uInt8 = 5;
+  uint64 uInt16 = 6;
+  uint64 uInt32 = 7;
+  uint64 uInt64 = 8;
+  float float32 = 9;
+  double float64 = 10;
 }
 """.trimIndent()
 
@@ -75,6 +91,19 @@ class GenerateProto3ForDataModelTest {
         }
 
         output shouldBe generatedProto3ForCompleteMarykModel
+    }
+
+    @Test
+    fun testNumericModelConversion() {
+        var output = ""
+
+        NumericMarykModel.generateProto3Schema(
+            GenerationContext()
+        ) {
+            output += it
+        }
+
+        output shouldBe generatedProto3ForNumericMarykModel
     }
 
     @Test

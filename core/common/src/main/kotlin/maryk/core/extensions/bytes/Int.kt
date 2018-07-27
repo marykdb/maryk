@@ -84,3 +84,19 @@ internal fun Int.calculateVarByteLength(): Int = when {
     this and (Int.MAX_VALUE shl 28) == 0 -> 4
     else -> 5
 }
+
+/** Write the bytes of this Int in little endian order to a [writer] */
+internal fun Int.writeLittleEndianBytes(writer: (byte: Byte) -> Unit) {
+    for (it in 0..3) {
+        writer(
+            (this shr it * 8 and 0xFF).toByte()
+        )
+    }
+}
+
+/** Creates Integer by reading bytes in little endian order from [reader] */
+internal fun initIntLittleEndian(reader: () -> Byte) =
+    (reader().toInt() and 0xff) or
+    ((reader().toInt() and 0xff) shl 8) or
+    ((reader().toInt() and 0xff) shl 16) or
+    ((reader().toInt() and 0xff) shl 24)

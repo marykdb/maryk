@@ -272,27 +272,7 @@ internal class DataModelTest {
 
         TestMarykModel.writeProtoBuf(map, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a036861791008182021400c70a3d70a3d7228ccf794d105300138037209010501050105010501"
-    }
-
-    @Test
-    fun convert_from_ProtoBuf_bytes() {
-        val bytes = initByteArrayByHex("0a036861791008182021400c70a3d70a3d7228ccf794d105300138027209010501050105010501")
-        var index = 0
-
-        val map = TestMarykModel.readProtoBuf(bytes.size, {
-            bytes[index++]
-        })
-
-        map.size shouldBe 8
-        map { string } shouldBe "hay"
-        map { int } shouldBe 4
-        map { uint } shouldBe 32.toUInt32()
-        map { double } shouldBe 3.555
-        map { dateTime } shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
-        map { bool } shouldBe true
-        map { enum } shouldBe Option.V2
-        map { reference }!!.bytes.toHex() shouldBe "010501050105010501"
+        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d105300138037209010501050105010501"
     }
 
     @Test
@@ -305,6 +285,8 @@ internal class DataModelTest {
         )
 
         TestMarykModel.writeProtoBuf(testExtendedObject, cache, bc::write)
+
+        bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497"
 
         TestMarykModel.readProtoBuf(bc.size, bc::read) shouldBe testExtendedObject
     }

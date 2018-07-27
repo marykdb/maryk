@@ -68,7 +68,7 @@ internal class LongKtTest {
     }
 
     @Test
-    fun testStreamingVarIntConversion() {
+    fun testStreamingVarLongConversion() {
         val bc = ByteCollector()
 
         testByteContent(bc, 2222, "ae11")
@@ -83,7 +83,7 @@ internal class LongKtTest {
     }
 
     @Test
-    fun testStreamingVarIntZigZagConversion() {
+    fun testStreamingVarLongZigZagConversion() {
         val bc = ByteCollector()
 
         testZigZagByteContent(bc, 2222, "dc22")
@@ -97,6 +97,21 @@ internal class LongKtTest {
         testZigZagByteContent(bc, Long.MIN_VALUE, "ffffffffffffffffff01")
     }
 
+    @Test
+    fun testStreamingLongLittleEndianConversion() {
+        val bc = ByteCollector()
+
+        testLittleEndianByteContent(bc, 2222, "ae08000000000000")
+        testLittleEndianByteContent(bc, -2222, "52f7ffffffffffff")
+        testLittleEndianByteContent(bc, 1, "0100000000000000")
+        testLittleEndianByteContent(bc, 0, "0000000000000000")
+        testLittleEndianByteContent(bc, -1, "ffffffffffffffff")
+        testLittleEndianByteContent(bc, -4786131286145765123, "fdf0e508f43e94bd")
+        testLittleEndianByteContent(bc, 4786131286145765123, "030f1af70bc16b42")
+        testLittleEndianByteContent(bc, Long.MAX_VALUE, "ffffffffffffff7f")
+        testLittleEndianByteContent(bc, Long.MIN_VALUE, "0000000000000080")
+    }
+
     private fun testZigZagByteContent(bc: ByteCollector, it: Long, hexValue: String) {
         testByteContent(bc, it.encodeZigZag(), hexValue)
     }
@@ -106,6 +121,16 @@ internal class LongKtTest {
         it.writeVarBytes(bc::write)
 
         initLongByVar(bc::read) shouldBe it
+
+        bc.bytes!!.toHex() shouldBe hexValue
+        bc.reset()
+    }
+
+    private fun testLittleEndianByteContent(bc: ByteCollector, it: Long, hexValue: String) {
+        bc.reserve(8)
+        it.writeLittleEndianBytes(bc::write)
+
+        initLongLittleEndian(bc::read) shouldBe it
 
         bc.bytes!!.toHex() shouldBe hexValue
         bc.reset()

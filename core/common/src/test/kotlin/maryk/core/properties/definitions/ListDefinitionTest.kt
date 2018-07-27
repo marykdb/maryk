@@ -150,7 +150,7 @@ internal class ListDefinitionTest {
             0.000222F,
             236453165416F
         ).asList()
-        val asHex = "22104064395947638de13968c8ad525c36d5"
+        val asHex = "221058396440e08d6347acc86839d4365c52"
 
         this.testPackedTransportConversion(def32Int, value, asHex, 4)
     }
@@ -163,7 +163,7 @@ internal class ListDefinitionTest {
             0.0002222222222,
             2364531654162343428.0
         )
-        val asHex = "1a20400c30e5336d62274334b22a641083fd3f2d208a5a84aba343c06840817d41b4"
+        val asHex = "1a2026626d33e5300c40fc8310642ab23443a2ab845a8a202d3fb3417d814068c043"
 
         this.testPackedTransportConversion(def64Int, value, asHex, 3)
     }

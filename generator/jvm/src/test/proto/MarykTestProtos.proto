@@ -9,6 +9,19 @@ enum MarykEnum {
     O3 = 3;
 }
 
+message NumericMarykModel {
+    sint32 sInt8 = 1;
+    sint32 sInt16 = 2;
+    sint32 sInt32 = 3;
+    sint64 sInt64 = 4;
+    uint64 uInt8 = 5;
+    uint64 uInt16 = 6;
+    uint64 uInt32 = 7;
+    uint64 uInt64 = 8;
+    float float32 = 9;
+    double float64 = 10;
+}
+
 message SimpleMarykModel {
     string value = 1;
 }

@@ -15,3 +15,13 @@ internal fun initDouble(reader: () -> Byte): Double {
     l = l xor (l.inv() shr 64 - 1 or Long.MIN_VALUE)
     return Double.fromBits(l)
 }
+
+/** Write the bytes of this Double in little endian order to a [writer] */
+internal fun Double.writeTransportableBytes(writer: (byte: Byte) -> Unit) =
+    this.toRawBits().writeLittleEndianBytes(writer)
+
+/** Converts [reader] with little endian encoded bytes to Double */
+internal fun initDoubleFromTransport(reader: () -> Byte) =
+    Double.fromBits(
+        initLongLittleEndian(reader)
+    )

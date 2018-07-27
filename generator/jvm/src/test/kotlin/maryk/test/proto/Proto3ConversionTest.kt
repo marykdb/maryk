@@ -5,6 +5,7 @@ import maryk.CompleteMarykModel
 import maryk.MarykEnum
 import maryk.MarykEnumEmbedded
 import maryk.MarykTestProtos
+import maryk.NumericMarykModel
 import maryk.SimpleMarykModel
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
@@ -32,6 +33,40 @@ class Proto3ConversionTest {
         SimpleMarykModel.writeProtoBuf(simpleObject, cache, bc::write)
 
         val protoBufByteArray = simpleObjectProto.toByteArray()
+
+        // Compare result
+        protoBufByteArray.toHex() shouldBe bc.bytes!!.toHex()
+    }
+
+    @Test
+    fun testNumericMarykModel(){
+        // SimpleObject to convert
+        val numericObject = NumericMarykModel()
+        val numericObjectProto = MarykTestProtos.NumericMarykModel
+            .newBuilder()
+            .setSInt8(4)
+            .setSInt16(42)
+            .setSInt32(42)
+            .setSInt64(4123123344572L)
+            .setUInt8(4)
+            .setUInt16(42)
+            .setUInt32(42)
+            .setUInt64(4123123344572L)
+            .setFloat32(42.345F)
+            .setFloat64(2345762.3123)
+            .build()
+
+        42.345F.toRawBits() shouldBe java.lang.Float.floatToRawIntBits(42.345F)
+
+        // Write protobuf
+        val bc = ByteCollector()
+        val cache = WriteCache()
+        bc.reserve(
+            NumericMarykModel.calculateProtoBufLength(numericObject, cache)
+        )
+        NumericMarykModel.writeProtoBuf(numericObject, cache, bc::write)
+
+        val protoBufByteArray = numericObjectProto.toByteArray()
 
         // Compare result
         protoBufByteArray.toHex() shouldBe bc.bytes!!.toHex()

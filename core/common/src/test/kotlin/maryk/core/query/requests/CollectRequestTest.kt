@@ -10,7 +10,10 @@ import kotlin.test.Test
 
 val collectRequest = CollectRequest(
     "testName",
-    getRequest
+    SimpleMarykModel.get(
+        SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng"),
+        SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+    )
 )
 
 class CollectRequestTest {

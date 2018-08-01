@@ -12,9 +12,9 @@ import maryk.core.protobuf.WriteCacheWriter
  * and referred by PropertyReference of type [P].
  */
 open class ValueWithFixedBytesPropertyReference<
-        T: Any,
-        out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>,
-        out P: IsPropertyReference<*, *>
+    T: Any,
+    out D : FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>,
+    out P: AnyPropertyReference
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?

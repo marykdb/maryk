@@ -3,14 +3,14 @@ package maryk.core.properties.exceptions
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 
 /**
  * Exception for when a property referred by [reference] is final and already has a value but was tried
  * to set to another value.
  */
 data class AlreadySetException internal constructor(
-    val reference: IsPropertyReference<*, *>?
+    val reference: AnyPropertyReference?
 ) : ValidationException(
     reference = reference,
     reason = "is already set before and cannot be set again"

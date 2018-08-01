@@ -6,6 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.EmbeddedObjectPropertyRef
 import maryk.core.properties.references.IsPropertyReference
@@ -39,7 +40,7 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+    override fun getRef(parentRef: AnyPropertyReference?) =
         EmbeddedObjectPropertyRef(
             this,
             parentRef?.let {

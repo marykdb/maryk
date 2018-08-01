@@ -21,6 +21,7 @@ import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitio
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
@@ -192,7 +193,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+    override fun getRef(parentRef: AnyPropertyReference?) =
         ValuePropertyReference(this, parentRef)
 }
 

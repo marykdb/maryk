@@ -17,6 +17,7 @@ import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 
@@ -125,7 +126,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     final override fun getPropertyReferenceByName(referenceName: String): IsPropertyReference<*, IsPropertyDefinition<*>> {
         val names = referenceName.split(".")
 
-        var propertyReference: IsPropertyReference<*, *>? = null
+        var propertyReference: AnyPropertyReference? = null
         for (name in names) {
             propertyReference = when (propertyReference) {
                 null -> this[name]?.getRef(propertyReference)
@@ -146,7 +147,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
             reader()
         }
 
-        var propertyReference: IsPropertyReference<*, *>? = null
+        var propertyReference: AnyPropertyReference? = null
         while (readLength < length) {
             propertyReference = when (propertyReference) {
                 null -> {

@@ -14,7 +14,7 @@ open class ValuePropertyReference<
         T: Any,
         TO: Any,
         out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
-        out P: IsPropertyReference<*, *>
+        out P: AnyPropertyReference
 > internal constructor(
         propertyDefinition: D,
         parentReference: P?

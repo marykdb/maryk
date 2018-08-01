@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.graph.PropRefGraphType
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 
 /**
@@ -36,7 +36,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
     override val graphType = PropRefGraphType.PropRef
     override val keyPartType = KeyPartType.Reference
 
-    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+    override fun getRef(parentRef: AnyPropertyReference?) =
         ValueWithFixedBytesPropertyReference(this, parentRef)
 
     /** Get the value to be used in a key from [dataObject] defined by [dataModel] */

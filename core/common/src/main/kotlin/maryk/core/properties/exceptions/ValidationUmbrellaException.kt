@@ -5,7 +5,7 @@ import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
 
 /**
@@ -13,7 +13,7 @@ import maryk.core.properties.types.TypedValue
  * Contains a list of [exceptions] which where caught on property referred by [reference].
  */
 data class ValidationUmbrellaException internal constructor(
-    val reference: IsPropertyReference<*,*>?,
+    val reference: AnyPropertyReference?,
     val exceptions: List<ValidationException>
 ) : ValidationException(
     newMessage = createReason(reference, exceptions)
@@ -46,7 +46,7 @@ data class ValidationUmbrellaException internal constructor(
     }
 }
 
-private fun createReason(reference: IsPropertyReference<*, *>?, exceptions: List<ValidationException>): String {
+private fun createReason(reference: AnyPropertyReference?, exceptions: List<ValidationException>): String {
     val property = if (reference != null) " in property «${reference.completeName}»" else ""
 
     var messages = "Umbrella exception$property: [\n"
@@ -57,7 +57,7 @@ private fun createReason(reference: IsPropertyReference<*, *>?, exceptions: List
 }
 
 /** Convenience method to create a new ValidationUmbrellaException */
-fun createValidationUmbrellaException(refGetter: () -> IsPropertyReference<*, *>?, exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit){
+fun createValidationUmbrellaException(refGetter: () -> AnyPropertyReference?, exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit){
     var hasExceptions = false
     val exceptions by lazy {
         hasExceptions = true

@@ -3,11 +3,11 @@ package maryk.core.properties.exceptions
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 
 /** Exception for when properties referred by [reference] are set with invalid [value]. */
 data class InvalidValueException internal constructor(
-    val reference: IsPropertyReference<*, *>?,
+    val reference: AnyPropertyReference?,
     val value: String
 ) : ValidationException(
     reference = reference,

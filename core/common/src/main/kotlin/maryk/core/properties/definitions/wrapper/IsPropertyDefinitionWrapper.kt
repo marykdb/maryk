@@ -18,6 +18,7 @@ import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitio
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.IsPropRefGraphable
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
@@ -59,14 +60,14 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     /** Get a reference to this definition inside [parentRef] */
-    fun getRef(parentRef: IsPropertyReference<*, *>? = null): IsPropertyReference<T, *>
+    fun getRef(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, *>
 
     /**
      * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates
      * reference with [parentRefFactory]
      * @throws ValidationException when encountering invalid new value
      */
-    fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> IsPropertyReference<*, *>? = { null }) {
+    fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> AnyPropertyReference? = { null }) {
         this.validateWithRef(previousValue, newValue) { this.getRef(parentRefFactory()) }
     }
 

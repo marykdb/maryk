@@ -4,7 +4,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 
 /**
  * Exception for when a [value] of property referred by [reference] was
@@ -14,7 +14,7 @@ import maryk.core.properties.references.IsPropertyReference
  * Map
  */
 data class OutOfRangeException internal constructor(
-    val reference: IsPropertyReference<*, *>?,
+    val reference: AnyPropertyReference?,
     val value: String,
     val min: String?,
     val max: String?

@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
@@ -31,11 +32,11 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+    override fun getRef(parentRef: AnyPropertyReference?) =
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific set item by [value] with optional [parentRef] */
-    fun getItemRef(value: T, parentRef: IsPropertyReference<*, *>? = null) =
+    fun getItemRef(value: T, parentRef: AnyPropertyReference? = null) =
         this.definition.getItemRef(value, this.getRef(parentRef))
 
     /** For quick notation to get a set [item] reference */

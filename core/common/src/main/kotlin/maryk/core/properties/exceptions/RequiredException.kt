@@ -3,11 +3,11 @@ package maryk.core.properties.exceptions
 import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 
 /** Exception if a required property referred by [reference] was not set or is being unset. */
 data class RequiredException internal constructor(
-    val reference: IsPropertyReference<*, *>?
+    val reference: AnyPropertyReference?
 ) : ValidationException(
     reference = reference,
     reason = "is required and not set"

@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 abstract class PropertyReference<
         T: Any,
         out D : IsPropertyDefinition<T>,
-        out P: IsPropertyReference<*, *>
+        out P: AnyPropertyReference
 > internal constructor(
     final override val propertyDefinition: D,
     val parentReference: P?
@@ -18,7 +18,7 @@ abstract class PropertyReference<
 
     override fun equals(other: Any?) = when {
         this === other -> true
-        other == null || other !is IsPropertyReference<*, *> -> false
+        other == null || other !is AnyPropertyReference -> false
         else -> other.completeName == this.completeName
     }
 

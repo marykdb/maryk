@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -49,8 +49,8 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefiniti
     }
 
     private fun <T: Any, CX: IsPropertyContext> IsJsonLikeWriter.writeJsonValues(
-        referenceProperty: PropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, *>,
-        reference: IsPropertyReference<*, *>,
+        referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, *>,
+        reference: AnyPropertyReference,
         valueProperty: IsPropertyDefinitionWrapper<T, *, CX, *>,
         value: T,
         context: DataModelPropertyContext?

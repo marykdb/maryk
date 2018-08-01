@@ -4,7 +4,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
 /**
@@ -12,7 +12,7 @@ import maryk.core.properties.types.numeric.SInt32
  * not enough items compared to [minSize]
  */
 data class NotEnoughItemsException internal constructor(
-    val reference: IsPropertyReference<*, *>?,
+    val reference: AnyPropertyReference?,
     val size: Int,
     val minSize: Int
 ) : ValidationException(

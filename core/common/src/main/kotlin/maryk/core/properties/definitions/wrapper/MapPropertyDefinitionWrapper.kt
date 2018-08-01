@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
@@ -32,15 +33,15 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
     override val graphType = PropRefGraphType.PropRef
 
     @Suppress("UNCHECKED_CAST")
-    override fun getRef(parentRef: IsPropertyReference<*, *>?): MapReference<K, V, CX> =
+    override fun getRef(parentRef: AnyPropertyReference?): MapReference<K, V, CX> =
         MapReference(this as MapPropertyDefinitionWrapper<K, V, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific map [key] with optional [parentRef] */
-    private fun getKeyRef(key: K, parentRef: IsPropertyReference<*, *>? = null) =
+    private fun getKeyRef(key: K, parentRef: AnyPropertyReference? = null) =
         this.definition.getKeyRef(key, this.getRef(parentRef))
 
     /** Get a reference to a specific map value by [key] with optional [parentRef] */
-    private fun getValueRef(key: K, parentRef: IsPropertyReference<*, *>? = null) =
+    private fun getValueRef(key: K, parentRef: AnyPropertyReference? = null) =
         this.definition.getValueRef(key, this.getRef(parentRef))
 
     /** For quick notation to get a map [key] reference */

@@ -27,7 +27,7 @@ open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
         else -> throw ParseException("Unknown Set type $name[0]")
     }
 
-    override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, *> {
+    override fun getEmbeddedRef(reader: () -> Byte): AnyPropertyReference {
         val protoKey = ProtoBuf.readKey(reader)
         return when(protoKey.tag) {
             0 -> {

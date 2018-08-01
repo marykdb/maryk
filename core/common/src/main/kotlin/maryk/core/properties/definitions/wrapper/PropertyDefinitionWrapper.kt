@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.graph.PropRefGraphType
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 
 /**
@@ -26,6 +26,6 @@ data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: I
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+    override fun getRef(parentRef: AnyPropertyReference?) =
         ValuePropertyReference(this, parentRef)
 }

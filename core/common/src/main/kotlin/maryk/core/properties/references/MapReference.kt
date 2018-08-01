@@ -16,7 +16,7 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<Map<K, V>> {
-    override fun getEmbedded(name: String): IsPropertyReference<*, *>  = when(name[0]) {
+    override fun getEmbedded(name: String): AnyPropertyReference  = when(name[0]) {
         '@' -> MapValueReference(
             propertyDefinition.keyDefinition.fromString(
                 name.substring(1)

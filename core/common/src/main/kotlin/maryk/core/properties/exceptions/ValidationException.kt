@@ -7,10 +7,11 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelPropertyContext
 
-/** Validation Exception with [newMessage] for properties */
+/** Validation Exception with newMessage for properties */
 abstract class ValidationException internal constructor(
     newMessage: String
 ) : Throwable(
@@ -18,7 +19,7 @@ abstract class ValidationException internal constructor(
 ) {
     internal constructor(
         reason: String?,
-        reference: IsPropertyReference<*,*>?
+        reference: AnyPropertyReference?
     ) : this(
         newMessage = "Property «${reference?.completeName}» $reason"
     )
@@ -26,7 +27,7 @@ abstract class ValidationException internal constructor(
     internal abstract val validationExceptionType: ValidationExceptionType
 
     internal companion object {
-        internal fun <DO: ValidationException> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> IsPropertyReference<*, *>?) {
+        internal fun <DO: ValidationException> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> AnyPropertyReference?) {
             definitions.add(
                 index = 1, name = "reference",
                 definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(

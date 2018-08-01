@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -26,16 +26,16 @@ enum class Direction(override val index: Int) : IndexedEnum<Direction> {
 }
 
 /** Descending ordering of property */
-fun IsPropertyReference<*, *>.descending() = Order(this, Direction.DESC)
+fun AnyPropertyReference.descending() = Order(this, Direction.DESC)
 
 /** Ascending ordering of property */
-fun IsPropertyReference<*, *>.ascending() = Order(this, Direction.ASC)
+fun AnyPropertyReference.ascending() = Order(this, Direction.ASC)
 
 /**
  * To define the order of results of property referred to [propertyReference] into [direction]
  */
 data class Order internal constructor(
-    val propertyReference: IsPropertyReference<*, *>,
+    val propertyReference: AnyPropertyReference,
     val direction: Direction = Direction.ASC
 ) {
     internal object Properties : ObjectPropertyDefinitions<Order>() {
@@ -68,7 +68,7 @@ data class Order internal constructor(
         }
 
         private fun writeJsonOrderValue(
-            reference: IsPropertyReference<*, *>,
+            reference: AnyPropertyReference,
             direction: Direction,
             writer: YamlWriter,
             context: DataModelPropertyContext?

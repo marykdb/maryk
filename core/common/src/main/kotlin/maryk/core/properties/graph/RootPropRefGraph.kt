@@ -7,7 +7,7 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.json.IsJsonLikeReader
@@ -82,7 +82,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
                             TypedValue(
                                 PropRefGraphType.PropRef,
                                 multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
-                                    .readJson(reader, context) as IsPropertyReference<*, *>
+                                    .readJson(reader, context) as AnyPropertyReference
                             )
                         )
                     }

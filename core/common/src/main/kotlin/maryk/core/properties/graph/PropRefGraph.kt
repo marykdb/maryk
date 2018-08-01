@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
 import maryk.json.IsJsonLikeReader
@@ -81,7 +81,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
 
         @Suppress("UNUSED_PARAMETER")
         private fun writeJsonValues(
-            reference: IsPropertyReference<*, *>,
+            reference: AnyPropertyReference,
             listOfPropRefGraphables: List<IsPropRefGraphable<*>>,
             writer: IsJsonLikeWriter,
             context: GraphContext?
@@ -144,7 +144,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
                             TypedValue(
                                 PropRefGraphType.PropRef,
                                 multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
-                                    .readJson(reader, context) as IsPropertyReference<*, *>
+                                    .readJson(reader, context) as AnyPropertyReference
                             )
                         )
                     }
@@ -199,7 +199,7 @@ internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
         },
         fromSerializable = { value: TypedValue<PropRefGraphType, *> ->
             when (value.value) {
-                is IsPropertyReference<*, *> -> value.value.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>
+                is AnyPropertyReference -> value.value.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>
                 is PropRefGraph<*, *> -> value.value
                 else -> throw ParseException("Unknown PropRefGraphType ${value.type}")
             }
@@ -221,7 +221,7 @@ internal fun writePropertiesToJson(
             is PropRefGraph<*, *> -> PropRefGraph.writeJson(
                 graphable.value, writer, context
             )
-            is IsPropertyReference<*, *> -> {
+            is AnyPropertyReference -> {
                 writer.writeString(graphable.value.completeName)
             }
             else -> throw ParseException("Cannot write unknown graphType ${graphable.type}")

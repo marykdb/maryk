@@ -20,6 +20,7 @@ import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DataModelContext
 import maryk.json.IsJsonLikeReader
@@ -295,5 +296,5 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO: 
     override val fromSerializable: ((ObjectPropertyDefinitions<Any>?) -> ObjectPropertyDefinitions<Any>?)? = null
     override val capturer: ((DataModelContext, ObjectPropertyDefinitions<Any>) -> Unit)? = null
 
-    override fun getRef(parentRef: IsPropertyReference<*, *>?) = throw Throwable("Not implemented")
+    override fun getRef(parentRef: AnyPropertyReference?) = throw Throwable("Not implemented")
 }

@@ -7,7 +7,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.filters.Exists
 import maryk.json.IsJsonLikeReader
@@ -20,7 +20,7 @@ internal abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectProperty
     properties: P
 ) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     protected fun IsJsonLikeWriter.writeJsonReferences(
-        references: List<IsPropertyReference<*, *>>,
+        references: List<AnyPropertyReference>,
         context: DataModelPropertyContext?
     ) {
         if (references.size == 1) {
@@ -69,9 +69,9 @@ internal abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectProperty
 }
 
 internal abstract class ReferencesObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>() {
-    abstract val references: ListPropertyDefinitionWrapper<IsPropertyReference<*, *>, IsPropertyReference<*, *>, DataModelPropertyContext, DO>
+    abstract val references: ListPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, DataModelPropertyContext, DO>
 
-    internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<IsPropertyReference<*, *>>) =
+    internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<AnyPropertyReference>) =
         this.add(1, "references",
             ListDefinition(
                 valueDefinition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(

@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 abstract class CanHaveComplexChildReference<
         T: Any,
         out D : IsPropertyDefinition<T>,
-        out P: IsPropertyReference<*, *>
+        out P: AnyPropertyReference
 > internal constructor(
     definition: D,
     parentReference: P?

@@ -4,7 +4,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.numeric.SInt32
 
 /**
@@ -12,7 +12,7 @@ import maryk.core.properties.types.numeric.SInt32
  * which got a wrong new size outside [min] and [max].
  */
 data class InvalidSizeException internal constructor(
-    val reference: IsPropertyReference<*, *>?,
+    val reference: AnyPropertyReference?,
     val value: String,
     val min: Int?,
     val max: Int?

@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.graph.PropRefGraphType
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
@@ -32,11 +33,11 @@ data class ListPropertyDefinitionWrapper<T: Any, TO: Any, CX: IsPropertyContext,
     override val graphType = PropRefGraphType.PropRef
 
     @Suppress("UNCHECKED_CAST")
-    override fun getRef(parentRef: IsPropertyReference<*, *>?) =
+    override fun getRef(parentRef: AnyPropertyReference?) =
         ListReference(this as ListPropertyDefinitionWrapper<T, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *>?)
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
-    fun getItemRef(index: Int, parentRef: IsPropertyReference<*, *>? = null) =
+    fun getItemRef(index: Int, parentRef: AnyPropertyReference? = null) =
         this.definition.getItemRef(index, this.getRef(parentRef))
 
     /** For quick notation to get a list item reference by [index] */

@@ -4,6 +4,8 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
+typealias AnyPropertyReference = IsPropertyReference<*, *>
+
 /**
  * Abstract for reference to a property of type [T] defined by [D]
  */

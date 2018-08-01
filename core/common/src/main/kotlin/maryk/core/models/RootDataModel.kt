@@ -144,7 +144,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                     is JsonToken.FieldName -> {
                         val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                        val definition = properties.get(value)
+                        val definition = properties[value]
                         if (definition == null) {
                             reader.skipUntilNextField()
                             continue@walker

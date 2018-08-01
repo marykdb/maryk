@@ -31,7 +31,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for (key in map.keys) {
-                val definition = properties.get(key) ?: continue
+                val definition = properties[key] ?: continue
                 val value = map<Any?>(key) ?: continue // skip empty values
                 try {
                     definition.validate(
@@ -54,7 +54,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
-            val definition = properties.get(key) ?: continue
+            val definition = properties[key] ?: continue
 
             definition.capture(context, value)
 
@@ -83,7 +83,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
-            val def = properties.get(key) ?: continue
+            val def = properties[key] ?: continue
 
             def.capture(context, value)
 
@@ -101,7 +101,7 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
         for (key in map.keys) {
             val value = map<Any?>(key) ?: continue // skip empty values
 
-            val definition = properties.get(key) ?: continue
+            val definition = properties[key] ?: continue
 
             definition.capture(context, value)
 

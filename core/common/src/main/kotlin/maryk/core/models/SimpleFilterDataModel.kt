@@ -26,7 +26,7 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefiniti
         context: DataModelPropertyContext?
     ) {
         val referenceProperty =
-            this.properties.get(0)
+            this.properties[0]
         val referencePropertyDefinition = referenceProperty?.definition as? IsValueDefinition<*, DataModelPropertyContext>
             ?: throw Exception("No first property found")
 
@@ -38,7 +38,7 @@ internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefiniti
         reader.nextToken()
 
         val valueProperty =
-            this.properties.get(1) ?: throw Exception("No property for value found")
+            this.properties[1] ?: throw Exception("No property for value found")
 
         valueMap[valueProperty.index] =
                 valueProperty.readJson(reader, context)

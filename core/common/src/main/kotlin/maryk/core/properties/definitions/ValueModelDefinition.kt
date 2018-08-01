@@ -58,7 +58,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
 
     override fun fromString(string: String) = this.dataModel.fromString(string)
 
-    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties.get(name)
+    override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 

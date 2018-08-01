@@ -589,76 +589,76 @@ internal class RootDataModelTest {
         RootDataModel.Model.readJson(reader, newContext).toDataObject().apply {
             name shouldBe "SimpleModel"
 
-            properties.get("string")!!.let {
+            properties["string"]!!.let {
                 it.index shouldBe 1
                 it.definition shouldBe StringDefinition()
             }
-            properties.get("int")!!.let {
+            properties["int"]!!.let {
                 it.index shouldBe 2
                 it.definition shouldBe NumberDefinition(type = SInt32)
             }
-            properties.get("date")!!.let {
+            properties["date"]!!.let {
                 it.index shouldBe 3
                 it.definition shouldBe DateDefinition()
             }
-            properties.get("time")!!.let {
+            properties["time"]!!.let {
                 it.index shouldBe 4
                 it.definition shouldBe TimeDefinition()
             }
-            properties.get("dateTime")!!.let {
+            properties["dateTime"]!!.let {
                 it.index shouldBe 5
                 it.definition shouldBe DateTimeDefinition()
             }
-            properties.get("options")!!.let {
+            properties["options"]!!.let {
                 it.index shouldBe 6
                 it.definition shouldBe EnumDefinition(enum = Option)
             }
-            properties.get("fixed")!!.let {
+            properties["fixed"]!!.let {
                 it.index shouldBe 7
                 it.definition shouldBe FixedBytesDefinition(byteSize = 4)
             }
-            properties.get("flex")!!.let {
+            properties["flex"]!!.let {
                 it.index shouldBe 8
                 it.definition shouldBe FlexBytesDefinition()
             }
-            properties.get("list")!!.let {
+            properties["list"]!!.let {
                 it.index shouldBe 9
                 it.definition shouldBe ListDefinition(
                     valueDefinition = StringDefinition()
                 )
             }
-            properties.get("set")!!.let {
+            properties["set"]!!.let {
                 it.index shouldBe 10
                 it.definition shouldBe SetDefinition(
                     valueDefinition = BooleanDefinition()
                 )
             }
-            properties.get("map")!!.let {
+            properties["map"]!!.let {
                 it.index shouldBe 11
                 it.definition shouldBe MapDefinition(
                     keyDefinition = DateDefinition(),
                     valueDefinition = StringDefinition()
                 )
             }
-            properties.get("embedded")!!.let {
+            properties["embedded"]!!.let {
                 it.index shouldBe 12
                 it.definition shouldBe EmbeddedValuesDefinition(
                     dataModel = { TestMarykModel }
                 )
             }
-            properties.get("value")!!.let {
+            properties["value"]!!.let {
                 it.index shouldBe 13
                 it.definition shouldBe ValueModelDefinition(
                     dataModel = TestValueObject
                 )
             }
-            properties.get("ref")!!.let {
+            properties["ref"]!!.let {
                 it.index shouldBe 14
                 it.definition shouldBe ReferenceDefinition(
                     dataModel = { TestMarykModel }
                 )
             }
-            properties.get("multi")!!.let {
+            properties["multi"]!!.let {
                 it.index shouldBe 15
                 it.definition shouldBe MultiTypeDefinition<Option, IsPropertyContext>(
                     typeEnum = Option,
@@ -668,7 +668,7 @@ internal class RootDataModelTest {
                     )
                 )
             }
-            properties.get("isTrue")!!.let {
+            properties["isTrue"]!!.let {
                 it.index shouldBe 16
                 it.definition shouldBe BooleanDefinition()
             }

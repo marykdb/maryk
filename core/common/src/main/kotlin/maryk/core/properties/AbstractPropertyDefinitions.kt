@@ -42,7 +42,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     override fun isEmpty() = this._allProperties.isEmpty()
 
     /** Get the definition with a property [name] */
-    fun get(name: String) = nameToDefinition[name]
+    operator fun get(name: String) = nameToDefinition[name]
     /** Get the definition with a property [index] */
     operator fun get(index: Int) = indexToDefinition[index]
 
@@ -128,7 +128,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         var propertyReference: IsPropertyReference<*, *>? = null
         for (name in names) {
             propertyReference = when (propertyReference) {
-                null -> this.get(name)?.getRef(propertyReference)
+                null -> this[name]?.getRef(propertyReference)
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
                 else -> throw DefNotFoundException("Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
@@ -151,7 +151,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
             propertyReference = when (propertyReference) {
                 null -> {
                     val index = initIntByVar(lengthReader)
-                    this.get(index)?.getRef(propertyReference)
+                    this[index]?.getRef(propertyReference)
                 }
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader)
                 else -> throw DefNotFoundException("More property references found on property that cannot have any ")

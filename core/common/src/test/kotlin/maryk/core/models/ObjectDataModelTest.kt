@@ -115,10 +115,10 @@ internal class ObjectDataModelTest {
 
     @Test
     fun get_property_definition_by_name() {
-        TestMarykObject.properties.get("string") shouldBe TestMarykObject.Properties.string
-        TestMarykObject.properties.get("int") shouldBe TestMarykObject.Properties.int
-        TestMarykObject.properties.get("dateTime") shouldBe TestMarykObject.Properties.dateTime
-        TestMarykObject.properties.get("bool") shouldBe TestMarykObject.Properties.bool
+        TestMarykObject.properties["string"] shouldBe TestMarykObject.Properties.string
+        TestMarykObject.properties["int"] shouldBe TestMarykObject.Properties.int
+        TestMarykObject.properties["dateTime"] shouldBe TestMarykObject.Properties.dateTime
+        TestMarykObject.properties["bool"] shouldBe TestMarykObject.Properties.bool
     }
 
     @Test

@@ -11,12 +11,12 @@ import maryk.json.IsJsonLikeWriter
 
 /** Delete of a property referred by [references] */
 data class Delete internal constructor(
-    val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>
+    val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>>
 ) : IsChange {
     override val changeType = ChangeType.Delete
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>): this(reference.toList())
+    constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>): this(reference.toList())
 
     internal object Properties : ReferencesObjectPropertyDefinitions<Delete>() {
         override val references = addReferenceListPropertyDefinition(Delete::references)

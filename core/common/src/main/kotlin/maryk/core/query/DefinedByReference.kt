@@ -13,7 +13,7 @@ import maryk.core.properties.references.IsPropertyReference
  * For objects containing a reference which defines the context of other properties
  */
 interface DefinedByReference<T: Any> {
-    val reference: IsPropertyReference<T, IsPropertyDefinition<T>>
+    val reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>
 
     companion object {
         internal fun <DO: Any> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> AnyPropertyReference?) =
@@ -27,7 +27,7 @@ interface DefinedByReference<T: Any> {
                 getter = getter,
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>
+                    context.reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>
                 }
             )
     }

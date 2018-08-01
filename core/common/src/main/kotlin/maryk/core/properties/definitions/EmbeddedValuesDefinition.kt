@@ -64,7 +64,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[index]
 
-    override fun validateWithRef(previousValue: Values<DM, P>?, newValue: Values<DM, P>?, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>>?) {
+    override fun validateWithRef(previousValue: Values<DM, P>?, newValue: Values<DM, P>?, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.typedDataModel.validate(

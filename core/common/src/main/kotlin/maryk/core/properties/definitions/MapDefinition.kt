@@ -66,7 +66,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?) =
         MapValueReference(key, this, parentMap)
 
-    override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>>?) {
+    override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>, *>?) {
         super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {

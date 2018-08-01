@@ -12,7 +12,7 @@ import maryk.core.query.ValueRange
 
 /** Defines a pair of a [reference] and [range] of type [T] */
 data class ReferenceValueRangePair<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
     val range: ValueRange<T>
 ) : DefinedByReference<T> {
     internal object Properties: ObjectPropertyDefinitions<ReferenceValueRangePair<*>>() {
@@ -40,10 +40,10 @@ data class ReferenceValueRangePair<T: Any> internal constructor(
 }
 
 /** Convenience infix method to create Reference [range] pairs */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.with(range: ValueRange<T>) =
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(range: ValueRange<T>) =
     ReferenceValueRangePair(this, range)
 
 /** Creates a reference value [range] pair */
-infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.with(
+infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(
     range: ClosedRange<T>
 ) = ReferenceValueRangePair(this, ValueRange(range.start, range.endInclusive, true, true))

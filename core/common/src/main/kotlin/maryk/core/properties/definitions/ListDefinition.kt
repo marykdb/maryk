@@ -35,7 +35,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     fun getItemRef(index: Int, parentList: ListReference<T, CX>?) =
         ListItemReference(index, this, parentList)
 
-    override fun validateCollectionForExceptions(refGetter: () -> IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>?, newValue: List<T>, validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) -> Any) {
+    override fun validateCollectionForExceptions(refGetter: () -> IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>?, newValue: List<T>, validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any) {
         newValue.forEachIndexed { index, item ->
             validator(item) {
                 @Suppress("UNCHECKED_CAST")

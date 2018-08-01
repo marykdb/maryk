@@ -60,7 +60,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     /** Get a reference to this definition inside [parentRef] */
-    fun getRef(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, *>
+    fun getRef(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, *, *>
 
     /**
      * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates

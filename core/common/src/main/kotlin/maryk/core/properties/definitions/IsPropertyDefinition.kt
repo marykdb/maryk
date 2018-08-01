@@ -19,7 +19,7 @@ interface IsPropertyDefinition<T: Any> {
      * Validates [newValue] against [previousValue] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationException when encountering invalid new value
      */
-    fun validateWithRef(previousValue: T? = null, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>>? = { null }) = when {
+    fun validateWithRef(previousValue: T? = null, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>? = { null }) = when {
         this.final && previousValue != null -> throw AlreadySetException(refGetter())
         this.required && newValue == null -> throw RequiredException(refGetter())
         else -> {}

@@ -5,6 +5,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.objects.AbstractValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
@@ -24,8 +25,8 @@ class EmbeddedObjectPropertyRef<
     CX: IsPropertyContext
 > internal constructor(
     propertyDefinition: EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>,
-    parentReference: CanHaveComplexChildReference<*, *, *>?
-): CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+    parentReference: CanHaveComplexChildReference<*, *, *, *>?
+): CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
 ), HasEmbeddedPropertyReference<DO> {
     val name = this.propertyDefinition.name
@@ -55,5 +56,10 @@ class EmbeddedObjectPropertyRef<
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)
+    }
+
+    override fun resolve(values: AbstractValues<*, *, *>): DO? {
+        @Suppress("UNCHECKED_CAST")
+        return values.original(propertyDefinition.index) as DO?
     }
 }

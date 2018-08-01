@@ -14,7 +14,7 @@ import maryk.core.query.DefinedByReference
 
 /** Compares given [value] of type [T] against referenced value [reference] */
 data class ReferenceValuePair<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
     val value: T
 ) : DefinedByReference<T> {
     internal object Properties: ObjectPropertyDefinitions<ReferenceValuePair<*>>() {
@@ -47,5 +47,5 @@ data class ReferenceValuePair<T: Any> internal constructor(
 }
 
 /** Convenience infix method to create Reference [value] pairs */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.with(value: T) =
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
     ReferenceValuePair(this, value)

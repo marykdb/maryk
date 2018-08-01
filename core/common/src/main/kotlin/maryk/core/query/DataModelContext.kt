@@ -1,6 +1,7 @@
 package maryk.core.query
 
 import maryk.core.models.IsNamedDataModel
+import maryk.core.objects.AbstractValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.enum.IndexedEnumDefinition
@@ -13,4 +14,14 @@ open class DataModelContext(
     internal val dataModels: MutableMap<String, () -> IsNamedDataModel<*>> = mutableMapOf(),
     internal val enums: MutableMap<String, IndexedEnumDefinition<*>> = mutableMapOf(),
     internal var propertyDefinitions: IsPropertyDefinitions? = null
-) : IsPropertyContext
+
+) : IsPropertyContext {
+    private var collectedResults = mutableMapOf<String, AbstractValues<*, *, *>>()
+
+    fun collectResult(collectionName: String, value: AbstractValues<*, *, *>) {
+        this.collectedResults.put(collectionName, value)
+    }
+
+    fun retrieveResult(collectionName: String) =
+        this.collectedResults[collectionName]
+}

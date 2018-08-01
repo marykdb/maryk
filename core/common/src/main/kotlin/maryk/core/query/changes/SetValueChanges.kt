@@ -16,7 +16,7 @@ import maryk.core.query.DefinedByReference
 
 /** Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues] */
 data class SetValueChanges<T: Any> internal constructor(
-    override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>>,
+    override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>,
     val addValues: Set<T>? = null,
     val deleteValues: Set<T>? = null
 ) : DefinedByReference<Set<T>> {
@@ -60,7 +60,7 @@ private val valueDefinition = ContextualValueDefinition(
  * Convenience infix method to define an map value change
  * Set property of values [T] with [addValues] and [deleteValues] for changes
  */
-fun <T: Any> IsPropertyReference<Set<T>, IsCollectionDefinition<T, Set<T>, *, *>>.change(
+fun <T: Any> IsPropertyReference<Set<T>, IsCollectionDefinition<T, Set<T>, *, *>, *>.change(
     addValues: Set<T>? = null,
     deleteValues: Set<T>? = null
 ) =

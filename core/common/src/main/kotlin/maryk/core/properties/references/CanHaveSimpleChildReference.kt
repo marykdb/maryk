@@ -9,8 +9,9 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 abstract class CanHaveSimpleChildReference<
         T: Any,
         out D : IsPropertyDefinition<T>,
-        out P: AnyPropertyReference
+        out P: AnyPropertyReference,
+        C: Any
 > internal constructor(
     definition: D,
     parentReference: P?
-) : PropertyReference<T, D, P>(definition, parentReference)
+) : PropertyReference<T, D, P, C>(definition, parentReference)

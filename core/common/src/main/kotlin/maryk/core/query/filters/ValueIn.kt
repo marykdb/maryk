@@ -82,7 +82,7 @@ data class ValueIn internal constructor(
                 val reference = ReferenceValueSetPair.Properties.reference.definition.fromString(
                     currentToken.value ?: throw ParseException("Reference cannot be empty in filter"),
                     context
-                ) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>>
+                ) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
                 reader.nextToken()
 
                 ReferenceValueSetPair.Properties.reference.capture(context, reference)

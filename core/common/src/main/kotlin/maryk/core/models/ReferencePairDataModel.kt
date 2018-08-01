@@ -53,7 +53,7 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValu
             val reference = ReferenceValuePair.Properties.reference.definition.fromString(
                 currentToken.value ?: throw ParseException("Reference cannot be empty in filter"),
                 context
-            ) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>>
+            ) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
             reader.nextToken()
 
             ReferenceValuePair.Properties.reference.capture(context, reference)

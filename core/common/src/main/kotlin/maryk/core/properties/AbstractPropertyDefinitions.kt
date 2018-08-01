@@ -123,7 +123,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     }
 
     /** Get PropertyReference by [referenceName] */
-    final override fun getPropertyReferenceByName(referenceName: String): IsPropertyReference<*, IsPropertyDefinition<*>> {
+    final override fun getPropertyReferenceByName(referenceName: String): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val names = referenceName.split(".")
 
         var propertyReference: AnyPropertyReference? = null
@@ -139,7 +139,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     }
 
     /** Get PropertyReference by bytes from [reader] with [length] */
-    final override fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>> {
+    final override fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         var readLength = 0
 
         val lengthReader = {

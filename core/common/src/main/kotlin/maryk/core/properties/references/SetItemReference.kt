@@ -16,7 +16,7 @@ class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     val value: T,
     private val setDefinition: SetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?
-) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>>(
+) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>, Set<T>>(
     setDefinition.valueDefinition, parentReference
 ) {
     override val completeName: String get() = this.parentReference?.let {
@@ -33,5 +33,9 @@ class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
         setDefinition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
+    }
+
+    override fun resolve(values: Set<T>): T? {
+        return value
     }
 }

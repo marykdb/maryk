@@ -11,8 +11,8 @@ import maryk.lib.exceptions.ParseException
  */
 open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition: MapPropertyDefinitionWrapper<K, V, Any, CX, *>,
-    parentReference: CanHaveComplexChildReference<*, *, *>?
-) : ValuePropertyReference<Map<K, V>, Any, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+    parentReference: CanHaveComplexChildReference<*, *, *, *>?
+) : ValuePropertyReference<Map<K, V>, Any, MapPropertyDefinitionWrapper<K, V, Any, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<Map<K, V>> {
@@ -34,7 +34,7 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
         else -> throw ParseException("Unknown List type $name[0]")
     }
 
-    override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>> {
+    override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
         return when(protoKey.tag) {
             0 -> {

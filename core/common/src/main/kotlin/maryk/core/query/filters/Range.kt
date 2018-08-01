@@ -93,7 +93,7 @@ data class Range internal constructor(
                         @Suppress("UNCHECKED_CAST")
                         listOfRanges.add(
                             ReferenceValueRangePair(
-                                reference as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>>,
+                                reference as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>,
                                 range as ValueRange<Any>
                             )
                         )

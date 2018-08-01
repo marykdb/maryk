@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsValuesDataModel
+import maryk.core.objects.AbstractValues
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -42,22 +43,22 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
         EmbeddedValuesPropertyRef(
             this,
             parentRef?.let {
-                it as CanHaveComplexChildReference<*, *, *>
+                it as CanHaveComplexChildReference<*, *, *, *>
             }
         )
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
+    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
         propertyDefinitionGetter: P.()-> W
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W> =
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, AbstractValues<*, *, *>> =
         { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T: Any, W: IsPropertyDefinition<T>> invoke(
         referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) ->
-                IsPropertyReference<T, W>
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> IsPropertyReference<T, W> {
+            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) ->
+                IsPropertyReference<T, W, *>
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> {
         return { this.definition.dataModel(this.getRef(it), referenceGetter) }
     }
 

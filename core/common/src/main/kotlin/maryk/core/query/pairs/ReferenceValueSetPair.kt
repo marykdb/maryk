@@ -15,7 +15,7 @@ import maryk.core.query.DefinedByReference
 
 /** Compares given [values] set of type [T] against referenced value [reference] */
 data class ReferenceValueSetPair<T: Any> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>,
+    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
     val values: Set<T>
 ) : DefinedByReference<T> {
     internal object Properties: ObjectPropertyDefinitions<ReferenceValueSetPair<*>>() {
@@ -46,5 +46,5 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
 }
 
 /** Convenience infix method to create Reference [value] pairs */
-infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>>.with(value: Set<T>) =
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: Set<T>) =
     ReferenceValueSetPair(this, value)

@@ -23,7 +23,7 @@ import maryk.core.query.DefinedByReference
  * Options are to [addValuesToEnd], [addValuesAtIndex], [deleteValues] and/or [deleteAtIndex]
  */
 data class ListValueChanges<T: Any> internal constructor(
-    override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>>,
+    override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>,
     val addValuesToEnd: List<T>? = null,
     val addValuesAtIndex: Map<Int, T>? = null,
     val deleteValues: List<T>? = null,
@@ -52,6 +52,7 @@ data class ListValueChanges<T: Any> internal constructor(
     internal companion object: QueryDataModel<ListValueChanges<*>, Properties>(
         properties = Properties
     ) {
+        @Suppress("RemoveExplicitTypeArguments")
         override fun invoke(map: ObjectValues<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
             reference = map(1),
             addValuesToEnd = map(2),
@@ -79,7 +80,7 @@ private val valueListDefinition = ListDefinition(
  * Convenience infix method to define an array value change
  * Options are to [addValuesToEnd], [addValuesAtIndex], [deleteValues] and/or [deleteAtIndex]
  */
-fun <T: Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>>.change(
+fun <T: Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>, *>.change(
     addValuesToEnd: List<T>? = null,
     addValuesAtIndex: Map<Int, T>? = null,
     deleteValues: List<T>? = null,

@@ -21,7 +21,7 @@ import maryk.core.query.DefinedByReference
  * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
  */
 data class MapValueChanges<K: Any, V: Any> internal constructor(
-    override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>>,
+    override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>, *>,
     val valuesToAdd: Map<K, V>? = null,
     val keysToDelete: Set<K>? = null
 ) : DefinedByReference<Map<K, V>> {
@@ -75,7 +75,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
  * Convenience infix method to define an map value change
  * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
  */
-fun <K: Any, V: Any> IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>>.change(
+fun <K: Any, V: Any> IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>, *>.change(
     valuesToAdd: Map<K, V>? = null,
     keysToDelete: Set<K>? = null
 ) =

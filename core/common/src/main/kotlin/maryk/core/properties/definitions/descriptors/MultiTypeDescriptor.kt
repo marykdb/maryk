@@ -125,9 +125,9 @@ private data class MultiTypeDescriptorListDefinition(
     override fun newMutableCollection(context: IsPropertyContext?) = mutableListOf<MultiTypeDescriptor>()
 
     override fun validateCollectionForExceptions(
-        refGetter: () -> IsPropertyReference<List<MultiTypeDescriptor>, IsPropertyDefinition<List<MultiTypeDescriptor>>>?,
+        refGetter: () -> IsPropertyReference<List<MultiTypeDescriptor>, IsPropertyDefinition<List<MultiTypeDescriptor>>, *>?,
         newValue: List<MultiTypeDescriptor>,
-        validator: (item: MultiTypeDescriptor, itemRefFactory: () -> IsPropertyReference<MultiTypeDescriptor, IsPropertyDefinition<MultiTypeDescriptor>>?) -> Any
+        validator: (item: MultiTypeDescriptor, itemRefFactory: () -> IsPropertyReference<MultiTypeDescriptor, IsPropertyDefinition<MultiTypeDescriptor>, *>?) -> Any
     ) {}
 
     /** Write [value] to JSON [writer] with [context] */

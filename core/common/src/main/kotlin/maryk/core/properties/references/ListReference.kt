@@ -9,8 +9,8 @@ import maryk.lib.exceptions.ParseException
 /** Reference to a List property of type [T] and context [CX] */
 open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition: ListPropertyDefinitionWrapper<T, Any, CX, *>,
-    parentReference: CanHaveComplexChildReference<*, *, *>?
-) : ValuePropertyReference<List<T>, List<Any>, ListPropertyDefinitionWrapper<T, Any, CX, *>, CanHaveComplexChildReference<*, *, *>>(
+    parentReference: CanHaveComplexChildReference<*, *, *, *>?
+) : ValuePropertyReference<List<T>, List<Any>, ListPropertyDefinitionWrapper<T, Any, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T> {
@@ -19,7 +19,7 @@ open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
         else -> throw ParseException("Unknown List type $name[0]")
     }
 
-    override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>> {
+    override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val index = initIntByVar(reader)
         return when(index) {
             0 -> ListItemReference(initIntByVar(reader), propertyDefinition.definition, this)

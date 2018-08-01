@@ -36,9 +36,9 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         SetItemReference(value, this, setReference)
 
     override fun validateCollectionForExceptions(
-        refGetter: () -> IsPropertyReference<Set<T>,IsPropertyDefinition<Set<T>>>?,
+        refGetter: () -> IsPropertyReference<Set<T>,IsPropertyDefinition<Set<T>>, *>?,
         newValue: Set<T>,
-        validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) -> Any
+        validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any
     ) {
         for (it in newValue) {
             validator(it) {

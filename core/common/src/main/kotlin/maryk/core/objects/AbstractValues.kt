@@ -3,8 +3,11 @@ package maryk.core.objects
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.PropertyReference
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -66,5 +69,24 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         } else "ObjectValues"
 
         return "$name $map"
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    operator fun <T: Any, D: IsPropertyDefinition<T>, C: Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
+        val refList = mutableListOf(propertyReference as IsPropertyReference<*, *, in Any>)
+
+        var ref: IsPropertyReference<*, *, in Any> = propertyReference
+        while (ref is PropertyReference<*, *, *, *> && ref.parentReference != null) {
+            ref = ref.parentReference as IsPropertyReference<*, *, in Any>
+            refList.add(0, ref)
+        }
+
+        var value: Any = this
+        for (toResolve in refList) {
+            value = toResolve.resolve(value)
+                    ?: return null
+        }
+
+        return value as T?
     }
 }

@@ -39,7 +39,7 @@ abstract class ValidationException internal constructor(
                 getter = getter,
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>>
+                    context.reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>
                 }
             )
         }

@@ -47,7 +47,7 @@ data class FlexBytesDefinition(
             value as? Bytes
         }
 
-    override fun validateWithRef(previousValue: Bytes?, newValue: Bytes?, refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>>?) {
+    override fun validateWithRef(previousValue: Bytes?, newValue: Bytes?, refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>, *>?) {
         super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null && (isSizeToSmall(newValue.size) || isSizeToBig(newValue.size))) {

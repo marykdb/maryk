@@ -11,12 +11,12 @@ import maryk.json.IsJsonLikeWriter
 
 /** Checks if [references] exist on DataModel */
 data class Exists internal constructor(
-    val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>>
+    val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>>
 ) : IsFilter {
     override val filterType = FilterType.Exists
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>>): this(reference.toList())
+    constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>): this(reference.toList())
 
     internal object Properties : ReferencesObjectPropertyDefinitions<Exists>() {
         override val references = addReferenceListPropertyDefinition(Exists::references)

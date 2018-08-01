@@ -34,14 +34,14 @@ data class ListPropertyDefinitionWrapper<T: Any, TO: Any, CX: IsPropertyContext,
 
     @Suppress("UNCHECKED_CAST")
     override fun getRef(parentRef: AnyPropertyReference?) =
-        ListReference(this as ListPropertyDefinitionWrapper<T, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *>?)
+        ListReference(this as ListPropertyDefinitionWrapper<T, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
     fun getItemRef(index: Int, parentRef: AnyPropertyReference? = null) =
         this.definition.getItemRef(index, this.getRef(parentRef))
 
     /** For quick notation to get a list item reference by [index] */
-    infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> ListItemReference<T, CX> {
+    infix fun at(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListItemReference<T, CX> {
         return { this.getItemRef(index, it) }
     }
 }

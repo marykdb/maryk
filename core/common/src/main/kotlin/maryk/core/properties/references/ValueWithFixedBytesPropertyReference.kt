@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.objects.AbstractValues
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -18,7 +19,7 @@ open class ValueWithFixedBytesPropertyReference<
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-): PropertyReference<T, D, P>(propertyDefinition, parentReference) {
+): PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference) {
     open val name = this.propertyDefinition.name
 
     /** The name of property which is referenced */
@@ -36,5 +37,10 @@ open class ValueWithFixedBytesPropertyReference<
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)
+    }
+
+    override fun resolve(values: AbstractValues<*, *, *>): T? {
+        @Suppress("UNCHECKED_CAST")
+        return values.original(propertyDefinition.index) as T?
     }
 }

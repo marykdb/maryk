@@ -13,7 +13,7 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
     val key: K,
     private val mapDefinition: MapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
-) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>>(
+) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
     mapDefinition.valueDefinition, parentReference
 ) {
     override val completeName get() = this.parentReference?.let {
@@ -30,5 +30,9 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
         mapDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
+    }
+
+    override fun resolve(values: Map<K, V>): V? {
+        return values[key]
     }
 }

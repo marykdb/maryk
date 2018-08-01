@@ -31,7 +31,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
 ) : IsObjectDataModel<DO, P>, AbstractDataModel<DO, P, CXI, CX>(properties) {
     override fun validate(
         dataObject: DO,
-        refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>>?
+        refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for (it in this.properties) {

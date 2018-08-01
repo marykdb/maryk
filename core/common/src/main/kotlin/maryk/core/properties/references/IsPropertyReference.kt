@@ -4,12 +4,12 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-typealias AnyPropertyReference = IsPropertyReference<*, *>
+typealias AnyPropertyReference = IsPropertyReference<*, *, *>
 
 /**
  * Abstract for reference to a property of type [T] defined by [D]
  */
-interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>> {
+interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, C: Any> {
     val completeName: String
     val propertyDefinition: D
 
@@ -24,4 +24,9 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>> {
      * cached values from [cacheGetter]
      */
     fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit)
+
+    /**
+     * Resolve the value from the given values
+     */
+    fun resolve(values: C): T?
 }

@@ -34,7 +34,7 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
 
     @Suppress("UNCHECKED_CAST")
     override fun getRef(parentRef: AnyPropertyReference?): MapReference<K, V, CX> =
-        MapReference(this as MapPropertyDefinitionWrapper<K, V, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *>?)
+        MapReference(this as MapPropertyDefinitionWrapper<K, V, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
 
     /** Get a reference to a specific map [key] with optional [parentRef] */
     private fun getKeyRef(key: K, parentRef: AnyPropertyReference? = null) =
@@ -45,12 +45,12 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
         this.definition.getValueRef(key, this.getRef(parentRef))
 
     /** For quick notation to get a map [key] reference */
-    infix fun key(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> MapKeyReference<K, V, *> {
+    infix fun key(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapKeyReference<K, V, *> {
         return { this.getKeyRef(key, it) }
     }
 
     /** For quick notation to get a map value reference at given [key] */
-    infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>>?) -> MapValueReference<K, V, *> {
+    infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapValueReference<K, V, *> {
         return { this.getValueRef(key, it) }
     }
 }

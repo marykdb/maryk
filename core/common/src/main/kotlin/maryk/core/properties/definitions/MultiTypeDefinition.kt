@@ -68,7 +68,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         return this.readJson(JsonReader { stringIterator.nextChar() }, context)
     }
 
-    override fun validateWithRef(previousValue: TypedValue<E, Any>?, newValue: TypedValue<E, Any>?, refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>>?) {
+    override fun validateWithRef(previousValue: TypedValue<E, Any>?, newValue: TypedValue<E, Any>?, refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, *>?) {
         super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             @Suppress("UNCHECKED_CAST")
@@ -80,7 +80,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                 newValue.value
             ) {
                 @Suppress("UNCHECKED_CAST")
-                refGetter() as IsPropertyReference<Any, IsPropertyDefinition<Any>>?
+                refGetter() as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>?
             }
         }
     }

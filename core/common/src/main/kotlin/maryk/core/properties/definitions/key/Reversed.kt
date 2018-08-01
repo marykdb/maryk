@@ -53,7 +53,7 @@ data class Reversed<T: Any>(
                     ),
                     getter = {
                         @Suppress("UNCHECKED_CAST")
-                        it.reference as IsPropertyReference<Any, *>
+                        it.reference as IsPropertyReference<Any, *, *>
                     }
                 )
             }

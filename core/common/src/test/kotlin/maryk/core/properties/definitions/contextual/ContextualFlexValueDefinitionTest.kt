@@ -31,7 +31,7 @@ class ContextualValueDefinitionTest {
             EmbeddedMarykModel.name to { EmbeddedMarykModel }
         ),
         dataModel = TestMarykModel,
-        reference = TestMarykModel.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>>
+        reference = TestMarykModel.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>, *>
     )
 
     @Test

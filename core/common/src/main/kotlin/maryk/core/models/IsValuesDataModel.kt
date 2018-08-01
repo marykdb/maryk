@@ -14,7 +14,7 @@ interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinition
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
-    fun validate(map: Values<DM, P>, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>>? = { null })
+    fun validate(map: Values<DM, P>, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>? = { null })
 
     /** Create a ObjectValues with given [createMap] function */
     @Suppress("UNCHECKED_CAST")

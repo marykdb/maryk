@@ -35,7 +35,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
-    override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?) {
+    override fun validateWithRef(previousValue: C?, newValue: C?, refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>, *>?) {
         super<IsByteTransportableCollection>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
@@ -61,9 +61,9 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
     /** Validates the collection [newValue] with [validator] or get reference from [refGetter] for exception */
     fun validateCollectionForExceptions(
-        refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>>?,
+        refGetter: () -> IsPropertyReference<C, IsPropertyDefinition<C>, *>?,
         newValue: C,
-        validator: (item: T, itemRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) -> Any
+        validator: (item: T, itemRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any
     )
 
     /** Creates a new mutable instance of the collection within optional [context] */

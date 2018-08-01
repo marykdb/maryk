@@ -20,7 +20,7 @@ interface IsComparableDefinition<T: Comparable<T>, in CX: IsPropertyContext> : I
      * Validate [newValue] against [previousValue] and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationException thrown if property is invalid
      */
-    override fun validateWithRef(previousValue: T?, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>>?) {
+    override fun validateWithRef(previousValue: T?, newValue: T?, refGetter: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) {
         super.validateWithRef(previousValue, newValue, refGetter)
         when {
             newValue != null -> {

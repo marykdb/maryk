@@ -5,6 +5,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DataModelContext
 
 interface IsValuesDataModel<P: PropertyDefinitions>: IsDataModel<P>, IsNamedDataModel<P>
 
@@ -18,5 +19,6 @@ interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinition
 
     /** Create a ObjectValues with given [createMap] function */
     @Suppress("UNCHECKED_CAST")
-    fun map(createMap: P.() -> Map<Int, Any?>) = Values(this as DM, createMap(this.properties))
+    fun map(context: DataModelContext? = null, createMap: P.() -> Map<Int, Any?>) =
+        Values(this as DM, createMap(this.properties), context)
 }

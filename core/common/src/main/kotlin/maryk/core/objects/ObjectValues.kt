@@ -2,6 +2,7 @@ package maryk.core.objects
 
 import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.query.DataModelContext
 
 typealias SimpleObjectValues<DO> = ObjectValues<DO, ObjectPropertyDefinitions<DO>>
 
@@ -10,7 +11,8 @@ typealias SimpleObjectValues<DO> = ObjectValues<DO, ObjectPropertyDefinitions<DO
  */
 data class ObjectValues<DO: Any, P: ObjectPropertyDefinitions<DO>> internal constructor(
     override val dataModel: IsObjectDataModel<DO, P>,
-    override val map: Map<Int, Any?>
+    override val map: Map<Int, Any?>,
+    override val context: DataModelContext? = null
 ): AbstractValues<DO, IsObjectDataModel<DO, P>, P>() {
     /**
      * Converts map to a strong typed DataObject.

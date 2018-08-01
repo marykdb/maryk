@@ -1,5 +1,6 @@
 package maryk.core.objects
 
+import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -8,6 +9,8 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.types.AnyInject
+import maryk.core.query.DataModelContext
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -16,6 +19,7 @@ import maryk.lib.exceptions.ParseException
 abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>> {
     abstract val dataModel: DM
     protected abstract val map: Map<Int, Any?>
+    abstract val context: DataModelContext?
 
     /** Retrieve the keys of the map */
     val keys get() = map.keys
@@ -34,8 +38,13 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
 
         val transformedValue = valueDef.convertToCurrentValue(value)
 
+        // Resolve Injects
+        val resolvedValue = if (transformedValue is AnyInject) {
+            transformedValue.resolve(this.context ?: throw ContextNotFoundException())
+        } else transformedValue
+
         return when {
-            transformedValue is T -> transformedValue
+            resolvedValue is T -> resolvedValue
             value is T -> value
             else -> throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
         }

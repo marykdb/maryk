@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsDataModel
 import maryk.core.models.SimpleObjectDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -110,7 +111,11 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             }
         }
 
-        return this.fromSerializable?.invoke(value as T?) ?: value as TO?
+        if (value is ObjectValues<*, *>) {
+            return value.toDataObject() as TO?
+        }
+
+        return this.fromSerializable?.invoke(value as? T?) ?: value as? TO?
     }
 
     companion object {

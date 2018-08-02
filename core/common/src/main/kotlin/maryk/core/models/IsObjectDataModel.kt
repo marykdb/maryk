@@ -24,3 +24,20 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
     fun map(context: DataModelContext? = null, createMap: P.() -> Map<Int, Any?>) =
         ObjectValues(this, createMap(this.properties), context)
 }
+
+/**
+ * Converts a DataObject back to ObjectValues
+ */
+fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>> DM.asValues(dataObject: DO): ObjectValues<DO, P> {
+    val mutableMap = mutableMapOf<Int, Any>()
+
+    for (property in this.properties) {
+        property.getter(dataObject)?.let {
+            mutableMap[property.index] = it
+        }
+    }
+
+    return this.map {
+        mutableMap
+    }
+}

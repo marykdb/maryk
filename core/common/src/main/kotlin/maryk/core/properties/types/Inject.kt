@@ -15,12 +15,15 @@ typealias AnyInject = Inject<*, *, *, *>
 class Inject<T: Any, D: IsPropertyDefinition<T>, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<Any>>(
     val collectionName: String,
     val dataModel: DM,
-    val propertyReference: IsPropertyReference<T, D, *>
+    val propertyReference: IsPropertyReference<T, D, *>? = null
 ) {
     fun resolve(context: DataModelContext): T? {
         val result = context.retrieveResult(collectionName)
             ?: throw InjectException(this.collectionName)
 
-        return result[propertyReference]
+        @Suppress("UNCHECKED_CAST")
+        return propertyReference?.let {
+            result[propertyReference]
+        } ?: result as T?
     }
 }

@@ -36,15 +36,15 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         val valueDef = this.dataModel.properties[index]
                 ?: throw Exception("Value definition of index $index is missing")
 
-        val transformedValue = valueDef.convertToCurrentValue(value)
-
         // Resolve Injects
-        val resolvedValue = if (transformedValue is AnyInject) {
-            transformedValue.resolve(this.context ?: throw ContextNotFoundException())
-        } else transformedValue
+        val resolvedValue = if (value is AnyInject) {
+            value.resolve(this.context ?: throw ContextNotFoundException())
+        } else value
+
+        val transformedValue = valueDef.convertToCurrentValue(resolvedValue)
 
         return when {
-            resolvedValue is T -> resolvedValue
+            transformedValue is T -> transformedValue
             value is T -> value
             else -> throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as IsTransportablePropertyDefinitionType<*>).propertyDefinitionType.name}")
         }

@@ -2,8 +2,12 @@ package maryk.core.properties.types
 
 import maryk.EmbeddedMarykModel
 import maryk.TestMarykModel
+import maryk.core.models.asValues
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.DataModelContext
+import maryk.core.query.filters.Equals
+import maryk.core.query.pairs.with
+import maryk.core.query.requests.GetRequest
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -15,7 +19,7 @@ class InjectTest {
         )
     )
 
-    val valuesToCollect = EmbeddedMarykModel(
+    private val valuesToCollect = EmbeddedMarykModel(
         value ="a test value",
         model = EmbeddedMarykModel(
             "embedded value"
@@ -26,7 +30,7 @@ class InjectTest {
         context.collectResult("testCollection", valuesToCollect)
     }
 
-    val inject = Inject(
+    private val inject = Inject(
         "testCollection",
         EmbeddedMarykModel,
         EmbeddedMarykModel.ref { value }
@@ -63,5 +67,30 @@ class InjectTest {
         context.collectResult("testCollection2", valuesToCollect)
 
         values { string } shouldBe "embedded value"
+    }
+
+    @Test
+    fun testInjectInObject() {
+        val getRequest = GetRequest.map(context) {
+            mapNonNulls(
+                filter with Inject(
+                    "filter",
+                    EmbeddedMarykModel,
+                    EmbeddedMarykModel { model.ref { value } }
+                )
+            )
+        }
+
+        shouldThrow<InjectException> {
+            getRequest { filter }
+        } shouldBe InjectException("filter")
+
+        val equals = Equals(
+            EmbeddedMarykModel.ref { value } with "hoi"
+        )
+
+        context.collectResult("filter", Equals.asValues(equals))
+
+        getRequest { filter } shouldBe equals
     }
 }

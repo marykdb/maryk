@@ -6,12 +6,10 @@ import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
-import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
@@ -57,9 +55,7 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
                 IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
                 IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)
                 IsFetchRequest.addSelect(this, GetVersionedChangesRequest<*>::select)
-                IsFetchRequest.addFilter(this) { request ->
-                    request.filter?.let { TypedValue(it.filterType, it) }
-                }
+                IsFetchRequest.addFilter(this,  GetVersionedChangesRequest<*>::filter)
                 IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
                 IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
@@ -72,7 +68,7 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
             dataModel = map(1),
             keys = map(2),
             select = map(3),
-            filter = map<TypedValue<FilterType, IsFilter>?>(4)?.value,
+            filter = map(4),
             order = map(5),
             toVersion = map(6),
             filterSoftDeleted = map(7),

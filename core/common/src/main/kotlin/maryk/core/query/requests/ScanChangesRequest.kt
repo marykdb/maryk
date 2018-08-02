@@ -6,12 +6,10 @@ import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
-import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 
 /**
@@ -58,9 +56,7 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
                 IsObjectRequest.addDataModel(this, ScanChangesRequest<*>::dataModel)
                 IsScanRequest.addStartKey(this, ScanChangesRequest<*>::startKey)
                 IsFetchRequest.addSelect(this, ScanChangesRequest<*>::select)
-                IsFetchRequest.addFilter(this) { request ->
-                    request.filter?.let { TypedValue(it.filterType, it) }
-                }
+                IsFetchRequest.addFilter(this, ScanChangesRequest<*>::filter)
                 IsFetchRequest.addOrder(this, ScanChangesRequest<*>::order)
                 IsFetchRequest.addToVersion(this, ScanChangesRequest<*>::toVersion)
                 IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*>::filterSoftDeleted)
@@ -73,7 +69,7 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
             dataModel = map(1),
             startKey = map(2),
             select = map(3),
-            filter = map<TypedValue<FilterType, IsFilter>?>(4)?.value,
+            filter = map(4),
             order = map(5),
             toVersion = map(6),
             filterSoftDeleted = map(7),

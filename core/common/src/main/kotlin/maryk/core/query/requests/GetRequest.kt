@@ -44,14 +44,14 @@ data class GetRequest<DM: IsRootDataModel<*>> internal constructor(
     object Properties : ObjectPropertyDefinitions<GetRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, GetRequest<*>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetRequest<*>::keys)
-        private val select = IsFetchRequest.addSelect(this, GetRequest<*>::select)
+        val select = IsFetchRequest.addSelect(this, GetRequest<*>::select)
         val filter = IsFetchRequest.addFilter(this, GetRequest<*>::filter)
-        private val order = IsFetchRequest.addOrder(this, GetRequest<*>::order)
+        val order = IsFetchRequest.addOrder(this, GetRequest<*>::order)
         val toVersion = IsFetchRequest.addToVersion(this, GetRequest<*>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetRequest<*>::filterSoftDeleted)
     }
 
-    internal companion object: QueryDataModel<GetRequest<*>, Properties>(
+    companion object: QueryDataModel<GetRequest<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<GetRequest<*>, Properties>) = GetRequest(

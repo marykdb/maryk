@@ -14,7 +14,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another property from a context resolved from [contextualResolver]  */
-internal data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext>(
+data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> internal constructor(
     override val required: Boolean = true,
     val contextualResolver: (context: CX?) -> AbstractPropertyDefinitions<*>
 ): IsValueDefinition<AnyPropertyReference, CX>, IsSerializableFlexBytesEncodable<AnyPropertyReference, CX> {

@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
@@ -45,21 +45,21 @@ data class GetChangesRequest<DM: IsRootDataModel<*>> internal constructor(
 ) : IsGetRequest<DM>, IsChangesRequest<DM> {
     override val requestType = RequestType.GetChanges
 
-    internal companion object: SimpleQueryDataModel<GetChangesRequest<*>>(
-        properties = object : ObjectPropertyDefinitions<GetChangesRequest<*>>() {
-            init {
-                IsObjectRequest.addDataModel(this, GetChangesRequest<*>::dataModel)
-                IsGetRequest.addKeys(this, GetChangesRequest<*>::keys)
-                IsFetchRequest.addSelect(this, GetChangesRequest<*>::select)
-                IsFetchRequest.addFilter(this, GetChangesRequest<*>::filter)
-                IsFetchRequest.addOrder(this, GetChangesRequest<*>::order)
-                IsFetchRequest.addToVersion(this, GetChangesRequest<*>::toVersion)
-                IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*>::filterSoftDeleted)
-                IsChangesRequest.addFromVersion(8, this, GetChangesRequest<*>::fromVersion)
-            }
-        }
+    object Properties : ObjectPropertyDefinitions<GetChangesRequest<*>>() {
+        val dataModel = IsObjectRequest.addDataModel(this, GetChangesRequest<*>::dataModel)
+        val keys = IsGetRequest.addKeys(this, GetChangesRequest<*>::keys)
+        val select = IsFetchRequest.addSelect(this, GetChangesRequest<*>::select)
+        val filter = IsFetchRequest.addFilter(this, GetChangesRequest<*>::filter)
+        val order = IsFetchRequest.addOrder(this, GetChangesRequest<*>::order)
+        val addToVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*>::toVersion)
+        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*>::filterSoftDeleted)
+        val fromVersion = IsChangesRequest.addFromVersion(8, this, GetChangesRequest<*>::fromVersion)
+    }
+
+    companion object: QueryDataModel<GetChangesRequest<*>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<GetChangesRequest<*>>) = GetChangesRequest(
+        override fun invoke(map: ObjectValues<GetChangesRequest<*>, Properties>) = GetChangesRequest(
             dataModel = map(1),
             keys = map(2),
             select = map(3),

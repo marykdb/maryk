@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
@@ -49,22 +49,24 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
 ) : IsGetRequest<DM>, IsVersionedChangesRequest<DM> {
     override val requestType = RequestType.GetVersionedChanges
 
-    internal companion object: SimpleQueryDataModel<GetVersionedChangesRequest<*>>(
-        properties = object : ObjectPropertyDefinitions<GetVersionedChangesRequest<*>>() {
-            init {
-                IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
-                IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)
-                IsFetchRequest.addSelect(this, GetVersionedChangesRequest<*>::select)
-                IsFetchRequest.addFilter(this,  GetVersionedChangesRequest<*>::filter)
-                IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
-                IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
-                IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
-                IsChangesRequest.addFromVersion(8, this, GetVersionedChangesRequest<*>::fromVersion)
-                IsVersionedChangesRequest.addMaxVersions(9, this, GetVersionedChangesRequest<*>::maxVersions)
-            }
+    object Properties : ObjectPropertyDefinitions<GetVersionedChangesRequest<*>>() {
+        init {
+            IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
+            IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)
+            IsFetchRequest.addSelect(this, GetVersionedChangesRequest<*>::select)
+            IsFetchRequest.addFilter(this,  GetVersionedChangesRequest<*>::filter)
+            IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
+            IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
+            IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
+            IsChangesRequest.addFromVersion(8, this, GetVersionedChangesRequest<*>::fromVersion)
+            IsVersionedChangesRequest.addMaxVersions(9, this, GetVersionedChangesRequest<*>::maxVersions)
         }
+    }
+
+    companion object: QueryDataModel<GetVersionedChangesRequest<*>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<GetVersionedChangesRequest<*>>) = GetVersionedChangesRequest(
+        override fun invoke(map: ObjectValues<GetVersionedChangesRequest<*>, Properties>) = GetVersionedChangesRequest(
             dataModel = map(1),
             keys = map(2),
             select = map(3),

@@ -2,8 +2,8 @@ package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -32,27 +32,27 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
 ) : IsObjectRequest<DM> {
     override val requestType = RequestType.Delete
 
-    internal companion object: SimpleQueryDataModel<DeleteRequest<*>>(
-        properties = object : ObjectPropertyDefinitions<DeleteRequest<*>>() {
-            init {
-                IsObjectRequest.addDataModel(this, DeleteRequest<*>::dataModel)
+    object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {
+        val dataModel = IsObjectRequest.addDataModel(this, DeleteRequest<*>::dataModel)
 
-                add(2, "objectsToDelete", ListDefinition(
-                    valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
-                        contextualResolver = {
-                            it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-                        }
-                    )
-                ), DeleteRequest<*>::objectsToDelete)
+        val objectsToDelete = add(2, "objectsToDelete", ListDefinition(
+            valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
+                contextualResolver = {
+                    it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
+                }
+            )
+        ), DeleteRequest<*>::objectsToDelete)
 
-                add(3, "hardDelete",
-                    BooleanDefinition(default = false),
-                    DeleteRequest<*>::hardDelete
-                )
-            }
-        }
+        val hardDelete = add(3, "hardDelete",
+            BooleanDefinition(default = false),
+            DeleteRequest<*>::hardDelete
+        )
+    }
+
+    companion object: QueryDataModel<DeleteRequest<*>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<DeleteRequest<*>>) = DeleteRequest(
+        override fun invoke(map: ObjectValues<DeleteRequest<*>, Properties>) = DeleteRequest(
             dataModel = map(1),
             objectsToDelete = map(2),
             hardDelete = map(3)

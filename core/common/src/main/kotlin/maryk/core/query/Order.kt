@@ -38,7 +38,7 @@ data class Order internal constructor(
     val propertyReference: AnyPropertyReference,
     val direction: Direction = Direction.ASC
 ) {
-    internal object Properties : ObjectPropertyDefinitions<Order>() {
+    object Properties : ObjectPropertyDefinitions<Order>() {
         val propertyReference = add(1, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
             contextualResolver = {
                 it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
@@ -51,7 +51,7 @@ data class Order internal constructor(
         ), Order::direction)
     }
 
-    internal companion object: QueryDataModel<Order, Properties>(
+    companion object: QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Order, Properties>) = Order(

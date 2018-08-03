@@ -3,9 +3,9 @@ package maryk.core.query.requests
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.SimpleQueryDataModel
+import maryk.core.models.QueryDataModel
 import maryk.core.models.ValuesDataModelImpl
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.objects.ObjectValues
 import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -25,23 +25,24 @@ data class AddRequest<DM: IsRootValuesDataModel<*>> internal constructor(
 ) : IsObjectRequest<DM> {
     override val requestType = RequestType.Add
 
-    internal companion object: SimpleQueryDataModel<AddRequest<*>>(
-        properties = object : ObjectPropertyDefinitions<AddRequest<*>>() {
-            init {
-                IsObjectRequest.addDataModel(this, AddRequest<*>::dataModel)
-                @Suppress("UNCHECKED_CAST")
-                add(2, "objectsToAdd", ListDefinition(
-                    valueDefinition = ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
-                        contextualResolver = {
-                            @Suppress("UNCHECKED_CAST")
-                            it?.dataModel as? ValuesDataModelImpl<DataModelPropertyContext>? ?: throw ContextNotFoundException()
-                        }
-                    ) as IsValueDefinition<Values<out IsValuesDataModel<*>, out PropertyDefinitions>, DataModelPropertyContext>
-                ), AddRequest<*>::objectsToAdd)
-            }
-        }
+    object Properties : ObjectPropertyDefinitions<AddRequest<*>>() {
+        val dataModel = IsObjectRequest.addDataModel(this, AddRequest<*>::dataModel)
+
+        @Suppress("UNCHECKED_CAST")
+        val objectsToAdd = add(2, "objectsToAdd", ListDefinition(
+            valueDefinition = ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
+                contextualResolver = {
+                    @Suppress("UNCHECKED_CAST")
+                    it?.dataModel as? ValuesDataModelImpl<DataModelPropertyContext>? ?: throw ContextNotFoundException()
+                }
+            ) as IsValueDefinition<Values<out IsValuesDataModel<*>, out PropertyDefinitions>, DataModelPropertyContext>
+        ), AddRequest<*>::objectsToAdd)
+    }
+
+    companion object: QueryDataModel<AddRequest<*>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<AddRequest<*>>) = AddRequest(
+        override fun invoke(map: ObjectValues<AddRequest<*>, Properties>) = AddRequest(
             dataModel = map(1),
             objectsToAdd = map(2)
         )

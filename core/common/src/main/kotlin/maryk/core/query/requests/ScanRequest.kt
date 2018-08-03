@@ -1,8 +1,8 @@
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
@@ -48,21 +48,21 @@ data class ScanRequest<DM: IsRootDataModel<*>> internal constructor(
 ) : IsScanRequest<DM> {
     override val requestType = RequestType.Scan
 
-    internal companion object: SimpleQueryDataModel<ScanRequest<*>>(
-        properties = object : ObjectPropertyDefinitions<ScanRequest<*>>() {
-            init {
-                IsObjectRequest.addDataModel(this, ScanRequest<*>::dataModel)
-                IsScanRequest.addStartKey(this, ScanRequest<*>::startKey)
-                IsFetchRequest.addSelect(this, ScanRequest<*>::select)
-                IsFetchRequest.addFilter(this, ScanRequest<*>::filter)
-                IsFetchRequest.addOrder(this, ScanRequest<*>::order)
-                IsFetchRequest.addToVersion(this, ScanRequest<*>::toVersion)
-                IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*>::filterSoftDeleted)
-                IsScanRequest.addLimit(this, ScanRequest<*>::limit)
-            }
-        }
+    object Properties: ObjectPropertyDefinitions<ScanRequest<*>>() {
+        val dataModel = IsObjectRequest.addDataModel(this, ScanRequest<*>::dataModel)
+        val startKey = IsScanRequest.addStartKey(this, ScanRequest<*>::startKey)
+        val select = IsFetchRequest.addSelect(this, ScanRequest<*>::select)
+        val filter = IsFetchRequest.addFilter(this, ScanRequest<*>::filter)
+        val order = IsFetchRequest.addOrder(this, ScanRequest<*>::order)
+        val toVersion = IsFetchRequest.addToVersion(this, ScanRequest<*>::toVersion)
+        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanRequest<*>::filterSoftDeleted)
+        val limit = IsScanRequest.addLimit(this, ScanRequest<*>::limit)
+    }
+
+    companion object: QueryDataModel<ScanRequest<*>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<ScanRequest<*>>) = ScanRequest(
+        override fun invoke(map: ObjectValues<ScanRequest<*>, Properties>) = ScanRequest(
             dataModel = map(1),
             startKey = map(2),
             select = map(3),

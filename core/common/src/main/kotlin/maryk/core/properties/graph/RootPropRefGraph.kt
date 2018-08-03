@@ -29,7 +29,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
         }
     }
 
-    internal companion object : ContextualDataModel<RootPropRefGraph<*>, Properties, ContainsDataModelContext<*>, GraphContext>(
+    companion object : ContextualDataModel<RootPropRefGraph<*>, Properties, ContainsDataModelContext<*>, GraphContext>(
         properties = Properties,
         contextTransformer = {
             GraphContext(it?.dataModel)

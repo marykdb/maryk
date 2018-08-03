@@ -9,7 +9,7 @@ import maryk.core.properties.references.IsPropertyReference
  * Saves the context while writing and parsing Requests and Responses
  * Context does not need to be cached since it is present in all phases.
  */
-internal class DataModelPropertyContext(
+class DataModelPropertyContext(
     val dataModels: Map<String, () -> IsNamedDataModel<*>>,
     override var dataModel: IsDataModel<*>? = null,
     var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>? = null

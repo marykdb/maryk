@@ -16,11 +16,11 @@ data class LessThanEquals internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<out Any>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    internal object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, LessThanEquals>() {
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, LessThanEquals>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(LessThanEquals::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, LessThanEquals, Properties>(
+    companion object: ReferencePairDataModel<Any, LessThanEquals, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<LessThanEquals, Properties>) = LessThanEquals(

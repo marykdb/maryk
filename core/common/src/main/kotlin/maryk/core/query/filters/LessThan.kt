@@ -16,11 +16,11 @@ data class LessThan internal constructor(
 
     override val filterType = FilterType.LessThan
 
-    internal object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, LessThan>() {
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, LessThan>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(LessThan::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, LessThan, Properties>(
+    companion object: ReferencePairDataModel<Any, LessThan, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<LessThan, Properties>) = LessThan(

@@ -25,7 +25,7 @@ data class Range internal constructor(
 ) {
     constructor(vararg range: ReferenceValueRangePair<*>): this(range.toList())
 
-    internal object Properties : ObjectPropertyDefinitions<Range>() {
+    object Properties : ObjectPropertyDefinitions<Range>() {
         val ranges = Properties.add(1, "referenceRangePairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
@@ -36,7 +36,7 @@ data class Range internal constructor(
         )
     }
 
-    internal companion object: QueryDataModel<Range, Properties>(
+    companion object: QueryDataModel<Range, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Range, Properties>) = Range(

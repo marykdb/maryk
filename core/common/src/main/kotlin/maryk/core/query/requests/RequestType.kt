@@ -21,7 +21,7 @@ enum class RequestType(override val index: Int): IndexedEnum<RequestType> {
     )
 }
 
-internal val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
+val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
     RequestType.Add to EmbeddedObjectDefinition(dataModel = { AddRequest }),
     RequestType.Change to EmbeddedObjectDefinition(dataModel = { ChangeRequest }),
     RequestType.Delete to EmbeddedObjectDefinition(dataModel = { DeleteRequest }),

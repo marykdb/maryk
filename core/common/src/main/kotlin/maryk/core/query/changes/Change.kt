@@ -16,11 +16,11 @@ data class Change internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    internal object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, Change>() {
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, Change>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(Change::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, Change, Properties>(
+    companion object: ReferencePairDataModel<Any, Change, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Change, Properties>) = Change(

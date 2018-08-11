@@ -21,6 +21,7 @@ data class ChangeRequest<out DM: IsRootDataModel<*>> internal constructor(
 ) : IsObjectRequest<DM> {
     override val requestType = RequestType.Change
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, ChangeRequest<*>::dataModel)
         val objectChanges = add(2, "objectChanges",

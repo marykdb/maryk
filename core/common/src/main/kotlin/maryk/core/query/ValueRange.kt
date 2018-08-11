@@ -32,7 +32,7 @@ data class ValueRange<T: Any> internal constructor(
 ) : IsFilter {
     override val filterType = FilterType.Range
 
-    internal object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
+    object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
         val from = add(1, "from", ContextualValueDefinition(
             contextualResolver = { context: DataModelPropertyContext? ->
                 @Suppress("UNCHECKED_CAST")
@@ -53,7 +53,7 @@ data class ValueRange<T: Any> internal constructor(
         val inclusiveTo = add(4, "inclusiveTo", BooleanDefinition(default = true), ValueRange<*>::inclusiveTo)
     }
 
-    internal companion object: QueryDataModel<ValueRange<*>, Properties>(
+    companion object: QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ValueRange<*>, Properties>) = ValueRange(

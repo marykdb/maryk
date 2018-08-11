@@ -20,7 +20,7 @@ data class Not(
 
     override val filterType = FilterType.Not
 
-    internal object Properties : ObjectPropertyDefinitions<Not>() {
+    object Properties : ObjectPropertyDefinitions<Not>() {
         val filters = Properties.add(1, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -34,7 +34,7 @@ data class Not(
         )
     }
 
-    internal companion object: QueryDataModel<Not, Properties>(
+    companion object: QueryDataModel<Not, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Not, Properties>) = Not(

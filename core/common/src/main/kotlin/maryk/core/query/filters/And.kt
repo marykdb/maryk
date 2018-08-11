@@ -20,7 +20,7 @@ data class And(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    internal object Properties : ObjectPropertyDefinitions<And>() {
+    object Properties : ObjectPropertyDefinitions<And>() {
         val filters = add(1, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -34,7 +34,7 @@ data class And(
         )
     }
 
-    internal companion object: QueryDataModel<And, Properties>(
+    companion object: QueryDataModel<And, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<And, Properties>) = And(

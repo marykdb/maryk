@@ -16,7 +16,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-internal abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: ObjectPropertyDefinitions<DO>, CP: ObjectPropertyDefinitions<CDO>>(
+abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: ObjectPropertyDefinitions<DO>, CP: ObjectPropertyDefinitions<CDO>>(
     properties: P,
     private val containedDataModel: QueryDataModel<CDO, CP>,
     private val referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, CDO>

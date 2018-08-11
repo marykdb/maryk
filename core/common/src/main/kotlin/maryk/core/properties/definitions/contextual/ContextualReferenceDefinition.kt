@@ -14,7 +14,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject from a context resolved from [contextualResolver] */
-internal class ContextualReferenceDefinition<in CX: IsPropertyContext>(
+class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> IsRootDataModel<*>
 ): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
     override val indexed = false

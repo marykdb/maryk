@@ -16,19 +16,17 @@ interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
     val limit: UInt32
 
     companion object {
-        internal fun <DO: IsScanRequest<*>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) {
+        internal fun <DO: IsScanRequest<*>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) =
             definitions.add(2, "startKey", ContextualReferenceDefinition<DataModelPropertyContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             ), getter)
-        }
 
-        internal fun <DO: Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt32?) {
+        internal fun <DO: Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt32?) =
             definitions.add(8, "limit", NumberDefinition(
                 default = 100.toUInt32(),
                 type = UInt32
             ), getter)
-        }
     }
 }

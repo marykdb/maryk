@@ -16,7 +16,8 @@ data class ListChange internal constructor(
 
     constructor(vararg listValueChange: ListValueChanges<*>): this(listValueChange.toList())
 
-    internal object Properties : ObjectPropertyDefinitions<ListChange>() {
+    object Properties : ObjectPropertyDefinitions<ListChange>() {
+        @Suppress("unused")
         val referenceListValueChangesPairs = add(1, "referenceListValueChangesPairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
@@ -27,7 +28,7 @@ data class ListChange internal constructor(
         )
     }
 
-    internal companion object: ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Properties, ListValueChanges.Properties>(
+    companion object: ReferenceMappedDataModel<ListChange, ListValueChanges<*>, Properties, ListValueChanges.Properties>(
         properties = Properties,
         containedDataModel = ListValueChanges,
         referenceProperty = ListValueChanges.Properties.reference

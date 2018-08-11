@@ -19,7 +19,7 @@ data class CollectRequest(
 ) : IsRequest {
     override val requestType = RequestType.Collect
 
-    internal object Properties: ObjectPropertyDefinitions<CollectRequest>() {
+    object Properties: ObjectPropertyDefinitions<CollectRequest>() {
         val name = add(1, "name", StringDefinition(), CollectRequest::name)
 
         @Suppress("UNCHECKED_CAST")
@@ -40,7 +40,7 @@ data class CollectRequest(
         )
     }
 
-    internal companion object: QueryDataModel<CollectRequest, CollectRequest.Properties>(
+    companion object: QueryDataModel<CollectRequest, CollectRequest.Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<CollectRequest, CollectRequest.Properties>) = CollectRequest(

@@ -25,41 +25,40 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
     val valuesToAdd: Map<K, V>? = null,
     val keysToDelete: Set<K>? = null
 ) : DefinedByReference<Map<K, V>> {
-    internal object Properties : ObjectPropertyDefinitions<MapValueChanges<out Any, out Any>>() {
+    @Suppress("unused")
+    object Properties : ObjectPropertyDefinitions<MapValueChanges<out Any, out Any>>() {
         val reference = DefinedByReference.addReference(this, MapValueChanges<*, *>::reference)
 
-        init {
-            @Suppress("UNCHECKED_CAST")
-            add(2, "valuesToAdd",
-                ContextualMapDefinition(
-                    required = false,
+        @Suppress("UNCHECKED_CAST")
+        val valuesToAdd = add(2, "valuesToAdd",
+            ContextualMapDefinition(
+                required = false,
+                contextualResolver = { context: DataModelPropertyContext? ->
+                    (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
+                        ?.propertyDefinition?.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>?
+                            ?: throw ContextNotFoundException()
+                }
+            ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>,
+            MapValueChanges<*, *>::valuesToAdd
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val keysToDelete = add(3, "keysToDelete",
+            SetDefinition(
+                required = false,
+                valueDefinition = ContextualValueDefinition(
                     contextualResolver = { context: DataModelPropertyContext? ->
                         (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
-                            ?.propertyDefinition?.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>?
+                            ?.propertyDefinition?.keyDefinition
                                 ?: throw ContextNotFoundException()
                     }
-                ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>,
-                MapValueChanges<*, *>::valuesToAdd
-            )
-
-            @Suppress("UNCHECKED_CAST")
-            add(3, "keysToDelete",
-                SetDefinition(
-                    required = false,
-                    valueDefinition = ContextualValueDefinition(
-                        contextualResolver = { context: DataModelPropertyContext? ->
-                            (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
-                                ?.propertyDefinition?.keyDefinition
-                                    ?: throw ContextNotFoundException()
-                        }
-                    )
-                ),
-                MapValueChanges<*, *>::keysToDelete
-            )
-        }
+                )
+            ),
+            MapValueChanges<*, *>::keysToDelete
+        )
     }
 
-    internal companion object: QueryDataModel<MapValueChanges<*, *>, Properties>(
+    companion object: QueryDataModel<MapValueChanges<*, *>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<MapValueChanges<*, *>, Properties>) = MapValueChanges<Any, Any>(

@@ -18,11 +18,11 @@ data class Exists internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>): this(reference.toList())
 
-    internal object Properties : ReferencesObjectPropertyDefinitions<Exists>() {
+    object Properties : ReferencesObjectPropertyDefinitions<Exists>() {
         override val references = addReferenceListPropertyDefinition(Exists::references)
     }
 
-    internal companion object: ReferencesDataModel<Exists, Properties>(
+    companion object: ReferencesDataModel<Exists, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Exists, Properties>) = Exists(

@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 @Suppress("FunctionName")
-internal fun <DM: IsNamedDataModel<*>, CX: IsPropertyContext> ContextualModelReferenceDefinition(
+fun <DM: IsNamedDataModel<*>, CX: IsPropertyContext> ContextualModelReferenceDefinition(
     contextualResolver: (context: CX?, name: String) -> () -> DM
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it

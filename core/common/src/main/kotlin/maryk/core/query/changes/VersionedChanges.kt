@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -14,29 +14,29 @@ data class VersionedChanges(
     val version: UInt64,
     val changes: List<IsChange>
 ) {
-    internal companion object: SimpleQueryDataModel<VersionedChanges>(
-        properties = object : ObjectPropertyDefinitions<VersionedChanges>() {
-            init {
-                add(1, "version", NumberDefinition(
-                    type = UInt64
-                ), VersionedChanges::version)
+    object Properties : ObjectPropertyDefinitions<VersionedChanges>() {
+        val version = add(1, "version", NumberDefinition(
+            type = UInt64
+        ), VersionedChanges::version)
 
-                add(2, "changes",
-                    ListDefinition(
-                        default = emptyList(),
-                        valueDefinition = MultiTypeDefinition(
-                            typeEnum = ChangeType,
-                            definitionMap = mapOfChangeDefinitions
-                        )
-                    ),
-                    getter = VersionedChanges::changes,
-                    toSerializable = { TypedValue(it.changeType, it) },
-                    fromSerializable = { it.value as IsChange }
+        val changes = add(2, "changes",
+            ListDefinition(
+                default = emptyList(),
+                valueDefinition = MultiTypeDefinition(
+                    typeEnum = ChangeType,
+                    definitionMap = mapOfChangeDefinitions
                 )
-            }
-        }
+            ),
+            getter = VersionedChanges::changes,
+            toSerializable = { TypedValue(it.changeType, it) },
+            fromSerializable = { it.value as IsChange }
+        )
+    }
+
+    companion object: QueryDataModel<VersionedChanges, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<VersionedChanges>) = VersionedChanges(
+        override fun invoke(map: ObjectValues<VersionedChanges, Properties>) = VersionedChanges(
             version = map(1),
             changes = map(2)
         )

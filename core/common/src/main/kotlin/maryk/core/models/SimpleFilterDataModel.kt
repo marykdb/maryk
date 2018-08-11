@@ -17,7 +17,7 @@ import maryk.lib.exceptions.ParseException
  * ObjectDataModel of type [DO] with [properties] definitions to contain
  * query actions so they can be validated and transported
  */
-internal abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
+abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     properties: P
 ) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     override fun walkJsonToRead(

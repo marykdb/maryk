@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 /**
  * Definition wrapper to transform the context with [contextTransformer] for valueDefinition of [T] defined by [definition]
  */
-internal data class ContextTransformerDefinition<T: Any, in CX: IsPropertyContext, CXI: IsPropertyContext>(
+data class ContextTransformerDefinition<T: Any, in CX: IsPropertyContext, CXI: IsPropertyContext>(
     val definition: IsValueDefinition<T, CXI>,
     private val contextTransformer: (CX?) -> CXI?
 ) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {

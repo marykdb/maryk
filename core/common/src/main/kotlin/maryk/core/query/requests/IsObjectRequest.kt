@@ -14,7 +14,7 @@ interface IsObjectRequest<out DM: IsRootDataModel<*>>: IsRequest {
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) {
+        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) =
             definitions.add(
                 1, "dataModel",
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, DataModelPropertyContext>(
@@ -37,6 +37,5 @@ interface IsObjectRequest<out DM: IsRootDataModel<*>>: IsRequest {
                     context.dataModel = value.get() as IsRootDataModel<IsPropertyDefinitions>
                 }
             )
-        }
     }
 }

@@ -30,7 +30,7 @@ data class ListValueChanges<T: Any> internal constructor(
     val deleteAtIndex: Set<Int>? = null
 ) : DefinedByReference<List<T>> {
     @Suppress("unused")
-    internal object Properties : ObjectPropertyDefinitions<ListValueChanges<*>>() {
+    object Properties : ObjectPropertyDefinitions<ListValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, ListValueChanges<*>::reference)
 
         val addValuesToEnd = add(2, "addValuesToEnd", valueListDefinition, ListValueChanges<*>::addValuesToEnd)
@@ -49,7 +49,7 @@ data class ListValueChanges<T: Any> internal constructor(
         ), ListValueChanges<*>::deleteAtIndex)
     }
 
-    internal companion object: QueryDataModel<ListValueChanges<*>, Properties>(
+    companion object: QueryDataModel<ListValueChanges<*>, Properties>(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")

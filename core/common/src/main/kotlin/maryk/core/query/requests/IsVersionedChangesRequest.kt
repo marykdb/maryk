@@ -1,8 +1,10 @@
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 
@@ -11,7 +13,7 @@ interface IsVersionedChangesRequest<DM: IsRootDataModel<*>> : IsChangesRequest<D
     val maxVersions: UInt32
 
     companion object {
-        internal fun <DM: Any> addMaxVersions(index: Int, definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> UInt32?) {
+        internal fun <DM: Any> addMaxVersions(index: Int, definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> UInt32?): FixedBytesPropertyDefinitionWrapper<UInt32, UInt32, IsPropertyContext, NumberDefinition<UInt32>, DM> =
             definitions.add(index, "maxVersions",
                 NumberDefinition(
                     type = UInt32,
@@ -19,6 +21,5 @@ interface IsVersionedChangesRequest<DM: IsRootDataModel<*>> : IsChangesRequest<D
                 ),
                 getter
             )
-        }
     }
 }

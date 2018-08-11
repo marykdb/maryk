@@ -20,23 +20,22 @@ data class SetValueChanges<T: Any> internal constructor(
     val addValues: Set<T>? = null,
     val deleteValues: Set<T>? = null
 ) : DefinedByReference<Set<T>> {
-    internal object Properties : ObjectPropertyDefinitions<SetValueChanges<*>>() {
+    @Suppress("UNUSED_VARIABLE")
+    object Properties : ObjectPropertyDefinitions<SetValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, SetValueChanges<*>::reference)
 
-        init {
-            add(2, "addValues", SetDefinition(
-                required = false,
-                valueDefinition = valueDefinition
-            ), SetValueChanges<*>::addValues)
+        val addValues = add(2, "addValues", SetDefinition(
+            required = false,
+            valueDefinition = valueDefinition
+        ), SetValueChanges<*>::addValues)
 
-            add(3, "deleteValues", SetDefinition(
-                required = false,
-                valueDefinition = valueDefinition
-            ), SetValueChanges<*>::deleteValues)
-        }
+        val deleteValues = add(3, "deleteValues", SetDefinition(
+            required = false,
+            valueDefinition = valueDefinition
+        ), SetValueChanges<*>::deleteValues)
     }
 
-    internal companion object: QueryDataModel<SetValueChanges<out Any>, Properties>(
+    companion object: QueryDataModel<SetValueChanges<out Any>, Properties>(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")

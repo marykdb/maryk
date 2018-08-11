@@ -24,7 +24,7 @@ data class ValueIn internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValueSetPair<*>): this(referenceValuePair.toList() as List<ReferenceValueSetPair<Any>>)
 
-    internal object Properties : ObjectPropertyDefinitions<ValueIn>() {
+    object Properties : ObjectPropertyDefinitions<ValueIn>() {
         val referenceValuePairs = add(1, "referenceValuePairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
@@ -37,7 +37,7 @@ data class ValueIn internal constructor(
         )
     }
 
-    internal companion object: SimpleFilterDataModel<ValueIn, Properties>(
+    companion object: SimpleFilterDataModel<ValueIn, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ValueIn, Properties>) = ValueIn(

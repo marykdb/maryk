@@ -16,11 +16,11 @@ data class GreaterThan internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    internal object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, GreaterThan>() {
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, GreaterThan>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(GreaterThan::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, GreaterThan, Properties>(
+    companion object: ReferencePairDataModel<Any, GreaterThan, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<GreaterThan, Properties>) = GreaterThan(

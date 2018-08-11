@@ -18,11 +18,11 @@ data class Delete internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>): this(reference.toList())
 
-    internal object Properties : ReferencesObjectPropertyDefinitions<Delete>() {
+    object Properties : ReferencesObjectPropertyDefinitions<Delete>() {
         override val references = addReferenceListPropertyDefinition(Delete::references)
     }
 
-    internal companion object: ReferencesDataModel<Delete, Properties>(
+    companion object: ReferencesDataModel<Delete, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Delete, Properties>) = Delete(

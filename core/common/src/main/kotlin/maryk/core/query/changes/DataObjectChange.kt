@@ -2,8 +2,8 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -30,35 +30,36 @@ data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
     val changes: List<IsChange>,
     val lastVersion: UInt64? = null
 ) {
-    internal companion object: SimpleQueryDataModel<DataObjectChange<*>>(
-        properties = object : ObjectPropertyDefinitions<DataObjectChange<*>>() {
-            init {
-                add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = {
-                        it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-                    }
-                ), DataObjectChange<*>::key)
-
-                add(2, "changes",
-                    ListDefinition(
-                        default = emptyList(),
-                        valueDefinition = MultiTypeDefinition(
-                            typeEnum = ChangeType,
-                            definitionMap = mapOfChangeDefinitions
-                        )
-                    ),
-                    getter = DataObjectChange<*>::changes,
-                    toSerializable = { TypedValue(it.changeType, it) },
-                    fromSerializable = { it.value as IsChange }
-                )
-
-                add(3, "lastVersion", NumberDefinition(
-                    type = UInt64
-                ), DataObjectChange<*>::lastVersion)
+    @Suppress("unused")
+    object Properties : ObjectPropertyDefinitions<DataObjectChange<*>>() {
+        val key = add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+            contextualResolver = {
+                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }
-        }
+        ), DataObjectChange<*>::key)
+
+        val changes = add(2, "changes",
+            ListDefinition(
+                default = emptyList(),
+                valueDefinition = MultiTypeDefinition(
+                    typeEnum = ChangeType,
+                    definitionMap = mapOfChangeDefinitions
+                )
+            ),
+            getter = DataObjectChange<*>::changes,
+            toSerializable = { TypedValue(it.changeType, it) },
+            fromSerializable = { it.value as IsChange }
+        )
+
+        val lastVersion = add(3, "lastVersion", NumberDefinition(
+            type = UInt64
+        ), DataObjectChange<*>::lastVersion)
+    }
+
+    companion object: QueryDataModel<DataObjectChange<*>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<DataObjectChange<*>>) = DataObjectChange(
+        override fun invoke(map: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange(
             key = map(1),
             changes = map(2),
             lastVersion = map(3)

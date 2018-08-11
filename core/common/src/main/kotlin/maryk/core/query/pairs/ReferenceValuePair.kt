@@ -17,7 +17,7 @@ data class ReferenceValuePair<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
     val value: T
 ) : DefinedByReference<T> {
-    internal object Properties: ObjectPropertyDefinitions<ReferenceValuePair<*>>() {
+    object Properties: ObjectPropertyDefinitions<ReferenceValuePair<*>>() {
         val reference = DefinedByReference.addReference(
             this,
             ReferenceValuePair<*>::reference
@@ -36,7 +36,7 @@ data class ReferenceValuePair<T: Any> internal constructor(
         )
     }
 
-    internal companion object: SimpleObjectDataModel<ReferenceValuePair<*>, Properties>(
+    companion object: SimpleObjectDataModel<ReferenceValuePair<*>, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<ReferenceValuePair<*>, Properties>) = ReferenceValuePair(

@@ -20,7 +20,7 @@ data class Or(
 
     constructor(vararg filters: IsFilter) : this(filters.toList())
 
-    internal object Properties : ObjectPropertyDefinitions<Or>() {
+    object Properties : ObjectPropertyDefinitions<Or>() {
         val filters = add(1, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -34,7 +34,7 @@ data class Or(
         )
     }
 
-    internal companion object: QueryDataModel<Or, Properties>(
+    companion object: QueryDataModel<Or, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Or, Properties>) = Or(

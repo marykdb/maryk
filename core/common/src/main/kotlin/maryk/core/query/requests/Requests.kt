@@ -15,7 +15,7 @@ data class Requests(
 ) {
     constructor(vararg request: IsRequest): this(request.toList())
 
-    internal object Properties: ObjectPropertyDefinitions<Requests>() {
+    object Properties: ObjectPropertyDefinitions<Requests>() {
         val requests = add(1, "requests",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -30,7 +30,7 @@ data class Requests(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal companion object: QuerySingleValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, DataModelPropertyContext>(
+    companion object: QuerySingleValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, DataModelPropertyContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, DataModelPropertyContext, Requests>
     ) {

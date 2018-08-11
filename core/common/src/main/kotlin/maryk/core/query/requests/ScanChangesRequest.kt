@@ -50,6 +50,7 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
 ) : IsScanRequest<DM>, IsChangesRequest<DM> {
     override val requestType = RequestType.ScanChanges
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ScanChangesRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, ScanChangesRequest<*>::dataModel)
         val startKey = IsScanRequest.addStartKey(this, ScanChangesRequest<*>::startKey)

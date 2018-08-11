@@ -2,8 +2,8 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -18,25 +18,25 @@ data class DataObjectVersionedChange<out DM: IsRootDataModel<*>>(
     val key: Key<DM>,
     val changes: List<VersionedChanges>
 ) {
-    internal companion object: SimpleQueryDataModel<DataObjectVersionedChange<*>>(
-        properties = object : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
-            init {
-                add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
-                    contextualResolver = {
-                        it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
-                    }
-                ), DataObjectVersionedChange<*>::key)
-
-                add(2, "changes", ListDefinition(
-                    default = emptyList(),
-                    valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { VersionedChanges }
-                    )
-                ), DataObjectVersionedChange<*>::changes)
+    object Properties : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
+        val key = add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+            contextualResolver = {
+                it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }
-        }
+        ), DataObjectVersionedChange<*>::key)
+
+        val changes = add(2, "changes", ListDefinition(
+            default = emptyList(),
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { VersionedChanges }
+            )
+        ), DataObjectVersionedChange<*>::changes)
+    }
+
+    companion object: QueryDataModel<DataObjectVersionedChange<*>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<DataObjectVersionedChange<*>>) = DataObjectVersionedChange(
+        override fun invoke(map: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange(
             key = map(1),
             changes = map(2)
         )

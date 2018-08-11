@@ -15,7 +15,7 @@ import maryk.lib.exceptions.ParseException
  *
  * In JSON/YAML this model is represented as just that property.
  */
-internal abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
+abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
     properties: P,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, T, CX, DO>
 ) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {

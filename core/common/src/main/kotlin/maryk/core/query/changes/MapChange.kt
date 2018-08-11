@@ -16,7 +16,8 @@ data class MapChange internal constructor(
 
     constructor(vararg mapValueChange: MapValueChanges<*, *>): this(mapValueChange.toList())
 
-    internal object Properties : ObjectPropertyDefinitions<MapChange>() {
+    object Properties : ObjectPropertyDefinitions<MapChange>() {
+        @Suppress("unused")
         val mapValueChanges = add(1, "mapValueChanges",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
@@ -27,8 +28,8 @@ data class MapChange internal constructor(
         )
     }
 
-    internal companion object: ReferenceMappedDataModel<MapChange, MapValueChanges<*, *>, Properties, MapValueChanges.Properties>(
-        properties = MapChange.Properties,
+    companion object: ReferenceMappedDataModel<MapChange, MapValueChanges<*, *>, Properties, MapValueChanges.Properties>(
+        properties = Properties,
         containedDataModel = MapValueChanges,
         referenceProperty = MapValueChanges.Properties.reference
     ) {

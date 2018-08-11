@@ -15,11 +15,11 @@ data class RegEx internal constructor(
 
     constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())
 
-    internal object Properties : ReferenceValuePairsObjectPropertyDefinitions<String, RegEx>() {
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<String, RegEx>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(RegEx::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<String, RegEx, Properties>(
+    companion object: ReferencePairDataModel<String, RegEx, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<RegEx, Properties>) = RegEx(

@@ -32,6 +32,7 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
 ) : IsObjectRequest<DM> {
     override val requestType = RequestType.Delete
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, DeleteRequest<*>::dataModel)
 

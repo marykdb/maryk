@@ -17,7 +17,7 @@ import maryk.core.query.requests.Requests
 data class RootMaryk(
     val operations: List<TypedValue<Operation, *>> = listOf()
 ) {
-    internal object Properties : ObjectPropertyDefinitions<RootMaryk>() {
+    object Properties : ObjectPropertyDefinitions<RootMaryk>() {
         val operations = add(1, "operations",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
@@ -44,7 +44,7 @@ data class RootMaryk(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal companion object: QuerySingleValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DataModelContext>(
+    companion object: QuerySingleValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DataModelContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DataModelContext, RootMaryk>
     ) {

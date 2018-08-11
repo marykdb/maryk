@@ -16,11 +16,11 @@ data class Check internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    internal object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, Check>() {
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, Check>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(Check::referenceValuePairs)
     }
 
-    internal companion object: ReferencePairDataModel<Any, Check, Properties>(
+    companion object: ReferencePairDataModel<Any, Check, Properties>(
         properties = Properties
     ) {
         override fun invoke(map: ObjectValues<Check, Properties>) = Check(

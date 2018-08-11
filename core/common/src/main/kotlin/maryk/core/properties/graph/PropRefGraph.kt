@@ -36,7 +36,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
 ) : IsPropRefGraphable<PDM> {
     override val graphType = PropRefGraphType.Graph
 
-    internal object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *>>() {
+    object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *>>() {
         val parent = add(1, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
@@ -60,7 +60,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
         }
     }
 
-    internal companion object : ContextualDataModel<PropRefGraph<*, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
+    companion object : ContextualDataModel<PropRefGraph<*, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
         properties = Properties,
         contextTransformer = {
             if (it is GraphContext && it.subDataModel != null) {

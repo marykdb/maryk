@@ -16,7 +16,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** For data models which contains only reference pairs */
-internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<T, DO>>(
+abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<T, DO>>(
     properties: P
 ) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
     internal fun IsJsonLikeWriter.writeJsonMapObject(
@@ -73,7 +73,7 @@ internal abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValu
     }
 }
 
-internal abstract class ReferenceValuePairsObjectPropertyDefinitions<T: Any, DO: Any> : ObjectPropertyDefinitions<DO>() {
+abstract class ReferenceValuePairsObjectPropertyDefinitions<T: Any, DO: Any> : ObjectPropertyDefinitions<DO>() {
     abstract val referenceValuePairs: ListPropertyDefinitionWrapper<ReferenceValuePair<T>, ReferenceValuePair<T>, IsPropertyContext, DO>
 
     protected fun <T: Any> addReferenceValuePairsDefinition(getter: (DO) -> List<ReferenceValuePair<T>>?) =

@@ -45,6 +45,7 @@ data class GetChangesRequest<DM: IsRootDataModel<*>> internal constructor(
 ) : IsGetRequest<DM>, IsChangesRequest<DM> {
     override val requestType = RequestType.GetChanges
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<GetChangesRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, GetChangesRequest<*>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetChangesRequest<*>::keys)

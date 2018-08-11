@@ -28,7 +28,7 @@ data class AddRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     object Properties : ObjectPropertyDefinitions<AddRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, AddRequest<*>::dataModel)
 
-        @Suppress("UNCHECKED_CAST")
+        @Suppress("UNCHECKED_CAST", "unused")
         val objectsToAdd = add(2, "objectsToAdd", ListDefinition(
             valueDefinition = ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
                 contextualResolver = {

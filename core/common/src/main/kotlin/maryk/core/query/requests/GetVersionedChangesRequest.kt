@@ -50,17 +50,15 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
     override val requestType = RequestType.GetVersionedChanges
 
     object Properties : ObjectPropertyDefinitions<GetVersionedChangesRequest<*>>() {
-        init {
-            IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
-            IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)
-            IsFetchRequest.addSelect(this, GetVersionedChangesRequest<*>::select)
-            IsFetchRequest.addFilter(this,  GetVersionedChangesRequest<*>::filter)
-            IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
-            IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
-            IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
-            IsChangesRequest.addFromVersion(8, this, GetVersionedChangesRequest<*>::fromVersion)
-            IsVersionedChangesRequest.addMaxVersions(9, this, GetVersionedChangesRequest<*>::maxVersions)
-        }
+        val dataModel = IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
+        val keys = IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)
+        val select = IsFetchRequest.addSelect(this, GetVersionedChangesRequest<*>::select)
+        val filter = IsFetchRequest.addFilter(this,  GetVersionedChangesRequest<*>::filter)
+        val order = IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
+        val toVersion = IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
+        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
+        val fromVersion = IsChangesRequest.addFromVersion(8, this, GetVersionedChangesRequest<*>::fromVersion)
+        val maxVersions = IsVersionedChangesRequest.addMaxVersions(9, this, GetVersionedChangesRequest<*>::maxVersions)
     }
 
     companion object: QueryDataModel<GetVersionedChangesRequest<*>, Properties>(

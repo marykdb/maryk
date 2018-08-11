@@ -13,7 +13,7 @@ interface IsGetRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
     val keys: List<Key<DM>>
 
     companion object {
-        internal fun <REQ: IsGetRequest<*>> addKeys(definitions: ObjectPropertyDefinitions<REQ>, getter: (REQ) -> List<Key<*>>?) {
+        internal fun <REQ: IsGetRequest<*>> addKeys(definitions: ObjectPropertyDefinitions<REQ>, getter: (REQ) -> List<Key<*>>?) =
             definitions.add(2, "keys", ListDefinition(
                 valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
                     contextualResolver = {
@@ -21,6 +21,5 @@ interface IsGetRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
                     }
                 )
             ), getter)
-        }
     }
 }

@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
+import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
@@ -115,10 +116,15 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
                             continue@walker
                         }
 
-                        definition.definition.readJson(reader, context).also {
-                            valueMap[definition.index] = it
-                            definition.capture(context, it)
+                        val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+                            @Suppress("UNCHECKED_CAST")
+                            (definition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readJsonToValues(reader, context)
+                        } else {
+                            definition.readJson(reader, context)
                         }
+
+                        valueMap[definition.index] = readValue
+                        definition.capture(context, readValue)
                     }
                 }
                 else -> break@walker
@@ -210,12 +216,23 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
             ProtoBuf.skipField(key.wireType, byteReader)
         } else {
             when (propertyDefinition) {
-                is IsByteTransportableValue<*, CX> -> valueMap[key.tag] = propertyDefinition.readTransportBytes(
-                    ProtoBuf.getLength(key.wireType, byteReader),
-                    byteReader,
-                    context
-                ).also {
-                    dataObjectPropertyDefinition.capture(context, it)
+                is IsByteTransportableValue<*, CX> -> {
+                    valueMap[key.tag] = if (propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        (propertyDefinition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readTransportBytesToValues(
+                            ProtoBuf.getLength(key.wireType, byteReader),
+                            byteReader,
+                            context
+                        )
+                    } else {
+                        propertyDefinition.readTransportBytes(
+                            ProtoBuf.getLength(key.wireType, byteReader),
+                            byteReader,
+                            context
+                        )
+                    }.also {
+                        dataObjectPropertyDefinition.capture(context, it)
+                    }
                 }
                 is IsByteTransportableCollection<out Any, *, CX> -> {
                     when {

@@ -20,7 +20,6 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.DataModelContext
-import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -74,9 +73,6 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         this.dataModel.transformContext(context)
     )
 
-    override fun readJson(reader: IsJsonLikeReader, context: CXI?) =
-        this.dataModel.readJson(reader, this.dataModel.transformContext(context)).toDataObject()
-
     override fun calculateTransportByteLength(value: DO, cacher: WriteCacheWriter, context: CXI?) =
         this.dataModel.calculateProtoBufLength(
             value,
@@ -115,9 +111,6 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         } else {
             context as CX?
         }
-
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: CXI?) =
-        this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context)).toDataObject()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

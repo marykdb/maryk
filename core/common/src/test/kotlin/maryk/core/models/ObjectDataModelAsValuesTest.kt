@@ -49,7 +49,11 @@ private val testExtendedObject = TestMarykObject.map {
             Time(10, 3) to "ahum"
         ),
         valueObject with TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
-        embeddedObject with EmbeddedMarykObject("test"),
+        embeddedObject with EmbeddedMarykObject.map {
+            mapNonNulls(
+                value with "test"
+            )
+        },
         multi with TypedValue(Option.V3, EmbeddedMarykObject("subInMulti!")),
         listOfString with listOf("test1", "another test", "🤗")
     )

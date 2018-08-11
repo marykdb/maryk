@@ -7,7 +7,7 @@ import maryk.test.shouldBe
 /**
  * Compares if two DataModels are equal
  */
-internal fun <DM: AbstractDataModel<*, *, *, *>> compareDataModels(converted: DM, original: DM) {
+internal fun <DM: AbstractDataModel<*, *, *, *, *>> compareDataModels(converted: DM, original: DM) {
     (converted.properties)
         .zip(original.properties)
         .forEach { (convertedWrapper, originalWrapper) ->

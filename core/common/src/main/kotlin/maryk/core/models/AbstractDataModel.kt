@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.objects.AbstractValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -9,6 +10,9 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.DataModelContext
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -21,9 +25,31 @@ import maryk.lib.exceptions.ParseException
  * to read and write. [CXI] is the input Context for properties. This can be different because the ObjectDataModel can create
  * its own context by transforming the given context.
  */
-abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
+abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V: AbstractValues<DO, *, P>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     final override val properties: P
 ) : IsDataModel<P> {
+
+    /** Create a ObjectValues with given [createMap] function */
+    abstract fun map(context: DataModelContext? = null, createMap: P.() -> Map<Int, Any?>): V
+
+    /**
+     * Write an [map] with values for this ObjectDataModel to JSON with [writer]
+     * Optionally pass a [context] when needed for more complex property types
+     */
+    open fun writeJson(map: V, writer: IsJsonLikeWriter, context: CX? = null) {
+        writer.writeStartObject()
+        for (key in map.keys) {
+            val value = map<Any?>(key) ?: continue // skip empty values
+
+            val definition = properties[key] ?: continue
+
+            definition.capture(context, value)
+
+            writeJsonValue(definition, writer, value, context)
+        }
+        writer.writeEndObject()
+    }
+
     internal fun writeJsonValue(
         def: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         writer: IsJsonLikeWriter,
@@ -32,6 +58,16 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, in
     ) {
         writer.writeFieldName(def.name)
         def.definition.writeJsonValue(value, writer, context)
+    }
+
+    /**
+     * Read JSON from [reader] to a Map with values
+     * Optionally pass a [context] when needed to read more complex property types
+     */
+    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): V {
+        return this.map {
+            this@AbstractDataModel.readJsonToMap(reader, context)
+        }
     }
 
     /**
@@ -92,10 +128,56 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, in
     }
 
     /**
+     * Calculates the byte length for the DataObject contained in [map]
+     * The [cacher] caches any values needed to write later.
+     * Optionally pass a [context] to write more complex properties which depend on other properties
+     */
+    fun calculateProtoBufLength(map: V, cacher: WriteCacheWriter, context: CX? = null) : Int {
+        var totalByteLength = 0
+        for (key in map.keys) {
+            val value = map<Any?>(key) ?: continue // skip empty values
+
+            val def = properties[key] ?: continue
+
+            def.capture(context, value)
+
+            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
+        }
+        return totalByteLength
+    }
+
+    /**
+     * Write a ProtoBuf from a [map] with values to [writer] and get
+     * possible cached values from [cacheGetter]
+     * Optionally pass a [context] to write more complex properties which depend on other properties
+     */
+    fun writeProtoBuf(map: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+        for (key in map.keys) {
+            val value = map<Any?>(key) ?: continue // skip empty values
+
+            val definition = properties[key] ?: continue
+
+            definition.capture(context, value)
+
+            definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
+        }
+    }
+
+    /**
+     * Read ProtoBuf bytes from [reader] until [length] to a Map of values
+     * Optionally pass a [context] to read more complex properties which depend on other properties
+     */
+    fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): V {
+        return this.map {
+            this@AbstractDataModel.readProtoBufToMap(length, reader, context)
+        }
+    }
+
+    /**
      * Read ProtoBuf bytes from [reader] until [length] to a Map
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    internal fun readProtoBufToMap(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
+    private fun readProtoBufToMap(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
         val valueMap: MutableMap<Int, Any> = mutableMapOf()
         var byteCounter = 1
 

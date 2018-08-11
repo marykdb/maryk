@@ -10,7 +10,7 @@ import maryk.core.query.DataModelContext
 interface IsValuesDataModel<P: PropertyDefinitions>: IsDataModel<P>, IsNamedDataModel<P>
 
 /** A DataModel which holds properties and can be validated */
-interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>: IsValuesDataModel<P> {
+interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>: IsDataModelWithValues<Any, P, Values<DM, P>>, IsValuesDataModel<P> {
     /**
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
@@ -19,6 +19,6 @@ interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinition
 
     /** Create a ObjectValues with given [createMap] function */
     @Suppress("UNCHECKED_CAST")
-    fun map(context: DataModelContext? = null, createMap: P.() -> Map<Int, Any?>) =
+    override fun map(context: DataModelContext?, createMap: P.() -> Map<Int, Any?>) =
         Values(this as DM, createMap(this.properties), context)
 }

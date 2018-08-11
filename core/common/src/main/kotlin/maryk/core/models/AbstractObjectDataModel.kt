@@ -12,7 +12,6 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.DataModelContext
 import maryk.core.query.DataModelPropertyContext
-import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
 typealias SimpleObjectDataModel<DO, P> = AbstractObjectDataModel<DO, P, IsPropertyContext, IsPropertyContext>
@@ -28,7 +27,7 @@ internal typealias SimpleQueryDataModel<DO> = AbstractObjectDataModel<DO, Object
  */
 abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     properties: P
-) : IsObjectDataModel<DO, P>, AbstractDataModel<DO, P, CXI, CX>(properties) {
+) : IsObjectDataModel<DO, P>, AbstractDataModel<DO, P, ObjectValues<DO, P>, CXI, CX>(properties) {
     override fun validate(
         dataObject: DO,
         refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>?
@@ -61,16 +60,6 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
             writeJsonValue(definition, writer, value, context)
         }
         writer.writeEndObject()
-    }
-
-    /**
-     * Read JSON from [reader] to a Map with values
-     * Optionally pass a [context] when needed to read more complex property types
-     */
-    open fun readJson(reader: IsJsonLikeReader, context: CX? = null): ObjectValues<DO, P> {
-        return this.map {
-            this@AbstractObjectDataModel.readJsonToMap(reader, context)
-        }
     }
 
     /**
@@ -110,16 +99,6 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         obj: DO,
         context: CX?
     ) = definition.getPropertyAndSerialize(obj, context)
-
-    /**
-     * Read ProtoBuf bytes from [reader] until [length] to a Map of values
-     * Optionally pass a [context] to read more complex properties which depend on other properties
-     */
-    internal fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): ObjectValues<DO, P> {
-        return this.map {
-            this@AbstractObjectDataModel.readProtoBufToMap(length, reader, context)
-        }
-    }
 
     /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")

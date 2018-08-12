@@ -2,6 +2,7 @@ package maryk.core.query
 
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
+import maryk.core.objects.AbstractValues
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 
@@ -24,4 +25,13 @@ class RequestContext(
         dataModel,
         reference
     )
+
+    private var collectedResults = mutableMapOf<String, AbstractValues<*, *, *>>()
+
+    fun collectResult(collectionName: String, value: AbstractValues<*, *, *>) {
+        this.collectedResults.put(collectionName, value)
+    }
+
+    fun retrieveResult(collectionName: String) =
+        this.collectedResults[collectionName]
 }

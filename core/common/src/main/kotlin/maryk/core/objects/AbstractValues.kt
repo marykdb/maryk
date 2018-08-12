@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.AnyInject
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -19,7 +19,7 @@ import maryk.lib.exceptions.ParseException
 abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>> {
     abstract val dataModel: DM
     protected abstract val map: Map<Int, Any?>
-    abstract val context: DefinitionsContext?
+    abstract val context: RequestContext?
 
     /** Retrieve the keys of the map */
     val keys get() = map.keys

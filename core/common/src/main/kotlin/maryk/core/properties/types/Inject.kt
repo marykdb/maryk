@@ -5,7 +5,7 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.RequestContext
 
 typealias AnyInject = Inject<*, *, *, *>
 
@@ -17,7 +17,7 @@ class Inject<T: Any, D: IsPropertyDefinition<T>, DM: IsDataModel<P>, P: IsProper
     val dataModel: DM,
     private val propertyReference: IsPropertyReference<T, D, *>? = null
 ) {
-    fun resolve(context: DefinitionsContext): T? {
+    fun resolve(context: RequestContext): T? {
         val result = context.retrieveResult(collectionName)
             ?: throw InjectException(this.collectionName)
 

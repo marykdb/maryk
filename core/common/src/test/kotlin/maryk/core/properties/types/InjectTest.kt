@@ -6,6 +6,7 @@ import maryk.core.models.asValues
 import maryk.core.models.injectable
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.DefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.core.query.filters.Equals
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.GetRequest
@@ -14,10 +15,14 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class InjectTest {
-    val context = DefinitionsContext(
+    private val definitionsContext = DefinitionsContext(
         dataModels = mutableMapOf(
             EmbeddedMarykModel.name to { EmbeddedMarykModel }
         )
+    )
+
+    private val context = RequestContext(
+        definitionsContext
     )
 
     private val valuesToCollect = EmbeddedMarykModel(

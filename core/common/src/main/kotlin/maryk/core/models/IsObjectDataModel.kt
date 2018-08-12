@@ -5,7 +5,6 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 
 typealias IsSimpleObjectDataModel<DO> = IsObjectDataModel<DO, ObjectPropertyDefinitions<DO>>
@@ -29,7 +28,7 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
 /**
  * Converts a DataObject back to ObjectValues
  */
-fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>> DM.asValues(dataObject: DO): ObjectValues<DO, P> {
+fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>> DM.asValues(dataObject: DO, context: RequestContext? = null): ObjectValues<DO, P> {
     val mutableMap = mutableMapOf<Int, Any>()
 
     for (property in this.properties) {
@@ -38,7 +37,7 @@ fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>> DM
         }
     }
 
-    return this.map {
+    return this.map(context) {
         mutableMap
     }
 }

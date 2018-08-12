@@ -7,8 +7,8 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.query.RequestContext
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -91,7 +91,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
                         this.containedDataModel.walkJsonToRead(reader, valueMap, context)
                     }
 
-                    val dataObjectMap = this.containedDataModel.map {
+                    val dataObjectMap = this.containedDataModel.map(context) {
                         valueMap
                     }
                     items.add(
@@ -103,7 +103,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
             reader.nextToken()
         } while (token !is JsonToken.Stopped)
 
-        return this.map {
+        return this.map(context) {
             mapOf(
                 referenceProperty.index to items
             )

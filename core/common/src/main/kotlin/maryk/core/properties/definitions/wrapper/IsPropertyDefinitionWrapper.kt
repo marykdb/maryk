@@ -27,6 +27,7 @@ import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -190,7 +191,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
 
-                this.map {
+                this.map(context as? RequestContext) {
                     valueMap
                 }
             } else {

@@ -28,6 +28,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -81,7 +82,7 @@ private data class MultiTypeDescriptor(
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): ObjectValues<MultiTypeDescriptor, Properties> {
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
-                this.map {
+                this.map(context as? RequestContext) {
                     val valueMap: MutableMap<Int, Any?> = mutableMapOf()
 
                     reader.readNamedIndexField(valueMap, name, index)

@@ -93,7 +93,7 @@ data class Order internal constructor(
 
                 @Suppress("UNCHECKED_CAST")
                 (currentToken as? JsonToken.Value<String>)?.let {
-                    return this.map {
+                    return this.map(context) {
                         val valueMap = mutableMapOf<Int, Any?>()
 
                         it.type.let { valueType ->

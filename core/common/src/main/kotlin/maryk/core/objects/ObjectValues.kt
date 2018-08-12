@@ -19,4 +19,20 @@ data class ObjectValues<DO: Any, P: ObjectPropertyDefinitions<DO>> internal cons
      * Will throw exception if map is missing values for a complete DataObject
      */
     fun toDataObject() = this.dataModel.invoke(this)
+
+    // ignore context
+    override fun equals(other: Any?) = when {
+        this === other -> true
+        other !is ObjectValues<*, *> -> false
+        dataModel != other.dataModel -> false
+        map != other.map -> false
+        else -> true
+    }
+
+    // ignore context
+    override fun hashCode(): Int {
+        var result = dataModel.hashCode()
+        result = 31 * result + map.hashCode()
+        return result
+    }
 }

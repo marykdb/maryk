@@ -94,7 +94,7 @@ data class ValueIn internal constructor(
                 currentToken = reader.nextToken()
             }
 
-            return this.map {
+            return this.map(context) {
                 mapNonNulls(
                     referenceValuePairs with list
                 )

@@ -13,6 +13,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.RequestContext
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -62,7 +63,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Optionally pass a [context] when needed to read more complex property types
      */
     open fun readJson(reader: IsJsonLikeReader, context: CX? = null): V {
-        return this.map {
+        return this.map(context as? RequestContext) {
             this@AbstractDataModel.readJsonToMap(reader, context)
         }
     }
@@ -170,7 +171,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): V {
-        return this.map {
+        return this.map(context as? RequestContext) {
             this@AbstractDataModel.readProtoBufToMap(length, reader, context)
         }
     }

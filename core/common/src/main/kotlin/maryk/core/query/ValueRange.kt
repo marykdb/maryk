@@ -99,7 +99,7 @@ data class ValueRange<T: Any> internal constructor(
                     reader.nextToken()
                 }
 
-                this.map {
+                this.map(context) {
                     val valueMap = mutableMapOf<Int, Any?>()
 
                     if (reader.currentToken !is JsonToken.StartArray) {

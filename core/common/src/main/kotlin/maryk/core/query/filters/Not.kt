@@ -54,7 +54,7 @@ data class Not(
                 reader.nextToken()
             }
 
-            return this.map {
+            return this.map(context) {
                 mapNonNulls(
                     filters with filters.readJson(reader, context)
                 )

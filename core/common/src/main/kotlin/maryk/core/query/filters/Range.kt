@@ -103,7 +103,7 @@ data class Range internal constructor(
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            return this.map {
+            return this.map(context) {
                 mapNonNulls(
                     ranges with listOfRanges
                 )

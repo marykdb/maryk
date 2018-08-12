@@ -76,7 +76,7 @@ data class CollectRequest(
 
             reader.nextToken() // read past end object
 
-            return this.map {
+            return this.map(context) {
                 mapNonNulls(
                     this.name with name,
                     this.request with request

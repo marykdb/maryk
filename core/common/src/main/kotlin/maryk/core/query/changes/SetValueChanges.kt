@@ -20,7 +20,7 @@ data class SetValueChanges<T: Any> internal constructor(
     val addValues: Set<T>? = null,
     val deleteValues: Set<T>? = null
 ) : DefinedByReference<Set<T>> {
-    @Suppress("UNUSED_VARIABLE")
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<SetValueChanges<*>>() {
         val reference = DefinedByReference.addReference(this, SetValueChanges<*>::reference)
 

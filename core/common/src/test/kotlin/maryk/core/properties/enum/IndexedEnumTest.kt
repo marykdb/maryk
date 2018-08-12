@@ -6,7 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.createMarykYamlModelReader
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -17,7 +17,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             Option,
-            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DataModelContext, DataModelContext>,
+            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
             null,
             ::compareEnumDefinitions
         )
@@ -28,7 +28,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             Option,
-            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DataModelContext, DataModelContext>,
+            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
             null,
             ::compareEnumDefinitions
         )
@@ -39,7 +39,7 @@ class IndexedEnumTest {
         @Suppress("UNCHECKED_CAST")
         checkYamlConversion(
             Option,
-            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DataModelContext, DataModelContext>,
+            IndexedEnumDefinition.Model as AbstractObjectDataModel<Option.Companion, ObjectPropertyDefinitions<Option.Companion>, DefinitionsContext, DefinitionsContext>,
             null,
             ::compareEnumDefinitions
         ) shouldBe """

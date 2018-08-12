@@ -4,7 +4,7 @@ import maryk.EmbeddedMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import kotlin.test.Test
 
 class EmbeddedValuesPropertyDefinitionWrapperTest {
@@ -19,11 +19,11 @@ class EmbeddedValuesPropertyDefinitionWrapperTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, { DataModelContext() }, ::comparePropertyDefinitionWrapper)
+        checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, { DefinitionsContext() }, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, { DataModelContext() }, ::comparePropertyDefinitionWrapper)
+        checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, { DefinitionsContext() }, ::comparePropertyDefinitionWrapper)
     }
 }

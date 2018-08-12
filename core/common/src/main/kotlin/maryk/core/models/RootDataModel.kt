@@ -19,7 +19,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -182,7 +182,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                     PresetJsonTokenReader(jsonTokens)
                 }
 
-                valueMap[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DataModelContext?)
+                valueMap[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DefinitionsContext?)
 
                 if (reader is IsYamlReader) {
                     reader.nextToken()

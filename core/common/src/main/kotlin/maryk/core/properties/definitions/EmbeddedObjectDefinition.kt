@@ -19,7 +19,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -132,7 +132,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         return result
     }
 
-    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, DataModelContext, ModelContext>(
+    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, DefinitionsContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
             init {
@@ -142,9 +142,9 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                 add(4, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextTransformer = {context: ModelContext? ->
-                            context?.dataModelContext
+                            context?.definitionsContext
                         },
-                        contextualResolver = { context: DataModelContext?, name ->
+                        contextualResolver = { context: DefinitionsContext?, name ->
                             context?.let{
                                 @Suppress("UNCHECKED_CAST")
                                 it.dataModels[name] as? () -> ObjectDataModel<*, *>
@@ -162,7 +162,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                     },
                     fromSerializable = { it: IsDataModelReference<ObjectDataModel<*, *>>? -> it?.get },
                     capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
-                        context.dataModelContext?.let {
+                        context.definitionsContext?.let {
                             if (!it.dataModels.containsKey(dataModel.name)) {
                                 it.dataModels[dataModel.name] = dataModel.get
                             }

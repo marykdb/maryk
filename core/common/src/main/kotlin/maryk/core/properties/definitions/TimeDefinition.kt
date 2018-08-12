@@ -15,7 +15,7 @@ import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.lib.time.Time
 
 /** Definition for Time properties */
@@ -72,7 +72,7 @@ data class TimeDefinition(
         else -> value as? Time
     }
 
-    object Model : ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, DataModelContext, TimeDefinitionContext>(
+    object Model : ContextualDataModel<TimeDefinition, ObjectPropertyDefinitions<TimeDefinition>, DefinitionsContext, TimeDefinitionContext>(
         contextTransformer = { TimeDefinitionContext() },
         properties = object : ObjectPropertyDefinitions<TimeDefinition>() {
             init {

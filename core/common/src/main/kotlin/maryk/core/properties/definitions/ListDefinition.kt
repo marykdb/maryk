@@ -11,7 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 
 /** Definition for List property */
 data class ListDefinition<T: Any, CX: IsPropertyContext>(
@@ -44,8 +44,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<ListDefinition<*, *>, ObjectPropertyDefinitions<ListDefinition<*, *>>, DataModelContext, ListDefinitionContext>(
-        contextTransformer = { it: DataModelContext? -> ListDefinitionContext(it) },
+    object Model : ContextualDataModel<ListDefinition<*, *>, ObjectPropertyDefinitions<ListDefinition<*, *>>, DefinitionsContext, ListDefinitionContext>(
+        contextTransformer = { it: DefinitionsContext? -> ListDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<ListDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
@@ -55,7 +55,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMaxSize(5, this, ListDefinition<*, *>::maxSize)
                 add(6, "valueDefinition",
                     ContextTransformerDefinition(
-                        contextTransformer = { it?.dataModelContext },
+                        contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -68,12 +68,12 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                     },
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
-                        it?.value as IsValueDefinition<Any, DataModelContext>?
+                        it?.value as IsValueDefinition<Any, DefinitionsContext>?
                     },
                     capturer = { context: ListDefinitionContext?, value ->
                         context?.apply {
                             @Suppress("UNCHECKED_CAST")
-                            valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
+                            valueDefinion = value.value as IsValueDefinition<Any, DefinitionsContext>
                         } ?: throw ContextNotFoundException()
                     }
                 )
@@ -102,13 +102,13 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
 }
 
 class ListDefinitionContext(
-    val dataModelContext: DataModelContext?
+    val definitionsContext: DefinitionsContext?
 ) : IsPropertyContext {
-    var valueDefinion: IsValueDefinition<Any, DataModelContext>? = null
+    var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null
 
-    private var _listDefinition: Lazy<ListDefinition<Any, DataModelContext>> = lazy {
+    private var _listDefinition: Lazy<ListDefinition<Any, DefinitionsContext>> = lazy {
         ListDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
 
-    val listDefinition: ListDefinition<Any, DataModelContext> get() = this._listDefinition.value
+    val listDefinition: ListDefinition<Any, DefinitionsContext> get() = this._listDefinition.value
 }

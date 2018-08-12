@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.requests.Requests
 
@@ -26,7 +26,7 @@ data class RootMaryk(
                         Operation.Define to EmbeddedObjectDefinition(
                             dataModel = { Definitions }
                         ),
-                        Operation.Request to ContextTransformerDefinition<Requests, DataModelContext, DataModelPropertyContext>(
+                        Operation.Request to ContextTransformerDefinition<Requests, DefinitionsContext, DataModelPropertyContext>(
                             definition = EmbeddedObjectDefinition(
                                 dataModel = { Requests }
                             ),
@@ -44,9 +44,9 @@ data class RootMaryk(
     }
 
     @Suppress("UNCHECKED_CAST")
-    companion object: QuerySingleValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DataModelContext>(
+    companion object: QuerySingleValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DefinitionsContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DataModelContext, RootMaryk>
+        singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DefinitionsContext, RootMaryk>
     ) {
         override fun invoke(map: ObjectValues<RootMaryk, Properties>) = RootMaryk(
             operations = map(1)

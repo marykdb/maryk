@@ -19,7 +19,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 
 /**
  * Defines a key part which refers to a multi type definition with [reference].
@@ -58,7 +58,7 @@ data class TypeId<E: IndexedEnum<E>>(
         properties = object : ObjectPropertyDefinitions<TypeId<*>>() {
             init {
                 add(1, "multiTypeDefinition",
-                    ContextualPropertyReferenceDefinition<DataModelContext>(
+                    ContextualPropertyReferenceDefinition<DefinitionsContext>(
                         contextualResolver = {
                             it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                         }

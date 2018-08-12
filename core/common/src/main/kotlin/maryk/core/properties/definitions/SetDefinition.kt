@@ -11,7 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 
 /** Definition for Set property */
 data class SetDefinition<T: Any, CX: IsPropertyContext>(
@@ -48,8 +48,8 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, DataModelContext, SetDefinitionContext>(
-        contextTransformer = { it: DataModelContext? -> SetDefinitionContext(it) },
+    object Model : ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, DefinitionsContext, SetDefinitionContext>(
+        contextTransformer = { it: DefinitionsContext? -> SetDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)
@@ -59,7 +59,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                 HasSizeDefinition.addMaxSize(5, this, SetDefinition<*, *>::maxSize)
                 add(6, "valueDefinition",
                     ContextTransformerDefinition(
-                        contextTransformer = { it?.dataModelContext },
+                        contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -72,11 +72,11 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                     },
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
-                        it?.value as IsValueDefinition<Any, DataModelContext>?
+                        it?.value as IsValueDefinition<Any, DefinitionsContext>?
                     },
                     capturer = { context: SetDefinitionContext, value ->
                         @Suppress("UNCHECKED_CAST")
-                        context.valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
+                        context.valueDefinion = value.value as IsValueDefinition<Any, DefinitionsContext>
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
@@ -104,13 +104,13 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
 }
 
 class SetDefinitionContext(
-    val dataModelContext: DataModelContext?
+    val definitionsContext: DefinitionsContext?
 ) : IsPropertyContext {
-    var valueDefinion: IsValueDefinition<Any, DataModelContext>? = null
+    var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null
 
-    private var _setDefinition: Lazy<SetDefinition<Any, DataModelContext>> = lazy {
+    private var _setDefinition: Lazy<SetDefinition<Any, DefinitionsContext>> = lazy {
         SetDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
 
-    val setDefinition: SetDefinition<Any, DataModelContext> get() = this._setDefinition.value
+    val setDefinition: SetDefinition<Any, DefinitionsContext> get() = this._setDefinition.value
 }

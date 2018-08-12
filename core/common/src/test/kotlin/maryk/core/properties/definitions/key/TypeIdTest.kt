@@ -13,7 +13,7 @@ import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -74,7 +74,7 @@ internal class TypeIdTest {
         specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1
     }
 
-    private val context = DataModelContext(
+    private val context = DefinitionsContext(
         propertyDefinitions = MarykModel.Properties
     )
 

@@ -17,7 +17,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -60,7 +60,7 @@ data class Definitions(
                             definition = EmbeddedObjectDefinition(
                                 dataModel = { RootDataModel.Model }
                             ),
-                            capturer = { context: DataModelContext?, model ->
+                            capturer = { context: DefinitionsContext?, model ->
                                 context?.let {
                                     it.dataModels[model.name] = { model }
                                 } ?: throw ContextNotFoundException()
@@ -90,9 +90,9 @@ data class Definitions(
                                 } ?: throw ContextNotFoundException()
                             }
                         )
-                    ) as Map<PrimitiveType, IsSubDefinition<out Any, DataModelContext>>
+                    ) as Map<PrimitiveType, IsSubDefinition<out Any, DefinitionsContext>>
                 )
-            ) as ListDefinition<TypedValue<PrimitiveType, MarykPrimitive>, DataModelContext>,
+            ) as ListDefinition<TypedValue<PrimitiveType, MarykPrimitive>, DefinitionsContext>,
             Definitions::definitions,
             fromSerializable = { it.value },
             toSerializable = { TypedValue(it.primitiveType, it) }
@@ -100,9 +100,9 @@ data class Definitions(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal companion object: QuerySingleValueDataModel<List<MarykPrimitive>, Definitions, Properties, DataModelContext>(
+    internal companion object: QuerySingleValueDataModel<List<MarykPrimitive>, Definitions, Properties, DefinitionsContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, List<MarykPrimitive>, DataModelContext, Definitions>
+        singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, List<MarykPrimitive>, DefinitionsContext, Definitions>
     ) {
         override fun invoke(map: ObjectValues<Definitions, Properties>) = Definitions(
             definitions = map(1)

@@ -24,7 +24,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -183,8 +183,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return Pair(key, value)
     }
 
-    object Model : ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, DataModelContext, KeyValueDefinitionContext>(
-        contextTransformer = { it: DataModelContext? -> KeyValueDefinitionContext(it) },
+    object Model : ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, DefinitionsContext, KeyValueDefinitionContext>(
+        contextTransformer = { it: DefinitionsContext? -> KeyValueDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)
@@ -195,7 +195,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 
                 add(6, "keyDefinition",
                     ContextTransformerDefinition(
-                        contextTransformer = { it?.dataModelContext },
+                        contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -208,17 +208,17 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     },
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
-                        it?.value as IsSimpleValueDefinition<Any, DataModelContext>?
+                        it?.value as IsSimpleValueDefinition<Any, DefinitionsContext>?
                     },
                     capturer = { context: KeyValueDefinitionContext, value ->
                         @Suppress("UNCHECKED_CAST")
-                        context.keyDefinion = value.value as IsSimpleValueDefinition<Any, DataModelContext>
+                        context.keyDefinion = value.value as IsSimpleValueDefinition<Any, DefinitionsContext>
                     }
                 )
 
                 add(7, "valueDefinition",
                     ContextTransformerDefinition(
-                        contextTransformer = { it?.dataModelContext },
+                        contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
                             typeEnum = PropertyDefinitionType,
                             definitionMap = mapOfPropertyDefEmbeddedObjectDefinitions
@@ -231,11 +231,11 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     },
                     fromSerializable = {
                         @Suppress("UNCHECKED_CAST")
-                        it?.value as IsValueDefinition<Any, DataModelContext>?
+                        it?.value as IsValueDefinition<Any, DefinitionsContext>?
                     },
                     capturer = { context: KeyValueDefinitionContext, value ->
                         @Suppress("UNCHECKED_CAST")
-                        context.valueDefinion = value.value as IsValueDefinition<Any, DataModelContext>
+                        context.valueDefinion = value.value as IsValueDefinition<Any, DefinitionsContext>
                     }
                 )
 
@@ -268,17 +268,17 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 }
 
 class KeyValueDefinitionContext(
-    val dataModelContext: DataModelContext?
+    val definitionsContext: DefinitionsContext?
 ) : IsPropertyContext {
-    var keyDefinion: IsSimpleValueDefinition<Any, DataModelContext>? = null
-    var valueDefinion: IsValueDefinition<Any, DataModelContext>? = null
+    var keyDefinion: IsSimpleValueDefinition<Any, DefinitionsContext>? = null
+    var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null
 
-    private var _mapDefinition: Lazy<MapDefinition<Any, Any, DataModelContext>> = lazy {
+    private var _mapDefinition: Lazy<MapDefinition<Any, Any, DefinitionsContext>> = lazy {
         MapDefinition(
             keyDefinition = this.keyDefinion ?: throw ContextNotFoundException(),
             valueDefinition = this.valueDefinion ?: throw ContextNotFoundException()
         )
     }
 
-    val mapDefinition: MapDefinition<Any, Any, DataModelContext> get() = this._mapDefinition.value
+    val mapDefinition: MapDefinition<Any, Any, DefinitionsContext> get() = this._mapDefinition.value
 }

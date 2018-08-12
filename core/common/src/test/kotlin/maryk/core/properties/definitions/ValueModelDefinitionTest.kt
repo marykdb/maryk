@@ -6,7 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -105,20 +105,20 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, ValueModelDefinition.Model, { DataModelContext() })
-        checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, { DataModelContext() })
+        checkProtoBufConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, ValueModelDefinition.Model, { DataModelContext() })
-        checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, ValueModelDefinition.Model, { DataModelContext() })
-        checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DataModelContext() }) shouldBe """
+        checkYamlConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
+        checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() }) shouldBe """
         indexed: true
         required: false
         final: true

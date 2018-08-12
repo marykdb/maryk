@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
@@ -48,7 +48,7 @@ data class Reversed<T: Any>(
         properties = object : ObjectPropertyDefinitions<Reversed<out Any>>() {
             init {
                 add(1, "multiTypeDefinition",
-                    ContextualPropertyReferenceDefinition<DataModelContext>(
+                    ContextualPropertyReferenceDefinition<DefinitionsContext>(
                         contextualResolver = { it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException() }
                     ),
                     getter = {

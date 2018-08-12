@@ -18,7 +18,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
@@ -211,7 +211,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         return result
     }
 
-    object Model : ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, DataModelContext, MultiTypeDefinitionContext>(
+    object Model : ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, DefinitionsContext, MultiTypeDefinitionContext>(
         contextTransformer = { MultiTypeDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>() {
             init {
@@ -238,7 +238,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
                     ContextualValueDefinition(
                         required = false,
                         contextTransformer = { context: MultiTypeDefinitionContext? ->
-                            context?.dataModelContext
+                            context?.definitionsContext
                         },
                         contextualResolver = { context: MultiTypeDefinitionContext? ->
                             context?.multiTypeDefinition ?: throw ContextNotFoundException()
@@ -249,7 +249,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> {
+        override fun invoke(map: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, DefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
                 map(5)
             )
@@ -273,13 +273,13 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 }
 
 class MultiTypeDefinitionContext(
-    val dataModelContext: DataModelContext?
+    val definitionsContext: DefinitionsContext?
 ): IsPropertyContext {
     var typeEnumName: String? = null
 
-    var definitionMap: Map<IndexedEnum<Any>, IsSubDefinition<out Any, DataModelContext>> ?= null
+    var definitionMap: Map<IndexedEnum<Any>, IsSubDefinition<out Any, DefinitionsContext>> ?= null
 
-    private var _multiTypeDefinition: Lazy<MultiTypeDefinition<IndexedEnum<Any>, DataModelContext>> = lazy {
+    private var _multiTypeDefinition: Lazy<MultiTypeDefinition<IndexedEnum<Any>, DefinitionsContext>> = lazy {
         val typeOptions = definitionMap?.keys?.toTypedArray() ?: throw ContextNotFoundException()
 
         val typeEnum = IndexedEnumDefinition(
@@ -292,5 +292,5 @@ class MultiTypeDefinitionContext(
         )
     }
 
-    val multiTypeDefinition: MultiTypeDefinition<IndexedEnum<Any>, DataModelContext> get() = this._multiTypeDefinition.value
+    val multiTypeDefinition: MultiTypeDefinition<IndexedEnum<Any>, DefinitionsContext> get() = this._multiTypeDefinition.value
 }

@@ -10,12 +10,12 @@ import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.core.query.DataModelPropertyContext
 import maryk.json.IsJsonLikeWriter
 
 typealias SimpleObjectDataModel<DO, P> = AbstractObjectDataModel<DO, P, IsPropertyContext, IsPropertyContext>
-typealias DefinitionDataModel<DO> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, DataModelContext, DataModelContext>
+typealias DefinitionDataModel<DO> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, DefinitionsContext, DefinitionsContext>
 internal typealias QueryDataModel<DO, P> = AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>
 internal typealias SimpleQueryDataModel<DO> = AbstractObjectDataModel<DO, ObjectPropertyDefinitions<DO>, DataModelPropertyContext, DataModelPropertyContext>
 

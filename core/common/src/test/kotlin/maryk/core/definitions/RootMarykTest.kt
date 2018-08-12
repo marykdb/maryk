@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.core.query.requests.Requests
 import maryk.core.query.requests.addRequest
 import maryk.core.query.requests.getMaxRequest
@@ -36,17 +36,17 @@ class RootMarykTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.rootMaryk, RootMaryk, { DataModelContext() }, ::compareRootMaryk, true)
+        checkProtoBufConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.rootMaryk, RootMaryk, { DataModelContext() }, ::compareRootMaryk, true)
+        checkJsonConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.rootMaryk, RootMaryk, { DataModelContext() }, ::compareRootMaryk, true) shouldBe """
+        checkYamlConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true) shouldBe """
         - !Define
           - !EnumDefinition
             name: Option

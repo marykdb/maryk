@@ -9,7 +9,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
@@ -110,20 +110,20 @@ internal class EmbeddedValuesDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, EmbeddedValuesDefinition.Model, { DataModelContext() })
-        checkProtoBufConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DataModelContext() })
+        checkProtoBufConversion(this.def, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, EmbeddedValuesDefinition.Model, { DataModelContext() })
-        checkJsonConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.def, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, EmbeddedValuesDefinition.Model, { DataModelContext() })
-        checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DataModelContext() }) shouldBe """
+        checkYamlConversion(this.def, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
+        checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() }) shouldBe """
         indexed: true
         required: false
         final: true

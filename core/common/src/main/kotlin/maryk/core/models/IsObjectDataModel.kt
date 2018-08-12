@@ -5,7 +5,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 
 typealias IsSimpleObjectDataModel<DO> = IsObjectDataModel<DO, ObjectPropertyDefinitions<DO>>
 
@@ -21,7 +21,7 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
     operator fun invoke(map: ObjectValues<DO, P>): DO
 
     /** Create a ObjectValues with given [createMap] function */
-    override fun map(context: DataModelContext?, createMap: P.() -> Map<Int, Any?>) =
+    override fun map(context: DefinitionsContext?, createMap: P.() -> Map<Int, Any?>) =
         ObjectValues(this, createMap(this.properties), context)
 }
 

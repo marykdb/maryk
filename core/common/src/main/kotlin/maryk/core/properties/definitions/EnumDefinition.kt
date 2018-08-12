@@ -17,7 +17,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Enum properties */
@@ -111,7 +111,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    object Model : ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, DataModelContext, EnumDefinitionContext>(
+    object Model : ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, DefinitionsContext, EnumDefinitionContext>(
         contextTransformer = { EnumDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<EnumDefinition<*>>() {
             init {
@@ -127,13 +127,13 @@ class EnumDefinition<E : IndexedEnum<E>>(
                                 dataModel = { IndexedEnumDefinition.Model }
                             ),
                             contextTransformer = {
-                                it?.dataModelContext
+                                it?.definitionsContext
                             }
                         ),
                         valueTransformer = { context, value ->
                             if (value.optionalValues == null) {
                                 context?.let { c ->
-                                    c.dataModelContext?.let {
+                                    c.definitionsContext?.let {
                                         it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?
                                             ?: throw ParseException("Enum ${value.name} is not Defined")
                                     }
@@ -217,7 +217,7 @@ private fun enumsHashCode(enumValues: Array<out IndexedEnum<*>>): Int {
 }
 
 class EnumDefinitionContext(
-    val dataModelContext: DataModelContext?
+    val definitionsContext: DefinitionsContext?
 ) : IsPropertyContext {
     var enumDefinition: EnumDefinition<IndexedEnum<Any>>? = null
 }

@@ -18,7 +18,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
@@ -85,7 +85,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
             }
         } else { null }
 
-    object Model : ContextualDataModel<ValueModelDefinition<*, *, *>, ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>, DataModelContext, ModelContext>(
+    object Model : ContextualDataModel<ValueModelDefinition<*, *, *>, ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>, DefinitionsContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>() {
             init {
@@ -95,8 +95,8 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                 IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *, *>::unique)
 
                 add(5, "dataModel",
-                    ContextualModelReferenceDefinition<ValueDataModel<*, *>,ModelContext, DataModelContext>(
-                        contextTransformer = { it?.dataModelContext },
+                    ContextualModelReferenceDefinition<ValueDataModel<*, *>,ModelContext, DefinitionsContext>(
+                        contextTransformer = { it?.definitionsContext },
                         contextualResolver = { context, name ->
                             context?.let {
                                 @Suppress("UNCHECKED_CAST")
@@ -115,7 +115,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     },
                     capturer = { context, dataModel ->
                         context.let {
-                            context.dataModelContext?.let { modelContext ->
+                            context.definitionsContext?.let { modelContext ->
                                 if (!modelContext.dataModels.containsKey(dataModel.name)) {
                                     modelContext.dataModels[dataModel.name] = dataModel.get
                                 }

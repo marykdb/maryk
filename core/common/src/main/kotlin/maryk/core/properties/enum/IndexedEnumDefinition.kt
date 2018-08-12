@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.SInt32
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -55,7 +55,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                     if (enumNameContext.isOriginalDefinition == true) {
                         false
                     } else {
-                        enumNameContext.dataModelContext?.let {
+                        enumNameContext.definitionsContext?.let {
                             if(it.enums[enumNameContext.name] == null) {
                                 enumNameContext.isOriginalDefinition = true
                                 false
@@ -87,7 +87,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal object Model: ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, DataModelContext, EnumNameContext>(
+    internal object Model: ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, DefinitionsContext, EnumNameContext>(
         properties = Properties,
         contextTransformer = { EnumNameContext(it) }
     ) {
@@ -98,7 +98,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             )
 
         override fun writeJson(obj: IndexedEnumDefinition<IndexedEnum<Any>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
-            if (context?.dataModelContext?.enums?.containsKey(obj.name) == true) {
+            if (context?.definitionsContext?.enums?.containsKey(obj.name) == true) {
                 // Write a single string name if no options was defined
                 val value = Properties.name.getPropertyAndSerialize(obj, context)
                         ?: throw ParseException("Missing requests in Requests")

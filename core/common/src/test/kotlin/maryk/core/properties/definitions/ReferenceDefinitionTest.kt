@@ -7,7 +7,7 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.properties.types.Key
-import maryk.core.query.DataModelContext
+import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -77,20 +77,20 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, ReferenceDefinition.Model,{ DataModelContext() })
-        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, { DataModelContext() })
+        checkProtoBufConversion(this.def, ReferenceDefinition.Model,{ DefinitionsContext() })
+        checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, ReferenceDefinition.Model, { DataModelContext() })
-        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, { DataModelContext() })
+        checkJsonConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, ReferenceDefinition.Model, { DataModelContext() })
-        checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DataModelContext() }) shouldBe """
+        checkYamlConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
+        checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() }) shouldBe """
         indexed: true
         required: false
         final: true

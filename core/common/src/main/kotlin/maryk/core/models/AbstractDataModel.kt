@@ -13,7 +13,6 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DataModelContext
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -28,10 +27,7 @@ import maryk.lib.exceptions.ParseException
  */
 abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V: AbstractValues<DO, *, P>, in CXI: IsPropertyContext, CX: IsPropertyContext> internal constructor(
     final override val properties: P
-) : IsDataModel<P> {
-
-    /** Create a ObjectValues with given [createMap] function */
-    abstract fun map(context: DataModelContext? = null, createMap: P.() -> Map<Int, Any?>): V
+) : IsDataModelWithValues<DO, P, V> {
 
     /**
      * Write an [map] with values for this ObjectDataModel to JSON with [writer]

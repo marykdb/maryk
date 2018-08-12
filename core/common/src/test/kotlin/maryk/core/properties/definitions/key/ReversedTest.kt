@@ -8,7 +8,7 @@ import maryk.core.models.definitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.time.DateTime
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -65,7 +65,7 @@ internal class ReversedTest {
         key.toHex() shouldBe "fe017fffffa6540703"
     }
 
-    private val context = DefinitionsContext(
+    private val context = DefinitionsConversionContext(
         propertyDefinitions = MarykModel.Properties
     )
 

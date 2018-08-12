@@ -9,7 +9,7 @@ import maryk.core.objects.SimpleObjectValues
 import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.lib.uuid.generateUUID
 import maryk.yaml.IsYamlReader
@@ -38,7 +38,7 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>> {
     ) {
         override fun invoke(map: SimpleObjectValues<UUIDKey>) = UUIDKey
 
-        override fun readJson(reader: IsJsonLikeReader, context: DefinitionsContext?): SimpleObjectValues<UUIDKey> {
+        override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?): SimpleObjectValues<UUIDKey> {
             return if (reader is IsYamlReader) {
                 this.map { mapOf() }
             } else {

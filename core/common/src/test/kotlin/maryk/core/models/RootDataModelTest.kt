@@ -28,7 +28,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -85,7 +85,7 @@ internal class RootDataModelTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(TestMarykModel, RootDataModel.Model, { DefinitionsContext() }, ::compareDataModels)
+        checkProtoBufConversion(TestMarykModel, RootDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels)
     }
 
     @Test
@@ -93,7 +93,7 @@ internal class RootDataModelTest {
         checkJsonConversion(
             TestMarykModel,
             RootDataModel.Model,
-            { DefinitionsContext() },
+            { DefinitionsConversionContext() },
             ::compareDataModels
         ) shouldBe """
         {
@@ -335,7 +335,7 @@ internal class RootDataModelTest {
         checkYamlConversion(
             TestMarykModel,
             RootDataModel.Model,
-            { DefinitionsContext() },
+            { DefinitionsConversionContext() },
             ::compareDataModels
         ) shouldBe """
         name: TestMarykModel
@@ -582,7 +582,7 @@ internal class RootDataModelTest {
             }
         }
 
-        val newContext = DefinitionsContext()
+        val newContext = DefinitionsConversionContext()
         newContext.dataModels["TestMarykModel"] = { TestMarykModel }
         newContext.dataModels["TestValueObject"] = { TestValueObject }
 

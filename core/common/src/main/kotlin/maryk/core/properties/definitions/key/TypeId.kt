@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.key
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.initShort
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.models.DefinitionDataModel
+import maryk.core.models.DefinitionWithContextDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.SimpleObjectValues
@@ -19,7 +19,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 
 /**
  * Defines a key part which refers to a multi type definition with [reference].
@@ -54,11 +54,11 @@ data class TypeId<E: IndexedEnum<E>>(
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         initShort(reader).toInt() - Short.MIN_VALUE
 
-    internal object Model : DefinitionDataModel<TypeId<*>>(
+    internal object Model : DefinitionWithContextDataModel<TypeId<*>, DefinitionsConversionContext>(
         properties = object : ObjectPropertyDefinitions<TypeId<*>>() {
             init {
                 add(1, "multiTypeDefinition",
-                    ContextualPropertyReferenceDefinition<DefinitionsContext>(
+                    ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
                         contextualResolver = {
                             it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                         }

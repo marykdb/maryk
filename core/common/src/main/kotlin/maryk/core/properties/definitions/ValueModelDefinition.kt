@@ -18,7 +18,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
@@ -85,7 +85,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
             }
         } else { null }
 
-    object Model : ContextualDataModel<ValueModelDefinition<*, *, *>, ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>, DefinitionsContext, ModelContext>(
+    object Model : ContextualDataModel<ValueModelDefinition<*, *, *>, ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>, ContainsDefinitionsContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>() {
             init {
@@ -95,10 +95,9 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                 IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *, *>::unique)
 
                 add(5, "dataModel",
-                    ContextualModelReferenceDefinition<ValueDataModel<*, *>,ModelContext, DefinitionsContext>(
-                        contextTransformer = { it?.definitionsContext },
+                    ContextualModelReferenceDefinition<ValueDataModel<*, *>, ModelContext>(
                         contextualResolver = { context, name ->
-                            context?.let {
+                            context?.definitionsContext?.let {
                                 @Suppress("UNCHECKED_CAST")
                                 it.dataModels[name] as (() -> ValueDataModel<*, *>)? ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()

@@ -11,6 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
 
 /** Definition for List property */
@@ -44,8 +45,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<ListDefinition<*, *>, ObjectPropertyDefinitions<ListDefinition<*, *>>, DefinitionsContext, ListDefinitionContext>(
-        contextTransformer = { it: DefinitionsContext? -> ListDefinitionContext(it) },
+    object Model : ContextualDataModel<ListDefinition<*, *>, ObjectPropertyDefinitions<ListDefinition<*, *>>, ContainsDefinitionsContext, ListDefinitionContext>(
+        contextTransformer = { it: ContainsDefinitionsContext? -> ListDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<ListDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
@@ -102,7 +103,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
 }
 
 class ListDefinitionContext(
-    val definitionsContext: DefinitionsContext?
+    val definitionsContext: ContainsDefinitionsContext?
 ) : IsPropertyContext {
     var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null
 

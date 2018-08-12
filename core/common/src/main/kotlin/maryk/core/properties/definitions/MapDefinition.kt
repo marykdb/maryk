@@ -24,6 +24,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -183,8 +184,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         return Pair(key, value)
     }
 
-    object Model : ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, DefinitionsContext, KeyValueDefinitionContext>(
-        contextTransformer = { it: DefinitionsContext? -> KeyValueDefinitionContext(it) },
+    object Model : ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(
+        contextTransformer = { it: ContainsDefinitionsContext? -> KeyValueDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)
@@ -268,7 +269,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 }
 
 class KeyValueDefinitionContext(
-    val definitionsContext: DefinitionsContext?
+    val definitionsContext: ContainsDefinitionsContext?
 ) : IsPropertyContext {
     var keyDefinion: IsSimpleValueDefinition<Any, DefinitionsContext>? = null
     var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null

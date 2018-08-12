@@ -26,7 +26,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -171,7 +171,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         ) {
             // When writing YAML, use YAML optimized format with complex field names
             if (writer is YamlWriter) {
-                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as DefinitionsContext)
+                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index)
@@ -188,7 +188,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 val valueMap: MutableMap<Int, Any?> = mutableMapOf()
 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
-                valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as DefinitionsContext)
+                valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
 
                 this.map {
                     valueMap

@@ -21,7 +21,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
@@ -127,7 +127,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         return result
     }
 
-    object Model : ContextualDataModel<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>, DefinitionsContext, ModelContext>(
+    object Model : ContextualDataModel<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>, ContainsDefinitionsContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>() {
             init {
@@ -139,7 +139,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                         contextTransformer = {context: ModelContext? ->
                             context?.definitionsContext
                         },
-                        contextualResolver = { context: DefinitionsContext?, name ->
+                        contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let{
                                 @Suppress("UNCHECKED_CAST")
                                 it.dataModels[name] as? () -> DataModel<*, *>

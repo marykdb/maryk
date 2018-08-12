@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.SInt32
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -87,7 +87,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal object Model: ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, DefinitionsContext, EnumNameContext>(
+    internal object Model: ContextualDataModel<IndexedEnumDefinition<IndexedEnum<Any>>, Properties, ContainsDefinitionsContext, EnumNameContext>(
         properties = Properties,
         contextTransformer = { EnumNameContext(it) }
     ) {

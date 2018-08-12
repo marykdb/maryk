@@ -10,7 +10,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
@@ -109,20 +109,20 @@ internal class EmbeddedObjectDefinitionTest {
 
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsContext() })
-        checkProtoBufConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsContext() })
+        checkProtoBufConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
+        checkProtoBufConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
     }
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsContext() })
-        checkJsonConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsContext() })
+        checkJsonConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
+        checkJsonConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsContext() })
-        checkYamlConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsContext() }) shouldBe """
+        checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
+        checkYamlConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() }) shouldBe """
         indexed: true
         required: false
         final: true

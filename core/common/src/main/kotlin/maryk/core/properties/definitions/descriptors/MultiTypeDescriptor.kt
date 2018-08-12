@@ -27,7 +27,7 @@ import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -45,7 +45,7 @@ import maryk.yaml.YamlWriter
 private data class MultiTypeDescriptor(
     val index: Int,
     val name: String,
-    val definition: IsSubDefinition<out Any, DefinitionsContext>
+    val definition: IsSubDefinition<out Any, ContainsDefinitionsContext>
 ) {
     private object Properties: ObjectPropertyDefinitions<MultiTypeDescriptor>() {
         val index = add(1, "index",
@@ -85,7 +85,7 @@ private data class MultiTypeDescriptor(
                     val valueMap: MutableMap<Int, Any?> = mutableMapOf()
 
                     reader.readNamedIndexField(valueMap, name, index)
-                    valueMap += definition withNotNull definition.readJson(reader, context as DefinitionsContext?)
+                    valueMap += definition withNotNull definition.readJson(reader, context as ContainsDefinitionsContext?)
 
                     valueMap
                 }
@@ -97,7 +97,7 @@ private data class MultiTypeDescriptor(
         override fun writeJson(obj: MultiTypeDescriptor, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
             // When writing YAML, use YAML optimized format with complex field names
             if (writer is YamlWriter) {
-                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as DefinitionsContext?)
+                val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext?)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
                 writer.writeNamedIndexField(obj.name, obj.index)
@@ -182,14 +182,14 @@ private data class MultiTypeDescriptorListDefinition(
 private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constructor(
     override val index: Int,
     override val name: String,
-    override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, DefinitionsContext>,
+    override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, ContainsDefinitionsContext>,
     override val toSerializable: ((List<MultiTypeDescriptor>?, MultiTypeDefinitionContext?) -> List<MultiTypeDescriptor>?)? = null,
     override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
     override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
-    override val getter: (MultiTypeDefinition<IndexedEnum<Any>, DefinitionsContext>) -> List<MultiTypeDescriptor>?
+    override val getter: (MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
 ) :
     IsByteTransportableCollection<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext> by definition,
-    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<IndexedEnum<Any>, DefinitionsContext>>
+    IsPropertyDefinitionWrapper<List<MultiTypeDescriptor>, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext>>
 {
     override val graphType = PropRefGraphType.PropRef
 
@@ -240,7 +240,7 @@ internal fun ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>.addDescriptorP
  * Will throw an exception if it fails to convert
  */
 @Suppress("UNCHECKED_CAST")
-internal fun convertMultiTypeDescriptors(value: Any?): Map<IndexedEnum<Any>, IsSubDefinition<out Any, DefinitionsContext>> {
+internal fun convertMultiTypeDescriptors(value: Any?): Map<IndexedEnum<Any>, IsSubDefinition<out Any, ContainsDefinitionsContext>> {
     val descriptorList = value as? List<MultiTypeDescriptor>
             ?: throw ParseException("Multi type definition descriptor cannot be empty")
 

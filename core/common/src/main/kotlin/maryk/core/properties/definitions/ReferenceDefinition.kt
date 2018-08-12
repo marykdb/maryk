@@ -14,7 +14,7 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject*/
@@ -102,7 +102,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
                 add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
                 add(8, "dataModel",
                     definition = ContextualModelReferenceDefinition(
-                        contextualResolver = { context: DefinitionsContext?, name ->
+                        contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let {
                                 @Suppress("UNCHECKED_CAST")
                                 it.dataModels[name] as (() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")

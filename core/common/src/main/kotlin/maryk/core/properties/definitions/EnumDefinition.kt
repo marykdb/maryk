@@ -17,7 +17,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Enum properties */
@@ -111,7 +111,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         return result
     }
 
-    object Model : ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, DefinitionsContext, EnumDefinitionContext>(
+    object Model : ContextualDataModel<EnumDefinition<*>, ObjectPropertyDefinitions<EnumDefinition<*>>, ContainsDefinitionsContext, EnumDefinitionContext>(
         contextTransformer = { EnumDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<EnumDefinition<*>>() {
             init {
@@ -217,7 +217,7 @@ private fun enumsHashCode(enumValues: Array<out IndexedEnum<*>>): Int {
 }
 
 class EnumDefinitionContext(
-    val definitionsContext: DefinitionsContext?
+    val definitionsContext: ContainsDefinitionsContext?
 ) : IsPropertyContext {
     var enumDefinition: EnumDefinition<IndexedEnum<Any>>? = null
 }

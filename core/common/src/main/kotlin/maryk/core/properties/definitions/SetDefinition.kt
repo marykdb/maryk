@@ -11,6 +11,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
 
 /** Definition for Set property */
@@ -48,8 +49,8 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
         }
     }
 
-    object Model : ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, DefinitionsContext, SetDefinitionContext>(
-        contextTransformer = { it: DefinitionsContext? -> SetDefinitionContext(it) },
+    object Model : ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, ContainsDefinitionsContext, SetDefinitionContext>(
+        contextTransformer = { it: ContainsDefinitionsContext? -> SetDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)
@@ -76,7 +77,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
                     },
                     capturer = { context: SetDefinitionContext, value ->
                         @Suppress("UNCHECKED_CAST")
-                        context.valueDefinion = value.value as IsValueDefinition<Any, DefinitionsContext>
+                        context.valueDefinion = value.value as IsValueDefinition<Any, ContainsDefinitionsContext>
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
@@ -104,13 +105,13 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
 }
 
 class SetDefinitionContext(
-    val definitionsContext: DefinitionsContext?
+    val definitionsContext: ContainsDefinitionsContext?
 ) : IsPropertyContext {
-    var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null
+    var valueDefinion: IsValueDefinition<Any, ContainsDefinitionsContext>? = null
 
-    private var _setDefinition: Lazy<SetDefinition<Any, DefinitionsContext>> = lazy {
+    private var _setDefinition: Lazy<SetDefinition<Any, ContainsDefinitionsContext>> = lazy {
         SetDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
 
-    val setDefinition: SetDefinition<Any, DefinitionsContext> get() = this._setDefinition.value
+    val setDefinition: SetDefinition<Any, ContainsDefinitionsContext> get() = this._setDefinition.value
 }

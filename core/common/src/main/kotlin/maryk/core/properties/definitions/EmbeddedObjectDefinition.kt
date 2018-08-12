@@ -19,7 +19,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -132,7 +132,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         return result
     }
 
-    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, DefinitionsContext, ModelContext>(
+    object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>, ContainsDefinitionsContext, ModelContext>(
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
             init {
@@ -141,11 +141,8 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                 IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
                 add(4, "dataModel",
                     ContextualModelReferenceDefinition(
-                        contextTransformer = {context: ModelContext? ->
-                            context?.definitionsContext
-                        },
-                        contextualResolver = { context: DefinitionsContext?, name ->
-                            context?.let{
+                        contextualResolver = { context: ModelContext?, name ->
+                            context?.definitionsContext?.let{
                                 @Suppress("UNCHECKED_CAST")
                                 it.dataModels[name] as? () -> ObjectDataModel<*, *>
                                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")

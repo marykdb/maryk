@@ -22,7 +22,7 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -201,11 +201,11 @@ internal class MutableObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinit
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
 internal data class ObjectPropertyDefinitionsCollectionDefinition(
-    private val capturer: (DefinitionsContext?, ObjectPropertyDefinitions<Any>) -> Unit
+    private val capturer: (DefinitionsConversionContext?, ObjectPropertyDefinitions<Any>) -> Unit
 ) : IsCollectionDefinition<
         IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
         ObjectPropertyDefinitions<Any>,
-        DefinitionsContext,
+        DefinitionsConversionContext,
         EmbeddedObjectDefinition<
                 IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
                 ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>,
@@ -237,7 +237,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
         validator: (item: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, itemRefFactory: () -> IsPropertyReference<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, IsPropertyDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, *>?) -> Any
     ) {}
 
-    override fun newMutableCollection(context: DefinitionsContext?) =
+    override fun newMutableCollection(context: DefinitionsConversionContext?) =
         MutableObjectPropertyDefinitions<Any>().apply {
             capturer(context, this)
         }
@@ -248,7 +248,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override fun writeJsonValue(
         value: ObjectPropertyDefinitions<Any>,
         writer: IsJsonLikeWriter,
-        context: DefinitionsContext?
+        context: DefinitionsConversionContext?
     ) {
         if (writer is YamlWriter) {
             writer.writeStartObject()
@@ -261,7 +261,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DefinitionsContext?): ObjectPropertyDefinitions<Any> {
+    override fun readJson(reader: IsJsonLikeReader, context: DefinitionsConversionContext?): ObjectPropertyDefinitions<Any> {
         return if (reader is IsYamlReader) {
             if (reader.currentToken !is JsonToken.StartObject) {
                 throw ParseException("Property definitions should be an Object")
@@ -287,14 +287,14 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO: 
     override val definition: ObjectPropertyDefinitionsCollectionDefinition,
     override val getter: (DO) -> ObjectPropertyDefinitions<Any>?
 ) :
-    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<Any>, DefinitionsContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
-    IsPropertyDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsContext, DO>
+    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsPropertyDefinitionWrapper<ObjectPropertyDefinitions<Any>, ObjectPropertyDefinitions<Any>, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override val toSerializable: ((ObjectPropertyDefinitions<Any>?, DefinitionsContext?) -> ObjectPropertyDefinitions<Any>?)? = null
+    override val toSerializable: ((ObjectPropertyDefinitions<Any>?, DefinitionsConversionContext?) -> ObjectPropertyDefinitions<Any>?)? = null
     override val fromSerializable: ((ObjectPropertyDefinitions<Any>?) -> ObjectPropertyDefinitions<Any>?)? = null
-    override val capturer: ((DefinitionsContext, ObjectPropertyDefinitions<Any>) -> Unit)? = null
+    override val capturer: ((DefinitionsConversionContext, ObjectPropertyDefinitions<Any>) -> Unit)? = null
 
     override fun getRef(parentRef: AnyPropertyReference?) = throw Throwable("Not implemented")
 }

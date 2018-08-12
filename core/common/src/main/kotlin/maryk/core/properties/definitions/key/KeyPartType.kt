@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.json.TokenType
 import maryk.json.ValueType
 
@@ -32,7 +32,7 @@ sealed class KeyPartType(
 
 val keyPartValues = arrayOf<KeyPartType>(KeyPartType.UUID, KeyPartType.Reference, KeyPartType.TypeId, KeyPartType.Reversed)
 
-internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DefinitionsContext>>(
+internal val mapOfKeyPartDefinitions = mapOf<KeyPartType, IsSubDefinition<*, DefinitionsConversionContext>>(
     KeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
     KeyPartType.Reference to ContextualPropertyReferenceDefinition(
         contextualResolver = {

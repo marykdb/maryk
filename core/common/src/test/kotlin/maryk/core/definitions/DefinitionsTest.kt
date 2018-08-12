@@ -12,7 +12,7 @@ import maryk.core.models.ObjectDataModel
 import maryk.core.models.compareDataModels
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.compareEnumDefinitions
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -27,17 +27,17 @@ class DefinitionsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.definitions, Definitions, { DefinitionsContext() }, ::compareDefinitions, true)
+        checkProtoBufConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true)
     }
 
     @Test
     fun convert_to_JSON_and_back() {
-        checkJsonConversion(this.definitions, Definitions, { DefinitionsContext() }, ::compareDefinitions, true)
+        checkJsonConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true)
     }
 
     @Test
     fun convert_to_YAML_and_back() {
-        checkYamlConversion(this.definitions, Definitions, { DefinitionsContext() }, ::compareDefinitions, true) shouldBe """
+        checkYamlConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true) shouldBe """
         - !EnumDefinition
           name: Option
           values:

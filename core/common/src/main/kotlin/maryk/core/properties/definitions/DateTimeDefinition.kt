@@ -16,7 +16,7 @@ import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
-import maryk.core.query.DefinitionsContext
+import maryk.core.query.ContainsDefinitionsContext
 
 /**
  * Definition for DateTime properties
@@ -69,7 +69,7 @@ data class DateTimeDefinition(
 
     override fun fromNativeType(value: Any) = value as? DateTime
 
-    object Model : ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, DefinitionsContext, DateTimeDefinitionContext>(
+    object Model : ContextualDataModel<DateTimeDefinition, ObjectPropertyDefinitions<DateTimeDefinition>, ContainsDefinitionsContext, DateTimeDefinitionContext>(
         contextTransformer = { DateTimeDefinitionContext() },
         properties = object : ObjectPropertyDefinitions<DateTimeDefinition>() {
             init {

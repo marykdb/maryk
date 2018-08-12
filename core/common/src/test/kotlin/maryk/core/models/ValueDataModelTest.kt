@@ -8,6 +8,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
+import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.time.DateTime
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -16,7 +17,7 @@ import kotlin.test.Test
 internal class ValueDataModelTest {
     @Test
     fun convert_definition_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(TestValueObject, ValueDataModel.Model, { DefinitionsContext() }, { converted: ValueDataModel<*, *>, original: ValueDataModel<*, *> ->
+        checkProtoBufConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, { converted: ValueDataModel<*, *>, original: ValueDataModel<*, *> ->
             compareDataModels(converted, original)
 
             // Also test conversion with the generated ValueObject
@@ -48,12 +49,12 @@ internal class ValueDataModelTest {
 
     @Test
     fun convert_definition_to_JSON_and_back() {
-        checkJsonConversion(TestValueObject, ValueDataModel.Model, { DefinitionsContext() }, ::compareDataModels)
+        checkJsonConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels)
     }
 
     @Test
     fun convert_definition_to_YAML_and_back() {
-        checkYamlConversion(TestValueObject, ValueDataModel.Model, { DefinitionsContext() }, ::compareDataModels) shouldBe  """
+        checkYamlConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels) shouldBe  """
         name: TestValueObject
         properties:
           ? 1: int

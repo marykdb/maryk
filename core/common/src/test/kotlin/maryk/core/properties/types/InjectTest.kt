@@ -3,6 +3,7 @@ package maryk.core.properties.types
 import maryk.EmbeddedMarykModel
 import maryk.TestMarykModel
 import maryk.core.models.asValues
+import maryk.core.models.injectable
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.DataModelContext
 import maryk.core.query.filters.Equals
@@ -30,17 +31,15 @@ class InjectTest {
         context.collectResult("testCollection", valuesToCollect)
     }
 
-    private val inject = Inject(
-        "testCollection",
-        EmbeddedMarykModel,
-        EmbeddedMarykModel.ref { value }
-    )
+    private val inject =
+        EmbeddedMarykModel.injectable("testCollection") {
+            ref { value }
+        }
 
-    val injectDeep = Inject(
-        "testCollection",
-        EmbeddedMarykModel,
-        EmbeddedMarykModel { model.ref { value } }
-    )
+    private val injectDeep =
+        EmbeddedMarykModel.injectable("testCollection") {
+            this { model.ref { value } }
+        }
 
     @Test
     fun testResolve() {
@@ -52,11 +51,11 @@ class InjectTest {
     fun testInjectInValues() {
         val values = TestMarykModel.map(context) {
             mapNonNulls(
-                string with Inject(
-                    "testCollection2",
-                    EmbeddedMarykModel,
-                    EmbeddedMarykModel { model.ref { value } }
-                )
+                string with EmbeddedMarykModel.injectable(
+                    "testCollection2"
+                ) {
+                    this { model.ref { value } }
+                }
             )
         }
 
@@ -73,11 +72,9 @@ class InjectTest {
     fun testInjectInObject() {
         val getRequest = GetRequest.map(context) {
             mapNonNulls(
-                filter with Inject(
-                    "filter",
-                    EmbeddedMarykModel,
-                    EmbeddedMarykModel { model.ref { value } }
-                )
+                filter with EmbeddedMarykModel.injectable("filter") {
+                    this { model.ref { value } }
+                }
             )
         }
 

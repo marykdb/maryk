@@ -4,7 +4,7 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.ValueRange
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
@@ -21,7 +21,7 @@ class RangeTest {
         TestMarykModel.ref { int } with 3..5
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel }
         ),

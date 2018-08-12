@@ -4,7 +4,7 @@ import maryk.EmbeddedMarykModel
 import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.properties.AbstractPropertyDefinitions
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -15,11 +15,11 @@ class ContextualPropertyReferenceDefinitionTest {
         TestMarykModel { embeddedValues ref { value } }
     )
 
-    private val def = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+    private val def = ContextualPropertyReferenceDefinition<RequestContext>(
         contextualResolver = { it!!.dataModel!!.properties as AbstractPropertyDefinitions<*> }
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel },
             EmbeddedMarykModel.name to { EmbeddedMarykModel }

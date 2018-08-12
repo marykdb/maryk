@@ -12,7 +12,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
 fun <DM: IsRootValuesDataModel<*>> DM.add(vararg objectToAdd: Values<DM, *>) =
@@ -30,12 +30,12 @@ data class AddRequest<DM: IsRootValuesDataModel<*>> internal constructor(
 
         @Suppress("UNCHECKED_CAST", "unused")
         val objectsToAdd = add(2, "objectsToAdd", ListDefinition(
-            valueDefinition = ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
+            valueDefinition = ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")
-                    it?.dataModel as? ValuesDataModelImpl<DataModelPropertyContext>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? ValuesDataModelImpl<RequestContext>? ?: throw ContextNotFoundException()
                 }
-            ) as IsValueDefinition<Values<out IsValuesDataModel<*>, out PropertyDefinitions>, DataModelPropertyContext>
+            ) as IsValueDefinition<Values<out IsValuesDataModel<*>, out PropertyDefinitions>, RequestContext>
         ), AddRequest<*>::objectsToAdd)
     }
 

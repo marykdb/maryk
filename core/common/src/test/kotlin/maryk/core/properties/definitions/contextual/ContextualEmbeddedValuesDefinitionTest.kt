@@ -6,7 +6,6 @@ import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.ValuesImpl
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.query.DataModelPropertyContext
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -18,15 +17,13 @@ class ContextualEmbeddedValuesDefinitionTest {
     )
 
     @Suppress("UNCHECKED_CAST")
-    private val def = ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.dataModel!! as AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, DataModelPropertyContext> }
+    private val def = ContextualEmbeddedValuesDefinition<ModelContext>(
+        contextualResolver = { it!!.model!!.invoke() as AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext> }
     )
 
-    private val context = DataModelPropertyContext(
-        mapOf(
-            SimpleMarykModel.name to { SimpleMarykModel }
-        ),
-        dataModel = SimpleMarykModel
+    private val context = ModelContext(
+        definitionsContext = null,
+        model = { SimpleMarykModel }
     )
 
     @Test

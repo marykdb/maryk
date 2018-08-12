@@ -5,7 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.ServerFail
@@ -26,7 +26,7 @@ class DeleteResponseTest {
         )
     )
 
-    private val context = DataModelPropertyContext(mapOf(
+    private val context = RequestContext(mapOf(
         SimpleMarykModel.name to { SimpleMarykModel }
     ))
 

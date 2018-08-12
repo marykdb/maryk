@@ -15,8 +15,8 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.numeric.SInt32
-import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
 
 /**
  * Changes for a list property containing values of type [T]
@@ -65,7 +65,7 @@ data class ListValueChanges<T: Any> internal constructor(
 
 @Suppress("UNCHECKED_CAST")
 private val valueDefinition = ContextualValueDefinition(
-    contextualResolver = { context: DataModelPropertyContext? ->
+    contextualResolver = { context: RequestContext? ->
         (context?.reference as ListReference<Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
             ?: throw ContextNotFoundException()
     }

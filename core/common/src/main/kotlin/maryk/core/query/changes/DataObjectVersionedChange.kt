@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /**
  * Contains versioned [changes] for a specific DataObject by [key]
@@ -19,7 +19,7 @@ data class DataObjectVersionedChange<out DM: IsRootDataModel<*>>(
     val changes: List<VersionedChanges>
 ) {
     object Properties : ObjectPropertyDefinitions<DataObjectVersionedChange<*>>() {
-        val key = add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+        val key = add(1, "key", ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
                 it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }

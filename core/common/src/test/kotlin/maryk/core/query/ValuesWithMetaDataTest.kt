@@ -32,7 +32,7 @@ class ValuesWithMetaDataTest {
         isDeleted = false
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel }
         ),

@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.ValueRange
 import maryk.core.query.pairs.ReferenceValueRangePair
 import maryk.json.IllegalJsonOperation
@@ -43,7 +43,7 @@ data class Range internal constructor(
             referenceRangePairs = map(1)
         )
 
-        override fun writeJson(obj: Range, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: Range, writer: IsJsonLikeWriter, context: RequestContext?) {
             val ranges = obj.referenceRangePairs
 
             writer.writeJsonRanges(ranges, context)
@@ -51,7 +51,7 @@ data class Range internal constructor(
 
         private fun IsJsonLikeWriter.writeJsonRanges(
             ranges: List<ReferenceValueRangePair<*>>,
-            context: DataModelPropertyContext?
+            context: RequestContext?
         ) {
             writeStartObject()
             for (it in ranges) {
@@ -65,7 +65,7 @@ data class Range internal constructor(
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<Range, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Range, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

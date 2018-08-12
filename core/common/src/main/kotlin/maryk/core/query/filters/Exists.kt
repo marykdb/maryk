@@ -6,7 +6,7 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeWriter
 
 /** Checks if [references] exist on DataModel */
@@ -29,7 +29,7 @@ data class Exists internal constructor(
             references = map(1)
         )
 
-        override fun writeJson(obj: Exists, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: Exists, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeJsonReferences(obj.references, context)
         }
     }

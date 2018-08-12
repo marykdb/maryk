@@ -39,7 +39,7 @@ data class Order internal constructor(
     val direction: Direction = Direction.ASC
 ) {
     object Properties : ObjectPropertyDefinitions<Order>() {
-        val propertyReference = add(1, "propertyReference", ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+        val propertyReference = add(1, "propertyReference", ContextualPropertyReferenceDefinition<RequestContext>(
             contextualResolver = {
                 it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
             }
@@ -59,7 +59,7 @@ data class Order internal constructor(
             direction = map(2)
         )
 
-        override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: RequestContext?) {
             if (writer is YamlWriter) {
                 writeJsonOrderValue(obj.propertyReference, obj.direction, writer, context)
             } else {
@@ -71,7 +71,7 @@ data class Order internal constructor(
             reference: AnyPropertyReference,
             direction: Direction,
             writer: YamlWriter,
-            context: DataModelPropertyContext?
+            context: RequestContext?
         ) {
             if (direction == Direction.DESC) {
                 writer.writeTag("!Desc")
@@ -79,7 +79,7 @@ data class Order internal constructor(
             Properties.propertyReference.writeJsonValue(reference, writer, context)
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<Order, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Order, Properties> {
             if (reader is IsYamlReader) {
                 var currentToken = reader.currentToken
 

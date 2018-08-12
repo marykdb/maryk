@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.DefinedByReference
 
 /** Compares given [value] of type [T] against referenced value [reference] */
@@ -25,7 +25,7 @@ data class ReferenceValuePair<T: Any> internal constructor(
         val value = add(
             2, "value",
             ContextualValueDefinition(
-                contextualResolver = { context: DataModelPropertyContext? ->
+                contextualResolver = { context: RequestContext? ->
                     context?.reference?.let {
                         @Suppress("UNCHECKED_CAST")
                         it.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>

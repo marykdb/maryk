@@ -5,7 +5,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.change
@@ -27,7 +27,7 @@ class ChangesResponseTest {
         )
     )
 
-    private val context = DataModelPropertyContext(mapOf(
+    private val context = RequestContext(mapOf(
         SimpleMarykModel.name to { SimpleMarykModel }
     ))
 

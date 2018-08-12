@@ -7,7 +7,7 @@ import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -19,11 +19,11 @@ class ContextualReferenceDefinitionTest {
         Key(ByteArray(9) { if (it % 2 == 1) 0b1000_1000.toByte() else MAX_BYTE })
     )
 
-    private val def = ContextualReferenceDefinition<DataModelPropertyContext>(
+    private val def = ContextualReferenceDefinition<RequestContext>(
         contextualResolver = { it!!.dataModel!! as IsRootDataModel<*> }
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel },
             EmbeddedMarykModel.name to { EmbeddedMarykModel }

@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -33,7 +33,7 @@ class DataObjectChangeTest {
         lastVersion = 12345L.toUInt64()
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel }
         ),

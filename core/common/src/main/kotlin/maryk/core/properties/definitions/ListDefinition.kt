@@ -74,7 +74,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
                     capturer = { context: ListDefinitionContext?, value ->
                         context?.apply {
                             @Suppress("UNCHECKED_CAST")
-                            valueDefinion = value.value as IsValueDefinition<Any, DefinitionsContext>
+                            valueDefinion = value.value as IsValueDefinition<Any, IsPropertyContext>
                         } ?: throw ContextNotFoundException()
                     }
                 )
@@ -103,13 +103,12 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
 }
 
 class ListDefinitionContext(
-    val definitionsContext: ContainsDefinitionsContext?
+    val definitionsContext: ContainsDefinitionsContext?,
+    var valueDefinion: IsValueDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
-    var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null
-
-    private var _listDefinition: Lazy<ListDefinition<Any, DefinitionsContext>> = lazy {
+    private var _listDefinition: Lazy<ListDefinition<Any, IsPropertyContext>> = lazy {
         ListDefinition(valueDefinition = this.valueDefinion ?: throw ContextNotFoundException())
     }
 
-    val listDefinition: ListDefinition<Any, DefinitionsContext> get() = this._listDefinition.value
+    val listDefinition: ListDefinition<Any, IsPropertyContext> get() = this._listDefinition.value
 }

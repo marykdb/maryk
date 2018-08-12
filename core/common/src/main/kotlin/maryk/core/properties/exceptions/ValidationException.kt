@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /** Validation Exception with newMessage for properties */
 abstract class ValidationException internal constructor(
@@ -30,7 +30,7 @@ abstract class ValidationException internal constructor(
         internal fun <DO: ValidationException> addReference(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> AnyPropertyReference?) {
             definitions.add(
                 index = 1, name = "reference",
-                definition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                definition = ContextualPropertyReferenceDefinition<RequestContext>(
                     required = false,
                     contextualResolver = {
                         it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()

@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -27,7 +27,7 @@ data class CollectRequest(
             MultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
-            ) as IsSerializableFlexBytesEncodable<TypedValue<RequestType, IsRequest>, DataModelPropertyContext>,
+            ) as IsSerializableFlexBytesEncodable<TypedValue<RequestType, IsRequest>, RequestContext>,
             getter = CollectRequest::request,
             toSerializable = { request, _ ->
                 request?.let {
@@ -48,7 +48,7 @@ data class CollectRequest(
             request = map(2)
         )
 
-        override fun writeJson(obj: CollectRequest, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: CollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeStartObject()
             writer.writeFieldName(obj.name)
             val typedRequest = Properties.request.toSerializable?.invoke(obj.request, context)!!
@@ -56,7 +56,7 @@ data class CollectRequest(
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<CollectRequest, CollectRequest.Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<CollectRequest, CollectRequest.Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

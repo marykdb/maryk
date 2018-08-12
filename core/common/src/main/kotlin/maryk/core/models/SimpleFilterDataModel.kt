@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -19,15 +19,15 @@ import maryk.lib.exceptions.ParseException
  */
 abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     properties: P
-) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
+) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties){
     override fun walkJsonToRead(
         reader: IsJsonLikeReader,
         valueMap: MutableMap<Int, Any>,
-        context: DataModelPropertyContext?
+        context: RequestContext?
     ) {
         val referenceProperty =
             this.properties[0]
-        val referencePropertyDefinition = referenceProperty?.definition as? IsValueDefinition<*, DataModelPropertyContext>
+        val referencePropertyDefinition = referenceProperty?.definition as? IsValueDefinition<*, RequestContext>
             ?: throw Exception("No first property found")
 
         (reader.currentToken as? JsonToken.FieldName)?.value?.let {
@@ -49,11 +49,11 @@ abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
     }
 
     private fun <T: Any, CX: IsPropertyContext> IsJsonLikeWriter.writeJsonValues(
-        referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, *>,
+        referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, *>,
         reference: AnyPropertyReference,
         valueProperty: IsPropertyDefinitionWrapper<T, *, CX, *>,
         value: T,
-        context: DataModelPropertyContext?
+        context: RequestContext?
     ) {
         writeStartObject()
         writeFieldName(

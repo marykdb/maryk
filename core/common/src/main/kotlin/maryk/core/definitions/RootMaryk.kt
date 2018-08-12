@@ -9,9 +9,9 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.query.RequestContext
 import maryk.core.query.requests.Requests
 
 /** Root Maryk element for multiple definitions or requests */
@@ -34,13 +34,13 @@ data class RootMaryk(
                                 }
                             }
                         ),
-                        Operation.Request to ContextTransformerDefinition<Requests, DefinitionsContext, DataModelPropertyContext>(
+                        Operation.Request to ContextTransformerDefinition<Requests, DefinitionsContext, RequestContext>(
                             definition = EmbeddedObjectDefinition(
                                 dataModel = { Requests }
                             ),
                             contextTransformer = {
                                 it?.let { modelContext ->
-                                    DataModelPropertyContext(modelContext)
+                                    RequestContext(modelContext)
                                 }
                             }
                         )

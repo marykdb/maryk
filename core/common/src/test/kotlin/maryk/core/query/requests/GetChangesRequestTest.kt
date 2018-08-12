@@ -6,7 +6,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.numeric.toUInt64
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.ascending
 import maryk.core.query.filters.Exists
 import maryk.test.shouldBe
@@ -40,7 +40,7 @@ internal val getChangesMaxRequest = SimpleMarykModel.run {
 }
 
 class GetChangesRequestTest {
-    private val context = DataModelPropertyContext(mapOf(
+    private val context = RequestContext(mapOf(
         SimpleMarykModel.name to { SimpleMarykModel }
     ))
 

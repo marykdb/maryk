@@ -6,7 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /** Defines a Get by keys request. */
 interface IsGetRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
@@ -15,7 +15,7 @@ interface IsGetRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
     companion object {
         internal fun <REQ: IsGetRequest<*>> addKeys(definitions: ObjectPropertyDefinitions<REQ>, getter: (REQ) -> List<Key<*>>?) =
             definitions.add(2, "keys", ListDefinition(
-                valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
+                valueDefinition = ContextualReferenceDefinition<RequestContext>(
                     contextualResolver = {
                         it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                     }

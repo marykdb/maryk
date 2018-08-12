@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -18,10 +18,10 @@ import maryk.lib.exceptions.ParseException
 /** For data models which contains only reference pairs */
 abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitions<DO>>(
     properties: P
-) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
+) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties){
     protected fun IsJsonLikeWriter.writeJsonReferences(
         references: List<AnyPropertyReference>,
-        context: DataModelPropertyContext?
+        context: RequestContext?
     ) {
         if (references.size == 1) {
             Exists.Properties.references.definition.valueDefinition.writeJsonValue(references[0], this, context)
@@ -34,7 +34,7 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<DO, P> {
+    override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
         var currentToken = reader.currentToken
 
         if (currentToken == JsonToken.StartDocument){
@@ -69,12 +69,12 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
 }
 
 abstract class ReferencesObjectPropertyDefinitions<DO: Any> : ObjectPropertyDefinitions<DO>() {
-    abstract val references: ListPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, DataModelPropertyContext, DO>
+    abstract val references: ListPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, DO>
 
     internal fun addReferenceListPropertyDefinition(getter: (DO) -> List<AnyPropertyReference>) =
         this.add(1, "references",
             ListDefinition(
-                valueDefinition = ContextualPropertyReferenceDefinition<DataModelPropertyContext>(
+                valueDefinition = ContextualPropertyReferenceDefinition<RequestContext>(
                     contextualResolver = {
                         it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
                     }

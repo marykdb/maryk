@@ -213,7 +213,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     },
                     capturer = { context: KeyValueDefinitionContext, value ->
                         @Suppress("UNCHECKED_CAST")
-                        context.keyDefinion = value.value as IsSimpleValueDefinition<Any, DefinitionsContext>
+                        context.keyDefinion = value.value as IsSimpleValueDefinition<Any, IsPropertyContext>
                     }
                 )
 
@@ -236,7 +236,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     },
                     capturer = { context: KeyValueDefinitionContext, value ->
                         @Suppress("UNCHECKED_CAST")
-                        context.valueDefinion = value.value as IsValueDefinition<Any, DefinitionsContext>
+                        context.valueDefinion = value.value as IsValueDefinition<Any, IsPropertyContext>
                     }
                 )
 
@@ -269,17 +269,17 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 }
 
 class KeyValueDefinitionContext(
-    val definitionsContext: ContainsDefinitionsContext?
+    val definitionsContext: ContainsDefinitionsContext?,
+    var keyDefinion: IsSimpleValueDefinition<Any, IsPropertyContext>? = null,
+    var valueDefinion: IsValueDefinition<Any, IsPropertyContext>? = null
 ) : IsPropertyContext {
-    var keyDefinion: IsSimpleValueDefinition<Any, DefinitionsContext>? = null
-    var valueDefinion: IsValueDefinition<Any, DefinitionsContext>? = null
 
-    private var _mapDefinition: Lazy<MapDefinition<Any, Any, DefinitionsContext>> = lazy {
+    private var _mapDefinition: Lazy<MapDefinition<Any, Any, IsPropertyContext>> = lazy {
         MapDefinition(
             keyDefinition = this.keyDefinion ?: throw ContextNotFoundException(),
             valueDefinition = this.valueDefinion ?: throw ContextNotFoundException()
         )
     }
 
-    val mapDefinition: MapDefinition<Any, Any, DefinitionsContext> get() = this._mapDefinition.value
+    val mapDefinition: MapDefinition<Any, Any, IsPropertyContext> get() = this._mapDefinition.value
 }

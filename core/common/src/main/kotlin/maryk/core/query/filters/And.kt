@@ -6,7 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -41,7 +41,7 @@ data class And(
             filters = map<List<IsFilter>>(1)
         )
 
-        override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: RequestContext?) {
             Properties.filters.writeJsonValue(
                 Properties.filters.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing filters in And filter"),
                 writer,
@@ -49,7 +49,7 @@ data class And(
             )
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<And, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<And, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

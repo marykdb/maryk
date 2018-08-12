@@ -6,7 +6,7 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeWriter
 
 /** Delete of a property referred by [references] */
@@ -29,7 +29,7 @@ data class Delete internal constructor(
             references = map(1)
         )
 
-        override fun writeJson(obj: Delete, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: Delete, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeJsonReferences(obj.references, context)
         }
     }

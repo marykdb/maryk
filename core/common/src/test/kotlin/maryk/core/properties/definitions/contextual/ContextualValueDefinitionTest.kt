@@ -1,16 +1,16 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.EmbeddedMarykModel
-import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.properties.definitions.StringDefinition
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
+
+private class ValueContext: IsPropertyContext {
+    val valueDefinition = StringDefinition()
+}
 
 class ContextualValueDefinitionTest {
     private val valuesToTest = listOf(
@@ -20,19 +20,12 @@ class ContextualValueDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualValueDefinition(
-        contextualResolver = { context: DataModelPropertyContext? ->
-            context!!.reference!!.propertyDefinition.definition as IsValueDefinition<Any, IsPropertyContext>
+        contextualResolver = { context: ValueContext? ->
+            context!!.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
         }
     )
 
-    private val context = DataModelPropertyContext(
-        mapOf(
-            TestMarykModel.name to { TestMarykModel },
-            EmbeddedMarykModel.name to { EmbeddedMarykModel }
-        ),
-        dataModel = TestMarykModel,
-        reference = TestMarykModel.ref { string } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>, *>
-    )
+    private val context = ValueContext()
 
     @Test
     fun testTransportConversion() {

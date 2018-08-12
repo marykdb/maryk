@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.DefinedByReference
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
@@ -19,14 +19,14 @@ import maryk.lib.exceptions.ParseException
 abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: ObjectPropertyDefinitions<DO>, CP: ObjectPropertyDefinitions<CDO>>(
     properties: P,
     private val containedDataModel: QueryDataModel<CDO, CP>,
-    private val referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, DataModelPropertyContext, ContextualPropertyReferenceDefinition<DataModelPropertyContext>, CDO>
+    private val referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
 ) : QueryDataModel<DO, P>(properties) {
 
     /** Write a map to [writer] with references mapped to the internal model for [items] within [context] */
     internal fun writeReferenceValueMap(
         writer: IsJsonLikeWriter,
         items: List<CDO>,
-        context: DataModelPropertyContext?
+        context: RequestContext?
     ) {
         writer.writeStartObject()
         for (item in items) {
@@ -54,7 +54,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
         }
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<DO, P> {
+    override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

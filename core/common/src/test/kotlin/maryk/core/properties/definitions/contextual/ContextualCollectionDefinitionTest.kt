@@ -1,11 +1,13 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.TestMarykModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
+import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.ListDefinitionContext
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DataModelPropertyContext
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
@@ -19,13 +21,14 @@ class ContextualCollectionDefinitionTest {
     )
 
     @Suppress("UNCHECKED_CAST")
-    private val def = ContextualCollectionDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.reference!!.propertyDefinition as IsByteTransportableCollection<Any, Collection<Any>, DataModelPropertyContext> }
+    private val def = ContextualCollectionDefinition<ListDefinitionContext>(
+        contextualResolver = { it!!.listDefinition as IsByteTransportableCollection<Any, Collection<Any>, ListDefinitionContext> }
     )
 
-    private val context = DataModelPropertyContext(
-        mapOf(),
-        reference = TestMarykModel.ref { listOfString }
+    @Suppress("UNCHECKED_CAST")
+    private val context = ListDefinitionContext(
+        definitionsContext = null,
+        valueDefinion = TestMarykModel.properties.listOfString.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
     )
 
     @Test

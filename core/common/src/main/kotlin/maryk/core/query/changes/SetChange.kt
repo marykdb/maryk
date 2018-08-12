@@ -5,7 +5,7 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeWriter
 
 /** Defines changes to sets by [setValueChanges] */
@@ -37,7 +37,7 @@ data class SetChange internal constructor(
             setValueChanges = map(1)
         )
 
-        override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {
             writeReferenceValueMap(writer, obj.setValueChanges, context)
         }
     }

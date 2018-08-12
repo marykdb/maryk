@@ -13,8 +13,8 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
-import maryk.core.query.DataModelPropertyContext
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
 
 /**
  * Changes for a map property containing keys [K] and values [V] referred by [reference]
@@ -33,12 +33,12 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
         val valuesToAdd = add(2, "valuesToAdd",
             ContextualMapDefinition(
                 required = false,
-                contextualResolver = { context: DataModelPropertyContext? ->
+                contextualResolver = { context: RequestContext? ->
                     (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
                         ?.propertyDefinition?.definition as IsByteTransportableMap<Any, Any, IsPropertyContext>?
                             ?: throw ContextNotFoundException()
                 }
-            ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, DataModelPropertyContext>,
+            ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, RequestContext>,
             MapValueChanges<*, *>::valuesToAdd
         )
 
@@ -47,7 +47,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
             SetDefinition(
                 required = false,
                 valueDefinition = ContextualValueDefinition(
-                    contextualResolver = { context: DataModelPropertyContext? ->
+                    contextualResolver = { context: RequestContext? ->
                         (context?.reference as MapReference<Any, Any, IsPropertyContext>?)
                             ?.propertyDefinition?.keyDefinition
                                 ?: throw ContextNotFoundException()

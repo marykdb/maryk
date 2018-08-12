@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.contextual.ContextualReferenceDefinitio
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /** Defines a Scan from key request. */
 interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
@@ -17,7 +17,7 @@ interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
 
     companion object {
         internal fun <DO: IsScanRequest<*>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) =
-            definitions.add(2, "startKey", ContextualReferenceDefinition<DataModelPropertyContext>(
+            definitions.add(2, "startKey", ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }

@@ -7,7 +7,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.toUInt64
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.RequestFail
@@ -34,7 +34,7 @@ class ChangeResponseTest {
         )
     )
 
-    private val context = DataModelPropertyContext(mapOf(
+    private val context = RequestContext(mapOf(
         SimpleMarykModel.name to { SimpleMarykModel }
     ))
 

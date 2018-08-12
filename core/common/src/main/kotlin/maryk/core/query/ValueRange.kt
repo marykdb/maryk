@@ -34,7 +34,7 @@ data class ValueRange<T: Any> internal constructor(
 
     object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
         val from = add(1, "from", ContextualValueDefinition(
-            contextualResolver = { context: DataModelPropertyContext? ->
+            contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
                         ?: throw ContextNotFoundException()
@@ -42,7 +42,7 @@ data class ValueRange<T: Any> internal constructor(
         ), ValueRange<*>::from)
 
         val to = add(2, "to", ContextualValueDefinition(
-            contextualResolver = { context: DataModelPropertyContext? ->
+            contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
                 context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
                         ?: throw ContextNotFoundException()
@@ -63,7 +63,7 @@ data class ValueRange<T: Any> internal constructor(
             inclusiveTo = map(4)
         )
 
-        override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: RequestContext?) {
             @Suppress("UNCHECKED_CAST")
             if (writer is YamlWriter) {
                 writer.writeStartArray(true)
@@ -93,7 +93,7 @@ data class ValueRange<T: Any> internal constructor(
             }
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<ValueRange<*>, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<ValueRange<*>, Properties> {
             return if (reader is IsYamlReader) {
                 if (reader.currentToken == JsonToken.StartDocument){
                     reader.nextToken()

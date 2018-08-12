@@ -9,7 +9,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 
 /**
@@ -37,7 +37,7 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
         val dataModel = IsObjectRequest.addDataModel(this, DeleteRequest<*>::dataModel)
 
         val objectsToDelete = add(2, "objectsToDelete", ListDefinition(
-            valueDefinition = ContextualReferenceDefinition<DataModelPropertyContext>(
+            valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }

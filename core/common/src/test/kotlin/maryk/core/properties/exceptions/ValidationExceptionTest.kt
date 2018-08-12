@@ -4,7 +4,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import kotlin.test.Test
 
 class ValidationExceptionTest {
@@ -25,7 +25,7 @@ class ValidationExceptionTest {
         )
     ))
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             SimpleMarykModel.name to { SimpleMarykModel }
         ),

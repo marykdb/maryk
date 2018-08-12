@@ -7,7 +7,7 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /** A request for a data operation */
 interface IsObjectRequest<out DM: IsRootDataModel<*>>: IsRequest {
@@ -17,7 +17,7 @@ interface IsObjectRequest<out DM: IsRootDataModel<*>>: IsRequest {
         internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) =
             definitions.add(
                 1, "dataModel",
-                ContextualModelReferenceDefinition<IsRootDataModel<*>, DataModelPropertyContext>(
+                ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
                     contextualResolver = { context, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")

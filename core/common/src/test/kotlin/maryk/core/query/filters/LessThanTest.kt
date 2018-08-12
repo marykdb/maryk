@@ -4,7 +4,7 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.lib.time.DateTime
 import maryk.test.shouldBe
@@ -16,7 +16,7 @@ class LessThanTest {
         TestMarykModel.ref { dateTime } with DateTime(2018, 1, 1, 13, 22, 34)
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel }
         ),

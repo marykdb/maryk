@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /** Object to contain multiple [requests] */
 data class Requests(
@@ -30,9 +30,9 @@ data class Requests(
     }
 
     @Suppress("UNCHECKED_CAST")
-    companion object: QuerySingleValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, DataModelPropertyContext>(
+    companion object: QuerySingleValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, DataModelPropertyContext, Requests>
+        singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
     ) {
         override fun invoke(map: ObjectValues<Requests, Properties>) = Requests(
             requests = map(1)

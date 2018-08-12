@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -18,10 +18,10 @@ import maryk.lib.exceptions.ParseException
 /** For data models which contains only reference pairs */
 abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<T, DO>>(
     properties: P
-) : AbstractObjectDataModel<DO, P, DataModelPropertyContext, DataModelPropertyContext>(properties){
+) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties){
     internal fun IsJsonLikeWriter.writeJsonMapObject(
         listOfPairs: List<ReferenceValuePair<*>>,
-        context: DataModelPropertyContext?
+        context: RequestContext?
     ) {
         writeStartObject()
 
@@ -36,7 +36,7 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
         writeEndObject()
     }
 
-    override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<DO, P> {
+    override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<DO, P> {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }

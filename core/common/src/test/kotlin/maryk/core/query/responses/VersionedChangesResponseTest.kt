@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.types.numeric.toUInt64
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -54,7 +54,7 @@ class VersionedChangesResponseTest {
         )
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         dataModels = mapOf(
             EmbeddedMarykModel.name to { EmbeddedMarykModel },
             TestMarykModel.name to { TestMarykModel }

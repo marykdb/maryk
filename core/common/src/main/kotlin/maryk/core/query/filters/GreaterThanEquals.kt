@@ -3,7 +3,7 @@ package maryk.core.query.filters
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
 import maryk.core.objects.ObjectValues
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter
 
@@ -27,7 +27,7 @@ data class GreaterThanEquals(
             referenceValuePairs = map(1)
         )
 
-        override fun writeJson(obj: GreaterThanEquals, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: GreaterThanEquals, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeJsonMapObject(obj.referenceValuePairs, context)
         }
     }

@@ -8,7 +8,6 @@ import maryk.core.query.ContainsDefinitionsContext
  * Context to contain a reference to a model
  */
 class ModelContext(
-    val definitionsContext: ContainsDefinitionsContext?
-) : IsPropertyContext {
+    val definitionsContext: ContainsDefinitionsContext?,
     var model: (() -> IsDataModel<*>)? = null
-}
+) : IsPropertyContext

@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.DefinedByReference
 
 /** Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues] */
@@ -49,7 +49,7 @@ data class SetValueChanges<T: Any> internal constructor(
 
 @Suppress("UNCHECKED_CAST")
 private val valueDefinition = ContextualValueDefinition(
-    contextualResolver = { context: DataModelPropertyContext? ->
+    contextualResolver = { context: RequestContext? ->
         (context?.reference as SetReference<Any, IsPropertyContext>?)?.propertyDefinition?.definition?.valueDefinition
             ?: throw ContextNotFoundException()
     }

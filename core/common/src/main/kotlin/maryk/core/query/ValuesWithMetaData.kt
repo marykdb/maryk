@@ -26,7 +26,7 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     val isDeleted: Boolean
 ) {
     object Properties : ObjectPropertyDefinitions<ValuesWithMetaData<*, *>>() {
-        val key = add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+        val key = add(1, "key", ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
                 it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }
@@ -34,11 +34,11 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 
         @Suppress("UNCHECKED_CAST")
         val values = add(2, "values",
-            ContextualEmbeddedValuesDefinition<DataModelPropertyContext>(
+            ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
-                    it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, DataModelPropertyContext>? ?: throw ContextNotFoundException()
+                    it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>? ?: throw ContextNotFoundException()
                 }
-            ) as IsSerializableFlexBytesEncodable<Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>, DataModelPropertyContext>,
+            ) as IsSerializableFlexBytesEncodable<Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>, RequestContext>,
             ValuesWithMetaData<*, *>::values as (ValuesWithMetaData<*, *>) -> Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
         )
         val firstVersion = add(3, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)

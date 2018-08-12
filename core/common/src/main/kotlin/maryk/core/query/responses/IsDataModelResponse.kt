@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.AuthFail
@@ -28,7 +28,7 @@ interface IsDataModelResponse<out DM: IsRootDataModel<*>>{
     companion object {
         internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) {
             definitions.add(1, "dataModel",
-                ContextualModelReferenceDefinition<IsRootDataModel<*>, DataModelPropertyContext>(
+                ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
                     contextualResolver = { context, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")

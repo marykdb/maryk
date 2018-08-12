@@ -4,7 +4,6 @@ import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.query.DataModelPropertyContext
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -16,15 +15,13 @@ class ContextualEmbeddedObjectDefinitionTest {
     )
 
     @Suppress("UNCHECKED_CAST")
-    private val def = ContextualEmbeddedObjectDefinition<DataModelPropertyContext>(
-        contextualResolver = { it!!.dataModel!! as SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>> }
+    private val def = ContextualEmbeddedObjectDefinition<ModelContext>(
+        contextualResolver = { it!!.model!!.invoke() as SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>> }
     )
 
-    private val context = DataModelPropertyContext(
-        mapOf(
-            SimpleMarykObject.name to { SimpleMarykObject }
-        ),
-        dataModel = SimpleMarykObject
+    private val context = ModelContext(
+        definitionsContext = null,
+        model = { SimpleMarykObject }
     )
 
     @Test

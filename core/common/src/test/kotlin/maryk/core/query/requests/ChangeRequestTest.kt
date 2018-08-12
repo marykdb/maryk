@@ -4,7 +4,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.changes.change
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -18,7 +18,7 @@ internal val changeRequest = SimpleMarykModel.change(
 )
 
 class ChangeRequestTest {
-    private val context = DataModelPropertyContext(mapOf(
+    private val context = RequestContext(mapOf(
         SimpleMarykModel.name to { SimpleMarykModel }
     ))
 

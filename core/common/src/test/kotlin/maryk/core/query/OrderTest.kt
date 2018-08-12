@@ -13,7 +13,7 @@ class OrderTest {
         Direction.DESC
     )
 
-    private val context = DataModelPropertyContext(
+    private val context = RequestContext(
         mapOf(
             SimpleMarykModel.name to { SimpleMarykModel }
         ),

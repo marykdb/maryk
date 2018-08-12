@@ -12,7 +12,7 @@ import maryk.core.properties.definitions.contextual.ContextualReferenceDefinitio
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 
 /**
  * Creates a DataObjectChange which contains [change] until [lastVersion] for a specific DataObject
@@ -32,7 +32,7 @@ data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
 ) {
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DataObjectChange<*>>() {
-        val key = add(1, "key", ContextualReferenceDefinition<DataModelPropertyContext>(
+        val key = add(1, "key", ContextualReferenceDefinition<RequestContext>(
             contextualResolver = {
                 it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
             }

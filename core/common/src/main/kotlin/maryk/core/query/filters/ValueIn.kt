@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.DataModelPropertyContext
+import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValueSetPair
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -44,13 +44,13 @@ data class ValueIn internal constructor(
             referenceValuePairs = map(1)
         )
 
-        override fun writeJson(obj: ValueIn, writer: IsJsonLikeWriter, context: DataModelPropertyContext?) {
+        override fun writeJson(obj: ValueIn, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeJsonMapObject(obj.referenceValuePairs, context)
         }
 
         internal fun IsJsonLikeWriter.writeJsonMapObject(
             listOfPairs: List<ReferenceValueSetPair<*>>,
-            context: DataModelPropertyContext?
+            context: RequestContext?
         ) {
             writeStartObject()
 
@@ -65,7 +65,7 @@ data class ValueIn internal constructor(
             writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: DataModelPropertyContext?): ObjectValues<ValueIn, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<ValueIn, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

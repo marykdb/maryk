@@ -1,11 +1,13 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.TestMarykModel
-import maryk.core.properties.definitions.IsByteTransportableMap
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.KeyValueDefinitionContext
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
-import maryk.core.query.DataModelPropertyContext
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.time.Time
@@ -20,14 +22,15 @@ class ContextualMapDefinitionTest {
         Time(14, 22,23) to "goodBye"
     ) as Map<Any, Any>
 
-    @Suppress("UNCHECKED_CAST")
-    private val def = ContextualMapDefinition<Any, Any, DataModelPropertyContext>(
-        contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
+    private val def = ContextualMapDefinition<Any, Any, KeyValueDefinitionContext>(
+        contextualResolver = { context.mapDefinition }
     )
 
-    private val context = DataModelPropertyContext(
-        mapOf(),
-        reference = TestMarykModel.ref { map }
+    @Suppress("UNCHECKED_CAST")
+    private val context = KeyValueDefinitionContext(
+        definitionsContext = null,
+        keyDefinion = TestMarykModel.properties.map.keyDefinition as IsSimpleValueDefinition<Any, IsPropertyContext>,
+        valueDefinion = TestMarykModel.properties.map.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
     )
 
     @Test

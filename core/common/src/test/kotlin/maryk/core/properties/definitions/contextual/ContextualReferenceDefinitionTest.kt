@@ -23,7 +23,6 @@ class ContextualReferenceDefinitionTest {
         contextualResolver = { it!!.dataModel!! as IsRootDataModel<*> }
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel },

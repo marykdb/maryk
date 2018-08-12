@@ -20,7 +20,6 @@ class ContextualEmbeddedObjectDefinitionTest {
         contextualResolver = { it!!.dataModel!! as SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>> }
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
             SimpleMarykObject.name to { SimpleMarykObject }

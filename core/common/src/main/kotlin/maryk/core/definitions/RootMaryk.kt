@@ -40,7 +40,7 @@ data class RootMaryk(
                             ),
                             contextTransformer = {
                                 it?.let { modelContext ->
-                                    DataModelPropertyContext(modelContext.dataModels)
+                                    DataModelPropertyContext(modelContext)
                                 }
                             }
                         )

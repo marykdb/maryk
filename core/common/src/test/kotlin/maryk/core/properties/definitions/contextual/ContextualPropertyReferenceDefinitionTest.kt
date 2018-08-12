@@ -19,7 +19,6 @@ class ContextualPropertyReferenceDefinitionTest {
         contextualResolver = { it!!.dataModel!!.properties as AbstractPropertyDefinitions<*> }
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(
             TestMarykModel.name to { TestMarykModel },

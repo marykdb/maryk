@@ -10,7 +10,18 @@ import maryk.core.properties.references.IsPropertyReference
  * Context does not need to be cached since it is present in all phases.
  */
 class DataModelPropertyContext(
-    val dataModels: Map<String, () -> IsNamedDataModel<*>>,
+    val definitionsContext: ContainsDefinitionsContext,
     override var dataModel: IsDataModel<*>? = null,
     var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>? = null
-) : ContainsDataModelContext<IsDataModel<*>>
+) : ContainsDataModelContext<IsDataModel<*>>, ContainsDefinitionsContext by definitionsContext {
+    /** For test use */
+    internal constructor(
+        dataModels: Map<String, () -> IsNamedDataModel<*>>,
+        dataModel: IsDataModel<*>? = null,
+        reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>? = null
+    ) : this(
+        DefinitionsContext(dataModels.toMutableMap()),
+        dataModel,
+        reference
+    )
+}

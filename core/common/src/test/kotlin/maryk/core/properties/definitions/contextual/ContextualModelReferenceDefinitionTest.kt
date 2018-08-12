@@ -25,9 +25,8 @@ class ContextualModelReferenceDefinitionTest {
         contextualResolver = { context, name -> context!!.dataModels[name] as () -> ObjectDataModel<*, *> }
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
-        mapOf(
+        dataModels = mapOf(
             TestMarykObject.name to { TestMarykObject },
             EmbeddedMarykObject.name to { EmbeddedMarykObject },
             TestMarykModel.name to { TestMarykModel },

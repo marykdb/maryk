@@ -2,8 +2,6 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.TestMarykModel
 import maryk.core.properties.definitions.IsByteTransportableMap
-import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
@@ -27,10 +25,9 @@ class ContextualMapDefinitionTest {
         contextualResolver = { it!!.reference!!.propertyDefinition.definition as IsByteTransportableMap<Any, Any, DataModelPropertyContext> }
     )
 
-    @Suppress("UNCHECKED_CAST")
     private val context = DataModelPropertyContext(
         mapOf(),
-        reference = TestMarykModel.ref { map } as IsPropertyReference<*, PropertyDefinitionWrapper<*, *, *, *, *>, *>
+        reference = TestMarykModel.ref { map }
     )
 
     @Test

@@ -14,7 +14,7 @@ data class DeleteResponse<DM: IsRootDataModel<*>>(
     override val dataModel: DM,
     val statuses: List<IsDeleteResponseStatus<DM>>
 ) : IsDataModelResponse<DM> {
-    internal companion object: SimpleQueryDataModel<DeleteResponse<*>>(
+    companion object: SimpleQueryDataModel<DeleteResponse<*>>(
         properties = object : ObjectPropertyDefinitions<DeleteResponse<*>>() {
             init {
                 IsDataModelResponse.addDataModel(this, DeleteResponse<*>::dataModel)

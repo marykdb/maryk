@@ -11,9 +11,9 @@ import maryk.core.query.RequestContext
 
 /** Object to contain multiple [requests] */
 data class Requests(
-    val requests: List<IsRequest>
+    val requests: List<IsRequest<*>>
 ) {
-    constructor(vararg request: IsRequest): this(request.toList())
+    constructor(vararg request: IsRequest<*>): this(request.toList())
 
     object Properties: ObjectPropertyDefinitions<Requests>() {
         val requests = add(1, "requests",
@@ -24,7 +24,7 @@ data class Requests(
                 )
             ),
             Requests::requests,
-            fromSerializable = { it.value as IsRequest },
+            fromSerializable = { it.value as IsRequest<*> },
             toSerializable = { TypedValue(it.requestType, it) }
         )
     }

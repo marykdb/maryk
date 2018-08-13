@@ -11,6 +11,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.responses.ValuesResponse
 
 /**
  * Creates a Request to scan DataObjects by key from [startKey] until [limit] and only return [select]
@@ -45,8 +46,9 @@ data class ScanRequest<DM: IsRootDataModel<*>> internal constructor(
     override val limit: UInt32 = 100.toUInt32(),
     override val toVersion: UInt64? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM> {
+) : IsScanRequest<DM, ValuesResponse<*, *>> {
     override val requestType = RequestType.Scan
+    override val responseModel = ValuesResponse
 
     @Suppress("unused")
     object Properties: ObjectPropertyDefinitions<ScanRequest<*>>() {

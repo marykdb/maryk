@@ -7,6 +7,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.query.changes.DataObjectChange
+import maryk.core.query.responses.ChangeResponse
 
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
@@ -18,8 +19,9 @@ fun <DM: IsRootDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM
 data class ChangeRequest<out DM: IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objectChanges: List<DataObjectChange<DM>>
-) : IsObjectRequest<DM> {
+) : IsObjectRequest<DM, ChangeResponse<*>> {
     override val requestType = RequestType.Change
+    override val responseModel = ChangeResponse
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {

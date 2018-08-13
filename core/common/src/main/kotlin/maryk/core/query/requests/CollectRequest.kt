@@ -8,27 +8,31 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.query.responses.IsResponse
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-data class CollectRequest(
-    val name: String,
-    val request: IsRequest
-) : IsRequest {
-    override val requestType = RequestType.Collect
+typealias AnyCollectRequest = CollectRequest<*, *>
 
-    object Properties: ObjectPropertyDefinitions<CollectRequest>() {
-        val name = add(1, "name", StringDefinition(), CollectRequest::name)
+data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
+    val name: String,
+    val request: RQ
+) : IsRequest<RP> {
+    override val requestType = RequestType.Collect
+    override val responseModel = request.responseModel
+
+    object Properties: ObjectPropertyDefinitions<AnyCollectRequest>() {
+        val name = add(1, "name", StringDefinition(), AnyCollectRequest::name)
 
         @Suppress("UNCHECKED_CAST")
         val request = add(2, "request",
             MultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
-            ) as IsSerializableFlexBytesEncodable<TypedValue<RequestType, IsRequest>, RequestContext>,
-            getter = CollectRequest::request,
+            ) as IsSerializableFlexBytesEncodable<TypedValue<RequestType, IsRequest<*>>, RequestContext>,
+            getter = AnyCollectRequest::request,
             toSerializable = { request, _ ->
                 request?.let {
                     TypedValue(request.requestType, request)
@@ -40,15 +44,15 @@ data class CollectRequest(
         )
     }
 
-    companion object: QueryDataModel<CollectRequest, CollectRequest.Properties>(
+    companion object: QueryDataModel<AnyCollectRequest, CollectRequest.Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<CollectRequest, CollectRequest.Properties>) = CollectRequest(
+        override fun invoke(map: ObjectValues<AnyCollectRequest, CollectRequest.Properties>) = CollectRequest<IsRequest<IsResponse>, IsResponse>(
             name = map(1),
             request = map(2)
         )
 
-        override fun writeJson(obj: CollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
+        override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
             writer.writeStartObject()
             writer.writeFieldName(obj.name)
             val typedRequest = Properties.request.toSerializable?.invoke(obj.request, context)!!
@@ -56,7 +60,7 @@ data class CollectRequest(
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<CollectRequest, CollectRequest.Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<AnyCollectRequest, CollectRequest.Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }

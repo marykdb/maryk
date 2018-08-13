@@ -14,7 +14,7 @@ data class AddResponse<DM: IsRootDataModel<*>> constructor(
     override val dataModel: DM,
     val statuses: List<IsAddResponseStatus<DM>>
 ): IsDataModelResponse<DM> {
-    internal companion object: SimpleQueryDataModel<AddResponse<*>>(
+    companion object: SimpleQueryDataModel<AddResponse<*>>(
         properties = object : ObjectPropertyDefinitions<AddResponse<*>>() {
             init {
                 IsDataModelResponse.addDataModel(this, AddResponse<*>::dataModel)

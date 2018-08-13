@@ -4,9 +4,10 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.query.responses.IsResponse
 
 /** Request for all changes from a version and later */
-interface IsChangesRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
+interface IsChangesRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsFetchRequest<DM, RP> {
     val fromVersion: UInt64
 
     companion object {

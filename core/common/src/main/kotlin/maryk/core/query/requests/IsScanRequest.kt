@@ -9,14 +9,15 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.RequestContext
+import maryk.core.query.responses.IsResponse
 
 /** Defines a Scan from key request. */
-interface IsScanRequest<DM: IsRootDataModel<*>> : IsFetchRequest<DM> {
+interface IsScanRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsFetchRequest<DM, RP> {
     val startKey: Key<DM>
     val limit: UInt32
 
     companion object {
-        internal fun <DO: IsScanRequest<*>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) =
+        internal fun <DO: IsScanRequest<*, *>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) =
             definitions.add(2, "startKey", ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()

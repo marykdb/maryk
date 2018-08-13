@@ -14,7 +14,7 @@ data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     override val dataModel: DM,
     val values: List<ValuesWithMetaData<DM, P>>
 ) : IsDataModelResponse<DM> {
-    internal companion object: SimpleQueryDataModel<ValuesResponse<*, *>>(
+    companion object: SimpleQueryDataModel<ValuesResponse<*, *>>(
         properties = object : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
             init {
                 IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)

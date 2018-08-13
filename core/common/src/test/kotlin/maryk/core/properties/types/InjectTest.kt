@@ -33,6 +33,7 @@ class InjectTest {
     )
 
     init {
+        context.addToCollect("testCollection", EmbeddedMarykModel)
         context.collectResult("testCollection", valuesToCollect)
     }
 
@@ -54,6 +55,8 @@ class InjectTest {
 
     @Test
     fun testInjectInValues() {
+        context.addToCollect("testCollection2", EmbeddedMarykModel)
+
         val values = TestMarykModel.map(context) {
             mapNonNulls(
                 string with EmbeddedMarykModel.injectable(
@@ -75,6 +78,8 @@ class InjectTest {
 
     @Test
     fun testInjectInObject() {
+        context.addToCollect("filter", Equals)
+
         val getRequest = GetRequest.map(context) {
             mapNonNulls(
                 filter with EmbeddedMarykModel.injectable("filter") {

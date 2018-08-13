@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.query.RequestContext
+import maryk.core.query.responses.AddResponse
 
 /** Creates a Request to add multiple [objectToAdd] to a store defined by given DataModel */
 fun <DM: IsRootValuesDataModel<*>> DM.add(vararg objectToAdd: Values<DM, *>) =
@@ -22,8 +23,9 @@ fun <DM: IsRootValuesDataModel<*>> DM.add(vararg objectToAdd: Values<DM, *>) =
 data class AddRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objectsToAdd: List<Values<DM, *>>
-) : IsObjectRequest<DM> {
+) : IsObjectRequest<DM, AddResponse<*>> {
     override val requestType = RequestType.Add
+    override val responseModel = AddResponse
 
     object Properties : ObjectPropertyDefinitions<AddRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, AddRequest<*>::dataModel)

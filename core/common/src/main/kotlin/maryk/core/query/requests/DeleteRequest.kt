@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
-
+import maryk.core.query.responses.DeleteResponse
 
 /**
  * Creates a Request to delete [objectsToDelete] from [DM]. If [hardDelete] is false the data will still exist but is
@@ -29,8 +29,9 @@ data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objectsToDelete: List<Key<DM>>,
     val hardDelete: Boolean
-) : IsObjectRequest<DM> {
+) : IsObjectRequest<DM, DeleteResponse<*>> {
     override val requestType = RequestType.Delete
+    override val responseModel = DeleteResponse
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {

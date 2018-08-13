@@ -27,11 +27,25 @@ class RequestContext(
     )
 
     private var collectedResults = mutableMapOf<String, AbstractValues<*, *, *>>()
+    private var toCollect = mutableMapOf<String, IsDataModel<*>>()
 
-    fun collectResult(collectionName: String, value: AbstractValues<*, *, *>) {
-        this.collectedResults.put(collectionName, value)
+    /** Collect result [values] by [collectionName] */
+    fun collectResult(collectionName: String, values: AbstractValues<*, *, *>) {
+        if (values.dataModel !== this.toCollect[collectionName]) {
+            throw Exception("Collect($collectionName): Value $values is not of right dataModel ${toCollect[collectionName]} ")
+        }
+        this.collectedResults.put(collectionName, values)
     }
 
+    /** Retrieve result values by [collectionName] */
     fun retrieveResult(collectionName: String) =
         this.collectedResults[collectionName]
+
+    /** Add to collect values by [model] into [collectionName] */
+    fun addToCollect(collectionName: String, model: IsDataModel<*>) {
+        toCollect[collectionName] = model
+    }
+
+    /** Get model of to be collected value by [collectionName] */
+    fun getToCollectModel(collectionName: String) = toCollect[collectionName]
 }

@@ -11,6 +11,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.responses.ChangesResponse
 
 /**
  * Creates a request to scan DataObjects by key from [startKey] [fromVersion] until [limit]
@@ -47,8 +48,9 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM>, IsChangesRequest<DM> {
+) : IsScanRequest<DM, ChangesResponse<*>>, IsChangesRequest<DM, ChangesResponse<*>> {
     override val requestType = RequestType.ScanChanges
+    override val responseModel = ChangesResponse
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ScanChangesRequest<*>>() {

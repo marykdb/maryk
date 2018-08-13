@@ -7,9 +7,10 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
+import maryk.core.query.responses.IsResponse
 
 /** Request for all versioned changes from a version and later */
-interface IsVersionedChangesRequest<DM: IsRootDataModel<*>> : IsChangesRequest<DM> {
+interface IsVersionedChangesRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsChangesRequest<DM, RP> {
     val maxVersions: UInt32
 
     companion object {

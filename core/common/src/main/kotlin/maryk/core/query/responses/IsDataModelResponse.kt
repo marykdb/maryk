@@ -22,7 +22,7 @@ import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 
 /** A response for a data operation on a DataModel */
-interface IsDataModelResponse<out DM: IsRootDataModel<*>>{
+interface IsDataModelResponse<out DM: IsRootDataModel<*>> : IsResponse {
     val dataModel: DM
 
     companion object {

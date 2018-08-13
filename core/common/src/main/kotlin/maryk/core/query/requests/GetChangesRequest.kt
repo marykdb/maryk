@@ -9,6 +9,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.responses.ChangesResponse
 
 /**
  * Creates a Request to get changes by [keys] from a store
@@ -42,8 +43,9 @@ data class GetChangesRequest<DM: IsRootDataModel<*>> internal constructor(
     override val toVersion: UInt64? = null,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsGetRequest<DM>, IsChangesRequest<DM> {
+) : IsGetRequest<DM, ChangesResponse<*>>, IsChangesRequest<DM, ChangesResponse<*>> {
     override val requestType = RequestType.GetChanges
+    override val responseModel = ChangesResponse
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<GetChangesRequest<*>>() {

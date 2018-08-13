@@ -9,6 +9,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.responses.ValuesResponse
 
 /**
  * Creates a Request to get [select] values of DataObjects by [keys] and [filter] for the DataModel of type [DM].
@@ -38,8 +39,9 @@ data class GetRequest<DM: IsRootDataModel<*>> internal constructor(
     override val order: Order?,
     override val toVersion: UInt64?,
     override val filterSoftDeleted: Boolean
-) : IsGetRequest<DM> {
+) : IsGetRequest<DM, ValuesResponse<*, *>> {
     override val requestType = RequestType.Get
+    override val responseModel = ValuesResponse
 
     object Properties : ObjectPropertyDefinitions<GetRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, GetRequest<*>::dataModel)

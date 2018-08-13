@@ -8,9 +8,10 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
+import maryk.core.query.responses.IsResponse
 
 /** A request for a data operation */
-interface IsObjectRequest<out DM: IsRootDataModel<*>>: IsRequest {
+interface IsObjectRequest<out DM: IsRootDataModel<*>, RP: IsResponse>: IsRequest<RP> {
     val dataModel: DM
 
     companion object {

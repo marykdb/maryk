@@ -11,6 +11,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.responses.VersionedChangesResponse
 
 /**
  * Creates a request to get DataObject its versioned changes by value [keys]
@@ -46,9 +47,11 @@ data class GetVersionedChangesRequest<DM: IsRootDataModel<*>> internal construct
     override val maxVersions: UInt32 = 1000.toUInt32(),
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsGetRequest<DM>, IsVersionedChangesRequest<DM> {
+) : IsGetRequest<DM, VersionedChangesResponse<*>>, IsVersionedChangesRequest<DM, VersionedChangesResponse<*>> {
     override val requestType = RequestType.GetVersionedChanges
+    override val responseModel = VersionedChangesResponse
 
+    @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<GetVersionedChangesRequest<*>>() {
         val dataModel = IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)

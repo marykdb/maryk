@@ -15,9 +15,10 @@ import maryk.core.query.Order
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.mapOfFilterDefinitions
+import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
-interface IsFetchRequest<DM: IsRootDataModel<*>> : IsObjectRequest<DM> {
+interface IsFetchRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsObjectRequest<DM, RP> {
     val select: RootPropRefGraph<DM>?
     val filter: IsFilter?
     val order: Order?

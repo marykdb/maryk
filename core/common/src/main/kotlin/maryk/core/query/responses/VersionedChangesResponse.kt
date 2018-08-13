@@ -13,7 +13,7 @@ data class VersionedChangesResponse<out DM: IsRootDataModel<*>>(
     override val dataModel: DM,
     val changes: List<DataObjectVersionedChange<DM>>
 ) : IsDataModelResponse<DM> {
-    internal companion object: SimpleQueryDataModel<VersionedChangesResponse<*>>(
+    companion object: SimpleQueryDataModel<VersionedChangesResponse<*>>(
         properties = object : ObjectPropertyDefinitions<VersionedChangesResponse<*>>() {
             init {
                 IsDataModelResponse.addDataModel(this, VersionedChangesResponse<*>::dataModel)

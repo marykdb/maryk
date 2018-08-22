@@ -1,8 +1,8 @@
 package maryk.core.query.responses
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.models.QueryDataModel
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -14,19 +14,19 @@ data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     override val dataModel: DM,
     val values: List<ValuesWithMetaData<DM, P>>
 ) : IsDataModelResponse<DM> {
-    companion object: SimpleQueryDataModel<ValuesResponse<*, *>>(
-        properties = object : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
-            init {
-                IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)
-                add(2, "values", ListDefinition(
-                    valueDefinition = EmbeddedObjectDefinition(
-                        dataModel = { ValuesWithMetaData }
-                    )
-                ), ValuesResponse<*, *>::values)
-            }
-        }
+    object Properties : ObjectPropertyDefinitions<ValuesResponse<*, *>>() {
+        val dataModel = IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)
+        val values = add(2, "values", ListDefinition(
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { ValuesWithMetaData }
+            )
+        ), ValuesResponse<*, *>::values)
+    }
+
+    companion object: QueryDataModel<ValuesResponse<*, *>, Properties>(
+        properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<ValuesResponse<*, *>>) = ValuesResponse(
+        override fun invoke(map: ObjectValues<ValuesResponse<*, *>, Properties>) = ValuesResponse(
             dataModel = map(1),
             values = map<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2)
         )

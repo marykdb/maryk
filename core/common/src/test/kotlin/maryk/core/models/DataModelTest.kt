@@ -23,7 +23,7 @@ import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
-private val testObject = TestMarykModel(
+val testMarykModelObject = TestMarykModel(
     string = "haas",
     int = 4,
     uint = 53.toUInt32(),
@@ -92,20 +92,20 @@ internal class DataModelTest {
     fun construct_by_map() {
         TestMarykModel.map {
             mapNonNulls(
-                string with testObject { string },
-                int with testObject { int },
-                uint with testObject { uint },
-                double with testObject { double },
-                dateTime with testObject { dateTime },
-                bool with testObject { bool },
-                enum with testObject { enum }
+                string with testMarykModelObject { string },
+                int with testMarykModelObject { int },
+                uint with testMarykModelObject { uint },
+                double with testMarykModelObject { double },
+                dateTime with testMarykModelObject { dateTime },
+                bool with testMarykModelObject { bool },
+                enum with testMarykModelObject { enum }
             )
-        } shouldBe testObject
+        } shouldBe testMarykModelObject
     }
 
     @Test
     fun validate() {
-        TestMarykModel.validate(testObject)
+        TestMarykModel.validate(testMarykModelObject)
     }
 
     @Test

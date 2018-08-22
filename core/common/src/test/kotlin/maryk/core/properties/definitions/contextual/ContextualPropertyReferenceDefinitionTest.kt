@@ -10,9 +10,9 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ContextualPropertyReferenceDefinitionTest {
-    private val refsToTest = listOf(
-        TestMarykModel.ref { string },
-        TestMarykModel { embeddedValues ref { value } }
+    private val refsToTest = mapOf(
+        TestMarykModel.ref { string } to "string",
+        TestMarykModel { embeddedValues ref { value } } to "embeddedValues.value"
     )
 
     private val def = ContextualPropertyReferenceDefinition<RequestContext>(
@@ -30,16 +30,17 @@ class ContextualPropertyReferenceDefinitionTest {
     @Test
     fun testTransportConversion() {
         val bc = ByteCollector()
-        for (value in refsToTest) {
-            checkProtoBufConversion(bc, value, this.def, this.context)
+        for ((toCompare) in refsToTest) {
+            checkProtoBufConversion(bc, toCompare, this.def, this.context)
         }
     }
 
     @Test
     fun convertString() {
-        for (it in refsToTest) {
-            val b = def.asString(it, this.context)
-            def.fromString(b, this.context) shouldBe it
+        for ((toCompare, value) in refsToTest) {
+            val b = def.asString(toCompare, this.context)
+            b shouldBe value
+            def.fromString(b, this.context) shouldBe toCompare
         }
     }
 }

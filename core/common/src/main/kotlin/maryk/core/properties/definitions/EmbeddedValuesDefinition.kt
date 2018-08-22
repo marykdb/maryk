@@ -171,11 +171,10 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                 add(5, "default",
                     ContextualEmbeddedValuesDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            @Suppress("UNCHECKED_CAST")
                             context?.model?.invoke() as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>? ?: throw ContextNotFoundException()
                         }
-                    ) as IsSerializableFlexBytesEncodable<Values<*, *>, ModelContext>,
-                    EmbeddedValuesDefinition<*, *>::default
+                    ) as IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>,
+                    EmbeddedValuesDefinition<*, *>::default as (EmbeddedValuesDefinition<*, *>) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
                 )
             }
         }

@@ -1,10 +1,13 @@
 package maryk.core.properties
 
 import maryk.core.models.AbstractObjectDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectDataModel
+import maryk.core.objects.Values
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -13,6 +16,7 @@ import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
@@ -175,6 +179,22 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
         getter: (DO) -> EODO? = { null },
         capturer: ((CXI, EODO) -> Unit)? = null
     ) = EmbeddedObjectPropertyDefinitionWrapper(index, name, definition, getter, capturer).apply {
+        addSingle(this)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    /** Add embedded values property [definition] with [name] and [index] and value [getter] */
+    fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, CX: IsPropertyContext> add(
+        index: Int,
+        name: String,
+        definition: IsEmbeddedValuesDefinition<DM, P, CX>,
+        getter: (DO) -> Values<DM, P>? = { null },
+        capturer: ((CX, Values<DM, P>) -> Unit)? = null
+    ) = EmbeddedValuesPropertyDefinitionWrapper(
+        index, name, definition,
+        getter as (Any) -> Values<DM, P>?,
+        capturer
+    ).apply {
         addSingle(this)
     }
 }

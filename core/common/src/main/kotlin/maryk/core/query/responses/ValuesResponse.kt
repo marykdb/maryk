@@ -19,6 +19,7 @@ data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         val dataModel = IsDataModelResponse.addDataModel(this, ValuesResponse<*, *>::dataModel)
         val values = ObjectListPropertyDefinitionWrapper(
             2, "values",
+            properties = ValuesWithMetaData.Properties,
             definition = ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { ValuesWithMetaData }

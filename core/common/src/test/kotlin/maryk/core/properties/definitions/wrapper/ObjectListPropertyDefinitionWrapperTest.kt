@@ -12,6 +12,7 @@ class ObjectListPropertyDefinitionWrapperTest {
     private val def = ObjectListPropertyDefinitionWrapper(
         index = 1,
         name = "wrapper",
+        properties = SimpleMarykObject.Properties,
         definition = ListDefinition(
             valueDefinition = EmbeddedObjectDefinition(
                 dataModel = { SimpleMarykObject }

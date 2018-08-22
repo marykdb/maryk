@@ -11,7 +11,7 @@ import maryk.core.objects.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
@@ -38,7 +38,7 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
                 contextualResolver = {
                     it?.dataModel as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>? ?: throw ContextNotFoundException()
                 }
-            ) as IsSerializableFlexBytesEncodable<Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>, RequestContext>,
+            ) as IsEmbeddedValuesDefinition<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions, RequestContext>,
             ValuesWithMetaData<*, *>::values as (ValuesWithMetaData<*, *>) -> Values<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?
         )
         val firstVersion = add(3, "firstVersion", NumberDefinition(type = UInt64), ValuesWithMetaData<*, *>::firstVersion)

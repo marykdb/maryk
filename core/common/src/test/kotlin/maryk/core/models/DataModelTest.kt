@@ -32,7 +32,7 @@ val testMarykModelObject = TestMarykModel(
     dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
 )
 
-private val testExtendedObject = TestMarykModel(
+val testExtendedMarykModelObject = TestMarykModel(
     string = "hay",
     int = 4,
     double = 3.555,
@@ -168,7 +168,7 @@ internal class DataModelTest {
             output += it
         }
 
-        TestMarykModel.writeJson(testExtendedObject, writer)
+        TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
 
         output shouldBe JSON
     }
@@ -180,7 +180,7 @@ internal class DataModelTest {
             output += it
         }
 
-        TestMarykModel.writeJson(testExtendedObject, writer)
+        TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
 
         output shouldBe """
         {
@@ -220,7 +220,7 @@ internal class DataModelTest {
             output += it
         }
 
-        TestMarykModel.writeJson(testExtendedObject, writer)
+        TestMarykModel.writeJson(testExtendedMarykModelObject, writer)
 
         output shouldBe """
         string: hay
@@ -281,14 +281,14 @@ internal class DataModelTest {
         val cache = WriteCache()
 
         bc.reserve(
-            TestMarykModel.calculateProtoBufLength(testExtendedObject, cache)
+            TestMarykModel.calculateProtoBufLength(testExtendedMarykModelObject, cache)
         )
 
-        TestMarykModel.writeProtoBuf(testExtendedObject, cache, bc::write)
+        TestMarykModel.writeProtoBuf(testExtendedMarykModelObject, cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497"
 
-        TestMarykModel.readProtoBuf(bc.size, bc::read) shouldBe testExtendedObject
+        TestMarykModel.readProtoBuf(bc.size, bc::read) shouldBe testExtendedMarykModelObject
     }
 
     @Test
@@ -316,7 +316,7 @@ internal class DataModelTest {
         ).forEach { jsonInput ->
             input = jsonInput
             index = 0
-            TestMarykModel.readJson(reader = jsonReader()) shouldBe testExtendedObject
+            TestMarykModel.readJson(reader = jsonReader()) shouldBe testExtendedMarykModelObject
         }
     }
 
@@ -329,11 +329,11 @@ internal class DataModelTest {
             JsonWriter(writer = writer),
             JsonWriter(pretty = true, writer = writer)
         ).forEach { generator ->
-            TestMarykModel.writeJson(testExtendedObject, generator)
+            TestMarykModel.writeJson(testExtendedMarykModelObject, generator)
 
             var index = 0
             val reader = { JsonReader(reader = { output[index++] }) }
-            TestMarykModel.readJson(reader = reader()) shouldBe testExtendedObject
+            TestMarykModel.readJson(reader = reader()) shouldBe testExtendedMarykModelObject
 
             output = ""
         }

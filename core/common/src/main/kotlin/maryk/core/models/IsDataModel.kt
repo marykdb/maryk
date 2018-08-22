@@ -34,10 +34,10 @@ interface IsDataModel<P: IsPropertyDefinitions> {
      * To get a top level reference on a model by passing a [propertyDefinitionGetter] from its defined Properties
      * Optionally pass an already resolved [parent]
      */
-    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
+    fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
         parent: IsPropertyReference<out Any, IsPropertyDefinition<*>, *>? = null,
         propertyDefinitionGetter: P.()-> W
-    ): IsPropertyReference<T, W, AbstractValues<*, *, *>> {
+    ): IsPropertyReference<T, W, *> {
         @Suppress("UNCHECKED_CAST")
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W, AbstractValues<*, *, *>>
     }

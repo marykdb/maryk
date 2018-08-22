@@ -2,11 +2,12 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.objects.Values
 import maryk.core.objects.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
-import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -18,7 +19,11 @@ import maryk.json.JsonWriter
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedValuesDefinition<CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
-): IsValueDefinition<ValuesImpl, CX>, IsSerializableFlexBytesEncodable<ValuesImpl, CX> {
+): IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX> {
+    override val dataModel: IsValuesDataModel<PropertyDefinitions>
+        get() = throw Exception("dataModel is contextually determined")
+    override val propertyDefinitionType = PropertyDefinitionType.Embed
+    override val default: Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>? = null
     override val indexed = false
     override val required = true
     override val final = true

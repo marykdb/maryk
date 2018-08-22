@@ -1,9 +1,11 @@
 package maryk.core.query.responses
 
 import maryk.SimpleMarykModel
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.models.asValues
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -11,7 +13,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class ValuesResponseTest {
-    private val value = SimpleMarykModel(value = "haha1")
+    private val simpleValue = SimpleMarykModel(value = "haha1")
 
     private val key = SimpleMarykModel.key("+1xO4zD4R5sIMcS9pXTZEA")
 
@@ -20,7 +22,7 @@ class ValuesResponseTest {
         listOf(
             ValuesWithMetaData(
                 key = key,
-                values = value,
+                values = simpleValue,
                 firstVersion = 0L.toUInt64(),
                 lastVersion = 14141L.toUInt64(),
                 isDeleted = false
@@ -55,5 +57,18 @@ class ValuesResponseTest {
           isDeleted: false
 
         """.trimIndent()
+    }
+
+    @Test
+    fun referenceToValuesAndGetOnObject() {
+        val valuesResponseRef = ValuesResponse { values.ref(0){ values } }
+        val simpleValueRef = SimpleMarykObject.ref(valuesResponseRef) { value }
+
+        valuesResponseRef.completeName shouldBe "values.@0.values"
+        simpleValueRef.completeName shouldBe "values.@0.values.value"
+
+        val objectValues = ValuesResponse.asValues(objectsResponse)
+
+        objectValues[simpleValueRef] shouldBe "haha1"
     }
 }

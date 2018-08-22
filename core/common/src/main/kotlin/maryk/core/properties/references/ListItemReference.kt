@@ -15,7 +15,7 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
     val index: Int,
     listDefinition: ListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
-) : CanHaveSimpleChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
+) : CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
     listDefinition.valueDefinition, parentReference
 ) {
     override val completeName: String get() = this.parentReference?.let {

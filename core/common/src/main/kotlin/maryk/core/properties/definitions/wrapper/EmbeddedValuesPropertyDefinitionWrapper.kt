@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsValuesDataModel
-import maryk.core.objects.AbstractValues
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -48,9 +47,9 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
         )
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
-    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(
+    infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
         propertyDefinitionGetter: P.()-> W
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, AbstractValues<*, *, *>> =
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
         { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */

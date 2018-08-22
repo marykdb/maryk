@@ -58,8 +58,8 @@ class ValuesTest {
         values[TestMarykModel.ref { string }] shouldBe "hello world"
         values[TestMarykModel.ref { double }] shouldBe 2.3
         values[TestMarykModel.ref { dateTime }] shouldBe DateTime(2018, 7, 18)
-        values[TestMarykModel { listOfString at 2 }] shouldBe "v3"
-        values[TestMarykModel { map at Time(12, 23, 34) }] shouldBe "twelve"
+        values[TestMarykModel { listOfString refAt 2 }] shouldBe "v3"
+        values[TestMarykModel { map refAt Time(12, 23, 34) }] shouldBe "twelve"
         values[TestMarykModel { embeddedValues.ref { value } }] shouldBe "test"
         values[TestMarykModel { embeddedValues { model.ref { value } } }] shouldBe "another test"
     }

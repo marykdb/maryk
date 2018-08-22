@@ -45,12 +45,12 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
         this.definition.getValueRef(key, this.getRef(parentRef))
 
     /** For quick notation to get a map [key] reference */
-    infix fun key(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapKeyReference<K, V, *> {
+    infix fun refToKey(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapKeyReference<K, V, *> {
         return { this.getKeyRef(key, it) }
     }
 
     /** For quick notation to get a map value reference at given [key] */
-    infix fun at(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapValueReference<K, V, *> {
+    infix fun refAt(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapValueReference<K, V, *> {
         return { this.getValueRef(key, it) }
     }
 }

@@ -64,7 +64,7 @@ It is also possible to refer a value of a map to filter or order:
 ```kotlin
 // Model contains map with Time as a key
 // Refer to the value at 12:23
-Model { map at Time(12, 23) }
+Model { map refAt Time(12, 23) }
 ```
 
 In string notation this can be defined as `map.@12:23`. Validation exceptions which refer to the key can be
@@ -76,7 +76,7 @@ Items in sets can be selected by set value
 ```kotlin
 // Model with a set property of Time
 // Refer to the value at Time(12, 23)
-Model { set at Time(12, 23) }
+Model { set refAt Time(12, 23) }
 ```
 
 In string notation this can be defined as `set.$12:23`. 
@@ -87,7 +87,7 @@ Items in lists can also be selected by index
 ```kotlin
 // Model with list property
 // Refer to the value at index 5
-Model { list at 5 }
+Model { list refAt 5 }
 ```
 
 In string notation this can be defined as `list.@5`. 

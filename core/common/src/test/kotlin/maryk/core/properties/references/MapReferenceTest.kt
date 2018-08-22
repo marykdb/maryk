@@ -9,8 +9,8 @@ import kotlin.test.Test
 
 class MapReferenceTest {
     private val mapReference = TestMarykModel.ref { map }
-    private val keyReference = TestMarykModel { map key Time(12, 0, 1) }
-    private val valReference = TestMarykModel { map at Time(15, 22, 55) }
+    private val keyReference = TestMarykModel { map refToKey Time(12, 0, 1) }
+    private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
 
     @Test
     fun convert_to_ProtoBuf_and_back() {

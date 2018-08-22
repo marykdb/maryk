@@ -18,10 +18,11 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { model { model ref { value } } } }.completeName shouldBe "embeddedValues.model.model.value"
         TestMarykModel { embeddedValues { model { model { model ref { value } } } } }.completeName shouldBe "embeddedValues.model.model.model.value"
 
-        TestMarykModel { embeddedValues { marykModel { list at 5 } } }.completeName shouldBe "embeddedValues.marykModel.list.@5"
-        TestMarykModel { embeddedValues { marykModel { set at Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.\$2017-12-05"
+        TestMarykModel { embeddedValues { marykModel { list refAt 5 } } }.completeName shouldBe "embeddedValues.marykModel.list.@5"
 
-        TestMarykModel { embeddedValues { marykModel { map key Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.$12:23"""
-        TestMarykModel { embeddedValues { marykModel { map at Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
+        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.completeName shouldBe "embeddedValues.marykModel.set.\$2017-12-05"
+
+        TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.$12:23"""
+        TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
     }
 }

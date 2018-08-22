@@ -1,20 +1,20 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.SimpleMarykModel
+import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
-import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.query.DefinitionsContext
 import kotlin.test.Test
 
-class ValuesListPropertyDefinitionWrapperTest {
-    private val def = ValuesListPropertyDefinitionWrapper(
+class ObjectListPropertyDefinitionWrapperTest {
+    private val def = ObjectListPropertyDefinitionWrapper(
         index = 1,
         name = "wrapper",
         definition = ListDefinition(
-            valueDefinition = EmbeddedValuesDefinition(
-                dataModel = { SimpleMarykModel }
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = { SimpleMarykObject }
             )
         ),
         getter = { _: Any -> listOf<Nothing>() }

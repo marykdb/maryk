@@ -1,10 +1,9 @@
 package maryk.core.query.requests
 
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.responses.IsResponse
 
 interface IsRequest<RP: IsResponse> {
     val requestType: RequestType
-    val responseModel: IsObjectDataModel<RP, ObjectPropertyDefinitions<RP>>
+    val responseModel: IsObjectDataModel<RP, *>
 }

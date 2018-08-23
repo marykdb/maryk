@@ -2,8 +2,8 @@ package maryk.core.properties.types
 
 import maryk.EmbeddedMarykModel
 import maryk.TestMarykModel
+import maryk.checkYamlConversion
 import maryk.core.models.asValues
-import maryk.core.models.injectable
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
 import maryk.core.properties.exceptions.InjectException
@@ -58,14 +58,10 @@ class InjectTest {
     private val firstResponseValueRef = ValuesResponse { values.ref(0) { values } }
 
     private val inject =
-        ValuesResponse.injectable("testCollection") {
-            TestMarykModel.ref(firstResponseValueRef) { string }
-        }
+        Inject("testCollection", TestMarykModel.ref(firstResponseValueRef) { string })
 
     private val injectDeep =
-        ValuesResponse.injectable("testCollection") {
-            TestMarykModel(firstResponseValueRef) { embeddedValues.ref { value } }
-        }
+        Inject("testCollection", TestMarykModel(firstResponseValueRef) { embeddedValues.ref { value } })
 
     @Test
     fun testGetToCollect() {
@@ -91,11 +87,7 @@ class InjectTest {
 
         val values = TestMarykModel.map(context) {
             mapNonNulls(
-                string with EmbeddedMarykModel.injectable(
-                    "testCollection2"
-                ) {
-                    this { model.ref { value } }
-                }
+                string with Inject("testCollection2", EmbeddedMarykModel { model.ref { value } })
             )
         }
 
@@ -114,9 +106,7 @@ class InjectTest {
 
         val getRequest = GetRequest.map(context) {
             mapNonNulls(
-                filter with EmbeddedMarykModel.injectable("filter") {
-                    this { model.ref { value } }
-                }
+                filter with Inject("filter", EmbeddedMarykModel { model.ref { value } })
             )
         }
 
@@ -131,5 +121,17 @@ class InjectTest {
         context.collectResult("filter", Equals.asValues(equals))
 
         getRequest { filter } shouldBe equals
+    }
+
+    @Test
+    fun convert_simple_to_YAML_and_back() {
+        context.addToCollect("testSimpleConvert", EmbeddedMarykModel)
+
+        val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model.ref { value } })
+        checkYamlConversion(injectSimple, Inject, { this.context }) shouldBe """
+        collectionName: testSimpleConvert
+        propertyReference: model.value
+
+        """.trimIndent()
     }
 }

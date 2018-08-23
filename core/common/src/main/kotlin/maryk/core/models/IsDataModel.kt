@@ -5,7 +5,6 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.Inject
 
 /** A DataModel which holds properties and can be validated */
 interface IsDataModel<P: IsPropertyDefinitions> {
@@ -42,12 +41,3 @@ interface IsDataModel<P: IsPropertyDefinitions> {
         return propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W, AbstractValues<*, *, *>>
     }
 }
-
-/**
- * Create an Injectable for DataModel with [collectionName] and [referenceGetter]
- */
-fun <DM: IsDataModel<P>, P: IsPropertyDefinitions, T: Any, W: IsPropertyDefinition<T>> DM.injectable(
-    collectionName: String,
-    referenceGetter: DM.() -> IsPropertyReference<T, W, *>
-) =
-    Inject(collectionName, this, referenceGetter())

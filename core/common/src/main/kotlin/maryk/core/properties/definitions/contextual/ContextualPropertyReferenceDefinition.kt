@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.references.AnyPropertyReference
@@ -16,7 +16,7 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another property from a context resolved from [contextualResolver]  */
 data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> internal constructor(
     override val required: Boolean = true,
-    val contextualResolver: (context: CX?) -> AbstractPropertyDefinitions<*>
+    val contextualResolver: (context: CX?) -> IsPropertyDefinitions
 ): IsValueDefinition<AnyPropertyReference, CX>, IsSerializableFlexBytesEncodable<AnyPropertyReference, CX> {
     override val indexed = false
     override val final = true

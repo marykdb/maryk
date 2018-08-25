@@ -15,12 +15,12 @@ open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T> {
-    override fun getEmbedded(name: String) = when(name[0]) {
+    override fun getEmbedded(name: String, context: IsPropertyContext?) = when(name[0]) {
         '@' -> ListItemReference(name.substring(1).toInt(), propertyDefinition.definition, this)
         else -> throw ParseException("Unknown List type $name[0]")
     }
 
-    override fun getEmbeddedRef(reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val index = initIntByVar(reader)
         return when(index) {
             0 -> ListItemReference(initIntByVar(reader), propertyDefinition.definition, this)

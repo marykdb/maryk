@@ -134,4 +134,13 @@ class InjectTest {
 
         """.trimIndent()
     }
+
+    @Test
+    fun convert_to_YAML_and_back() {
+        checkYamlConversion(this.inject, Inject, { this.context }) shouldBe """
+        collectionName: testCollection
+        propertyReference: values.@0.values.string
+
+        """.trimIndent()
+    }
 }

@@ -2,6 +2,7 @@ package maryk.core.properties.types
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
@@ -11,8 +12,11 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.ContainsDataModelContext
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.ModelTypeToCollect
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.IsObjectRequest
 
 typealias AnyInject = Inject<*, *>
 
@@ -55,7 +59,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
 
     internal companion object: ContextualDataModel<AnyInject, Properties, RequestContext, InjectionContext>(
         properties = Properties,
-        contextTransformer = { requestContext -> InjectionContext(requestContext) }
+        contextTransformer = { requestContext -> InjectionContext(requestContext ?: throw ContextNotFoundException()) }
     ) {
         override fun invoke(map: ObjectValues<AnyInject, Properties>) = Inject<Any, IsPropertyDefinition<Any>>(
             collectionName = map(1),
@@ -66,11 +70,35 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
 
 /** Context to resolve Inject properties */
 internal class InjectionContext(
-    private val requestContext: RequestContext?
-): IsPropertyContext {
+    private val requestContext: RequestContext
+):
+    IsPropertyContext,
+    ContainsDataModelContext<IsDataModel<*>>,
+    ContainsDefinitionsContext by requestContext
+{
+    override val dataModel: IsDataModel<*>? get() {
+        collectionName?.let { collectionName ->
+            val collectType = requestContext.getToCollectModel(collectionName)
+
+            return when(collectType) {
+                null -> throw Exception("Inject collection name $collectionName not found")
+                is ModelTypeToCollect.Request<*> -> {
+                    if (collectType.request is IsObjectRequest<*, *>) {
+                        collectType.request.dataModel
+                    } else {
+                        collectType.request.responseModel
+                    }
+                }
+                is ModelTypeToCollect.Model<*> -> {
+                    collectType.model
+                }
+            }
+        } ?: throw ContextNotFoundException()
+    }
+
     fun resolvePropertyReference(): IsPropertyDefinitions? {
         collectionName?.let { collectionName ->
-            val collectType = requestContext?.getToCollectModel(collectionName)
+            val collectType = requestContext.getToCollectModel(collectionName)
 
             return when(collectType) {
                 null -> throw Exception("Inject collection name $collectionName not found")

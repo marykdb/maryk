@@ -123,14 +123,14 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     }
 
     /** Get PropertyReference by [referenceName] */
-    final override fun getPropertyReferenceByName(referenceName: String): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+    final override fun getPropertyReferenceByName(referenceName: String, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val names = referenceName.split(".")
 
         var propertyReference: AnyPropertyReference? = null
         for (name in names) {
             propertyReference = when (propertyReference) {
                 null -> this[name]?.getRef(propertyReference)
-                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name)
+                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name, context)
                 else -> throw DefNotFoundException("Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
         }
@@ -139,7 +139,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     }
 
     /** Get PropertyReference by bytes from [reader] with [length] */
-    final override fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+    final override fun getPropertyReferenceByBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         var readLength = 0
 
         val lengthReader = {
@@ -154,7 +154,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
                     val index = initIntByVar(lengthReader)
                     this[index]?.getRef(propertyReference)
                 }
-                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader)
+                is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader, context)
                 else -> throw DefNotFoundException("More property references found on property that cannot have any ")
             } ?: throw DefNotFoundException("Property reference does not exist")
         }

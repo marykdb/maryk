@@ -10,7 +10,7 @@ import maryk.core.query.requests.IsRequest
 import maryk.core.query.responses.IsResponse
 
 sealed class ModelTypeToCollect<DM: IsDataModel<*>>(val model: DM) {
-    class Request<RP: IsResponse>(value: IsRequest<RP>): ModelTypeToCollect<IsObjectDataModel<RP, *>>(value.responseModel)
+    class Request<RP: IsResponse>(val request: IsRequest<RP>): ModelTypeToCollect<IsObjectDataModel<RP, *>>(request.responseModel)
     class Model<DM: IsDataModel<*>>(value: DM): ModelTypeToCollect<DM>(value)
 }
 

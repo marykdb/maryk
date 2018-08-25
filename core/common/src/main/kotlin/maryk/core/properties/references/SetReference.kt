@@ -16,7 +16,7 @@ open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T> {
-    override fun getEmbedded(name: String) = when(name[0]) {
+    override fun getEmbedded(name: String, context: IsPropertyContext?) = when(name[0]) {
         '$' -> SetItemReference(
             propertyDefinition.definition.valueDefinition.fromString(
                 name.substring(1)
@@ -27,7 +27,7 @@ open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
         else -> throw ParseException("Unknown Set type $name[0]")
     }
 
-    override fun getEmbeddedRef(reader: () -> Byte): AnyPropertyReference {
+    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         val protoKey = ProtoBuf.readKey(reader)
         return when(protoKey.tag) {
             0 -> {

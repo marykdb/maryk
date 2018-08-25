@@ -9,9 +9,11 @@ import maryk.core.objects.AbstractValues
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.ContainsDataModelContext
 
 /**
  * Reference to a Embed property containing type Values, [P] PropertyDefinitions. Which is defined by
@@ -35,11 +37,16 @@ class EmbeddedValuesPropertyRef<
         "${it.completeName}.$name"
     } ?: name
 
-    override fun getEmbedded(name: String) =
-        this.propertyDefinition.definition.dataModel.properties[name]?.getRef(this)
-            ?: throw DefNotFoundException("Embedded Definition with $name not found")
+    override fun getEmbedded(name: String, context: IsPropertyContext?) =
+        if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
+            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(name)?.getRef(this)
+                    ?: throw DefNotFoundException("Embedded Definition with $name not found")
+        } else {
+            this.propertyDefinition.definition.dataModel.properties[name]?.getRef(this)
+                    ?: throw DefNotFoundException("Embedded Definition with $name not found")
+        }
 
-    override fun getEmbeddedRef(reader: () -> Byte): AnyPropertyReference {
+    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         val index = initIntByVar(reader)
         return this.propertyDefinition.definition.dataModel.properties[index]?.getRef(this)
                 ?: throw DefNotFoundException("Embedded Definition with $name not found")

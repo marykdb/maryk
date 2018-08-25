@@ -21,12 +21,12 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
 ) : HasEmbeddedPropertyReference<T>, CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
     listDefinition.valueDefinition, parentReference
 ) {
-    override fun getEmbedded(name: String) = if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+    override fun getEmbedded(name: String, context: IsPropertyContext?) = if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
         this.propertyDefinition.dataModel.properties[name]?.getRef(this)
                 ?: throw DefNotFoundException("Embedded Definition with $name not found")
     } else throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
 
-    override fun getEmbeddedRef(reader: () -> Byte): AnyPropertyReference {
+    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
             val index = initIntByVar(reader)
             return this.propertyDefinition.dataModel.properties[index]?.getRef(this)

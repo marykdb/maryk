@@ -4,5 +4,5 @@ import maryk.core.models.IsDataModel
 import maryk.core.properties.IsPropertyContext
 
 interface ContainsDataModelContext<DM: IsDataModel<*>>: IsPropertyContext {
-    var dataModel: DM?
+    val dataModel: DM?
 }

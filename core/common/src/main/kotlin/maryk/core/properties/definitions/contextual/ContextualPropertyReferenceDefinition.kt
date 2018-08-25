@@ -26,7 +26,7 @@ data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> inter
         value.completeName
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(context).getPropertyReferenceByName(string)
+        contextualResolver(context).getPropertyReferenceByName(string, context)
 
     override fun writeJsonValue(value: AnyPropertyReference, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeString(value.completeName)
@@ -41,9 +41,11 @@ data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> inter
                     is String -> fromString(jsonValue, context)
                     is ByteArray -> {
                         var readIndex = 0
-                        contextualResolver(context).getPropertyReferenceByBytes(jsonValue.size) {
-                            jsonValue[readIndex++]
-                        }
+                        contextualResolver(context).getPropertyReferenceByBytes(
+                            jsonValue.size,
+                            { jsonValue[readIndex++] },
+                            context
+                        )
                     }
                     else -> {
                         throw ParseException("Property reference was not defined as byte array or string")
@@ -62,6 +64,6 @@ data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> inter
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): AnyPropertyReference =
-        contextualResolver(context).getPropertyReferenceByBytes(length, reader)
+        contextualResolver(context).getPropertyReferenceByBytes(length, reader, context)
 }
 

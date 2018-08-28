@@ -48,8 +48,11 @@ class EmbeddedValuesPropertyRef<
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         val index = initIntByVar(reader)
-        return this.propertyDefinition.definition.dataModel.properties[index]?.getRef(this)
-                ?: throw DefNotFoundException("Embedded Definition with $name not found")
+        return if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
+            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.getRef(this)
+        } else {
+            this.propertyDefinition.definition.dataModel.properties[index]?.getRef(this)
+        } ?: throw DefNotFoundException("Embedded Definition with $index not found")
     }
 
     /** Calculate the transport length of encoding this reference and cache length with [cacher] */

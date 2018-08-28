@@ -2,6 +2,8 @@ package maryk.core.properties.types
 
 import maryk.EmbeddedMarykModel
 import maryk.TestMarykModel
+import maryk.checkJsonConversion
+import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.asValues
 import maryk.core.models.testExtendedMarykModelObject
@@ -50,9 +52,12 @@ class InjectTest {
         )
     )
 
+    private val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model.ref { value } })
+
     init {
         context.addToCollect("testCollection", getRequest)
         context.collectResult("testCollection", valuesResponse)
+        context.addToCollect("testSimpleConvert", EmbeddedMarykModel)
     }
 
     private val firstResponseValueRef = ValuesResponse { values.ref(0) { values } }
@@ -124,10 +129,7 @@ class InjectTest {
     }
 
     @Test
-    fun convert_simple_to_YAML_and_back() {
-        context.addToCollect("testSimpleConvert", EmbeddedMarykModel)
-
-        val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model.ref { value } })
+    fun convertSimpleToYAMLAndBack() {
         checkYamlConversion(injectSimple, Inject, { this.context }) shouldBe """
         collectionName: testSimpleConvert
         propertyReference: model.value
@@ -136,11 +138,31 @@ class InjectTest {
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertSimpleToJSONAndBack() {
+        checkJsonConversion(injectSimple, Inject, { this.context })
+    }
+
+    @Test
+    fun convertSimpleToProtoBufAndBack() {
+        checkProtoBufConversion(injectSimple, Inject, { this.context })
+    }
+
+    @Test
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.inject, Inject, { this.context }) shouldBe """
         collectionName: testCollection
         propertyReference: values.@0.values.string
 
         """.trimIndent()
+    }
+
+    @Test
+    fun convertToJSONAndBack() {
+        checkJsonConversion(this.inject, Inject, { this.context })
+    }
+
+    @Test
+    fun convertToProtoBufAndBack() {
+        checkProtoBufConversion(this.inject, Inject, { this.context })
     }
 }

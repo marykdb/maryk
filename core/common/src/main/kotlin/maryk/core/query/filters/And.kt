@@ -56,7 +56,7 @@ data class And(
 
             return this.map(context) {
                 mapNonNulls(
-                    filters with filters.readJson(reader, context)
+                    filters withSerializable filters.readJson(reader, context)
                 )
             }
         }

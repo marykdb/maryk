@@ -3,11 +3,9 @@ package maryk.core.properties.definitions.wrapper
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsDataModel
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.objects.ObjectValues
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -21,6 +19,7 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.IsPropRefGraphable
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.Inject
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.toUInt32
@@ -57,7 +56,17 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     /** Create an index [value] pair for maps */
-    infix fun with(value: Any?) = value?.let {
+    infix fun with(value: TO?) = value?.let {
+        Pair(this.index, value)
+    }
+
+    /** Create an index [value] pair for maps */
+    infix fun injectWith(value: Inject<*, *>?) = value?.let {
+        Pair(this.index, value)
+    }
+
+    /** Create an index [value] pair for maps */
+    infix fun withSerializable(value: T?) = value?.let {
         Pair(this.index, value)
     }
 
@@ -98,25 +107,6 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         if(this.capturer != null && context != null) {
             this.capturer!!.invoke(context, value)
         }
-    }
-
-    /**
-     * Transforms the serialized [value] to current value.
-     * Returns default value if unset
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun convertToCurrentValue(value: Any?): TO? {
-        if (value == null && this.definition is HasDefaultValueDefinition<*>) {
-            (this.definition as? HasDefaultValueDefinition<*>).let {
-                return it?.default as TO?
-            }
-        }
-
-        if (value is ObjectValues<*, *>) {
-            return value.toDataObject() as TO?
-        }
-
-        return this.fromSerializable?.invoke(value as? T?) ?: value as? TO?
     }
 
     companion object {

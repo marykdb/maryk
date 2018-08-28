@@ -44,7 +44,7 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
         if (reader.currentToken !is JsonToken.StartObject) {
             throw ParseException("JSON value should be an Object")
         }
-        val list = mutableListOf<ReferenceValuePair<*>>()
+        val list = mutableListOf<ReferenceValuePair<T>>()
 
         var currentToken = reader.nextToken()
 
@@ -60,14 +60,15 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
 
             val value = ReferenceValuePair.Properties.value.readJson(reader, context)
 
-            list.add(ReferenceValuePair(reference, value))
+            @Suppress("UNCHECKED_CAST")
+            list.add(ReferenceValuePair(reference, value) as ReferenceValuePair<T>)
 
             currentToken = reader.nextToken()
         }
 
         return this.map(context) {
             mapNonNulls(
-                referenceValuePairs with list
+                referenceValuePairs withSerializable list
             )
         }
     }

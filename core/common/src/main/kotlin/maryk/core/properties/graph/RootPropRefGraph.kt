@@ -94,7 +94,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
 
             return this.map {
                 mapNonNulls(
-                    properties with propertiesList
+                    properties withSerializable propertiesList
                 )
             }
         }

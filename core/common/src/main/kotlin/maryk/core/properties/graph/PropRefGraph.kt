@@ -158,8 +158,8 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
 
             return this.map {
                 mapNonNulls(
-                    parent with parentValue,
-                    properties with propertiesValue
+                    parent withSerializable parentValue,
+                    properties withSerializable propertiesValue
                 )
             }
         }

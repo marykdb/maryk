@@ -43,6 +43,35 @@ class GetRequestTest {
     ))
 
     @Test
+    fun createAsMap(){
+        GetRequest.map(context) {
+            mapNonNulls(
+                dataModel with SimpleMarykModel,
+                keys with listOf(key1, key2)
+            )
+        }.toDataObject() shouldBe getRequest
+    }
+
+    @Test
+    fun createAsMaxMap(){
+        GetRequest.map(context) {
+            mapNonNulls(
+                dataModel with SimpleMarykModel,
+                keys with listOf(key1, key2),
+                filter with Exists(SimpleMarykModel.ref { value }),
+                order with SimpleMarykModel.ref { value }.descending(),
+                toVersion with 333L.toUInt64(),
+                filterSoftDeleted with true,
+                select with SimpleMarykModel.props {
+                    RootPropRefGraph<SimpleMarykModel>(
+                        value
+                    )
+                }
+            )
+        }.toDataObject() shouldBe getMaxRequest
+    }
+
+    @Test
     fun convert_to_ProtoBuf_and_back() {
         checkProtoBufConversion(getRequest, GetRequest, { this.context })
         checkProtoBufConversion(getMaxRequest, GetRequest, { this.context })

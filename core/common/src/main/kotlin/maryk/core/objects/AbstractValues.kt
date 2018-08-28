@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -97,5 +98,25 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         }
 
         return value as T?
+    }
+}
+
+
+/**
+ * Transforms the serialized [value] to current value.
+ * Returns default value if unset
+ */
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T: Any, TO: Any> IsPropertyDefinitionWrapper<T, TO, *, *>.convertToCurrentValue(value: Any?): TO? {
+    return when {
+        value == null && this.definition is HasDefaultValueDefinition<*> -> (this.definition as? HasDefaultValueDefinition<*>).let {
+            it?.default as TO?
+        }
+        value is ObjectValues<*, *> -> value.toDataObject() as TO?
+        else -> try {
+            this.fromSerializable?.invoke(value as? T?) ?: value as? TO?
+        } catch (e: Throwable) {
+            value as? TO?
+        }
     }
 }

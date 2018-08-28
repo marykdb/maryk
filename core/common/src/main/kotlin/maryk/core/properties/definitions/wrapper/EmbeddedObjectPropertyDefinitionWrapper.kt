@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.objects.AbstractValues
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -48,6 +49,11 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
                 it as CanHaveComplexChildReference<*, *, *, *>
             }
         )
+
+    /** Create an index [value] pair for maps */
+    infix fun with(value: ObjectValues<EODO, P>?) = value?.let {
+        Pair(this.index, value)
+    }
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
     infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, AbstractValues<*, *, *>>> ref(

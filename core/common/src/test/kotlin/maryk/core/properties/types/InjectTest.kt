@@ -106,6 +106,17 @@ class InjectTest {
     }
 
     @Test
+    fun testInjectInValuesWithResponse() {
+        val values = TestMarykModel.map(context) {
+            mapNonNulls(
+                string injectWith injectDeep
+            )
+        }
+
+        values { string } shouldBe "test"
+    }
+
+    @Test
     fun testInjectInObject() {
         context.addToCollect("filter", Equals)
 

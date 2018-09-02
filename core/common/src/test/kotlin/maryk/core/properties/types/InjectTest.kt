@@ -54,6 +54,8 @@ class InjectTest {
 
     private val injectSimple = Inject("testSimpleConvert", EmbeddedMarykModel { model.ref { value } })
 
+    private val injectCompleteObject = Inject("testCompleteConvert")
+
     init {
         context.addToCollect("testCollection", getRequest)
         context.collectResult("testCollection", valuesResponse)
@@ -140,15 +142,6 @@ class InjectTest {
     }
 
     @Test
-    fun convertSimpleToYAMLAndBack() {
-        checkYamlConversion(injectSimple, Inject, { this.context }) shouldBe """
-        collectionName: testSimpleConvert
-        propertyReference: model.value
-
-        """.trimIndent()
-    }
-
-    @Test
     fun convertSimpleToJSONAndBack() {
         checkJsonConversion(injectSimple, Inject, { this.context })
     }
@@ -161,9 +154,15 @@ class InjectTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.inject, Inject, { this.context }) shouldBe """
-        collectionName: testCollection
-        propertyReference: values.@0.values.string
+        testCollection: values.@0.values.string
 
+        """.trimIndent()
+    }
+
+    @Test
+    fun convertCompleteObjectToYAMLAndBack() {
+        checkYamlConversion(injectCompleteObject, Inject, { this.context }) shouldBe """
+        testCompleteConvert
         """.trimIndent()
     }
 

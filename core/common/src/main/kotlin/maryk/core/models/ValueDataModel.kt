@@ -67,14 +67,14 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
         return bytes
     }
 
-    override fun getValueFromDefinition(
+    override fun getValueWithDefinition(
         definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: IsPropertyContext?
     ) = if (obj is ValueDataObjectWithValues) {
         obj.values(definition.index)
     } else {
-        super.getValueFromDefinition(definition, obj, context)
+        super.getValueWithDefinition(definition, obj, context)
     }
 
     /** Creates bytes for given [inputs] */

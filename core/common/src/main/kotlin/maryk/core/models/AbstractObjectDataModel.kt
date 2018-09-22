@@ -37,7 +37,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
             for (it in this.properties) {
                 try {
                     it.validate(
-                        newValue = getValueFromDefinition(it, dataObject, null),
+                        newValue = getValueWithDefinition(it, dataObject, null),
                         parentRefFactory = refGetter
                     )
                 } catch (e: ValidationException) {
@@ -54,7 +54,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
     open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (definition in this.properties) {
-            val value = getValueFromDefinition(definition, obj, context) ?: continue
+            val value = getValueWithDefinition(definition, obj, context) ?: continue
 
             definition.capture(context, value)
 
@@ -71,7 +71,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
     internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (definition in this.properties) {
-            val value = getValueFromDefinition(definition, dataObject, context) ?: continue
+            val value = getValueWithDefinition(definition, dataObject, context) ?: continue
 
             definition.capture(context, value)
 
@@ -87,7 +87,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
      */
     internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (definition in this.properties) {
-            val value = getValueFromDefinition(definition, dataObject, context) ?: continue
+            val value = getValueWithDefinition(definition, dataObject, context) ?: continue
 
             definition.capture(context, value)
 
@@ -95,7 +95,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         }
     }
 
-    protected open fun getValueFromDefinition(
+    protected open fun getValueWithDefinition(
         definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: CX?

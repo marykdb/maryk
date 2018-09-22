@@ -23,7 +23,7 @@ internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
     // Skip bytes if below certain length
     if (length < 4) {
         val negative = firstByte and SIGN_BYTE != SIGN_BYTE
-        (0 until 8 - length).forEach {
+        for (it in 0 until 8 - length) {
             if (negative) { // Set to max byte to have correct value if negative
                 int = int xor 0xFF
             }

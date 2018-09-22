@@ -26,7 +26,7 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
     // Skip bytes if below certain length
     if (length < 8) {
         val negative = firstByte and SIGN_BYTE != SIGN_BYTE
-        (0 until 8 - length).forEach {
+        for (it in 0 until 8 - length) {
             if (negative) { // Set to max byte to have correct value if negative
                 long = long xor 0xFF
             }

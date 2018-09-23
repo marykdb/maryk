@@ -96,7 +96,7 @@ data class ValueIn internal constructor(
 
             return this.map(context) {
                 mapNonNulls(
-                    referenceValuePairs with list
+                    referenceValuePairs withSerializable list
                 )
             }
         }

@@ -105,7 +105,7 @@ data class Range internal constructor(
 
             return this.map(context) {
                 mapNonNulls(
-                    ranges with listOfRanges
+                    ranges withSerializable listOfRanges
                 )
             }
         }

@@ -37,7 +37,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     open fun writeJson(map: V, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
         for (key in map.keys) {
-            val value = map<Any?>(key) ?: continue // skip empty values
+            val value = map.original(key) ?: continue // skip empty values
 
             val definition = properties[key] ?: continue
 
@@ -138,13 +138,13 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     fun calculateProtoBufLength(map: V, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (key in map.keys) {
-            val value = map<Any?>(key) ?: continue // skip empty values
+            val originalValue = map.original(key) ?: continue // skip empty values
 
             val def = properties[key] ?: continue
 
-            def.capture(context, value)
+            def.capture(context, originalValue)
 
-            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, value, cacher, context)
+            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, originalValue, cacher, context)
         }
         return totalByteLength
     }
@@ -156,13 +156,13 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      */
     fun writeProtoBuf(map: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (key in map.keys) {
-            val value = map<Any?>(key) ?: continue // skip empty values
+            val originalValue = map.original(key) ?: continue // skip empty values
 
             val definition = properties[key] ?: continue
 
-            definition.capture(context, value)
+            definition.capture(context, originalValue)
 
-            definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
+            definition.definition.writeTransportBytesWithKey(definition.index, originalValue, cacheGetter, writer, context)
         }
     }
 

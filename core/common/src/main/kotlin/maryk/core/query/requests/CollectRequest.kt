@@ -82,7 +82,7 @@ data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
 
             return this.map(context) {
                 mapNonNulls(
-                    this.name with name,
+                    this.name withSerializable name,
                     this.request withSerializable request
                 )
             }

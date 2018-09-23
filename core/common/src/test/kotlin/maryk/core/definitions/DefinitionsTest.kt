@@ -280,11 +280,11 @@ internal fun compareDefinitions(converted: Definitions, original: Definitions) {
         if (item is ObjectDataModel<*, *>) {
             (converted.definitions[index] as? ObjectDataModel<*, *>)?.let {
                 compareDataModels(it, item)
-            } ?: throw AssertionError("Converted Model should be a ObjectDataModel")
+            } ?: throw AssertionError("Converted Model ${converted.definitions[index]} should be a ObjectDataModel")
         } else if (item is IndexedEnumDefinition<*>) {
             (converted.definitions[index] as? IndexedEnumDefinition<*>)?.let {
                 compareEnumDefinitions(it, item)
-            } ?: throw AssertionError("Converted item should be an EnumDefinition")
+            } ?: throw AssertionError("Converted item ${converted.definitions[index]} should be an EnumDefinition")
         }
     }
 }

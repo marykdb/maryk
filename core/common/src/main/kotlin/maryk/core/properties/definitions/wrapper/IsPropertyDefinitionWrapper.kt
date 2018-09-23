@@ -57,7 +57,15 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
 
     /** Create an index [value] pair for maps */
     infix fun with(value: TO?) = value?.let {
-        Pair(this.index, value)
+        val serializedValue = try {
+            toSerializable?.let { serializer ->
+                serializer(value, null) ?: value
+            } ?: value
+        } catch (_: Throwable) {
+            value
+        }
+
+        Pair(this.index, serializedValue)
     }
 
     /** Create an index [value] pair for maps */

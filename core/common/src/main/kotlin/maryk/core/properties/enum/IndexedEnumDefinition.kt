@@ -120,7 +120,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
 
                 this.map {
                     mapNonNulls(
-                        name with value
+                        name withSerializable value
                     )
                 }
             } else {

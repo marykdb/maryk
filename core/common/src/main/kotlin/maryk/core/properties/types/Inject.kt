@@ -112,8 +112,8 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
 
                     this.map(context?.requestContext) {
                         mapNonNulls(
-                            Properties.collectionName with collectionName,
-                            Properties.propertyReference with propertyReference
+                            Properties.collectionName withSerializable collectionName,
+                            Properties.propertyReference withSerializable propertyReference
                         )
                     }
                 }
@@ -128,7 +128,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
 
                     this.map(context?.requestContext) {
                         mapNonNulls(
-                            Properties.collectionName with collectionName
+                            Properties.collectionName withSerializable collectionName
                         )
                     }
                 }

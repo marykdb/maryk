@@ -99,7 +99,11 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         obj: DO,
         context: CX?
-    ) = definition.getPropertyAndSerialize(obj, context)
+    ) = if(obj is ObjectValues<*, *>) {
+        obj.original(definition.index)
+    } else {
+        definition.getPropertyAndSerialize(obj, context)
+    }
 
     /** Transform [context] into context specific to ObjectDataModel. Override for specific implementation */
     @Suppress("UNCHECKED_CAST")

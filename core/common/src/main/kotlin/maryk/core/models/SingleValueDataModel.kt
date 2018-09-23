@@ -36,7 +36,7 @@ abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefin
 
         return this.map(context as? RequestContext) {
             mapNonNulls(
-                singlePropertyDefinition with value
+                singlePropertyDefinition withSerializable value
             )
         }
     }

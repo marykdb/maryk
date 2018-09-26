@@ -1,9 +1,9 @@
-package maryk.core.models
+package maryk.core.properties.types
 
 import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
-import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
+import maryk.core.objects.ObjectValues
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
@@ -13,18 +13,15 @@ import maryk.core.query.requests.GetRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
-private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
-
 private val context = RequestContext(mapOf(
     SimpleMarykModel.name to { SimpleMarykModel }
 ))
 
-class ObjectAsMapConversionTest {
+class InjectInRequestTest {
     private val getRequestWithInjectable = GetRequest.map(context) {
         mapNonNulls(
             dataModel with SimpleMarykModel,
-            keys with listOf(key1, key2),
+            keys injectWith Inject("keysToInject", GetRequest.ref { keys }),
             filter with Exists(SimpleMarykModel.ref { value }),
             order with SimpleMarykModel.ref { value }.descending(),
             toVersion with 333L.toUInt64(),
@@ -37,18 +34,24 @@ class ObjectAsMapConversionTest {
         )
     }
 
+    fun checker(converted: ObjectValues<GetRequest<*>, GetRequest.Properties>, original: ObjectValues<GetRequest<*>, GetRequest.Properties>) {
+        (converted.original { keys } as ObjectValues<*, *>).toDataObject() shouldBe original.original { keys }
+        converted { filter } shouldBe original { filter }
+    }
+
     @Test
     fun convertToYAMLAndBack() {
+        context.addToCollect("keysToInject", GetRequest)
+
         checkYamlConversion(
             getRequestWithInjectable,
             GetRequest,
             { context },
-            checker = { a, b ->
-                a.toDataObject() shouldBe b.toDataObject()
-            }
+            checker = ::checker
         ) shouldBe """
         dataModel: SimpleMarykModel
-        keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+        keys: !:Inject
+          keysToInject: keys
         filter: !Exists value
         order: !Desc value
         toVersion: 333
@@ -61,25 +64,15 @@ class ObjectAsMapConversionTest {
 
     @Test
     fun convertToJSONAndBack() {
+        context.addToCollect("keysToInject", GetRequest)
+
         checkJsonConversion(
             getRequestWithInjectable,
             GetRequest,
             { context },
-            checker = { a, b ->
-                a.toDataObject() shouldBe b.toDataObject()
-            }
-        )
-    }
-
-    @Test
-    fun convertToProtoBufAndBack() {
-        checkProtoBufObjectValuesConversion(
-            getRequestWithInjectable,
-            GetRequest,
-            { context },
-            checker = { a, b ->
-                a.toDataObject() shouldBe b.toDataObject()
-            }
-        )
+            checker = ::checker
+        ) shouldBe """
+        {"dataModel":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"filter":["Exists","value"],"order":{"propertyReference":"value","direction":"DESC"},"toVersion":"333","filterSoftDeleted":true,"select":["value"]}
+        """.trimIndent()
     }
 }

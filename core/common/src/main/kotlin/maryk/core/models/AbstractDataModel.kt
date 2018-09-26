@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsByteTransportableValue
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.types.Inject
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
@@ -17,8 +18,13 @@ import maryk.core.query.RequestContext
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonReader
 import maryk.json.JsonToken
+import maryk.json.TokenWithType
 import maryk.lib.exceptions.ParseException
+import maryk.yaml.IsYamlReader
+import maryk.yaml.UnknownYamlTag
+import maryk.yaml.YamlWriter
 
 /**
  * A Data Model for converting and validating DataObjects. The [properties] contain all the property definitions for
@@ -41,9 +47,20 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
 
             val definition = properties[key] ?: continue
 
-            definition.capture(context, value)
+            if (value is Inject<*, *>) {
+                if (writer is YamlWriter) {
+                    writer.writeFieldName(definition.name)
+                    writer.writeTag("!:Inject")
+                } else {
+                    writer.writeFieldName("?${definition.name}")
+                }
 
-            writeJsonValue(definition, writer, value, context)
+                val injectionContext = Inject.transformContext(context as RequestContext)
+                Inject.writeJson(value, writer, injectionContext)
+            }else {
+                definition.capture(context, value)
+                writeJsonValue(definition, writer, value, context)
+            }
         }
         writer.writeEndObject()
     }
@@ -97,9 +114,18 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
             val token = reader.currentToken
             when (token) {
                 is JsonToken.FieldName -> {
-                    val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
+                    var isInject = false
 
-                    val definition = properties[value]
+                    val fieldName = token.value?.let {
+                        if (reader is JsonReader && it.startsWith("?")) {
+                            isInject = true
+                            it.substring(1)
+                        } else {
+                            it
+                        }
+                    } ?: throw ParseException("Empty field name not allowed in JSON")
+
+                    val definition = properties[fieldName]
                     if (definition == null) {
                         reader.skipUntilNextField()
                         continue@walker
@@ -113,15 +139,36 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
                             continue@walker
                         }
 
-                        val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-                            @Suppress("UNCHECKED_CAST")
-                            (definition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readJsonToValues(reader, context)
-                        } else {
-                            definition.readJson(reader, context)
+                        if (reader is IsYamlReader) {
+                            reader.currentToken.let { yamlToken ->
+                                if (yamlToken is TokenWithType) {
+                                    yamlToken.type.let {
+                                        if (it is UnknownYamlTag) {
+                                            isInject = it.name == ":Inject"
+                                        }
+                                    }
+                                }
+                            }
                         }
 
-                        valueMap[definition.index] = readValue
-                        definition.capture(context, readValue)
+                        if (isInject) {
+                            val inject = Inject.readJson(reader, Inject.transformContext(context as RequestContext))
+
+                            valueMap[definition.index] = inject
+                        } else {
+                            val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+                                @Suppress("UNCHECKED_CAST")
+                                (definition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readJsonToValues(
+                                    reader,
+                                    context
+                                )
+                            } else {
+                                definition.readJson(reader, context)
+                            }
+
+                            valueMap[definition.index] = readValue
+                            definition.capture(context, readValue)
+                        }
                     }
                 }
                 else -> break@walker

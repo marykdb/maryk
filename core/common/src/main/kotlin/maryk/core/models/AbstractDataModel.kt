@@ -184,14 +184,14 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      */
     fun calculateProtoBufLength(map: V, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
-        for (key in map.keys) {
-            val originalValue = map.original(key) ?: continue // skip empty values
+        for (definition in this.properties) {
+            val originalValue = map.original(definition.index) ?: continue // Skip empty values
 
-            val def = properties[key] ?: continue
+            if (originalValue is Inject<*, *>) continue // Skip Inject values since they are encoded in Requests object
 
-            def.capture(context, originalValue)
+            definition.capture(context, originalValue)
 
-            totalByteLength += def.definition.calculateTransportByteLengthWithKey(def.index, originalValue, cacher, context)
+            totalByteLength += definition.definition.calculateTransportByteLengthWithKey(definition.index, originalValue, cacher, context)
         }
         return totalByteLength
     }
@@ -202,15 +202,30 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
     fun writeProtoBuf(map: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
-        for (key in map.keys) {
-            val originalValue = map.original(key) ?: continue // skip empty values
+        for (definition in this.properties) {
+            val originalValue = map.original(definition.index)
 
-            val definition = properties[key] ?: continue
-
-            definition.capture(context, originalValue)
-
-            definition.definition.writeTransportBytesWithKey(definition.index, originalValue, cacheGetter, writer, context)
+            this.writeProtoBufField(originalValue, definition, cacheGetter, writer, context)
         }
+    }
+
+    /**
+     * Writes a specific protobuf field defined by [definition] with [value] to [writer] and get
+     * possible cached values from [cacheGetter]
+     * Optionally pass a [context] to write more complex properties which depend on other properties
+     */
+    internal open fun writeProtoBufField(
+        value: Any?,
+        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        cacheGetter: WriteCacheReader,
+        writer: (byte: Byte) -> Unit,
+        context: CX?
+    ) {
+        if (value == null) return // Skip empty values
+
+        definition.capture(context, value)
+
+        definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
     }
 
     /**

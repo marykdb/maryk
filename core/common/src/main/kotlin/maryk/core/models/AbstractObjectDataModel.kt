@@ -87,11 +87,9 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
      */
     internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (definition in this.properties) {
-            val value = getValueWithDefinition(definition, dataObject, context) ?: continue
+            val value = getValueWithDefinition(definition, dataObject, context)
 
-            definition.capture(context, value)
-
-            definition.definition.writeTransportBytesWithKey(definition.index, value, cacheGetter, writer, context)
+            this.writeProtoBufField(value, definition, cacheGetter, writer, context)
         }
     }
 

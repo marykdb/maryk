@@ -25,15 +25,15 @@ class ObjectAsMapConversionTest {
         mapNonNulls(
             dataModel with SimpleMarykModel,
             keys with listOf(key1, key2),
-            filter with Exists(SimpleMarykModel.ref { value }),
-            order with SimpleMarykModel.ref { value }.descending(),
-            toVersion with 333L.toUInt64(),
-            filterSoftDeleted with true,
             select with SimpleMarykModel.props {
                 RootPropRefGraph<SimpleMarykModel>(
                     value
                 )
-            }
+            },
+            filter with Exists(SimpleMarykModel.ref { value }),
+            order with SimpleMarykModel.ref { value }.descending(),
+            toVersion with 333L.toUInt64(),
+            filterSoftDeleted with true
         )
     }
 
@@ -49,12 +49,12 @@ class ObjectAsMapConversionTest {
         ) shouldBe """
         dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
+        select:
+        - value
         filter: !Exists value
         order: !Desc value
         toVersion: 333
         filterSoftDeleted: true
-        select:
-        - value
 
         """.trimIndent()
     }

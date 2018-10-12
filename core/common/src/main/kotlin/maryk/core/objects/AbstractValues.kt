@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.types.AnyInject
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.lib.exceptions.ParseException
 
@@ -93,8 +94,13 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
 
         var value: Any = this
         for (toResolve in refList) {
-            value = toResolve.resolve(value)
-                    ?: return null
+            value = toResolve.resolve(value) ?: return null
+
+            // In resolving the typed value is directly unwrapped to its value
+            // because the typed value itself is not important in references
+            if (value is TypedValue<*, *>) {
+                value = value.value
+            }
         }
 
         return value as T?

@@ -1,14 +1,27 @@
 package maryk.core.properties.references
 
 import maryk.TestMarykModel
+import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class ListItemReferenceTest {
     val reference = TestMarykModel.Properties.listOfString.getItemRef(5)
     val cache = WriteCache()
+
+    @Test
+    fun get_value_from_list() {
+        val list = listOf('a','b','c','d','e','f', 'g')
+
+        this.reference.resolveFromAny(list) shouldBe 'f'
+
+        shouldThrow<UnexpectedValueException> {
+            this.reference.resolveFromAny("wrongInput")
+        }
+    }
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
@@ -24,7 +37,7 @@ class ListItemReferenceTest {
     }
 
     @Test
-    fun testStringConversion() {
+    fun convert_to_and_from_string() {
         this.reference.completeName shouldBe "listOfString.@5"
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)

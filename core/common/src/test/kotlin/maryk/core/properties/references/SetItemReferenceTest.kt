@@ -1,14 +1,31 @@
 package maryk.core.properties.references
 
 import maryk.TestMarykModel
+import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
 import maryk.lib.time.Date
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
+import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class SetItemReferenceTest {
     val reference = TestMarykModel.Properties.set.getItemRef(Date(2001, 4, 2))
+
+    @Test
+    fun get_value_from_set() {
+        val list = setOf(
+            Date(2001, 4, 2),
+            Date(2005, 5, 22),
+            Date(2013, 10, 1)
+        )
+
+        this.reference.resolveFromAny(list) shouldBe Date(2001, 4, 2)
+
+        shouldThrow<UnexpectedValueException> {
+            this.reference.resolveFromAny("wrongInput")
+        }
+    }
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
@@ -25,7 +42,7 @@ class SetItemReferenceTest {
     }
 
     @Test
-    fun testStringConversion() {
+    fun convert_to_and_from_string() {
         this.reference.completeName shouldBe "set.$2001-04-02"
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)

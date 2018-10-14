@@ -1,6 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
@@ -70,5 +71,12 @@ class EmbeddedValuesPropertyRef<
     override fun resolve(values: AbstractValues<*, *, *>): Values<DM, P>? {
         @Suppress("UNCHECKED_CAST")
         return values.original(propertyDefinition.index) as Values<DM, P>?
+    }
+
+    override fun resolveFromAny(value: Any): Any {
+        val valueAsValues = (value as? AbstractValues<*, *, *>)  ?: throw UnexpectedValueException("Expected Values object for getting value by reference")
+
+        return valueAsValues.original(this.propertyDefinition.index)
+                ?: throw UnexpectedValueException("Not Found ${this.propertyDefinition.index}/${this.propertyDefinition.name} on Values")
     }
 }

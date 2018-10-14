@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
@@ -8,7 +9,7 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
-/** Reference to map value [V] by [key] of [K] contained in map referred by [parentReference] */
+/** Reference to map value [V] below [key] of [K] contained in map referred by [parentReference] */
 class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     val key: K,
     private val mapDefinition: MapDefinition<K, V, CX>,
@@ -19,6 +20,12 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
     override val completeName get() = this.parentReference?.let {
         "${it.completeName}.@$key"
     } ?: "@$key"
+
+    override fun resolveFromAny(value: Any): Any {
+        @Suppress("UNCHECKED_CAST")
+        val map = (value as? Map<K, V>) ?: throw UnexpectedValueException("Expected Map to get value by reference")
+        return map[this.key] as Any? ?: throw UnexpectedValueException("Expected Map to contain key to get value by reference")
+    }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0

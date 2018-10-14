@@ -1,5 +1,6 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.SetDefinition
@@ -22,6 +23,13 @@ class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     override val completeName: String get() = this.parentReference?.let {
         "${it.completeName}.$$value"
     } ?: "$$value"
+
+    override fun resolveFromAny(value: Any) =
+        if (value is Set<*> && value.contains(this.value)){
+            this.value
+        } else {
+            throw UnexpectedValueException("Expected List to get value by reference")
+        }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0

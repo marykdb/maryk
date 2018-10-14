@@ -1,6 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
@@ -50,4 +51,7 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
     }
 
     override fun resolve(values: List<T>): T? = values[index]
+
+    @Suppress("UNCHECKED_CAST")
+    override fun resolveFromAny(value: Any) = (value as? List<Any>)?.get(this.index) ?: throw UnexpectedValueException("Expected List to get value by reference")
 }

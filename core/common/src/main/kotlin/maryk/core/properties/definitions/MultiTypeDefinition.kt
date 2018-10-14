@@ -12,7 +12,9 @@ import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -174,6 +176,13 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
 
         return totalByteLength
     }
+
+    /**
+     * Creates a reference referring to [type]of multi type below [parentReference]
+     * so reference can be strongly typed
+     */
+    internal fun getTypeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>) =
+        TypeReference(type, this, parentReference)
 
     override fun writeTransportBytes(value: TypedValue<E, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         @Suppress("UNCHECKED_CAST")

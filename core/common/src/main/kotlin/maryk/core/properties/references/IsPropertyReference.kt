@@ -25,8 +25,22 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, C: Any> {
      */
     fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit)
 
-    /**
-     * Resolve the value from the given values
-     */
+    /** Resolve the value from the given [values] */
     fun resolve(values: C): T?
+
+    /** Get [value] with the reference */
+    fun resolveFromAny(value: Any): Any
+
+    /** Unwraps the references into an ordered list with parent to children */
+    fun unwrap(): List<IsPropertyReference<*, *, in Any>> {
+        @Suppress("UNCHECKED_CAST")
+        val refList = mutableListOf(this as IsPropertyReference<*, *, in Any>)
+        var ref: IsPropertyReference<*, *, in Any> = this
+        while (ref is PropertyReference<*, *, *, *> && ref.parentReference != null) {
+            @Suppress("UNCHECKED_CAST")
+            ref = ref.parentReference as IsPropertyReference<*, *, in Any>
+            refList.add(0, ref)
+        }
+        return refList
+    }
 }

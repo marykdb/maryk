@@ -2,6 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
@@ -21,6 +23,7 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
@@ -43,7 +46,8 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override val final: Boolean = false,
     val typeEnum: IndexedEnumDefinition<E>,
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
-    override val default: TypedValue<E, *>? = null
+    override val default: TypedValue<E, *>? = null,
+    internal val keepAsValues: Boolean = false
 ) :
     IsValueDefinition<TypedValue<E, Any>, CX>,
     IsSerializableFlexBytesEncodable<TypedValue<E, Any>, CX>,
@@ -53,7 +57,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED
 
-    private val typeByName = definitionMap.map { Pair(it.key.name, it.key) }.toMap()
+    internal val typeByName = definitionMap.map { Pair(it.key.name, it.key) }.toMap()
     private val typeByIndex = definitionMap.map { Pair(it.key.index, it.key) }.toMap()
     private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
 
@@ -156,11 +160,19 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         val type = this.typeByIndex[key.tag] ?: throw ParseException("Unknown multi type index ${key.tag}")
         val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type ${key.tag}")
 
-        val value = def.readTransportBytes(
-            ProtoBuf.getLength(key.wireType, reader),
-            reader,
-            context
-        )
+        val value = if(def is IsEmbeddedObjectDefinition<*, *, *, *, *> && keepAsValues) {
+            (def as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readTransportBytesToValues(
+                ProtoBuf.getLength(key.wireType, reader),
+                reader,
+                context
+            )
+        } else {
+            def.readTransportBytes(
+                ProtoBuf.getLength(key.wireType, reader),
+                reader,
+                context
+            )
+        }
 
         return TypedValue(type, value)
     }
@@ -168,11 +180,21 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override fun calculateTransportByteLength(value: TypedValue<E, Any>, cacher: WriteCacheWriter, context: CX?): Int {
         var totalByteLength = 0
 
+        if (context is RequestContext) {
+            context.collectInjectLevel(this) {
+                this.getTypeRef(value.type, it as CanHaveComplexChildReference<*, *, *, *>)
+            }
+        }
+
         // stored as value below an index of the type id
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
         totalByteLength += def.calculateTransportByteLengthWithKey(value.type.index, value.value, cacher, context)
+
+        if (context is RequestContext) {
+            context.closeInjectLevel(this)
+        }
 
         return totalByteLength
     }
@@ -181,7 +203,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
      * Creates a reference referring to [type]of multi type below [parentReference]
      * so reference can be strongly typed
      */
-    internal fun getTypeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>) =
+    internal fun getTypeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
         TypeReference(type, this, parentReference)
 
     override fun writeTransportBytes(value: TypedValue<E, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
@@ -218,6 +240,27 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         result = 31 * result + final.hashCode()
         result = 31 * result + definitionMap.hashCode()
         return result
+    }
+
+    /** Resolve a reference from [reader] found on a [parentReference] */
+    fun resolveReference(
+        reader: () -> Byte,
+        parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
+    ): IsPropertyReference<Any, *, *> {
+        val index = initIntByVar(reader)
+        if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 is not supported")
+        val typeIndex = initIntByVar(reader)
+        val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
+        return getTypeRef(type, parentReference)
+    }
+
+    /** Resolve a reference from [name] found on a [parentReference] */
+    fun resolveReferenceByName(
+        name: String,
+        parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
+    ): IsPropertyReference<Any, *, *> {
+        val type = this.typeByName[name.substring(1)] ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
+        return getTypeRef(type, parentReference)
     }
 
     object Model : ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(

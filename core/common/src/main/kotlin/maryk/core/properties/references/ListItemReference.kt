@@ -3,12 +3,12 @@ package maryk.core.properties.references
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -22,17 +22,26 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
 ) : HasEmbeddedPropertyReference<T>, CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
     listDefinition.valueDefinition, parentReference
 ) {
-    override fun getEmbedded(name: String, context: IsPropertyContext?) = if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-        this.propertyDefinition.dataModel.properties[name]?.getRef(this)
-                ?: throw DefNotFoundException("Embedded Definition with $name not found")
-    } else throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
+    override fun getEmbedded(name: String, context: IsPropertyContext?) =
+        when(this.propertyDefinition) {
+            is IsEmbeddedObjectDefinition<*, *, *, *, *> ->
+                this.propertyDefinition.resolveReferenceByName(name, this)
+            is MultiTypeDefinition<*, *> -> {
+                this.propertyDefinition.resolveReferenceByName(name, this)
+            }
+            else -> throw DefNotFoundException("ListItem can not contain embedded name references ($name)")
+        }
 
-    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-            val index = initIntByVar(reader)
-            return this.propertyDefinition.dataModel.properties[index]?.getRef(this)
-                    ?: throw DefNotFoundException("Embedded Definition with $index not found")
-        } else throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
+    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
+        return when(this.propertyDefinition) {
+            is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
+                this.propertyDefinition.resolveReference(reader, this)
+            }
+            is MultiTypeDefinition<*, *> -> {
+                this.propertyDefinition.resolveReference(reader, this)
+            }
+            else -> throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
+        }
     }
 
     override val completeName: String get() = this.parentReference?.let {

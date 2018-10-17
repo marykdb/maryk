@@ -7,6 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
@@ -35,6 +36,12 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     /** Get a reference to a specific list item on [parentList] by [index]. */
     fun getItemRef(index: Int, parentList: ListReference<T, CX>?) =
         ListItemReference(index, this, parentList)
+
+    override fun getItemPropertyRefCreator(index: Int, item: T) =
+        { parentRef: AnyPropertyReference? ->
+            @Suppress("UNCHECKED_CAST")
+            this.getItemRef(index, parentRef as ListReference<T, CX>?) as IsPropertyReference<Any, *, *>
+        }
 
     override fun validateCollectionForExceptions(refGetter: () -> IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>?, newValue: List<T>, validator: (item: T, parentRefFactory: () -> IsPropertyReference<T, IsPropertyDefinition<T>, *>?) -> Any) {
         newValue.forEachIndexed { index, item ->

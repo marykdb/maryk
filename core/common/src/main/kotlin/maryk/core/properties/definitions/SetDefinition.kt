@@ -7,6 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
@@ -35,6 +36,14 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
     /** Get a reference by [value] to a specific set item of set of [setReference] */
     fun getItemRef(value: T, setReference: SetReference<T, CX>?) =
         SetItemReference(value, this, setReference)
+
+    override fun getItemPropertyRefCreator(
+        index: Int,
+        item: T
+    ) = { parentRef: AnyPropertyReference? ->
+        @Suppress("UNCHECKED_CAST")
+        this.getItemRef(item, parentRef as SetReference<T, CX>?) as IsPropertyReference<Any, *, *>
+    }
 
     override fun validateCollectionForExceptions(
         refGetter: () -> IsPropertyReference<Set<T>,IsPropertyDefinition<Set<T>>, *>?,

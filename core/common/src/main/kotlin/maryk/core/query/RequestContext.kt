@@ -1,11 +1,14 @@
 package maryk.core.query
 
+import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.objects.AbstractValues
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.Inject
 import maryk.core.query.requests.IsRequest
 import maryk.core.query.responses.IsResponse
 
@@ -37,6 +40,11 @@ class RequestContext(
     private var toCollect = mutableMapOf<String, ModelTypeToCollect<*>>()
     private var collectedResults = mutableMapOf<String, AbstractValues<*, *, *>>()
 
+    internal var collectedInjects = mutableListOf<InjectWithReference>()
+
+    private var collectedLevels = mutableListOf<Any>()
+    private var collectedReferenceCreators = mutableListOf<(AnyPropertyReference?) -> IsPropertyReference<Any, *, *>>()
+
     /** Add to collect values by [model] into [collectionName] */
     fun addToCollect(collectionName: String, model: IsDataModel<*>) {
         toCollect[collectionName] = ModelTypeToCollect.Model(model)
@@ -64,4 +72,47 @@ class RequestContext(
     /** Retrieve result values by [collectionName] */
     fun retrieveResult(collectionName: String) =
         this.collectedResults[collectionName]
+
+    /**
+     * Collects Injects [inject] so they can be encoded in a higher Requests object
+     * referring with [referenceCreator] to where they are used.
+     * This because ProtoBuf does not allow encoding Injects in place
+     */
+    fun collectInject(
+        inject: Inject<*, *>
+    ) {
+        var reference: IsPropertyReference<Any, *, *>? = null
+        // Create the reference by walking all parent reference creators
+        for (creator in this.collectedReferenceCreators) {
+            reference = creator(reference)
+        }
+
+        this.collectedInjects.add(
+            InjectWithReference(inject, reference!!)
+        )
+    }
+
+    /** Collect the [propertyRefCreator] for the level defined by [levelItem] */
+    fun collectInjectLevel(
+        levelItem: Any,
+        propertyRefCreator: (AnyPropertyReference?) -> IsPropertyReference<Any, *, *>
+    ) {
+        if (this.collectedLevels.isNotEmpty() && levelItem == this.collectedLevels.last()) {
+            this.collectedReferenceCreators.removeAt(this.collectedReferenceCreators.size - 1)
+        } else {
+            this.collectedLevels.add(levelItem)
+        }
+
+        this.collectedReferenceCreators.add(propertyRefCreator)
+    }
+
+    /** Removes the last injection [levelItem] and its reference creator */
+    fun closeInjectLevel(
+        levelItem: Any
+    ) {
+        if (this.collectedLevels.isNotEmpty() && levelItem == this.collectedLevels.last()) {
+            this.collectedLevels.removeAt(this.collectedLevels.size - 1)
+            this.collectedReferenceCreators.dropLast(1)
+        }
+    }
 }

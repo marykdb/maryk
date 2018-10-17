@@ -1,12 +1,15 @@
 package maryk.core.models
 
+import maryk.core.inject.InjectWithReference
 import maryk.core.objects.AbstractValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsByteTransportableMap
 import maryk.core.properties.definitions.IsByteTransportableValue
+import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.Inject
@@ -185,15 +188,50 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     fun calculateProtoBufLength(map: V, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (definition in this.properties) {
-            val originalValue = map.original(definition.index) ?: continue // Skip empty values
+            val originalValue = map.original(definition.index)
 
-            if (originalValue is Inject<*, *>) continue // Skip Inject values since they are encoded in Requests object
-
-            definition.capture(context, originalValue)
-
-            totalByteLength += definition.definition.calculateTransportByteLengthWithKey(definition.index, originalValue, cacher, context)
+            totalByteLength += this.protoBufLengthToAddForField(originalValue, definition, cacher, context)
         }
+
+        if (context is RequestContext) {
+            context.closeInjectLevel(this)
+        }
+
         return totalByteLength
+    }
+
+    /** Calculates length for the ProtoBuf field for [value] */
+    protected open fun protoBufLengthToAddForField(
+        value: Any?,
+        definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
+        cacher: WriteCacheWriter,
+        context: CX?
+    ): Int {
+        if (value == null) {
+            return 0 // Skip null value in counting
+        }
+
+        // If it is inject it needs to be collected for protobuf since it cannot be encoded inline
+        // Except if it is the InjectWithReference object in which it is encoded
+        if (value is Inject<*, *> && this !is InjectWithReference.Companion) {
+            if (context is RequestContext) {
+                context.collectInjectLevel(this) { definition.getRef(it) }
+                context.collectInject(value)
+            }
+
+            return 0 // Don't count length of Inject values since they are encoded in Requests object
+        } else if (
+            context is RequestContext
+            && (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>
+                    || definition is IsCollectionDefinition<*, *, *, *>
+                    || definition is IsMapDefinition<*, *, *>)
+        ) {
+            // Collect inject level if value can contain sub values
+            context.collectInjectLevel(this) { definition.getRef(it) }
+        }
+
+        definition.capture(context, value)
+        return definition.definition.calculateTransportByteLengthWithKey(definition.index, value, cacher, context)
     }
 
     /**
@@ -210,7 +248,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     }
 
     /**
-     * Writes a specific protobuf field defined by [definition] with [value] to [writer] and get
+     * Writes a specific ProtoBuf field defined by [definition] with [value] to [writer] and get
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
@@ -222,6 +260,10 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
         context: CX?
     ) {
         if (value == null) return // Skip empty values
+
+        if (value is Inject<*, *> && this !is InjectWithReference.Companion) {
+            return // Skip Inject values since they are encoded in Requests object
+        }
 
         definition.capture(context, value)
 

@@ -71,12 +71,15 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
     internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (definition in this.properties) {
-            val value = getValueWithDefinition(definition, dataObject, context) ?: continue
+            val value = getValueWithDefinition(definition, dataObject, context)
 
-            definition.capture(context, value)
-
-            totalByteLength += definition.definition.calculateTransportByteLengthWithKey(definition.index, value, cacher, context)
+            totalByteLength += protoBufLengthToAddForField(value, definition, cacher, context)
         }
+
+        if (context is RequestContext && this.properties.isNotEmpty()) {
+            context.closeInjectLevel(this)
+        }
+
         return totalByteLength
     }
 

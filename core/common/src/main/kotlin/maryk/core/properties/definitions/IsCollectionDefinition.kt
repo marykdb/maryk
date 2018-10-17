@@ -10,12 +10,14 @@ import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -114,7 +116,11 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
                 val container = ByteLengthContainer()
                 cacher.addLengthToCache(container)
 
-                value.forEach { item ->
+                value.forEachIndexed { position, item ->
+                    if (context is RequestContext) {
+                        context.collectInjectLevel(this, this.getItemPropertyRefCreator(position, item))
+                    }
+
                     totalByteSize += valueDefinition.calculateTransportByteLength(item, cacher, context)
                 }
                 container.length = totalByteSize
@@ -122,9 +128,17 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
                 totalByteSize += ProtoBuf.calculateKeyLength(index)
                 totalByteSize += container.length.calculateVarByteLength()
             }
-            else -> for (item in value) {
+            else -> value.forEachIndexed { position, item ->
+                if (context is RequestContext) {
+                    context.collectInjectLevel(this, this.getItemPropertyRefCreator(position, item))
+                }
+
                 totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(index, item, cacher, context)
             }
+        }
+
+        if (context is RequestContext && value.isNotEmpty()) {
+            context.closeInjectLevel(this)
         }
 
         return totalByteSize
@@ -143,6 +157,11 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
                 valueDefinition.writeTransportBytesWithKey(index, item, cacheGetter, writer, context)
             }
         }
+    }
+
+    /** Get a property reference creator for collection [item] and [index] */
+    fun getItemPropertyRefCreator(index: Int, item: T): (AnyPropertyReference?) -> IsPropertyReference<Any, *, *> {
+        throw NotImplementedError()
     }
 
     override fun isPacked(context: CX?, encodedWireType: WireType) = when(this.valueDefinition.wireType) {

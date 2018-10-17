@@ -4,6 +4,8 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.objects.ObjectValues
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -28,7 +30,14 @@ class RequestsTest {
 
     @Test
     fun convert_to_ProtoBuf_and_back() {
-        checkProtoBufConversion(this.requests, Requests, { this.context })
+        checkProtoBufConversion(this.requests, Requests, { this.context }, { converted, original ->
+            converted.requests.size shouldBe original.requests.size
+
+            converted.requests.zip(original.requests).forEach {
+                @Suppress("UNCHECKED_CAST")
+                (it.first as TypedValue<RequestType, ObjectValues<*, *>>).value.toDataObject() shouldBe it.second
+            }
+        })
     }
 
     @Test

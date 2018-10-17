@@ -2,7 +2,6 @@ package maryk
 
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.AbstractValuesDataModel
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.objects.Values
@@ -66,7 +65,7 @@ fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, CX: IsPropertyContext> ch
 }
 
 /** Convert values with a values DataModel */
-fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext> checkProtoBufObjectValuesConversion(
+fun <DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext> checkProtoBufObjectValuesConversion(
     values: ObjectValues<DO, P>,
     dataModel: AbstractObjectDataModel<DO, P, CX, CX>,
     context: (() -> CX)? = null,

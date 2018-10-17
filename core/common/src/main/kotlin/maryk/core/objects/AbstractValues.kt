@@ -98,6 +98,18 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
 
         return value as T?
     }
+
+    /** Add to internal map with [index] and [value] */
+    internal fun addToMap(index: Int, value: Any) {
+        @Suppress("UNCHECKED_CAST")
+        (this.map as MutableMap<Int, Any>)[index] = value
+    }
+
+    /** Remove from internal map by [index] */
+    internal fun removeFromMap(index: Int): Any? {
+        @Suppress("UNCHECKED_CAST")
+        return (this.map as MutableMap<Int, Any>).remove(index)
+    }
 }
 
 

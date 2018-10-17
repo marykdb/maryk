@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.Option
+import maryk.Option.V1
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -67,6 +68,11 @@ internal class MultiTypeDefinitionTest {
         shouldThrow<InvalidValueException> {
             def.validateWithRef(newValue = TypedValue(Option.V1, "WRONG"))
         }
+    }
+
+    @Test
+    fun resolveReferenceByName() {
+        def.resolveReferenceByName("*V1") shouldBe def.getTypeRef(V1, null)
     }
 
     @Test

@@ -9,11 +9,8 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 class TypeReferenceTest {
-    private val typeReference = TypeReference(
-        type = V1,
-        multiTypeDefinition = TestMarykModel.properties.multi.definition,
-        parentReference = null
-    )
+    private val typeReference =
+        TestMarykModel.properties.multi.definition.getTypeRef(V1, null)
 
     @Test
     fun get_value_from_map() {

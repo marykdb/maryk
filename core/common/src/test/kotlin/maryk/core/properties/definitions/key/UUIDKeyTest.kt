@@ -7,6 +7,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.definitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
+import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -30,6 +31,24 @@ internal class UUIDKeyTest {
                 this.value with value
             )
         }
+    }
+
+    @Test
+    fun testConv() {
+        val msb = 1039590204813653973
+        val lsb = 8429492950547628920
+
+        val b = initByteArrayByHex("8e6d5dc885e4b7d5f4fb932d5a0d0378")
+
+        val keyDef = MarykModel.keyDefinitions[0] as UUIDKey
+
+        var i = 0
+        val uuid = keyDef.readStorageBytes(16) {
+            b[i++]
+        }
+
+        uuid.first shouldBe msb
+        uuid.second shouldBe lsb
     }
 
     @Test

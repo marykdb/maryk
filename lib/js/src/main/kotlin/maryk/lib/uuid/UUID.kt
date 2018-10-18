@@ -12,8 +12,6 @@ actual fun generateUUID(): Pair<Long, Long> {
     randomBytes[8] = randomBytes[8] and 0x3f  // clear variant
     randomBytes[8] = randomBytes[8] or 0x80.toByte()  // set to IETF variant
 
-    println(randomBytes[8])
-
     var msb = 0L
     var lsb = 0L
 

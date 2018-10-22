@@ -9,7 +9,7 @@ import maryk.core.properties.types.Key
 
 /** Response that object of [key] does not exist */
 data class DoesNotExist<DM: IsRootDataModel<*>>(
-    val key: Key<*>
+    val key: Key<DM>
 ) : IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     override val statusType = StatusType.DOES_NOT_EXIST
 

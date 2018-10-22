@@ -17,7 +17,7 @@ import maryk.core.query.changes.mapOfChangeDefinitions
 
 /** Successful add of given object with [key], [version] and added [changes] */
 data class AddSuccess<DM: IsRootDataModel<*>>(
-    val key: Key<*>,
+    val key: Key<DM>,
     val version: UInt64,
     val changes: List<IsChange>
 ) : IsAddResponseStatus<DM> {

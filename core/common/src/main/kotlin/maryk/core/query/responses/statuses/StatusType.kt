@@ -5,7 +5,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 
 /** Indexed type of changes */
 enum class StatusType(
-        override val index: Int
+    override val index: Int
 ): IndexedEnum<StatusType> {
     SUCCESS(1),
     ADD_SUCCESS(2),

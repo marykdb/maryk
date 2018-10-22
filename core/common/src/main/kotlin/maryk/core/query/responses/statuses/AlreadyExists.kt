@@ -9,7 +9,7 @@ import maryk.core.properties.types.Key
 
 /** Given object with [key] already exists */
 data class AlreadyExists<DM: IsRootDataModel<*>>(
-    val key: Key<*>
+    val key: Key<DM>
 ) : IsAddResponseStatus<DM> {
     override val statusType = StatusType.ALREADY_EXISTS
 

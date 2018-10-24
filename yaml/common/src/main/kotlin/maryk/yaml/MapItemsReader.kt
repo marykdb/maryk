@@ -98,9 +98,9 @@ internal class MapItemsReader<out P>(
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         this.stateWasSetOnRead = false
         this.currentReader = this
-        return this.selectReaderAndRead(true, tag, extraIndent, this::jsonTokenCreator).also {
-            return checkAndSetState(extraIndent == 0, tag, it)
-        }
+        val token = this.selectReaderAndRead(true, tag, extraIndent, this::jsonTokenCreator)
+
+        return checkAndSetState(extraIndent == 0, tag, token)
     }
 
     private fun jsonTokenCreator(value: String?, isPlainStringReader: Boolean, tag: TokenType?, extraIndent: Int): JsonToken {

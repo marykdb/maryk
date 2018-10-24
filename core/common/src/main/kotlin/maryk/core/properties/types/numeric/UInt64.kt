@@ -7,8 +7,8 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.random
 import maryk.lib.extensions.toHex
+import kotlin.random.Random
 
 /** Base class for 64 bit/8 byte unsigned integers */
 class UInt64 internal constructor(number: Long): UInt<Long>(number) {
@@ -60,7 +60,7 @@ class UInt64 internal constructor(number: Long): UInt<Long>(number) {
         override fun ofDouble(value: Double) = value.toLong().toUInt64()
         override fun ofInt(value: Int) = value.toLong().toUInt64()
         override fun ofLong(value: Long) = value.toUInt64()
-        override fun createRandom() = UInt64(Long.random())
+        override fun createRandom() = UInt64(Random.nextLong())
         override fun isOfType(value: Any) = value == UInt64
     }
 }

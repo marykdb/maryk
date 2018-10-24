@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.random
+import kotlin.random.Random
 
 /** Base class for 32 bit/4 byte unsigned integers */
 class UInt32 internal constructor(number: Int): UInt<Int>(number) {
@@ -33,7 +33,7 @@ class UInt32 internal constructor(number: Int): UInt<Int>(number) {
         override fun ofDouble(value: Double) = value.toInt().toUInt32()
         override fun ofInt(value: Int) = value.toUInt32()
         override fun ofLong(value: Long) = value.toInt().toUInt32()
-        override fun createRandom() = UInt32(Int.random())
+        override fun createRandom() = UInt32(Random.nextInt())
         override fun isOfType(value: Any) = value == UInt32
     }
 }

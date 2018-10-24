@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.initFloatFromTransport
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeTransportBytes
 import maryk.core.protobuf.WireType
-import maryk.lib.extensions.random
+import kotlin.random.Random
 
 object Float32 : NumberDescriptor<Float>(
     size = 4,
@@ -21,6 +21,6 @@ object Float32 : NumberDescriptor<Float>(
     override fun ofDouble(value: Double) = value.toFloat()
     override fun ofInt(value: Int) = value.toFloat()
     override fun ofLong(value: Long) = value.toFloat()
-    override fun createRandom() = Float.random()
+    override fun createRandom() = Random.nextFloat()
     override fun isOfType(value: Any) = value is Float
 }

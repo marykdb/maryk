@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.protobuf.WireType
-import maryk.lib.extensions.random
+import kotlin.random.Random
 
 object SInt16 : NumberDescriptor<Short>(
     size = 2,
@@ -27,6 +27,6 @@ object SInt16 : NumberDescriptor<Short>(
     override fun ofDouble(value: Double) = value.toShort()
     override fun ofInt(value: Int) = value.toShort()
     override fun ofLong(value: Long) = value.toShort()
-    override fun createRandom() = Short.random()
+    override fun createRandom() = Random.nextInt(32767).toShort()
     override fun isOfType(value: Any) = value is Short
 }

@@ -6,7 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
-import maryk.lib.extensions.randomBytes
+import kotlin.random.Random
 
 /** Definition for a bytes array with fixed length */
 data class FixedBytesDefinition(
@@ -28,7 +28,7 @@ data class FixedBytesDefinition(
     override val propertyDefinitionType = PropertyDefinitionType.FixedBytes
     override val wireType = WireType.LENGTH_DELIMITED
 
-    override fun createRandom() = Bytes(randomBytes(this.byteSize))
+    override fun createRandom() = Bytes(Random.nextBytes(this.byteSize))
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(byteSize, reader)
 

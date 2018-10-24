@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.protobuf.WireType
-import maryk.lib.extensions.random
+import kotlin.random.Random
 
 object SInt32 : NumberDescriptor<Int>(
     size = 4,
@@ -27,6 +27,6 @@ object SInt32 : NumberDescriptor<Int>(
     override fun ofDouble(value: Double) = value.toInt()
     override fun ofInt(value: Int) = value
     override fun ofLong(value: Long) = value.toInt()
-    override fun createRandom() = Int.random()
+    override fun createRandom() = Random.nextInt()
     override fun isOfType(value: Any) = value is Int
 }

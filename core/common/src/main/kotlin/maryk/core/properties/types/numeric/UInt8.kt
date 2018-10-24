@@ -6,7 +6,6 @@ import maryk.core.extensions.bytes.initByteByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.random
 
 /** Base class for 8 bit/1 byte unsigned integers */
 class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
@@ -33,7 +32,7 @@ class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
         override fun ofDouble(value: Double) = value.toInt().toUInt8()
         override fun ofInt(value: Int) = value.toUInt8()
         override fun ofLong(value: Long) = value.toInt().toUInt8()
-        override fun createRandom() = UInt8(Byte.random())
+        override fun createRandom() = UInt8(SInt8.createRandom())
         override fun isOfType(value: Any) = value == UInt8
     }
 }

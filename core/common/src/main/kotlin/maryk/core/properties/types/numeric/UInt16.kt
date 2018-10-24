@@ -6,7 +6,6 @@ import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.random
 
 /** Base class for 16 bit/2 byte unsigned integers */
 class UInt16 internal constructor(number: Short): UInt<Short>(number) {
@@ -33,7 +32,7 @@ class UInt16 internal constructor(number: Short): UInt<Short>(number) {
         override fun ofDouble(value: Double) = value.toInt().toUInt16()
         override fun ofInt(value: Int) = value.toUInt16()
         override fun ofLong(value: Long) = value.toInt().toUInt16()
-        override fun createRandom() = UInt16(Short.random())
+        override fun createRandom() = UInt16(SInt16.createRandom())
         override fun isOfType(value: Any) = value == UInt16
     }
 }

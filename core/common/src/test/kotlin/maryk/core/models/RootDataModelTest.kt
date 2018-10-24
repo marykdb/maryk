@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.models
 
 import maryk.EmbeddedMarykObject
@@ -26,7 +28,6 @@ import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.SInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlReaders
@@ -43,7 +44,7 @@ internal class RootDataModelTest {
             TestMarykModel(
                 string = "name",
                 int = 5123123,
-                uint = 555.toUInt32(),
+                uint = 555u,
                 double = 6.33,
                 bool = true,
                 enum = Option.V3,

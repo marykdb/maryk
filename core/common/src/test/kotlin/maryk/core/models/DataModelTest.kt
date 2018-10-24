@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.models
 
 import maryk.EmbeddedMarykModel
@@ -8,7 +10,6 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -26,7 +27,7 @@ import kotlin.test.Test
 val testMarykModelObject = TestMarykModel(
     string = "haas",
     int = 4,
-    uint = 53.toUInt32(),
+    uint = 53u,
     double = 3.5555,
     bool = true,
     dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
@@ -37,7 +38,7 @@ val testExtendedMarykModelObject = TestMarykModel(
     int = 4,
     double = 3.555,
     dateTime = DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-    uint = 32.toUInt32(),
+    uint = 32u,
     bool = true,
     list = listOf(34, 2352, 3423, 766),
     set = setOf(
@@ -115,7 +116,7 @@ internal class DataModelTest {
                 TestMarykModel(
                     string = "haas",
                     int = 9,
-                    uint = 53.toUInt32(),
+                    uint = 53u,
                     double = 3.5555,
                     bool = true,
                     dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
@@ -257,7 +258,7 @@ internal class DataModelTest {
             mapNonNulls(
                 string with "hay",
                 int with 4,
-                uint with 32.toUInt32(),
+                uint with 32u,
                 double with 3.555,
                 dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
                 bool with true,

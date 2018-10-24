@@ -18,4 +18,5 @@ abstract class NumberDescriptor<T: Comparable<T>> internal constructor(
     internal abstract fun ofInt(value: Int): T
     internal abstract fun ofLong(value: Long): T
     internal abstract fun isOfType(value: Any): Boolean
+    internal abstract fun toDouble(value: T): Double
 }

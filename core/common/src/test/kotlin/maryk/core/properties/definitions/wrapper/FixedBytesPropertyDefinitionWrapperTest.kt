@@ -7,10 +7,12 @@ import maryk.core.properties.types.numeric.UInt32
 import kotlin.test.Test
 
 class FixedBytesPropertyDefinitionWrapperTest {
+    private val type = UInt32
+
     private val def = FixedBytesPropertyDefinitionWrapper(
         index = 1,
         name = "wrapper",
-        definition = NumberDefinition(type = UInt32),
+        definition = NumberDefinition(type = type),
         getter = { _: Any -> null }
     )
 

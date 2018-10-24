@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk
 import maryk.core.models.ObjectDataModel
 import maryk.core.objects.ObjectValues
@@ -29,7 +31,7 @@ import maryk.lib.time.Time
 data class TestMarykObject(
     val string: String = "haha",
     val int: Int,
-    val uint: UInt32,
+    val uint: UInt,
     val double: Double,
     val dateTime: DateTime,
     val bool: Boolean? = null,

@@ -26,7 +26,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.yaml.readNamedIndexField
@@ -49,10 +48,11 @@ private data class MultiTypeDescriptor(
     val definition: IsSubDefinition<out Any, ContainsDefinitionsContext>
 ) {
     private object Properties: ObjectPropertyDefinitions<MultiTypeDescriptor>() {
+        @ExperimentalUnsignedTypes
         val index = add(1, "index",
             NumberDefinition(type = UInt32),
             MultiTypeDescriptor::index,
-            toSerializable = { value, _ -> value?.toUInt32() },
+            toSerializable = { value, _ -> value?.toUInt() },
             fromSerializable = { it?.toInt() }
         )
         val name = add(2, "name", StringDefinition(), MultiTypeDescriptor::name)
@@ -85,6 +85,7 @@ private data class MultiTypeDescriptor(
                 this.map(context as? RequestContext) {
                     val valueMap: MutableMap<Int, Any?> = mutableMapOf()
 
+                    @Suppress("EXPERIMENTAL_API_USAGE")
                     reader.readNamedIndexField(valueMap, name, index)
                     valueMap += definition withNotNull definition.readJson(reader, context as ContainsDefinitionsContext?)
 

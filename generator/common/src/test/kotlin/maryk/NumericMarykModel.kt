@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
+
 package maryk
 
 import maryk.core.models.RootDataModel
@@ -14,7 +16,6 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.UInt8
 import maryk.core.properties.types.numeric.toUInt16
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.properties.types.numeric.toUInt8
 
@@ -69,7 +70,7 @@ object NumericMarykModel: RootDataModel<NumericMarykModel, NumericMarykModel.Pro
             index = 7, name = "uInt32",
             definition = NumberDefinition(
                 type = UInt32,
-                default = 42.toUInt32()
+                default = 42u
             )
         )
         val uInt64 = add(
@@ -102,9 +103,9 @@ object NumericMarykModel: RootDataModel<NumericMarykModel, NumericMarykModel.Pro
         sInt64: Long = 4123123344572L,
         uInt8: UInt8 = 4.toUInt8(),
         uInt16: UInt16 = 42.toUInt16(),
-        uInt32: UInt32 = 42.toUInt32(),
+        uInt32: UInt = 42u,
         uInt64: UInt64 = 4123123344572L.toUInt64(),
-        float32: Float = 42.345F.toFloat(),
+        float32: Float = 42.345F,
         float64: Double = 2345762.3123
     ) = map {
         mapNonNulls(

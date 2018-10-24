@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_OVERRIDE", "EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
@@ -6,9 +8,7 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.ChangesResponse
@@ -23,7 +23,7 @@ fun <DM: IsRootDataModel<*>> DM.scanChanges(
     startKey: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
-    limit: UInt32 = 100.toUInt32(),
+    limit: UInt = 100u,
     fromVersion: UInt64,
     toVersion: UInt64? = null,
     select: RootPropRefGraph<DM>? = null,
@@ -44,7 +44,7 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
     override val select: RootPropRefGraph<DM>? = null,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
-    override val limit: UInt32 = 100.toUInt32(),
+    override val limit: UInt = 100u,
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
     override val filterSoftDeleted: Boolean = true

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query
 
 import maryk.Option
@@ -5,7 +7,6 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.lib.time.DateTime
 import maryk.test.shouldBe
@@ -15,7 +16,7 @@ class ValuesWithMetaDataTest {
     private val value = TestMarykModel(
         string = "name",
         int = 5123123,
-        uint = 555.toUInt32(),
+        uint = 555u,
         double = 6.33,
         bool = true,
         enum = Option.V3,

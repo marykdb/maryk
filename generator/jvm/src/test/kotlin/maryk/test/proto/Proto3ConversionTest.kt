@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.test.proto
 
 import com.google.protobuf.ByteString

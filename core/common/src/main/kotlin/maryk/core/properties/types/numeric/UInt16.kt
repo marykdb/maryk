@@ -30,6 +30,7 @@ class UInt16 internal constructor(number: Short): UnsignedInt<Short>(number) {
         }
         override fun ofString(value: String) = UInt16((value.toInt() + Short.MIN_VALUE).toShort())
         override fun ofDouble(value: Double) = value.toInt().toUInt16()
+        override fun toDouble(value: UInt16) = value.toLong().toDouble()
         override fun ofInt(value: Int) = value.toUInt16()
         override fun ofLong(value: Long) = value.toInt().toUInt16()
         override fun createRandom() = UInt16(SInt16.createRandom())

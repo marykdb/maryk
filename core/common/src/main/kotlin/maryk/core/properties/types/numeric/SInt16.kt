@@ -25,6 +25,7 @@ object SInt16 : NumberDescriptor<Short>(
     }
     override fun ofString(value: String) = value.toShort()
     override fun ofDouble(value: Double) = value.toShort()
+    override fun toDouble(value: Short) = value.toDouble()
     override fun ofInt(value: Int) = value.toShort()
     override fun ofLong(value: Long) = value.toShort()
     override fun createRandom() = Random.nextInt(32767).toShort()

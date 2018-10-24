@@ -5,7 +5,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.ascending
@@ -21,12 +20,13 @@ internal val scanRequest = SimpleMarykModel.run {
     )
 }
 
+@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 internal val scanMaxRequest = SimpleMarykModel.run {
     scan(
         startKey = key1,
         filter = Exists(ref { value }),
         order = ref { value }.ascending(),
-        limit = 200.toUInt32(),
+        limit = 200u,
         filterSoftDeleted = true,
         toVersion = 2345L.toUInt64(),
         select = props {

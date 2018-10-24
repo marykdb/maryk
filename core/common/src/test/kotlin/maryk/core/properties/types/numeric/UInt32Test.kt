@@ -1,3 +1,4 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
 package maryk.core.properties.types.numeric
 
 import maryk.lib.extensions.toHex
@@ -7,23 +8,11 @@ import kotlin.test.Test
 
 internal class UInt32Test {
 
-    private val uInt32values = arrayOf(UInt32.MIN_VALUE, UInt32.MAX_VALUE, 4242342349.toUInt32())
+    private val uInt32values = arrayOf(UInt32.MIN_VALUE, UInt32.MAX_VALUE, 4242342349u)
 
     @Test
     fun testRandom() {
         UInt32.createRandom()
-    }
-
-    @Test
-    fun testHashCode() {
-        UInt32.MAX_VALUE.hashCode() shouldBe Int.MAX_VALUE.hashCode()
-    }
-
-    @Test
-    fun testCompare() {
-        UInt32.MAX_VALUE.compareTo(UInt32.MIN_VALUE) shouldBe 1
-        34455.toUInt32().compareTo(34455.toUInt32()) shouldBe 0
-        14444.toUInt32().compareTo(34455.toUInt32()) shouldBe -1
     }
 
     @Test
@@ -76,6 +65,6 @@ internal class UInt32Test {
 
     @Test
     fun test_int_conversion() {
-        12345678.toUInt32().toInt() shouldBe 12345678
+        12345678u.toInt() shouldBe 12345678
     }
 }

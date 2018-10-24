@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
@@ -6,9 +8,7 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.VersionedChangesResponse
@@ -23,10 +23,10 @@ fun <DM: IsRootDataModel<*>> DM.scanVersionedChanges(
     startKey: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
-    limit: UInt32 = 100.toUInt32(),
+    limit: UInt = 100u,
     fromVersion: UInt64,
     toVersion: UInt64? = null,
-    maxVersions: UInt32 = 1000.toUInt32(),
+    maxVersions: UInt = 1000u,
     select: RootPropRefGraph<DM>? = null,
     filterSoftDeleted: Boolean = true
 ) =
@@ -38,15 +38,16 @@ fun <DM: IsRootDataModel<*>> DM.scanVersionedChanges(
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
+@Suppress("EXPERIMENTAL_OVERRIDE")
 data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
-    override val limit: UInt32 = 100.toUInt32(),
+    override val limit: UInt = 100u,
     override val fromVersion: UInt64,
     override val toVersion: UInt64? = null,
-    override val maxVersions: UInt32 = 1000.toUInt32(),
+    override val maxVersions: UInt = 1000u,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DM, VersionedChangesResponse<*>>, IsVersionedChangesRequest<DM, VersionedChangesResponse<*>> {

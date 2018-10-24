@@ -152,7 +152,7 @@ fun <T: Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
             value as T
         }
         value is Double -> type.ofDouble(value).also {
-            if (it != value) {
+            if (type.toDouble(it) != value) {
                 throw ParseException("$value not of expected type")
             }
         }

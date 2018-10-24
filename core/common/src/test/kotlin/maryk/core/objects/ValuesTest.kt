@@ -1,9 +1,10 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.objects
 
 import maryk.EmbeddedMarykModel
 import maryk.Option
 import maryk.TestMarykModel
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.shouldBe
@@ -15,7 +16,7 @@ class ValuesTest {
         val original = TestMarykModel(
             string = "hello world",
             int = 5,
-            uint = 3.toUInt32(),
+            uint = 3u,
             double = 2.3,
             dateTime = DateTime(2018, 7, 18)
         )
@@ -37,7 +38,7 @@ class ValuesTest {
         val values = TestMarykModel(
             string = "hello world",
             int = 5,
-            uint = 3.toUInt32(),
+            uint = 3u,
             double = 2.3,
             dateTime = DateTime(2018, 7, 18),
             listOfString = listOf(

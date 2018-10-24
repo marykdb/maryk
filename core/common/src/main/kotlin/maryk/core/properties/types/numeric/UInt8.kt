@@ -30,6 +30,7 @@ class UInt8 internal constructor(number: Byte): UnsignedInt<Byte>(number) {
         }
         override fun ofString(value: String) = UInt8((value.toShort() + Byte.MIN_VALUE).toByte())
         override fun ofDouble(value: Double) = value.toInt().toUInt8()
+        override fun toDouble(value: UInt8) = value.toLong().toDouble()
         override fun ofInt(value: Int) = value.toUInt8()
         override fun ofLong(value: Long) = value.toInt().toUInt8()
         override fun createRandom() = UInt8(SInt8.createRandom())

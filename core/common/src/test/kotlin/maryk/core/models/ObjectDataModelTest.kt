@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.models
 
 import maryk.EmbeddedMarykObject
@@ -6,7 +8,6 @@ import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -24,7 +25,7 @@ import kotlin.test.Test
 private val testObject = TestMarykObject(
     string = "haas",
     int = 4,
-    uint = 53.toUInt32(),
+    uint = 53u,
     double = 3.5555,
     bool = true,
     dateTime = DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
@@ -35,7 +36,7 @@ private val testExtendedObject = TestMarykObject(
     int = 4,
     double = 3.555,
     dateTime = DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
-    uint = 32.toUInt32(),
+    uint = 32u,
     bool = true,
     list = listOf(34, 2352, 3423, 766),
     set = setOf(
@@ -143,7 +144,7 @@ internal class ObjectDataModelTest {
     fun get_properties_by_index() {
         TestMarykObject.properties.getPropertyGetter(1)!!.invoke(testExtendedObject) shouldBe "hay"
         TestMarykObject.properties.getPropertyGetter(2)!!.invoke(testExtendedObject) shouldBe 4
-        TestMarykObject.properties.getPropertyGetter(3)!!.invoke(testExtendedObject) shouldBe 32.toUInt32()
+        TestMarykObject.properties.getPropertyGetter(3)!!.invoke(testExtendedObject) shouldBe 32u
         TestMarykObject.properties.getPropertyGetter(4)!!.invoke(testExtendedObject) shouldBe 3.555
         TestMarykObject.properties.getPropertyGetter(5)!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
         TestMarykObject.properties.getPropertyGetter(6)!!.invoke(testExtendedObject) shouldBe true

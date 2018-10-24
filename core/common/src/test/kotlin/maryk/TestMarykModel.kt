@@ -28,6 +28,7 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
+@Suppress("EXPERIMENTAL_API_USAGE")
 object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     name = "TestMarykModel",
     keyDefinitions = definitions(
@@ -175,7 +176,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     operator fun invoke(
         string: String = "haha",
         int: Int,
-        uint: UInt32,
+        uint: UInt,
         double: Double,
         dateTime: DateTime,
         bool: Boolean? = null,

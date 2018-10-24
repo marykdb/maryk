@@ -58,6 +58,7 @@ class UInt64 internal constructor(number: Long): UnsignedInt<Long>(number) {
             }
         }
         override fun ofDouble(value: Double) = value.toLong().toUInt64()
+        override fun toDouble(value: UInt64) = value.toLong().toDouble()
         override fun ofInt(value: Int) = value.toLong().toUInt64()
         override fun ofLong(value: Long) = value.toUInt64()
         override fun createRandom() = UInt64(Random.nextLong())

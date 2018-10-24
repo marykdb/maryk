@@ -25,6 +25,7 @@ object SInt64 : NumberDescriptor<Long>(
     }
     override fun ofString(value: String) = value.toLong()
     override fun ofDouble(value: Double) = value.toLong()
+    override fun toDouble(value: Long) = value.toDouble()
     override fun ofInt(value: Int) = value.toLong()
     override fun ofLong(value: Long) = value
     override fun createRandom() = Random.nextLong()

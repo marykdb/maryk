@@ -19,6 +19,7 @@ object Float64 : NumberDescriptor<Double>(
     override fun writeTransportBytes(value: Double, writer: (byte: Byte) -> Unit) = value.writeTransportableBytes(writer)
     override fun ofString(value: String) = value.toDouble()
     override fun ofDouble(value: Double) = value
+    override fun toDouble(value: Double) = value
     override fun ofInt(value: Int) = value.toDouble()
     override fun ofLong(value: Long) = value.toDouble()
     override fun createRandom() = Random.nextDouble()

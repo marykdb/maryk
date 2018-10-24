@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
+
 package maryk
 
 import maryk.core.models.RootDataModel
@@ -33,7 +35,6 @@ import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -83,9 +84,9 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 final = true,
                 unique = true,
                 type = UInt32,
-                minValue = 12.toUInt32(),
-                maxValue = 34.toUInt32(),
-                default = 42.toUInt32(),
+                minValue = 12u,
+                maxValue = 34u,
+                default = 42u,
                 random = true
             )
         )
@@ -336,7 +337,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
 
     operator fun invoke(
         string: String = "string",
-        number: UInt32 = 42.toUInt32(),
+        number: UInt = 42u,
         boolean: Boolean = true,
         enum: MarykEnum = MarykEnum.O1,
         date: Date = Date(2018, 5, 2),

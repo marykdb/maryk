@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.requests
 
 import maryk.SimpleMarykModel
@@ -5,7 +7,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
@@ -30,7 +31,7 @@ internal val getVersionedChangesMaxRequest = SimpleMarykModel.run {
         order = ref { value }.descending(),
         fromVersion = 1234L.toUInt64(),
         toVersion = 12345L.toUInt64(),
-        maxVersions = 5.toUInt32(),
+        maxVersions = 5u,
         filterSoftDeleted = true,
         select = SimpleMarykModel.props {
             RootPropRefGraph<SimpleMarykModel>(

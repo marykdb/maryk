@@ -22,7 +22,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Inject
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
@@ -118,11 +117,12 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     companion object {
+        @Suppress("EXPERIMENTAL_API_USAGE")
         private fun <DO:Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) =
             definitions.add(1, "index",
                 NumberDefinition(type = UInt32),
                 getter,
-                toSerializable = { value, _ -> value?.toUInt32() },
+                toSerializable = { value, _ -> value?.toUInt() },
                 fromSerializable = { it?.toInt() }
             )
 
@@ -181,6 +181,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             }
         }
 
+        @Suppress("EXPERIMENTAL_API_USAGE")
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {

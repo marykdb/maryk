@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 
 /** Interface to define something can be en/decoded to fixed byte array */
 interface IsFixedBytesEncodable<T: Any> {
@@ -23,11 +22,12 @@ interface IsFixedBytesEncodable<T: Any> {
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     companion object {
+        @Suppress("EXPERIMENTAL_API_USAGE")
         internal fun <DO:Any> addByteSize(index: Int, definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) {
             definitions.add(index, "byteSize",
                 NumberDefinition(type = UInt32),
                 getter,
-                toSerializable = { value, _ -> value?.toUInt32() },
+                toSerializable = { value, _ -> value?.toUInt() },
                 fromSerializable = { it?.toInt() }
             )
         }

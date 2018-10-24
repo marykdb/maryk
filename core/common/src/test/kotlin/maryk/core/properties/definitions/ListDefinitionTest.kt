@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
+
 package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
@@ -11,7 +13,6 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
@@ -132,10 +133,10 @@ internal class ListDefinitionTest {
     @Test
     fun convert_varInt_values_to_packed_transport_bytes_and_back() {
         val value = listOf(
-            76523.toUInt32(),
-            2423.toUInt32(),
-            25423.toUInt32(),
-            42.toUInt32()
+            76523u,
+            2423u,
+            25423u,
+            42u
         )
         val asHex = "1209ebd504f712cfc6012a"
 

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.models
 
 import maryk.EmbeddedMarykObject
@@ -5,7 +7,6 @@ import maryk.Option
 import maryk.TestMarykObject
 import maryk.TestValueObject
 import maryk.core.properties.types.TypedValue
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -18,22 +19,11 @@ import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
-private val testObject = TestMarykObject.map {
-    mapNonNulls(
-        string with "haas",
-        int with 4,
-        uint with 53.toUInt32(),
-        double with 3.5555,
-        bool with true,
-        dateTime with DateTime(year = 2017, month = 12, day = 5, hour = 12, minute = 40)
-    )
-}
-
 private val testExtendedObject = TestMarykObject.map {
     mapNonNulls(
         string with "hay",
         int with 4,
-        uint with 32.toUInt32(),
+        uint with 32u,
         double with 3.555,
         dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
         bool with true,

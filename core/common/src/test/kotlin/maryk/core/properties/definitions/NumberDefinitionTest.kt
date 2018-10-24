@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
+
 package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion
@@ -7,7 +9,6 @@ import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.lib.exceptions.ParseException
@@ -38,9 +39,9 @@ internal class NumberDefinitionTest {
     )
 
     private val intArray = arrayOf(
-        UInt32.MIN_VALUE,
-        UInt32.MAX_VALUE,
-        32373957.toUInt32()
+        UInt.MIN_VALUE,
+        UInt.MAX_VALUE,
+        32373957u
     )
 
     private val floatArray = floatArrayOf(
@@ -163,8 +164,8 @@ internal class NumberDefinitionTest {
 
     @Test
     fun convert_native_type() {
-        def.fromNativeType(356725.000) shouldBe 356725.toUInt32()
-        def.fromNativeType(38762873) shouldBe 38762873.toUInt32()
+        def.fromNativeType(356725.000) shouldBe 356725u
+        def.fromNativeType(38762873) shouldBe 38762873u
 
         shouldThrow<ParseException> {
             def.fromNativeType(Long.MAX_VALUE.toDouble())

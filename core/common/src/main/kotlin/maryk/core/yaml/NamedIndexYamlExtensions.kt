@@ -5,8 +5,6 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
-import maryk.core.properties.types.numeric.UInt32
-import maryk.core.properties.types.numeric.toUInt32
 import maryk.json.IllegalJsonOperation
 import maryk.json.JsonToken
 import maryk.yaml.IsYamlReader
@@ -26,16 +24,17 @@ internal fun YamlWriter.writeNamedIndexField(name: String, index: Int) {
  * Read a complex named index field from yaml and write values
  * to [valueMap] using [nameDescriptor] and [indexDescriptor]
  */
+@ExperimentalUnsignedTypes
 internal fun <DO: Any> IsYamlReader.readNamedIndexField(
     valueMap: MutableMap<Int, Any?>,
     nameDescriptor: PropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,
-    indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt32, *, IsPropertyContext, NumberDefinition<UInt32>, DO>
+    indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt, *, IsPropertyContext, NumberDefinition<UInt>, DO>
 ) {
     if (currentToken != JsonToken.StartComplexFieldName || nextToken() !is JsonToken.StartObject) {
         throw IllegalJsonOperation("Expected named index like '? [0: name]'")
     }
 
-    val index = (nextToken() as? JsonToken.FieldName)?.value?.toInt()?.toUInt32()
+    val index = (nextToken() as? JsonToken.FieldName)?.value?.toInt()?.toUInt()
             ?: throw IllegalJsonOperation("Expected index integer as field name like '? 0: name'")
     valueMap[indexDescriptor.index] = index
 

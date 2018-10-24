@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.core.properties.types.numeric
 
 import maryk.lib.extensions.toHex
@@ -6,23 +8,11 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UInt8Test {
-    private val uInt8values = arrayOf(UInt8.MIN_VALUE, UInt8.MAX_VALUE, 89.toUInt8(), 127.toByte().toUInt8())
+    private val uInt8values = arrayOf(UInt8.MIN_VALUE, UInt8.MAX_VALUE, 89.toUByte(), 127.toUByte())
 
     @Test
     fun testRandom() {
         UInt8.createRandom()
-    }
-
-    @Test
-    fun testHashCode() {
-        UInt8.MAX_VALUE.hashCode() shouldBe Byte.MAX_VALUE.hashCode()
-    }
-
-    @Test
-    fun testCompare() {
-        UInt8.MAX_VALUE.compareTo(UInt8.MIN_VALUE) shouldBe 1
-        3.toUInt8().compareTo(3.toUInt8()) shouldBe 0
-        1.toUInt8().compareTo(3.toUInt8()) shouldBe -1
     }
 
     @Test
@@ -74,7 +64,7 @@ internal class UInt8Test {
     }
 
     @Test
-    fun test_int_conversion() {
-        12.toUInt8().toInt() shouldBe 12
+    fun testIntConversion() {
+        12.toUByte().toInt() shouldBe 12
     }
 }

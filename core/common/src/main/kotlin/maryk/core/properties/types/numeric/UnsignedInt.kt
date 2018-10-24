@@ -9,7 +9,7 @@ abstract class UnsignedInt<T: Number> internal constructor(internal val number: 
             is Double -> other % 1 == 0.0 && this.toLong() == other.toLong()
             is Float -> other % 1 == 0.0F && this.toLong() == other.toLong()
             is Int, is Short, is Byte, is Long -> this.toLong() == other
-            is UInt8 -> this.toLong() == other.toLong()
+            is UByte -> this.toLong() == other.toLong()
             is UInt16 -> this.toLong() == other.toLong()
             is UInt -> this.toLong() == other.toLong()
             is ULong -> this.toLong() == other.toLong()

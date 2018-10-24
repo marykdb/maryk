@@ -24,7 +24,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.UInt16
-import maryk.core.properties.types.numeric.UInt8
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
@@ -42,9 +41,8 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         val enumDefinition = definition as EnumDefinition<*>
         "${enumDefinition.enum.name}.${value.name}"
     }
-    is UInt8 -> {
-        addImport("maryk.core.properties.types.numeric.toUInt8")
-        "${value.toInt()}.toUInt8()"
+    is UByte -> {
+        "${value.toInt()}.toUByte()"
     }
     is UInt16 -> {
         addImport("maryk.core.properties.types.numeric.toUInt16")

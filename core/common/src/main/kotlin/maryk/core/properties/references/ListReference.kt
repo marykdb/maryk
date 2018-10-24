@@ -21,8 +21,7 @@ open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
-        val index = initIntByVar(reader)
-        return when(index) {
+        return when(val index = initIntByVar(reader)) {
             0 -> ListItemReference(initIntByVar(reader), propertyDefinition.definition, this)
             else -> throw ParseException("Unknown List reference type $index")
         }

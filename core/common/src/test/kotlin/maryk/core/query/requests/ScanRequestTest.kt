@@ -5,7 +5,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.ascending
 import maryk.core.query.filters.Exists
@@ -28,7 +27,7 @@ internal val scanMaxRequest = SimpleMarykModel.run {
         order = ref { value }.ascending(),
         limit = 200u,
         filterSoftDeleted = true,
-        toVersion = 2345L.toUInt64(),
+        toVersion = 2345uL,
         select = props {
             RootPropRefGraph<SimpleMarykModel>(
                 value
@@ -43,19 +42,19 @@ class ScanSelectRequestTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(scanRequest, ScanRequest, { this.context })
         checkProtoBufConversion(scanMaxRequest, ScanRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(scanRequest, ScanRequest, { this.context })
         checkJsonConversion(scanMaxRequest, ScanRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(scanRequest, ScanRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ

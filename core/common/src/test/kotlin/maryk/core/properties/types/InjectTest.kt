@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.properties.types
 
 import maryk.EmbeddedMarykModel
@@ -9,7 +11,6 @@ import maryk.core.models.asValues
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
 import maryk.core.properties.exceptions.InjectException
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -44,8 +45,8 @@ class InjectTest {
                 ValuesWithMetaData(
                     key = key,
                     values = testExtendedMarykModelObject,
-                    firstVersion = 1234L.toUInt64(),
-                    lastVersion = 3456L.toUInt64(),
+                    firstVersion = 1234uL,
+                    lastVersion = 3456uL,
                     isDeleted = false
                 )
             )

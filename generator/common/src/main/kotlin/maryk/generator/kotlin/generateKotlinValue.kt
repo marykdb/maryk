@@ -24,7 +24,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.UInt16
-import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.UInt8
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -54,9 +53,8 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
     is UInt -> {
         "${value.toLong()}u"
     }
-    is UInt64 -> {
-        addImport("maryk.core.properties.types.numeric.toUInt64")
-        "${value.toLong()}.toUInt64()"
+    is ULong -> {
+        "${value.toLong()}uL"
     }
     is Time -> {
         when {

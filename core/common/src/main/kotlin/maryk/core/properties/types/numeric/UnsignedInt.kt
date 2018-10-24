@@ -12,7 +12,7 @@ abstract class UnsignedInt<T: Number> internal constructor(internal val number: 
             is UInt8 -> this.toLong() == other.toLong()
             is UInt16 -> this.toLong() == other.toLong()
             is UInt -> this.toLong() == other.toLong()
-            is UInt64 -> this.toLong() == other.toLong()
+            is ULong -> this.toLong() == other.toLong()
             else -> false
         }
 

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.properties.types.numeric
 
 import maryk.lib.extensions.toHex
@@ -9,8 +11,8 @@ internal class UInt64Test {
     private val uInt64values = arrayOf(
         UInt64.MIN_VALUE,
         UInt64.MAX_VALUE,
-        6267862346434742349L.toUInt64(),
-        0L.toUInt64()
+        6267862346434742349uL,
+        0uL
     )
 
     @Test
@@ -19,24 +21,12 @@ internal class UInt64Test {
     }
 
     @Test
-    fun testHashCode() {
-        UInt64.MAX_VALUE.hashCode() shouldBe Long.MAX_VALUE.hashCode()
-    }
-
-    @Test
-    fun testCompare() {
-        UInt64.MAX_VALUE.compareTo(UInt64.MIN_VALUE) shouldBe 1
-        34455666666666.toUInt64().compareTo(34455666666666.toUInt64()) shouldBe 0
-        14444666666666.toUInt64().compareTo(34455666666666.toUInt64()) shouldBe -1
-    }
-
-    @Test
     fun testStringConversion() {
         UInt64.MIN_VALUE.toString() shouldBe "0"
-        UInt64.MAX_VALUE.toString() shouldBe "0xffffffffffffffff"
-        Long.MAX_VALUE.toUInt64().toString() shouldBe "9223372036854775807"
+        UInt64.MAX_VALUE.toString() shouldBe "18446744073709551615"
+        Long.MAX_VALUE.toULong().toString() shouldBe "9223372036854775807"
 
-        UInt64.ofString("0xf000000000000000").toString() shouldBe "0xf000000000000000"
+        UInt64.ofString("17293822569102704640").toString() shouldBe "17293822569102704640"
 
         for (it in uInt64values) {
             UInt64.ofString(it.toString()) shouldBe it
@@ -82,7 +72,7 @@ internal class UInt64Test {
     }
 
     @Test
-    fun test_int_conversion() {
-        12345678L.toUInt64().toInt() shouldBe 12345678
+    fun testIntConversion() {
+        12345678L.toULong().toInt() shouldBe 12345678
     }
 }

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.properties.types
 
 import maryk.SimpleMarykModel
@@ -6,7 +8,6 @@ import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
@@ -29,7 +30,7 @@ class InjectInRequestTest {
             keys injectWith Inject("keysToInject", GetRequest.ref { keys }),
             filter with Exists(SimpleMarykModel.ref { value }),
             order with SimpleMarykModel.ref { value }.descending(),
-            toVersion with 333L.toUInt64(),
+            toVersion with 333uL,
             filterSoftDeleted with true,
             select with SimpleMarykModel.props {
                 RootPropRefGraph<SimpleMarykModel>(

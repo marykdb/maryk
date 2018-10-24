@@ -11,8 +11,8 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
-import maryk.core.query.RequestContext
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
 
 /** Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues] */
 data class SetValueChanges<T: Any> internal constructor(

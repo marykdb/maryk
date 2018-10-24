@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS", "unused")
 
 package maryk.core.query.requests
 
@@ -8,7 +8,6 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.ValuesResponse
@@ -25,7 +24,7 @@ fun <DM: IsRootDataModel<*>> DM.scan(
     filter: IsFilter? = null,
     order: Order? = null,
     limit: UInt = 100u,
-    toVersion: UInt64? = null,
+    toVersion: ULong? = null,
     filterSoftDeleted: Boolean = true
 ) =
     ScanRequest(this, startKey, select, filter, order, limit, toVersion, filterSoftDeleted)
@@ -44,7 +43,7 @@ data class ScanRequest<DM: IsRootDataModel<*>> internal constructor(
     override val filter: IsFilter? = null,
     override val order: Order? = null,
     override val limit: UInt = 100u,
-    override val toVersion: UInt64? = null,
+    override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsScanRequest<DM, ValuesResponse<*, *>> {
     override val requestType = RequestType.Scan

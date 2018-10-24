@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS", "unused")
 
 package maryk.core.query.requests
 
@@ -8,7 +8,6 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.VersionedChangesResponse
@@ -24,8 +23,8 @@ fun <DM: IsRootDataModel<*>> DM.scanVersionedChanges(
     filter: IsFilter? = null,
     order: Order? = null,
     limit: UInt = 100u,
-    fromVersion: UInt64,
-    toVersion: UInt64? = null,
+    fromVersion: ULong,
+    toVersion: ULong? = null,
     maxVersions: UInt = 1000u,
     select: RootPropRefGraph<DM>? = null,
     filterSoftDeleted: Boolean = true
@@ -45,8 +44,8 @@ data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal construc
     override val filter: IsFilter? = null,
     override val order: Order? = null,
     override val limit: UInt = 100u,
-    override val fromVersion: UInt64,
-    override val toVersion: UInt64? = null,
+    override val fromVersion: ULong,
+    override val toVersion: ULong? = null,
     override val maxVersions: UInt = 1000u,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true

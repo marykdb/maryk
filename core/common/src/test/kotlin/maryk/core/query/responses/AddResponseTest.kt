@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.responses
 
 import maryk.SimpleMarykModel
@@ -6,7 +8,6 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
@@ -25,7 +26,7 @@ class AddResponseTest {
         SimpleMarykModel,
         listOf(
             AddSuccess(
-                key, 32352L.toUInt64(), listOf(
+                key, 32352uL, listOf(
                     Change(SimpleMarykModel.ref{ value } with "new")
                 )
             ),
@@ -43,17 +44,17 @@ class AddResponseTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.addResponse, AddResponse, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.addResponse, AddResponse, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.addResponse, AddResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         statuses:

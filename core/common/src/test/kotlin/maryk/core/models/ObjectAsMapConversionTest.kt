@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.models
 
 import maryk.SimpleMarykModel
@@ -5,7 +7,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
@@ -32,7 +33,7 @@ class ObjectAsMapConversionTest {
             },
             filter with Exists(SimpleMarykModel.ref { value }),
             order with SimpleMarykModel.ref { value }.descending(),
-            toVersion with 333L.toUInt64(),
+            toVersion with 333uL,
             filterSoftDeleted with true
         )
     }

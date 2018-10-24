@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.requests
 
 import maryk.SimpleMarykModel
@@ -5,7 +7,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.ascending
 import maryk.core.query.filters.Exists
@@ -18,8 +19,8 @@ private val key2 = SimpleMarykModel.key("CXTD69pnTdsytwq0yxPryA")
 internal val getChangesRequest = SimpleMarykModel.getChanges(
     key1,
     key2,
-    fromVersion = 1234L.toUInt64(),
-    toVersion = 3456L.toUInt64()
+    fromVersion = 1234uL,
+    toVersion = 3456uL
 )
 
 internal val getChangesMaxRequest = SimpleMarykModel.run {
@@ -28,8 +29,8 @@ internal val getChangesMaxRequest = SimpleMarykModel.run {
         key2,
         filter = Exists(ref { value }),
         order = ref { value }.ascending(),
-        fromVersion = 1234L.toUInt64(),
-        toVersion = 3456L.toUInt64(),
+        fromVersion = 1234uL,
+        toVersion = 3456uL,
         filterSoftDeleted = true,
         select = SimpleMarykModel.props {
             RootPropRefGraph<SimpleMarykModel>(
@@ -45,19 +46,19 @@ class GetChangesRequestTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(getChangesRequest, GetChangesRequest, { this.context })
         checkProtoBufConversion(getChangesMaxRequest, GetChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(getChangesRequest, GetChangesRequest, { this.context })
         checkJsonConversion(getChangesMaxRequest, GetChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(getChangesRequest, GetChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]

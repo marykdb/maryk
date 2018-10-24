@@ -5,67 +5,29 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.toHex
 import kotlin.random.Random
+import kotlin.random.nextULong
 
-/** Base class for 64 bit/8 byte unsigned integers */
-class UInt64 internal constructor(number: Long): UnsignedInt<Long>(number) {
-    override fun compareTo(other: UnsignedInt<Long>) = number.compareTo(other.number)
-
-    override fun toString(): String {
-        // If number is within normal positive Long range. Print it as base 10
-        return if (this.number < 0L) {
-            this.toLong().toString()
-        } else {
-            val bytes = ByteArray(8)
-            var index = 0
-            number.writeBytes({ bytes[index++] = it })
-            return "0x${bytes.toHex(true)}"
-        }
+/** Object for 64 bit/8 byte unsigned integers */
+@Suppress("EXPERIMENTAL_API_USAGE")
+object UInt64 : UnsignedNumberDescriptor<ULong>(
+    size = ULong.SIZE_BYTES,
+    MIN_VALUE = ULong.MIN_VALUE,
+    MAX_VALUE = ULong.MAX_VALUE,
+    type = NumberType.UInt64
+) {
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = (initLong(reader) + Long.MIN_VALUE).toULong()
+    override fun writeStorageBytes(value: ULong, writer: (byte: Byte) -> Unit) = (value.toLong() - Long.MIN_VALUE).writeBytes(writer)
+    override fun readTransportBytes(reader: () -> Byte) = initLongByVar(reader).toULong()
+    override fun calculateTransportByteLength(value: ULong) = value.toLong().calculateVarByteLength()
+    override fun writeTransportBytes(value: ULong, writer: (byte: Byte) -> Unit) {
+        value.toLong().writeVarBytes(writer)
     }
-
-    override fun toInt() = (this.number - Long.MIN_VALUE).toInt()
-    override fun toLong() = this.number + Long.MIN_VALUE
-
-    companion object : UnsignedNumberDescriptor<UInt64>(
-        size = 8,
-        MIN_VALUE = UInt64(Long.MIN_VALUE),
-        MAX_VALUE = UInt64(Long.MAX_VALUE),
-        type = NumberType.UInt64
-    ) {
-        override fun fromStorageByteReader(length: Int, reader: () -> Byte) = UInt64(initLong(reader))
-        override fun writeStorageBytes(value: UInt64, writer: (byte: Byte) -> Unit) = value.number.writeBytes(writer)
-        override fun readTransportBytes(reader: () -> Byte) = UInt64(initLongByVar(reader) + Long.MIN_VALUE)
-        override fun calculateTransportByteLength(value: UInt64) = (value.number - Long.MIN_VALUE).calculateVarByteLength()
-        override fun writeTransportBytes(value: UInt64, writer: (byte: Byte) -> Unit) {
-            val number = value.number - Long.MIN_VALUE
-            number.writeVarBytes(writer)
-        }
-        override fun ofString(value: String): UInt64 {
-            return if(value.startsWith("0x")) {
-                if (value.length < 4) {
-                    throw ParseException("Hex string should be at least 4 characters long")
-                }
-                val bytes = initByteArrayByHex(value.substring(2))
-                var index = 0
-                UInt64(initLong({ bytes[index++] }))
-            } else if(value.startsWith("-")) {
-                throw ParseException("UInt64 cannot start with a -")
-            } else {
-                value.toLong().toUInt64()
-            }
-        }
-        override fun ofDouble(value: Double) = value.toLong().toUInt64()
-        override fun toDouble(value: UInt64) = value.toLong().toDouble()
-        override fun ofInt(value: Int) = value.toLong().toUInt64()
-        override fun ofLong(value: Long) = value.toUInt64()
-        override fun createRandom() = UInt64(Random.nextLong())
-        override fun isOfType(value: Any) = value == UInt64
-    }
+    override fun ofString(value: String) = value.toULong()
+    override fun ofDouble(value: Double) = value.toLong().toULong()
+    override fun toDouble(value: ULong) = value.toLong().toDouble()
+    override fun ofInt(value: Int) = value.toULong()
+    override fun ofLong(value: Long) = value.toULong()
+    override fun createRandom() = Random.nextULong()
+    override fun isOfType(value: Any) = value == UInt64
 }
-
-fun Long.toUInt64() = if (this >= 0) {
-    UInt64(this + Long.MIN_VALUE)
-} else { throw ParseException("Negative Long not allowed $this") }

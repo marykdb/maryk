@@ -1,10 +1,11 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.responses
 
 import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -22,7 +23,7 @@ class ChangesResponseTest {
             key.change(
                 Change(SimpleMarykModel.ref { value } with "hoho"),
                 Delete(SimpleMarykModel.ref { value }),
-                lastVersion = 14141L.toUInt64()
+                lastVersion = 14141uL
             )
         )
     )
@@ -32,17 +33,17 @@ class ChangesResponseTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.objectChangesResponse, ChangesResponse, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.objectChangesResponse, ChangesResponse, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.objectChangesResponse, ChangesResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         changes:

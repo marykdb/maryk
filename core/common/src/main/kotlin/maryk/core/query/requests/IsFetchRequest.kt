@@ -18,11 +18,12 @@ import maryk.core.query.filters.mapOfFilterDefinitions
 import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
+@Suppress("EXPERIMENTAL_API_USAGE")
 interface IsFetchRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsObjectRequest<DM, RP> {
     val select: RootPropRefGraph<DM>?
     val filter: IsFilter?
     val order: Order?
-    val toVersion: UInt64?
+    val toVersion: ULong?
     val filterSoftDeleted: Boolean
 
     companion object {
@@ -62,7 +63,7 @@ interface IsFetchRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsObjectReque
                 getter
             )
 
-        internal fun <DM: Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> UInt64?) =
+        internal fun <DM: Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> ULong?) =
             definitions.add(6, "toVersion",
                 NumberDefinition(
                     required = false,

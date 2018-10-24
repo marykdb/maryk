@@ -16,7 +16,6 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.UInt8
 import maryk.core.properties.types.numeric.toUInt16
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.properties.types.numeric.toUInt8
 
 object NumericMarykModel: RootDataModel<NumericMarykModel, NumericMarykModel.Properties>(
@@ -77,7 +76,7 @@ object NumericMarykModel: RootDataModel<NumericMarykModel, NumericMarykModel.Pro
             index = 8, name = "uInt64",
             definition = NumberDefinition(
                 type = UInt64,
-                default = 4123123344572L.toUInt64()
+                default = 4123123344572uL
             )
         )
         val float32 = add(
@@ -104,7 +103,7 @@ object NumericMarykModel: RootDataModel<NumericMarykModel, NumericMarykModel.Pro
         uInt8: UInt8 = 4.toUInt8(),
         uInt16: UInt16 = 42.toUInt16(),
         uInt32: UInt = 42u,
-        uInt64: UInt64 = 4123123344572L.toUInt64(),
+        uInt64: ULong = 4123123344572uL,
         float32: Float = 42.345F,
         float64: Double = 2345762.3123
     ) = map {

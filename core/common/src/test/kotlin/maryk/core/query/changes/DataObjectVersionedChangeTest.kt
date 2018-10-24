@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.changes
 
 import maryk.EmbeddedMarykModel
@@ -5,7 +7,6 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
@@ -22,7 +23,7 @@ class DataObjectVersionedChangeTest {
         key = key1,
         changes = listOf(
             VersionedChanges(
-                219674127L.toUInt64(),
+                219674127uL,
                 listOf(
                     ObjectSoftDeleteChange(true),
                     ListChange(TestMarykModel.ref { list }.change()),
@@ -31,7 +32,7 @@ class DataObjectVersionedChangeTest {
                 )
             ),
             VersionedChanges(
-                319674127L.toUInt64(),
+                319674127uL,
                 listOf(
                     Change(EmbeddedMarykModel.ref(subModel) { value } with "new"),
                     Delete(EmbeddedMarykModel.ref(subModel) { value }),
@@ -50,17 +51,17 @@ class DataObjectVersionedChangeTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.dataObjectVersionedChanges, DataObjectVersionedChange, { this.context }) shouldBe """
         key: AAACKwEBAQAC
         changes:

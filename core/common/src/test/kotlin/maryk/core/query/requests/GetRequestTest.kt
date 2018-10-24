@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.requests
 
 import maryk.SimpleMarykModel
@@ -5,7 +7,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
@@ -27,7 +28,7 @@ internal val getMaxRequest = SimpleMarykModel.run {
         key2,
         filter = Exists(ref { value }),
         order = ref { value }.descending(),
-        toVersion = 333L.toUInt64(),
+        toVersion = 333uL,
         filterSoftDeleted = true,
         select = props {
             RootPropRefGraph<SimpleMarykModel>(
@@ -60,7 +61,7 @@ class GetRequestTest {
                 keys with listOf(key1, key2),
                 filter with Exists(SimpleMarykModel.ref { value }),
                 order with SimpleMarykModel.ref { value }.descending(),
-                toVersion with 333L.toUInt64(),
+                toVersion with 333uL,
                 filterSoftDeleted with true,
                 select with SimpleMarykModel.props {
                     RootPropRefGraph<SimpleMarykModel>(
@@ -72,19 +73,19 @@ class GetRequestTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(getRequest, GetRequest, { this.context })
         checkProtoBufConversion(getMaxRequest, GetRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(getRequest, GetRequest, { this.context })
         checkJsonConversion(getMaxRequest, GetRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(getRequest, GetRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
@@ -106,7 +107,7 @@ class GetRequestTest {
     }
 
     @Test
-    fun convert_basic_definition_from_YAML() {
+    fun convertBasicDefinitionFromYAML() {
         val simpleYaml = """
         dataModel: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]

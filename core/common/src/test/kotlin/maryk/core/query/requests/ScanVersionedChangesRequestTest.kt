@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.requests
 
 import maryk.SimpleMarykModel
@@ -5,7 +7,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
@@ -16,18 +17,17 @@ private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
 internal val scanVersionedChangesRequest = SimpleMarykModel.scanVersionedChanges(
     startKey = key1,
-    fromVersion = 1234L.toUInt64()
+    fromVersion = 1234uL
 )
 
-@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 internal val scanVersionedChangesMaxRequest = SimpleMarykModel.run {
     scanVersionedChanges(
         startKey = key1,
         filter = Exists(ref { value }),
         order = ref { value }.descending(),
         limit = 300u,
-        toVersion = 2345L.toUInt64(),
-        fromVersion = 1234L.toUInt64(),
+        toVersion = 2345uL,
+        fromVersion = 1234uL,
         maxVersions = 10u,
         select = SimpleMarykModel.props {
             RootPropRefGraph<SimpleMarykModel>(
@@ -43,19 +43,19 @@ class ScanVersionedChangesRequestTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context })
         checkProtoBufConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context })
         checkJsonConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ

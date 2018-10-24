@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "unused")
+
 package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
@@ -19,7 +21,7 @@ import maryk.core.query.RequestContext
  */
 fun <DM: IsRootDataModel<*>> Key<DM>.change(
     vararg change: IsChange,
-    lastVersion: UInt64? = null
+    lastVersion: ULong? = null
 ) = DataObjectChange(this, change.toList(), lastVersion)
 
 /**
@@ -28,7 +30,7 @@ fun <DM: IsRootDataModel<*>> Key<DM>.change(
 data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
     val key: Key<DM>,
     val changes: List<IsChange>,
-    val lastVersion: UInt64? = null
+    val lastVersion: ULong? = null
 ) {
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DataObjectChange<*>>() {

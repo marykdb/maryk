@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.responses
 
 import maryk.EmbeddedMarykModel
@@ -5,7 +7,6 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
@@ -33,7 +34,7 @@ class VersionedChangesResponseTest {
                 key = key,
                 changes = listOf(
                     VersionedChanges(
-                        219674127L.toUInt64(),
+                        219674127uL,
                         listOf(
                             ObjectSoftDeleteChange(true),
                             ListChange(TestMarykModel.ref { list }.change()),
@@ -42,7 +43,7 @@ class VersionedChangesResponseTest {
                         )
                     ),
                     VersionedChanges(
-                        319674127L.toUInt64(),
+                        319674127uL,
                         listOf(
                             Change(EmbeddedMarykModel.ref(subModel) { value } with "new"),
                             Delete(EmbeddedMarykModel.ref(subModel) { value }),
@@ -63,17 +64,17 @@ class VersionedChangesResponseTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.objectVersionedChangesResponse, VersionedChangesResponse, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.objectVersionedChangesResponse, VersionedChangesResponse, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.objectVersionedChangesResponse, VersionedChangesResponse, { this.context }) shouldBe """
         dataModel: TestMarykModel
         changes:

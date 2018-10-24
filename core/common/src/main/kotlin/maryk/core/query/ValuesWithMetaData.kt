@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "unused")
+
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
@@ -21,8 +23,8 @@ import maryk.core.properties.types.numeric.UInt64
 data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val key: Key<DM>,
     val values: Values<DM, P>,
-    val firstVersion: UInt64,
-    val lastVersion: UInt64,
+    val firstVersion: ULong,
+    val lastVersion: ULong,
     val isDeleted: Boolean
 ) {
     object Properties : ObjectPropertyDefinitions<ValuesWithMetaData<*, *>>() {

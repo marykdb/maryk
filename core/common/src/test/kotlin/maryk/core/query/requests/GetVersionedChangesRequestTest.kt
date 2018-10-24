@@ -7,7 +7,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
@@ -20,7 +19,7 @@ private val key2 = SimpleMarykModel.key("awfbjYrVQ+cdXblfQKV10A")
 internal val getVersionedChangesRequest = SimpleMarykModel.getVersionedChanges(
     key1,
     key2,
-    fromVersion = 1234L.toUInt64()
+    fromVersion = 1234uL
 )
 
 internal val getVersionedChangesMaxRequest = SimpleMarykModel.run {
@@ -29,8 +28,8 @@ internal val getVersionedChangesMaxRequest = SimpleMarykModel.run {
         key2,
         filter = Exists(ref { value }),
         order = ref { value }.descending(),
-        fromVersion = 1234L.toUInt64(),
-        toVersion = 12345L.toUInt64(),
+        fromVersion = 1234uL,
+        toVersion = 12345uL,
         maxVersions = 5u,
         filterSoftDeleted = true,
         select = SimpleMarykModel.props {
@@ -47,19 +46,19 @@ class GetVersionedChangesRequestTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(getVersionedChangesRequest, GetVersionedChangesRequest, { this.context })
         checkProtoBufConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(getVersionedChangesRequest, GetVersionedChangesRequest, { this.context })
         checkJsonConversion(getVersionedChangesMaxRequest, GetVersionedChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(getVersionedChangesRequest, GetVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]

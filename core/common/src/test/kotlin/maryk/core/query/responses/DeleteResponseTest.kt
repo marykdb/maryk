@@ -1,10 +1,11 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.responses
 
 import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -19,7 +20,7 @@ class DeleteResponseTest {
     private val deleteResponse = DeleteResponse(
         SimpleMarykModel,
         listOf(
-            Success(32352L.toUInt64()),
+            Success(32352uL),
             DoesNotExist(key),
             AuthFail(),
             ServerFail("Something went wrong")
@@ -31,17 +32,17 @@ class DeleteResponseTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.deleteResponse, DeleteResponse, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.deleteResponse, DeleteResponse, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.deleteResponse, DeleteResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         statuses:

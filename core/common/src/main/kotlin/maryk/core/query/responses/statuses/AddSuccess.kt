@@ -16,9 +16,10 @@ import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
 
 /** Successful add of given object with [key], [version] and added [changes] */
+@Suppress("EXPERIMENTAL_API_USAGE")
 data class AddSuccess<DM: IsRootDataModel<*>>(
     val key: Key<DM>,
-    val version: UInt64,
+    val version: ULong,
     val changes: List<IsChange>
 ) : IsAddResponseStatus<DM> {
     override val statusType = StatusType.ADD_SUCCESS

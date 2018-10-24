@@ -7,7 +7,6 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.lib.time.DateTime
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -28,8 +27,8 @@ class ValuesWithMetaDataTest {
     private val valuesMetaData = ValuesWithMetaData(
         key1,
         value,
-        firstVersion = 12L.toUInt64(),
-        lastVersion = 12345L.toUInt64(),
+        firstVersion = 12uL,
+        lastVersion = 12345uL,
         isDeleted = false
     )
 
@@ -41,17 +40,17 @@ class ValuesWithMetaDataTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.valuesMetaData, ValuesWithMetaData, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.valuesMetaData, ValuesWithMetaData, { this.context }) shouldBe """
         key: AAACKwEBAQAD
         values:

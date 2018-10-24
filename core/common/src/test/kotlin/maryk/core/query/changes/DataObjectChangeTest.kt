@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.changes
 
 import maryk.EmbeddedMarykModel
@@ -5,7 +7,6 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
@@ -30,7 +31,7 @@ class DataObjectChangeTest {
         ),
         SetChange(TestMarykModel.ref { set }.change()),
         MapChange(TestMarykModel.ref { map }.change()),
-        lastVersion = 12345L.toUInt64()
+        lastVersion = 12345uL
     )
 
     private val context = RequestContext(
@@ -41,17 +42,17 @@ class DataObjectChangeTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.dataObjectChange, DataObjectChange, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.dataObjectChange, DataObjectChange, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.dataObjectChange, DataObjectChange, { this.context }) shouldBe """
         key: AAACKwEBAQAC
         changes:

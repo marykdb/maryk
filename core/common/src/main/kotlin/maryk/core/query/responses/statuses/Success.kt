@@ -9,8 +9,9 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.numeric.UInt64
 
 /** Action was completed successfully with [version] */
+@Suppress("EXPERIMENTAL_API_USAGE")
 data class Success<DM: IsRootDataModel<*>>(
-    val version: UInt64
+    val version: ULong
 ) : IsChangeResponseStatus<DM>, IsDeleteResponseStatus<DM> {
     override val statusType = StatusType.SUCCESS
 

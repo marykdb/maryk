@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.responses
 
 import maryk.SimpleMarykModel
@@ -6,7 +8,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.asValues
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.test.shouldBe
@@ -23,8 +24,8 @@ class ValuesResponseTest {
             ValuesWithMetaData(
                 key = key,
                 values = simpleValue,
-                firstVersion = 0L.toUInt64(),
-                lastVersion = 14141L.toUInt64(),
+                firstVersion = 0uL,
+                lastVersion = 14141uL,
                 isDeleted = false
             )
         )
@@ -35,17 +36,17 @@ class ValuesResponseTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.objectsResponse, ValuesResponse, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.objectsResponse, ValuesResponse, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.objectsResponse, ValuesResponse, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         values:

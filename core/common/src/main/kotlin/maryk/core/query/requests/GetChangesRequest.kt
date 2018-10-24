@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "unused")
+
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
@@ -6,7 +8,6 @@ import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.ChangesResponse
@@ -21,8 +22,8 @@ fun <DM: IsRootDataModel<*>> DM.getChanges(
     vararg keys: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
-    fromVersion: UInt64,
-    toVersion: UInt64? = null,
+    fromVersion: ULong,
+    toVersion: ULong? = null,
     select: RootPropRefGraph<DM>? = null,
     filterSoftDeleted: Boolean = true
 ) =
@@ -39,8 +40,8 @@ data class GetChangesRequest<DM: IsRootDataModel<*>> internal constructor(
     override val keys: List<Key<DM>>,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
-    override val fromVersion: UInt64,
-    override val toVersion: UInt64? = null,
+    override val fromVersion: ULong,
+    override val toVersion: ULong? = null,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DM, ChangesResponse<*>>, IsChangesRequest<DM, ChangesResponse<*>> {

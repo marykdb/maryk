@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.query.requests
 
 import maryk.SimpleMarykModel
@@ -5,7 +7,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.properties.types.numeric.toUInt64
 import maryk.core.query.Order
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
@@ -16,7 +17,7 @@ private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
 internal val scanChangesRequest = SimpleMarykModel.scanChanges(
     startKey = key1,
-    fromVersion = 1234L.toUInt64()
+    fromVersion = 1234uL
 )
 
 @Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
@@ -26,8 +27,8 @@ internal val scanChangeMaxRequest = SimpleMarykModel.scanChanges(
     order = Order(SimpleMarykModel.ref { value }),
     limit = 100u,
     filterSoftDeleted = true,
-    toVersion = 2345L.toUInt64(),
-    fromVersion = 1234L.toUInt64(),
+    toVersion = 2345uL,
+    fromVersion = 1234uL,
     select = SimpleMarykModel.props {
         RootPropRefGraph<SimpleMarykModel>(
             value
@@ -41,19 +42,19 @@ class ScanChangesRequestTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(scanChangesRequest, ScanChangesRequest, { this.context })
         checkProtoBufConversion(scanChangeMaxRequest, ScanChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(scanChangesRequest, ScanChangesRequest, { this.context })
         checkJsonConversion(scanChangeMaxRequest, ScanChangesRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(scanChangesRequest, ScanChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.core.query.changes
 
 import maryk.core.models.QueryDataModel
@@ -11,7 +13,7 @@ import maryk.core.properties.types.numeric.UInt64
 
 /** Contains a list of [changes] that belongs to a [version] */
 data class VersionedChanges(
-    val version: UInt64,
+    val version: ULong,
     val changes: List<IsChange>
 ) {
     object Properties : ObjectPropertyDefinitions<VersionedChanges>() {

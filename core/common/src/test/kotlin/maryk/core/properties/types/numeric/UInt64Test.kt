@@ -70,9 +70,4 @@ internal class UInt64Test {
             bc.reset()
         }
     }
-
-    @Test
-    fun testIntConversion() {
-        12345678L.toULong().toInt() shouldBe 12345678
-    }
 }

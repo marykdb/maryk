@@ -62,9 +62,4 @@ internal class UInt8Test {
             bc.reset()
         }
     }
-
-    @Test
-    fun testIntConversion() {
-        12.toUByte().toInt() shouldBe 12
-    }
 }

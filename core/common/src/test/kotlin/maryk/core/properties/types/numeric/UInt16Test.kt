@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.core.properties.types.numeric
 
 import maryk.lib.extensions.toHex
@@ -6,23 +8,11 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UInt16Test {
-    private val uInt16values = arrayOf(UInt16.MIN_VALUE, UInt16.MAX_VALUE, 839.toUInt16(), 12312.toShort().toUInt16())
+    private val uInt16values = arrayOf(UInt16.MIN_VALUE, UInt16.MAX_VALUE, 839.toUShort(), 12312.toUShort())
 
     @Test
     fun testRandom() {
         UInt16.createRandom()
-    }
-
-    @Test
-    fun testHashCode() {
-        UInt16.MAX_VALUE.hashCode() shouldBe Short.MAX_VALUE.hashCode()
-    }
-
-    @Test
-    fun testCompare() {
-        UInt16.MAX_VALUE.compareTo(UInt16.MIN_VALUE) shouldBe 1
-        344.toUInt16().compareTo(344.toUInt16()) shouldBe 0
-        144.toUInt16().compareTo(344.toUInt16()) shouldBe -1
     }
 
     @Test
@@ -71,10 +61,5 @@ internal class UInt16Test {
             UInt16.readTransportBytes(bc::read) shouldBe value
             bc.reset()
         }
-    }
-
-    @Test
-    fun test_int_conversion() {
-        1234.toUInt16().toInt() shouldBe 1234
     }
 }

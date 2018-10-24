@@ -9,8 +9,8 @@ import maryk.lib.exceptions.ParseException
 import kotlin.random.Random
 
 /** Base class for 32 bit/4 byte unsigned integers */
-class UInt32 internal constructor(number: Int): UInt<Int>(number) {
-    override fun compareTo(other: UInt<Int>) = number.compareTo(other.number)
+class UInt32 internal constructor(number: Int): UnsignedInt<Int>(number) {
+    override fun compareTo(other: UnsignedInt<Int>) = number.compareTo(other.number)
     override fun toString() = (number.toLong() - Int.MIN_VALUE).toString()
     override fun toInt() = this.number - Int.MIN_VALUE
     override fun toLong() = number.toLong() - Int.MIN_VALUE

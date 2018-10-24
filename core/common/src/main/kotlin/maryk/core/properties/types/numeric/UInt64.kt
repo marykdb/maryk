@@ -11,8 +11,8 @@ import maryk.lib.extensions.toHex
 import kotlin.random.Random
 
 /** Base class for 64 bit/8 byte unsigned integers */
-class UInt64 internal constructor(number: Long): UInt<Long>(number) {
-    override fun compareTo(other: UInt<Long>) = number.compareTo(other.number)
+class UInt64 internal constructor(number: Long): UnsignedInt<Long>(number) {
+    override fun compareTo(other: UnsignedInt<Long>) = number.compareTo(other.number)
 
     override fun toString(): String {
         // If number is within normal positive Long range. Print it as base 10

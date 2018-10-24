@@ -8,8 +8,8 @@ import maryk.core.extensions.bytes.writeVarBytes
 import maryk.lib.exceptions.ParseException
 
 /** Base class for 8 bit/1 byte unsigned integers */
-class UInt8 internal constructor(number: Byte): UInt<Byte>(number) {
-    override fun compareTo(other: UInt<Byte>) = number.compareTo(other.number)
+class UInt8 internal constructor(number: Byte): UnsignedInt<Byte>(number) {
+    override fun compareTo(other: UnsignedInt<Byte>) = number.compareTo(other.number)
     override fun toString() = (number.toShort() - Byte.MIN_VALUE).toString()
     override fun toInt() = this.number - Byte.MIN_VALUE
     override fun toLong() = this.number.toLong() - Byte.MIN_VALUE

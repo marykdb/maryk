@@ -1,5 +1,6 @@
 package maryk.core.properties.types.numeric
 
+import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -37,10 +38,18 @@ internal class UInt8Test {
     @Test
     fun testStorageBytesConversion() {
         val bc = ByteCollector()
-        for (it in uInt8values) {
+
+        val values = uInt8values.zip(
+            arrayOf("00", "ff", "59", "7f")
+        )
+
+        for ((value, hexString) in values) {
             bc.reserve(UInt8.size)
-            UInt8.writeStorageBytes(it, bc::write)
-            UInt8.fromStorageByteReader(bc.size, bc::read) shouldBe it
+            UInt8.writeStorageBytes(value, bc::write)
+
+            bc.bytes?.toHex() shouldBe hexString
+
+            UInt8.fromStorageByteReader(bc.size, bc::read) shouldBe value
             bc.reset()
         }
     }
@@ -48,10 +57,18 @@ internal class UInt8Test {
     @Test
     fun testTransportBytesConversion() {
         val bc = ByteCollector()
-        for (it in uInt8values) {
-            bc.reserve(UInt8.calculateTransportByteLength(it))
-            UInt8.writeTransportBytes(it, bc::write)
-            UInt8.readTransportBytes(bc::read) shouldBe it
+
+        val values = uInt8values.zip(
+            arrayOf("00", "ff01", "59", "7f")
+        )
+
+        for ((value, hexString) in values) {
+            bc.reserve(UInt8.calculateTransportByteLength(value))
+            UInt8.writeTransportBytes(value, bc::write)
+
+            bc.bytes?.toHex() shouldBe hexString
+
+            UInt8.readTransportBytes(bc::read) shouldBe value
             bc.reset()
         }
     }

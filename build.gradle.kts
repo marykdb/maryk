@@ -1,12 +1,11 @@
 buildscript {
-    val kotlinVersion = file("kotlin-version.txt").readText().trim()
-    extra["kotlinVersion"] = kotlinVersion
+    extra["kotlinVersion"] = "1.3.0-rc-198"
 
     repositories {
         jcenter()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${extra["kotlinVersion"]}")
     }
 }
 

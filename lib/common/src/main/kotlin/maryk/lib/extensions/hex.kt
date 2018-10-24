@@ -8,7 +8,7 @@ val HEX_CHARS = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a
 /** Converts initByteArrayByHex into a String Hex value */
 fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
     val numChars = size * 2
-    val charArray = CharArray(numChars)
+
 
     val startPos = if(skipLeadingZeroBytes) {
         var index = 0
@@ -17,6 +17,8 @@ fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
         }
         index * 2
     } else 0
+
+    val charArray = CharArray(numChars - startPos)
 
     for (i in startPos until numChars step 2) {
         val d = this[i / 2].toInt()

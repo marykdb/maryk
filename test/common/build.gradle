@@ -1,8 +1,0 @@
-apply {
-    plugin("kotlin-platform-common")
-}
-
-dependencies {
-    compile("org.jetbrains.kotlin:kotlin-test-annotations-common:$kotlinVersion")
-    compile("org.jetbrains.kotlin:kotlin-test-common:$kotlinVersion")
-}

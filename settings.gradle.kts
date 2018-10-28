@@ -1,23 +1,40 @@
-fun includeMultiPlatformProjects(vararg names: String) {
-    for (name in names) {
-        includeProject(name, "common")
-        includeProject(name, "jvm")
-        includeProject(name, "js")
+pluginManagement {
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "kotlin-multiplatform") {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+            }
+        }
+    }
+
+    repositories {
+//        maven { setUrl("http://dl.bintray.com/kotlin/kotlin-eap") }
+
+        mavenCentral()
+
+        maven { setUrl("https://plugins.gradle.org/m2/") }
     }
 }
 
-fun includeProject(name: String, platform: String) {
-    include(":$name-$platform")
-    project(":$name-$platform").projectDir = file("$name/$platform")
+fun includeProjects(vararg names: String) {
+    for (name in names) {
+        include(":$name")
+        project(":$name").projectDir = file("$name")
+    }
 }
 
-includeMultiPlatformProjects(
+includeProjects(
+    "test",
     "lib",
     "json",
     "yaml",
     "core",
-    "test",
     "generator"
 )
 
+include(":generator-jvmTest")
+project(":generator-jvmTest").projectDir = file("generator/jvmTest")
+
 rootProject.name = "maryk"
+
+enableFeaturePreview("GRADLE_METADATA")

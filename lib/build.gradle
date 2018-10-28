@@ -1,0 +1,26 @@
+plugins {
+    id 'kotlin-multiplatform'
+}
+
+apply {
+    from("../gradle/common.gradle")
+    from("../gradle/js.gradle")
+    from("../gradle/jvm.gradle")
+    from("../gradle/native.gradle")
+}
+
+setupCommon()
+setupJVM()
+setupJS()
+setupNative()
+
+kotlin {
+    sourceSets {
+        commonTest {
+            dependencies {
+                implementation project(':test')
+            }
+        }
+    }
+}
+

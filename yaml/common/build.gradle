@@ -1,9 +1,0 @@
-apply {
-    plugin("kotlin-platform-common")
-}
-
-dependencies {
-    compile(project(":json-common"))
-
-    compile(project(":test-common"))
-}

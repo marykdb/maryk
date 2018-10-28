@@ -1,0 +1,41 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+plugins {
+    id "com.google.protobuf" version "0.8.6"
+    id "kotlin-platform-jvm"
+    id "idea"
+}
+
+ext {
+    protobufVersion = '3.6.0'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protobufVersion"
+    }
+    generatedFilesBaseDir = "$projectDir/gen"
+}
+
+clean {
+    delete protobuf.generatedFilesBaseDir
+}
+
+dependencies {
+    compile("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+    implementation(project(":generator"))
+    implementation(project(":core"))
+    implementation(project(":lib"))
+    implementation(project(":yaml"))
+    implementation(project(":json"))
+
+    testCompile(project(":test"))
+    testCompile("com.google.protobuf:protobuf-java:$protobufVersion")
+}
+
+tasks.withType(KotlinCompile) {
+    kotlinOptions {
+        allWarningsAsErrors = true
+        jvmTarget = "1.8"
+    }
+}

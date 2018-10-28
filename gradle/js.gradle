@@ -1,0 +1,72 @@
+// Gradle script to setup a JS multi-platform project
+ext.setupJS = { runTests ->
+    apply {
+        plugin("com.moowork.node")
+    }
+
+    kotlin {
+        targets {
+            fromPreset(presets.js, 'js')
+        }
+        sourceSets {
+            jsMain {
+                dependencies {
+                    implementation 'org.jetbrains.kotlin:kotlin-stdlib-js'
+                }
+            }
+            jsTest {
+                dependencies {
+                    implementation 'org.jetbrains.kotlin:kotlin-test-js'
+                }
+            }
+        }
+    }
+
+    node {
+        nodeModulesDir = file("${project.rootDir}/.nodeTest")
+    }
+
+    [compileKotlinJs, compileTestKotlinJs]*.configure {
+        kotlinOptions.moduleKind = "commonjs"
+        kotlinOptions.sourceMap = true
+    }
+
+    if (runTests == null || runTests == true) {
+        task installMocha(type: NpmTask) {
+            args = ['install', 'mocha']
+        }
+
+        afterEvaluate {
+            // Directory for all js test dependencies
+            def testDir = "${buildDir}/jsTest"
+            def projectName = name
+
+            // Copy test files
+            task copyJsTestOutput(type: Copy, dependsOn: [compileTestKotlinJs]) {
+                from compileTestKotlinJs.outputFile.parentFile.path
+                include "*.js"
+                include "*.js.map"
+                into testDir
+            }
+
+            // Copy all to be tested code and dependencies
+            task copyJsMainOutputAndDependencies(type: Copy, dependsOn: compileKotlinJs) {
+                from compileKotlinJs.destinationDir
+                configurations.jsTestCompileClasspath.each {
+                    from(zipTree(it.absolutePath).matching { include '*.js.map'; include '*.js' })
+                }
+
+                into("${testDir}/node_modules")
+            }
+
+            // Use mocha as the test runner
+            task runMocha(type: NodeTask, dependsOn: [copyJsMainOutputAndDependencies, copyJsTestOutput, installMocha]) {
+                script = file("../.nodeTest/node_modules/mocha/bin/mocha")
+                args = ["${testDir}/${projectName}_test.js"]
+            }
+
+            // Let mocha run when test is run in JS target
+            jsTest.dependsOn runMocha
+        }
+    }
+}

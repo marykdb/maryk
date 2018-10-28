@@ -1,0 +1,41 @@
+plugins {
+    id 'kotlin-multiplatform'
+}
+
+apply {
+    from("../gradle/common.gradle")
+    from("../gradle/js.gradle")
+    from("../gradle/jvm.gradle")
+    from("../gradle/native.gradle")
+}
+
+setupCommon()
+setupJVM()
+setupJS(false)
+setupNative()
+
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
+                implementation 'org.jetbrains.kotlin:kotlin-test-common'
+                implementation 'org.jetbrains.kotlin:kotlin-test-annotations-common'
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+                implementation 'org.jetbrains.kotlin:kotlin-test'
+                implementation 'org.jetbrains.kotlin:kotlin-test-junit'
+                implementation "org.jetbrains.kotlin:kotlin-reflect"
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation 'org.jetbrains.kotlin:kotlin-stdlib-js'
+                implementation 'org.jetbrains.kotlin:kotlin-test-js'
+            }
+        }
+    }
+}

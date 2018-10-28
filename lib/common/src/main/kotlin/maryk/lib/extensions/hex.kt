@@ -2,18 +2,20 @@ package maryk.lib.extensions
 
 import maryk.lib.exceptions.ParseException
 
-val ZERO_BYTE: Byte = 0b0
+const val ZERO_BYTE: Byte = 0b0
 val HEX_CHARS = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
 
 /** Converts initByteArrayByHex into a String Hex value */
 fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
     val numChars = size * 2
 
-
     val startPos = if(skipLeadingZeroBytes) {
         var index = 0
         while (this[index] == ZERO_BYTE) {
             index++
+            if(index >= this.size) {
+                return ""
+            }
         }
         index * 2
     } else 0
@@ -22,8 +24,8 @@ fun ByteArray.toHex(skipLeadingZeroBytes: Boolean = false): String {
 
     for (i in startPos until numChars step 2) {
         val d = this[i / 2].toInt()
-        charArray[i] = HEX_CHARS[d shr 4 and 0x0F]
-        charArray[i + 1] = HEX_CHARS[d and 0x0F]
+        charArray[i - startPos] = HEX_CHARS[d shr 4 and 0x0F]
+        charArray[i - startPos + 1] = HEX_CHARS[d and 0x0F]
     }
 
     return String(charArray)

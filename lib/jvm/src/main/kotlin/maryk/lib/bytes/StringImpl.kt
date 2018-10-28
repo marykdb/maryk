@@ -7,4 +7,6 @@ actual fun initString(length: Int, reader: () -> Byte) = String(
 )
 actual fun codePointAt(string: String, index: Int) = Character.codePointAt(string, index)
 
-actual fun fromCodePoint(value: Int) = Character.toChars(value).joinToString(separator = "")
+actual fun fromCodePoint(value: Int): String {
+    return Character.toChars(value).joinToString(separator = "")
+}

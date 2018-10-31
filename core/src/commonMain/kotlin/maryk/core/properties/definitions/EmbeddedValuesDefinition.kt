@@ -26,6 +26,7 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
+import maryk.lib.atomicLazy
 
 /** Definition for embedded object properties [P] to [dataModel] of type [DM] */
 class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions>(
@@ -40,7 +41,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
     override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val wireType = WireType.LENGTH_DELIMITED
 
-    private val internalDataModel = lazy(dataModel)
+    private val internalDataModel = atomicLazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value
 
     @Suppress("UNCHECKED_CAST")

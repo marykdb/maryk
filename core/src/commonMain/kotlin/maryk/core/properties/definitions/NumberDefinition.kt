@@ -71,7 +71,7 @@ data class NumberDefinition<T: Comparable<T>>(
     }
 
     object Model : ContextualDataModel<NumberDefinition<*>, ObjectPropertyDefinitions<NumberDefinition<*>>, IsPropertyContext, NumericContext>(
-        contextTransformer = { NumericContext },
+        contextTransformer = { NumericContext() },
         properties = object : ObjectPropertyDefinitions<NumberDefinition<*>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, NumberDefinition<*>::indexed)
@@ -141,7 +141,7 @@ data class NumberDefinition<T: Comparable<T>>(
     }
 }
 
-object NumericContext : IsPropertyContext {
+class NumericContext : IsPropertyContext {
     var numberType: NumberDescriptor<Comparable<Any>>? = null
 }
 

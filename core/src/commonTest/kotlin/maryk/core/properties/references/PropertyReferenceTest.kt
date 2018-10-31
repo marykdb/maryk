@@ -15,7 +15,12 @@ import maryk.test.shouldNotBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-private object Properties : ObjectPropertyDefinitions<Any>()
+private object Properties : ObjectPropertyDefinitions<Any>() {
+    val definition = Properties.add(1, "test", StringDefinition())
+    val modelDefinition = Properties.add(2, "embeddedObject", EmbeddedValuesDefinition(
+        dataModel = { TestMarykModel }
+    ))
+}
 
 private object Model : ObjectDataModel<Any, Properties>(
     "name", Properties
@@ -23,18 +28,13 @@ private object Model : ObjectDataModel<Any, Properties>(
     override fun invoke(map: ObjectValues<Any, Properties>): Any { throw Exception("Not implemented") }
 }
 
-private val modelDefinition = Properties.add(2, "embeddedObject", EmbeddedValuesDefinition(
-    dataModel = { TestMarykModel }
-))
 
-private val definition = Properties.add(1, "test", StringDefinition())
-
-private val ref = definition.getRef()
-private val subRef = definition.getRef(modelDefinition.getRef())
+private val ref = Properties.definition.getRef()
+private val subRef = Properties.definition.getRef(Properties.modelDefinition.getRef())
 
 internal class PropertyReferenceTest {
     @Test
-    fun get_value_from_list() {
+    fun getValueFromList() {
         val values = Model.map {
             mapNonNulls (
                 definition with "±testValue"
@@ -64,13 +64,13 @@ internal class PropertyReferenceTest {
 
     @Test
     fun testHashCode() {
-        ref.hashCode() shouldBe 3556498
+        ref.hashCode() shouldBe "test".hashCode()
     }
 
     @Test
     fun testCompareTo() {
-        ref shouldBe  definition.getRef()
-        ref shouldNotBe modelDefinition.getRef()
+        ref shouldBe Properties.definition.getRef()
+        ref shouldNotBe Properties.modelDefinition.getRef()
     }
 
     @Test

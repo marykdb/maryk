@@ -15,6 +15,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.lib.atomicLazy
 import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject*/
@@ -37,7 +38,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize get() = dataModel.keySize
 
-    private val internalDataModel = lazy(dataModel)
+    private val internalDataModel = atomicLazy(dataModel)
     val dataModel: DM get() = internalDataModel.value
 
     override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize

@@ -23,6 +23,7 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
+import maryk.lib.atomicLazy
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
 class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
@@ -37,7 +38,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
     override val propertyDefinitionType = PropertyDefinitionType.EmbedObject
     override val wireType = WireType.LENGTH_DELIMITED
 
-    private val internalDataModel = lazy(dataModel)
+    private val internalDataModel = atomicLazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value
 
     override fun asString(value: DO, context: CXI?): String {

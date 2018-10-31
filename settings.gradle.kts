@@ -8,8 +8,6 @@ pluginManagement {
     }
 
     repositories {
-//        maven { setUrl("http://dl.bintray.com/kotlin/kotlin-eap") }
-
         mavenCentral()
 
         maven { setUrl("https://plugins.gradle.org/m2/") }
@@ -24,7 +22,7 @@ fun includeProjects(vararg names: String) {
 }
 
 includeProjects(
-    "test",
+    "testlib",
     "lib",
     "json",
     "yaml",

@@ -29,7 +29,7 @@ dependencies {
     implementation(project(":yaml"))
     implementation(project(":json"))
 
-    testCompile(project(":test"))
+    testCompile(project(":testlib"))
     testCompile("com.google.protobuf:protobuf-java:$protobufVersion")
 }
 

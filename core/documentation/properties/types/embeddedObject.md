@@ -29,7 +29,7 @@ A property which contains another DataModel as embedded object. See
 val def = EmbeddedObjectDefinition(
     required = false,
     final = true,
-    dataModel = Address
+    dataModel = { Address }
 )
 ```
 

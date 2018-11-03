@@ -34,7 +34,7 @@ A property which contains values from selected DataModel. See
 val def = EmbeddedValuesDefinition(
     required = false,
     final = true,
-    dataModel = Address
+    dataModel = { Address }
 )
 ```
 

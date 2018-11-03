@@ -38,7 +38,7 @@ val def = ReferenceDefinition(
     required = true,
     final = true,
     unique = true,
-    dataModel = Person
+    dataModel = { Person }
 )
 ```
 

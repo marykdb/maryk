@@ -75,11 +75,11 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
                 else -> {
                     findInfinity(value!!)?.let { return it }
                     findFloat(value)?.let { return it }
-                    throw InvalidYamlContent("Expected float value")
+                    throw InvalidYamlContent("Expected float value and not $value")
                 }
             }
             is ValueType.Int -> findInt(value!!)?.let { return it }
-                    ?: throw InvalidYamlContent("Not an integer")
+                    ?: throw InvalidYamlContent("Not an integer: $value")
             is YamlValueType.Binary -> {
                 JsonToken.Value(Base64.decode(value!!), it)
             }

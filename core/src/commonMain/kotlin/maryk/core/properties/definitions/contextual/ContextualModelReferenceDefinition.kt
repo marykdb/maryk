@@ -19,7 +19,7 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 @Suppress("FunctionName")
 fun <DM: IsNamedDataModel<*>, CX: IsPropertyContext> ContextualModelReferenceDefinition(
-    contextualResolver: (context: CX?, name: String) -> () -> DM
+    contextualResolver: (context: CX?, name: String) -> Unit.() -> DM
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
 }
@@ -29,7 +29,7 @@ fun <DM: IsNamedDataModel<*>, CX: IsPropertyContext> ContextualModelReferenceDef
  * Has a [contextTransformer] to transform context.
  */
 data class ContextualModelReferenceDefinition<DM: IsNamedDataModel<*>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
-    val contextualResolver: (context: CXI?, name: String) -> () -> DM,
+    val contextualResolver: (context: CXI?, name: String) -> Unit.() -> DM,
     val contextTransformer: (CX?) -> CXI?
 ): IsValueDefinition<IsDataModelReference<DM>, CX>, IsSerializableFlexBytesEncodable<IsDataModelReference<DM>, CX> {
     override val indexed = false

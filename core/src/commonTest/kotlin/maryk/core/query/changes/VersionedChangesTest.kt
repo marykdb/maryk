@@ -7,6 +7,7 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
@@ -30,8 +31,8 @@ class VersionedChangesTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            EmbeddedMarykModel.name to { EmbeddedMarykModel },
-            TestMarykModel.name to { TestMarykModel }
+            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel },
+            TestMarykModel.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

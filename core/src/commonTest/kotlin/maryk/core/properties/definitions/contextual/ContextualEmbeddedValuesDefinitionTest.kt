@@ -18,7 +18,7 @@ class ContextualEmbeddedValuesDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualEmbeddedValuesDefinition<ModelContext>(
-        contextualResolver = { it!!.model!!.invoke() as AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext> }
+        contextualResolver = { it!!.model!!.invoke(Unit) as AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext> }
     )
 
     private val context = ModelContext(

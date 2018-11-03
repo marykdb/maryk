@@ -28,7 +28,7 @@ class RequestContext(
 ) : ContainsDataModelContext<IsDataModel<*>>, ContainsDefinitionsContext by definitionsContext {
     /** For test use */
     internal constructor(
-        dataModels: Map<String, () -> IsNamedDataModel<*>>,
+        dataModels: Map<String, Unit.() -> IsNamedDataModel<*>>,
         dataModel: IsDataModel<*>? = null,
         reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>? = null
     ) : this(

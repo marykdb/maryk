@@ -23,14 +23,14 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.atomicLazy
+import maryk.lib.safeLazy
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
 class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
-    dataModel: () -> DM,
+    dataModel: Unit.() -> DM,
     override val default: DO? = null
 ) :
     IsEmbeddedObjectDefinition<DO, P, DM, CXI, CX>
@@ -38,7 +38,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
     override val propertyDefinitionType = PropertyDefinitionType.EmbedObject
     override val wireType = WireType.LENGTH_DELIMITED
 
-    private val internalDataModel = atomicLazy(dataModel)
+    private val internalDataModel = safeLazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value
 
     override fun asString(value: DO, context: CXI?): String {
@@ -145,7 +145,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                         contextualResolver = { context: ModelContext?, name ->
                             context?.definitionsContext?.let{
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? () -> ObjectDataModel<*, *>
+                                it.dataModels[name] as? Unit.() -> ObjectDataModel<*, *>
                                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
@@ -153,8 +153,8 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                     getter = { it: EmbeddedObjectDefinition<*, *, *, *, *> ->
                         { it.dataModel as ObjectDataModel<*, *> }
                     },
-                    toSerializable = { value: (() -> ObjectDataModel<*, *>)?, _ ->
-                        value?.invoke()?.let{ model ->
+                    toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->
+                        value?.invoke(Unit)?.let{ model ->
                             DataModelReference(model.name, value)
                         }
                     },
@@ -167,7 +167,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                         } ?: throw ContextNotFoundException()
 
                         @Suppress("UNCHECKED_CAST")
-                        context.model = dataModel.get as () -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
+                        context.model = dataModel.get as Unit.() -> AbstractObjectDataModel<Any, ObjectPropertyDefinitions<Any>, IsPropertyContext, IsPropertyContext>
                     }
                 )
 
@@ -175,7 +175,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
-                            context?.model?.invoke() as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
+                            context?.model?.invoke(Unit) as? SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>? ?: throw ContextNotFoundException()
                         }
                     ),
                     EmbeddedObjectDefinition<*, *, *, *, *>::default
@@ -187,7 +187,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
             indexed = map(1),
             required = map(2),
             final = map(3),
-            dataModel = map<() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(4),
+            dataModel = map<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(4),
             default = map(5)
         )
     }

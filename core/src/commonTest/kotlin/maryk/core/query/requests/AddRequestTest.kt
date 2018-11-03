@@ -4,6 +4,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -15,7 +16,7 @@ internal val addRequest = SimpleMarykModel.add(
 
 class AddRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name to { SimpleMarykModel }
+        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
     ))
 
     @Test

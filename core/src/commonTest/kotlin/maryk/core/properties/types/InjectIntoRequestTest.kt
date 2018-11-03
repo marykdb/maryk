@@ -6,6 +6,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.RequestContext
@@ -18,7 +19,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.name to { SimpleMarykModel }
+    SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
 )).apply {
     addToCollect("keysToInject", GetRequest)
 }

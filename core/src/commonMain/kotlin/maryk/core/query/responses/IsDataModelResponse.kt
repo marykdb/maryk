@@ -32,7 +32,7 @@ interface IsDataModelResponse<out DM: IsRootDataModel<*>> : IsResponse {
                     contextualResolver = { context, name ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
-                            it.dataModels[name] as (() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                            it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),
@@ -42,10 +42,10 @@ interface IsDataModelResponse<out DM: IsRootDataModel<*>> : IsResponse {
                         DataModelReference(it.name){ it }
                     }
                 },
-                fromSerializable = { it?.get?.invoke() },
+                fromSerializable = { it?.get?.invoke(Unit) },
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.dataModel = value.get()
+                    context.dataModel = value.get(Unit)
                 }
             )
         }

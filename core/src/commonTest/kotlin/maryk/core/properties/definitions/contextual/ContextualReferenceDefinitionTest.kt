@@ -5,6 +5,7 @@ import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
+import maryk.core.extensions.toUnitLambda
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
@@ -25,8 +26,8 @@ class ContextualReferenceDefinitionTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name to { TestMarykModel },
-            EmbeddedMarykModel.name to { EmbeddedMarykModel }
+            TestMarykModel.name toUnitLambda { TestMarykModel },
+            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
         ),
         dataModel = TestMarykModel
     )

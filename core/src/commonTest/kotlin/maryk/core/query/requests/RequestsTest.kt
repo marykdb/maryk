@@ -4,6 +4,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
@@ -25,7 +26,7 @@ class RequestsTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name to { SimpleMarykModel }
+        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
     ))
 
     @Test

@@ -7,6 +7,7 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.models.asValues
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
@@ -26,7 +27,7 @@ import kotlin.test.Test
 class InjectTest {
     private val definitionsContext = DefinitionsContext(
         dataModels = mutableMapOf(
-            EmbeddedMarykModel.name to { EmbeddedMarykModel }
+            EmbeddedMarykModel.name toUnitLambda { EmbeddedMarykModel }
         )
     )
 

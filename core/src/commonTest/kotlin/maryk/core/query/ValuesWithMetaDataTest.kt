@@ -7,6 +7,7 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.lib.time.DateTime
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -34,7 +35,7 @@ class ValuesWithMetaDataTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name to { TestMarykModel }
+            TestMarykModel.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

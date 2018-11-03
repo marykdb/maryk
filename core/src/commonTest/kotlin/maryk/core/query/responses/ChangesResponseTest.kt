@@ -6,6 +6,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
@@ -29,7 +30,7 @@ class ChangesResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name to { SimpleMarykModel }
+        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
     ))
 
     @Test

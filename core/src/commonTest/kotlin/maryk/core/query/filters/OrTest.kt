@@ -4,6 +4,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.shouldBe
@@ -17,7 +18,7 @@ class OrTest {
 
     private val context = RequestContext(
         mapOf(
-            SimpleMarykModel.name to { SimpleMarykModel }
+            SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
         ),
         dataModel = SimpleMarykModel
     )

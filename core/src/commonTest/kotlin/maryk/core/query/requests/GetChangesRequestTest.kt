@@ -6,6 +6,7 @@ import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.RequestContext
 import maryk.core.query.ascending
@@ -42,7 +43,7 @@ internal val getChangesMaxRequest = SimpleMarykModel.run {
 
 class GetChangesRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name to { SimpleMarykModel }
+        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
     ))
 
     @Test

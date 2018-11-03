@@ -26,14 +26,14 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.atomicLazy
+import maryk.lib.safeLazy
 
 /** Definition for embedded object properties [P] to [dataModel] of type [DM] */
 class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions>(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
-    dataModel: () -> DM,
+    dataModel: Unit.() -> DM,
     override val default: Values<DM, P>? = null
 ) :
     IsEmbeddedValuesDefinition<DM, P, IsPropertyContext>
@@ -41,7 +41,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
     override val propertyDefinitionType = PropertyDefinitionType.Embed
     override val wireType = WireType.LENGTH_DELIMITED
 
-    private val internalDataModel = atomicLazy(dataModel)
+    private val internalDataModel = safeLazy(dataModel)
     override val dataModel: DM get() = internalDataModel.value
 
     @Suppress("UNCHECKED_CAST")
@@ -143,7 +143,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                         contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let{
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as? () -> DataModel<*, *>
+                                it.dataModels[name] as? Unit.() -> DataModel<*, *>
                                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
@@ -151,8 +151,8 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                     getter = { it: EmbeddedValuesDefinition<*, *> ->
                         { it.dataModel as DataModel<*, *> }
                     },
-                    toSerializable = { value: (() -> DataModel<*, *>)?, _ ->
-                        value?.invoke()?.let{ model ->
+                    toSerializable = { value: (Unit.() -> DataModel<*, *>)?, _ ->
+                        value?.invoke(Unit)?.let{ model ->
                             DataModelReference(model.name, value)
                         }
                     },
@@ -172,7 +172,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                 add(5, "default",
                     ContextualEmbeddedValuesDefinition(
                         contextualResolver = { context: ModelContext? ->
-                            context?.model?.invoke() as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>? ?: throw ContextNotFoundException()
+                            context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>? ?: throw ContextNotFoundException()
                         }
                     ) as IsEmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>,
                     EmbeddedValuesDefinition<*, *>::default as (EmbeddedValuesDefinition<*, *>) -> Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>?

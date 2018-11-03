@@ -4,6 +4,7 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.ValueRange
 import maryk.core.query.pairs.with
@@ -23,7 +24,7 @@ class RangeTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name to { TestMarykModel }
+            TestMarykModel.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

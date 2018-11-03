@@ -7,6 +7,7 @@ import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.models.asValues
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -32,7 +33,7 @@ class ValuesResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.name to { SimpleMarykModel }
+        SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
     ))
 
     @Test

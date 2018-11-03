@@ -15,8 +15,8 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.lib.atomicLazy
 import maryk.lib.exceptions.ParseException
+import maryk.lib.safeLazy
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DM: IsRootDataModel<*>>(
@@ -27,7 +27,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
     override val minValue: Key<DM>? = null,
     override val maxValue: Key<DM>? = null,
     override val default: Key<DM>? = null,
-    dataModel: () -> DM
+    dataModel: Unit.() -> DM
 ):
     IsComparableDefinition<Key<DM>, IsPropertyContext>,
     IsSerializableFixedBytesEncodable<Key<DM>, IsPropertyContext>,
@@ -38,7 +38,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
     override val wireType = WireType.LENGTH_DELIMITED
     override val byteSize get() = dataModel.keySize
 
-    private val internalDataModel = atomicLazy(dataModel)
+    private val internalDataModel = safeLazy(dataModel)
     val dataModel: DM get() = internalDataModel.value
 
     override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
@@ -106,15 +106,15 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
                         contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let {
                                 @Suppress("UNCHECKED_CAST")
-                                it.dataModels[name] as (() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
+                                it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                             } ?: throw ContextNotFoundException()
                         }
                     ),
                     getter = { it: ReferenceDefinition<*> ->
                         { it.dataModel }
                     },
-                    toSerializable = { value, _ ->
-                        value?.invoke()?.let { model: IsRootDataModel<*> ->
+                    toSerializable = { value: (Unit.() -> IsRootDataModel<*>)? , _ ->
+                        value?.invoke(Unit)?.let { model: IsRootDataModel<*> ->
                             DataModelReference(model.name, value)
                         }
                     },

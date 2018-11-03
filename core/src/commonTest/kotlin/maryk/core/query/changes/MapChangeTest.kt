@@ -4,6 +4,7 @@ import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.lib.time.Time
 import maryk.test.shouldBe
@@ -25,7 +26,7 @@ class MapChangeTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.name to { TestMarykModel }
+            TestMarykModel.name toUnitLambda { TestMarykModel }
         ),
         dataModel = TestMarykModel
     )

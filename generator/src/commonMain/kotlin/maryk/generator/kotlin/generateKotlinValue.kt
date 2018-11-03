@@ -149,8 +149,8 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         when (definition) {
             is ContextualModelReferenceDefinition<*, *, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                (value as? () -> IsNamedDataModel<*>)?.let {
-                    """{ ${value().name} }"""
+                (value as? Unit.() -> IsNamedDataModel<*>)?.let {
+                    """{ ${value(Unit).name} }"""
                 } ?: throw Exception("NamedDataModel $value cannot be null")
             }
             is EmbeddedValuesDefinition<*, *> -> (definition.dataModel as? DataModel<*, *>)?.let {

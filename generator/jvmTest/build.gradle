@@ -22,11 +22,11 @@ clean {
 }
 
 dependencies {
-    compile("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
-    api(project(":generator"))
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    api project(":generator")
 
-    testCompile(project(":testlib"))
-    testCompile("com.google.protobuf:protobuf-java:$protobufVersion")
+    testImplementation project(":testlib")
+    testImplementation "com.google.protobuf:protobuf-java:$protobufVersion"
 }
 
 tasks.withType(KotlinCompile) {

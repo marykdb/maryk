@@ -23,11 +23,7 @@ clean {
 
 dependencies {
     compile("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
-    implementation(project(":generator"))
-    implementation(project(":core"))
-    implementation(project(":lib"))
-    implementation(project(":yaml"))
-    implementation(project(":json"))
+    api(project(":generator"))
 
     testCompile(project(":testlib"))
     testCompile("com.google.protobuf:protobuf-java:$protobufVersion")

@@ -8,13 +8,6 @@ ext.setupCommon = {
                     implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
                 }
             }
-            commonTest {
-                dependencies {
-                    implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
-                    implementation 'org.jetbrains.kotlin:kotlin-test-common'
-                    implementation 'org.jetbrains.kotlin:kotlin-test-annotations-common'
-                }
-            }
         }
     }
 }

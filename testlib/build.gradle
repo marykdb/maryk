@@ -18,23 +18,23 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
-                implementation 'org.jetbrains.kotlin:kotlin-test-common'
-                implementation 'org.jetbrains.kotlin:kotlin-test-annotations-common'
+                api 'org.jetbrains.kotlin:kotlin-stdlib-common'
+                api 'org.jetbrains.kotlin:kotlin-test-common'
+                api 'org.jetbrains.kotlin:kotlin-test-annotations-common'
             }
         }
         jvmMain {
             dependencies {
-                implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
-                implementation 'org.jetbrains.kotlin:kotlin-test'
-                implementation 'org.jetbrains.kotlin:kotlin-test-junit'
+                api 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+                api 'org.jetbrains.kotlin:kotlin-test'
+                api 'org.jetbrains.kotlin:kotlin-test-junit'
                 implementation "org.jetbrains.kotlin:kotlin-reflect"
             }
         }
         jsMain {
             dependencies {
-                implementation 'org.jetbrains.kotlin:kotlin-stdlib-js'
-                implementation 'org.jetbrains.kotlin:kotlin-test-js'
+                api 'org.jetbrains.kotlin:kotlin-stdlib-js'
+                api 'org.jetbrains.kotlin:kotlin-test-js'
             }
         }
     }

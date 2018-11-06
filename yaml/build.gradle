@@ -18,6 +18,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api project(':lib')
                 api project(':json')
             }
         }

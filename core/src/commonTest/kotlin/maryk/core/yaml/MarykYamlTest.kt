@@ -29,7 +29,7 @@ fun createMarykYamlModelReader(yaml: String): IsJsonLikeReader {
 
 class MarykYamlTest{
     @Test
-    fun read_maryk_tags() {
+    fun readMarykTags() {
         createMarykYamlModelReader("""
         |    - !Boolean { k1: v1 }
         |    - !String { k2: v2 }

@@ -41,7 +41,7 @@ internal class DateTimeDefinitionTest {
     )
 
     @Test
-    fun create_now_date_time() {
+    fun createNowDateTime() {
         val now = def.createNow().toEpochMilli()
         val expected = Instant.getCurrentEpochTimeInMillis()
 
@@ -51,7 +51,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convert_values_with_milliseconds_precision_to_storage_bytes_and_back() {
+    fun convertValuesWithMillisecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(
@@ -64,7 +64,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convert_values_with_seconds_precision_to_storage_bytes_and_back() {
+    fun convertValuesWithSecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
         for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(
@@ -77,7 +77,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convert_values_with_seconds_precision_to_transport_bytes_and_back() {
+    fun convertValuesWithSecondsPrecisionToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -90,7 +90,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convert_values_with_millisecond_precision_to_transport_bytes_and_back() {
+    fun convertValuesWithMillisecondPrecisionToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -103,7 +103,7 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         for (it in dateTimesToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -111,26 +111,26 @@ internal class DateTimeDefinitionTest {
     }
 
     @Test
-    fun invalid_String_value_should_throw_exception() {
+    fun invalidStringValueShouldThrowException() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, DateTimeDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, DateTimeDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, DateTimeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, DateTimeDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, DateTimeDefinition.Model)
         checkYamlConversion(this.defMaxDefined, DateTimeDefinition.Model) shouldBe """
         indexed: true

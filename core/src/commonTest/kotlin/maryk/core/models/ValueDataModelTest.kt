@@ -16,7 +16,7 @@ import kotlin.test.Test
 
 internal class ValueDataModelTest {
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, { converted: ValueDataModel<*, *>, original: ValueDataModel<*, *> ->
             compareDataModels(converted, original)
 
@@ -48,12 +48,12 @@ internal class ValueDataModelTest {
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels) shouldBe  """
         name: TestValueObject
         properties:

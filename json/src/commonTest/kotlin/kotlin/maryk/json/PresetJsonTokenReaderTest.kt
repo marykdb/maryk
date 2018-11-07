@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class PresetJsonTokenReaderTest {
     @Test
-    fun return_preset_json_tokens() {
+    fun returnPresetJsonTokens() {
         val tokens = listOf(
             JsonToken.SimpleStartObject,
             JsonToken.FieldName("a"),

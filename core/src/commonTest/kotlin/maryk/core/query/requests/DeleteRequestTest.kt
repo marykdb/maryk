@@ -16,17 +16,17 @@ class DeleteRequestTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(deleteRequest, DeleteRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(deleteRequest, DeleteRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(deleteRequest, DeleteRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         objectsToDelete: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]

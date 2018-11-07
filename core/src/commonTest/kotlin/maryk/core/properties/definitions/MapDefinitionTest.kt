@@ -59,7 +59,7 @@ internal class MapDefinitionTest {
     )
 
     @Test
-    fun validate_map_size() {
+    fun validateMapSize() {
         def.validateWithRef(newValue = mapOf(
             12 to "#twelve",
             30 to "#thirty"
@@ -93,7 +93,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun validate_map_content() {
+    fun validateMapContent() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(
                 newValue = mapOf(
@@ -120,7 +120,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -151,7 +151,7 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun convert_values_values_to_JSON_String_and_back() {
+    fun convertValuesToJSONStringAndBack() {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })
 
@@ -166,19 +166,19 @@ internal class MapDefinitionTest {
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, MapDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, MapDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, MapDefinition.Model)
         checkJsonConversion(this.defMaxDefined, MapDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, MapDefinition.Model)
         checkYamlConversion(this.defMaxDefined, MapDefinition.Model) shouldBe """
         indexed: true

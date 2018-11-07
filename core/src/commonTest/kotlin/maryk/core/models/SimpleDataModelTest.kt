@@ -17,7 +17,7 @@ private val testValues = SimpleMarykModel(
 
 internal class SimpleDataModelTest {
     @Test
-    fun construct_by_map() {
+    fun constructByMap() {
         SimpleMarykModel.map {
             mapNonNulls(
                 value with testValues { value }
@@ -31,7 +31,7 @@ internal class SimpleDataModelTest {
     }
 
     @Test
-    fun write_into_a_JSON_object() {
+    fun writeIntoJSONObject() {
         var output = ""
         val writer = JsonWriter {
             output += it
@@ -43,7 +43,7 @@ internal class SimpleDataModelTest {
     }
 
     @Test
-    fun write_into_a_pretty_JSON_object() {
+    fun writeIntoPrettyJSONObject() {
         var output = ""
         val writer = JsonWriter(pretty = true) {
             output += it
@@ -59,7 +59,7 @@ internal class SimpleDataModelTest {
     }
 
     @Test
-    fun write_into_a_YAML_object() {
+    fun writeIntoYAMLObject() {
         var output = ""
         val writer = YamlWriter {
             output += it
@@ -74,7 +74,7 @@ internal class SimpleDataModelTest {
     }
 
     @Test
-    fun write_to_ProtoBuf_bytes() {
+    fun writeToProtoBufBytes() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -92,7 +92,7 @@ internal class SimpleDataModelTest {
     }
 
     @Test
-    fun convert_ProtoBuf_bytes_to_map() {
+    fun convertProtoBufBytesToMap() {
         val bytes = initByteArrayByHex("0a036861790008102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
         var index = 0
 
@@ -105,7 +105,7 @@ internal class SimpleDataModelTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -121,7 +121,7 @@ internal class SimpleDataModelTest {
     }
 
     @Test
-    fun convert_map_to_JSON_and_back_to_map() {
+    fun convertMapToJSONAndBackToMap() {
         var output = ""
         val writer = { string: String -> output += string }
 

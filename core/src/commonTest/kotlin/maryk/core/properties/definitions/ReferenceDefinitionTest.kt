@@ -41,21 +41,21 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         for (it in refToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
         }
     }
     @Test
-    fun invalid_String_value_should_throw_exception() {
+    fun invalidStringValueShouldThrowException() {
         shouldThrow<ParseException> {
             def.fromString("wrong§")
         }
     }
 
     @Test
-    fun convert_values_to_storage_bytes_and_back() {
+    fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
         for (it in refToTest) {
             bc.reserve(
@@ -68,7 +68,7 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         for (it in refToTest) {
             checkProtoBufConversion(bc, it, this.def)
@@ -76,19 +76,19 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, ReferenceDefinition.Model,{ DefinitionsContext() })
         checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
         checkJsonConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
         checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() }) shouldBe """
         indexed: true

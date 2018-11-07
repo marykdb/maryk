@@ -32,17 +32,17 @@ class MapChangeTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.mapPropertyChange, MapChange, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.mapPropertyChange, MapChange, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.mapPropertyChange, MapChange, { this.context }) shouldBe """
         map:
           valuesToAdd:

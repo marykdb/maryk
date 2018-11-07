@@ -54,7 +54,7 @@ internal class ValueModelDefinitionTest {
     )
 
     @Test
-    fun convert_values_to_storage_bytes_and_back() {
+    fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
         bc.reserve(
             def.calculateStorageByteLength(value)
@@ -66,14 +66,14 @@ internal class ValueModelDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
 
         checkProtoBufConversion(bc, value, this.def)
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         def.fromString(
             def.asString(value)
         ) shouldBe value
@@ -104,19 +104,19 @@ internal class ValueModelDefinitionTest {
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
         checkProtoBufConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
         checkJsonConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() })
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
         checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() }) shouldBe """
         indexed: true

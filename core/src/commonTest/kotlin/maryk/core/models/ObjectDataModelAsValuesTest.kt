@@ -84,7 +84,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 
 internal class ObjectDataModelAsValuesTest {
     @Test
-    fun write_into_a_JSON_object() {
+    fun writeIntoJSONObject() {
         var output = ""
         val writer = JsonWriter {
             output += it
@@ -96,7 +96,7 @@ internal class ObjectDataModelAsValuesTest {
     }
 
     @Test
-    fun write_into_a_pretty_JSON_object() {
+    fun writeIntoPrettyJSONObject() {
         var output = ""
         val writer = JsonWriter(pretty = true) {
             output += it
@@ -136,7 +136,7 @@ internal class ObjectDataModelAsValuesTest {
     }
 
     @Test
-    fun write_into_a_YAML_object() {
+    fun writeIntoYAMLObject() {
         var output = ""
         val writer = YamlWriter {
             output += it
@@ -171,7 +171,7 @@ internal class ObjectDataModelAsValuesTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -187,7 +187,7 @@ internal class ObjectDataModelAsValuesTest {
     }
 
     @Test
-    fun convert_JSON_to_DataObject() {
+    fun convertJSONToDataObject() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -204,7 +204,7 @@ internal class ObjectDataModelAsValuesTest {
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         var output = ""
         val writer = { string: String -> output += string }
 

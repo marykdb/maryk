@@ -18,12 +18,12 @@ class EmbeddedObjectPropertyDefinitionWrapperTest {
     )
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, IsPropertyDefinitionWrapper.Model, { DefinitionsConversionContext() }, ::comparePropertyDefinitionWrapper)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, IsPropertyDefinitionWrapper.Model, { DefinitionsConversionContext() }, ::comparePropertyDefinitionWrapper)
     }
 }

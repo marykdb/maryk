@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class MapItemsReaderTest {
     @Test
-    fun read_simple_mapping() {
+    fun readSimpleMapping() {
         createYamlReader("""
         |key1: value1
         |'key2': "value2"
@@ -27,7 +27,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_mapping_with_comments_and_line_breaks() {
+    fun readMappingWithCommentsAndLineBreaks() {
         createYamlReader("""
         |key1: "value1" #comment at end
         |'key2': #comment after key
@@ -52,7 +52,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_indented_mapping() {
+    fun readIndentedMapping() {
         createYamlReader("""
         |  key1: value1
         |  'key2': "value2"
@@ -68,7 +68,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_wrong_mapping() {
+    fun readWrongMapping() {
         createYamlReader("""
         |key1: value1
         |'key2': value2
@@ -83,7 +83,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_deeper_mapping() {
+    fun readDeeperMapping() {
         createYamlReader("""
         |key1: value1
         |'key2':
@@ -114,7 +114,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_mapping_with_array() {
+    fun readMappingWithArray() {
         createYamlReader("""
         |key1: value1
         |'key2':
@@ -138,7 +138,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_sequence_in_map() {
+    fun readSequenceInMap() {
         val input = """
         | 1:
         |   seq:
@@ -167,7 +167,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun fail_duplicate_key() {
+    fun failDuplicateKey() {
         val input = """
         | alfa: a
         | alfa: b
@@ -181,7 +181,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_map_in_array_at_end() {
+    fun readMapInArrayAtEnd() {
         createYamlReader("""
         |  properties:
         |  - index: 0
@@ -204,7 +204,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_map_in_array() {
+    fun readMapInArray() {
         createYamlReader("""
         |  properties:
         |  - index: 0
@@ -229,7 +229,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_map_with_null_value_in_array() {
+    fun readMapWithNullValueInArray() {
         createYamlReader("""
         - k1:
         - k2:
@@ -250,7 +250,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun read_indented_map_in_array() {
+    fun readIndentedMapInArray() {
         createYamlReader("""
         |  -        index: 0
         |           name: string
@@ -270,7 +270,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun fail_on_double_key() {
+    fun failOnDoubleKey() {
         createYamlReader("""
         |  index: 0: 1
         """.trimMargin()).apply {
@@ -281,7 +281,7 @@ class MapItemsReaderTest {
     }
 
     @Test
-    fun null_values() {
+    fun nullValues() {
         createYamlReader("""
         |  key1:
         |  key2:

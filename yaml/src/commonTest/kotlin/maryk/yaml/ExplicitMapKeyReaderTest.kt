@@ -7,7 +7,7 @@ import kotlin.test.Test
 
 class ExplicitMapKeyReaderTest {
     @Test
-    fun empty_key_indicator() {
+    fun emptyKeyIndicator() {
         createYamlReader("?").apply {
             assertStartObject()
             assertFieldName(null)
@@ -18,7 +18,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun empty_key_indicator_with_value() {
+    fun emptyKeyIndicatorWithValue() {
         createYamlReader("""
         | ?
         | : value
@@ -32,7 +32,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun empty_key_indicator_with_no_value() {
+    fun emptyKeyIndicatorWithNoValue() {
         createYamlReader("""
         | ?
         | key: value
@@ -48,7 +48,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun plain_string_key_indicator_with_value() {
+    fun plainStringKeyIndicatorWithValue() {
         createYamlReader("""
         | ? key
         | : value
@@ -62,7 +62,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun plain_string_multiline_key_indicator_with_value() {
+    fun plainStringMultilineKeyIndicatorWithValue() {
         createYamlReader("""
         | ? key
         |   with more lines
@@ -77,7 +77,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun map_in_key_indicator_with_value() {
+    fun mapInKeyIndicatorWithValue() {
         createYamlReader("""
         | ? k1: v1
         |   k2: v2
@@ -99,7 +99,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun map_in_key_indicator_on_new_line_with_value() {
+    fun mapInKeyIndicatorOnNewLineWithValue() {
         createYamlReader("""
         | ?
         |     k1: v1
@@ -122,7 +122,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun map_in_key_indicator_with_value_and_only_tag() {
+    fun mapInKeyIndicatorWithValueAndOnlyTag() {
         createYamlReader("""
         | ? k1: v1
         | : !!omap
@@ -176,7 +176,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun map_in_key_indicator_with_value_and_double_quotes() {
+    fun mapInKeyIndicatorWithValueAndDoubleQuotes() {
         createYamlReader("""
         | ?    "k1": "v1"
         |      "k2": "v2"
@@ -198,7 +198,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun sequence_in_key_indicator_with_value() {
+    fun sequenceInKeyIndicatorWithValue() {
         createYamlReader("""
         | ? - a1
         |   - a2
@@ -218,7 +218,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun sequence_with_new_line_in_key_indicator_with_value() {
+    fun sequenceWithNewLineInKeyIndicatorWithValue() {
         createYamlReader("""
         | ?
         |   - a1
@@ -239,7 +239,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun interrupt_sequence_within_explicit_map_key() {
+    fun interruptSequenceWithinExplicitMapKey() {
         createYamlReader("""
         | ? - a1
         """.trimMargin()).apply {
@@ -253,7 +253,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun interrupt_map_within_explicit_map_key() {
+    fun interruptMapWithinExplicitMapKey() {
         createYamlReader("""
         | ? k1: v1
         """.trimMargin()).apply {
@@ -268,7 +268,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun flow_sequence_with_new_line_in_key_indicator_with_value() {
+    fun flowSequenceWithNewLineInKeyIndicatorWithValue() {
         createYamlReader("""
         | ? [ a1, a2]
         | : value
@@ -287,7 +287,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun flow_map_in_key_indicator_with_value() {
+    fun flowMapInKeyIndicatorWithValue() {
         createYamlReader("""
         | ? { k1: v1,
         |     k2: v2 }
@@ -309,7 +309,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun second_be_explicit_key() {
+    fun secondBeExplicitKey() {
         createYamlReader("""
         | k1: v1
         | ? k2
@@ -326,7 +326,7 @@ class ExplicitMapKeyReaderTest {
     }
 
     @Test
-    fun read_properties() {
+    fun readProperties() {
         createYamlReader("""
         |properties:
         | ? 0: string

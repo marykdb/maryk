@@ -40,7 +40,7 @@ class RequestsTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.requests, Requests, { this.context }, { converted, original ->
             converted.requests.size shouldBe original.requests.size
 
@@ -52,12 +52,12 @@ class RequestsTest {
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.requests, Requests, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.requests, Requests, { this.context }) shouldBe """
         - !Add
           dataModel: SimpleMarykModel

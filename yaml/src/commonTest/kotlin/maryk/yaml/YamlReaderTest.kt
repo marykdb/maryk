@@ -9,7 +9,7 @@ import kotlin.test.Test
 
 class YamlReaderTest {
     @Test
-    fun test_skip_fields_structure() {
+    fun testSkipFieldsStructure() {
         val input = """
         |  1: 567
         |  2: [a1, a2, a3]
@@ -68,7 +68,7 @@ class YamlReaderTest {
     }
 
     @Test
-    fun read_exception() {
+    fun readException() {
         createYamlReader("key:\n `wrong").apply {
             assertStartObject()
             assertFieldName("key")
@@ -81,14 +81,14 @@ class YamlReaderTest {
     }
 
     @Test
-    fun read_prefix_tag() {
+    fun readPrefixTag() {
         val reader = createYamlReader("%TAG !prefix! !B\n---") as YamlReaderImpl
         reader.nextToken()
         reader.resolveTag("!prefix!", "ar") shouldBe TestType.Bar
     }
 
     @Test
-    fun fail_on_invalid_URI_tag() {
+    fun failOnInvalid_URI_tag() {
         val reader = createYamlReader("") as YamlReaderImpl
         shouldThrow<InvalidYamlContent> {
             reader.resolveTag("!", "<wrong>")
@@ -96,7 +96,7 @@ class YamlReaderTest {
     }
 
     @Test
-    fun fail_on_unknown_URI_tag() {
+    fun failOnUnknown_URI_tag() {
         shouldThrow<InvalidYamlContent> {
             (createYamlReader("") as YamlReaderImpl)
                 .resolveTag("!", "<tag:unknown.org,2002>")
@@ -104,7 +104,7 @@ class YamlReaderTest {
     }
 
     @Test
-    fun fail_on_unknown_tag() {
+    fun failOnUnknownTag() {
         shouldThrow<InvalidYamlContent> {
             (createYamlReader("") as YamlReaderImpl)
                 .resolveTag("!", "unknown")
@@ -112,7 +112,7 @@ class YamlReaderTest {
     }
 
     @Test
-    fun fail_on_unknown_default_tag() {
+    fun failOnUnknownDefaultTag() {
         shouldThrow<InvalidYamlContent> {
             (createYamlReader("") as YamlReaderImpl)
                 .resolveTag("!!", "unknown")
@@ -120,7 +120,7 @@ class YamlReaderTest {
     }
 
     @Test
-    fun fail_on_unknown_named_tag() {
+    fun failOnUnknownNamedTag() {
         shouldThrow<InvalidYamlContent> {
             (createYamlReader("%TAG !known! tag:unknown.org,2002\n---") as YamlReaderImpl).let {
                 it.nextToken()

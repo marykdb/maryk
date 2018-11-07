@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class AnchorAndAliasReaderTest {
     @Test
-    fun anchors_with_value() {
+    fun anchorsWithValue() {
         createYamlReader("""
         |  - &array alfa
         |  - *array
@@ -19,7 +19,7 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
-    fun anchors_in_sequences() {
+    fun anchorsInSequences() {
         createYamlReader("""
         |  - &array [a, b]
         |  - *array
@@ -39,7 +39,7 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
-    fun anchors_complex() {
+    fun anchorsComplex() {
         createYamlReader("""
         |  - &complex
         |       test: {a: b}
@@ -87,7 +87,7 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
-    fun fail_on_invalid_anchor() {
+    fun failOnInvalidAnchor() {
         createYamlReader("""
         |  - & [a, b]
         """.trimMargin()).apply {
@@ -97,7 +97,7 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
-    fun fail_on_invalid_alias() {
+    fun failOnInvalidAlias() {
         createYamlReader("""
         |  - &array a
         |  - *
@@ -109,7 +109,7 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
-    fun fail_on_unknown_alias() {
+    fun failOnUnknownAlias() {
         createYamlReader("""
         |  - &array a
         |  - *unknown
@@ -121,7 +121,7 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
-    fun only_anchor() {
+    fun onlyAnchor() {
         createYamlReader("""
         |  - &anchor
         """.trimMargin()).apply {

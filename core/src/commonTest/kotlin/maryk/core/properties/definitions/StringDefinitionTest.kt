@@ -52,7 +52,7 @@ internal class StringDefinitionTest {
     )
 
     @Test
-    fun validate_values() {
+    fun validateValues() {
         // Should both succeed without errors
         def.validateWithRef(newValue = "abc")
         def.validateWithRef(newValue = "abcdef")
@@ -66,7 +66,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun validate_values_with_regular_expression() {
+    fun validateValuesWithRegularExpression() {
         // Should succeed
         defRegEx.validateWithRef(newValue = "abc")
 
@@ -76,7 +76,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_storage_bytes_and_back() {
+    fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
         for ((value, asHex) in stringsToTest) {
             bc.reserve(
@@ -90,7 +90,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
         for ((value, asHex) in stringsToTest) {
@@ -112,7 +112,7 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         for (it in stringsToTest.keys) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -120,19 +120,19 @@ internal class StringDefinitionTest {
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, StringDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, StringDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, StringDefinition.Model)
         checkJsonConversion(this.defMaxDefined, StringDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, StringDefinition.Model)
         checkYamlConversion(this.defMaxDefined, StringDefinition.Model) shouldBe """
         indexed: true

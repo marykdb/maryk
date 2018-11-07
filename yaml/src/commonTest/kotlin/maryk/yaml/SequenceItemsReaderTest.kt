@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class SequenceItemsReaderTest {
     @Test
-    fun read_sequence_items() {
+    fun readSequenceItems() {
         createYamlReader("""
             |     - 'test'
             |     - hey
@@ -21,7 +21,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_sequence_with_comments() {
+    fun readSequenceWithComments() {
         createYamlReader("""
             |     - 'test' #ignore
             |  # ignore too
@@ -39,7 +39,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_complex_sequence_items() {
+    fun readComplexSequenceItems() {
         createYamlReader("""
             |     - 'test'
             |     - 'hey'
@@ -71,7 +71,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_double_sequence_items() {
+    fun readDoubleSequenceItems() {
         createYamlReader("""
             |     -   - 'test'
             |         - 'hey'
@@ -89,7 +89,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_wrong_sequence_items() {
+    fun readWrongSequenceItems() {
         createYamlReader("""
             |     - 'test'
             |     "wrong"
@@ -101,7 +101,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_wrong_sequence_start_items() {
+    fun readWrongSequenceStartItems() {
         createYamlReader("""
             |     - 'test'
             |  - 'hey'
@@ -114,7 +114,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun fail_on_wrong_non_sequence_continuation() {
+    fun failOnWrongNonSequenceContinuation() {
         createYamlReader("""
             | - 'test'
             | -wrong
@@ -126,7 +126,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_embedded_sequence() {
+    fun readEmbeddedSequence() {
         createYamlReader("""
         |-
         |  - Reference
@@ -149,7 +149,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_embedded_sequence_in_map() {
+    fun readEmbeddedSequenceInMap() {
         createYamlReader("""
         |key:
         |-
@@ -176,7 +176,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_map_inside_sequence() {
+    fun readMapInsideSequence() {
         createYamlReader("""
          - Number
          - indexed: false
@@ -195,7 +195,7 @@ class SequenceItemsReaderTest {
     }
 
     @Test
-    fun read_null_values() {
+    fun readNullValues() {
         createYamlReader("""
         |    - !!null
         |    - a

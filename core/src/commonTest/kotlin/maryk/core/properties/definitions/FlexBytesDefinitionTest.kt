@@ -13,9 +13,9 @@ import kotlin.test.Test
 
 internal class FlexBytesDefinitionTest {
     private val flexBytesToTest = arrayOf(
-        Bytes(ByteArray(5, { 0x00.toByte() } )),
-        Bytes(ByteArray(7, { 0xFF.toByte() } )),
-        Bytes(ByteArray(9, { if (it % 2 == 1) 0x88.toByte() else 0xFF.toByte() } ))
+        Bytes(ByteArray(5) { 0x00.toByte() }),
+        Bytes(ByteArray(7) { 0xFF.toByte() }),
+        Bytes(ByteArray(9) { if (it % 2 == 1) 0x88.toByte() else 0xFF.toByte() })
     )
 
     val def = FlexBytesDefinition(
@@ -36,22 +36,22 @@ internal class FlexBytesDefinitionTest {
     )
 
     @Test
-    fun validate_values() {
+    fun validateValues() {
         // Should both succeed without errors
-        def.validateWithRef(newValue = Bytes(ByteArray(4, { 0x00.toByte() } )))
-        def.validateWithRef(newValue = Bytes(ByteArray(5, { 0x00.toByte() } )))
-        def.validateWithRef(newValue = Bytes(ByteArray(10, { 0x00.toByte() } )))
+        def.validateWithRef(newValue = Bytes(ByteArray(4) { 0x00.toByte() }))
+        def.validateWithRef(newValue = Bytes(ByteArray(5) { 0x00.toByte() }))
+        def.validateWithRef(newValue = Bytes(ByteArray(10) { 0x00.toByte() }))
 
         shouldThrow<InvalidSizeException> {
-            def.validateWithRef(newValue = Bytes(ByteArray(1, { 0x00.toByte() })))
+            def.validateWithRef(newValue = Bytes(ByteArray(1) { 0x00.toByte() }))
         }
         shouldThrow<InvalidSizeException> {
-            def.validateWithRef(newValue = Bytes(ByteArray(20, { 0x00.toByte() })))
+            def.validateWithRef(newValue = Bytes(ByteArray(20) { 0x00.toByte() }))
         }
     }
 
     @Test
-    fun convert_values_to_storage_bytes_and_back() {
+    fun convertJSONToDataObjectvaluesToStorageBytesAndBack() {
         val bc = ByteCollector()
         for (it in flexBytesToTest) {
             bc.reserve(
@@ -64,7 +64,7 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         for (it in flexBytesToTest) {
             checkProtoBufConversion(bc, it, this.def)
@@ -72,7 +72,7 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         for (it in flexBytesToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -80,26 +80,26 @@ internal class FlexBytesDefinitionTest {
     }
 
     @Test
-    fun invalid_String_value_should_throw_exception() {
+    fun invalidStringValueShouldThrowException() {
         shouldThrow<ParseException> {
             def.fromString("wrong§")
         }
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, FlexBytesDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, FlexBytesDefinition.Model)
         checkJsonConversion(this.defMaxDefined, FlexBytesDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, FlexBytesDefinition.Model)
         checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model) shouldBe """
         indexed: true

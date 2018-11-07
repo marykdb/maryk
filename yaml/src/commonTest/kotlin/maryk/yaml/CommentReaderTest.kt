@@ -4,14 +4,14 @@ import kotlin.test.Test
 
 class CommentReaderTest {
     @Test
-    fun read_comment() {
+    fun readComment() {
         createYamlReader("# Comment").apply {
             assertEndDocument()
         }
     }
 
     @Test
-    fun read_comment_with_directive() {
+    fun readCommentWithDirective() {
         createYamlReader("""
         |%YAML 1.2
         |# Comment
@@ -22,7 +22,7 @@ class CommentReaderTest {
     }
 
     @Test
-    fun read_multi_line_comment() {
+    fun readMultiLineComment() {
         createYamlReader("""
         |  # Comment
         |  # Line 2

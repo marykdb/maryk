@@ -52,14 +52,14 @@ internal class SInt16Test {
 
 
     @Test
-    fun test_of_native_types() {
+    fun testOfNativeTypes() {
         SInt16.ofLong(12345) shouldBe 12345.toShort()
         SInt16.ofDouble(12.0) shouldBe 12.toShort()
         SInt16.ofInt(12) shouldBe 12.toShort()
     }
 
     @Test
-    fun test_is_of_type() {
+    fun testIsOfType() {
         SInt16.isOfType(12.toShort()) shouldBe true
         SInt16.isOfType(1234L) shouldBe false
     }

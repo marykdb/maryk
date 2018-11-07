@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class DirectiveReaderTest {
     @Test
-    fun read_yaml_directive() {
+    fun readYamlDirective() {
         createYamlReader("""
         |%YAML 1.2
         |---
@@ -16,7 +16,7 @@ class DirectiveReaderTest {
     }
 
     @Test
-    fun fail_unsupported_yaml_version() {
+    fun failUnsupportedYamlVersion() {
         createYamlReader("""
         |%YAML 2.0
         |---
@@ -26,7 +26,7 @@ class DirectiveReaderTest {
     }
 
     @Test
-    fun fail_when_yaml_version_twice() {
+    fun failWhenYamlVersionTwice() {
         createYamlReader("""
         |%YAML 1.2
         |%YAML 1.3
@@ -37,7 +37,7 @@ class DirectiveReaderTest {
     }
 
     @Test
-    fun ignore_unknown_directive() {
+    fun ignoreUnknownDirective() {
         createYamlReader("""
         |%UNKNOWN directive
         |%UNKNOWN two
@@ -49,7 +49,7 @@ class DirectiveReaderTest {
     }
 
     @Test
-    fun read_tags() {
+    fun readTags() {
         val reader = createYamlReader("""
         |%TAG ! tag:maryk.io,2018:
         |%TAG !! tag:maryk.io,2016:
@@ -72,7 +72,7 @@ class DirectiveReaderTest {
     }
 
     @Test
-    fun fail_on_duplicate_tag() {
+    fun failOnDuplicateTag() {
         val reader = createYamlReader("""
         |%TAG !yaml! tag:yaml.org,2002
         |%TAG !yaml! tag:anotheryaml.org,2018
@@ -86,7 +86,7 @@ class DirectiveReaderTest {
     }
 
     @Test
-    fun read_only_tag_directive() {
+    fun readOnlyTagDirective() {
         createYamlReader("""
         |%TAG !yaml! tag:yaml.org,2002
         """.trimMargin()).apply {

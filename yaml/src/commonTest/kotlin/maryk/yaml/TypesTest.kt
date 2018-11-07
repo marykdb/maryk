@@ -8,7 +8,7 @@ import kotlin.test.Test
 
 class TypesTest {
     @Test
-    fun read_auto_typed_values() {
+    fun readAutoTypedValues() {
         createYamlReader("""
         |- [yes, Yes, YES, Y, on, ON, On, true, True, TRUE]
         |- [no, No, NO, N, off, OFF, Off, false, False, FALSE]
@@ -26,7 +26,7 @@ class TypesTest {
     }
 
     @Test
-    fun read_strong_typed_values() {
+    fun readStrongTypedValues() {
         createYamlReader("""
         |- [!!bool yes, !!bool Yes, !!bool YES, !!bool Y, !!bool on, !!bool ON, !!bool On, !!bool true, !!bool True, !!bool TRUE]
         |- [!!bool no, !!bool No, !!bool NO, !!bool N, !!bool off, !!bool OFF, !!bool Off, !!bool false, !!bool False, !!bool FALSE]
@@ -53,7 +53,7 @@ class TypesTest {
     }
 
     @Test
-    fun read_wrong_typed_values() {
+    fun readWrongTypedValues() {
         createYamlReader("!!null yes").apply {
             assertInvalidYaml()
         }
@@ -68,7 +68,7 @@ class TypesTest {
     }
 
     @Test
-    fun read_string_typed_values() {
+    fun readStringTypedValues() {
         createYamlReader("!!str .NAN").apply {
             assertValue(
                 ".NAN",

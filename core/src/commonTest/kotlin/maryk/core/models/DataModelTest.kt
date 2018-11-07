@@ -90,7 +90,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 
 internal class DataModelTest {
     @Test
-    fun construct_by_map() {
+    fun constructByMap() {
         TestMarykModel.map {
             mapNonNulls(
                 string with testMarykModelObject { string },
@@ -110,7 +110,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun fail_validation_with_incorrect_values_in_DataObject() {
+    fun failValidationWithIncorrectValuesInDataObject() {
         shouldThrow<ValidationUmbrellaException> {
             TestMarykModel.validate(
                 TestMarykModel(
@@ -126,7 +126,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun fail_validation_with_incorrect_values_in_map() {
+    fun failValidationWithIncorrectValuesInMap() {
         val e = shouldThrow<ValidationUmbrellaException> {
             TestMarykModel.validate(
                 TestMarykModel.map {
@@ -145,7 +145,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun get_property_definition_by_name() {
+    fun getPropertyDefinitionByName() {
         TestMarykModel.properties["string"] shouldBe TestMarykModel.Properties.string
         TestMarykModel.properties["int"] shouldBe TestMarykModel.Properties.int
         TestMarykModel.properties["dateTime"] shouldBe TestMarykModel.Properties.dateTime
@@ -153,7 +153,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun get_property_definition_by_index() {
+    fun getPropertyDefinitionByIndex() {
         TestMarykModel.properties[1] shouldBe TestMarykModel.Properties.string
         TestMarykModel.properties[2] shouldBe TestMarykModel.Properties.int
         TestMarykModel.properties[3] shouldBe TestMarykModel.Properties.uint
@@ -163,7 +163,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun write_into_a_JSON_object() {
+    fun writeIntoJSONObject() {
         var output = ""
         val writer = JsonWriter {
             output += it
@@ -175,7 +175,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun write_into_a_pretty_JSON_object() {
+    fun writeIntoPrettyJSONObject() {
         var output = ""
         val writer = JsonWriter(pretty = true) {
             output += it
@@ -215,7 +215,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun write_into_a_YAML_object() {
+    fun writeIntoYAMLObject() {
         var output = ""
         val writer = YamlWriter {
             output += it
@@ -250,7 +250,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun write_to_ProtoBuf_bytes() {
+    fun writeToProtoBufBytes() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -277,7 +277,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -293,7 +293,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun skip_reading_unknown_fields() {
+    fun skipReadingUnknownFields() {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
@@ -305,7 +305,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun convert_from_JSON() {
+    fun convertFromJSON() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -322,7 +322,7 @@ internal class DataModelTest {
     }
 
     @Test
-    fun convert_map_to_JSON_and_back_to_map() {
+    fun convertMapToJSONAndBackToMap() {
         var output = ""
         val writer = { string: String -> output += string }
 

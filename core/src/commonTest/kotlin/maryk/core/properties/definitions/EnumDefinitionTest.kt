@@ -39,7 +39,7 @@ internal class EnumDefinitionTest {
     )
 
     @Test
-    fun convert_values_to_storage_bytes_and_back() {
+    fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
         for (it in enumsToTest) {
             bc.reserve(
@@ -52,7 +52,7 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -81,7 +81,7 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         for (it in enumsToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -89,26 +89,26 @@ internal class EnumDefinitionTest {
     }
 
     @Test
-    fun invalid_String_value_should_throw_exception() {
+    fun invalidStringValueShouldThrowException() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, EnumDefinition.Model, null, ::compare)
         checkProtoBufConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, EnumDefinition.Model, null, ::compare)
         checkJsonConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, EnumDefinition.Model, null, ::compare)
         checkYamlConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare) shouldBe """
         indexed: true

@@ -27,17 +27,17 @@ class ExistsTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.exists, Exists, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.exists, Exists, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.exists, Exists, { this.context }) shouldBe """
         string
         """.trimIndent()

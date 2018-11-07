@@ -4,14 +4,14 @@ import kotlin.test.Test
 
 class LiteralStringReaderTest {
     @Test
-    fun fail_on_literal_string_without_break() {
+    fun failOnLiteralStringWithoutBreak() {
         createYamlReader("  | test").apply {
             assertInvalidYaml()
         }
     }
 
     @Test
-    fun fail_on_invalid_indent() {
+    fun failOnInvalidIndent() {
         createYamlReader("""
             |   |
             | test
@@ -21,7 +21,7 @@ class LiteralStringReaderTest {
     }
 
     @Test
-    fun read_literal_string() {
+    fun readLiteralString() {
         createYamlReader("""
             ||
             |
@@ -36,7 +36,7 @@ class LiteralStringReaderTest {
     }
 
     @Test
-    fun read_literal_string_in_array() {
+    fun readLiteralStringInArray() {
         createYamlReader("""
             |- |
             |  test
@@ -52,7 +52,7 @@ class LiteralStringReaderTest {
 
 
     @Test
-    fun fail_on_invalid_preset_indent() {
+    fun failOnInvalidPresetIndent() {
         createYamlReader("""
             | |3
             |  test
@@ -62,7 +62,7 @@ class LiteralStringReaderTest {
     }
 
     @Test
-    fun read_with_preset_indent() {
+    fun readWithPresetIndent() {
         createYamlReader("""
             | |7
             |         test
@@ -72,7 +72,7 @@ class LiteralStringReaderTest {
     }
 
     @Test
-    fun read_with_strip_chomp_indent() {
+    fun readWithStripChompIndent() {
         createYamlReader("""
             | |-
             | test
@@ -85,7 +85,7 @@ class LiteralStringReaderTest {
 
 
     @Test
-    fun read_with_keep_chomp_indent() {
+    fun readWithKeepChompIndent() {
         createYamlReader("""
             | |+
             | test
@@ -97,7 +97,7 @@ class LiteralStringReaderTest {
     }
 
     @Test
-    fun read_with_clip_chomp_indent() {
+    fun readWithClipChompIndent() {
         createYamlReader("""
             | |
             | test
@@ -109,7 +109,7 @@ class LiteralStringReaderTest {
     }
 
     @Test
-    fun read_with_array_with_multiple_chomps_indent() {
+    fun readWithArrayWithMultipleChompsIndent() {
         createYamlReader("""
             | - |
             |   test1

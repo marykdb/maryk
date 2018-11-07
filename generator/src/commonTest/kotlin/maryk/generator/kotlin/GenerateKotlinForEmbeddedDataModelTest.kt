@@ -37,7 +37,7 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
 
 class GenerateKotlinForEmbeddedDataModelTest {
     @Test
-    fun generate_kotlin_for_simple_model(){
+    fun generateKotlinForSimpleModel(){
         var output = ""
 
         EmbeddedModel.generateKotlin("maryk") {

@@ -28,19 +28,19 @@ class DeleteTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.propertyDelete, Delete, { this.context })
         checkProtoBufConversion(this.propertyDeleteMultiple, Delete, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.propertyDelete, Delete, { this.context })
         checkJsonConversion(this.propertyDeleteMultiple, Delete, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.propertyDelete, Delete, { this.context }) shouldBe """
         string
         """.trimIndent()

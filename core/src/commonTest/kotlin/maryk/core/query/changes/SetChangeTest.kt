@@ -29,17 +29,17 @@ class SetChangeTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.setPropertyChange, SetChange, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.setPropertyChange, SetChange, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.setPropertyChange, SetChange, { this.context }) shouldBe """
         set:
           addValues: [2014-04-14, 2013-03-13]

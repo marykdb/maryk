@@ -28,17 +28,17 @@ class OrderTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.order, Order, { this.context }, ::compareRequest)
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.order, Order, { this.context }, ::compareRequest)
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.order, Order, { this.context }, ::compareRequest) shouldBe """
         !Desc value
         """.trimIndent()

@@ -6,7 +6,7 @@ import kotlin.test.Test
 
 internal class JsonWriterTest {
     @Test
-    fun write_expected_JSON() {
+    fun writeExpectedJSON() {
         var output = ""
         val writer = { string: String -> output += string }
 
@@ -18,7 +18,7 @@ internal class JsonWriterTest {
     }
 
     @Test
-    fun write_expected_pretty_JSON() {
+    fun writeExpectedPrettyJSON() {
         var output = ""
         val writer = { string: String -> output += string }
 
@@ -57,7 +57,7 @@ internal class JsonWriterTest {
     }
 
     @Test
-    fun not_start_with_unallowed_JSON_types() {
+    fun notStartWithUnallowedJSONTypes() {
         var output = ""
 
         val jsonWriter = JsonWriter {
@@ -81,7 +81,7 @@ internal class JsonWriterTest {
     }
 
     @Test
-    fun not_allow_illegal_operations_inside_an_Array() {
+    fun notAllowIllegalOperationsInsideAnArray() {
         var output = ""
         val jsonWriter = JsonWriter {
             output += it
@@ -102,7 +102,7 @@ internal class JsonWriterTest {
 
 
     @Test
-    fun not_allow_illegal_operations_within_an_Object() {
+    fun notAllowIllegalOperationsInsideAnObject() {
         var output = ""
         val jsonWriter = JsonWriter {
             output += it
@@ -127,7 +127,7 @@ internal class JsonWriterTest {
     }
 
     @Test
-    fun not_allow_illegal_operations_after_an_object_field_name() {
+    fun notAllowIllegalOperationsInsideAnObjectFieldName() {
         var output = ""
         val jsonWriter = JsonWriter {
             output += it

@@ -13,7 +13,7 @@ class TypeReferenceTest {
         TestMarykModel.properties.multi.definition.getTypeRef(V1, null)
 
     @Test
-    fun get_value_from_map() {
+    fun getValueFromMap() {
         val typedValue = TypedValue(
             V1,
             "string"

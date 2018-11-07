@@ -15,7 +15,7 @@ class MapReferenceTest {
     private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
 
     @Test
-    fun get_value_from_map() {
+    fun getValueFromMap() {
         val map = mapOf(
             Time(12, 0, 1) to "right",
             Time(15, 22, 55) to "right2",
@@ -32,7 +32,7 @@ class MapReferenceTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 

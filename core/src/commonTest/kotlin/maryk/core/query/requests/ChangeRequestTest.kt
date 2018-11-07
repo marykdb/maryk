@@ -22,17 +22,17 @@ class ChangeRequestTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(changeRequest, ChangeRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(changeRequest, ChangeRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(changeRequest, ChangeRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         objectChanges:

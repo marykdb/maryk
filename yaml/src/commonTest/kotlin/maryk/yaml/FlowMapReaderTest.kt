@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class FlowMapReaderTest {
     @Test
-    fun read_map_items() {
+    fun readMapItems() {
         createYamlReader("""
         |     - {"key0",-key1: "value1", 'key2': 'value2'}
         """.trimMargin()).apply {
@@ -24,7 +24,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_items_with_anchor_and_alias() {
+    fun readMapItemsWithAnchorAndAlias() {
         createYamlReader("""
         |     - {hey: &anchor ha, ho: *anchor}
         """.trimMargin()).apply {
@@ -41,7 +41,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_on_duplicate_map_field_names() {
+    fun failOnDuplicateMapFieldNames() {
         createYamlReader("""
         |    {a: 1, a: 2}
         """.trimMargin()).apply {
@@ -53,7 +53,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_and_sequence_in_map_items() {
+    fun readMapAndSequenceInMapItems() {
         createYamlReader("""
         |     - {"key0",?key1: {e1: v1}, 'key2': [v1, v2]}
         """.trimMargin()).apply {
@@ -78,7 +78,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_items_plain_string() {
+    fun readMapItemsPlainString() {
         createYamlReader("""
         |     - {key0, key1: value1, key2: value2}
         """.trimMargin()).apply {
@@ -97,7 +97,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_items_plain_string_multiline() {
+    fun readMapItemsPlainStringMultiline() {
         createYamlReader("""
         |     - {key0,
         |      key1:
@@ -125,7 +125,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_items_plain_string_wrong_multiline() {
+    fun readMapItemsPlainStringWrongMultiline() {
         createYamlReader("""
         |     - {key0
         |     multiline
@@ -137,7 +137,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_multiline_items() {
+    fun readMapMultilineItems() {
         createYamlReader("""
         |   {"key0",
         |"key1":
@@ -157,7 +157,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_key_items() {
+    fun readMapWithExplicitKeyItems() {
         createYamlReader("""
         |   {? ,test: v1}
         """.trimMargin()).apply {
@@ -172,7 +172,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_direct_key_items() {
+    fun readMapWithExplicitDirectKeyItems() {
         createYamlReader("""
         |   {?,test: v1}
         """.trimMargin()).apply {
@@ -187,7 +187,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_defined_key_with_value_items() {
+    fun readMapWithExplicitDefinedKeyWithValueItems() {
         createYamlReader("""
         |   {? t1: v0,test: v1}
         """.trimMargin()).apply {
@@ -202,7 +202,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_defined_key_items() {
+    fun readMapWithExplicitDefinedKeyItems() {
         createYamlReader("""
         |   {? t1}
         """.trimMargin()).apply {
@@ -215,7 +215,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_key_value_items() {
+    fun readMapWithExplicitKeyValueItems() {
         createYamlReader("""
         |   {?: v0,test: v1}
         """.trimMargin()).apply {
@@ -230,7 +230,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_with_unfinished_map() {
+    fun failWithUnfinishedMap() {
         createYamlReader("""
         |   {?: v0,test: v1
         """.trimMargin()).apply{
@@ -244,7 +244,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_defined_sequence_key_with_value_items() {
+    fun readMapWithExplicitDefinedSequenceKeyWithValueItems() {
         createYamlReader("""
         |   {? [a1]: v0,test: v1}
         """.trimMargin()).apply {
@@ -263,7 +263,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun read_map_with_explicit_defined_map_key_with_value_items() {
+    fun readMapWithExplicitDefinedMapKeyWithValueItems() {
         createYamlReader("""
         |   {? {k1: v1}: v0,test: v1}
         """.trimMargin()).apply {
@@ -283,7 +283,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_on_embedded_sequence() {
+    fun failOnEmbeddedSequence() {
         createYamlReader("""- {"key0", - wrong}""").apply {
             assertStartArray()
             assertStartObject()
@@ -294,7 +294,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_on_wrong_sequence_end() {
+    fun failOnWrongSequenceEnd() {
         createYamlReader(""" - {key0: "v1"]""").apply {
             assertStartArray()
             assertStartObject()
@@ -305,7 +305,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_on_double_explicit() {
+    fun failOnDoubleExplicit() {
         createYamlReader(""" - {? ? wrong""").apply {
             assertStartArray()
             assertStartObject()
@@ -314,7 +314,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_on_invalid_string_types() {
+    fun failOnInvalidStringTypes() {
         createYamlReader("{|").apply {
             assertStartObject()
             assertInvalidYaml()
@@ -327,7 +327,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_on_reserved_indicators() {
+    fun failOnReservedIndicators() {
         createYamlReader("{@").apply {
             assertStartObject()
             assertInvalidYaml()
@@ -340,7 +340,7 @@ class FlowMapReaderTest {
     }
 
     @Test
-    fun fail_on_value_tag_on_map() {
+    fun failOnValueTagOnMap() {
         createYamlReader("!!str {k: v}").apply {
             assertInvalidYaml()
         }

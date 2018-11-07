@@ -54,17 +54,17 @@ internal class NumberDefinitionTest {
     )
 
     @Test
-    fun has_values_set() {
+    fun hasValuesSet() {
         def.type shouldBe UInt32
     }
 
     @Test
-    fun create_random_number() {
+    fun createRandomNumber() {
         def.createRandom()
     }
 
     @Test
-    fun convert_values_to_storage_bytes_and_back() {
+    fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
         for (it in intArray) {
             bc.reserve(
@@ -77,7 +77,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -98,7 +98,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convert_Float_values_to_transport_bytes_and_back() {
+    fun convertFloatValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -119,7 +119,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         for (it in intArray) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -127,26 +127,26 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun invalid_String_value_should_throw_exception() {
+    fun invalidStringValueShouldThrowException() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, NumberDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, NumberDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, NumberDefinition.Model)
         checkJsonConversion(this.defMaxDefined, NumberDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, NumberDefinition.Model)
         checkYamlConversion(this.defMaxDefined, NumberDefinition.Model) shouldBe """
         indexed: true
@@ -163,7 +163,7 @@ internal class NumberDefinitionTest {
     }
 
     @Test
-    fun convert_native_type() {
+    fun convertNativeType() {
         def.fromNativeType(356725.000) shouldBe 356725u
         def.fromNativeType(38762873) shouldBe 38762873u
 

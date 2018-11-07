@@ -7,7 +7,7 @@ import kotlin.test.Test
 
 class TagReaderTest {
     @Test
-    fun read_tags_in_map() {
+    fun readTagsInMap() {
         createYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -109,7 +109,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun read_tags_in_flow_map() {
+    fun readTagsInFlowMap() {
         createYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -140,7 +140,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun read_tags_in_sequence() {
+    fun readTagsInSequence() {
         createYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -173,7 +173,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun read_tags_in_flow_sequence() {
+    fun readTagsInFlowSequence() {
         createYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -208,7 +208,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun read_empty_tags_in_flow_sequence() {
+    fun readEmptyTagsInFlowSequence() {
         createYamlReader("""
         |%TAG !test! tag:yaml.org,2002:
         |---
@@ -230,7 +230,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun read_custom_tags() {
+    fun readCustomTags() {
         createYamlReader("""
         |    - !Foo { k1: v1 }
         |    - !Bar { k2: v2 }
@@ -250,7 +250,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun fail_on_unknown_tag() {
+    fun failOnUnknownTag() {
         createYamlReader("""
         |    - !Nonsense { k1: v1 }
         """.trimMargin()).apply {
@@ -260,7 +260,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun read_tag_as_last() {
+    fun readTagAsLast() {
         createYamlReader("""
         |    - !!str
         """.trimMargin()).apply {
@@ -272,7 +272,7 @@ class TagReaderTest {
     }
 
     @Test
-    fun fail_on_faulty_tag() {
+    fun failOnFaultyTag() {
         createYamlReader("""
         |    - !string!wrong!
         """.trimMargin()).apply {

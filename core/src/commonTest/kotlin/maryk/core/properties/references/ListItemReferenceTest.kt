@@ -13,7 +13,7 @@ class ListItemReferenceTest {
     val cache = WriteCache()
 
     @Test
-    fun get_value_from_list() {
+    fun getValueFromList() {
         val list = listOf('a','b','c','d','e','f', 'g')
 
         this.reference.resolveFromAny(list) shouldBe 'f'
@@ -24,7 +24,7 @@ class ListItemReferenceTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -37,7 +37,7 @@ class ListItemReferenceTest {
     }
 
     @Test
-    fun convert_to_and_from_string() {
+    fun convertToStringAndBack() {
         this.reference.completeName shouldBe "listOfString.@5"
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)

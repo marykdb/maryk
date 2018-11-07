@@ -32,13 +32,13 @@ internal class DateDefinitionTest {
     )
 
     @Test
-    fun create_now_date() {
+    fun createNowDate() {
         val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
         def.createNow().epochDay shouldBe currentEpochDay
     }
 
     @Test
-    fun convert_values_to_storage_bytes_and_back() {
+    fun convertValuesToStorageBytesAndBack() {
         val bc = ByteCollector()
         for (it in datesToTest) {
             bc.reserve(
@@ -51,7 +51,7 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
@@ -66,7 +66,7 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_String_and_back() {
+    fun convertValuesToStringAndBack() {
         for (it in datesToTest) {
             val b = def.asString(it)
             def.fromString(b) shouldBe it
@@ -74,26 +74,26 @@ internal class DateDefinitionTest {
     }
 
     @Test
-    fun invalid_String_value_should_throw_exception() {
+    fun invalidStringValueShouldThrowException() {
         shouldThrow<ParseException> {
             def.fromString("wrong")
         }
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, DateDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, DateDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, DateDefinition.Model)
         checkJsonConversion(this.defMaxDefined, DateDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, DateDefinition.Model)
         checkYamlConversion(this.defMaxDefined, DateDefinition.Model) shouldBe """
         indexed: true

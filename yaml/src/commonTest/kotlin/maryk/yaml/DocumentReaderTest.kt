@@ -27,7 +27,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_comment_with_directive() {
+    fun readCommentWithDirective() {
         createYamlReader("""
         |%YAML 1.2
         |# Comment
@@ -38,7 +38,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_multi_line_comment() {
+    fun readMultiLineComment() {
         createYamlReader("""
         |  # Comment
         |  # Line 2
@@ -48,7 +48,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun fail_on_wrong_indent() {
+    fun failOnWrongIndent() {
         createYamlReader("""
         |  k1: 1
         | k2: 2
@@ -62,7 +62,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun fail_on_wrong_with_comment_indent() {
+    fun failOnWrongWithCommentIndent() {
         createYamlReader("""
         |  k1: 1
         |
@@ -79,7 +79,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun fail_on_wronger_indent() {
+    fun failOnWrongerIndent() {
         createYamlReader("""
         |  k1: 1
         |k2: 2
@@ -93,7 +93,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun fail_on_wrong_array_indent() {
+    fun failOnWrongArrayIndent() {
         createYamlReader("""
         |  k1: 1
         |--
@@ -107,7 +107,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun fail_on_multiple_directives_blocks() {
+    fun failOnMultipleDirectivesBlocks() {
         createYamlReader("""
         |%YAML 1.2
         |---
@@ -118,7 +118,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun fail_on_no_close_of_directive_with_document_indicator() {
+    fun failOnNoCloseOfDirectiveWithDocumentIndicator() {
         createYamlReader("""
         |%YAML 1.2
         |test
@@ -128,7 +128,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_single_dash() {
+    fun readSingleDash() {
         createYamlReader("""
         |-
         """.trimMargin()).apply {
@@ -137,7 +137,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_double_dash() {
+    fun readDoubleDash() {
         createYamlReader("""
         |-- test
         """.trimMargin()).apply {
@@ -146,7 +146,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_single_dot_break() {
+    fun readSingleDotBreak() {
         createYamlReader("""
         |.
         """.trimMargin()).apply {
@@ -155,7 +155,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_single_dot() {
+    fun readSingleDot() {
         createYamlReader("""
         |. test
         """.trimMargin()).apply {
@@ -164,7 +164,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_double_dot() {
+    fun readDoubleDot() {
         createYamlReader("""
         |.. dot
         """.trimMargin()).apply {
@@ -173,7 +173,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_double_dot_break() {
+    fun readDoubleDotBreak() {
         createYamlReader("""
         |..
         """.trimMargin()).apply {
@@ -182,7 +182,7 @@ class DocumentReaderTest {
     }
 
     @Test
-    fun read_end_document() {
+    fun readEndDocument() {
         createYamlReader("""
         |...
         """.trimMargin()).apply {

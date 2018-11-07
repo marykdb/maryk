@@ -7,7 +7,7 @@ import kotlin.test.Test
 
 internal class YamlWriterTest {
     @Test
-    fun write_expected_YAML() {
+    fun writeExpectedYAML() {
         var output = ""
         YamlWriter {
             output += it
@@ -43,7 +43,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_in_map_embedded_in_map() {
+    fun writeYamlInMapEmbeddedInMap() {
         var output = ""
         YamlWriter {
             output += it
@@ -75,7 +75,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_in_map_with_simple_child_map() {
+    fun writeYamlInmapWithSimpleChildMap() {
         var output = ""
 
         YamlWriter {
@@ -105,7 +105,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_in_simple_embedded_maps() {
+    fun writeYamlInSimpleEmbeddedMaps() {
         var output = ""
         YamlWriter {
             output += it
@@ -133,7 +133,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_in_double_array() {
+    fun writeYamlInDoubleArray() {
         var output = ""
         YamlWriter {
             output += it
@@ -160,7 +160,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_in_double_array_and_tag() {
+    fun writeYamlIndoubleArrayAndTag() {
         var output = ""
         YamlWriter {
             output += it
@@ -191,7 +191,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_in_double_array_with_less_complex_child() {
+    fun writeYamlIndoubleArrayWithLessComplexChild() {
         var output = ""
         YamlWriter{
             output += it
@@ -216,7 +216,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_in_less_complex_double_array() {
+    fun writeYamlInlessComplexDoubleArray() {
         var output = ""
         YamlWriter {
             output += it
@@ -240,7 +240,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_with_tags() {
+    fun writeYAMLWithTags() {
         var output = ""
         YamlWriter {
             output += it
@@ -292,7 +292,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_with_tags_in_array() {
+    fun writeYAMLWithTagsInArray() {
         var output = ""
         YamlWriter {
             output += it
@@ -325,7 +325,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun write_YAML_with_complex_fields() {
+    fun writeYAMLWithComplexFields() {
         var output = ""
         YamlWriter {
             output += it
@@ -401,7 +401,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun not_start_with_unallowed_YAML_types() {
+    fun notStartWithUnallowedYAMLTypes() {
         var output = ""
 
         YamlWriter {
@@ -425,7 +425,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun not_allow_illegal_operations_inside_an_Array() {
+    fun notAllowIllegalOperationsInsideAnArray() {
         var output = ""
         YamlWriter {
             output += it
@@ -446,7 +446,7 @@ internal class YamlWriterTest {
 
 
     @Test
-    fun not_allow_illegal_operations_within_an_Object() {
+    fun notAllowIllegalOperationsWithinAnObject() {
         var output = ""
 
         YamlWriter {
@@ -472,7 +472,7 @@ internal class YamlWriterTest {
     }
 
     @Test
-    fun not_allow_illegal_operations_after_an_object_field_name() {
+    fun notAllowIllegalOperationsAfterAnObjectFieldName() {
         var output = ""
         YamlWriter {
             output += it

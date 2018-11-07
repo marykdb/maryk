@@ -4,14 +4,14 @@ import kotlin.test.Test
 
 class FoldedStringReaderTest {
     @Test
-    fun fail_on_folded_string_without_break() {
+    fun failOnFoldedStringWithoutBreak() {
         createYamlReader("  > test").apply {
             assertInvalidYaml()
         }
     }
 
     @Test
-    fun fail_on_invalid_indent() {
+    fun failOnInvalidIndent() {
         createYamlReader("""
             |   >
             | test
@@ -21,7 +21,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun fail_on_invalid_preset_indent() {
+    fun failOnInvalidPresetIndent() {
         createYamlReader("""
             | >3
             |  test
@@ -31,7 +31,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun read_with_preset_indent() {
+    fun readWithPresetIndent() {
         createYamlReader("""
             | >7
             |         test
@@ -41,7 +41,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun read_folded_string() {
+    fun readFoldedString() {
         createYamlReader("""
         |>
         |
@@ -63,7 +63,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun read_folded_string_in_array() {
+    fun readFoldedStringInArray() {
         createYamlReader("""
             |- >
             |  test
@@ -78,7 +78,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun fail_on_double_chomp() {
+    fun failOnDoubleChomp() {
         createYamlReader("""
             |>-2+
             |  test
@@ -88,7 +88,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun fail_on_double_indent() {
+    fun failOnDoubleIndent() {
         createYamlReader("""
             |>2-5
             |  test
@@ -98,7 +98,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun read_with_strip_chomp_indent() {
+    fun readWithStripChompIndent() {
         createYamlReader("""
             | |-
             | test
@@ -110,7 +110,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun read_with_keep_chomp_indent() {
+    fun readWithKeepChompIndent() {
         createYamlReader("""
             | >+
             | test
@@ -122,7 +122,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun read_with_clip_chomp_indent() {
+    fun readWithClipChompIndent() {
         createYamlReader("""
             | >
             | test
@@ -134,7 +134,7 @@ class FoldedStringReaderTest {
     }
 
     @Test
-    fun read_with_array_with_multiple_chomps_indent() {
+    fun readWithArrayWithMultipleChompsIndent() {
         createYamlReader("""
             | - >
             |   test1

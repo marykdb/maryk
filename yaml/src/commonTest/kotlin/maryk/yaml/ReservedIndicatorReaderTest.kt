@@ -4,7 +4,7 @@ import kotlin.test.Test
 
 class ReservedIndicatorReaderTest {
     @Test
-    fun fail_on_reserved_chars() {
+    fun failOnReservedChars() {
         createYamlReader("`test").apply {
             assertInvalidYaml()
         }
@@ -15,7 +15,7 @@ class ReservedIndicatorReaderTest {
     }
 
     @Test
-    fun fail_on_reserved_sign_in_map() {
+    fun failOnReservedSignInMap() {
         createYamlReader("test: @test").apply {
             assertStartObject()
             assertFieldName("test")
@@ -24,7 +24,7 @@ class ReservedIndicatorReaderTest {
     }
 
     @Test
-    fun fail_on_reserved_sign_in_array() {
+    fun failOnReservedSignInArray() {
         createYamlReader(" - `test").apply {
             assertStartArray()
             assertInvalidYaml()

@@ -4,7 +4,7 @@ import kotlin.test.Test
 
 class FlowSequenceReaderTest {
     @Test
-    fun read_sequence_items() {
+    fun readSequenceItems() {
         createYamlReader("""
             |     - ["test1", "test2", 'test3']
         """.trimMargin()).apply {
@@ -21,7 +21,7 @@ class FlowSequenceReaderTest {
 
 
     @Test
-    fun read_sequence_items_with_anchor_and_alias() {
+    fun readSequenceItemsWithAnchorAndAlias() {
         createYamlReader("[ &anchor ha, *anchor]").apply {
             assertStartArray()
             assertValue("ha")
@@ -32,7 +32,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_items_plain() {
+    fun readSequenceItemsPlain() {
         createYamlReader("""
             |     - [test1, test2, test3, ?test4]
         """.trimMargin()).apply {
@@ -49,7 +49,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_items_with_sequences_and_maps() {
+    fun readSequenceItemsWithSequencesAndMaps() {
         createYamlReader("""
             |     - [test1, [t1, t2], {k: v}]
         """.trimMargin()).apply {
@@ -71,7 +71,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_items_plain_multiline() {
+    fun readSequenceItemsPlainMultiline() {
         createYamlReader("""
             |     - [test1
             |      longer
@@ -91,7 +91,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_items_plain_wrong_multiline() {
+    fun readSequenceItemsPlainWrongMultiline() {
         createYamlReader("""
             |     - [test1
             |     wrong]
@@ -103,7 +103,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_whitespacing_items() {
+    fun readSequenceWithWhitespacingItems() {
         createYamlReader("""
             |     - ["test1"    ,    "test2",
             |"test3"  ]
@@ -120,7 +120,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_map_items() {
+    fun readSequenceWithMapItems() {
         createYamlReader("""
             |     - [t1: v1, t2: v2]
         """.trimMargin()).apply{
@@ -141,7 +141,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_explicit_key_items() {
+    fun readSequenceWithExplicitKeyItems() {
         createYamlReader("""
         |   [? ,test]
         """.trimMargin()).apply{
@@ -157,7 +157,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_explicit_direct_key_items() {
+    fun readSequenceWithExplicitDirectKeyItems() {
         createYamlReader("""
         |   [?,test]
         """.trimMargin()).apply{
@@ -173,7 +173,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_explicit_defined_key_with_value_items() {
+    fun readSequenceWithExplicitDefinedKeyWithValueItems() {
         createYamlReader("""
         |   [? t1: v0,test]
         """.trimMargin()).apply{
@@ -189,7 +189,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_explicit_defined_key_items() {
+    fun readSequenceWithExplicitDefinedKeyItems() {
         createYamlReader("""
         |   [? t1]
         """.trimMargin()).apply{
@@ -204,7 +204,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_explicit_key_value_items() {
+    fun readSequenceWithExplicitKeyValueItems() {
         createYamlReader("""
         |   [?: v0,test]
         """.trimMargin()).apply{
@@ -220,7 +220,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun fail_when_not_closed_sequence() {
+    fun failWhenNotClosedSequence() {
         createYamlReader("""
         |   [?: v0
         """.trimMargin()).apply{
@@ -233,7 +233,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_explicit_defined_sequence_key_with_value_items() {
+    fun readSequenceWithExplicitDefinedSequenceKeyWithValueItems() {
         createYamlReader("""
         |   [? [a1, a2]: v0,test]
         """.trimMargin()).apply{
@@ -254,7 +254,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun read_sequence_with_explicit_defined_map_key_with_value_items() {
+    fun readSequenceWithExplicitDefinedMapKeyWithValueItems() {
         createYamlReader("""
         |   [? {k1: v1}: v0,test]
         """.trimMargin()).apply{
@@ -275,7 +275,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun fail_on_embedded_sequence() {
+    fun failOnEmbeddedSequence() {
         createYamlReader("""["key0", - wrong]""").apply {
             assertStartArray()
             assertValue("key0")
@@ -284,7 +284,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun fail_on_wrong_sequence_end() {
+    fun failOnWrongSequenceEnd() {
         createYamlReader("""["v1"}""").apply {
             assertStartArray()
             assertInvalidYaml()
@@ -292,7 +292,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun fail_on_double_explicit() {
+    fun failOnDoubleExplicit() {
         createYamlReader("[? ? wrong").apply {
             assertStartArray()
             assertStartObject()
@@ -301,7 +301,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun fail_on_invalid_string_types() {
+    fun failOnInvalidStringTypes() {
         createYamlReader("[|").apply {
             assertStartArray()
             assertInvalidYaml()
@@ -314,7 +314,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun fail_on_reserved_indicators() {
+    fun failOnReservedIndicators() {
         createYamlReader("[@").apply {
             assertStartArray()
             assertInvalidYaml()
@@ -327,7 +327,7 @@ class FlowSequenceReaderTest {
     }
 
     @Test
-    fun fail_on_value_tag_on_sequence() {
+    fun failOnValueTagOnSequence() {
         createYamlReader("!!str [1, 2]").apply {
             assertInvalidYaml()
         }

@@ -6,27 +6,8 @@ import kotlin.test.Test
 internal abstract class AbstractJsonWriterTest {
     abstract fun createJsonWriter(writer: (String) -> Unit): IsJsonLikeWriter
 
-    internal fun writeJson(writer: IsJsonLikeWriter) {
-        writer.writeStartArray()
-        writer.writeValue("1")
-        writer.writeString("#Test")
-        writer.writeValue("3.5")
-        writer.writeValue("true")
-        writer.writeStartObject()
-        writer.writeFieldName("test")
-        writer.writeValue("false")
-        writer.writeFieldName("test2")
-        writer.writeString("value")
-        writer.writeEndObject()
-        writer.writeStartObject()
-        writer.writeFieldName("another")
-        writer.writeString("yes")
-        writer.writeEndObject()
-        writer.writeEndArray()
-    }
-
     @Test
-    fun not_start_with_unallowed_JSON_types() {
+    fun notStartWithUnallowedJSONTypes() {
         var output = ""
 
         val jsonWriter = createJsonWriter {
@@ -60,7 +41,7 @@ internal abstract class AbstractJsonWriterTest {
     }
 
     @Test
-    fun not_allow_illegal_operations_inside_an_Array() {
+    fun notAllowIllegalOperationsInsideAnArray() {
         var output = ""
         val jsonWriter = createJsonWriter {
             output += it
@@ -81,7 +62,7 @@ internal abstract class AbstractJsonWriterTest {
 
 
     @Test
-    fun not_allow_illegal_operations_within_an_Object() {
+    fun notAllowIllegalOperationsInsideAnObject() {
         var output = ""
         val jsonWriter = createJsonWriter {
             output += it
@@ -106,7 +87,7 @@ internal abstract class AbstractJsonWriterTest {
     }
 
     @Test
-    fun not_allow_illegal_operations_after_an_object_field_name() {
+    fun notAllowIllegalOperationsInsideAnObjectFieldName() {
         var output = ""
         val jsonWriter = createJsonWriter {
             output += it

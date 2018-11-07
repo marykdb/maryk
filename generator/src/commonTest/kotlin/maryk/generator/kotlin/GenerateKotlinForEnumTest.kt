@@ -25,7 +25,7 @@ enum class MarykEnum(
 
 class GenerateKotlinForEnumTest {
     @Test
-    fun generate_kotlin_for_simple_model(){
+    fun generateKotlinForSimpleModel(){
         var output = ""
 
         MarykEnum.generateKotlin("maryk") {

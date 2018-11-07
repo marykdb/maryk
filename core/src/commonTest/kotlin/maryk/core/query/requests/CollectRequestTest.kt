@@ -16,17 +16,17 @@ class CollectRequestTest {
     ))
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(collectRequest, CollectRequest, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(collectRequest, CollectRequest, { this.context })
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(collectRequest, CollectRequest, { this.context }) shouldBe """
         testName: !Get
           dataModel: SimpleMarykModel

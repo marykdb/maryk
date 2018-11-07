@@ -42,7 +42,7 @@ internal class SetDefinitionTest {
     )
 
     @Test
-    fun validate_required() {
+    fun validateRequired() {
         defMaxDefined.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
@@ -51,7 +51,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun validate_set_size() {
+    fun validateSetSize() {
         def.validateWithRef(newValue = setOf("T", "T2"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3"))
         def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4"))
@@ -66,7 +66,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun validate_set_content() {
+    fun validateSetContent() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = setOf("T", "WRONG", "WRONG2"))
         }
@@ -77,7 +77,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -110,7 +110,7 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun convert_values_values_to_JSON_String_and_back() {
+    fun convertValuesToJSONStringAndBack() {
         val value = setOf("T", "T2", "T3", "T4")
 
         var totalString = ""
@@ -127,19 +127,19 @@ internal class SetDefinitionTest {
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, SetDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, SetDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, SetDefinition.Model)
         checkJsonConversion(this.defMaxDefined, SetDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, SetDefinition.Model)
         checkYamlConversion(this.defMaxDefined, SetDefinition.Model) shouldBe """
         indexed: true

@@ -88,7 +88,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 
 internal class ObjectDataModelTest {
     @Test
-    fun construct_by_map() {
+    fun constructByMap() {
         TestMarykObject.map {
             mapNonNulls(
                 string with testObject.string,
@@ -108,14 +108,14 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun fail_validation_with_incorrect_values() {
+    fun failValidationWithIncorrectValues() {
         shouldThrow<ValidationUmbrellaException> {
             TestMarykObject.validate(testObject.copy(int = 9))
         }
     }
 
     @Test
-    fun get_property_definition_by_name() {
+    fun getPropertyDefinitionByName() {
         TestMarykObject.properties["string"] shouldBe TestMarykObject.Properties.string
         TestMarykObject.properties["int"] shouldBe TestMarykObject.Properties.int
         TestMarykObject.properties["dateTime"] shouldBe TestMarykObject.Properties.dateTime
@@ -123,7 +123,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun get_property_definition_by_index() {
+    fun getPropertyDefinitionByIndex() {
         TestMarykObject.properties[1] shouldBe TestMarykObject.Properties.string
         TestMarykObject.properties[2] shouldBe TestMarykObject.Properties.int
         TestMarykObject.properties[3] shouldBe TestMarykObject.Properties.uint
@@ -133,7 +133,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun get_properties_by_name() {
+    fun getPropertiesByName() {
         TestMarykObject.properties.getPropertyGetter("string")!!.invoke(testExtendedObject) shouldBe "hay"
         TestMarykObject.properties.getPropertyGetter("int")!!.invoke(testExtendedObject) shouldBe 4
         TestMarykObject.properties.getPropertyGetter("dateTime")!!.invoke(testExtendedObject) shouldBe DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13)
@@ -141,7 +141,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun get_properties_by_index() {
+    fun getPropertiesByIndex() {
         TestMarykObject.properties.getPropertyGetter(1)!!.invoke(testExtendedObject) shouldBe "hay"
         TestMarykObject.properties.getPropertyGetter(2)!!.invoke(testExtendedObject) shouldBe 4
         TestMarykObject.properties.getPropertyGetter(3)!!.invoke(testExtendedObject) shouldBe 32u
@@ -151,7 +151,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun write_into_a_JSON_object() {
+    fun writeIntoJSONObject() {
         var output = ""
         val writer = JsonWriter {
             output += it
@@ -163,7 +163,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun write_into_a_pretty_JSON_object() {
+    fun writeIntoPrettyJSONObject() {
         var output = ""
         val writer = JsonWriter(pretty = true) {
             output += it
@@ -203,7 +203,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun write_into_a_YAML_object() {
+    fun writeIntoYAMLObject() {
         var output = ""
         val writer = YamlWriter {
             output += it
@@ -238,7 +238,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -254,7 +254,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun skip_reading_unknown_fields() {
+    fun skipReadingUnknownFields() {
         val bytes = initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
         var index = 0
 
@@ -266,7 +266,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun convert_JSON_to_DataObject() {
+    fun convertJSONToDataObject() {
         var input = ""
         var index = 0
         val reader = { input[index++] }
@@ -283,7 +283,7 @@ internal class ObjectDataModelTest {
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         var output = ""
         val writer = { string: String -> output += string }
 

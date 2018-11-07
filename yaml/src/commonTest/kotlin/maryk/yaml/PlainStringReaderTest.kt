@@ -4,7 +4,7 @@ import kotlin.test.Test
 
 class PlainStringReaderTest {
     @Test
-    fun read_plain_string() {
+    fun readPlainString() {
         createYamlReader("test").apply {
             assertValue("test")
             assertEndDocument()
@@ -12,7 +12,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_hash() {
+    fun readPlainStringWithHash() {
         createYamlReader("test#").apply {
             assertValue("test#")
             assertEndDocument()
@@ -20,7 +20,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_comment() {
+    fun readPlainStringWithComment() {
         createYamlReader("test # ignore this").apply {
             assertValue("test")
             assertEndDocument()
@@ -28,7 +28,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_same_line_breaks() {
+    fun readPlainStringWithSameLineBreaks() {
         createYamlReader("""
             |  test
             |  test
@@ -39,7 +39,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_wrong_line_breaks() {
+    fun readPlainStringWithWrongLineBreaks() {
         createYamlReader("""
             |  test
             | test
@@ -50,7 +50,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_line_breaks() {
+    fun readPlainStringWithLineBreaks() {
         createYamlReader("""
             |  test
             |   test
@@ -61,7 +61,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_question_mark() {
+    fun readPlainStringWithQuestionMark() {
         createYamlReader("?test").apply {
             assertValue("?test")
             assertEndDocument()
@@ -69,7 +69,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_colon() {
+    fun readPlainStringWithColon() {
         createYamlReader(":test").apply {
             assertValue(":test")
             assertEndDocument()
@@ -77,7 +77,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_with_dash() {
+    fun readPlainStringWithDash() {
         createYamlReader("-test").apply {
             assertValue("-test")
             assertEndDocument()
@@ -85,7 +85,7 @@ class PlainStringReaderTest {
     }
 
     @Test
-    fun read_plain_string_in_array() {
+    fun readPlainStringInArray() {
         createYamlReader("""
             - test1
             - test2

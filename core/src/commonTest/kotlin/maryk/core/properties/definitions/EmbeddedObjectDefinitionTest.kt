@@ -65,7 +65,7 @@ internal class EmbeddedObjectDefinitionTest {
     }
 
     @Test
-    fun convert_object_to_JSON_and_back() {
+    fun convertObjectToJSONAndBack() {
         var output = ""
         val writer = JsonWriter(true) {
            output += it
@@ -83,7 +83,7 @@ internal class EmbeddedObjectDefinitionTest {
     }
 
     @Test
-    fun convert_object_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -108,19 +108,19 @@ internal class EmbeddedObjectDefinitionTest {
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
         checkProtoBufConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
         checkJsonConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
         checkYamlConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() }) shouldBe """
         indexed: true

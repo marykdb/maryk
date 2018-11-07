@@ -35,17 +35,17 @@ class RootMarykTest {
 
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true)
     }
 
     @Test
-    fun convert_to_YAML_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true) shouldBe """
         - !Define
           - !EnumDefinition

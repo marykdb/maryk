@@ -13,7 +13,7 @@ class SetItemReferenceTest {
     val reference = TestMarykModel.Properties.set.getItemRef(Date(2001, 4, 2))
 
     @Test
-    fun get_value_from_set() {
+    fun getValueFromSet() {
         val list = setOf(
             Date(2001, 4, 2),
             Date(2005, 5, 22),
@@ -28,7 +28,7 @@ class SetItemReferenceTest {
     }
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -42,7 +42,7 @@ class SetItemReferenceTest {
     }
 
     @Test
-    fun convert_to_and_from_string() {
+    fun convertToStringAndBack() {
         this.reference.completeName shouldBe "set.$2001-04-02"
 
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)

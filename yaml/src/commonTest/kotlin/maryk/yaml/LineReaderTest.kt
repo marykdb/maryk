@@ -4,7 +4,7 @@ import kotlin.test.Test
 
 class LineReaderTest {
     @Test
-    fun fail_on_reserved_indicator() {
+    fun failOnReservedIndicator() {
         createYamlReader("  @").apply {
             assertInvalidYaml()
         }
@@ -15,21 +15,21 @@ class LineReaderTest {
     }
 
     @Test
-    fun fail_on_directive() {
+    fun failOnDirective() {
         createYamlReader("  %test").apply {
             assertInvalidYaml()
         }
     }
 
     @Test
-    fun fail_on_end_map() {
+    fun failOnEndMap() {
         createYamlReader("  ]").apply {
             assertInvalidYaml()
         }
     }
 
     @Test
-    fun fail_on_comma() {
+    fun failOnComma() {
         createYamlReader("  ,").apply {
             assertInvalidYaml()
         }

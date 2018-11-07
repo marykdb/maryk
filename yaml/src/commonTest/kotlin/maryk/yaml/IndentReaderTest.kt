@@ -4,7 +4,7 @@ import kotlin.test.Test
 
 class IndentReaderTest {
     @Test
-    fun read_single_quotes_with_indent() {
+    fun readSingleQuotesWithIndent() {
         createYamlReader("""
             |     'test'
         """.trimMargin()).apply {

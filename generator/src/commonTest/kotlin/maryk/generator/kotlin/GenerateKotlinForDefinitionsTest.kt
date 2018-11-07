@@ -12,7 +12,7 @@ import kotlin.test.fail
 
 class GenerateKotlinForDefinitionsTest {
     @Test
-    fun generate_mixed_maryk_primitives() {
+    fun generateMixedMarykPrimitives() {
         val mapOfWriters = mutableMapOf(
             "MarykEnum" to Writer(),
             "ValueMarykObject" to Writer(),

@@ -141,7 +141,7 @@ internal class JsonReaderTest {
     }
 
     @Test
-    fun test_invalid_json_fail_message() {
+    fun testInvalidJsonFailMessage() {
         var index = 0
         val input = """{
         |"test" "
@@ -245,7 +245,7 @@ internal class JsonReaderTest {
     }
 
     @Test
-    fun read_double_quote() {
+    fun readDoubleQuote() {
         createJsonReader("""["test"]""").apply {
             assertStartArray()
             assertValue("test")
@@ -255,7 +255,7 @@ internal class JsonReaderTest {
     }
 
     @Test
-    fun read_double_quote_with_special_chars() {
+    fun readDoubleQuoteWithSpecialChars() {
         createJsonReader("""["te\"\b\f\n\t\\\/\r'\x"]""").apply {
             assertStartArray()
             assertValue("te\"\b\u000C\n\t\\/\r'\\x")
@@ -265,7 +265,7 @@ internal class JsonReaderTest {
     }
 
     @Test
-    fun read_double_quote_with_utf_chars() {
+    fun readDoubleQuoteWithUtfChars() {
         createJsonReader("""["\uD83D\uDE0D\uwrong\u0w\u00w\u000w"]""").apply {
             assertStartArray()
             assertValue("😍\\uwrong\\u0w\\u00w\\u000w")

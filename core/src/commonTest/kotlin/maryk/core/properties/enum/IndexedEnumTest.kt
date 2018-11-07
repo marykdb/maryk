@@ -13,7 +13,7 @@ import kotlin.test.Test
 
 class IndexedEnumTest {
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         @Suppress("UNCHECKED_CAST")
         checkProtoBufConversion(
             Option,
@@ -24,7 +24,7 @@ class IndexedEnumTest {
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         @Suppress("UNCHECKED_CAST")
         checkJsonConversion(
             Option,
@@ -35,7 +35,7 @@ class IndexedEnumTest {
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         @Suppress("UNCHECKED_CAST")
         checkYamlConversion(
             Option,
@@ -53,7 +53,7 @@ class IndexedEnumTest {
     }
 
     @Test
-    fun read_enum_from_yaml_without_values() {
+    fun readEnumFromYamlWithoutValues() {
         val reader = createMarykYamlModelReader(
             """
             name: Option

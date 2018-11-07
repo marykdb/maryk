@@ -79,7 +79,7 @@ internal class TypeIdTest {
     )
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
             value = TypeId(MarykModel.Properties.multi.getRef()),
             dataModel = TypeId.Model,
@@ -88,7 +88,7 @@ internal class TypeIdTest {
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
             value = TypeId(MarykModel.Properties.multi.getRef()),
             dataModel = TypeId.Model,
@@ -97,7 +97,7 @@ internal class TypeIdTest {
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(
             value = TypeId(MarykModel.Properties.multi.getRef()),
             dataModel = TypeId.Model,

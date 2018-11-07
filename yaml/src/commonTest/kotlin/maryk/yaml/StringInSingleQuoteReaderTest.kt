@@ -4,7 +4,7 @@ import kotlin.test.Test
 
 class StringInSingleQuoteReaderTest {
     @Test
-    fun read_single_quote() {
+    fun readSingleQuote() {
         createYamlReader("'te''st\"'").apply {
             assertValue("te'st\"")
             assertEndDocument()
@@ -12,7 +12,7 @@ class StringInSingleQuoteReaderTest {
     }
 
     @Test
-    fun fail_not_closed_single_quote() {
+    fun failNotClosedSingleQuote() {
         createYamlReader("'test").apply {
             assertInvalidYaml()
         }

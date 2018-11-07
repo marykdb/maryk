@@ -430,7 +430,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
 
 class GenerateKotlinForRootDataModelTest {
     @Test
-    fun generate_kotlin_for_simple_model(){
+    fun generateKotlinForSimpleModel(){
         var output = ""
 
         SimpleMarykModel.generateKotlin("maryk") {
@@ -441,7 +441,7 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
-    fun generate_kotlin_for_complete_model(){
+    fun generateKotlinForCompleteModel(){
         var output = ""
 
         val generationContext = GenerationContext(

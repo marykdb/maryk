@@ -4,7 +4,7 @@ import kotlin.test.Test
 
 class MergeTest{
     @Test
-    fun test_map_merge() {
+    fun testMapMerge() {
         createYamlReader("""
         |key1: value1
         |<<: { key2: b, key3: c }
@@ -22,7 +22,7 @@ class MergeTest{
     }
 
     @Test
-    fun test_map_in_array_merge() {
+    fun testMapInArrayMerge() {
         createYamlReader("""
         |key1: value1
         |<<: [{ key2: b }, {key3: c }]
@@ -40,7 +40,7 @@ class MergeTest{
     }
 
     @Test
-    fun test_map_in_array_with_alias_merge() {
+    fun testMapInArrayWithAliasMerge() {
         createYamlReader("""
         |key1: &map { key2: b, key3: c }
         |<<: *map

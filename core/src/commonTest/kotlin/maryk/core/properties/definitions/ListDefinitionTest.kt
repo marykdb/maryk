@@ -58,7 +58,7 @@ internal class ListDefinitionTest {
     )
 
     @Test
-    fun validate_required() {
+    fun validateRequired() {
         defMaxDefined.validateWithRef(newValue = null)
 
         shouldThrow<RequiredException> {
@@ -67,7 +67,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun validate_list_size() {
+    fun validateListSize() {
         def.validateWithRef(newValue = listOf("T", "T2"))
         def.validateWithRef(newValue = listOf("T", "T2", "T3"))
         def.validateWithRef(newValue = listOf("T", "T2", "T3", "T4"))
@@ -82,7 +82,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun validate_list_content() {
+    fun validateListContent() {
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(newValue = listOf("T", "WRONG", "WRONG2"))
         }
@@ -97,7 +97,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
 
         val value = listOf("T", "T2", "T3", "T4")
@@ -131,7 +131,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun convert_varInt_values_to_packed_transport_bytes_and_back() {
+    fun convertVarIntValuesToPackedTransportBytesAndBack() {
         val value = listOf(
             76523u,
             2423u,
@@ -144,7 +144,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun convert_32_bit_values_to_packed_transport_bytes_and_back() {
+    fun convert32BitValuesToPackedTransportBytesAndBack() {
         val value = floatArrayOf(
             3.566F,
             58253.87652F,
@@ -157,7 +157,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun convert_64_bit_values_to_packed_transport_bytes_and_back() {
+    fun convert64BitValuesToPackedTransportBytesAndBack() {
         val value = listOf(
             3.523874666,
             5825394671387643.87652,
@@ -194,7 +194,7 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun convert_values_values_to_JSON_String_and_back() {
+    fun convertValuesToJSONStringAndBack() {
         val value = listOf("T", "T2", "T3", "T4")
 
         var totalString = ""
@@ -211,19 +211,19 @@ internal class ListDefinitionTest {
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, ListDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, ListDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, ListDefinition.Model)
         checkJsonConversion(this.defMaxDefined, ListDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ListDefinition.Model)
         checkYamlConversion(this.defMaxDefined, ListDefinition.Model) shouldBe """
         indexed: true

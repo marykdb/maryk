@@ -34,17 +34,17 @@ class ValidationExceptionTest {
     )
 
     @Test
-    fun convert_to_ProtoBuf_and_back() {
+    fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
     }
 
     @Test
-    fun convert_to_JSON_and_back() {
+    fun convertToJSONAndBack() {
         checkJsonConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
     }
 
     @Test
-    fun convert_to_YALM_and_back() {
+    fun convertToYAMLAndBack() {
         checkYamlConversion(this.validationUmbrellaException, ValidationUmbrellaException, { this.context })
     }
 }

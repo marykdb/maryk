@@ -53,13 +53,13 @@ internal class MultiTypeDefinitionTest {
     )
 
     @Test
-    fun get_properties() {
+    fun getProperties() {
         def.definitionMap[Option.V1] shouldBe stringDef
         def.definitionMap[Option.V2] shouldBe intDef
     }
 
     @Test
-    fun validate_content() {
+    fun validateContent() {
         def.validateWithRef(newValue = TypedValue(Option.V1, "#test"))
         def.validateWithRef(newValue = TypedValue(Option.V2, 400))
 
@@ -77,32 +77,32 @@ internal class MultiTypeDefinitionTest {
     }
 
     @Test
-    fun invalid_field_should_throw_exception() {
+    fun invalidFieldShouldThrowException() {
         shouldThrow<DefNotFoundException> {
             def.validateWithRef(newValue = TypedValue(V3, "NonExistingField"))
         }
     }
 
     @Test
-    fun convert_values_to_transport_bytes_and_back() {
+    fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         multisToTest.forEach { checkProtoBufConversion(bc, it, this.def) }
     }
 
     @Test
-    fun convert_definition_to_ProtoBuf_and_back() {
+    fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(this.def, MultiTypeDefinition.Model)
         checkProtoBufConversion(this.defMaxDefined, MultiTypeDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_JSON_and_back() {
+    fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(this.def, MultiTypeDefinition.Model)
         checkJsonConversion(this.defMaxDefined, MultiTypeDefinition.Model)
     }
 
     @Test
-    fun convert_definition_to_YAML_and_back() {
+    fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, MultiTypeDefinition.Model)
         checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model) shouldBe """
         indexed: true

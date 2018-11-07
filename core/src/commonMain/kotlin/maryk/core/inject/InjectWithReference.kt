@@ -8,7 +8,6 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
-import maryk.core.properties.types.Inject
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.Requests
 

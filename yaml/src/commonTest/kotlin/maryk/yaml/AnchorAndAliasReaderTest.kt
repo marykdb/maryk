@@ -53,7 +53,7 @@ class AnchorAndAliasReaderTest {
             assertStartArray()
 
             // twice the same
-            (0..1).forEach {
+            for (it in 0..1) {
                 assertStartObject()
                 assertFieldName("test")
                 assertStartObject()

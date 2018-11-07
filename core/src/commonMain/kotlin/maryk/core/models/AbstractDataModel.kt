@@ -1,5 +1,6 @@
 package maryk.core.models
 
+import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.objects.AbstractValues
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -12,7 +13,6 @@ import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.types.Inject
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader

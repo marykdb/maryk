@@ -27,12 +27,10 @@ internal fun <P> P.selectReaderAndRead(startsAtNewLine: Boolean, tag: TokenType?
             read()
             val indentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
             val currentIndentCount = this.indentCount()
-            if (indentCount < currentIndentCount) {
-                return this.endIndentLevel(indentCount, tag, null)
-            } else if (indentCount == currentIndentCount) {
-                return this.continueIndentLevel(0, tag)
-            } else {
-                this.selectReaderAndRead(true, tag, indentCount - currentIndentCount, jsonTokenCreator)
+            when {
+                indentCount < currentIndentCount -> return this.endIndentLevel(indentCount, tag, null)
+                indentCount == currentIndentCount -> return this.continueIndentLevel(0, tag)
+                else -> this.selectReaderAndRead(true, tag, indentCount - currentIndentCount, jsonTokenCreator)
             }
         }
         '\'' -> this.singleQuoteString(tag, indents, jsonTokenCreator)

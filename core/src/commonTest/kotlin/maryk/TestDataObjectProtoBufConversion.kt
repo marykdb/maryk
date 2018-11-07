@@ -1,13 +1,9 @@
 package maryk
 
 import maryk.core.models.AbstractObjectDataModel
-import maryk.core.models.AbstractValuesDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.objects.ObjectValues
-import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.PropertyDefinitions
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -36,32 +32,6 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>, CXI: IsPropertyContext, CX: IsPr
     val converted = dataModel.readProtoBuf(byteLength, bc::read, newContext).toDataObject()
 
     checker(converted, value)
-}
-
-/** Convert values with a values DataModel */
-fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, CX: IsPropertyContext> checkProtoBufValuesConversion(
-    values: Values<DM, P>,
-    dataModel: AbstractValuesDataModel<DM, P, CX>,
-    context: (() -> CX)? = null,
-    checker: (Values<DM, P>, Values<DM, P>) -> Unit = { converted, original -> converted shouldBe original },
-    resetContextBeforeRead: Boolean = false
-) {
-    val bc = ByteCollector()
-    val cache = WriteCache()
-
-    var newContext = context?.invoke()
-
-    val byteLength = dataModel.calculateProtoBufLength(values, cache, newContext)
-    bc.reserve(byteLength)
-    dataModel.writeProtoBuf(values, cache, bc::write, newContext)
-
-    if (resetContextBeforeRead) {
-        newContext = context?.invoke()
-    }
-
-    val converted = dataModel.readProtoBuf(byteLength, bc::read, newContext)
-
-    checker(converted, values)
 }
 
 /** Convert values with a values DataModel */

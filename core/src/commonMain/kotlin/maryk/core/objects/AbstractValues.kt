@@ -1,6 +1,7 @@
 package maryk.core.objects
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.inject.AnyInject
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -9,7 +10,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.AnyInject
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.lib.exceptions.ParseException

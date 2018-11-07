@@ -12,9 +12,9 @@ import kotlin.test.Test
 
 internal class FixedBytesDefinitionTest {
     private val fixedBytesToTest = arrayOf(
-        Bytes(ByteArray(5, { 0x00.toByte() } )),
-        Bytes(ByteArray(5, { 0xFF.toByte() } )),
-        Bytes(ByteArray(5, { if (it % 2 == 1) 0x88.toByte() else 0xFF.toByte() } ))
+        Bytes(ByteArray(5) { 0x00.toByte() }),
+        Bytes(ByteArray(5) { 0xFF.toByte() }),
+        Bytes(ByteArray(5) { if (it % 2 == 1) 0x88.toByte() else 0xFF.toByte() })
     )
 
     val def = FixedBytesDefinition(

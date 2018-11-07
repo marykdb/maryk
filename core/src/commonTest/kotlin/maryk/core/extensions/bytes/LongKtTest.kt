@@ -138,7 +138,7 @@ internal class LongKtTest {
 
     @Test
     fun testWrongVarInt() {
-        val bytes = ByteArray(11, { -1 })
+        val bytes = ByteArray(11) { -1 }
         var index = 0
         shouldThrow<ParseException> {
             initLongByVar { bytes[index++] }

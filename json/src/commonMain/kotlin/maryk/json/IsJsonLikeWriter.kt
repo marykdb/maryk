@@ -42,7 +42,7 @@ interface IsJsonLikeWriter {
         this.writeValue(float.toString())
     }
 
-    /** Writes a [null] */
+    /** Writes a null */
     fun writeNull() {
         this.writeValue("null")
     }

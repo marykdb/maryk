@@ -53,11 +53,11 @@ internal fun YamlCharReader.tagReader(onDone: (tag: TokenType) -> JsonToken): Js
     if (this.yamlReader.hasException) {
         return createTokensFittingTag(tag)
     }
-    try {
-        return onDone(tag)
+    return try {
+        onDone(tag)
     } catch (e: ExceptionWhileReadingJson) {
         this.yamlReader.hasException = true
-        return createTokensFittingTag(tag)
+        createTokensFittingTag(tag)
     }
 }
 

@@ -12,9 +12,7 @@ import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.test.ByteCollector
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.MarykEnum
 import maryk.test.models.MarykEnum.O1
-import maryk.test.models.MarykEnumEmbedded
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
 import maryk.test.models.NumericMarykModel
@@ -32,7 +30,7 @@ class Proto3ConversionTest {
         // Write protobuf
         val bc = ByteCollector()
         val cache = WriteCache()
-        
+
         bc.reserve(
             SimpleMarykModel.calculateProtoBufLength(simpleObject, cache)
         )

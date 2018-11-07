@@ -94,30 +94,30 @@ class TypesTest {
     private fun IsJsonLikeReader.testForValues() {
         assertStartArray()
         assertStartArray()
-        (1..10).forEach {
+        for (it in 1..10) {
             assertValue(true, ValueType.Bool)
         }
         assertEndArray()
         assertStartArray()
-        (1..10).forEach {
+        for (it in 1..10) {
             assertValue(false, ValueType.Bool)
         }
         assertEndArray()
         assertStartArray()
-        (1..4).forEach {
+        for (it in 1..4) {
             assertValue(null, ValueType.Null)
         }
         assertEndArray()
         assertStartArray()
-        (1..3).forEach {
+        for (it in 1..3) {
             assertValue(Double.NaN, ValueType.Float)
         }
         assertEndArray()
         assertStartArray()
-        (1..6).forEach {
+        for (it in 1..6) {
             assertValue(Double.POSITIVE_INFINITY, ValueType.Float)
         }
-        (1..3).forEach {
+        for (it in 1..3) {
             assertValue(Double.NEGATIVE_INFINITY, ValueType.Float)
         }
         assertEndArray()

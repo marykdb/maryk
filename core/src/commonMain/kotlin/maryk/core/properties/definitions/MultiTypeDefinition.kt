@@ -57,7 +57,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED
 
-    internal val typeByName = definitionMap.map { Pair(it.key.name, it.key) }.toMap()
+    private val typeByName = definitionMap.map { Pair(it.key.name, it.key) }.toMap()
     private val typeByIndex = definitionMap.map { Pair(it.key.index, it.key) }.toMap()
     private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
 

@@ -297,7 +297,7 @@ class JsonReader(
     }
 
     private fun readFieldName() {
-        readStringValue({ JsonToken.FieldName(this.storedValue) })
+        readStringValue { JsonToken.FieldName(this.storedValue) }
         if (lastChar != ':') {
             throwJsonException()
         }

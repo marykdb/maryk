@@ -29,8 +29,8 @@ internal class FlowMapReader<out P>(
         return when(this.state) {
             FlowMapState.START -> {
                 this.state = FlowMapState.KEY
-                tag?.let {
-                    (it as? MapType)?.let {
+                tag?.let { tokenType ->
+                    (tokenType as? MapType)?.let {
                         JsonToken.StartObject(it)
                     } ?: throw InvalidYamlContent("Cannot use non map tags on maps")
                 } ?: JsonToken.SimpleStartObject

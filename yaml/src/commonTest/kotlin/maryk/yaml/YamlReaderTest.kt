@@ -88,7 +88,7 @@ class YamlReaderTest {
     }
 
     @Test
-    fun failOnInvalid_URI_tag() {
+    fun failOnInvalidURITag() {
         val reader = createYamlReader("") as YamlReaderImpl
         shouldThrow<InvalidYamlContent> {
             reader.resolveTag("!", "<wrong>")
@@ -96,7 +96,7 @@ class YamlReaderTest {
     }
 
     @Test
-    fun failOnUnknown_URI_tag() {
+    fun failOnUnknownURITag() {
         shouldThrow<InvalidYamlContent> {
             (createYamlReader("") as YamlReaderImpl)
                 .resolveTag("!", "<tag:unknown.org,2002>")

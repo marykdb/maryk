@@ -6,6 +6,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.StringDefinition
 
+@Suppress("unused")
 data class EmbeddedMarykObject(
     val value: String,
     val model: EmbeddedMarykObject? = null,

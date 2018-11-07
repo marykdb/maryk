@@ -76,7 +76,7 @@ internal class ByteKtTest {
 
     @Test
     fun testWrongVarInt() {
-        val bytes = ByteArray(3, { -1 })
+        val bytes = ByteArray(3) { -1 }
         var index = 0
         shouldThrow<ParseException> {
             initByteByVar { bytes[index++] }

@@ -6,7 +6,7 @@ fun generateProto3FileHeader(
     writer: (String) -> Unit
 ) {
     val imports = if (protosToImport.isNotEmpty()) {
-        "\n"+ protosToImport.map { """import "$it.proto";""" }.joinToString(separator = "\n").plus("\n")
+        "\n"+ protosToImport.joinToString(separator = "\n") { """import "$it.proto";""" }.plus("\n")
     } else ""
 
     val schema = """

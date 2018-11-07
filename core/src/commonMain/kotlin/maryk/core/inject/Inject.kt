@@ -1,7 +1,6 @@
-package maryk.core.properties.types
+package maryk.core.inject
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.inject.InjectionContext
 import maryk.core.models.ContextualDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions

@@ -27,7 +27,7 @@ class StringInDoubleQuoteReaderTest {
     }
 
     @Test
-    fun readDoubleQuoteWithUtf16_chars() {
+    fun readDoubleQuoteWithUtf16Chars() {
         createYamlReader(""""\uD83D\uDE0D\uwrong\u0w\u00w\u000w"""").apply {
             assertValue("😍\\uwrong\\u0w\\u00w\\u000w")
             assertEndDocument()
@@ -35,7 +35,7 @@ class StringInDoubleQuoteReaderTest {
     }
 
     @Test
-    fun readDoubleQuoteWithUtf8_chars() {
+    fun readDoubleQuoteWithUtf8Chars() {
         createYamlReader(""""\x43\x52\xw0\x0w"""").apply {
             assertValue("\u0043\u0052\\xw0\\x0w")
             assertEndDocument()
@@ -43,7 +43,7 @@ class StringInDoubleQuoteReaderTest {
     }
 
     @Test
-    fun readDoubleQuoteWithUtf32_chars() {
+    fun readDoubleQuoteWithUtf32Chars() {
         createYamlReader(""""\U0001F603\U0001W603"""").apply {
             assertValue("\uD83D\uDE03\\U0001W603")
             assertEndDocument()

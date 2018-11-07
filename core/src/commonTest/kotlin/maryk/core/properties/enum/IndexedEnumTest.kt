@@ -79,6 +79,6 @@ internal fun compareEnumDefinitions(
     val valueMap = value.values().map { Pair(it.index, it.name) }.toMap()
 
     for (enum in against.values()) {
-        valueMap.get(enum.index) shouldBe enum.name
+        valueMap[enum.index] shouldBe enum.name
     }
 }

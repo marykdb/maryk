@@ -1,6 +1,6 @@
 package maryk.lib.exceptions
 
-/** Exception with [cause] for when parsing to [value] fails. */
+/** Exception with [cause] for when parsing to value fails. */
 class ParseException(
     value: String,
     cause: Throwable? = null

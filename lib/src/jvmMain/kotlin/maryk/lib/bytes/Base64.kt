@@ -8,7 +8,7 @@ actual object Base64 {
     private val base64Encoder by lazy { JvmBase64.getEncoder().withoutPadding() }
 
     /** Decode [base64] string into bytes array */
-    actual fun decode(base64: String) = base64Decoder.decode(base64)
+    actual fun decode(base64: String): ByteArray = base64Decoder.decode(base64)
 
     /** Encode [bytes] array into a base64 String */
     actual fun encode(bytes: ByteArray): String = base64Encoder.encodeToString(bytes)

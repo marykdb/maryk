@@ -65,7 +65,9 @@ internal object ProtoBuf {
             WireType.BIT_64 -> for (it in 0 until 8) {
                 reader()
             }
-            WireType.LENGTH_DELIMITED -> (0 until initIntByVar(reader)).forEach { reader() }
+            WireType.LENGTH_DELIMITED -> for (it in 0 until initIntByVar(reader)) {
+                reader()
+            }
             WireType.START_GROUP -> {
                 while (true) {
                     val key = ProtoBuf.readKey(reader)

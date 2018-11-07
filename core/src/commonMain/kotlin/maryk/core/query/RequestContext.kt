@@ -1,5 +1,6 @@
 package maryk.core.query
 
+import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
@@ -8,7 +9,6 @@ import maryk.core.objects.AbstractValues
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.Inject
 import maryk.core.query.requests.IsRequest
 import maryk.core.query.responses.IsResponse
 
@@ -75,7 +75,6 @@ class RequestContext(
 
     /**
      * Collects Injects [inject] so they can be encoded in a higher Requests object
-     * referring with [referenceCreator] to where they are used.
      * This because ProtoBuf does not allow encoding Injects in place
      */
     fun collectInject(

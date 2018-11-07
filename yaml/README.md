@@ -6,7 +6,7 @@ A streaming YAML library written in Kotlin for JS and JVM platforms
 
 ### Constructing a writer
 
-The [`YamlWriter`](common/src/main/kotlin/maryk/yaml/YamlWriter.kt) constructor takes 
+The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) constructor takes 
 1 property:
  
 - `writer` - A function which consumes a `String` to be added to output.
@@ -22,7 +22,7 @@ val yamlWriter = YamlWriter {
 
 ### Writing with the YamlWriter
 
-The [`YamlWriter`](common/src/main/kotlin/maryk/yaml/YamlWriter.kt) has a few 
+The [`YamlWriter`](src/commonMain/kotlin/maryk/yaml/YamlWriter.kt) has a few 
 methods to write YAML constructions to the output
 
 Compatible with [`JsonWriter`](../json/README.md):
@@ -108,7 +108,7 @@ pets:
 
 ## Reading YAML
 
-To read YAML values you need to construct a [`YamlReader`](common/src/main/kotlin/maryk/yaml/YamlReader.kt)
+To read YAML values you need to construct a [`YamlReader`](src/commonMain/kotlin/maryk/yaml/YamlReader.kt)
 which can then read the YAML for found tokens which represents YAML elements. `YamlReader`
 takes a `reader` which is a function to return 1 char at a time. This way any 
 outputStream implementation or String reader from any framework can be used.

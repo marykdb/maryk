@@ -1,4 +1,4 @@
-package maryk.lib.bytes;
+package maryk.lib.bytes
 
 actual fun initString(length: Int, reader: () -> Byte) = String(
     ByteArray(length) {

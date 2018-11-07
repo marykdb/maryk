@@ -53,17 +53,17 @@ internal fun checkAndCreateFieldName(foundFieldNames: MutableList<String?>, fiel
  * If from plain string with [isPlainStringReader] = true and [tag] = false it will try to determine ValueType from contents.
  */
 internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainStringReader: Boolean): JsonToken.Value<Any?> {
-    return tag?.let {
-        if (value == null && it != ValueType.Null) {
+    return tag?.let { tokenType ->
+        if (value == null && tokenType != ValueType.Null) {
             throw InvalidYamlContent("Cannot have a null value with explicit tag which is not !!null")
         }
-        when (it) {
+        when (tokenType) {
             !is ValueType<*> -> {
                 throw InvalidYamlContent("Cannot use non value tag with value $value")
             }
             is ValueType.Bool -> when(value) {
-                in trueValues -> JsonToken.Value(true, it)
-                in falseValues -> JsonToken.Value(false, it)
+                in trueValues -> JsonToken.Value(true, tokenType)
+                in falseValues -> JsonToken.Value(false, tokenType)
                 else -> throw InvalidYamlContent("Unknown !!bool value $value")
             }
             is ValueType.IsNullValueType -> when(value) {
@@ -71,7 +71,7 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
                 else -> throw InvalidYamlContent("Unknown !!null value $value")
             }
             is ValueType.Float -> when(value) {
-                in nanValues -> JsonToken.Value(Double.NaN, it)
+                in nanValues -> JsonToken.Value(Double.NaN, tokenType)
                 else -> {
                     findInfinity(value!!)?.let { return it }
                     findFloat(value)?.let { return it }
@@ -81,12 +81,12 @@ internal fun createYamlValueToken(value: String?, tag: TokenType?, isPlainString
             is ValueType.Int -> findInt(value!!)?.let { return it }
                     ?: throw InvalidYamlContent("Not an integer: $value")
             is YamlValueType.Binary -> {
-                JsonToken.Value(Base64.decode(value!!), it)
+                JsonToken.Value(Base64.decode(value!!), tokenType)
             }
             is YamlValueType.TimeStamp -> {
                 findTimestamp(value!!)
             }
-            else -> JsonToken.Value(value, it)
+            else -> JsonToken.Value(value, tokenType)
         }
     } ?: if (value == null) {
         JsonToken.NullValue
@@ -202,17 +202,17 @@ private fun findTimestamp(value: String): JsonToken.Value<DateTime>? {
                     it.groups[6]!!.value.toByte(),
                     it.groups[7]!!.value.toByte(),
                     it.groups[8]!!.value.toByte(),
-                    it.groups[10]?.value?.let {
+                    it.groups[10]?.value?.let { value ->
                         when {
-                            it.length < 3 -> {
-                                var longer = it
-                                (1..3 - it.length).forEach {
+                            value.length < 3 -> {
+                                var longer = value
+                                for (i in 1..3 - value.length) {
                                     longer += "0"
                                 }
                                 longer
                             }
-                            it.length == 3 -> it
-                            else -> it.substring(0, 3)
+                            value.length == 3 -> value
+                            else -> value.substring(0, 3)
                         }
                     }?.toShort() ?: 0
                 )

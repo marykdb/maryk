@@ -18,24 +18,24 @@ internal fun YamlCharReader.directiveReader(onDone: () -> JsonToken): JsonToken 
     foundDirective = foundDirective.trimEnd()
 
     yamlRegEx.matchEntire(foundDirective)?.let {
-        it.groups.let {
+        it.groups.let { match ->
             if (this.yamlReader.version != null) {
                 throw InvalidYamlContent("Cannot declare yaml version twice")
             }
-            if (it[1]?.value != "1") {
+            if (match[1]?.value != "1") {
                 throw InvalidYamlContent("Unsupported Yaml major version")
             }
-            this.yamlReader.version = "${it[1]?.value}.${it[2]?.value}"
+            this.yamlReader.version = "${match[1]?.value}.${match[2]?.value}"
         }
     }
 
     tagRegEx.matchEntire(foundDirective)?.let {
-        it.groups.let {
+        it.groups.let { match ->
             // Match should always contain 2 values
-            if (it[1]!!.value in this.yamlReader.tags.keys) {
-                throw InvalidYamlContent("Tag ${it[1]?.value} is already defined")
+            if (match[1]!!.value in this.yamlReader.tags.keys) {
+                throw InvalidYamlContent("Tag ${match[1]?.value} is already defined")
             }
-            this.yamlReader.tags[it[1]!!.value] = it[2]!!.value
+            this.yamlReader.tags[match[1]!!.value] = match[2]!!.value
         }
     }
 

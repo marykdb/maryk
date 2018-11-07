@@ -136,7 +136,7 @@ internal class IntKtTest {
 
     @Test
     fun testWrongVarInt() {
-        val bytes = ByteArray(6, { -1 })
+        val bytes = ByteArray(6) { -1 }
         var index = 0
         shouldThrow<ParseException> {
             initIntByVar { bytes[index++] }

@@ -70,7 +70,9 @@ class ProtoBufTest {
 
         ProtoBuf.writeKey(55, WireType.LENGTH_DELIMITED, bc::write)
         22.writeVarBytes(bc::write)
-        (0 until 22).forEach { bc.write(-1) }
+        for (it in 0 until 22) {
+            bc.write(-1)
+        }
 
         ProtoBuf.writeKey(66, WireType.START_GROUP, bc::write)
 
@@ -79,7 +81,9 @@ class ProtoBufTest {
 
         ProtoBuf.writeKey(2, WireType.LENGTH_DELIMITED, bc::write)
         5.writeVarBytes(bc::write)
-        (0 until 5).forEach { bc.write(-1) }
+        for (it in 0 until 5) {
+            bc.write(-1)
+        }
 
         ProtoBuf.writeKey(66, WireType.END_GROUP, bc::write)
 

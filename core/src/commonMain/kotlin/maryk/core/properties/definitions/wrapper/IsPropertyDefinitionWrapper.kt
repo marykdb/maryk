@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.inject.Inject
 import maryk.core.models.IsDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.objects.SimpleObjectValues
@@ -19,7 +20,6 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.IsPropRefGraphable
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.Inject
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WriteCacheReader

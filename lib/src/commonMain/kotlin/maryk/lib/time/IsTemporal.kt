@@ -2,7 +2,7 @@ package maryk.lib.time
 
 import maryk.lib.exceptions.ParseException
 
-abstract class IsTemporal<T> : Comparable<T> {}
+abstract class IsTemporal<T> : Comparable<T>
 
 abstract class IsTemporalObject<T> {
     /**

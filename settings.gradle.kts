@@ -36,4 +36,3 @@ project(":generator-jvmTest").projectDir = file("generator/jvmTest")
 rootProject.name = "maryk"
 
 enableFeaturePreview("GRADLE_METADATA")
-enableFeaturePreview("STABLE_PUBLISHING")

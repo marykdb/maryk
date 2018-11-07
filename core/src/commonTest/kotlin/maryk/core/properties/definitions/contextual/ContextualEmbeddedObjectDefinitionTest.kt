@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.SimpleMarykObject
 import maryk.checkProtoBufConversion
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.test.ByteCollector
+import maryk.test.models.SimpleMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 

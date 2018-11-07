@@ -1,6 +1,5 @@
 package maryk.core.query.requests
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -8,6 +7,17 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.addRequest
+import maryk.test.requests.changeRequest
+import maryk.test.requests.collectRequest
+import maryk.test.requests.deleteRequest
+import maryk.test.requests.getChangesRequest
+import maryk.test.requests.getRequest
+import maryk.test.requests.getVersionedChangesRequest
+import maryk.test.requests.scanChangesRequest
+import maryk.test.requests.scanRequest
+import maryk.test.requests.scanVersionedChangesRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
 

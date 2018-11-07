@@ -1,12 +1,12 @@
 package maryk.core.models
 
-import maryk.SimpleMarykModel
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test

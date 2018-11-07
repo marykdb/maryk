@@ -2,7 +2,6 @@
 
 package maryk.core.query.responses
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -16,6 +15,7 @@ import maryk.core.query.responses.statuses.RequestFail
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 

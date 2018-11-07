@@ -2,7 +2,6 @@
 
 package maryk.core.models
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
@@ -12,6 +11,7 @@ import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.GetRequest
+import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 

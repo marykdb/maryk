@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.key
 
-import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -16,6 +15,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.Option
 import maryk.test.shouldBe
 import kotlin.test.Test
 

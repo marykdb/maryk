@@ -1,7 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.Option
-import maryk.Option.V1
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -12,6 +10,9 @@ import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.test.ByteCollector
+import maryk.test.models.Option
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V3
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -78,7 +79,7 @@ internal class MultiTypeDefinitionTest {
     @Test
     fun invalid_field_should_throw_exception() {
         shouldThrow<DefNotFoundException> {
-            def.validateWithRef(newValue = TypedValue(Option.V3, "NonExistingField"))
+            def.validateWithRef(newValue = TypedValue(V3, "NonExistingField"))
         }
     }
 

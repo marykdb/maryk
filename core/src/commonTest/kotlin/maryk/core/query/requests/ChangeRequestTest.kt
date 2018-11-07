@@ -1,22 +1,14 @@
 package maryk.core.query.requests
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
-import maryk.core.query.changes.change
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.changeRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
-
-private val key1 = SimpleMarykModel.key("MYc6LBYcT38nWxoE1ahNxA")
-private val key2 = SimpleMarykModel.key("lneV6ioyQL0vnbkLqwVw+A")
-
-internal val changeRequest = SimpleMarykModel.change(
-    key1.change(),
-    key2.change()
-)
 
 class ChangeRequestTest {
     private val context = RequestContext(mapOf(

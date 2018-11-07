@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.EmbeddedMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.query.DefinitionsContext
+import maryk.test.models.EmbeddedMarykModel
 import kotlin.test.Test
 
 class EmbeddedValuesPropertyDefinitionWrapperTest {

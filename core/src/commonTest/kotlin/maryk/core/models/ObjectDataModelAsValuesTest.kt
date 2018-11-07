@@ -2,10 +2,6 @@
 
 package maryk.core.models
 
-import maryk.EmbeddedMarykObject
-import maryk.Option
-import maryk.TestMarykObject
-import maryk.TestValueObject
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
@@ -15,6 +11,11 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.models.EmbeddedMarykObject
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V3
+import maryk.test.models.TestMarykObject
+import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
@@ -27,7 +28,7 @@ private val testExtendedObject = TestMarykObject.map {
         double with 3.555,
         dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
         bool with true,
-        enum with Option.V1,
+        enum with V1,
         list with listOf(34, 2352, 3423, 766),
         set with setOf(
             Date(2017, 12, 5),
@@ -44,7 +45,7 @@ private val testExtendedObject = TestMarykObject.map {
                 value with "test"
             )
         },
-        multi with TypedValue(Option.V3, EmbeddedMarykObject("subInMulti!")),
+        multi with TypedValue(V3, EmbeddedMarykObject("subInMulti!")),
         listOfString with listOf("test1", "another test", "🤗")
     )
 }

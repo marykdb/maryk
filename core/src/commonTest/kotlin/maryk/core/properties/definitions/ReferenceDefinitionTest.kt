@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -10,6 +9,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

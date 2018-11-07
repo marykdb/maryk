@@ -1,9 +1,9 @@
 package maryk.core.properties.references
 
-import maryk.TestMarykModel
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

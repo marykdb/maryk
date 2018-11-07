@@ -1,15 +1,15 @@
 package maryk.core.definitions
 
-import maryk.Option
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.requests.Requests
-import maryk.core.query.requests.addRequest
-import maryk.core.query.requests.getMaxRequest
+import maryk.test.models.Option
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.addRequest
+import maryk.test.requests.getMaxRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
 

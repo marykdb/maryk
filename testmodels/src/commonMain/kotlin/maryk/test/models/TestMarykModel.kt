@@ -1,4 +1,4 @@
-package maryk
+package maryk.test.models
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.definitions

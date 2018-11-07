@@ -1,22 +1,14 @@
 package maryk.core.query.requests
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.deleteRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
-
-private val key1 = SimpleMarykModel.key("B4CeT0fDRxYnEmSTQuLA2A")
-private val key2 = SimpleMarykModel.key("oDHjQh7GSDwyPX2kTUAniQ")
-
-internal val deleteRequest = SimpleMarykModel.delete(
-    key1,
-    key2,
-    hardDelete = true
-)
 
 class DeleteRequestTest {
     private val context = RequestContext(mapOf(

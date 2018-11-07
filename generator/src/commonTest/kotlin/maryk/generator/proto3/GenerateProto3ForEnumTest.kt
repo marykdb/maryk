@@ -1,6 +1,6 @@
 package maryk.generator.proto3
 
-import maryk.MarykEnum
+import maryk.test.models.MarykEnum
 import maryk.test.shouldBe
 import kotlin.test.Test
 

@@ -17,7 +17,7 @@ pluginManagement {
 fun includeProjects(vararg names: String) {
     for (name in names) {
         include(":$name")
-        project(":$name").projectDir = file(name)
+        project(":$name").projectDir = file(name.replace('-', '/'))
     }
 }
 
@@ -27,11 +27,10 @@ includeProjects(
     "json",
     "yaml",
     "core",
-    "generator"
+    "testmodels",
+    "generator",
+    "generator-jvmTest"
 )
-
-include(":generator-jvmTest")
-project(":generator-jvmTest").projectDir = file("generator/jvmTest")
 
 rootProject.name = "maryk"
 

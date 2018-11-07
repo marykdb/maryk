@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.EmbeddedMarykModel
-import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
+import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 

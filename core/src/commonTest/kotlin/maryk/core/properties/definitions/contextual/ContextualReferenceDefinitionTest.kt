@@ -1,7 +1,5 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.EmbeddedMarykModel
-import maryk.TestMarykModel
 import maryk.checkProtoBufConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
@@ -10,6 +8,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
+import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 

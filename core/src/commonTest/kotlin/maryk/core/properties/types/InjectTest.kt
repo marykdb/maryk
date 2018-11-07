@@ -2,8 +2,6 @@
 
 package maryk.core.properties.types
 
-import maryk.EmbeddedMarykModel
-import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -20,6 +18,8 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.get
 import maryk.core.query.responses.ValuesResponse
+import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

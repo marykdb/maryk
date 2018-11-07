@@ -1,8 +1,8 @@
 package maryk.generator.proto3
 
-import maryk.CompleteMarykModel
-import maryk.MarykEnum
 import maryk.generator.kotlin.GenerationContext
+import maryk.test.models.CompleteMarykModel
+import maryk.test.models.MarykEnum
 import maryk.test.shouldBe
 import kotlin.test.Test
 

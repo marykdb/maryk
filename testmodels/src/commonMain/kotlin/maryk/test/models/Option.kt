@@ -1,4 +1,4 @@
-package maryk
+package maryk.test.models
 
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition

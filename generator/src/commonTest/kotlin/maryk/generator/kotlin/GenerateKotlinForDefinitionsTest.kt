@@ -1,11 +1,11 @@
 package maryk.generator.kotlin
 
-import maryk.CompleteMarykModel
 import maryk.EmbeddedModel
-import maryk.MarykEnum
-import maryk.SimpleMarykModel
 import maryk.ValueMarykObject
 import maryk.core.definitions.Definitions
+import maryk.test.models.CompleteMarykModel
+import maryk.test.models.MarykEnum
+import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.fail

@@ -3,12 +3,7 @@
 package maryk.test.proto
 
 import com.google.protobuf.ByteString
-import maryk.CompleteMarykModel
-import maryk.MarykEnum
-import maryk.MarykEnumEmbedded
 import maryk.MarykTestProtos
-import maryk.NumericMarykModel
-import maryk.SimpleMarykModel
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -16,6 +11,14 @@ import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.test.ByteCollector
+import maryk.test.models.CompleteMarykModel
+import maryk.test.models.MarykEnum
+import maryk.test.models.MarykEnum.O1
+import maryk.test.models.MarykEnumEmbedded
+import maryk.test.models.MarykEnumEmbedded.E1
+import maryk.test.models.MarykEnumEmbedded.E2
+import maryk.test.models.NumericMarykModel
+import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -29,6 +32,7 @@ class Proto3ConversionTest {
         // Write protobuf
         val bc = ByteCollector()
         val cache = WriteCache()
+        
         bc.reserve(
             SimpleMarykModel.calculateProtoBufLength(simpleObject, cache)
         )
@@ -80,10 +84,10 @@ class Proto3ConversionTest {
         val completeObject = CompleteMarykModel(
             booleanForKey = true,
             dateForKey = Date(2018, 7, 25),
-            multiForKey = TypedValue(MarykEnum.O1, "string"),
-            enumEmbedded = MarykEnumEmbedded.E1,
+            multiForKey = TypedValue(O1, "string"),
+            enumEmbedded = E1,
             mapWithEnum = mapOf(
-                MarykEnumEmbedded.E2 to "mapped"
+                E2 to "mapped"
             )
         )
 

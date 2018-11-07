@@ -1,7 +1,7 @@
 package maryk.generator.proto3
 
-import maryk.CompleteMarykModel
-import maryk.MarykEnum
+import maryk.test.models.CompleteMarykModel
+import maryk.test.models.MarykEnum
 import maryk.ValueMarykObject
 import maryk.core.definitions.Definitions
 import maryk.test.shouldBe

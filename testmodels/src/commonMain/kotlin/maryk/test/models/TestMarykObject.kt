@@ -1,6 +1,6 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package maryk
+package maryk.test.models
 import maryk.core.models.ObjectDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.IsPropertyContext

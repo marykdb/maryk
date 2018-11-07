@@ -2,8 +2,6 @@
 
 package maryk.core.query.responses
 
-import maryk.SimpleMarykModel
-import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,6 +9,8 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.models.asValues
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
+import maryk.test.models.SimpleMarykModel
+import maryk.test.models.SimpleMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 

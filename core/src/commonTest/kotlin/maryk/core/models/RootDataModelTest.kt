@@ -2,10 +2,6 @@
 
 package maryk.core.models
 
-import maryk.EmbeddedMarykObject
-import maryk.Option
-import maryk.TestMarykModel
-import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -34,6 +30,13 @@ import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.models.EmbeddedMarykObject
+import maryk.test.models.Option
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V2
+import maryk.test.models.Option.V3
+import maryk.test.models.TestMarykModel
+import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -47,7 +50,7 @@ internal class RootDataModelTest {
                 uint = 555u,
                 double = 6.33,
                 bool = true,
-                enum = Option.V3,
+                enum = V3,
                 dateTime = DateTime.nowUTC()
             )
         ) shouldBe Bytes(
@@ -664,8 +667,8 @@ internal class RootDataModelTest {
                 it.definition shouldBe MultiTypeDefinition<Option, IsPropertyContext>(
                     typeEnum = Option,
                     definitionMap = mapOf(
-                        Option.V1 to StringDefinition(),
-                        Option.V2 to BooleanDefinition()
+                        V1 to StringDefinition(),
+                        V2 to BooleanDefinition()
                     )
                 )
             }

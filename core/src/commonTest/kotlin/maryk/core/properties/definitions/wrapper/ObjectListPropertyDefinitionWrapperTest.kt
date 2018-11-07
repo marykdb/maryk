@@ -1,11 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.SimpleMarykObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.query.DefinitionsContext
+import maryk.test.models.SimpleMarykObject
 import kotlin.test.Test
 
 class ObjectListPropertyDefinitionWrapperTest {

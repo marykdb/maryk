@@ -26,6 +26,7 @@ dependencies {
     api project(":generator")
 
     testImplementation project(":testlib")
+    testImplementation project(":testmodels")
     testImplementation "com.google.protobuf:protobuf-java:$protobufVersion"
 }
 

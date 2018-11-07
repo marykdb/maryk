@@ -1,10 +1,5 @@
 package maryk.core.definitions
 
-import maryk.EmbeddedMarykModel
-import maryk.Option
-import maryk.SimpleMarykModel
-import maryk.TestMarykModel
-import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -13,6 +8,11 @@ import maryk.core.models.compareDataModels
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.compareEnumDefinitions
 import maryk.core.query.DefinitionsConversionContext
+import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.Option
+import maryk.test.models.SimpleMarykModel
+import maryk.test.models.TestMarykModel
+import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 

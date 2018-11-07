@@ -1,6 +1,6 @@
 package maryk.generator.proto3
 
-import maryk.MarykEnum
+import maryk.test.models.MarykEnum
 import maryk.ValueMarykObject
 import maryk.generator.kotlin.GenerationContext
 import maryk.test.shouldBe

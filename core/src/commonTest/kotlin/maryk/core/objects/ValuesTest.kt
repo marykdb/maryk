@@ -2,11 +2,11 @@
 
 package maryk.core.objects
 
-import maryk.EmbeddedMarykModel
-import maryk.Option
-import maryk.TestMarykModel
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.Option.V2
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -24,13 +24,13 @@ class ValuesTest {
         val copy = original.copy {
             arrayOf(
                 string withNotNull "bye world",
-                enum withNotNull Option.V2
+                enum withNotNull V2
             )
         }
 
         copy.size shouldBe 6
         copy { string } shouldBe "bye world"
-        copy { enum } shouldBe Option.V2
+        copy { enum } shouldBe V2
     }
 
     @Test

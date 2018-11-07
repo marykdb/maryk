@@ -1,45 +1,15 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
-
 package maryk.core.query.requests
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.RequestContext
-import maryk.core.query.descending
-import maryk.core.query.filters.Exists
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.getVersionedChangesMaxRequest
+import maryk.test.requests.getVersionedChangesRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
-
-private val key1 = SimpleMarykModel.key("WWurg6ysTsozoMei/SurOw")
-private val key2 = SimpleMarykModel.key("awfbjYrVQ+cdXblfQKV10A")
-
-internal val getVersionedChangesRequest = SimpleMarykModel.getVersionedChanges(
-    key1,
-    key2,
-    fromVersion = 1234uL
-)
-
-internal val getVersionedChangesMaxRequest = SimpleMarykModel.run {
-    getVersionedChanges(
-        key1,
-        key2,
-        filter = Exists(ref { value }),
-        order = ref { value }.descending(),
-        fromVersion = 1234uL,
-        toVersion = 12345uL,
-        maxVersions = 5u,
-        filterSoftDeleted = true,
-        select = SimpleMarykModel.props {
-            RootPropRefGraph<SimpleMarykModel>(
-                value
-            )
-        }
-    )
-}
 
 class GetVersionedChangesRequestTest {
     private val context = RequestContext(mapOf(

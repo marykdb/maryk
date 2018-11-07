@@ -35,7 +35,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
     /** Read bytes from [reader] to DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
-    internal fun readFromBytes(reader: () -> Byte): DO {
+    fun readFromBytes(reader: () -> Byte): DO {
         val values = mutableMapOf<Int, Any>()
         this.properties.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
@@ -100,7 +100,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
     /** Converts String [value] to DataObject
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
-    internal fun fromString(value: String): DO {
+    fun fromBase64(value: String): DO {
         val b = Base64.decode(value)
         var index = 0
         return this.readFromBytes {

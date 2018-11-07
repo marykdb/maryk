@@ -1,7 +1,7 @@
 package maryk.core.properties.types
 
-import maryk.TestValueObject
 import maryk.lib.time.Time
+import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -28,7 +28,7 @@ internal class ValueDataObjectTest {
 
     @Test
     fun testConvertBytes() {
-        val bytes = value._bytes
+        val bytes = value.toByteArray()
         val new = TestValueObject.readFromBytes(bytes.iterator()::nextByte)
 
         new.compareTo(value) shouldBe 0
@@ -37,7 +37,7 @@ internal class ValueDataObjectTest {
     @Test
     fun testConvertString() {
         val string = value.toBase64()
-        val new = TestValueObject.fromString(string)
+        val new = TestValueObject.fromBase64(string)
 
         new.compareTo(value) shouldBe 0
     }

@@ -68,7 +68,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    fun calculateProtoBufLength(dataObject: DO, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (definition in this.properties) {
             val value = getValueWithDefinition(definition, dataObject, context)
@@ -88,7 +88,7 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    internal fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    fun writeProtoBuf(dataObject: DO, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (definition in this.properties) {
             val value = getValueWithDefinition(definition, dataObject, context)
 

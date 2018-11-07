@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.contextual
 
-import maryk.TestMarykModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsValueDefinition
@@ -12,6 +11,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 

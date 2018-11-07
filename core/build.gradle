@@ -26,6 +26,7 @@ kotlin {
         commonTest {
             dependencies {
                 implementation project(':testlib')
+                implementation project(':testmodels')
             }
         }
     }

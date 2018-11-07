@@ -1,45 +1,15 @@
-@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
-
 package maryk.core.query.requests
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.RequestContext
-import maryk.core.query.ascending
-import maryk.core.query.filters.Exists
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.getChangesMaxRequest
+import maryk.test.requests.getChangesRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
-
-private val key1 = SimpleMarykModel.key("uBu6L+ARRCgpUuyks8f73g")
-private val key2 = SimpleMarykModel.key("CXTD69pnTdsytwq0yxPryA")
-
-internal val getChangesRequest = SimpleMarykModel.getChanges(
-    key1,
-    key2,
-    fromVersion = 1234uL,
-    toVersion = 3456uL
-)
-
-internal val getChangesMaxRequest = SimpleMarykModel.run {
-    getChanges(
-        key1,
-        key2,
-        filter = Exists(ref { value }),
-        order = ref { value }.ascending(),
-        fromVersion = 1234uL,
-        toVersion = 3456uL,
-        filterSoftDeleted = true,
-        select = SimpleMarykModel.props {
-            RootPropRefGraph<SimpleMarykModel>(
-                value
-            )
-        }
-    )
-}
 
 class GetChangesRequestTest {
     private val context = RequestContext(mapOf(

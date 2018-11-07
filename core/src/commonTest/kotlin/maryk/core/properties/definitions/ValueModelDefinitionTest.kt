@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.TestValueObject
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -11,6 +10,7 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test

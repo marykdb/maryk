@@ -1,6 +1,5 @@
 package maryk.core.properties.enum
 
-import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -8,6 +7,7 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.createMarykYamlModelReader
+import maryk.test.models.Option
 import maryk.test.shouldBe
 import kotlin.test.Test
 

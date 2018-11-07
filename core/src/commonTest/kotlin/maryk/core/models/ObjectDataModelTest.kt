@@ -2,10 +2,6 @@
 
 package maryk.core.models
 
-import maryk.EmbeddedMarykObject
-import maryk.Option
-import maryk.TestMarykObject
-import maryk.TestValueObject
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
@@ -17,6 +13,10 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.models.EmbeddedMarykObject
+import maryk.test.models.Option.V3
+import maryk.test.models.TestMarykObject
+import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter
@@ -50,7 +50,7 @@ private val testExtendedObject = TestMarykObject(
     ),
     valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
     embeddedObject = EmbeddedMarykObject("test"),
-    multi = TypedValue(Option.V3, EmbeddedMarykObject("subInMulti!")),
+    multi = TypedValue(V3, EmbeddedMarykObject("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
 

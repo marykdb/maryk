@@ -1,8 +1,8 @@
 package maryk.core.models
 
-import maryk.TestMarykModel
 import maryk.lib.time.Date
 import maryk.lib.time.Time
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 

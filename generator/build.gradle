@@ -18,13 +18,16 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api project(':lib')
+                api project(':json')
+                api project(':yaml')
                 api project(':core')
-                implementation project(':lib')
             }
         }
         commonTest {
             dependencies {
                 implementation project(':testlib')
+                implementation project(':testmodels')
             }
         }
     }

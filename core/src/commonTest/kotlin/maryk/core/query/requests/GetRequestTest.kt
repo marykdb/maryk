@@ -2,7 +2,6 @@
 
 package maryk.core.query.requests
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -12,32 +11,11 @@ import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
 import maryk.core.yaml.MarykYamlReaders
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.getMaxRequest
+import maryk.test.requests.getRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
-
-private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
-private val key2 = SimpleMarykModel.key("Vc4WgX/mQHYCSEoLtfLSUQ")
-
-val getRequest = SimpleMarykModel.get(
-    key1,
-    key2
-)
-
-internal val getMaxRequest = SimpleMarykModel.run {
-    get(
-        key1,
-        key2,
-        filter = Exists(ref { value }),
-        order = ref { value }.descending(),
-        toVersion = 333uL,
-        filterSoftDeleted = true,
-        select = props {
-            RootPropRefGraph<SimpleMarykModel>(
-                value
-            )
-        }
-    )
-}
 
 class GetRequestTest {
     private val context = RequestContext(mapOf(
@@ -49,7 +27,7 @@ class GetRequestTest {
         GetRequest.map(context) {
             mapNonNulls(
                 dataModel with SimpleMarykModel,
-                keys with listOf(key1, key2)
+                keys with listOf(getRequest.keys[0], getRequest.keys[1])
             )
         }.toDataObject() shouldBe getRequest
     }
@@ -59,7 +37,7 @@ class GetRequestTest {
         GetRequest.map(context) {
             mapNonNulls(
                 dataModel with SimpleMarykModel,
-                keys with listOf(key1, key2),
+                keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
                 filter with Exists(SimpleMarykModel.ref { value }),
                 order with SimpleMarykModel.ref { value }.descending(),
                 toVersion with 333uL,

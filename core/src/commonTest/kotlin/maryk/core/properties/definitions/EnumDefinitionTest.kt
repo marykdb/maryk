@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.Option
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -10,14 +9,18 @@ import maryk.core.protobuf.WireType
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.test.models.Option
+import maryk.test.models.Option.V1
+import maryk.test.models.Option.V2
+import maryk.test.models.Option.V3
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class EnumDefinitionTest {
     private val enumsToTest = arrayOf(
-        Option.V1,
-        Option.V2
+        V1,
+        V2
     )
 
     val def = EnumDefinition(
@@ -29,10 +32,10 @@ internal class EnumDefinitionTest {
         required = false,
         final = true,
         unique = true,
-        minValue = Option.V1,
-        maxValue = Option.V3,
+        minValue = V1,
+        maxValue = V3,
         enum = Option,
-        default = Option.V2
+        default = V2
     )
 
     @Test

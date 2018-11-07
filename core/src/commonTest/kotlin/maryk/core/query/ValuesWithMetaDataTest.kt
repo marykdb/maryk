@@ -2,13 +2,13 @@
 
 package maryk.core.query
 
-import maryk.Option
-import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.lib.time.DateTime
+import maryk.test.models.Option.V3
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -19,7 +19,7 @@ class ValuesWithMetaDataTest {
         uint = 555u,
         double = 6.33,
         bool = true,
-        enum = Option.V3,
+        enum = V3,
         dateTime = DateTime(2017, 12, 5, 1, 33, 55)
     )
 

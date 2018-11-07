@@ -56,7 +56,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
 
     override fun asString(value: DO) = value.toBase64()
 
-    override fun fromString(string: String) = this.dataModel.fromString(string)
+    override fun fromString(string: String) = this.dataModel.fromBase64(string)
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = dataModel.properties[name]
 

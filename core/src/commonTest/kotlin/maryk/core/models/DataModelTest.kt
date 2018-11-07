@@ -2,10 +2,6 @@
 
 package maryk.core.models
 
-import maryk.EmbeddedMarykModel
-import maryk.Option
-import maryk.TestMarykModel
-import maryk.TestValueObject
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -19,6 +15,10 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
+import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.Option.V3
+import maryk.test.models.TestMarykModel
+import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import maryk.yaml.YamlWriter
@@ -52,7 +52,7 @@ val testExtendedMarykModelObject = TestMarykModel(
     ),
     valueObject = TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
     embeddedValues = EmbeddedMarykModel("test"),
-    multi = TypedValue(Option.V3, EmbeddedMarykModel("subInMulti!")),
+    multi = TypedValue(V3, EmbeddedMarykModel("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
 
@@ -262,7 +262,7 @@ internal class DataModelTest {
                 double with 3.555,
                 dateTime with DateTime(year = 2017, month = 12, day = 4, hour = 12, minute = 13),
                 bool with true,
-                enum with Option.V3,
+                enum with V3,
                 reference with TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1, 5, 1))
             )
         }

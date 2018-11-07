@@ -1,6 +1,5 @@
 package maryk.core.query.filters
 
-import maryk.TestMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
@@ -8,6 +7,7 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.lib.time.DateTime
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 

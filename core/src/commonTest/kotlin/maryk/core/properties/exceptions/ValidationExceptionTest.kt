@@ -1,11 +1,11 @@
 package maryk.core.properties.exceptions
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
+import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 
 class ValidationExceptionTest {

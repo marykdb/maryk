@@ -1,4 +1,4 @@
-package maryk
+package maryk.test.models
 
 import maryk.core.models.ValueDataModel
 import maryk.core.objects.ObjectValues

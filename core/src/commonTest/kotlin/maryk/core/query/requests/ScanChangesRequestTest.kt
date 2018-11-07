@@ -2,40 +2,16 @@
 
 package maryk.core.query.requests
 
-import maryk.SimpleMarykModel
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph.RootPropRefGraph
-import maryk.core.query.Order
 import maryk.core.query.RequestContext
-import maryk.core.query.filters.Exists
+import maryk.test.models.SimpleMarykModel
+import maryk.test.requests.scanChangeMaxRequest
+import maryk.test.requests.scanChangesRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
-
-private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
-
-internal val scanChangesRequest = SimpleMarykModel.scanChanges(
-    startKey = key1,
-    fromVersion = 1234uL
-)
-
-@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
-internal val scanChangeMaxRequest = SimpleMarykModel.scanChanges(
-    startKey = key1,
-    filter = Exists(SimpleMarykModel.ref { value }),
-    order = Order(SimpleMarykModel.ref { value }),
-    limit = 100u,
-    filterSoftDeleted = true,
-    toVersion = 2345uL,
-    fromVersion = 1234uL,
-    select = SimpleMarykModel.props {
-        RootPropRefGraph<SimpleMarykModel>(
-            value
-        )
-    }
-)
 
 class ScanChangesRequestTest {
     private val context = RequestContext(mapOf(

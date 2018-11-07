@@ -1,6 +1,6 @@
 @file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
 
-package maryk
+package maryk.test.models
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions

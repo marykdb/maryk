@@ -188,10 +188,8 @@ private fun DataModel<*, *>.generateKotlinValue(value: ValuesImpl, addImport: (S
     val values = mutableListOf<String>()
 
     for(property in this.properties) {
-        val wrapper = property
-
         value.original(property.index)?.let {
-            values.add("${property.name} = ${generateKotlinValue(wrapper.definition, it, addImport)}")
+            values.add("${property.name} = ${generateKotlinValue(property.definition, it, addImport)}")
         }
     }
 

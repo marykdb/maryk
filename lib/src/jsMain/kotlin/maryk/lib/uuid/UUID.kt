@@ -1,11 +1,17 @@
 package maryk.lib.uuid
 
+import maryk.node.Crypto
 import kotlin.experimental.and
 import kotlin.experimental.or
-import kotlin.random.Random
 
 actual fun generateUUID(): Pair<Long, Long> {
-    val randomBytes = Random.nextBytes(16)
+    // TODO: Currently only runnable in Node
+    val buffer = Crypto.randomBytes(16)
+    val iterable = buffer.values()
+
+    val randomBytes = ByteArray(buffer.length) {
+        iterable.next().value
+    }
 
     randomBytes[6] = randomBytes[6] and 0x0f  // clear version
     randomBytes[6] = randomBytes[6] or 0x40  // set to version 4

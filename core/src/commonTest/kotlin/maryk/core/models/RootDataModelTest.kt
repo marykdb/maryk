@@ -22,7 +22,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
-import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
@@ -53,7 +53,7 @@ internal class RootDataModelTest {
                 enum = V3,
                 dateTime = DateTime.nowUTC()
             )
-        ) shouldBe Bytes(
+        ) shouldBe Key<TestMarykModel>(
             byteArrayOf(0, 0, 2, 43, 1, 1, 1, 0, 3)
         )
     }

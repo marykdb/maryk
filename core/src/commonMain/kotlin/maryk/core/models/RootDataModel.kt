@@ -45,26 +45,6 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
     final override val keySize = IsRootDataModel.calculateKeySize(keyDefinitions)
 
-    /** Get Key based on [values] */
-    @Suppress("UNCHECKED_CAST")
-    fun key(values: Values<DM, P>): Key<DM> {
-        val bytes = ByteArray(this.keySize)
-        var index = 0
-        for (it in this.keyDefinitions) {
-            val value = it.getValue(this as DM, values)
-
-            (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
-                bytes[index++] = it
-            }
-
-            // Add separator
-            if (index < this.keySize) {
-                bytes[index++] = 1
-            }
-        }
-        return Key(bytes)
-    }
-
     @Suppress("UNCHECKED_CAST")
     private object RootModelProperties: ObjectPropertyDefinitions<RootDataModel<*, *>>() {
         init {
@@ -190,4 +170,24 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
             }
         }
     }
+}
+
+/** Get Key based on [values] */
+@Suppress("UNCHECKED_CAST")
+fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
+    val bytes = ByteArray(this.keySize)
+    var index = 0
+    for (it in this.keyDefinitions) {
+        val value = it.getValue(this, values)
+
+        (it as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
+            bytes[index++] = it
+        }
+
+        // Add separator
+        if (index < this.keySize) {
+            bytes[index++] = 1
+        }
+    }
+    return Key(bytes)
 }

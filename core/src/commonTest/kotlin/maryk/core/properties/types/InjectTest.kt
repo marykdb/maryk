@@ -8,6 +8,7 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.models.asValues
+import maryk.core.models.key
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
 import maryk.core.properties.exceptions.InjectException

@@ -6,6 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.models.key
 import maryk.lib.time.DateTime
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel

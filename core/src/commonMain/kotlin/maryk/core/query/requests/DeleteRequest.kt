@@ -1,7 +1,9 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -16,7 +18,7 @@ import maryk.core.query.responses.DeleteResponse
  * Creates a Request to delete [objectsToDelete] from [DM]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-fun <DM: IsRootDataModel<*>> DM.delete(
+fun <DM: IsRootValuesDataModel<*>> DM.delete(
     vararg objectsToDelete: Key<DM>,
     hardDelete: Boolean = false
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
@@ -25,13 +27,14 @@ fun <DM: IsRootDataModel<*>> DM.delete(
  * A Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
-data class DeleteRequest<out DM: IsRootDataModel<*>> internal constructor(
+data class DeleteRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objectsToDelete: List<Key<DM>>,
     val hardDelete: Boolean
-) : IsObjectRequest<DM, DeleteResponse<*>> {
+) : IsStoreRequest<DM, DeleteResponse<DM>> {
     override val requestType = RequestType.Delete
-    override val responseModel = DeleteResponse
+    @Suppress("UNCHECKED_CAST")
+    override val responseModel = DeleteResponse as IsObjectDataModel<DeleteResponse<DM>, *>
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {

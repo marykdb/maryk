@@ -48,7 +48,7 @@ class InjectInRequestTest {
         )
     }
 
-    private fun checker(converted: ObjectValues<GetRequest<*>, GetRequest.Properties>, original: ObjectValues<GetRequest<*>, GetRequest.Properties>) {
+    private fun checker(converted: ObjectValues<GetRequest<*, *>, GetRequest.Properties>, original: ObjectValues<GetRequest<*, *>, GetRequest.Properties>) {
         val originalKeys: Any = converted.original { keys } as Any
 
         when (originalKeys) {
@@ -110,8 +110,8 @@ class InjectInRequestTest {
             checker = { converted, original ->
                 @Suppress("UNCHECKED_CAST")
                 checker(
-                    converted.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Properties>,
-                    original.original { requests }!![0].value as ObjectValues<GetRequest<*>, GetRequest.Properties>
+                    converted.original { requests }!![0].value as ObjectValues<GetRequest<*, *>, GetRequest.Properties>,
+                    original.original { requests }!![0].value as ObjectValues<GetRequest<*, *>, GetRequest.Properties>
                 )
             }
         )

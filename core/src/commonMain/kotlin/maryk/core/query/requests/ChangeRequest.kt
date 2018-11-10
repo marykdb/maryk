@@ -1,6 +1,7 @@
 package maryk.core.query.requests
 
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -12,16 +13,17 @@ import maryk.core.query.responses.ChangeResponse
 /**
  * Creates a request to change DataObjects with [objectChanges] in a Store.
  */
-fun <DM: IsRootDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
+fun <DM: IsRootValuesDataModel<*>> DM.change(vararg objectChanges: DataObjectChange<DM>) =
     ChangeRequest(this, objectChanges.toList())
 
 /** A Request to change DataObjects for [dataModel] with [objectChanges] */
-data class ChangeRequest<out DM: IsRootDataModel<*>> internal constructor(
+data class ChangeRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     val objectChanges: List<DataObjectChange<DM>>
-) : IsObjectRequest<DM, ChangeResponse<*>> {
+) : IsStoreRequest<DM, ChangeResponse<DM>> {
     override val requestType = RequestType.Change
-    override val responseModel = ChangeResponse
+    @Suppress("UNCHECKED_CAST")
+    override val responseModel = ChangeResponse as IsObjectDataModel<ChangeResponse<DM>, *>
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {

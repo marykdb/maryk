@@ -2,7 +2,8 @@
 
 package maryk.core.query.requests
 
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,7 +19,7 @@ import maryk.core.query.responses.ChangesResponse
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootDataModel<*>> DM.scanChanges(
+fun <DM: IsRootValuesDataModel<*>> DM.scanChanges(
     startKey: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -37,7 +38,7 @@ fun <DM: IsRootDataModel<*>> DM.scanChanges(
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
-data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
+data class ScanChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>,
     override val select: RootPropRefGraph<DM>? = null,
@@ -47,9 +48,10 @@ data class ScanChangesRequest<DM: IsRootDataModel<*>> internal constructor(
     override val fromVersion: ULong,
     override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM, ChangesResponse<*>>, IsChangesRequest<DM, ChangesResponse<*>> {
+) : IsScanRequest<DM, ChangesResponse<DM>>, IsChangesRequest<DM, ChangesResponse<DM>> {
     override val requestType = RequestType.ScanChanges
-    override val responseModel = ChangesResponse
+    @Suppress("UNCHECKED_CAST")
+    override val responseModel = ChangesResponse as IsObjectDataModel<ChangesResponse<DM>, *>
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ScanChangesRequest<*>>() {

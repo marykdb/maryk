@@ -19,7 +19,7 @@ import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
 @Suppress("EXPERIMENTAL_API_USAGE")
-interface IsFetchRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsObjectRequest<DM, RP> {
+interface IsFetchRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsStoreRequest<DM, RP> {
     val select: RootPropRefGraph<DM>?
     val filter: IsFilter?
     val order: Order?

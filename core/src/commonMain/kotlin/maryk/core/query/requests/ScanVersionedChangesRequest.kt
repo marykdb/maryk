@@ -2,7 +2,8 @@
 
 package maryk.core.query.requests
 
-import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,7 +19,7 @@ import maryk.core.query.responses.VersionedChangesResponse
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootDataModel<*>> DM.scanVersionedChanges(
+fun <DM: IsRootValuesDataModel<*>> DM.scanVersionedChanges(
     startKey: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -38,7 +39,7 @@ fun <DM: IsRootDataModel<*>> DM.scanVersionedChanges(
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 @Suppress("EXPERIMENTAL_OVERRIDE")
-data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal constructor(
+data class ScanVersionedChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>,
     override val filter: IsFilter? = null,
@@ -49,9 +50,10 @@ data class ScanVersionedChangesRequest<DM: IsRootDataModel<*>> internal construc
     override val maxVersions: UInt = 1000u,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM, VersionedChangesResponse<*>>, IsVersionedChangesRequest<DM, VersionedChangesResponse<*>> {
+) : IsScanRequest<DM, VersionedChangesResponse<DM>>, IsVersionedChangesRequest<DM, VersionedChangesResponse<DM>> {
     override val requestType = RequestType.ScanVersionedChanges
-    override val responseModel = VersionedChangesResponse
+    @Suppress("UNCHECKED_CAST")
+    override val responseModel = VersionedChangesResponse as IsObjectDataModel<VersionedChangesResponse<DM>, *>
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ScanVersionedChangesRequest<*>>() {

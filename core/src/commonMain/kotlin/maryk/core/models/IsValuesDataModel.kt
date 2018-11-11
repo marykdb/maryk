@@ -22,3 +22,7 @@ interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinition
     override fun map(context: RequestContext?, createMap: P.() -> Map<Int, Any?>) =
         Values(this as DM, createMap(this.properties), context)
 }
+
+/** Create a ObjectValues with given [createMap] function */
+fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions> DM.map(context: RequestContext?, createMap: P.() -> Map<Int, Any?>) =
+    Values(this, createMap(this.properties), context)

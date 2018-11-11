@@ -1,0 +1,57 @@
+plugins {
+    id 'kotlin-multiplatform'
+}
+
+apply {
+    from("../../gradle/common.gradle")
+    from("../../gradle/js.gradle")
+    from("../../gradle/jvm.gradle")
+    from("../../gradle/native.gradle")
+}
+
+setupCommon()
+setupJVM()
+setupJS()
+setupNative()
+
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
+
+                implementation project(':lib')
+                implementation project(':json')
+                implementation project(':yaml')
+                api project(':core')
+            }
+        }
+        commonTest {
+            dependencies {
+                api project(':testlib')
+                api project(':testmodels')
+            }
+        }
+        jsMain {
+            dependencies {
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion"
+            }
+        }
+        jvmMain {
+            dependencies {
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion"
+                implementation project(':lib')
+                implementation project(':json')
+                implementation project(':yaml')
+                implementation project(':core')
+            }
+        }
+        macosMain {
+            dependencies {
+                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion"
+            }
+        }
+    }
+}
+

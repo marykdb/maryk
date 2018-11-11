@@ -29,7 +29,8 @@ includeProjects(
     "core",
     "testmodels",
     "generator",
-    "generator-jvmTest"
+    "generator-jvmTest",
+    "store-memory"
 )
 
 rootProject.name = "maryk"

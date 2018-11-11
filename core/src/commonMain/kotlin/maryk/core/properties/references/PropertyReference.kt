@@ -7,10 +7,10 @@ import maryk.core.properties.definitions.IsPropertyDefinition
  * with parent [parentReference] of type [P]
  */
 abstract class PropertyReference<
-        T: Any,
-        out D : IsPropertyDefinition<T>,
-        out P: AnyPropertyReference,
-        C: Any
+    T: Any,
+    out D : IsPropertyDefinition<T>,
+    out P: AnyPropertyReference,
+    C: Any
 > internal constructor(
     final override val propertyDefinition: D,
     val parentReference: P?

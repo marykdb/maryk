@@ -39,7 +39,7 @@ class InMemoryDataStoreChangeTest {
     }
 
     @Test
-    fun executeChangeRequest() = runSuspendingTest {
+    fun executeChangeCheckRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             addRequest.dataModel.change(
                 keys[0].change(
@@ -53,18 +53,30 @@ class InMemoryDataStoreChangeTest {
                         SimpleMarykModel.ref { value } with "wrong"
                     ),
                     lastVersion = lastVersions[0]
+                ),
+                keys[0].change(
+                    Check(
+                        SimpleMarykModel.ref { value } with "haha1"
+                    ),
+                    lastVersion = 123uL
                 )
             )
         )
 
-        changeResponse.statuses.size shouldBe 2
-        changeResponse.statuses[0].let {
-            val success = shouldBeOfType<Success<*>>(changeResponse.statuses[0])
+        changeResponse.statuses.size shouldBe 3
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
             shouldBeRecent(success.version, 1000uL)
         }
 
-        changeResponse.statuses[1].let {
-            val validationFail = shouldBeOfType<ValidationFail<*>>(changeResponse.statuses[1])
+        changeResponse.statuses[1].let { status ->
+            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            validationFail.exceptions.size shouldBe 1
+            shouldBeOfType<InvalidValueException>(validationFail.exceptions[0])
+        }
+
+        changeResponse.statuses[2].let { status ->
+            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
             validationFail.exceptions.size shouldBe 1
             shouldBeOfType<InvalidValueException>(validationFail.exceptions[0])
         }

@@ -32,12 +32,25 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 
     if (changeRequest.objectChanges.isNotEmpty()) {
-        for (objectChange in changeRequest.objectChanges) {
+        objectChanges@for (objectChange in changeRequest.objectChanges) {
             val index = dataList.binarySearch { it.key.compareTo(objectChange.key) }
+            val objectToChange = dataList[index]
+
+            // Check if version is within range
+            if(objectChange.lastVersion != null && objectToChange.lastVersion.compareTo(objectChange.lastVersion!!) != 0) {
+                statuses.add(
+                    ValidationFail(
+                        listOf(
+                            InvalidValueException(null, "Version of object was different than given: ${objectChange.lastVersion} < ${objectToChange.lastVersion}")
+                        )
+                    )
+                )
+                continue@objectChanges
+            }
 
             val status: IsChangeResponseStatus<DM> = when {
                 index > -1 -> {
-                    applyChanges(dataList, index, objectChange.changes, version)
+                    applyChanges(objectToChange, objectChange.changes, version)
                 }
                 else -> DoesNotExist(objectChange.key)
             }
@@ -55,13 +68,10 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 }
 
 private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
-    dataList: MutableList<DataRecord<DM, P>>,
-    index: Int,
+    objectToChange: DataRecord<DM, P>,
     changes: List<IsChange>,
     version: ULong
 ): IsChangeResponseStatus<DM> {
-    val objectToChange = dataList[index]
-
     var validationExceptions: MutableList<ValidationException>? = null
 
     fun addValidationFail(ve: ValidationException) {

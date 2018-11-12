@@ -29,9 +29,10 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
 
             dataList.add(
                 DataRecord(
-                    firstVersion = version,
                     key = key,
-                    values = objectToAdd.toDataRecordValueTree(version)
+                    values = objectToAdd.toDataRecordValueTree(version),
+                    firstVersion = version,
+                    lastVersion = version
                 )
             )
             statuses.add(

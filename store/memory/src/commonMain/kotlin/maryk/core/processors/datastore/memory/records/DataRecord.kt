@@ -13,6 +13,7 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
     val key: Key<DM>,
     val values: DataRecordValueTree<DM, P>,
     val firstVersion: ULong,
+    val lastVersion: ULong,
     val isDeleted: DeleteState = NeverDeleted
 ) {
     operator fun <T: Any> get(reference: IsPropertyReference<T, *, *>): T {

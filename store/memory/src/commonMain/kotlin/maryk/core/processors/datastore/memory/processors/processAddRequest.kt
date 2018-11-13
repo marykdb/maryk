@@ -11,6 +11,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.lib.time.Instant
 
@@ -27,21 +28,26 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
         for (objectToAdd in addRequest.objectsToAdd) {
             val key = addRequest.dataModel.key(objectToAdd)
 
-            dataList.add(
-                DataRecord(
-                    key = key,
-                    values = objectToAdd.toDataRecordValueTree(version),
-                    firstVersion = version,
-                    lastVersion = version
-                )
-            )
-            statuses.add(
-                AddSuccess(key, version, listOf())
-            )
-        }
+            val index = dataList.binarySearch { it.key.compareTo(key) }
 
-        dataList.sortBy {
-            it.key
+            if (index < 0) {
+                dataList.add(
+                    (index * -1) - 1,
+                    DataRecord(
+                        key = key,
+                        values = objectToAdd.toDataRecordValueTree(version),
+                        firstVersion = version,
+                        lastVersion = version
+                    )
+                )
+                statuses.add(
+                    AddSuccess(key, version, listOf())
+                )
+            } else {
+                statuses.add(
+                    AlreadyExists(key)
+                )
+            }
         }
     }
 

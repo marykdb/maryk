@@ -1,6 +1,6 @@
 buildscript {
-    extra["kotlinVersion"] = "1.3.0"
-    extra["coroutinesVersion"] = "1.0.0"
+    extra["kotlinVersion"] = "1.3.10"
+    extra["coroutinesVersion"] = "1.0.1"
 
     repositories {
         jcenter()

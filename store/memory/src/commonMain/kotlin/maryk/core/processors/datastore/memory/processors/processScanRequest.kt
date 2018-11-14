@@ -40,6 +40,9 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanR
                 )
             )
         }
+
+        // Break when limit is found
+        if (valuesWithMeta.size.toUInt() == scanRequest.limit) break
     }
 
     storeAction.response.complete(

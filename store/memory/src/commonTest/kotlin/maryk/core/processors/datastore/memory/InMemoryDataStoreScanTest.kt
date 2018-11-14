@@ -22,6 +22,7 @@ class InMemoryDataStoreScanTest {
     private val logs = arrayOf(
         Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
         Log("Something else happened", timestamp = DateTime(2018, 11, 14, 12, 0, 0, 0)),
+        Log("Something REALLY happened", timestamp = DateTime(2018, 11, 14, 12, 33, 22, 111)),
         Log("WRONG", ERROR, DateTime(2018, 11, 14, 13, 0, 2, 0))
     )
 
@@ -38,21 +39,40 @@ class InMemoryDataStoreScanTest {
     }
 
     @Test
-    fun executeAddAndSimpleScanRequest() = runSuspendingTest {
+    fun executeSimpleScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
-            Log.scan(startKey = keys[1])
+            Log.scan(startKey = keys[2])
         )
 
-        scanResponse.values.size shouldBe 2
+        scanResponse.values.size shouldBe 3
 
         // Mind that Log is sorted in reverse so it goes back in time going forward
         scanResponse.values[0].let {
+            it.values shouldBe logs[2]
+            it.key shouldBe keys[2]
+        }
+        scanResponse.values[1].let {
             it.values shouldBe logs[1]
             it.key shouldBe keys[1]
         }
-        scanResponse.values[1].let {
+        scanResponse.values[2].let {
             it.values shouldBe logs[0]
             it.key shouldBe keys[0]
+        }
+    }
+
+    @Test
+    fun executeScanRequestWithLimit() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(startKey = keys[2], limit = 1u)
+        )
+
+        scanResponse.values.size shouldBe 1
+
+        // Mind that Log is sorted in reverse so it goes back in time going forward
+        scanResponse.values[0].let {
+            it.values shouldBe logs[2]
+            it.key shouldBe keys[2]
         }
     }
 }

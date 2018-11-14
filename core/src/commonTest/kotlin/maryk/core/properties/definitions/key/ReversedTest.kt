@@ -4,7 +4,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
-import maryk.core.models.definitions
 import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -18,7 +17,7 @@ import kotlin.test.Test
 internal class ReversedTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
-        keyDefinitions = definitions(
+        keyDefinitions = arrayOf(
             Reversed(Properties.boolean),
             Reversed(Properties.dateTime)
         ),

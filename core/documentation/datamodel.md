@@ -195,7 +195,7 @@ data class Event ...
 data class Advertisement ...
 
 object TimelineItem: RootDataModel<TimelineItem>(
-    keyDefinitions = definitions(
+    keyDefinitions = arrayOf(
         Reversed(Properties.dateOfPosting),
         TypeId(Properties.item)
     ),

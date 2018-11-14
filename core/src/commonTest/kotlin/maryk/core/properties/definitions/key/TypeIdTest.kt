@@ -4,7 +4,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
-import maryk.core.models.definitions
 import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -23,7 +22,7 @@ import kotlin.test.Test
 internal class TypeIdTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
-        keyDefinitions = definitions(
+        keyDefinitions = arrayOf(
             TypeId(MarykModel.Properties.multi)
         ),
         properties = Properties

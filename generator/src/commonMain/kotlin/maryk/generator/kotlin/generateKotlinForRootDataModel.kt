@@ -24,12 +24,10 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     val keyDefAsKotlin = if (this.keyDefinitions.size != 1 || this.keyDefinitions[0] != UUIDKey) {
         val keyDefs = this.keyDefinitions.generateKotlin(addImport)
 
-        addImport("maryk.core.models.definitions")
-
-        """keyDefinitions = definitions(
+        """keyDefinitions = arrayOf(
             ${keyDefs.prependIndent().prependIndent().trimStart()}
         ),
-            """.prependIndent().trimStart()
+        """.trimStart()
     } else ""
 
     val enumKotlinDefinitions = mutableListOf<String>()

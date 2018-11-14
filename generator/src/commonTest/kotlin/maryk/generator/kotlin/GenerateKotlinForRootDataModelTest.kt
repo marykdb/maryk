@@ -41,7 +41,6 @@ val generatedKotlinForCompleteDataModel = """
 package maryk
 
 import maryk.core.models.RootDataModel
-import maryk.core.models.definitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -91,13 +90,13 @@ enum class MarykEnumEmbedded(
 
 object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
     name = "CompleteMarykModel",
-    keyDefinitions = definitions(
-            UUIDKey,
-            TypeId(Properties.multiForKey.getRef()),
-            Properties.booleanForKey,
-            Reversed(Properties.dateForKey.getRef())
-        ),
-        properties = Properties
+    keyDefinitions = arrayOf(
+        UUIDKey,
+        TypeId(Properties.multiForKey.getRef()),
+        Properties.booleanForKey,
+        Reversed(Properties.dateForKey.getRef())
+    ),
+    properties = Properties
 ) {
     object Properties: PropertyDefinitions() {
         val string = add(

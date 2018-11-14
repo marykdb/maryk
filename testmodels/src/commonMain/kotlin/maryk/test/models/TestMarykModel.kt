@@ -1,7 +1,6 @@
 package maryk.test.models
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
-import maryk.core.models.definitions
 import maryk.core.objects.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -31,7 +30,7 @@ import maryk.lib.time.Time
 @Suppress("EXPERIMENTAL_API_USAGE")
 object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     name = "TestMarykModel",
-    keyDefinitions = definitions(
+    keyDefinitions = arrayOf(
         Properties.uint,
         Properties.bool,
         Properties.enum

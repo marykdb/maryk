@@ -41,7 +41,7 @@ class InMemoryDataStoreChangeTest {
     @Test
     fun executeChangeCheckRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
-            addRequest.dataModel.change(
+            SimpleMarykModel.change(
                 keys[0].change(
                     Check(
                         SimpleMarykModel.ref { value } with "haha1"

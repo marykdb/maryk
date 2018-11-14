@@ -32,7 +32,7 @@ class InMemoryDataStoreGetTest {
     @Test
     fun executeAddAndSimpleGetRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
-            addRequest.dataModel.get(*keys.toTypedArray())
+            SimpleMarykModel.get(*keys.toTypedArray())
         )
 
         getResponse.values.size shouldBe 2

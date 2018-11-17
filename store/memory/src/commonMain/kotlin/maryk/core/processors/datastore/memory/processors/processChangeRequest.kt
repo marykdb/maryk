@@ -36,8 +36,9 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
             val index = dataList.binarySearch { it.key.compareTo(objectChange.key) }
             val objectToChange = dataList[index]
 
+            val lastVersion = objectChange.lastVersion
             // Check if version is within range
-            if(objectChange.lastVersion != null && objectToChange.lastVersion.compareTo(objectChange.lastVersion!!) != 0) {
+            if(lastVersion != null && objectToChange.lastVersion.compareTo(lastVersion) != 0) {
                 statuses.add(
                     ValidationFail(
                         listOf(

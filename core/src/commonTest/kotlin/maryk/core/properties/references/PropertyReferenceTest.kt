@@ -74,7 +74,7 @@ internal class PropertyReferenceTest {
     }
 
     @Test
-    fun testProtoBufWrite() {
+    fun writeStorageBytes() {
         val bc = ByteCollector()
         val cache = WriteCache()
 

@@ -59,7 +59,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
 
     /** Converts a list of optional [pairs] to map */
     fun <K, V> mapNonNulls(vararg pairs: Pair<K, V>?): Map<K, V> =
-        mapOf(*pairs.mapNotNull { it }.toTypedArray())
+        pairs.filterNotNull().toMap()
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(

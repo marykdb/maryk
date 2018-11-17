@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.Values
+import maryk.core.values.Values
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationUmbrellaException

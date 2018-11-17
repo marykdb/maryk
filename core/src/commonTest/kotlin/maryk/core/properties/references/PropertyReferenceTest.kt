@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.models.ObjectDataModel
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition

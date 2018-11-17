@@ -4,7 +4,7 @@ package maryk.core.processors.datastore.memory.records
 
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.map
-import maryk.core.objects.Values
+import maryk.core.values.Values
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 

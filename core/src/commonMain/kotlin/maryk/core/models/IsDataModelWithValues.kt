@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.AbstractValues
+import maryk.core.values.AbstractValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.query.RequestContext
 

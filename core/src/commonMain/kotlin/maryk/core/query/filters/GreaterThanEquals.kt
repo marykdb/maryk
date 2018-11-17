@@ -2,7 +2,7 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.json.IsJsonLikeWriter

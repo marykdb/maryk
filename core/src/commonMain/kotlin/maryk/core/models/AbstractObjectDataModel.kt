@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition

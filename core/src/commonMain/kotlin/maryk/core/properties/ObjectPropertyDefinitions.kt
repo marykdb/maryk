@@ -3,7 +3,7 @@ package maryk.core.properties
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.objects.Values
+import maryk.core.values.Values
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition

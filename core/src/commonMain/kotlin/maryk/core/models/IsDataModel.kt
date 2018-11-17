@@ -1,6 +1,6 @@
 package maryk.core.models
 
-import maryk.core.objects.AbstractValues
+import maryk.core.values.AbstractValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper

@@ -3,7 +3,7 @@ package maryk.core.properties.references
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.AbstractObjectDataModel
-import maryk.core.objects.AbstractValues
+import maryk.core.values.AbstractValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper

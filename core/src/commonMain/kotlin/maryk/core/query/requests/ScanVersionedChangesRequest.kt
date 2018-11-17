@@ -5,7 +5,7 @@ package maryk.core.query.requests
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key

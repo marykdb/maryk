@@ -2,8 +2,8 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.objects.Values
-import maryk.core.objects.ValuesImpl
+import maryk.core.values.Values
+import maryk.core.values.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition

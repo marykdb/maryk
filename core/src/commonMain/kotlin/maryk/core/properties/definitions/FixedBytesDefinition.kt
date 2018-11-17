@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Bytes

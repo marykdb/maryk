@@ -1,7 +1,7 @@
 package maryk.core.query.changes
 
 import maryk.core.models.ReferenceMappedDataModel
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition

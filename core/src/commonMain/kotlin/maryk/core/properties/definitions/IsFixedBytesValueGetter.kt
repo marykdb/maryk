@@ -2,7 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.objects.Values
+import maryk.core.values.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 
 /** Interface to get value of fixed bytes encodables */

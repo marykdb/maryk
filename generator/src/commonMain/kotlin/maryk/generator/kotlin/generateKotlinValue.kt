@@ -4,7 +4,7 @@ import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.objects.ValuesImpl
+import maryk.core.values.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition

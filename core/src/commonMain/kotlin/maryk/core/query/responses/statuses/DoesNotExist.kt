@@ -2,7 +2,7 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Key

@@ -2,7 +2,7 @@ package maryk.core.models
 
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.objects.AbstractValues
+import maryk.core.values.AbstractValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection

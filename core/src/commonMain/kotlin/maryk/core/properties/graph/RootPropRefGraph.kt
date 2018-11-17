@@ -3,7 +3,7 @@ package maryk.core.properties.graph
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsDataModel
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition

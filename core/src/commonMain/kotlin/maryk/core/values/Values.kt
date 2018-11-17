@@ -1,4 +1,4 @@
-package maryk.core.objects
+package maryk.core.values
 
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.PropertyDefinitions

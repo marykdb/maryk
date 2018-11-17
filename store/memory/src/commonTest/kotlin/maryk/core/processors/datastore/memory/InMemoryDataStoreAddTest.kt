@@ -3,7 +3,7 @@
 package maryk.core.processors.datastore.memory
 
 import maryk.core.models.key
-import maryk.core.objects.Values
+import maryk.core.values.Values
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get

@@ -1,7 +1,7 @@
 package maryk.test.models
 
 import maryk.core.models.DataModel
-import maryk.core.objects.Values
+import maryk.core.values.Values
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition

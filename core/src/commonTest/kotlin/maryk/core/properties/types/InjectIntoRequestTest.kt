@@ -7,7 +7,7 @@ import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.RequestContext
 import maryk.core.query.descending

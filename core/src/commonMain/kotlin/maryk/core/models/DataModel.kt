@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions

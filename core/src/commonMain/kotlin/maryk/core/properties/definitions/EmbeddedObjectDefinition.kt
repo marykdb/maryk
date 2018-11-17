@@ -6,7 +6,7 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition

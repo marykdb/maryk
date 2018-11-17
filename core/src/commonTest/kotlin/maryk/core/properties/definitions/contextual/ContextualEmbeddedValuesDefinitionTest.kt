@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.checkProtoBufConversion
 import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.objects.ValuesImpl
+import maryk.core.values.ValuesImpl
 import maryk.core.properties.PropertyDefinitions
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykModel

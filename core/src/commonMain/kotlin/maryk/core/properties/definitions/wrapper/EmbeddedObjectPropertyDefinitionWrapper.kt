@@ -1,8 +1,8 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.AbstractObjectDataModel
-import maryk.core.objects.AbstractValues
-import maryk.core.objects.ObjectValues
+import maryk.core.values.AbstractValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition

@@ -5,8 +5,8 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.objects.SimpleObjectValues
-import maryk.core.objects.Values
+import maryk.core.values.SimpleObjectValues
+import maryk.core.values.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.query.ContainsDefinitionsContext

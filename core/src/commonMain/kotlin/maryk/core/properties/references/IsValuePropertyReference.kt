@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.objects.AbstractValues
+import maryk.core.values.AbstractValues
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.protobuf.WriteCacheReader

@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.objects.Values
+import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty

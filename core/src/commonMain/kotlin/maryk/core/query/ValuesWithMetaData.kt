@@ -8,8 +8,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.objects.ObjectValues
-import maryk.core.objects.Values
+import maryk.core.values.ObjectValues
+import maryk.core.values.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition

@@ -5,7 +5,7 @@ import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.objects.AbstractValues
+import maryk.core.values.AbstractValues
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference

@@ -1,6 +1,6 @@
 @file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 
-package maryk.core.objects
+package maryk.core.values
 
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time

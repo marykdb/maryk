@@ -5,7 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.ContextualDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition

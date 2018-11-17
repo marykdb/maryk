@@ -5,7 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsTypedRootDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions

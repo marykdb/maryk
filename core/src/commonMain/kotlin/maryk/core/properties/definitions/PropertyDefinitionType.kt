@@ -3,7 +3,7 @@ package maryk.core.properties.definitions
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.objects.ValuesImpl
+import maryk.core.values.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions

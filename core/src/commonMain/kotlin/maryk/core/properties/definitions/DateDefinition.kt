@@ -6,7 +6,7 @@ import maryk.core.extensions.bytes.encodeZigZag
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Date

@@ -1,6 +1,6 @@
 package maryk.core.properties.references
 
-import maryk.core.objects.AbstractValues
+import maryk.core.values.AbstractValues
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.types.TypedValue

@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition

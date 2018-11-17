@@ -3,8 +3,8 @@ package maryk.core.models
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.objects.ObjectValues
-import maryk.core.objects.SimpleObjectValues
+import maryk.core.values.ObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsFixedBytesEncodable

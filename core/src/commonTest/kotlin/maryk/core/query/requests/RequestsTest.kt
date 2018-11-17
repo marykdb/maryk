@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.objects.ObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel

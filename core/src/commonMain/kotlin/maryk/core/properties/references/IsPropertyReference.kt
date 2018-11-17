@@ -25,6 +25,18 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, C: Any> {
      */
     fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit)
 
+    /**
+     * Calculate the storage length of encoding this reference
+     * and stores result in [cacher] if relevant
+     */
+    fun calculateStorageByteLength(): Int
+
+    /**
+     * Write storage bytes of property reference to [writer] and gets any needed
+     * cached values from [cacheGetter]
+     */
+    fun writeStorageBytes(writer: (byte: Byte) -> Unit)
+
     /** Resolve the value from the given [values] */
     fun resolve(values: C): T?
 

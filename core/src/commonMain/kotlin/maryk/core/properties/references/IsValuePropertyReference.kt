@@ -2,9 +2,12 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.objects.AbstractValues
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
@@ -37,6 +40,16 @@ interface IsValuePropertyReference<
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         this.propertyDefinition.index.writeVarBytes(writer)
+    }
+
+    override fun calculateStorageByteLength(): Int {
+        val parent = this.parentReference?.calculateStorageByteLength() ?: 0
+        return parent + this.propertyDefinition.index.calculateVarIntWithExtraInfoByteSize()
+    }
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeStorageBytes(writer)
+        this.propertyDefinition.index.writeVarIntWithExtraInfo(VALUE.value, writer)
     }
 
     override fun resolve(values: AbstractValues<*, *, *>): T? {

@@ -1,7 +1,9 @@
 package maryk.core.properties.references
 
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.protobuf.ProtoBuf
 import maryk.lib.exceptions.ParseException
 
@@ -42,5 +44,10 @@ open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
             }
             else -> throw ParseException("Unknown Set reference type $protoKey")
         }
+    }
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeStorageBytes(writer)
+        this.propertyDefinition.index.writeVarIntWithExtraInfo(SET.value, writer)
     }
 }

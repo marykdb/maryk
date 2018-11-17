@@ -1,6 +1,8 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -39,6 +41,25 @@ class MapKeyReference<K: Any, V: Any, CX: IsPropertyContext> internal constructo
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(1, WireType.VAR_INT, writer)
         mapDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
+    }
+
+    override fun calculateStorageByteLength(): Int {
+        val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
+
+        return parentCount +
+                1 + // The type byte
+                // The map index
+                (this.parentReference?.propertyDefinition?.index?.calculateVarByteLength() ?: 0) +
+                // The map key
+                this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key)
+    }
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        this.parentReference?.parentReference?.writeStorageBytes(writer)
+
+        writer(ReferenceSpecialType.MAP_KEY.value)
+        this.parentReference?.propertyDefinition?.index?.writeVarBytes(writer)
+        this.mapDefinition.keyDefinition.writeStorageBytes(this.key, writer)
     }
 
     override fun resolve(values: Map<K, V>): K? {

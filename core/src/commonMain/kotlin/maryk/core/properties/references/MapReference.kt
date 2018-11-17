@@ -1,8 +1,10 @@
 package maryk.core.properties.references
 
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.protobuf.ProtoBuf
 import maryk.lib.exceptions.ParseException
 
@@ -59,5 +61,10 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
             }
             else -> throw ParseException("Unknown Key reference type ${protoKey.tag}")
         }
+    }
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeStorageBytes(writer)
+        this.propertyDefinition.index.writeVarIntWithExtraInfo(MAP.value, writer)
     }
 }

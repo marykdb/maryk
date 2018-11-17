@@ -100,3 +100,63 @@ internal fun initIntLittleEndian(reader: () -> Byte) =
     ((reader().toInt() and 0xff) shl 8) or
     ((reader().toInt() and 0xff) shl 16) or
     ((reader().toInt() and 0xff) shl 24)
+
+/** Write the key for ProtoBuf field */
+internal fun Int.writeVarIntWithExtraInfo(extraInfo: Byte, writer: (byte: Byte) -> Unit) {
+    val byteSize = this.calculateVarIntWithExtraInfoByteSize()
+
+    // Write Int (I) + Extra Info (X) + potential sign byte (S) (SIII IXXX)
+    writer(
+        (
+            ((this shl 3).toByte() and 0b0111_1000) // Add first part of tag to byte
+            xor (extraInfo and 0b111) // Add ExtraInfo to byte
+        ) xor if (byteSize > 1) SIGN_BYTE else ZERO_BYTE // Add Sign byte if total is longer than 5 bytes
+    )
+    // Write any needed extra byte for the Int as a VarInt
+    if (byteSize > 1) {
+        for (it in 1 until byteSize) {
+            val isLast = it == byteSize - 1
+            writer(
+                (this shr (7*it-3)).toByte() and SEVEN_BYTES xor if(isLast) ZERO_BYTE else SIGN_BYTE
+            )
+        }
+    }
+}
+
+/**
+ * Reads a var Int from [reader] with extra info encoded in last 3 bytes
+ * which is forwarded as Int to [objectCreator] to create object of type [T] with first the normal Int
+ * and then the extra info Int
+ *
+ * This is based on ProtoBuf encoding
+ */
+internal fun <T> initIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (Int, Byte) -> T) : T {
+    var byte = reader()
+
+    val wireTypeByte = byte and 0b111
+
+    var result = (byte and 0b0111_1000).toInt() shr 3
+    if (byte and SIGN_BYTE == ZERO_BYTE) {
+        return objectCreator(result, wireTypeByte)
+    }
+
+    var shift = 4
+    while (shift < 35) {
+        byte = reader()
+        result = result or ((byte and 0b0111_1111).toInt() shl shift)
+        if (byte and SIGN_BYTE == ZERO_BYTE) {
+            return objectCreator(result, wireTypeByte)
+        }
+        shift += 7
+    }
+    throw ParseException("Too big tag")
+}
+
+/** Calculates the byte length of the variable int with extra info */
+fun Int.calculateVarIntWithExtraInfoByteSize(): Int = when {
+    this and (Int.MAX_VALUE shl 4) == 0 -> 1
+    this and (Int.MAX_VALUE shl 11) == 0 -> 2
+    this and (Int.MAX_VALUE shl 18) == 0 -> 3
+    this and (Int.MAX_VALUE shl 25) == 0 -> 4
+    else -> 5
+}

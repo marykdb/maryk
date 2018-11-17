@@ -46,4 +46,40 @@ class ListReferenceTest {
         val converted = TestMarykModel.getPropertyReferenceByName(this.reference.completeName)
         converted shouldBe this.reference
     }
+
+    @Test
+    fun writeListRefStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            listReference.calculateStorageByteLength()
+        )
+        listReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "61197a"
+    }
+
+    @Test
+    fun writeStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            reference.calculateStorageByteLength()
+        )
+        reference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "7a05"
+    }
+
+    @Test
+    fun writeDeepStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            subReference.calculateStorageByteLength()
+        )
+        subReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "61197a16"
+    }
 }

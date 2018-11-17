@@ -1,10 +1,12 @@
 package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.IsListPropertyDefinitionWrapper
+import maryk.core.properties.references.ReferenceType.LIST
 import maryk.lib.exceptions.ParseException
 
 /** Reference to a List property of type [T] and context [CX] */
@@ -25,5 +27,10 @@ open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
             0 -> ListItemReference(initIntByVar(reader), propertyDefinition.definition, this)
             else -> throw ParseException("Unknown List reference type $index")
         }
+    }
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeStorageBytes(writer)
+        this.propertyDefinition.index.writeVarIntWithExtraInfo(LIST.value, writer)
     }
 }

@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
+import maryk.lib.extensions.toHex
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
@@ -13,6 +14,9 @@ class MapReferenceTest {
     private val mapReference = TestMarykModel.ref { map }
     private val keyReference = TestMarykModel { map refToKey Time(12, 0, 1) }
     private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
+
+    private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55)} }}
+    private val subKeyReference = TestMarykModel { embeddedValues { marykModel { map refToKey Time(15, 22, 55)} }}
 
     @Test
     fun getValueFromMap() {
@@ -58,5 +62,65 @@ class MapReferenceTest {
             val converted = TestMarykModel.getPropertyReferenceByName(it.completeName)
             converted shouldBe it
         }
+    }
+
+    @Test
+    fun writeMapRefStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            mapReference.calculateStorageByteLength()
+        )
+        mapReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "54"
+    }
+
+    @Test
+    fun writeValueRefStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            valReference.calculateStorageByteLength()
+        )
+        valReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "5480d84f"
+    }
+
+    @Test
+    fun writeDeepValueRefStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            subReference.calculateStorageByteLength()
+        )
+        subReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "61195480d84f"
+    }
+
+    @Test
+    fun writeKeyRefStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            keyReference.calculateStorageByteLength()
+        )
+        keyReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "100a80a8c1"
+    }
+
+    @Test
+    fun writeDeepKeyRefStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            subKeyReference.calculateStorageByteLength()
+        )
+        subKeyReference.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "6119100a80d84f"
     }
 }

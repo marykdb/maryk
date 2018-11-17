@@ -1,9 +1,13 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -41,6 +45,28 @@ class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
         ProtoBuf.writeKey(0, WireType.VAR_INT, writer)
         setDefinition.valueDefinition.writeTransportBytes(value, cacheGetter, writer)
+    }
+
+    override fun calculateStorageByteLength(): Int {
+        // Calculate bytes above the setReference parent
+        val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
+
+        return parentCount +
+                // calculate length of index of setDefinition
+                (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
+                // add bytes for set value
+                @Suppress("UNCHECKED_CAST")
+                (setDefinition.valueDefinition as IsFixedBytesEncodable<T>).calculateStorageByteLength(value)
+    }
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        // Calculate bytes above the setReference parent
+        this.parentReference?.parentReference?.writeStorageBytes(writer)
+        // Write set index with a SetValue type
+        this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(SET.value, writer)
+        // Write value bytes
+        @Suppress("UNCHECKED_CAST")
+        (setDefinition.valueDefinition as IsFixedBytesEncodable<T>).writeStorageBytes(value, writer)
     }
 
     override fun resolve(values: Set<T>): T? {

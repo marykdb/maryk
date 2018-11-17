@@ -20,7 +20,7 @@ import maryk.lib.exceptions.ParseException
  */
 abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>> {
     abstract val dataModel: DM
-    internal abstract val map: Map<Int, Any?>
+    internal abstract val map: Map<Int, Any>
     abstract val context: RequestContext?
 
     /** Retrieve the keys of the map */

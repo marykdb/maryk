@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -9,6 +8,7 @@ import maryk.core.properties.definitions.wrapper.ObjectListPropertyDefinitionWra
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 
 typealias IsSimpleObjectDataModel<DO> = IsObjectDataModel<DO, ObjectPropertyDefinitions<DO>>
 
@@ -24,7 +24,7 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
     operator fun invoke(map: ObjectValues<DO, P>): DO
 
     /** Create a ObjectValues with given [createMap] function */
-    override fun map(context: RequestContext?, createMap: P.() -> Map<Int, Any?>) =
+    override fun map(context: RequestContext?, createMap: P.() -> Map<Int, Any>) =
         ObjectValues(this, createMap(this.properties), context)
 }
 

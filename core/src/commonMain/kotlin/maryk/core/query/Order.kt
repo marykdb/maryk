@@ -2,7 +2,6 @@ package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
@@ -10,6 +9,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -94,7 +94,7 @@ data class Order internal constructor(
                 @Suppress("UNCHECKED_CAST")
                 (currentToken as? JsonToken.Value<String>)?.let {
                     return this.map(context) {
-                        val valueMap = mutableMapOf<Int, Any?>()
+                        val valueMap = mutableMapOf<Int, Any>()
 
                         it.type.let { valueType ->
                             if (valueType is UnknownYamlTag && valueType.name == "Desc") {

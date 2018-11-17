@@ -83,7 +83,7 @@ private data class MultiTypeDescriptor(
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 this.map(context as? RequestContext) {
-                    val valueMap: MutableMap<Int, Any?> = mutableMapOf()
+                    val valueMap: MutableMap<Int, Any> = mutableMapOf()
 
                     @Suppress("EXPERIMENTAL_API_USAGE")
                     reader.readNamedIndexField(valueMap, name, index)

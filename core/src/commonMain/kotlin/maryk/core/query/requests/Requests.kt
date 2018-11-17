@@ -2,7 +2,6 @@ package maryk.core.query.requests
 
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.QuerySingleValueDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -14,6 +13,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 
 /** Object to contain multiple [requests] */
 data class Requests internal constructor(
@@ -99,7 +99,7 @@ data class Requests internal constructor(
 
         override fun map(
             context: RequestContext?,
-            createMap: Properties.() -> Map<Int, Any?>
+            createMap: Properties.() -> Map<Int, Any>
         ): ObjectValues<Requests, Properties> {
             val map = ObjectValues(this, createMap(this.properties), context)
 

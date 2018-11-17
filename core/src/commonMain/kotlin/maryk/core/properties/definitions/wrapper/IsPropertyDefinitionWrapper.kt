@@ -4,7 +4,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.Inject
 import maryk.core.models.IsDataModel
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -26,6 +25,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.values.SimpleObjectValues
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -64,7 +64,9 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             value
         }
 
-        Pair(this.index, serializedValue)
+        if (serializedValue != null) {
+            Pair(this.index, serializedValue)
+        } else null
     }
 
     /** Create an index [value] pair for maps */
@@ -185,7 +187,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
-                val valueMap: MutableMap<Int, Any?> = mutableMapOf()
+                val valueMap: MutableMap<Int, Any> = mutableMapOf()
 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as ContainsDefinitionsContext)

@@ -10,7 +10,7 @@ import kotlin.test.Test
 
 class TypeReferenceTest {
     private val typeReference =
-        TestMarykModel.properties.multi.definition.getTypeRef(V1, null)
+        TestMarykModel { multi ofType V1 }
 
     @Test
     fun getValueFromMap() {
@@ -28,6 +28,6 @@ class TypeReferenceTest {
 
     @Test
     fun testCompleteName() {
-        typeReference.completeName shouldBe "*V1"
+        typeReference.completeName shouldBe "multi.*V1"
     }
 }

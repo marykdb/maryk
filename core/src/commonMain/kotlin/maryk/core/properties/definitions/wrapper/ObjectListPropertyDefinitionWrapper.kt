@@ -4,9 +4,8 @@ import maryk.core.objects.AbstractValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.IsPropertyReference
@@ -17,11 +16,11 @@ import maryk.core.properties.references.IsPropertyReference
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
 data class ObjectListPropertyDefinitionWrapper<
-        ODO : Any,
-        P : ObjectPropertyDefinitions<ODO>,
-        TO : Any,
-        CX : IsPropertyContext,
-        in DO : Any
+    ODO : Any,
+    P : ObjectPropertyDefinitions<ODO>,
+    TO : Any,
+    CX : IsPropertyContext,
+    in DO : Any
 > internal constructor(
     override val index: Int,
     override val name: String,
@@ -33,7 +32,7 @@ data class ObjectListPropertyDefinitionWrapper<
     override val fromSerializable: ((List<ODO>?) -> List<TO>?)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
-    IsCollectionDefinition<ODO, List<ODO>, CX, IsValueDefinition<ODO, CX>> by definition,
+    IsListDefinition<ODO, CX> by definition,
     IsListPropertyDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
     override val graphType = PropRefGraphType.PropRef
 

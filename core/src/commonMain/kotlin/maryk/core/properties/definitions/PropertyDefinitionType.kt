@@ -13,10 +13,12 @@ import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWra
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.json.MapType
 
@@ -115,7 +117,15 @@ internal val mapOfPropertyDefWrappers = mapOf(
             getter as (Any) -> Map<Any, Any>?
         )
     },
-    PropertyDefinitionType.MultiType to createFlexBytesWrapper,
+    PropertyDefinitionType.MultiType to { index, name, definition, getter ->
+        @Suppress("UNCHECKED_CAST")
+        MultiTypeDefinitionWrapper(
+            index,
+            name,
+            definition as IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>,
+            getter as (Any) -> TypedValue<IndexedEnum<Any>, Any>?
+        )
+    },
     PropertyDefinitionType.Number to createFixedBytesWrapper,
     PropertyDefinitionType.Reference to createFixedBytesWrapper,
     PropertyDefinitionType.Set to { index, name, definition, getter ->

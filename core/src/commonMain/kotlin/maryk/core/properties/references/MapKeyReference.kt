@@ -2,8 +2,8 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.MapDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -12,7 +12,7 @@ import maryk.core.protobuf.WriteCacheWriter
 /** Reference to a specific Map [key] of [K] containing value [V] contained in map referred by [parentReference] */
 class MapKeyReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     val key: K,
-    private val mapDefinition: MapDefinition<K, V, CX>,
+    private val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : CanHaveSimpleChildReference<K, IsPropertyDefinition<K>, MapReference<K, V, CX>, Map<K, V>>(
     mapDefinition.keyDefinition, parentReference

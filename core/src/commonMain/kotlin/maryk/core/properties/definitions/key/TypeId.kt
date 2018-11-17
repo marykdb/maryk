@@ -13,11 +13,10 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.exceptions.RequiredException
-import maryk.core.properties.references.ValuePropertyReference
+import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
 
@@ -26,12 +25,12 @@ import maryk.core.query.DefinitionsConversionContext
  * With this key part it is possible to query all objects which contain a property of a certain type
  */
 data class TypeId<E: IndexedEnum<E>>(
-    val reference: ValuePropertyReference<TypedValue<E, *>, TypedValue<E, *>, IsPropertyDefinitionWrapper<TypedValue<E, *>, TypedValue<E, *>, IsPropertyContext, *>, *>
+    val reference: MultiTypePropertyReference<E, TypedValue<E, *>, MultiTypeDefinitionWrapper<E, TypedValue<E, *>, IsPropertyContext, *>, *>
 ) : FixedBytesProperty<Int> {
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
 
-    constructor(multiTypeDefinition: PropertyDefinitionWrapper<TypedValue<E, *>, TypedValue<E, *>, IsPropertyContext, *, *>) : this(reference = multiTypeDefinition.getRef())
+    constructor(multiTypeDefinition: MultiTypeDefinitionWrapper<E, TypedValue<E, *>, IsPropertyContext, *>) : this(reference = multiTypeDefinition.getRef())
 
     override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO): Int {
         @Suppress("UNCHECKED_CAST")

@@ -19,7 +19,7 @@ import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
-    val reference: ValueWithFixedBytesPropertyReference<T, FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>, *>
+    val reference: ValueWithFixedBytesPropertyReference<T, *, FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>, *>
 ) : FixedBytesProperty<T> {
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize

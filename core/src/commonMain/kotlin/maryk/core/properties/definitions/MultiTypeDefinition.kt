@@ -16,7 +16,6 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -45,15 +44,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override val required: Boolean = true,
     override val final: Boolean = false,
     val typeEnum: IndexedEnumDefinition<E>,
-    val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
+    override val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
     override val default: TypedValue<E, *>? = null,
     internal val keepAsValues: Boolean = false
-) :
-    IsValueDefinition<TypedValue<E, Any>, CX>,
-    IsSerializableFlexBytesEncodable<TypedValue<E, Any>, CX>,
-    IsTransportablePropertyDefinitionType<TypedValue<E, Any>>,
-    HasDefaultValueDefinition<TypedValue<E, Any>>
-{
+) : IsMultiTypeDefinition<E, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.MultiType
     override val wireType = WireType.LENGTH_DELIMITED
 
@@ -75,7 +69,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     }
 
     override fun validateWithRef(previousValue: TypedValue<E, Any>?, newValue: TypedValue<E, Any>?, refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, *>?) {
-        super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
+        super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             @Suppress("UNCHECKED_CAST")
             val definition = this.definitionMapByIndex[newValue.type.index] as IsSubDefinition<Any, CX>?
@@ -199,13 +193,6 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         return totalByteLength
     }
 
-    /**
-     * Creates a reference referring to [type]of multi type below [parentReference]
-     * so reference can be strongly typed
-     */
-    internal fun getTypeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
-        TypeReference(type, this, parentReference)
-
     override fun writeTransportBytes(value: TypedValue<E, Any>, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
@@ -243,9 +230,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     }
 
     /** Resolve a reference from [reader] found on a [parentReference] */
-    fun resolveReference(
+    override fun resolveReference(
         reader: () -> Byte,
-        parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
+        parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ): IsPropertyReference<Any, *, *> {
         val index = initIntByVar(reader)
         if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 is not supported")
@@ -255,9 +242,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     }
 
     /** Resolve a reference from [name] found on a [parentReference] */
-    fun resolveReferenceByName(
+    override fun resolveReferenceByName(
         name: String,
-        parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
+        parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ): IsPropertyReference<Any, *, *> {
         val type = this.typeByName[name.substring(1)] ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
         return getTypeRef(type, parentReference)

@@ -6,8 +6,8 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -17,7 +17,7 @@ import maryk.core.protobuf.WriteCacheWriter
 /** Reference to a List Item on [parentReference] with [T] by [index] */
 class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
     val index: Int,
-    listDefinition: ListDefinition<T, CX>,
+    listDefinition: IsListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>, CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
     listDefinition.valueDefinition, parentReference

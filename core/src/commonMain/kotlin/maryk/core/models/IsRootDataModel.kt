@@ -53,7 +53,7 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
                         checkKeyDefinition(it.name, it.definition as IsValueDefinition<*, *>)
                     }
                     it is Reversed<out Any> -> {
-                        val reference = it.reference as ValueWithFixedBytesPropertyReference<out Any, *, *>
+                        val reference = it.reference as ValueWithFixedBytesPropertyReference<out Any, *, *, *>
                         checkKeyDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                     }
                     it is TypeId<*> -> {

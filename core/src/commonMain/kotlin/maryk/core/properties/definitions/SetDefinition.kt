@@ -9,7 +9,6 @@ import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
@@ -24,7 +23,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
     override val maxSize: Int? = null,
     override val valueDefinition: IsValueDefinition<T, CX>,
     override val default: Set<T>? = null
-) : IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>>, HasDefaultValueDefinition<Set<T>> {
+) : IsSetDefinition<T, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.Set
 
     init {
@@ -32,10 +31,6 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
     }
 
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
-
-    /** Get a reference by [value] to a specific set item of set of [setReference] */
-    fun getItemRef(value: T, setReference: SetReference<T, CX>?) =
-        SetItemReference(value, this, setReference)
 
     override fun getItemPropertyRefCreator(
         index: Int,

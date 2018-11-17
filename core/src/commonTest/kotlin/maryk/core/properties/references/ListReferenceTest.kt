@@ -2,14 +2,17 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
+import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-class ListItemReferenceTest {
-    val reference = TestMarykModel.Properties.listOfString.getItemRef(5)
+class ListReferenceTest {
+    private val listReference = TestMarykModel { embeddedValues { marykModel ref { listOfString } } }
+    private val reference = TestMarykModel { listOfString refAt 5 }
+    private val subReference = TestMarykModel { embeddedValues { marykModel { listOfString refAt 22 } } }
     val cache = WriteCache()
 
     @Test

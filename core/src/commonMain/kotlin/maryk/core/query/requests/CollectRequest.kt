@@ -3,7 +3,6 @@ package maryk.core.query.requests
 import maryk.core.models.QueryDataModel
 import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
@@ -26,12 +25,11 @@ data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
     object Properties: ObjectPropertyDefinitions<AnyCollectRequest>() {
         val name = add(1, "name", StringDefinition(), AnyCollectRequest::name)
 
-        @Suppress("UNCHECKED_CAST")
         val request = add(2, "request",
             MultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions
-            ) as IsSerializableFlexBytesEncodable<TypedValue<RequestType, IsRequest<*>>, RequestContext>,
+            ),
             getter = AnyCollectRequest::request,
             toSerializable = { request, _ ->
                 request?.let {
@@ -39,7 +37,7 @@ data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
                 }
             },
             fromSerializable = { request ->
-                request?.value
+                request?.value as IsRequest<*>?
             }
         )
     }

@@ -81,7 +81,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
             properties = map(2),
             keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(3))?.map {
                 when(it.value) {
-                    is ValueWithFixedBytesPropertyReference<*, *, *> -> it.value.propertyDefinition
+                    is ValueWithFixedBytesPropertyReference<*, *, *, *> -> it.value.propertyDefinition
                     else -> it.value as FixedBytesProperty<*>
                 }
             }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<FixedBytesProperty<out Any>>

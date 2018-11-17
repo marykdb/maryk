@@ -3,7 +3,7 @@ package maryk.core.properties.references
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -15,7 +15,7 @@ import maryk.core.protobuf.WriteCacheWriter
  */
 class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     val value: T,
-    private val setDefinition: SetDefinition<T, CX>,
+    private val setDefinition: IsSetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>, Set<T>>(
     setDefinition.valueDefinition, parentReference

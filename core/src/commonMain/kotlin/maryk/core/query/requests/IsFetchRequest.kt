@@ -1,11 +1,9 @@
 package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.graph.RootPropRefGraph
@@ -42,14 +40,14 @@ interface IsFetchRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsStoreReques
                     required = false,
                     typeEnum = FilterType,
                     definitionMap = mapOfFilterDefinitions
-                ) as IsSerializableFlexBytesEncodable<TypedValue<FilterType, IsFilter>, IsPropertyContext>,
+                ),
                 toSerializable = { filter, _ ->
                     filter?.let {
                         TypedValue(filter.filterType, filter)
                     }
                 },
                 fromSerializable = { typedValue ->
-                    typedValue?.value
+                    typedValue?.value as IsFilter?
                 },
                 getter = getter
             )

@@ -2,6 +2,7 @@ package maryk.core.models
 
 import maryk.lib.time.Date
 import maryk.lib.time.Time
+import maryk.test.models.Option.V1
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -24,5 +25,7 @@ internal class DataObjectPropertyReferenceTest {
 
         TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.completeName shouldBe """embeddedValues.marykModel.map.$12:23"""
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
+
+        TestMarykModel { multi ofType V1 }.completeName shouldBe "multi.*V1"
     }
 }

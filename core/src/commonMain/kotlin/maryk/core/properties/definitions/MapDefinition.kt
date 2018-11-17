@@ -15,9 +15,7 @@ import maryk.core.properties.exceptions.TooMuchItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
-import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ByteLengthContainer
 import maryk.core.protobuf.ProtoBuf
@@ -58,14 +56,6 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
     override fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>? = null
-
-    /** Get a reference to a specific map [key] on [parentMap] */
-    fun getKeyRef(key: K, parentMap: MapReference<K, V, CX>?) =
-        MapKeyReference(key, this, parentMap)
-
-    /** Get a reference to a specific map value on [parentMap] by [key] */
-    fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?) =
-        MapValueReference(key, this, parentMap)
 
     override fun validateWithRef(previousValue: Map<K,V>?, newValue: Map<K,V>?, refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K,V>>, *>?) {
         super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)

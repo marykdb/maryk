@@ -4,6 +4,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -15,11 +16,14 @@ import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWra
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.TypedValue
 
 abstract class AbstractPropertyDefinitions<DO: Any>(
     properties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
@@ -99,6 +103,15 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         name: String,
         definition: MapDefinition<K, V, CX>
     ) = MapPropertyDefinitionWrapper<K, V, Map<K,V>, CX, Any>(index, name, definition).apply {
+        addSingle(this)
+    }
+
+    /** Add multi type property [definition] with [name] and [index] */
+    fun <E: IndexedEnum<E>, CX: IsPropertyContext> add(
+        index: Int,
+        name: String,
+        definition: IsMultiTypeDefinition<E, CX>
+    ) = MultiTypeDefinitionWrapper<E, TypedValue<E, Any>, CX, Any>(index, name, definition).apply {
         addSingle(this)
     }
 

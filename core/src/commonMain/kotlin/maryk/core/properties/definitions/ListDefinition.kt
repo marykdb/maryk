@@ -9,7 +9,6 @@ import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
@@ -24,7 +23,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     override val maxSize: Int? = null,
     override val valueDefinition: IsValueDefinition<T, CX>,
     override val default: List<T>? = null
-) : IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>>, HasDefaultValueDefinition<List<T>> {
+) : IsListDefinition<T, CX> {
     override val propertyDefinitionType = PropertyDefinitionType.List
 
     init {
@@ -32,10 +31,6 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     }
 
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()
-
-    /** Get a reference to a specific list item on [parentList] by [index]. */
-    fun getItemRef(index: Int, parentList: ListReference<T, CX>?) =
-        ListItemReference(index, this, parentList)
 
     override fun getItemPropertyRefCreator(index: Int, item: T) =
         { parentRef: AnyPropertyReference? ->

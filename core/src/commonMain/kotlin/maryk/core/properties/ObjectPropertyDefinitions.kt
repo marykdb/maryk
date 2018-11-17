@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
@@ -21,11 +22,14 @@ import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWra
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -168,6 +172,33 @@ abstract class ObjectPropertyDefinitions<DO: Any>(
     ) = MapPropertyDefinitionWrapper(
         index, name, definition, getter, capturer, toSerializable, fromSerializable
     ).apply {
+        addSingle(this)
+    }
+
+    /** Add multi types property [definition] with [name] and [index] and value [getter] */
+    fun <E: IndexedEnum<E>, TO: Any, CX: IsPropertyContext, D: IsMultiTypeDefinition<E, CX>> add(
+        index: Int,
+        name: String,
+        definition: D,
+        getter: (DO) -> TO?,
+        capturer: ((CX, TypedValue<E, Any>) -> Unit)? = null
+    ) = MultiTypeDefinitionWrapper(index, name, definition, getter, capturer).apply {
+        addSingle(this)
+    }
+
+    /**
+     * Add multi types property [definition] with [name] and [index] and value [getter]
+     * Also has a [toSerializable], [fromSerializable] and [capturer] to serialize and capture properties
+     */
+    fun <E: IndexedEnum<E>, TO: Any, CX: IsPropertyContext, D: IsMultiTypeDefinition<E, CX>> add(
+        index: Int,
+        name: String,
+        definition: D,
+        getter: (DO) -> TO?,
+        toSerializable: (TO?, CX?) -> TypedValue<E, Any>?,
+        fromSerializable: (TypedValue<E, Any>?) -> TO?,
+        capturer: ((CX, TypedValue<E, Any>) -> Unit)? = null
+    ) = MultiTypeDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable).apply {
         addSingle(this)
     }
 

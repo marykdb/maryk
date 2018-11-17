@@ -1,9 +1,8 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
@@ -27,7 +26,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
     override val fromSerializable: ((Set<T>?) -> Set<T>?)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
-    IsCollectionDefinition<T, Set<T>, CX, IsValueDefinition<T, CX>> by definition,
+    IsSetDefinition<T, CX> by definition,
     IsPropertyDefinitionWrapper<Set<T>, Set<T>, CX, DO>
 {
     override val graphType = PropRefGraphType.PropRef
@@ -36,7 +35,7 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
 
     /** Get a reference to a specific set item by [value] with optional [parentRef] */
-    fun getItemRef(value: T, parentRef: AnyPropertyReference? = null) =
+    private fun getItemRef(value: T, parentRef: AnyPropertyReference? = null) =
         this.definition.getItemRef(value, this.getRef(parentRef))
 
     /** For quick notation to get a set [item] reference */

@@ -5,6 +5,7 @@ import maryk.core.inject.AnyInject
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -19,7 +20,7 @@ import maryk.lib.exceptions.ParseException
  */
 abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>> {
     abstract val dataModel: DM
-    protected abstract val map: Map<Int, Any?>
+    internal abstract val map: Map<Int, Any?>
     abstract val context: RequestContext?
 
     /** Retrieve the keys of the map */
@@ -37,6 +38,10 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         val valueDef = this.dataModel.properties[index]
                 ?: throw Exception("Value definition of index $index is missing")
 
+        return process(valueDef, value)
+    }
+
+    inline fun <reified T> process(valueDef: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>, value: Any?): T {
         // Resolve Injects
         val resolvedValue = if (value is AnyInject) {
             value.resolve(this.context ?: throw ContextNotFoundException())

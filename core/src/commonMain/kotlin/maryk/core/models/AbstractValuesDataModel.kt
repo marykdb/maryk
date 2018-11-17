@@ -26,9 +26,9 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
         refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
-            for (key in map.keys) {
+            for ((key, orgValue) in map.map) {
                 val definition = properties[key] ?: continue
-                val value = map<Any?>(key) ?: continue // skip empty values
+                val value = map.process<Any?>(definition, orgValue) ?: continue // skip empty values
                 try {
                     definition.validate(
                         newValue = value,

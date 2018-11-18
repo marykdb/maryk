@@ -1,5 +1,6 @@
 package maryk.core.values
 
+import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.RequestContext
@@ -11,15 +12,13 @@ typealias ValuesImpl = Values<IsValuesDataModel<PropertyDefinitions>, PropertyDe
  */
 data class Values<DM: IsValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
     override val dataModel: DM,
-    override val map: Map<Int, Any>,
+    override val map: IsValueItems,
     override val context: RequestContext? = null
 ): AbstractValues<Any, DM, P>() {
-    fun copy(pairCreator: P.() -> Array<Pair<Int, Any>>) =
+    fun copy(pairCreator: P.() -> Array<ValueItem>) =
         Values(
             dataModel,
-            map.plus(
-                pairCreator(this.dataModel.properties)
-            ),
+            map.copyAdding(pairCreator(this.dataModel.properties)),
             context
         )
 
@@ -37,5 +36,10 @@ data class Values<DM: IsValuesDataModel<P>, P: PropertyDefinitions> internal con
         var result = dataModel.hashCode()
         result = 31 * result + map.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        val modelName = (dataModel as? IsNamedDataModel<*>)?.name ?: dataModel
+        return "Values<$modelName>$map"
     }
 }

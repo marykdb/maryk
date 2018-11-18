@@ -18,16 +18,15 @@ import maryk.lib.exceptions.ParseException
 /**
  * Contains a [map] with all values related to a DataObject of [dataModel]
  */
-abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>> {
+abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>>: Iterable<ValueItem> {
     abstract val dataModel: DM
-    internal abstract val map: Map<Int, Any>
+    internal abstract val map: IsValueItems
     abstract val context: RequestContext?
-
-    /** Retrieve the keys of the map */
-    val keys get() = map.keys
 
     /** Retrieve the map size */
     val size get() = map.size
+
+    override fun iterator() = map.iterator()
 
     /**
      * Utility method to check and map a value to a constructor property
@@ -75,6 +74,10 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         return this.map[index] as T?
     }
 
+    /** Get ValueItem at [index] from internal list */
+    fun getByInternalListIndex(index: Int) =
+        (this.map as IsValueItemsImpl).list[index]
+
     /** Get the original value by [index] */
     fun original(index: Int) = this.map[index]
 
@@ -106,14 +109,12 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
 
     /** Add to internal map with [index] and [value] */
     internal fun addToMap(index: Int, value: Any) {
-        @Suppress("UNCHECKED_CAST")
-        (this.map as MutableMap<Int, Any>)[index] = value
+        (this.map as MutableValueItems)[index] = value
     }
 
     /** Remove from internal map by [index] */
     internal fun removeFromMap(index: Int): Any? {
-        @Suppress("UNCHECKED_CAST")
-        return (this.map as MutableMap<Int, Any>).remove(index)
+        return (this.map as MutableValueItems).remove(index)?.value
     }
 }
 

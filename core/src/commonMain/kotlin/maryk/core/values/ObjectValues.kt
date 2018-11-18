@@ -1,5 +1,6 @@
 package maryk.core.values
 
+import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.query.RequestContext
@@ -11,7 +12,7 @@ typealias SimpleObjectValues<DO> = ObjectValues<DO, ObjectPropertyDefinitions<DO
  */
 data class ObjectValues<DO: Any, P: ObjectPropertyDefinitions<DO>> internal constructor(
     override val dataModel: IsObjectDataModel<DO, P>,
-    override val map: Map<Int, Any>,
+    override val map: IsValueItems,
     override val context: RequestContext? = null
 ): AbstractValues<DO, IsObjectDataModel<DO, P>, P>() {
     /**
@@ -34,5 +35,10 @@ data class ObjectValues<DO: Any, P: ObjectPropertyDefinitions<DO>> internal cons
         var result = dataModel.hashCode()
         result = 31 * result + map.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        val modelName = (dataModel as? IsNamedDataModel<*>)?.name ?: dataModel
+        return "ObjectValues<$modelName>$map"
     }
 }

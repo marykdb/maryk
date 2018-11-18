@@ -2,7 +2,6 @@ package maryk.core.models
 
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.values.AbstractValues
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
@@ -18,6 +17,9 @@ import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
+import maryk.core.values.AbstractValues
+import maryk.core.values.IsValueItems
+import maryk.core.values.MutableValueItems
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -45,10 +47,8 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      */
     open fun writeJson(map: V, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
-        for (key in map.keys) {
-            val value = map.original(key) ?: continue // skip empty values
-
-            val definition = properties[key] ?: continue
+        for ((index, value) in map) {
+            val definition = properties[index] ?: continue
 
             if (value is Inject<*, *>) {
                 if (writer is YamlWriter) {
@@ -92,7 +92,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Read JSON from [reader] to a Map
      * Optionally pass a [context] when needed to read more complex property types
      */
-    open fun readJsonToMap(reader: IsJsonLikeReader, context: CX? = null): MutableMap<Int, Any> {
+    open fun readJsonToMap(reader: IsJsonLikeReader, context: CX? = null): MutableValueItems {
         if (reader.currentToken == JsonToken.StartDocument){
             reader.nextToken()
         }
@@ -101,7 +101,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
             throw IllegalJsonOperation("Expected object at start of JSON")
         }
 
-        val valueMap: MutableMap<Int, Any> = mutableMapOf()
+        val valueMap = MutableValueItems()
         reader.nextToken()
         walkJsonToRead(reader, valueMap, context)
 
@@ -110,7 +110,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
 
     internal open fun walkJsonToRead(
         reader: IsJsonLikeReader,
-        valueMap: MutableMap<Int, Any>,
+        valueMap: MutableValueItems,
         context: CX?
     ) {
         walker@ do {
@@ -284,8 +284,8 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Read ProtoBuf bytes from [reader] until [length] to a Map
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    private fun readProtoBufToMap(length: Int, reader: () -> Byte, context: CX? = null): Map<Int, Any> {
-        val valueMap: MutableMap<Int, Any> = mutableMapOf()
+    private fun readProtoBufToMap(length: Int, reader: () -> Byte, context: CX? = null): IsValueItems {
+        val valueMap = MutableValueItems()
         var byteCounter = 1
 
         val byteReader = {
@@ -309,7 +309,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Read a single field of [key] from [byteReader] into [valueMap]
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    private fun readProtoBufField(valueMap: MutableMap<Int, Any>, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
+    private fun readProtoBufField(valueMap: MutableValueItems, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
         val dataObjectPropertyDefinition = properties[key.tag]
         val propertyDefinition = dataObjectPropertyDefinition?.definition
 

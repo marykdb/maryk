@@ -7,7 +7,6 @@ import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
-import maryk.core.values.ObjectValues
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
@@ -15,6 +14,7 @@ import maryk.core.query.filters.Exists
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
+import maryk.core.values.ObjectValues
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -49,9 +49,10 @@ class InjectInRequestTest {
     }
 
     private fun checker(converted: ObjectValues<GetRequest<*, *>, GetRequest.Properties>, original: ObjectValues<GetRequest<*, *>, GetRequest.Properties>) {
-        val originalKeys: Any = converted.original { keys } as Any
+        val originalKeys = converted.original { keys } as Any?
 
         when (originalKeys) {
+            null -> error("Keys should not be null")
             is ObjectValues<*, *> -> {
                 originalKeys.toDataObject() shouldBe original.original { keys }
             }
@@ -75,12 +76,12 @@ class InjectInRequestTest {
         dataModel: SimpleMarykModel
         keys: !:Inject
           keysToInject: keys
+        select:
+        - value
         filter: !Exists value
         order: !Desc value
         toVersion: 333
         filterSoftDeleted: true
-        select:
-        - value
 
         """.trimIndent()
     }
@@ -95,7 +96,7 @@ class InjectInRequestTest {
             { context },
             checker = ::checker
         ) shouldBe """
-        {"dataModel":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"filter":["Exists","value"],"order":{"propertyReference":"value","direction":"DESC"},"toVersion":"333","filterSoftDeleted":true,"select":["value"]}
+        {"dataModel":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"filter":["Exists","value"],"order":{"propertyReference":"value","direction":"DESC"},"toVersion":"333","filterSoftDeleted":true}
         """.trimIndent()
     }
 

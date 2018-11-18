@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
+import maryk.core.values.MutableValueItems
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -22,7 +23,7 @@ abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
 ) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties){
     override fun walkJsonToRead(
         reader: IsJsonLikeReader,
-        valueMap: MutableMap<Int, Any>,
+        valueMap: MutableValueItems,
         context: RequestContext?
     ) {
         val referenceProperty =

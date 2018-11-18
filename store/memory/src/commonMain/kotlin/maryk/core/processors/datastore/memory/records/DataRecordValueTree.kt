@@ -4,15 +4,16 @@ package maryk.core.processors.datastore.memory.records
 
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.map
-import maryk.core.values.Values
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
+import maryk.core.values.MutableValueItems
+import maryk.core.values.Values
 
 internal inline class DataRecordValueTree<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
     internal val recordNodes: List<DataRecordNode>
 ) {
     fun toValues(dataModel: DM, handleValues: ((Values<DM, P>, ULong) -> Unit)) {
-        val valuesMap = LinkedHashMap<Int, Any>(this.recordNodes.size)
+        val valuesMap = MutableValueItems()
         var maxVersion = 0uL
         for (node in this.recordNodes) {
             val index = node.index.toInt()
@@ -52,22 +53,21 @@ internal inline class DataRecordValueTree<DM: IsValuesDataModel<P>, P: PropertyD
 }
 
 internal fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions> Values<DM, P>.toDataRecordValueTree(version: ULong): DataRecordValueTree<DM, P> {
-    val keys = this.keys.toIntArray()
-    keys.sort()
-    val nodes: List<DataRecordNode> = List(keys.size) {
-        val key = keys[it]
-        val value = this<Any>(key)
+    val nodes: List<DataRecordNode> = List(this.size) {
+        val item = this.getByInternalListIndex(it)
+        val definition = this.dataModel.properties[item.index] ?: throw Exception("No definition found for ${item.index}")
+        val value = process<Any>(definition, item.value)
 
         if (value is Values<*, *>) {
             @Suppress("UNCHECKED_CAST")
             val values = value as Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
             DataRecordValueTreeNode(
-                key.toUShort(),
+                item.index.toUShort(),
                 values.toDataRecordValueTree(version)
             )
         } else {
             DataRecordValue(
-                index = key.toUShort(),
+                index = item.index.toUShort(),
                 value = value,
                 version = version
             )

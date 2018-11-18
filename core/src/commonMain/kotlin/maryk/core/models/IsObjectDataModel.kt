@@ -8,6 +8,8 @@ import maryk.core.properties.definitions.wrapper.ObjectListPropertyDefinitionWra
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
+import maryk.core.values.IsValueItems
+import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 
 typealias IsSimpleObjectDataModel<DO> = IsObjectDataModel<DO, ObjectPropertyDefinitions<DO>>
@@ -24,7 +26,7 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
     operator fun invoke(map: ObjectValues<DO, P>): DO
 
     /** Create a ObjectValues with given [createMap] function */
-    override fun map(context: RequestContext?, createMap: P.() -> Map<Int, Any>) =
+    override fun map(context: RequestContext?, createMap: P.() -> IsValueItems) =
         ObjectValues(this, createMap(this.properties), context)
 }
 
@@ -32,7 +34,7 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
  * Converts a DataObject back to ObjectValues
  */
 fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>> DM.asValues(dataObject: DO, context: RequestContext? = null): ObjectValues<DO, P> {
-    val mutableMap = mutableMapOf<Int, Any>()
+    val mutableMap = MutableValueItems()
 
     @Suppress("UNCHECKED_CAST")
     for (property in this.properties) {

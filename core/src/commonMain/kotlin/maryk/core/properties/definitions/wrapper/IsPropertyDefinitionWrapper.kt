@@ -25,7 +25,9 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.values.MutableValueItems
 import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ValueItem
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -50,8 +52,8 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val fromSerializable: ((T?) -> TO?)?
 
     /** Create an index [value] pair for maps */
-    infix fun withNotNull(value: Any): Pair<Int, Any> {
-        return Pair(this.index, value)
+    infix fun withNotNull(value: Any): ValueItem {
+        return ValueItem(this.index, value)
     }
 
     /** Create an index [value] pair for maps */
@@ -65,18 +67,18 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         }
 
         if (serializedValue != null) {
-            Pair(this.index, serializedValue)
+            ValueItem(this.index, serializedValue)
         } else null
     }
 
     /** Create an index [value] pair for maps */
     infix fun injectWith(value: Inject<*, *>?) = value?.let {
-        Pair(this.index, value)
+        ValueItem(this.index, value)
     }
 
     /** Create an index [value] pair for maps */
     infix fun withSerializable(value: T?) = value?.let {
-        Pair(this.index, value)
+        ValueItem(this.index, value)
     }
 
     /** Get a reference to this definition inside [parentRef] */
@@ -162,7 +164,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 map(1),
                 map(2),
                 typedDefinition.value
-            ) { _: Any -> null } ?: throw DefNotFoundException("Property type $type not found")
+            ) { null } ?: throw DefNotFoundException("Property type $type not found")
         }
 
         override fun writeJson(
@@ -187,7 +189,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
-                val valueMap: MutableMap<Int, Any> = mutableMapOf()
+                val valueMap = MutableValueItems()
 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as ContainsDefinitionsContext)

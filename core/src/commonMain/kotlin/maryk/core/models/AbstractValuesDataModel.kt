@@ -1,12 +1,12 @@
 package maryk.core.models
 
-import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.values.Values
 
 typealias SimpleDataModel<DM, P> = AbstractValuesDataModel<DM, P, IsPropertyContext>
 typealias ValuesDataModelImpl<CX> = AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, CX>
@@ -26,8 +26,8 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
         refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
-            for ((key, orgValue) in map.map) {
-                val definition = properties[key] ?: continue
+            for ((index, orgValue) in map.map) {
+                val definition = properties[index] ?: continue
                 val value = map.process<Any?>(definition, orgValue) ?: continue // skip empty values
                 try {
                     definition.validate(

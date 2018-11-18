@@ -1,8 +1,6 @@
 package maryk.core.models
 
 import maryk.core.definitions.PrimitiveType
-import maryk.core.values.ObjectValues
-import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -20,6 +18,9 @@ import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
+import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -112,7 +113,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
          */
         override fun walkJsonToRead(
             reader: IsJsonLikeReader,
-            valueMap: MutableMap<Int, Any>,
+            valueMap: MutableValueItems,
             context: IsPropertyContext?
         ) {
             var keyDefinitionsToProcessLater: List<JsonToken>? = null

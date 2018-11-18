@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
+import maryk.core.values.MutableValueItems
 import maryk.json.IllegalJsonOperation
 import maryk.json.JsonToken
 import maryk.yaml.IsYamlReader
@@ -26,7 +27,7 @@ internal fun YamlWriter.writeNamedIndexField(name: String, index: Int) {
  */
 @ExperimentalUnsignedTypes
 internal fun <DO: Any> IsYamlReader.readNamedIndexField(
-    valueMap: MutableMap<Int, Any>,
+    valueMap: MutableValueItems,
     nameDescriptor: PropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,
     indexDescriptor: FixedBytesPropertyDefinitionWrapper<UInt, *, IsPropertyContext, NumberDefinition<UInt>, DO>
 ) {

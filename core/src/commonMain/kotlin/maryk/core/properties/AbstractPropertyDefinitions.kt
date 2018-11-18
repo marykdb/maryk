@@ -24,6 +24,9 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.values.IsValueItems
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ValueItem
 
 abstract class AbstractPropertyDefinitions<DO: Any>(
     properties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
@@ -58,8 +61,12 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
     }
 
     /** Converts a list of optional [pairs] to map */
-    fun <K, V> mapNonNulls(vararg pairs: Pair<K, V>?): Map<K, V> =
-        pairs.filterNotNull().toMap()
+    fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
+        MutableValueItems().also { items ->
+            for (it in pairs) {
+                if(it != null) items += it
+            }
+        }
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(

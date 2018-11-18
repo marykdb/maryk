@@ -167,7 +167,7 @@ data class PersonRoleInPeriod(
     companion object: ValueDataModel<TestValueObject, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: Map<Int, Any>) = TestValueObject(
+        override fun invoke(map: ObjectValues<TestValueObject, Properties>) = TestValueObject(
             person = map(1),
             role = map(2),
             startDate = map(3),

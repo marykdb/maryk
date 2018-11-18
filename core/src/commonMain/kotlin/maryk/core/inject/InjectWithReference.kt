@@ -1,8 +1,6 @@
 package maryk.core.inject
 
 import maryk.core.models.QueryDataModel
-import maryk.core.values.AbstractValues
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -10,6 +8,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValuePropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.Requests
+import maryk.core.values.AbstractValues
+import maryk.core.values.ObjectValues
 
 /**
  * With this object you refer to both the Inject and its place of usage with a property reference

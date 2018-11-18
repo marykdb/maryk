@@ -8,6 +8,7 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.ValueItems
 import maryk.lib.time.DateTime
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
@@ -26,7 +27,7 @@ internal class ValueDataModelTest {
             val convertedValueModel = converted as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
 
             val value = converted.map {
-                mapOf(
+                ValueItems(
                    convertedValueModel.properties[1]!! withNotNull 5,
                    convertedValueModel.properties[2]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),
                    convertedValueModel.properties[3]!! withNotNull true

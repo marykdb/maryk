@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.descriptors
 
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -28,6 +27,8 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -83,7 +84,7 @@ private data class MultiTypeDescriptor(
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
                 this.map(context as? RequestContext) {
-                    val valueMap: MutableMap<Int, Any> = mutableMapOf()
+                    val valueMap = MutableValueItems()
 
                     @Suppress("EXPERIMENTAL_API_USAGE")
                     reader.readNamedIndexField(valueMap, name, index)

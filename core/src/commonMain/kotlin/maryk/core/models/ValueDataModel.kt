@@ -3,14 +3,15 @@ package maryk.core.models
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.values.ObjectValues
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
+import maryk.core.values.SimpleObjectValues
 import maryk.lib.bytes.Base64
 
 /**
@@ -36,7 +37,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
      * @throws DefNotFoundException if definition needed for conversion is not found
      */
     fun readFromBytes(reader: () -> Byte): DO {
-        val values = mutableMapOf<Int, Any>()
+        val values = MutableValueItems()
         this.properties.forEachIndexed { index, it ->
             if (index != 0) reader() // skip separation byte
 

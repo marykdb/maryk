@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
+import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -100,7 +101,7 @@ data class ValueRange<T: Any> internal constructor(
                 }
 
                 this.map(context) {
-                    val valueMap = mutableMapOf<Int, Any>()
+                    val valueMap = MutableValueItems()
 
                     if (reader.currentToken !is JsonToken.StartArray) {
                         throw ParseException("Range should be contained in an Array")

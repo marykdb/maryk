@@ -13,6 +13,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
+import maryk.core.values.IsValueItems
 import maryk.core.values.ObjectValues
 
 /** Object to contain multiple [requests] */
@@ -99,7 +100,7 @@ data class Requests internal constructor(
 
         override fun map(
             context: RequestContext?,
-            createMap: Properties.() -> Map<Int, Any>
+            createMap: Properties.() -> IsValueItems
         ): ObjectValues<Requests, Properties> {
             val map = ObjectValues(this, createMap(this.properties), context)
 

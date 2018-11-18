@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -9,6 +8,9 @@ import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
+import maryk.core.values.ValueItems
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -73,7 +75,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
                 is JsonToken.FieldName -> {
                     val value = token.value ?: throw ParseException("Empty field name not allowed in JSON")
 
-                    val valueMap: MutableMap<Int, Any> = mutableMapOf()
+                    val valueMap = MutableValueItems()
 
                     valueMap[this.referenceProperty.index] =
                             this.referenceProperty.definition.fromString(value, context).also {
@@ -104,8 +106,8 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
         } while (token !is JsonToken.Stopped)
 
         return this.map(context) {
-            mapOf(
-                referenceProperty.index to items
+            ValueItems(
+                referenceProperty withNotNull items
             )
         }
     }

@@ -15,8 +15,8 @@ internal class DateTest {
 
     @Test
     fun compare() {
-        Date.MIN.compareTo(Date.MAX) shouldBe -199999998
-        Date.MAX.compareTo(Date.MIN) shouldBe 199999998
+        Date.MIN.compareTo(Date.MAX) shouldBe -1999998
+        Date.MAX.compareTo(Date.MIN) shouldBe 1999998
         Date.nowUTC().compareTo(Date.nowUTC()) shouldBe 0
     }
 
@@ -24,7 +24,7 @@ internal class DateTest {
     fun testStreamingConversion() {
         val bc = ByteCollector()
         for (it in datesToTest) {
-            bc.reserve(8)
+            bc.reserve(4)
             it.writeBytes(bc::write)
             Date.fromByteReader(bc::read) shouldBe it
             bc.reset()

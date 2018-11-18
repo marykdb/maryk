@@ -51,7 +51,7 @@ val def = DateDefinition(
 ```
 
 ## Storage Byte representation
-The date is represented by a 8 byte long counting the amount of days from January 1st 1970
+The date is represented by a 4 byte Int counting the amount of days from January 1st 1970
 
 ## Transport Byte representation
 The date is represented by a VarInt with the days since January 1st 1970

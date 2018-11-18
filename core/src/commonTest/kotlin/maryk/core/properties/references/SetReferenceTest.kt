@@ -73,7 +73,7 @@ class SetReferenceTest {
         )
         reference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "4b8000000000002c96"
+        bc.bytes!!.toHex() shouldBe "4b80002c96"
     }
 
     @Test
@@ -85,6 +85,6 @@ class SetReferenceTest {
         )
         subReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "61194b8000000000002c96"
+        bc.bytes!!.toHex() shouldBe "61194b80002c96"
     }
 }

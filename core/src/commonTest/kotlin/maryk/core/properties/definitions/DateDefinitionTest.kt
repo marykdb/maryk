@@ -34,7 +34,7 @@ internal class DateDefinitionTest {
     @Test
     fun createNowDate() {
         val currentEpochDay = Instant.getCurrentEpochTimeInMillis() / (24 * 60 * 60 * 1000)
-        def.createNow().epochDay shouldBe currentEpochDay
+        def.createNow().epochDay shouldBe currentEpochDay.toInt()
     }
 
     @Test
@@ -100,8 +100,8 @@ internal class DateDefinitionTest {
         required: false
         final: true
         unique: true
-        minValue: -99999999-01-01
-        maxValue: 99999999-12-31
+        minValue: -999999-01-01
+        maxValue: 999999-12-31
         default: 1970-12-01
         fillWithNow: true
 

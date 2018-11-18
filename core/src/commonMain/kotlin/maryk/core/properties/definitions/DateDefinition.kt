@@ -3,10 +3,9 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.decodeZigZag
 import maryk.core.extensions.bytes.encodeZigZag
-import maryk.core.extensions.bytes.initLongByVar
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.Date
@@ -15,6 +14,7 @@ import maryk.core.properties.types.fromByteReader
 import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
+import maryk.core.values.SimpleObjectValues
 import maryk.lib.time.Time
 
 /** Definition for Date properties */
@@ -35,7 +35,7 @@ data class DateDefinition(
 {
     override val propertyDefinitionType = PropertyDefinitionType.Date
     override val wireType = WireType.VAR_INT
-    override val byteSize = 8
+    override val byteSize = 4
 
     override fun createNow() = Date.nowUTC()
 
@@ -45,7 +45,7 @@ data class DateDefinition(
 
     override fun writeStorageBytes(value: Date, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
-    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = Date.ofEpochDay(initLongByVar(reader).decodeZigZag())
+    override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) = Date.ofEpochDay(initIntByVar(reader).decodeZigZag())
 
     override fun calculateTransportByteLength(value: Date) = value.epochDay.encodeZigZag().calculateVarByteLength()
 

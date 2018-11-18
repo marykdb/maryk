@@ -12,7 +12,7 @@ data class Date(
     DateInterface,
     IsTemporal<Date>()
 {
-    val epochDay: Long get() {
+    val epochDay: Int get() {
         val y = year.toLong()
         val m = month.toLong()
         var total = 0L
@@ -30,7 +30,7 @@ data class Date(
                 total--
             }
         }
-        return total - DAYS_0000_TO_1970
+        return (total - DAYS_0000_TO_1970).toInt()
     }
 
     override fun compareTo(other: Date): Int {
@@ -51,8 +51,8 @@ data class Date(
     override fun toString() = "$year-${month.zeroFill(2)}-${day.zeroFill(2)}"
 
     companion object: IsTemporalObject<Date>() {
-        var MIN = Date(-99_999_999, 1, 1)
-        var MAX = Date(99_999_999, 12, 31)
+        var MIN = Date(-999_999, 1, 1)
+        var MAX = Date(999_999, 12, 31)
 
         /** The amount of days in 400 year cycle. */
         private const val DAYS_PER_CYCLE = 146097
@@ -72,7 +72,7 @@ data class Date(
         internal fun isLeapYear(year: Int) = year and 3 == 0 && (year % 100 != 0 || year % 400 == 0)
 
         /** Get a date by the amount of days since 01-01-1970 */
-        fun ofEpochDay(epochDay: Long): Date {
+        fun ofEpochDay(epochDay: Int): Date {
             var zeroDay = epochDay + DAYS_0000_TO_1970
             // find the march-based year
             zeroDay -= 60  // adjust to 0000-03-01 so leap day is at end of four year cycle
@@ -137,7 +137,7 @@ data class Date(
 
         /** Get the current date at UTC timezone */
         override fun nowUTC() = ofEpochDay(
-            (Instant.getCurrentEpochTimeInMillis() / MILLIS_PER_DAY)
+            (Instant.getCurrentEpochTimeInMillis() / MILLIS_PER_DAY).toInt()
         )
     }
 }

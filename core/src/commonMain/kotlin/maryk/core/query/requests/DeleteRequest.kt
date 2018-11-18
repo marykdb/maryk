@@ -57,10 +57,10 @@ data class DeleteRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     companion object: QueryDataModel<DeleteRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<DeleteRequest<*>, Properties>) = DeleteRequest(
-            dataModel = map(1),
-            objectsToDelete = map(2),
-            hardDelete = map(3)
+        override fun invoke(values: ObjectValues<DeleteRequest<*>, Properties>) = DeleteRequest(
+            dataModel = values(1),
+            objectsToDelete = values(2),
+            hardDelete = values(3)
         )
     }
 }

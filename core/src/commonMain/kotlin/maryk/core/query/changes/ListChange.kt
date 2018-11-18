@@ -33,8 +33,8 @@ data class ListChange internal constructor(
         containedDataModel = ListValueChanges,
         referenceProperty = ListValueChanges.Properties.reference
     ) {
-        override fun invoke(map: ObjectValues<ListChange, Properties>) = ListChange(
-            listValueChanges = map(1)
+        override fun invoke(values: ObjectValues<ListChange, Properties>) = ListChange(
+            listValueChanges = values(1)
         )
 
         override fun writeJson(obj: ListChange, writer: IsJsonLikeWriter, context: RequestContext?) {

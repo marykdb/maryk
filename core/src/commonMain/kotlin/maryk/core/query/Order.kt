@@ -55,9 +55,9 @@ data class Order internal constructor(
     companion object: QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Order, Properties>) = Order(
-            propertyReference = map(1),
-            direction = map(2)
+        override fun invoke(values: ObjectValues<Order, Properties>) = Order(
+            propertyReference = values(1),
+            direction = values(2)
         )
 
         override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -94,7 +94,7 @@ data class Order internal constructor(
 
                 @Suppress("UNCHECKED_CAST")
                 (currentToken as? JsonToken.Value<String>)?.let {
-                    return this.map(context) {
+                    return this.values(context) {
                         val valueMap = MutableValueItems()
 
                         it.type.let { valueType ->

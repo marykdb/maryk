@@ -35,7 +35,7 @@ internal class ReversedTest {
         operator fun invoke(
             boolean: Boolean,
             dateTime: DateTime
-        ) = this.map {
+        ) = this.values {
             mapNonNulls(
                 this.boolean with boolean,
                 this.dateTime with dateTime

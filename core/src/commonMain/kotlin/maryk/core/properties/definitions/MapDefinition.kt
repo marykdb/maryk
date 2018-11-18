@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -24,6 +23,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
+import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -245,15 +245,15 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            minSize = map(4),
-            maxSize = map(5),
-            keyDefinition = map<IsSimpleValueDefinition<*, *>>(6),
-            valueDefinition = map<IsValueDefinition<*, *>>(7),
-            default = map(8)
+        override fun invoke(values: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            minSize = values(4),
+            maxSize = values(5),
+            keyDefinition = values<IsSimpleValueDefinition<*, *>>(6),
+            valueDefinition = values<IsValueDefinition<*, *>>(7),
+            default = values(8)
         )
     }
 }

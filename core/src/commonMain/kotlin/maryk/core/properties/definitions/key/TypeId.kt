@@ -67,8 +67,8 @@ data class TypeId<E: IndexedEnum<E>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<TypeId<*>>) = TypeId<IndexedEnum<Any>>(
-            reference = map(1)
+        override fun invoke(values: SimpleObjectValues<TypeId<*>>) = TypeId<IndexedEnum<Any>>(
+            reference = values(1)
         )
     }
 }

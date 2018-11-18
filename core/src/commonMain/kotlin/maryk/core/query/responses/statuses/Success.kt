@@ -22,8 +22,8 @@ data class Success<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<Success<*>>) = Success<IsRootDataModel<IsPropertyDefinitions>>(
-            version = map(1)
+        override fun invoke(values: SimpleObjectValues<Success<*>>) = Success<IsRootDataModel<IsPropertyDefinitions>>(
+            version = values(1)
         )
     }
 }

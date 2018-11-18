@@ -23,8 +23,8 @@ data class Change internal constructor(
     companion object: ReferencePairDataModel<Any, Change, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Change, Properties>) = Change(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<Change, Properties>) = Change(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: Change, writer: IsJsonLikeWriter, context: RequestContext?) {

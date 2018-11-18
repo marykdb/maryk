@@ -67,15 +67,15 @@ data class ScanRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> int
     companion object: QueryDataModel<ScanRequest<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ScanRequest<*, *>, Properties>) = ScanRequest(
-            dataModel = map<IsRootValuesDataModel<PropertyDefinitions>>(1),
-            startKey = map(2),
-            select = map(3),
-            filter = map(4),
-            order = map(5),
-            toVersion = map(6),
-            filterSoftDeleted = map(7),
-            limit = map(8)
+        override fun invoke(values: ObjectValues<ScanRequest<*, *>, Properties>) = ScanRequest(
+            dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1),
+            startKey = values(2),
+            select = values(3),
+            filter = values(4),
+            order = values(5),
+            toVersion = values(6),
+            filterSoftDeleted = values(7),
+            limit = values(8)
         )
     }
 }

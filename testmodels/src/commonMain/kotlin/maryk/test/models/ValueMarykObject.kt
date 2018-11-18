@@ -35,9 +35,9 @@ data class ValueMarykObject(
         name = "ValueMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ValueMarykObject, Properties>) = ValueMarykObject(
-            int = map(1),
-            date = map(2)
+        override fun invoke(values: ObjectValues<ValueMarykObject, Properties>) = ValueMarykObject(
+            int = values(1),
+            date = values(2)
         )
     }
 }

@@ -74,16 +74,16 @@ private data class MultiTypeDescriptor(
     internal object Model : SimpleObjectDataModel<MultiTypeDescriptor, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<MultiTypeDescriptor, Properties>) = MultiTypeDescriptor(
-            index = map(1),
-            name = map(2),
-            definition = map<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(3).value
+        override fun invoke(values: ObjectValues<MultiTypeDescriptor, Properties>) = MultiTypeDescriptor(
+            index = values(1),
+            name = values(2),
+            definition = values<TypedValue<IndexedEnum<Any>, IsSubDefinition<out Any, IsPropertyContext>>>(3).value
         )
 
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): ObjectValues<MultiTypeDescriptor, Properties> {
             // When writing YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {
-                this.map(context as? RequestContext) {
+                this.values(context as? RequestContext) {
                     val valueMap = MutableValueItems()
 
                     @Suppress("EXPERIMENTAL_API_USAGE")

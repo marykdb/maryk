@@ -30,7 +30,7 @@ fun <P: PropertyDefinitions> DataModel<*, P>.generateKotlin(
 
         operator fun invoke(
             ${propertiesKotlin.generateValuesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
-        ) = map {
+        ) = values {
             mapNonNulls(
                 ${propertiesKotlin.generateAssignsForProperties().prependIndent().prependIndent().prependIndent().prependIndent().trimStart()}
             )

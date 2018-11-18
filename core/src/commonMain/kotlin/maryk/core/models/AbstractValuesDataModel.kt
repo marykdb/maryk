@@ -22,13 +22,13 @@ abstract class AbstractValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefi
 ) : IsTypedValuesDataModel<DM, P>, AbstractDataModel<Any, P, Values<DM, P>, CX, CX>(properties) {
 
     override fun validate(
-        map: Values<DM, P>,
+        values: Values<DM, P>,
         refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>?
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
-            for ((index, orgValue) in map.map) {
+            for ((index, orgValue) in values.values) {
                 val definition = properties[index] ?: continue
-                val value = map.process<Any?>(definition, orgValue) ?: continue // skip empty values
+                val value = values.process<Any?>(definition, orgValue) ?: continue // skip empty values
                 try {
                     definition.validate(
                         newValue = value,

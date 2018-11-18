@@ -37,11 +37,11 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>> {
     internal object Model : DefinitionDataModel<UUIDKey>(
         properties = object : ObjectPropertyDefinitions<UUIDKey>() {}
     ) {
-        override fun invoke(map: SimpleObjectValues<UUIDKey>) = UUIDKey
+        override fun invoke(values: SimpleObjectValues<UUIDKey>) = UUIDKey
 
         override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?): SimpleObjectValues<UUIDKey> {
             return if (reader is IsYamlReader) {
-                this.map { ValueItems() }
+                this.values { ValueItems() }
             } else {
                 super.readJson(reader, context)
             }

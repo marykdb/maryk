@@ -26,7 +26,7 @@ internal class ValueDataModelTest {
             @Suppress("UNCHECKED_CAST")
             val convertedValueModel = converted as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
 
-            val value = converted.map {
+            val value = converted.values {
                 ValueItems(
                    convertedValueModel.properties[1]!! withNotNull 5,
                    convertedValueModel.properties[2]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),

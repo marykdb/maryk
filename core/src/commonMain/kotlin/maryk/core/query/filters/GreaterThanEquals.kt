@@ -23,8 +23,8 @@ data class GreaterThanEquals(
     companion object: ReferencePairDataModel<Any, GreaterThanEquals, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<GreaterThanEquals, Properties>) = GreaterThanEquals(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<GreaterThanEquals, Properties>) = GreaterThanEquals(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: GreaterThanEquals, writer: IsJsonLikeWriter, context: RequestContext?) {

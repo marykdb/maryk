@@ -60,14 +60,14 @@ data class GetRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> inte
     companion object: QueryDataModel<GetRequest<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<GetRequest<*, *>, Properties>) = GetRequest(
-            dataModel = map<IsRootValuesDataModel<PropertyDefinitions>>(1),
-            keys = map(2),
-            select = map(3),
-            filter = map(4),
-            order = map(5),
-            toVersion = map(6),
-            filterSoftDeleted = map(7)
+        override fun invoke(values: ObjectValues<GetRequest<*, *>, Properties>) = GetRequest(
+            dataModel = values<IsRootValuesDataModel<PropertyDefinitions>>(1),
+            keys = values(2),
+            select = values(3),
+            filter = values(4),
+            order = values(5),
+            toVersion = values(6),
+            filterSoftDeleted = values(7)
         )
     }
 }

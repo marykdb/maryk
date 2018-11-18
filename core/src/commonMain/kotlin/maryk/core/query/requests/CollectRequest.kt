@@ -45,9 +45,9 @@ data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
     companion object: QueryDataModel<AnyCollectRequest, CollectRequest.Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<AnyCollectRequest, CollectRequest.Properties>) = CollectRequest<IsRequest<IsResponse>, IsResponse>(
-            name = map(1),
-            request = map(2)
+        override fun invoke(values: ObjectValues<AnyCollectRequest, CollectRequest.Properties>) = CollectRequest<IsRequest<IsResponse>, IsResponse>(
+            name = values(1),
+            request = values(2)
         )
 
         override fun writeJson(obj: AnyCollectRequest, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -78,7 +78,7 @@ data class CollectRequest<RQ: IsRequest<RP>, RP: IsResponse>(
 
             reader.nextToken() // read past end object
 
-            return this.map(context) {
+            return this.values(context) {
                 mapNonNulls(
                     this.name withSerializable name,
                     this.request withSerializable request

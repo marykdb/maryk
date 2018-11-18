@@ -18,7 +18,7 @@ private val testValues = SimpleMarykModel(
 internal class SimpleDataModelTest {
     @Test
     fun constructByMap() {
-        SimpleMarykModel.map {
+        SimpleMarykModel.values {
             mapNonNulls(
                 value with testValues { value }
             )

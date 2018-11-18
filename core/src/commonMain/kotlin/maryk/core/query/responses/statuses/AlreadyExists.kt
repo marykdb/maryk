@@ -20,8 +20,8 @@ data class AlreadyExists<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<AlreadyExists<*>>) = AlreadyExists<IsRootDataModel<IsPropertyDefinitions>>(
-            key = map(1)
+        override fun invoke(values: SimpleObjectValues<AlreadyExists<*>>) = AlreadyExists<IsRootDataModel<IsPropertyDefinitions>>(
+            key = values(1)
         )
     }
 }

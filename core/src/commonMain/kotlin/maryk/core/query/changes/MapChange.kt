@@ -33,8 +33,8 @@ data class MapChange internal constructor(
         containedDataModel = MapValueChanges,
         referenceProperty = MapValueChanges.Properties.reference
     ) {
-        override fun invoke(map: ObjectValues<MapChange, MapChange.Properties>) = MapChange(
-            mapValueChanges = map(1)
+        override fun invoke(values: ObjectValues<MapChange, MapChange.Properties>) = MapChange(
+            mapValueChanges = values(1)
         )
 
         override fun writeJson(obj: MapChange, writer: IsJsonLikeWriter, context: RequestContext?) {

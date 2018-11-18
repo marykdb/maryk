@@ -25,7 +25,7 @@ private object Properties : ObjectPropertyDefinitions<Any>() {
 private object Model : ObjectDataModel<Any, Properties>(
     "name", Properties
 ) {
-    override fun invoke(map: ObjectValues<Any, Properties>): Any { throw Exception("Not implemented") }
+    override fun invoke(values: ObjectValues<Any, Properties>): Any { throw Exception("Not implemented") }
 }
 
 
@@ -35,7 +35,7 @@ private val subRef = Properties.definition.getRef(Properties.modelDefinition.get
 internal class PropertyReferenceTest {
     @Test
     fun getValueFromList() {
-        val values = Model.map {
+        val values = Model.values {
             mapNonNulls (
                 definition with "±testValue"
             )

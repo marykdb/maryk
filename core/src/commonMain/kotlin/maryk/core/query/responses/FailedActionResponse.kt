@@ -33,9 +33,9 @@ data class FailedActionResponse(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<FailedActionResponse>) = FailedActionResponse(
-            message = map(1),
-            failType = map(2)
+        override fun invoke(values: SimpleObjectValues<FailedActionResponse>) = FailedActionResponse(
+            message = values(1),
+            failType = values(2)
         )
     }
 }

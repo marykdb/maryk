@@ -92,14 +92,14 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ListDefinition<*, *>>) = ListDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            minSize = map(4),
-            maxSize = map(5),
-            valueDefinition = map<IsValueDefinition<*, *>>(6),
-            default = map(7)
+        override fun invoke(values: SimpleObjectValues<ListDefinition<*, *>>) = ListDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            minSize = values(4),
+            maxSize = values(5),
+            valueDefinition = values<IsValueDefinition<*, *>>(6),
+            default = values(7)
         )
     }
 }

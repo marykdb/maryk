@@ -114,16 +114,16 @@ data class TimeDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<TimeDefinition>) = TimeDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            precision = map(5),
-            minValue = map(6),
-            maxValue = map(7),
-            default = map(8),
-            fillWithNow = map(9)
+        override fun invoke(values: SimpleObjectValues<TimeDefinition>) = TimeDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            unique = values(4),
+            precision = values(5),
+            minValue = values(6),
+            maxValue = values(7),
+            default = values(8),
+            fillWithNow = values(9)
         )
     }
 }

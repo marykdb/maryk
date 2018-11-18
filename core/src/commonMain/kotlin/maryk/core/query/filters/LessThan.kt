@@ -23,8 +23,8 @@ data class LessThan internal constructor(
     companion object: ReferencePairDataModel<Any, LessThan, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<LessThan, Properties>) = LessThan(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<LessThan, Properties>) = LessThan(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: LessThan, writer: IsJsonLikeWriter, context: RequestContext?) {

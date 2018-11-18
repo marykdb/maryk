@@ -16,14 +16,14 @@ interface IsTypedValuesDataModel<DM: IsValuesDataModel<P>, P: PropertyDefinition
      * Validate a [map] with values and get reference from [refGetter] if exception needs to be thrown
      * @throws ValidationUmbrellaException if input was invalid
      */
-    fun validate(map: Values<DM, P>, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>? = { null })
+    fun validate(values: Values<DM, P>, refGetter: () -> IsPropertyReference<Values<DM, P>, IsPropertyDefinition<Values<DM, P>>, *>? = { null })
 
-    /** Create a ObjectValues with given [createMap] function */
+    /** Create a ObjectValues with given [createValues] function */
     @Suppress("UNCHECKED_CAST")
-    override fun map(context: RequestContext?, createMap: P.() -> IsValueItems) =
-        Values(this as DM, createMap(this.properties), context)
+    override fun values(context: RequestContext?, createValues: P.() -> IsValueItems) =
+        Values(this as DM, createValues(this.properties), context)
 }
 
 /** Create a ObjectValues with given [createMap] function */
-fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions> DM.map(context: RequestContext?, createMap: P.() -> IsValueItems) =
+fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions> DM.values(context: RequestContext?, createMap: P.() -> IsValueItems) =
     Values(this, createMap(this.properties), context)

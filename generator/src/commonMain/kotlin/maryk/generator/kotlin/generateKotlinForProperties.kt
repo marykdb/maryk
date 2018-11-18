@@ -53,7 +53,7 @@ internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlin(
                 value = """${propertyDefinitionWrapper.name}: $nativeTypeName$default""",
                 assign = """this.${propertyDefinitionWrapper.name} with ${propertyDefinitionWrapper.name}""",
                 definition = kotlinDescriptor.definitionToKotlin(definition, addImport),
-                invoke = "map(${propertyDefinitionWrapper.index})"
+                invoke = "values(${propertyDefinitionWrapper.index})"
             )
         )
     }

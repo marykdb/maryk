@@ -23,8 +23,8 @@ data class GreaterThan internal constructor(
     companion object: ReferencePairDataModel<Any, GreaterThan, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<GreaterThan, Properties>) = GreaterThan(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<GreaterThan, Properties>) = GreaterThan(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: GreaterThan, writer: IsJsonLikeWriter, context: RequestContext?) {

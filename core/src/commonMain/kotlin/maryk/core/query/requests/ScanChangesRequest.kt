@@ -69,16 +69,16 @@ data class ScanChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor
     companion object: QueryDataModel<ScanChangesRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ScanChangesRequest<*>, Properties>) = ScanChangesRequest(
-            dataModel = map(1),
-            startKey = map(2),
-            select = map(3),
-            filter = map(4),
-            order = map(5),
-            toVersion = map(6),
-            filterSoftDeleted = map(7),
-            limit = map(8),
-            fromVersion = map(9)
+        override fun invoke(values: ObjectValues<ScanChangesRequest<*>, Properties>) = ScanChangesRequest(
+            dataModel = values(1),
+            startKey = values(2),
+            select = values(3),
+            filter = values(4),
+            order = values(5),
+            toVersion = values(6),
+            filterSoftDeleted = values(7),
+            limit = values(8),
+            fromVersion = values(9)
         )
     }
 }

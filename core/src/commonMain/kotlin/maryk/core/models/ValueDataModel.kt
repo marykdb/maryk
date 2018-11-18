@@ -44,7 +44,7 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
             val def = it as IsFixedBytesEncodable<*>
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
-        return this(this.map { values })
+        return this(this.values { values })
     }
 
 
@@ -119,12 +119,12 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>(
-            name = map(1),
-            properties = map(2)
+        override fun invoke(values: SimpleObjectValues<ValueDataModel<*, *>>) = object : ValueDataModel<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>(
+            name = values(1),
+            properties = values(2)
         ){
-            override fun invoke(map: ObjectValues<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>): ValueDataObjectWithValues {
-                return ValueDataObjectWithValues(toBytes(map), map)
+            override fun invoke(values: ObjectValues<ValueDataObjectWithValues, ObjectPropertyDefinitions<ValueDataObjectWithValues>>): ValueDataObjectWithValues {
+                return ValueDataObjectWithValues(toBytes(values), values)
             }
         }
     }

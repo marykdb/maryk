@@ -104,8 +104,8 @@ data class Definitions(
         properties = Properties,
         singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
     ) {
-        override fun invoke(map: ObjectValues<Definitions, Properties>) = Definitions(
-            definitions = map(1)
+        override fun invoke(values: ObjectValues<Definitions, Properties>) = Definitions(
+            definitions = values(1)
         )
     }
 }

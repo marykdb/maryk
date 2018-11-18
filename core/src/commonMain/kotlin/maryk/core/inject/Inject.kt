@@ -63,9 +63,9 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
             )
         }
     ) {
-        override fun invoke(map: ObjectValues<AnyInject, Properties>) = Inject<Any, IsPropertyDefinition<Any>>(
-            collectionName = map(1),
-            propertyReference = map(2)
+        override fun invoke(values: ObjectValues<AnyInject, Properties>) = Inject<Any, IsPropertyDefinition<Any>>(
+            collectionName = values(1),
+            propertyReference = values(2)
         )
 
         override fun writeJson(obj: AnyInject, writer: IsJsonLikeWriter, context: InjectionContext?) {
@@ -107,7 +107,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
 
                     reader.nextToken() // read past end object
 
-                    this.map(context?.requestContext) {
+                    this.values(context?.requestContext) {
                         mapNonNulls(
                             Properties.collectionName withSerializable collectionName,
                             Properties.propertyReference withSerializable propertyReference
@@ -123,7 +123,7 @@ data class Inject<T: Any, D: IsPropertyDefinition<T>>(
 
                     reader.nextToken()
 
-                    this.map(context?.requestContext) {
+                    this.values(context?.requestContext) {
                         mapNonNulls(
                             Properties.collectionName withSerializable collectionName
                         )

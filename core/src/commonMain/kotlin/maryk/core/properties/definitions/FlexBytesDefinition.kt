@@ -72,16 +72,16 @@ data class FlexBytesDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<FlexBytesDefinition>) = FlexBytesDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            minValue = map(5),
-            maxValue = map(6),
-            default = map(7),
-            minSize = map(8),
-            maxSize = map(9)
+        override fun invoke(values: SimpleObjectValues<FlexBytesDefinition>) = FlexBytesDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            unique = values(4),
+            minValue = values(5),
+            maxValue = values(6),
+            default = values(7),
+            minSize = values(8),
+            maxSize = values(9)
         )
     }
 }

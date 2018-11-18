@@ -51,12 +51,12 @@ data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
     companion object: QueryDataModel<ValuesWithMetaData<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ValuesWithMetaData<*, *>, Properties>) = ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            key = map(1),
-            values = map(2),
-            firstVersion = map(3),
-            lastVersion = map(4),
-            isDeleted = map(5)
+        override fun invoke(values: ObjectValues<ValuesWithMetaData<*, *>, Properties>) = ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            key = values(1),
+            values = values(2),
+            firstVersion = values(3),
+            lastVersion = values(4),
+            isDeleted = values(5)
         )
     }
 }

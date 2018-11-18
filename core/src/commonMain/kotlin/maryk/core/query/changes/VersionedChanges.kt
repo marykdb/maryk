@@ -38,9 +38,9 @@ data class VersionedChanges(
     companion object: QueryDataModel<VersionedChanges, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<VersionedChanges, Properties>) = VersionedChanges(
-            version = map(1),
-            changes = map(2)
+        override fun invoke(values: ObjectValues<VersionedChanges, Properties>) = VersionedChanges(
+            version = values(1),
+            changes = values(2)
         )
     }
 }

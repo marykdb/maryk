@@ -34,9 +34,9 @@ data class ValuesResponse<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     companion object: QueryDataModel<ValuesResponse<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ValuesResponse<*, *>, Properties>) = ValuesResponse(
-            dataModel = map(1),
-            values = map<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2)
+        override fun invoke(values: ObjectValues<ValuesResponse<*, *>, Properties>) = ValuesResponse(
+            dataModel = values(1),
+            values = values<List<ValuesWithMetaData<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>>(2)
         )
     }
 }

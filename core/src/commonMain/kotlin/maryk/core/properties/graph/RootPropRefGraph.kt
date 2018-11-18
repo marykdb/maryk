@@ -35,8 +35,8 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(map: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<IsDataModel<*>>(
-            properties = map(1)
+        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<IsDataModel<*>>(
+            properties = values(1)
         )
 
         override fun writeJson(obj: RootPropRefGraph<*>, writer: IsJsonLikeWriter, context: GraphContext?) {
@@ -92,7 +92,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
                 currentToken = reader.nextToken()
             }
 
-            return this.map {
+            return this.values {
                 mapNonNulls(
                     properties withSerializable propertiesList
                 )

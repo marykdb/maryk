@@ -25,8 +25,8 @@ data class Exists internal constructor(
     companion object: ReferencesDataModel<Exists, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Exists, Properties>) = Exists(
-            references = map(1)
+        override fun invoke(values: ObjectValues<Exists, Properties>) = Exists(
+            references = values(1)
         )
 
         override fun writeJson(obj: Exists, writer: IsJsonLikeWriter, context: RequestContext?) {

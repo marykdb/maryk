@@ -34,11 +34,11 @@ data class OutOfRangeException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<OutOfRangeException>) = OutOfRangeException(
-            reference = map(1),
-            value = map(2),
-            min = map(3),
-            max = map(4)
+        override fun invoke(values: SimpleObjectValues<OutOfRangeException>) = OutOfRangeException(
+            reference = values(1),
+            value = values(2),
+            min = values(3),
+            max = values(4)
         )
     }
 }

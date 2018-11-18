@@ -70,9 +70,9 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             }
         }
     ) {
-        override fun invoke(map: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsValuesDataModel<*>, IsValuesDataModel<*>>(
-            parent = map(1),
-            properties = map(2)
+        override fun invoke(values: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsValuesDataModel<*>, IsValuesDataModel<*>>(
+            parent = values(1),
+            properties = values(2)
         )
 
         override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
@@ -156,7 +156,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
 
             reader.nextToken()
 
-            return this.map {
+            return this.values {
                 mapNonNulls(
                     parent withSerializable parentValue,
                     properties withSerializable propertiesValue

@@ -42,12 +42,12 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
 ) : IsDataModelWithValues<DO, P, V> {
 
     /**
-     * Write an [map] with values for this ObjectDataModel to JSON with [writer]
+     * Write [values] for this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    open fun writeJson(map: V, writer: IsJsonLikeWriter, context: CX? = null) {
+    open fun writeJson(values: V, writer: IsJsonLikeWriter, context: CX? = null) {
         writer.writeStartObject()
-        for ((index, value) in map) {
+        for ((index, value) in values) {
             val definition = properties[index] ?: continue
 
             if (value is Inject<*, *>) {
@@ -83,7 +83,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Optionally pass a [context] when needed to read more complex property types
      */
     open fun readJson(reader: IsJsonLikeReader, context: CX? = null): V {
-        return this.map(context as? RequestContext) {
+        return this.values(context as? RequestContext) {
             this@AbstractDataModel.readJsonToMap(reader, context)
         }
     }
@@ -110,7 +110,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
 
     internal open fun walkJsonToRead(
         reader: IsJsonLikeReader,
-        valueMap: MutableValueItems,
+        values: MutableValueItems,
         context: CX?
     ) {
         walker@ do {
@@ -157,7 +157,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
                         if (isInject) {
                             val inject = Inject.readJson(reader, Inject.transformContext(context as RequestContext))
 
-                            valueMap[definition.index] = inject
+                            values[definition.index] = inject
                         } else {
                             val readValue = if (definition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
                                 @Suppress("UNCHECKED_CAST")
@@ -169,7 +169,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
                                 definition.readJson(reader, context)
                             }
 
-                            valueMap[definition.index] = readValue
+                            values[definition.index] = readValue
                             definition.capture(context, readValue)
                         }
                     }
@@ -181,14 +181,14 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     }
 
     /**
-     * Calculates the byte length for the DataObject contained in [map]
+     * Calculates the byte length for the DataObject contained in [values]
      * The [cacher] caches any values needed to write later.
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun calculateProtoBufLength(map: V, cacher: WriteCacheWriter, context: CX? = null) : Int {
+    fun calculateProtoBufLength(values: V, cacher: WriteCacheWriter, context: CX? = null) : Int {
         var totalByteLength = 0
         for (definition in this.properties) {
-            val originalValue = map.original(definition.index)
+            val originalValue = values.original(definition.index)
 
             totalByteLength += this.protoBufLengthToAddForField(originalValue, definition, cacher, context)
         }
@@ -235,13 +235,13 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     }
 
     /**
-     * Write a ProtoBuf from a [map] with values to [writer] and get
+     * Write a ProtoBuf from a [values] with values to [writer] and get
      * possible cached values from [cacheGetter]
      * Optionally pass a [context] to write more complex properties which depend on other properties
      */
-    fun writeProtoBuf(map: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
+    fun writeProtoBuf(values: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX? = null) {
         for (definition in this.properties) {
-            val originalValue = map.original(definition.index)
+            val originalValue = values.original(definition.index)
 
             this.writeProtoBufField(originalValue, definition, cacheGetter, writer, context)
         }
@@ -275,7 +275,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
     fun readProtoBuf(length: Int, reader: () -> Byte, context: CX? = null): V {
-        return this.map(context as? RequestContext) {
+        return this.values(context as? RequestContext) {
             this@AbstractDataModel.readProtoBufToMap(length, reader, context)
         }
     }
@@ -306,10 +306,10 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
     }
 
     /**
-     * Read a single field of [key] from [byteReader] into [valueMap]
+     * Read a single field of [key] from [byteReader] into [values]
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    private fun readProtoBufField(valueMap: MutableValueItems, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
+    private fun readProtoBufField(values: MutableValueItems, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
         val dataObjectPropertyDefinition = properties[key.tag]
         val propertyDefinition = dataObjectPropertyDefinition?.definition
 
@@ -318,7 +318,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
         } else {
             when (propertyDefinition) {
                 is IsByteTransportableValue<*, CX> -> {
-                    valueMap[key.tag] = if (propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+                    values[key.tag] = if (propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
                         @Suppress("UNCHECKED_CAST")
                         (propertyDefinition as IsEmbeddedObjectDefinition<*, *, *, CX, *>).readTransportBytesToValues(
                             ProtoBuf.getLength(key.wireType, byteReader),
@@ -349,8 +349,8 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
 
                             @Suppress("UNCHECKED_CAST")
                             when {
-                                valueMap.contains(key.tag) -> (valueMap[key.tag] as MutableCollection<Any>).addAll(collection)
-                                else -> valueMap[key.tag] = collection
+                                values.contains(key.tag) -> (values[key.tag] as MutableCollection<Any>).addAll(collection)
+                                else -> values[key.tag] = collection
                             }
                         }
                         else -> {
@@ -361,9 +361,9 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
                             )
                             @Suppress("UNCHECKED_CAST")
                             val collection = when {
-                                valueMap.contains(key.tag) -> valueMap[key.tag]
+                                values.contains(key.tag) -> values[key.tag]
                                 else -> propertyDefinition.newMutableCollection(context).also {
-                                    valueMap[key.tag] = it
+                                    values[key.tag] = it
                                 }
                             } as MutableCollection<Any>
 
@@ -378,12 +378,12 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
                         byteReader,
                         context
                     )
-                    if (valueMap.contains(key.tag)) {
+                    if (values.contains(key.tag)) {
                         @Suppress("UNCHECKED_CAST")
-                        val map = valueMap[key.tag] as MutableMap<Any, Any>
+                        val map = values[key.tag] as MutableMap<Any, Any>
                         map[value.first] = value.second
                     } else {
-                        valueMap[key.tag] = mutableMapOf(value).also {
+                        values[key.tag] = mutableMapOf(value).also {
                             dataObjectPropertyDefinition.capture(context, it)
                         }
                     }

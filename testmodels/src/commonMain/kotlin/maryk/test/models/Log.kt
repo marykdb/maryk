@@ -56,7 +56,7 @@ object Log: RootDataModel<Log, Log.Properties>(
         message: String,
         severity: Severity = INFO,
         timestamp: DateTime = DateTime.nowUTC()
-    ) = this.map {
+    ) = this.values {
         mapNonNulls(
             this.timestamp with timestamp,
             this.severity with severity,

@@ -65,15 +65,15 @@ data class GetChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     companion object: QueryDataModel<GetChangesRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<GetChangesRequest<*>, Properties>) = GetChangesRequest(
-            dataModel = map(1),
-            keys = map(2),
-            select = map(3),
-            filter = map(4),
-            order = map(5),
-            toVersion = map(6),
-            filterSoftDeleted = map(7),
-            fromVersion = map(8)
+        override fun invoke(values: ObjectValues<GetChangesRequest<*>, Properties>) = GetChangesRequest(
+            dataModel = values(1),
+            keys = values(2),
+            select = values(3),
+            filter = values(4),
+            order = values(5),
+            toVersion = values(6),
+            filterSoftDeleted = values(7),
+            fromVersion = values(8)
         )
     }
 }

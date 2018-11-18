@@ -26,7 +26,7 @@ private val context = RequestContext(mapOf(
 }
 
 class InjectInRequestTest {
-    private val getRequestWithInjectable = GetRequest.map(context) {
+    private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
             dataModel with SimpleMarykModel,
             keys injectWith Inject("keysToInject", GetRequest.ref { keys }),
@@ -42,7 +42,7 @@ class InjectInRequestTest {
         )
     }
 
-    private val requests = Requests.map {
+    private val requests = Requests.values {
         mapNonNulls(
             requests withSerializable listOf(TypedValue(RequestType.Get, getRequestWithInjectable))
         )

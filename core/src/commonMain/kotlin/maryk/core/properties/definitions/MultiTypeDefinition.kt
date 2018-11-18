@@ -288,24 +288,24 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext> {
+        override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
-                map(5)
+                values(5)
             )
 
             val typeOptions = definitionMap.keys.toTypedArray()
 
             val typeEnum = IndexedEnumDefinition(
-                map(4)
+                values(4)
             ) { typeOptions }
 
             return MultiTypeDefinition(
-                indexed = map(1),
-                required = map(2),
-                final = map(3),
+                indexed = values(1),
+                required = values(2),
+                final = values(3),
                 typeEnum = typeEnum,
                 definitionMap = definitionMap,
-                default = map(6)
+                default = values(6)
             )
         }
     }

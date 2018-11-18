@@ -24,7 +24,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
     private val referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
 ) : QueryDataModel<DO, P>(properties) {
 
-    /** Write a map to [writer] with references mapped to the internal model for [items] within [context] */
+    /** Write a values to [writer] with references mapped to the internal model for [items] within [context] */
     internal fun writeReferenceValueMap(
         writer: IsJsonLikeWriter,
         items: List<CDO>,
@@ -93,7 +93,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
                         this.containedDataModel.walkJsonToRead(reader, valueMap, context)
                     }
 
-                    val dataObjectMap = this.containedDataModel.map(context) {
+                    val dataObjectMap = this.containedDataModel.values(context) {
                         valueMap
                     }
                     items.add(
@@ -105,7 +105,7 @@ abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: 
             reader.nextToken()
         } while (token !is JsonToken.Stopped)
 
-        return this.map(context) {
+        return this.values(context) {
             ValueItems(
                 referenceProperty withNotNull items
             )

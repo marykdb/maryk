@@ -37,8 +37,8 @@ data class Not(
     companion object: QueryDataModel<Not, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Not, Properties>) = Not(
-            filters = map<List<IsFilter>>(1)
+        override fun invoke(values: ObjectValues<Not, Properties>) = Not(
+            filters = values<List<IsFilter>>(1)
         )
 
         override fun writeJson(obj: Not, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -54,7 +54,7 @@ data class Not(
                 reader.nextToken()
             }
 
-            return this.map(context) {
+            return this.values(context) {
                 mapNonNulls(
                     filters withSerializable filters.readJson(reader, context)
                 )

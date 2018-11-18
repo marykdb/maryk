@@ -62,16 +62,16 @@ data class FixedBytesDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<FixedBytesDefinition>) = FixedBytesDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            minValue = map(5),
-            maxValue = map(6),
-            default = map(7),
-            random = map(8),
-            byteSize = map(9)
+        override fun invoke(values: SimpleObjectValues<FixedBytesDefinition>) = FixedBytesDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            unique = values(4),
+            minValue = values(5),
+            maxValue = values(6),
+            default = values(7),
+            random = values(8),
+            byteSize = values(9)
         )
     }
 }

@@ -91,10 +91,10 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         properties = Properties,
         contextTransformer = { EnumNameContext(it) }
     ) {
-        override fun invoke(map: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
+        override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
-                name = map(1),
-                optionalValues = map(2)
+                name = values(1),
+                optionalValues = values(2)
             )
 
         override fun writeJson(obj: IndexedEnumDefinition<IndexedEnum<Any>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
@@ -118,7 +118,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 val value = Properties.name.readJson(reader, context)
                 Properties.name.capture(context, value)
 
-                this.map {
+                this.values {
                     mapNonNulls(
                         name withSerializable value
                     )

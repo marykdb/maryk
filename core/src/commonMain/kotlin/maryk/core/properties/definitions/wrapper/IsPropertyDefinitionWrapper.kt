@@ -155,14 +155,14 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     object Model : SimpleObjectDataModel<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>>(
         properties = Properties
     ) {
-        override fun invoke(map: SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
+        override fun invoke(values: SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>>): IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any> {
             val typedDefinition =
-                map<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(3)
+                values<TypedValue<PropertyDefinitionType, IsPropertyDefinition<Any>>>(3)
             val type = typedDefinition.type
 
             return mapOfPropertyDefWrappers[type]?.invoke(
-                map(1),
-                map(2),
+                values(1),
+                values(2),
                 typedDefinition.value
             ) { null } ?: throw DefNotFoundException("Property type $type not found")
         }
@@ -194,7 +194,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 reader.readNamedIndexField(valueMap, Properties.name, Properties.index)
                 valueMap[Properties.definition.index] = Properties.definition.readJson(reader, context as ContainsDefinitionsContext)
 
-                this.map(context as? RequestContext) {
+                this.values(context as? RequestContext) {
                     valueMap
                 }
             } else {

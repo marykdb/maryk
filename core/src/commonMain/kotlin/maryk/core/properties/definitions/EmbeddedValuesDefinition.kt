@@ -69,7 +69,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
             this.typedDataModel.validate(
-                map = newValue,
+                values = newValue,
                 refGetter = refGetter
             )
         }
@@ -180,12 +180,12 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
             }
         }
     ) {
-        override fun invoke(map: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) = EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            dataModel = map(4),
-            default = map(5)
+        override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) = EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            dataModel = values(4),
+            default = values(5)
         )
     }
 }

@@ -59,8 +59,8 @@ data class Reversed<T: Any>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<Reversed<out Any>>) = Reversed<Any>(
-            reference = map(1)
+        override fun invoke(values: SimpleObjectValues<Reversed<out Any>>) = Reversed<Any>(
+            reference = values(1)
         )
     }
 }

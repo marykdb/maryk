@@ -29,7 +29,7 @@ object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Proper
 
     operator fun invoke(
         value: String = "haha"
-    ) = map {
+    ) = values {
         mapNonNulls(
             this.value with value
         )
@@ -399,7 +399,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         multiForKey: TypedValue<MarykEnum, *>,
         enumEmbedded: MarykEnumEmbedded,
         mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value")
-    ) = map {
+    ) = values {
         mapNonNulls(
             this.string with string,
             this.number with number,

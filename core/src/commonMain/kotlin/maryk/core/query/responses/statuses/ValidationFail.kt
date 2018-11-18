@@ -39,8 +39,8 @@ data class ValidationFail<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ValidationFail<*>>) = ValidationFail<IsRootDataModel<IsPropertyDefinitions>>(
-            exceptions = map(1)
+        override fun invoke(values: SimpleObjectValues<ValidationFail<*>>) = ValidationFail<IsRootDataModel<IsPropertyDefinitions>>(
+            exceptions = values(1)
         )
     }
 }

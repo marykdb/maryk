@@ -104,7 +104,7 @@ object NumericMarykModel: RootDataModel<NumericMarykModel, NumericMarykModel.Pro
         uInt64: ULong = 4123123344572uL,
         float32: Float = 42.345F,
         float64: Double = 2345762.3123
-    ) = map {
+    ) = values {
         mapNonNulls(
             this.sInt8 with sInt8,
             this.sInt16 with sInt16,

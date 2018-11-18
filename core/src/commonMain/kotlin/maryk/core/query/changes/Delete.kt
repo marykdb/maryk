@@ -25,8 +25,8 @@ data class Delete internal constructor(
     companion object: ReferencesDataModel<Delete, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Delete, Properties>) = Delete(
-            references = map(1)
+        override fun invoke(values: ObjectValues<Delete, Properties>) = Delete(
+            references = values(1)
         )
 
         override fun writeJson(obj: Delete, writer: IsJsonLikeWriter, context: RequestContext?) {

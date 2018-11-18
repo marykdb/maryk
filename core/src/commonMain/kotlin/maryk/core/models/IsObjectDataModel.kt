@@ -22,12 +22,12 @@ interface IsObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>: IsDataMo
      */
     fun validate(dataObject: DO, refGetter: () -> IsPropertyReference<DO, IsPropertyDefinition<DO>, *>? = { null })
 
-    /** Creates a Data Object by [map] */
-    operator fun invoke(map: ObjectValues<DO, P>): DO
+    /** Creates a Data Object by [values] */
+    operator fun invoke(values: ObjectValues<DO, P>): DO
 
-    /** Create a ObjectValues with given [createMap] function */
-    override fun map(context: RequestContext?, createMap: P.() -> IsValueItems) =
-        ObjectValues(this, createMap(this.properties), context)
+    /** Create a ObjectValues with given [createValues] function */
+    override fun values(context: RequestContext?, createValues: P.() -> IsValueItems) =
+        ObjectValues(this, createValues(this.properties), context)
 }
 
 /**
@@ -59,7 +59,7 @@ fun <DO: Any, DM: IsObjectDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>> DM
         }
     }
 
-    return this.map(context) {
+    return this.values(context) {
         mutableMap
     }
 }

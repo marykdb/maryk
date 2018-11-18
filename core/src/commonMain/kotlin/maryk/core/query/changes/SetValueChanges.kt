@@ -2,7 +2,6 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -13,6 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 
 /** Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues] */
 data class SetValueChanges<T: Any> internal constructor(
@@ -39,10 +39,10 @@ data class SetValueChanges<T: Any> internal constructor(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")
-        override fun invoke(map: ObjectValues<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
-            reference = map(1),
-            addValues = map(2),
-            deleteValues = map(3)
+        override fun invoke(values: ObjectValues<SetValueChanges<out Any>, Properties>) = SetValueChanges<Any>(
+            reference = values(1),
+            addValues = values(2),
+            deleteValues = values(3)
         )
     }
 }
@@ -56,7 +56,7 @@ private val valueDefinition = ContextualValueDefinition(
 )
 
 /**
- * Convenience infix method to define an map value change
+ * Convenience infix method to define avalues set value change
  * Set property of values [T] with [addValues] and [deleteValues] for changes
  */
 fun <T: Any> IsPropertyReference<Set<T>, IsCollectionDefinition<T, Set<T>, *, *>, *>.change(

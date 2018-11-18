@@ -21,8 +21,8 @@ data class RequiredException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<RequiredException>) = RequiredException(
-            reference = map(1)
+        override fun invoke(values: SimpleObjectValues<RequiredException>) = RequiredException(
+            reference = values(1)
         )
     }
 }

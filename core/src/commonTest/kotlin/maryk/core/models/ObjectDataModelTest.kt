@@ -89,7 +89,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 internal class ObjectDataModelTest {
     @Test
     fun constructByMap() {
-        TestMarykObject.map {
+        TestMarykObject.values {
             mapNonNulls(
                 string with testObject.string,
                 int with testObject.int,

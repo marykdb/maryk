@@ -37,7 +37,7 @@ internal class InjectWithReference(
             throw Exception("Inject can only be contained in Values")
         }
 
-        toAddTo.addToMap(
+        toAddTo.add(
             index = this.reference.propertyDefinition.index,
             value = this.inject
         )
@@ -62,9 +62,9 @@ internal class InjectWithReference(
     internal companion object: QueryDataModel<InjectWithReference, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<InjectWithReference, Properties>) = InjectWithReference(
-            inject = map(1),
-            reference = map(2)
+        override fun invoke(values: ObjectValues<InjectWithReference, Properties>) = InjectWithReference(
+            inject = values(1),
+            reference = values(2)
         )
     }
 }

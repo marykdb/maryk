@@ -39,8 +39,8 @@ data class Range internal constructor(
     companion object: QueryDataModel<Range, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Range, Properties>) = Range(
-            referenceRangePairs = map(1)
+        override fun invoke(values: ObjectValues<Range, Properties>) = Range(
+            referenceRangePairs = values(1)
         )
 
         override fun writeJson(obj: Range, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -103,7 +103,7 @@ data class Range internal constructor(
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            return this.map(context) {
+            return this.values(context) {
                 mapNonNulls(
                     ranges withSerializable listOfRanges
                 )

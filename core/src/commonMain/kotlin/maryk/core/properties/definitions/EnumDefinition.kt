@@ -181,15 +181,15 @@ class EnumDefinition<E : IndexedEnum<E>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnum<Any>>(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            enum = map(5),
-            minValue = map(6),
-            maxValue = map(7),
-            default = map(8)
+        override fun invoke(values: SimpleObjectValues<EnumDefinition<*>>) = EnumDefinition<IndexedEnum<Any>>(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            unique = values(4),
+            enum = values(5),
+            minValue = values(6),
+            maxValue = values(7),
+            default = values(8)
         )
     }
 }

@@ -30,10 +30,10 @@ data class TestValueObject(
         name = "TestValueObject",
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<TestValueObject, Properties>) = TestValueObject(
-            int = map(1),
-            dateTime = map(2),
-            bool = map(3)
+        override fun invoke(values: ObjectValues<TestValueObject, Properties>) = TestValueObject(
+            int = values(1),
+            dateTime = values(2),
+            bool = values(3)
         )
 
         override fun equals(other: Any?): Boolean {

@@ -44,7 +44,7 @@ internal class TypeIdTest {
 
         operator fun invoke(
             multi: TypedValue<Option, *>
-        ) = this.map {
+        ) = this.values {
             ReversedTest.MarykModel.Properties.mapNonNulls(
                 this.multi with multi
             )

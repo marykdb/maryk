@@ -20,8 +20,8 @@ data class ServerFail<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ServerFail<*>>) = ServerFail<IsRootDataModel<IsPropertyDefinitions>>(
-            map(1)
+        override fun invoke(values: SimpleObjectValues<ServerFail<*>>) = ServerFail<IsRootDataModel<IsPropertyDefinitions>>(
+            values(1)
         )
     }
 }

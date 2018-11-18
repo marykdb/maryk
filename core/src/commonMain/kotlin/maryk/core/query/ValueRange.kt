@@ -57,11 +57,11 @@ data class ValueRange<T: Any> internal constructor(
     companion object: QueryDataModel<ValueRange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ValueRange<*>, Properties>) = ValueRange(
-            from = map(1),
-            to = map(2),
-            inclusiveFrom = map(3),
-            inclusiveTo = map(4)
+        override fun invoke(values: ObjectValues<ValueRange<*>, Properties>) = ValueRange(
+            from = values(1),
+            to = values(2),
+            inclusiveFrom = values(3),
+            inclusiveTo = values(4)
         )
 
         override fun writeJson(obj: ValueRange<*>, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -100,7 +100,7 @@ data class ValueRange<T: Any> internal constructor(
                     reader.nextToken()
                 }
 
-                this.map(context) {
+                this.values(context) {
                     val valueMap = MutableValueItems()
 
                     if (reader.currentToken !is JsonToken.StartArray) {

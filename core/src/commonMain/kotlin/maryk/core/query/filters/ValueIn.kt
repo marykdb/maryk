@@ -40,8 +40,8 @@ data class ValueIn internal constructor(
     companion object: SimpleFilterDataModel<ValueIn, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ValueIn, Properties>) = ValueIn(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<ValueIn, Properties>) = ValueIn(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: ValueIn, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -94,7 +94,7 @@ data class ValueIn internal constructor(
                 currentToken = reader.nextToken()
             }
 
-            return this.map(context) {
+            return this.values(context) {
                 mapNonNulls(
                     referenceValuePairs withSerializable list
                 )

@@ -32,11 +32,11 @@ data class InvalidSizeException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<InvalidSizeException>) = InvalidSizeException(
-            reference = map(1),
-            value = map(2),
-            min = map(3),
-            max = map(4)
+        override fun invoke(values: SimpleObjectValues<InvalidSizeException>) = InvalidSizeException(
+            reference = values(1),
+            value = values(2),
+            min = values(3),
+            max = values(4)
         )
     }
 }

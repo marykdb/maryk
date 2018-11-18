@@ -77,10 +77,10 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
     object Model : SimpleObjectDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>(
         properties = RootModelProperties
     ) {
-        override fun invoke(map: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
-            name = map(1),
-            properties = map(2),
-            keyDefinitions = (map<List<TypedValue<PropertyDefinitionType, *>>?>(3))?.map {
+        override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
+            name = values(1),
+            properties = values(2),
+            keyDefinitions = (values<List<TypedValue<PropertyDefinitionType, *>>?>(3))?.map {
                 when(it.value) {
                     is ValueWithFixedBytesPropertyReference<*, *, *, *> -> it.value.propertyDefinition
                     else -> it.value as FixedBytesProperty<*>
@@ -113,7 +113,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
          */
         override fun walkJsonToRead(
             reader: IsJsonLikeReader,
-            valueMap: MutableValueItems,
+            values: MutableValueItems,
             context: IsPropertyContext?
         ) {
             var keyDefinitionsToProcessLater: List<JsonToken>? = null
@@ -145,7 +145,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
                             reader.nextToken()
 
-                            valueMap[definition.index] = definition.definition.readJson(reader, context)
+                            values[definition.index] = definition.definition.readJson(reader, context)
                         }
                     }
                     else -> break@walker
@@ -163,7 +163,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                     PresetJsonTokenReader(jsonTokens)
                 }
 
-                valueMap[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DefinitionsConversionContext?)
+                values[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DefinitionsConversionContext?)
 
                 if (reader is IsYamlReader) {
                     reader.nextToken()

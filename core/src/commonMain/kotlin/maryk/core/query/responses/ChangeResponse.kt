@@ -24,9 +24,9 @@ data class ChangeResponse<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ChangeResponse<*>>) = ChangeResponse(
-            dataModel = map(1),
-            statuses = map<List<TypedValue<StatusType, IsChangeResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(2)?.map { it.value } ?: emptyList()
+        override fun invoke(values: SimpleObjectValues<ChangeResponse<*>>) = ChangeResponse(
+            dataModel = values(1),
+            statuses = values<List<TypedValue<StatusType, IsChangeResponseStatus<IsRootDataModel<IsPropertyDefinitions>>>>?>(2)?.map { it.value } ?: emptyList()
         )
     }
 }

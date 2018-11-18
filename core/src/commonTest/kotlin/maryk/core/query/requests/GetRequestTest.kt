@@ -24,7 +24,7 @@ class GetRequestTest {
 
     @Test
     fun createAsMap(){
-        GetRequest.map(context) {
+        GetRequest.values(context) {
             mapNonNulls(
                 dataModel with SimpleMarykModel,
                 keys with listOf(getRequest.keys[0], getRequest.keys[1])
@@ -34,7 +34,7 @@ class GetRequestTest {
 
     @Test
     fun createAsMaxMap(){
-        GetRequest.map(context) {
+        GetRequest.values(context) {
             mapNonNulls(
                 dataModel with SimpleMarykModel,
                 keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),

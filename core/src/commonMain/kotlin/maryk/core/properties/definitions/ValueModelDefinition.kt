@@ -159,15 +159,15 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
         }
     ) {
         @Suppress("UNCHECKED_CAST")
-        override fun invoke(map: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            dataModel = map<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(5),
-            minValue = map(6),
-            maxValue = map(7),
-            default = map(8)
+        override fun invoke(values: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            unique = values(4),
+            dataModel = values<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(5),
+            minValue = values(6),
+            maxValue = values(7),
+            default = values(8)
         ) as GenericValueModelDefinition
     }
 }

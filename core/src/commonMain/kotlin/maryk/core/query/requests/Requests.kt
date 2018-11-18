@@ -63,9 +63,9 @@ data class Requests internal constructor(
         properties = Properties,
         singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
     ) {
-        override fun invoke(map: ObjectValues<Requests, Properties>) = Requests(
-            requests = map(1),
-            injectables = map(2)
+        override fun invoke(values: ObjectValues<Requests, Properties>) = Requests(
+            requests = values(1),
+            injectables = values(2)
         )
 
         override fun protoBufLengthToAddForField(
@@ -98,13 +98,13 @@ data class Requests internal constructor(
             context.collectedInjects
         } else value
 
-        override fun map(
+        override fun values(
             context: RequestContext?,
-            createMap: Properties.() -> IsValueItems
+            createValues: Properties.() -> IsValueItems
         ): ObjectValues<Requests, Properties> {
-            val map = ObjectValues(this, createMap(this.properties), context)
+            val map = ObjectValues(this, createValues(this.properties), context)
 
-            val injectables = map.removeFromMap(Properties.injectables.index) as? List<InjectWithReference>?
+            val injectables = map.remove(Properties.injectables.index) as? List<InjectWithReference>?
 
             injectables?.forEach {
                 it.injectInValues(map)

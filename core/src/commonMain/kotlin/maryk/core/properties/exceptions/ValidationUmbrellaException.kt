@@ -39,9 +39,9 @@ data class ValidationUmbrellaException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ValidationUmbrellaException>) = ValidationUmbrellaException(
-            reference = map(1),
-            exceptions = map(2)
+        override fun invoke(values: SimpleObjectValues<ValidationUmbrellaException>) = ValidationUmbrellaException(
+            reference = values(1),
+            exceptions = values(2)
         )
     }
 }

@@ -20,8 +20,8 @@ data class DoesNotExist<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<DoesNotExist<*>>) = DoesNotExist<IsRootDataModel<IsPropertyDefinitions>>(
-            key = map(1)
+        override fun invoke(values: SimpleObjectValues<DoesNotExist<*>>) = DoesNotExist<IsRootDataModel<IsPropertyDefinitions>>(
+            key = values(1)
         )
     }
 }

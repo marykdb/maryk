@@ -61,10 +61,10 @@ data class DataObjectChange<out DM: IsRootDataModel<*>> internal constructor(
     companion object: QueryDataModel<DataObjectChange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange(
-            key = map(1),
-            changes = map(2),
-            lastVersion = map(3)
+        override fun invoke(values: ObjectValues<DataObjectChange<*>, Properties>) = DataObjectChange(
+            key = values(1),
+            changes = values(2),
+            lastVersion = values(3)
         )
     }
 }

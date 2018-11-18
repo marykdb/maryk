@@ -21,6 +21,6 @@ class AuthFail<DM: IsRootDataModel<*>> :
     internal companion object: SimpleQueryDataModel<AuthFail<*>>(
         properties = object : ObjectPropertyDefinitions<AuthFail<*>>() {}
     ) {
-        override fun invoke(map: SimpleObjectValues<AuthFail<*>>) = AuthFail<IsRootDataModel<IsPropertyDefinitions>>()
+        override fun invoke(values: SimpleObjectValues<AuthFail<*>>) = AuthFail<IsRootDataModel<IsPropertyDefinitions>>()
     }
 }

@@ -34,7 +34,7 @@ internal class EmbeddedValuesDefinitionTest {
 
         operator fun invoke(
             string: String = "jur"
-        ) = this.map {
+        ) = this.values {
             mapNonNulls(
                 this.string with string
             )

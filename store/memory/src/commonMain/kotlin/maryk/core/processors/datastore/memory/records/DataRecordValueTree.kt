@@ -3,7 +3,7 @@
 package maryk.core.processors.datastore.memory.records
 
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.map
+import maryk.core.models.values
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.values.MutableValueItems
@@ -44,7 +44,7 @@ internal inline class DataRecordValueTree<DM: IsValuesDataModel<P>, P: PropertyD
         }
 
         handleValues(
-            dataModel.map(context = null) {
+            dataModel.values(context = null) {
                 valuesMap
             },
             maxVersion

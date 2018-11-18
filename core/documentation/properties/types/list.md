@@ -68,8 +68,8 @@ Kotlin:
 ```kotlin
 ListChange(
     Model.ref { listOfStrings }.change(
-        addValuesToEnd: listOf("three", "four"),
-        deleteValues: listOf("one", "two")
+        addValuesToEnd = listOf("three", "four"),
+        deleteValues = listOf("one", "two")
     )
 )
 ```
@@ -80,11 +80,11 @@ Kotlin:
 ```kotlin
 ListChange(
     Model.ref { listOfStrings }.change(
-        addValuesAtIndex: map(
+        addValuesAtIndex = mapOf(
             0 to "three", 
             0 to "four"
         ),
-        deleteAtIndex: setOf(1, 2)
+        deleteAtIndex = setOf(1, 2)
     )
 )
 ```

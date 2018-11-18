@@ -22,8 +22,8 @@ data class RequestFail<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<RequestFail<*>>) = RequestFail<IsRootDataModel<IsPropertyDefinitions>>(
-            map(1)
+        override fun invoke(values: SimpleObjectValues<RequestFail<*>>) = RequestFail<IsRootDataModel<IsPropertyDefinitions>>(
+            values(1)
         )
     }
 }

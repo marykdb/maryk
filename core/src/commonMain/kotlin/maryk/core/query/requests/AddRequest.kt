@@ -46,9 +46,9 @@ data class AddRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> inte
     companion object: QueryDataModel<AddRequest<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<AddRequest<*, *>, Properties>) = AddRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            dataModel = map(1),
-            objectsToAdd = map(2)
+        override fun invoke(values: ObjectValues<AddRequest<*, *>, Properties>) = AddRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+            dataModel = values(1),
+            objectsToAdd = values(2)
         )
     }
 }

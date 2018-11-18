@@ -12,12 +12,12 @@ typealias SimpleObjectValues<DO> = ObjectValues<DO, ObjectPropertyDefinitions<DO
  */
 data class ObjectValues<DO: Any, P: ObjectPropertyDefinitions<DO>> internal constructor(
     override val dataModel: IsObjectDataModel<DO, P>,
-    override val map: IsValueItems,
+    override val values: IsValueItems,
     override val context: RequestContext? = null
 ): AbstractValues<DO, IsObjectDataModel<DO, P>, P>() {
     /**
-     * Converts map to a strong typed DataObject.
-     * Will throw exception if map is missing values for a complete DataObject
+     * Converts values to a strong typed DataObject.
+     * Will throw exception if values is missing values for a complete DataObject
      */
     fun toDataObject() = this.dataModel.invoke(this)
 
@@ -26,19 +26,19 @@ data class ObjectValues<DO: Any, P: ObjectPropertyDefinitions<DO>> internal cons
         this === other -> true
         other !is ObjectValues<*, *> -> false
         dataModel != other.dataModel -> false
-        map != other.map -> false
+        values != other.values -> false
         else -> true
     }
 
     // ignore context
     override fun hashCode(): Int {
         var result = dataModel.hashCode()
-        result = 31 * result + map.hashCode()
+        result = 31 * result + values.hashCode()
         return result
     }
 
     override fun toString(): String {
         val modelName = (dataModel as? IsNamedDataModel<*>)?.name ?: dataModel
-        return "ObjectValues<$modelName>$map"
+        return "ObjectValues<$modelName>$values"
     }
 }

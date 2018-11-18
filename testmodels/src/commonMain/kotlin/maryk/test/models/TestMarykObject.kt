@@ -190,22 +190,22 @@ data class TestMarykObject(
         name = "TestMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<TestMarykObject, Properties>) = TestMarykObject(
-            string = map(1),
-            int = map(2),
-            uint = map(3),
-            double = map(4),
-            dateTime = map(5),
-            bool = map(6),
-            enum = map(7),
-            list = map(8),
-            set = map(9),
-            map = map(10),
-            valueObject = map(11),
-            embeddedObject = map(12),
-            multi = map(13),
-            reference = map(14),
-            listOfString = map(15)
+        override fun invoke(values: ObjectValues<TestMarykObject, Properties>) = TestMarykObject(
+            string = values(1),
+            int = values(2),
+            uint = values(3),
+            double = values(4),
+            dateTime = values(5),
+            bool = values(6),
+            enum = values(7),
+            list = values(8),
+            set = values(9),
+            map = values(10),
+            valueObject = values(11),
+            embeddedObject = values(12),
+            multi = values(13),
+            reference = values(14),
+            listOfString = values(15)
         )
 
         override fun equals(other: Any?): Boolean {

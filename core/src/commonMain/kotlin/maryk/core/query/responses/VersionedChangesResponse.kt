@@ -25,9 +25,9 @@ data class VersionedChangesResponse<out DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<VersionedChangesResponse<*>>) = VersionedChangesResponse(
-            dataModel = map(1),
-            changes = map(2)
+        override fun invoke(values: SimpleObjectValues<VersionedChangesResponse<*>>) = VersionedChangesResponse(
+            dataModel = values(1),
+            changes = values(2)
         )
     }
 }

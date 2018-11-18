@@ -189,7 +189,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         reference: Key<TestMarykModel>? = null,
         listOfString: List<String>? = null,
         selfReference: Key<TestMarykModel>? = null
-    ) = this.map {
+    ) = this.values {
         mapNonNulls(
             this.string with string,
             this.int with int,

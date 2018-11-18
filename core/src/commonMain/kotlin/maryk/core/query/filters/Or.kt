@@ -37,8 +37,8 @@ data class Or(
     companion object: QueryDataModel<Or, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Or, Properties>) = Or(
-            filters = map<List<IsFilter>>(1)
+        override fun invoke(values: ObjectValues<Or, Properties>) = Or(
+            filters = values<List<IsFilter>>(1)
         )
 
         override fun writeJson(obj: Or, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -54,7 +54,7 @@ data class Or(
                 reader.nextToken()
             }
 
-            return this.map(context) {
+            return this.values(context) {
                 mapNonNulls(
                     filters withSerializable filters.readJson(reader, context)
                 )

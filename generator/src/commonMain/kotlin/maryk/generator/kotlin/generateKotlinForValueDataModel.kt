@@ -34,7 +34,7 @@ fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P
             name = "$name",
             properties = Properties
         ) {
-            override fun invoke(map: ObjectValues<$name, Properties>) = $name(
+            override fun invoke(values: ObjectValues<$name, Properties>) = $name(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

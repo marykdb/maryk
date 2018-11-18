@@ -53,12 +53,12 @@ data class ListValueChanges<T: Any> internal constructor(
         properties = Properties
     ) {
         @Suppress("RemoveExplicitTypeArguments")
-        override fun invoke(map: ObjectValues<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
-            reference = map(1),
-            addValuesToEnd = map(2),
-            addValuesAtIndex = map(3),
-            deleteValues = map(4),
-            deleteAtIndex = map(5)
+        override fun invoke(values: ObjectValues<ListValueChanges<*>, Properties>) = ListValueChanges<Any>(
+            reference = values(1),
+            addValuesToEnd = values(2),
+            addValuesAtIndex = values(3),
+            deleteValues = values(4),
+            deleteAtIndex = values(5)
         )
     }
 }

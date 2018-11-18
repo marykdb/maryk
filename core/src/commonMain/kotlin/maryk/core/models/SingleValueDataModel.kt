@@ -1,10 +1,10 @@
 package maryk.core.models
 
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -34,7 +34,7 @@ abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefin
         val value = singlePropertyDefinition.readJson(reader, context)
         singlePropertyDefinition.capture(context, value)
 
-        return this.map(context as? RequestContext) {
+        return this.values(context as? RequestContext) {
             mapNonNulls(
                 singlePropertyDefinition withSerializable value
             )

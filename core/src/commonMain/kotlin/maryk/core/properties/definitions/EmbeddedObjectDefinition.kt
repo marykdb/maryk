@@ -183,12 +183,12 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
             }
         }
     ) {
-        override fun invoke(map: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            dataModel = map<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(4),
-            default = map(5)
+        override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(4),
+            default = values(5)
         )
     }
 }

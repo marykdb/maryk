@@ -30,10 +30,10 @@ data class NotEnoughItemsException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<NotEnoughItemsException>) = NotEnoughItemsException(
-            reference = map(1),
-            size = map(2),
-            minSize = map(3)
+        override fun invoke(values: SimpleObjectValues<NotEnoughItemsException>) = NotEnoughItemsException(
+            reference = values(1),
+            size = values(2),
+            minSize = values(3)
         )
     }
 }

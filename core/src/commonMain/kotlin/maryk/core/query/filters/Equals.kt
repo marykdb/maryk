@@ -23,8 +23,8 @@ data class Equals internal constructor(
     companion object: ReferencePairDataModel<Any, Equals, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Equals, Properties>) = Equals(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<Equals, Properties>) = Equals(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: Equals, writer: IsJsonLikeWriter, context: RequestContext?) {

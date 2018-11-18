@@ -167,11 +167,11 @@ data class PersonRoleInPeriod(
     companion object: ValueDataModel<TestValueObject, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<TestValueObject, Properties>) = TestValueObject(
-            person = map(1),
-            role = map(2),
-            startDate = map(3),
-            endDate = map(4)
+        override fun invoke(values: ObjectValues<TestValueObject, Properties>) = TestValueObject(
+            person = values(1),
+            role = values(2),
+            startDate = values(3),
+            endDate = values(4)
         )
     }
 }
@@ -220,7 +220,7 @@ object TimelineItem: RootDataModel<TimelineItem>(
     operator fun invoke(
         dateOfPosting: DateTime,
         item: TypedValue
-    ) = map {
+    ) = values {
         mapNonNulls(
             this.dataOfPosting with dateOfPosting,
             this.item with item

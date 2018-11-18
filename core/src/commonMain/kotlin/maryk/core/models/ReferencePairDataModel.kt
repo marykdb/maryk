@@ -66,7 +66,7 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
             currentToken = reader.nextToken()
         }
 
-        return this.map(context) {
+        return this.values(context) {
             mapNonNulls(
                 referenceValuePairs withSerializable list
             )

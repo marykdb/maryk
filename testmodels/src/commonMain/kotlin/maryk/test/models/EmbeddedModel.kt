@@ -20,7 +20,7 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
 
     operator fun invoke(
         value: String = "haha"
-    ) = map {
+    ) = values {
         mapNonNulls(
             this.value with value
         )

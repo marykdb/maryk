@@ -39,11 +39,11 @@ data class EmbeddedMarykObject(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<EmbeddedMarykObject, Properties>) =
+        override fun invoke(values: ObjectValues<EmbeddedMarykObject, Properties>) =
             EmbeddedMarykObject(
-                value = map(1),
-                model = map(2),
-                marykModel = map(3)
+                value = values(1),
+                model = values(2),
+                marykModel = values(3)
             )
 
         override fun equals(other: Any?): Boolean {

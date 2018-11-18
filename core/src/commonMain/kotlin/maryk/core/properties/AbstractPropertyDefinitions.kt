@@ -60,7 +60,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         }
     }
 
-    /** Converts a list of optional [pairs] to map */
+    /** Converts a list of optional [pairs] to values */
     fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
         MutableValueItems().also { items ->
             for (it in pairs) {

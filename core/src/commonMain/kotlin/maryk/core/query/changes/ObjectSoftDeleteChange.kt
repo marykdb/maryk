@@ -18,8 +18,8 @@ data class ObjectSoftDeleteChange(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ObjectSoftDeleteChange>) = ObjectSoftDeleteChange(
-            isDeleted = map(1)
+        override fun invoke(values: SimpleObjectValues<ObjectSoftDeleteChange>) = ObjectSoftDeleteChange(
+            isDeleted = values(1)
         )
     }
 }

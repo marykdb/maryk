@@ -20,7 +20,7 @@ import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
-private val testExtendedObject = TestMarykObject.map {
+private val testExtendedObject = TestMarykObject.values {
     mapNonNulls(
         string with "hay",
         int with 4,
@@ -40,7 +40,7 @@ private val testExtendedObject = TestMarykObject.map {
             Time(10, 3) to "ahum"
         ),
         valueObject with TestValueObject(6, DateTime(2017, 4, 1, 12, 55), true),
-        embeddedObject with EmbeddedMarykObject.map {
+        embeddedObject with EmbeddedMarykObject.values {
             mapNonNulls(
                 value with "test"
             )

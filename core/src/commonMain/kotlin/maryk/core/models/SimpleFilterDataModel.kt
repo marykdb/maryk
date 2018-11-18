@@ -23,7 +23,7 @@ abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
 ) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties){
     override fun walkJsonToRead(
         reader: IsJsonLikeReader,
-        valueMap: MutableValueItems,
+        values: MutableValueItems,
         context: RequestContext?
     ) {
         val referenceProperty =
@@ -32,7 +32,7 @@ abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
             ?: throw Exception("No first property found")
 
         (reader.currentToken as? JsonToken.FieldName)?.value?.let {
-            valueMap[referenceProperty.index] =
+            values[referenceProperty.index] =
                     referencePropertyDefinition.fromString(it, context)
         } ?: throw ParseException("Expected a field name for reference on filter")
 
@@ -41,7 +41,7 @@ abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
         val valueProperty =
             this.properties[1] ?: throw Exception("No property for value found")
 
-        valueMap[valueProperty.index] =
+        values[valueProperty.index] =
                 valueProperty.readJson(reader, context)
 
         if(reader.nextToken() !== JsonToken.EndObject) {

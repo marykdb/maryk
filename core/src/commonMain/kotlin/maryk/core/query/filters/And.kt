@@ -37,8 +37,8 @@ data class And(
     companion object: QueryDataModel<And, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<And, Properties>) = And(
-            filters = map<List<IsFilter>>(1)
+        override fun invoke(values: ObjectValues<And, Properties>) = And(
+            filters = values<List<IsFilter>>(1)
         )
 
         override fun writeJson(obj: And, writer: IsJsonLikeWriter, context: RequestContext?) {
@@ -54,7 +54,7 @@ data class And(
                 reader.nextToken()
             }
 
-            return this.map(context) {
+            return this.values(context) {
                 mapNonNulls(
                     filters withSerializable filters.readJson(reader, context)
                 )

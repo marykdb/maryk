@@ -23,9 +23,9 @@ data class InvalidValueException(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<InvalidValueException>) = InvalidValueException(
-            reference = map(1),
-            value = map(2)
+        override fun invoke(values: SimpleObjectValues<InvalidValueException>) = InvalidValueException(
+            reference = values(1),
+            value = values(2)
         )
     }
 }

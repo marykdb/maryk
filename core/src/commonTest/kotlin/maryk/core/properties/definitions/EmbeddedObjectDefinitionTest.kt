@@ -34,8 +34,8 @@ internal class EmbeddedObjectDefinitionTest {
             name = "MarykObject",
             properties = Properties
         ) {
-            override fun invoke(map: ObjectValues<MarykObject, Properties>) = MarykObject(
-                map(1)
+            override fun invoke(values: ObjectValues<MarykObject, Properties>) = MarykObject(
+                values(1)
             )
         }
     }

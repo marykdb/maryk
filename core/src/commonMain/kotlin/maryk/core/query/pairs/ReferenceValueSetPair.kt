@@ -38,9 +38,9 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
     companion object: SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair(
-            reference = map(1),
-            values = map(2)
+        override fun invoke(values: ObjectValues<ReferenceValueSetPair<*>, Properties>) = ReferenceValueSetPair(
+            reference = values(1),
+            values = values(2)
         )
     }
 }

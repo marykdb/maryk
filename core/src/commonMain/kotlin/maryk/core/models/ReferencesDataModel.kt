@@ -62,7 +62,7 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
             else -> throw ParseException("Expected a list or a single property reference in Exists filter")
         }
 
-        return this.map(context) {
+        return this.values(context) {
             valueMap
         }
     }

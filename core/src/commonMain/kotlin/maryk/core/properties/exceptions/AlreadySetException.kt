@@ -24,8 +24,8 @@ data class AlreadySetException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<AlreadySetException>) = AlreadySetException(
-            reference = map(1)
+        override fun invoke(values: SimpleObjectValues<AlreadySetException>) = AlreadySetException(
+            reference = values(1)
         )
     }
 }

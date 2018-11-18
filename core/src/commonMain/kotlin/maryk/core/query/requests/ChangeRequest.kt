@@ -41,9 +41,9 @@ data class ChangeRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     companion object: QueryDataModel<ChangeRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<ChangeRequest<*>, Properties>) = ChangeRequest(
-            dataModel = map(1),
-            objectChanges = map(2)
+        override fun invoke(values: ObjectValues<ChangeRequest<*>, Properties>) = ChangeRequest(
+            dataModel = values(1),
+            objectChanges = values(2)
         )
     }
 }

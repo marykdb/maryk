@@ -69,16 +69,16 @@ data class GetVersionedChangesRequest<DM: IsRootValuesDataModel<*>> internal con
     companion object: QueryDataModel<GetVersionedChangesRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<GetVersionedChangesRequest<*>, Properties>) = GetVersionedChangesRequest(
-            dataModel = map(1),
-            keys = map(2),
-            select = map(3),
-            filter = map(4),
-            order = map(5),
-            toVersion = map(6),
-            filterSoftDeleted = map(7),
-            fromVersion = map(8),
-            maxVersions = map(9)
+        override fun invoke(values: ObjectValues<GetVersionedChangesRequest<*>, Properties>) = GetVersionedChangesRequest(
+            dataModel = values(1),
+            keys = values(2),
+            select = values(3),
+            filter = values(4),
+            order = values(5),
+            toVersion = values(6),
+            filterSoftDeleted = values(7),
+            fromVersion = values(8),
+            maxVersions = values(9)
         )
     }
 }

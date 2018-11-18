@@ -56,8 +56,8 @@ data class RootMaryk(
         properties = Properties,
         singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DefinitionsContext, RootMaryk>
     ) {
-        override fun invoke(map: ObjectValues<RootMaryk, Properties>) = RootMaryk(
-            operations = map(1)
+        override fun invoke(values: ObjectValues<RootMaryk, Properties>) = RootMaryk(
+            operations = values(1)
         )
     }
 }

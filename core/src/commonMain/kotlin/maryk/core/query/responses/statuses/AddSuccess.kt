@@ -44,10 +44,10 @@ data class AddSuccess<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<AddSuccess<*>>) = AddSuccess<IsRootDataModel<IsPropertyDefinitions>>(
-            key = map(1),
-            version = map(2),
-            changes = map(3)
+        override fun invoke(values: SimpleObjectValues<AddSuccess<*>>) = AddSuccess<IsRootDataModel<IsPropertyDefinitions>>(
+            key = values(1),
+            version = values(2),
+            changes = values(3)
         )
     }
 }

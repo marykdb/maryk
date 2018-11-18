@@ -33,8 +33,8 @@ data class SetChange internal constructor(
         containedDataModel = SetValueChanges,
         referenceProperty = SetValueChanges.Properties.reference
     ) {
-        override fun invoke(map: ObjectValues<SetChange, SetChange.Properties>) = SetChange(
-            setValueChanges = map(1)
+        override fun invoke(values: ObjectValues<SetChange, SetChange.Properties>) = SetChange(
+            setValueChanges = values(1)
         )
 
         override fun writeJson(obj: SetChange, writer: IsJsonLikeWriter, context: RequestContext?) {

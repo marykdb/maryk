@@ -22,8 +22,8 @@ data class Prefix internal constructor(
     companion object: ReferencePairDataModel<String, Prefix, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Prefix, Properties>) = Prefix(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<Prefix, Properties>) = Prefix(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: Prefix, writer: IsJsonLikeWriter, context: RequestContext?) {

@@ -33,10 +33,10 @@ abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<DataModel<*, *>>) =
+        override fun invoke(values: SimpleObjectValues<DataModel<*, *>>) =
             object : DataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-                name = map(1),
-                properties = map(2)
+                name = values(1),
+                properties = values(2)
             ) {}
     }
 

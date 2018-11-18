@@ -131,15 +131,15 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<ReferenceDefinition<*>>) = ReferenceDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            unique = map(4),
-            minValue = map<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            maxValue = map<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            default = map<Bytes?>(7)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            dataModel = map(8)
+        override fun invoke(values: SimpleObjectValues<ReferenceDefinition<*>>) = ReferenceDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            unique = values(4),
+            minValue = values<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            maxValue = values<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            default = values<Bytes?>(7)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            dataModel = values(8)
         )
     }
 }

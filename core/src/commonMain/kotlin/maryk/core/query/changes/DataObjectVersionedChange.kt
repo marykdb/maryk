@@ -36,9 +36,9 @@ data class DataObjectVersionedChange<out DM: IsRootDataModel<*>>(
     companion object: QueryDataModel<DataObjectVersionedChange<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange(
-            key = map(1),
-            changes = map(2)
+        override fun invoke(values: ObjectValues<DataObjectVersionedChange<*>, Properties>) = DataObjectVersionedChange(
+            key = values(1),
+            changes = values(2)
         )
     }
 }

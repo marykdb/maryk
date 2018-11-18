@@ -91,7 +91,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
 internal class DataModelTest {
     @Test
     fun constructByMap() {
-        TestMarykModel.map {
+        TestMarykModel.values {
             mapNonNulls(
                 string with testMarykModelObject { string },
                 int with testMarykModelObject { int },
@@ -129,7 +129,7 @@ internal class DataModelTest {
     fun failValidationWithIncorrectValuesInMap() {
         val e = shouldThrow<ValidationUmbrellaException> {
             TestMarykModel.validate(
-                TestMarykModel.map {
+                TestMarykModel.values {
                     mapNonNulls(
                         string with "wrong",
                         int with 999
@@ -254,7 +254,7 @@ internal class DataModelTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val map = TestMarykModel.map {
+        val map = TestMarykModel.values {
             mapNonNulls(
                 string with "hay",
                 int with 4,

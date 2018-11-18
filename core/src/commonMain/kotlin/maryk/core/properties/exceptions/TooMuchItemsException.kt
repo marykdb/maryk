@@ -30,10 +30,10 @@ data class TooMuchItemsException internal constructor(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<TooMuchItemsException>) = TooMuchItemsException(
-            reference = map(1),
-            size = map(2),
-            maxSize = map(3)
+        override fun invoke(values: SimpleObjectValues<TooMuchItemsException>) = TooMuchItemsException(
+            reference = values(1),
+            size = values(2),
+            maxSize = values(3)
         )
     }
 }

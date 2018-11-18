@@ -23,7 +23,7 @@ private val context = RequestContext(mapOf(
 ))
 
 class ObjectAsMapConversionTest {
-    private val getRequestWithInjectable = GetRequest.map(context) {
+    private val getRequestWithInjectable = GetRequest.values(context) {
         mapNonNulls(
             dataModel with SimpleMarykModel,
             keys with listOf(key1, key2),

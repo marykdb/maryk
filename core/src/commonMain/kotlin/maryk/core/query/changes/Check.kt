@@ -23,8 +23,8 @@ data class Check internal constructor(
     companion object: ReferencePairDataModel<Any, Check, Properties>(
         properties = Properties
     ) {
-        override fun invoke(map: ObjectValues<Check, Properties>) = Check(
-            referenceValuePairs = map(1)
+        override fun invoke(values: ObjectValues<Check, Properties>) = Check(
+            referenceValuePairs = values(1)
         )
 
         override fun writeJson(obj: Check, writer: IsJsonLikeWriter, context: RequestContext?) {

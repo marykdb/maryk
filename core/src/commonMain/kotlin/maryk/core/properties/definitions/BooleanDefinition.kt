@@ -56,11 +56,11 @@ data class BooleanDefinition(
             }
         }
     ) {
-        override fun invoke(map: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
-            indexed = map(1),
-            required = map(2),
-            final = map(3),
-            default = map(4)
+        override fun invoke(values: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
+            indexed = values(1),
+            required = values(2),
+            final = values(3),
+            default = values(4)
         )
     }
 }

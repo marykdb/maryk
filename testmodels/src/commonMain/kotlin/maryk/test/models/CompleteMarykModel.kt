@@ -361,7 +361,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         multiForKey: TypedValue<MarykEnum, *>,
         enumEmbedded: MarykEnumEmbedded,
         mapWithEnum: Map<MarykEnumEmbedded, String>
-    ) = map {
+    ) = values {
         mapNonNulls(
             this.string with string,
             this.number with number,

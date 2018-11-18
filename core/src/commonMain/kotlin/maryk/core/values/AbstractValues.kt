@@ -16,20 +16,20 @@ import maryk.core.query.RequestContext
 import maryk.lib.exceptions.ParseException
 
 /**
- * Contains a [map] with all values related to a DataObject of [dataModel]
+ * Contains a [values] with all values related to a DataObject of [dataModel]
  */
 abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>>: Iterable<ValueItem> {
     abstract val dataModel: DM
-    internal abstract val map: IsValueItems
+    internal abstract val values: IsValueItems
     abstract val context: RequestContext?
 
-    /** Retrieve the map size */
-    val size get() = map.size
+    /** Retrieve the values size */
+    val size get() = values.size
 
-    override fun iterator() = map.iterator()
+    override fun iterator() = values.iterator()
 
     /**
-     * Utility method to check and map a value to a constructor property
+     * Utility method to check and values a value to a constructor property
      */
     inline operator fun <reified T> invoke(index: Int): T {
         val value = this.original(index)
@@ -55,7 +55,7 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         }
     }
 
-    /** Get property from map with wrapper in [getProperty] and convert it to native usage */
+    /** Get property from values with wrapper in [getProperty] and convert it to native usage */
     inline operator fun <TI: Any, reified TO: Any> invoke(getProperty: P.() -> IsPropertyDefinitionWrapper<TI, TO, *, DO>): TO? {
         val index = getProperty(
             this.dataModel.properties
@@ -64,29 +64,29 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         return invoke(index)
     }
 
-    /** Get property from map with wrapper in [getProperty] and convert it to native usage */
+    /** Get property from valuesvalues with wrapper in [getProperty] and convert it to native usage */
     fun <T: Any> original(getProperty: P.() -> IsPropertyDefinitionWrapper<T, *, *, DO>): T? {
         val index = getProperty(
             this.dataModel.properties
         ).index
 
         @Suppress("UNCHECKED_CAST")
-        return this.map[index] as T?
+        return this.values[index] as T?
     }
 
     /** Get ValueItem at [index] from internal list */
     fun getByInternalListIndex(index: Int) =
-        (this.map as IsValueItemsImpl).list[index]
+        (this.values as IsValueItemsImpl).list[index]
 
     /** Get the original value by [index] */
-    fun original(index: Int) = this.map[index]
+    fun original(index: Int) = this.values[index]
 
     override fun toString(): String {
         val name = if (dataModel is IsNamedDataModel<*>) {
             (dataModel as IsNamedDataModel<*>).name
         } else "ObjectValues"
 
-        return "$name $map"
+        return "$name $values"
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -107,14 +107,14 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         return value as T?
     }
 
-    /** Add to internal map with [index] and [value] */
-    internal fun addToMap(index: Int, value: Any) {
-        (this.map as MutableValueItems)[index] = value
+    /** Add to internal values with [index] and [value] */
+    internal fun add(index: Int, value: Any) {
+        (this.values as MutableValueItems)[index] = value
     }
 
-    /** Remove from internal map by [index] */
-    internal fun removeFromMap(index: Int): Any? {
-        return (this.map as MutableValueItems).remove(index)?.value
+    /** Remove from internal valuesvalues by [index] */
+    internal fun remove(index: Int): Any? {
+        return (this.values as MutableValueItems).remove(index)?.value
     }
 }
 

@@ -85,7 +85,7 @@ class MapReferenceTest {
         )
         valReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "5480d84f"
+        bc.bytes!!.toHex() shouldBe "5400d84f"
     }
 
     @Test
@@ -97,7 +97,7 @@ class MapReferenceTest {
         )
         subReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "61195480d84f"
+        bc.bytes!!.toHex() shouldBe "61195400d84f"
     }
 
     @Test
@@ -109,7 +109,7 @@ class MapReferenceTest {
         )
         keyReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "100a80a8c1"
+        bc.bytes!!.toHex() shouldBe "100a00a8c1"
     }
 
     @Test
@@ -121,6 +121,6 @@ class MapReferenceTest {
         )
         subKeyReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "6119100a80d84f"
+        bc.bytes!!.toHex() shouldBe "6119100a00d84f"
     }
 }

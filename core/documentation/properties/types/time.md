@@ -57,8 +57,8 @@ val def = TimeDefinition(
 ## Storage Byte representation
 It depends on the precision of the Time how it will be stored
 
-- `SECONDS` - 3 byte integer counting the seconds from midnight (0:00am)
-- `MILLIS` - 4 byte integer counting the milliseconds from midnight (0:00am)
+- `SECONDS` - 3 byte unsigned integer counting the seconds from midnight (0:00am)
+- `MILLIS` - 4 byte unsigned integer counting the milliseconds from midnight (0:00am)
 
 ## Transport Byte representation
 The bytes are transported in a different way depending on the precision of time.

@@ -71,7 +71,7 @@ data class Time(
         /** Get Time with seconds since midnight */
         fun ofSecondOfDay(secondOfDay: Int): Time {
             if(secondOfDay !in (0 until SECONDS_PER_DAY)){
-                throw ParseException("seconds of day out of reach for Time")
+                throw ParseException("seconds of day out of reach for Time: $secondOfDay in $SECONDS_PER_DAY")
             }
             val hours = (secondOfDay / SECONDS_PER_HOUR)
             var substractedSeconds = secondOfDay - (hours * SECONDS_PER_HOUR).toLong()

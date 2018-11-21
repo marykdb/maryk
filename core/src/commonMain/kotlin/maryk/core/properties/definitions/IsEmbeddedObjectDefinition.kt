@@ -3,20 +3,21 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.AbstractObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 
 /** Interface for property definitions containing embedded DataObjects of [DO] and context [CX]. */
 interface IsEmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> :
     IsValueDefinition<DO, CXI>,
     IsTransportablePropertyDefinitionType<DO>,
-    HasDefaultValueDefinition<DO>
+    HasDefaultValueDefinition<DO>,
+    IsEmbeddedDefinition<DM, P>
 {
-    val dataModel: DM
+    override val dataModel: DM
 
     /** Read JSON into ObjectValues */
     fun readJsonToValues(reader: IsJsonLikeReader, context: CXI?): ObjectValues<DO, P> =

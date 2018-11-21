@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.types.numeric.UInt32
 

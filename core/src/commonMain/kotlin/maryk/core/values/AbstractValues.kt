@@ -15,6 +15,8 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.lib.exceptions.ParseException
 
+typealias AnyAbstractValues = AbstractValues<Any, IsDataModel<AbstractPropertyDefinitions<Any>>, AbstractPropertyDefinitions<Any>>
+
 /**
  * Contains a [values] with all values related to a DataObject of [dataModel]
  */

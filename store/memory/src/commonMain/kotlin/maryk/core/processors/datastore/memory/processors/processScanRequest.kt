@@ -29,17 +29,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanR
             continue
         }
 
-        record.values.toValues(scanRequest.dataModel) { values, maxVersion ->
-            valuesWithMeta.add(
-                ValuesWithMetaData(
-                    key = record.key,
-                    values = values,
-                    isDeleted = false,
-                    firstVersion = record.firstVersion,
-                    lastVersion = maxVersion
-                )
-            )
-        }
+        valuesWithMeta += scanRequest.dataModel.recordToValueWithMeta(record)
 
         // Break when limit is found
         if (valuesWithMeta.size.toUInt() == scanRequest.limit) break

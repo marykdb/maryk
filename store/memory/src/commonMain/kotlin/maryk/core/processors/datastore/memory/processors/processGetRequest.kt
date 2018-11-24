@@ -28,17 +28,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processGetRe
                 continue
             }
 
-            record.values.toValues(getRequest.dataModel) { values, maxVersion ->
-                valuesWithMeta.add(
-                    ValuesWithMetaData(
-                        key = record.key,
-                        values = values,
-                        isDeleted = false,
-                        firstVersion = record.firstVersion,
-                        lastVersion = maxVersion
-                    )
-                )
-            }
+            valuesWithMeta += getRequest.dataModel.recordToValueWithMeta(record)
         }
     }
 

@@ -6,7 +6,9 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.memory.StoreAction
 import maryk.core.processors.datastore.memory.records.DataRecord
-import maryk.core.processors.datastore.memory.records.toDataRecordValueTree
+import maryk.core.processors.datastore.memory.records.IsDataRecordValue
+import maryk.core.processors.datastore.memory.records.DataRecordValue
+import maryk.core.processors.datastore.walkForStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
@@ -31,11 +33,16 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
             val index = dataList.binarySearch { it.key.compareTo(key) }
 
             if (index < 0) {
+                val recordValues = ArrayList<IsDataRecordValue>()
+                objectToAdd.walkForStorage { _, reference, _, value ->
+                    recordValues += DataRecordValue(reference, value, version)
+                }
+
                 dataList.add(
                     (index * -1) - 1,
                     DataRecord(
                         key = key,
-                        values = objectToAdd.toDataRecordValueTree(version),
+                        values = recordValues,
                         firstVersion = version,
                         lastVersion = version
                     )

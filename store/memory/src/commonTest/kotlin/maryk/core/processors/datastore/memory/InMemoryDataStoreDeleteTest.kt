@@ -43,6 +43,7 @@ class InMemoryDataStoreDeleteTest {
         deleteResponse.statuses.size shouldBe 1
         deleteResponse.statuses[0].statusType shouldBe SUCCESS
         with (deleteResponse.statuses[0]) {
+            statusType shouldBe SUCCESS
             shouldBeOfType<Success<SimpleMarykModel>>(this)
         }
 

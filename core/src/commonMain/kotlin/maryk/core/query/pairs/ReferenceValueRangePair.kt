@@ -1,7 +1,6 @@
 package maryk.core.query.pairs
 
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -9,6 +8,7 @@ import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrappe
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.ValueRange
+import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [range] of type [T] */
 data class ReferenceValueRangePair<T: Any> internal constructor(

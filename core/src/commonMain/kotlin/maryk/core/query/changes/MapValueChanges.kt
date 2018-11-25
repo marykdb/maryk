@@ -2,7 +2,6 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsByteTransportableMap
@@ -15,10 +14,12 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 
 /**
  * Changes for a map property containing keys [K] and values [V] referred by [reference]
  * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
+ * First keys will be deleted before values are added
  */
 data class MapValueChanges<K: Any, V: Any> internal constructor(
     override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>, *>,
@@ -73,6 +74,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
 /**
  * Convenience infix method to define an map value change
  * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
+ * First keys will be deleted before values are added
  */
 fun <K: Any, V: Any> IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>, *>.change(
     valuesToAdd: Map<K, V>? = null,

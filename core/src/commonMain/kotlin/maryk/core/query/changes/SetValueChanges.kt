@@ -14,7 +14,10 @@ import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
-/** Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues] */
+/**
+ * Changes for a set property of [T] referred by [reference] with [addValues] and [deleteValues]
+ * First values are deleted before adding new
+ */
 data class SetValueChanges<T: Any> internal constructor(
     override val reference: IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>,
     val addValues: Set<T>? = null,
@@ -58,6 +61,7 @@ private val valueDefinition = ContextualValueDefinition(
 /**
  * Convenience infix method to define avalues set value change
  * Set property of values [T] with [addValues] and [deleteValues] for changes
+ * First values are deleted before adding new
  */
 fun <T: Any> IsPropertyReference<Set<T>, IsCollectionDefinition<T, Set<T>, *, *>, *>.change(
     addValues: Set<T>? = null,

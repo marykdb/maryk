@@ -2,7 +2,6 @@ package maryk.core.query.changes
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsCollectionDefinition
@@ -17,17 +16,19 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 
 /**
  * Changes for a list property containing values of type [T]
- * Options are to [addValuesToEnd], [addValuesAtIndex], [deleteValues] and/or [deleteAtIndex]
+ * Options are to [deleteAtIndex], [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
+ * This is also the order of operation so mind changed indices while changing
  */
 data class ListValueChanges<T: Any> internal constructor(
     override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>,
-    val addValuesToEnd: List<T>? = null,
-    val addValuesAtIndex: Map<Int, T>? = null,
+    val deleteAtIndex: Set<Int>? = null,
     val deleteValues: List<T>? = null,
-    val deleteAtIndex: Set<Int>? = null
+    val addValuesAtIndex: Map<Int, T>? = null,
+    val addValuesToEnd: List<T>? = null
 ) : DefinedByReference<List<T>> {
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ListValueChanges<*>>() {
@@ -78,13 +79,14 @@ private val valueListDefinition = ListDefinition(
 
 /**
  * Convenience infix method to define an array value change
- * Options are to [addValuesToEnd], [addValuesAtIndex], [deleteValues] and/or [deleteAtIndex]
+ * Options are to [deleteAtIndex], [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
+ * This is also the order of operation so mind changed indices while changing
  */
 fun <T: Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>, *>.change(
-    addValuesToEnd: List<T>? = null,
-    addValuesAtIndex: Map<Int, T>? = null,
+    deleteAtIndex: Set<Int>? = null,
     deleteValues: List<T>? = null,
-    deleteAtIndex: Set<Int>? = null
+    addValuesAtIndex: Map<Int, T>? = null,
+    addValuesToEnd: List<T>? = null
 ) =
     ListValueChanges(
         reference = this,

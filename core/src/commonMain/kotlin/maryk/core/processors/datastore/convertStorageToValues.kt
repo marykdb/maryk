@@ -125,13 +125,12 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
             VALUE -> readValue(isAtEnd, index, qualifier, qIndex, addValueToOutput, readValueFromStorage, addToCache)
             LIST -> if (isAtEnd) {
                 @Suppress("UNCHECKED_CAST")
-                val list = ArrayList<Any>(
-                    readValueFromStorage(
-                        ListCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                        this.properties[index]!!
-                    ) as Int
-                )
+                val listCount = readValueFromStorage(
+                    ListCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                    this.properties[index]!!
+                ) as Int
 
+                val list = ArrayList<Any>(listCount)
                 val listValueAdder: ValueAdder = { i, value -> list.add(i, value) }
 
                 addToCache(offset) { q ->

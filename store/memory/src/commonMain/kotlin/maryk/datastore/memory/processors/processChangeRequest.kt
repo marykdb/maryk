@@ -3,9 +3,6 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.datastore.memory.InMemoryDataStore
-import maryk.datastore.memory.StoreAction
-import maryk.datastore.memory.records.DataRecord
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -13,6 +10,7 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.ListChange
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -20,6 +18,9 @@ import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.datastore.memory.InMemoryDataStore
+import maryk.datastore.memory.StoreAction
+import maryk.datastore.memory.records.DataRecord
 import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -111,6 +112,35 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                     if (validationExceptions.isNullOrEmpty()) {
                         for (reference in change.references) {
                             objectToChange.deleteByReference<Any>(reference, version)
+                        }
+                    }
+                }
+                is ListChange -> {
+                    if (validationExceptions.isNullOrEmpty()) {
+                        for (listChange in change.listValueChanges) {
+                            val list = objectToChange.getList(listChange.reference)
+                            val originalCount = list.size
+                            listChange.deleteAtIndex?.let {
+                                for(deleteIndex in it) {
+                                    list.removeAt(deleteIndex)
+                                }
+                            }
+                            listChange.deleteValues?.let {
+                                for(deleteValue in it) {
+                                    list.remove(deleteValue)
+                                }
+                            }
+                            listChange.addValuesAtIndex?.let {
+                                for((index, value) in it) {
+                                    list.add(index, value)
+                                }
+                            }
+                            listChange.addValuesToEnd?.let {
+                                for(value in it) {
+                                    list.add(value)
+                                }
+                            }
+                            objectToChange.setListValue(listChange.reference, list, originalCount, version, isWithHistory)
                         }
                     }
                 }

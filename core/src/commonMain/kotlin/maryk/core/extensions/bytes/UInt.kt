@@ -3,7 +3,7 @@
 package maryk.core.extensions.bytes
 
 /** Write the bytes of this Int to a [writer] */
-internal fun UInt.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
+fun UInt.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
     if (length !in 3..4) { throw IllegalArgumentException("Length should be within range of 3 to 4") }
 
     for (it in 0 until length) {

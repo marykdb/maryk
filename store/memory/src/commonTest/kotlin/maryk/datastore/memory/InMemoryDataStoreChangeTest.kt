@@ -3,10 +3,12 @@
 package maryk.datastore.memory
 
 import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
@@ -16,6 +18,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.lib.time.DateTime
+import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
@@ -32,8 +35,8 @@ class InMemoryDataStoreChangeTest {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 TestMarykModel.add(
-                    TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true),
-                    TestMarykModel("haha2", 3, 8u, 1.244, DateTime(2018, 1, 2), false),
+                    TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true, listOfString = listOf("a", "b", "c"), map = mapOf(Time(2, 3, 5) to "test"), set = setOf(Date(2018, 3, 4))),
+                    TestMarykModel("haha2", 3, 8u, 1.244, DateTime(2018, 1, 2), false, listOfString = listOf("c", "d", "e"), map = mapOf(Time(12, 33, 45) to "another"), set = setOf(Date(2018, 11, 25))),
                     TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, reference = TestMarykModel.key("AAACKwEBAQAC"))
                 )
             )
@@ -138,5 +141,38 @@ class InMemoryDataStoreChangeTest {
 
         getResponse.values.size shouldBe 1
         getResponse.values.first().values { reference } shouldBe null
+    }
+
+    @Test
+    fun executeChangeListRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[0].change(
+                    ListChange(
+                        TestMarykModel.ref { listOfString }.change(
+                            deleteAtIndex = setOf(1),
+                            deleteValues = listOf("c"),
+                            addValuesAtIndex = mapOf(
+                                0 to "zero"
+                            ),
+                            addValuesToEnd = listOf("x", "y", "z")
+                        )
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
+            shouldBeRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            TestMarykModel.get(keys[0])
+        )
+
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().values { listOfString } shouldBe listOf("zero", "a", "x", "y", "z")
     }
 }

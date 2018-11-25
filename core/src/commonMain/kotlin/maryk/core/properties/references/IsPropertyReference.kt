@@ -7,9 +7,9 @@ import maryk.core.protobuf.WriteCacheWriter
 typealias AnyPropertyReference = IsPropertyReference<*, *, *>
 
 /**
- * Abstract for reference to a property of type [T] defined by [D]
+ * Abstract for reference to a property of type [T] defined by [D] in Values [V]
  */
-interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, C: Any> {
+interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, V: Any> {
     val completeName: String
     val propertyDefinition: D
 
@@ -38,7 +38,7 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, C: Any> {
     fun writeStorageBytes(writer: (byte: Byte) -> Unit)
 
     /** Resolve the value from the given [values] */
-    fun resolve(values: C): T?
+    fun resolve(values: V): T?
 
     /** Get [value] with the reference */
     fun resolveFromAny(value: Any): Any

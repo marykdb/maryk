@@ -23,12 +23,21 @@ import maryk.yaml.YamlWriter
  * Defines a range of [from] until [to] of type [T].
  * With [inclusiveFrom] and [inclusiveTo] set to true (default) it will include [from] or [to]
  */
-data class ValueRange<T: Any> internal constructor(
+data class ValueRange<T: Comparable<T>> internal constructor(
     val from: T,
     val to: T,
     val inclusiveFrom: Boolean = true,
     val inclusiveTo: Boolean = true
 ) {
+    /** Check if value is contained in range */
+    operator fun contains(value: T): Boolean = when {
+        value < from -> false
+        value > to -> false
+        value == from && !inclusiveFrom -> false
+        value == to && !inclusiveTo -> false
+        else -> true
+    }
+
     object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
         val from = add(1, "from", ContextualValueDefinition(
             contextualResolver = { context: RequestContext? ->
@@ -54,7 +63,7 @@ data class ValueRange<T: Any> internal constructor(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ValueRange<*>, Properties>) = ValueRange(
-            from = values(1),
+            from = values<Comparable<Any>>(1),
             to = values(2),
             inclusiveFrom = values(3),
             inclusiveTo = values(4)

@@ -4,6 +4,7 @@ import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
@@ -28,11 +29,12 @@ data class Range internal constructor(
     constructor(vararg range: ReferenceValueRangePair<*>): this(range.toList())
 
     object Properties : ObjectPropertyDefinitions<Range>() {
+        @Suppress("UNCHECKED_CAST")
         val ranges = Properties.add(1, "referenceRangePairs",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(
                     dataModel = { ReferenceValueRangePair }
-                )
+                ) as IsValueDefinition<ReferenceValueRangePair<*>, IsPropertyContext>
             ),
             Range::referenceRangePairs
         )
@@ -95,8 +97,8 @@ data class Range internal constructor(
                         @Suppress("UNCHECKED_CAST")
                         listOfRanges.add(
                             ReferenceValueRangePair(
-                                reference as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>,
-                                range as ValueRange<Any>
+                                reference as IsPropertyReference<Comparable<Any>, IsValuePropertyDefinitionWrapper<Comparable<Any>, *, IsPropertyContext, *>, *>,
+                                range as ValueRange<Comparable<Any>>
                             )
                         )
                     }

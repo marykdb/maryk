@@ -11,6 +11,7 @@ import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
+import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.lib.time.Instant
 
@@ -28,24 +29,28 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDelet
         val version = Instant.getCurrentEpochTimeInMillis().toULong()
 
         for (key in deleteRequest.objectsToDelete) {
-            val index = dataList.binarySearch { it.key.compareTo(key) }
+            try {
+                val index = dataList.binarySearch { it.key.compareTo(key) }
 
-            val status: IsDeleteResponseStatus<DM> = when {
-                index > -1 -> {
-                    if (deleteRequest.hardDelete) {
-                        dataList.removeAt(index)
-                    } else {
-                        val newRecord = dataList[index].copy(
-                            isDeleted = Deleted(version)
-                        )
-                        dataList[index] = newRecord
+                val status: IsDeleteResponseStatus<DM> = when {
+                    index > -1 -> {
+                        if (deleteRequest.hardDelete) {
+                            dataList.removeAt(index)
+                        } else {
+                            val newRecord = dataList[index].copy(
+                                isDeleted = Deleted(version)
+                            )
+                            dataList[index] = newRecord
+                        }
+                        Success(version)
                     }
-                    Success(version)
+                    else -> DoesNotExist(key)
                 }
-                else -> DoesNotExist(key)
-            }
 
-            statuses.add(status)
+                statuses.add(status)
+            } catch (e: Throwable) {
+                statuses.add(ServerFail(e.toString()))
+            }
         }
     }
 

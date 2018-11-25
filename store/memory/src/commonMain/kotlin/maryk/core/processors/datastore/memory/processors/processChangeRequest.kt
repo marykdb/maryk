@@ -77,47 +77,55 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
     version: ULong,
     isWithHistory: Boolean
 ): IsChangeResponseStatus<DM> {
-    var validationExceptions: MutableList<ValidationException>? = null
+    try {
+        var validationExceptions: MutableList<ValidationException>? = null
 
-    fun addValidationFail(ve: ValidationException) {
-        if (validationExceptions == null) {
-            validationExceptions = mutableListOf()
+        fun addValidationFail(ve: ValidationException) {
+            if (validationExceptions == null) {
+                validationExceptions = mutableListOf()
+            }
+            validationExceptions!!.add(ve)
         }
-        validationExceptions!!.add(ve)
-    }
 
-    changes.forEach { change ->
-        when(change) {
-            is Check -> {
-                for ((reference, value) in change.referenceValuePairs) {
-                    if (objectToChange[reference] != value) {
-                        addValidationFail(
-                            InvalidValueException(reference, value.toString())
-                        )
+        for (change in changes) {
+            when (change) {
+                is Check -> {
+                    for ((reference, value) in change.referenceValuePairs) {
+                        if (objectToChange[reference] != value) {
+                            addValidationFail(
+                                InvalidValueException(reference, value.toString())
+                            )
+                        }
                     }
                 }
-            }
-            is Change -> {
-                for ((reference, value) in change.referenceValuePairs) {
-                    objectToChange.setValue(
-                        reference, value, version, isWithHistory
-                    )
+                is Change -> {
+                    if (validationExceptions.isNullOrEmpty()) {
+                        for ((reference, value) in change.referenceValuePairs) {
+                            objectToChange.setValue(
+                                reference, value, version, isWithHistory
+                            )
+                        }
+                    }
                 }
-            }
-            is Delete -> {
-                for (reference in change.references) {
-                    objectToChange.deleteByReference<Any>(reference, version)
+                is Delete -> {
+                    if (validationExceptions.isNullOrEmpty()) {
+                        for (reference in change.references) {
+                            objectToChange.deleteByReference<Any>(reference, version)
+                        }
+                    }
                 }
+                else -> return ServerFail("Unsupported operation $objectToChange")
             }
-            else -> return ServerFail("Unsupported operation $objectToChange")
         }
-    }
 
-    // Return fail if any validationExceptions were caught
-    validationExceptions?.let {
-        return ValidationFail(it)
-    }
+        // Return fail if any validationExceptions were caught
+        validationExceptions?.let {
+            return ValidationFail(it)
+        }
 
-    // Nothing skipped out so must be a success
-    return Success(version)
+        // Nothing skipped out so must be a success
+        return Success(version)
+    } catch (e: Throwable) {
+        return ServerFail(e.toString())
+    }
 }

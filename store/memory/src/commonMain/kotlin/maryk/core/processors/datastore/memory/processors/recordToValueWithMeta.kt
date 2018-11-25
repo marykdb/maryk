@@ -7,6 +7,7 @@ import maryk.core.processors.datastore.convertStorageToValues
 import maryk.core.processors.datastore.memory.records.DataRecord
 import maryk.core.processors.datastore.memory.records.DataRecordHistoricValues
 import maryk.core.processors.datastore.memory.records.DataRecordValue
+import maryk.core.processors.datastore.memory.records.DeletedValue
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValuesWithMetaData
 
@@ -36,13 +37,18 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                     node.value
                 }
                 is DataRecordHistoricValues<*> -> {
-                    node.history.last().let { latest ->
-                        if (latest.version > maxVersion) {
-                            maxVersion = latest.version
+                    when (val latest = node.history.last()) {
+                        is DataRecordValue<*> -> {
+                            if (latest.version > maxVersion) {
+                                maxVersion = latest.version
+                            }
+                            latest.value
                         }
-                        latest.value
+                        is DeletedValue<*> -> {} // skip deleted
+                        else -> throw Exception("Unknown value type")
                     }
                 }
+                is DeletedValue<*> -> {} // Skip deleted
             }
         }
     )

@@ -1,6 +1,7 @@
 package maryk.core.values
 
 import maryk.core.models.IsNamedDataModel
+import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.RequestContext
@@ -41,5 +42,13 @@ data class Values<DM: IsValuesDataModel<P>, P: PropertyDefinitions> internal con
     override fun toString(): String {
         val modelName = (dataModel as? IsNamedDataModel<*>)?.name ?: dataModel
         return "Values<$modelName>$values"
+    }
+
+    /**
+     * Validates the contents of values
+     */
+    fun validate() {
+        @Suppress("UNCHECKED_CAST")
+        (this.dataModel as IsTypedValuesDataModel<DM, P>).validate(this)
     }
 }

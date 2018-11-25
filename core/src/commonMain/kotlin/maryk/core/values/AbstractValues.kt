@@ -53,6 +53,11 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
         return when {
             transformedValue is T -> transformedValue
             value is T -> value
+            value == Unit -> {
+                if (valueDef.required) {
+                    throw ParseException("Property '${valueDef.name}' with value '$value' should be non null because is required")
+                } else null as T
+            }
             else -> throw ParseException("Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as? IsTransportablePropertyDefinitionType<*>)?.propertyDefinitionType?.name ?: "unknown"}")
         }
     }

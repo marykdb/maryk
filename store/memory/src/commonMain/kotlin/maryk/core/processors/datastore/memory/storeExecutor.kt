@@ -22,14 +22,14 @@ import maryk.core.query.requests.ScanRequest
 internal typealias AnyDataList = MutableList<DataRecord<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>>
 
 @Suppress("UNCHECKED_CAST")
-internal val storeExecutor: StoreExecutor<*, *> = { _, storeAction, dataList ->
+internal val storeExecutor: StoreExecutor<*, *> = { store, storeAction, dataList ->
     when(storeAction.request) {
         is AddRequest<*, *> ->
             processAddRequest(storeAction as AnyAddStoreAction, dataList)
         is GetRequest<*, *> ->
             processGetRequest(storeAction as AnyGetStoreAction, dataList as AnyDataList)
         is ChangeRequest<*> ->
-            processChangeRequest(storeAction as AnyChangeStoreAction, dataList as AnyDataList)
+            store.processChangeRequest(storeAction as AnyChangeStoreAction, dataList as AnyDataList)
         is DeleteRequest<*> ->
             processDeleteRequest(storeAction as AnyDeleteStoreAction, dataList as AnyDataList)
         is ScanRequest<*, *> ->

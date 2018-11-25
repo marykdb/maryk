@@ -3,12 +3,15 @@
 package maryk.core.processors.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.processors.datastore.memory.InMemoryDataStore
 import maryk.core.processors.datastore.memory.StoreAction
 import maryk.core.processors.datastore.memory.records.DataRecord
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
+import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
@@ -22,7 +25,7 @@ import maryk.lib.time.Instant
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChangeRequest(
+internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> InMemoryDataStore.processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataList: MutableList<DataRecord<DM, P>>
 ) {
@@ -51,7 +54,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 
             val status: IsChangeResponseStatus<DM> = when {
                 index > -1 -> {
-                    applyChanges(objectToChange, objectChange.changes, version)
+                    applyChanges(objectToChange, objectChange.changes, version, this.storeAllVersions)
                 }
                 else -> DoesNotExist(objectChange.key)
             }
@@ -71,7 +74,8 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
     objectToChange: DataRecord<DM, P>,
     changes: List<IsChange>,
-    version: ULong
+    version: ULong,
+    isWithHistory: Boolean
 ): IsChangeResponseStatus<DM> {
     var validationExceptions: MutableList<ValidationException>? = null
 
@@ -93,7 +97,19 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                     }
                 }
             }
-            else -> ServerFail<DM>("Unsupported operation $objectToChange")
+            is Change -> {
+                for ((reference, value) in change.referenceValuePairs) {
+                    objectToChange.setValue(
+                        reference, value, version, isWithHistory
+                    )
+                }
+            }
+            is Delete -> {
+                for (reference in change.references) {
+                    objectToChange.deleteByReference<Any>(reference, version)
+                }
+            }
+            else -> return ServerFail("Unsupported operation $objectToChange")
         }
     }
 

@@ -22,7 +22,9 @@ import maryk.lib.exceptions.ParseException
  */
 data class Range internal constructor(
     val referenceRangePairs: List<ReferenceValueRangePair<*>>
-) {
+) : IsFilter {
+    override val filterType = FilterType.Range
+
     constructor(vararg range: ReferenceValueRangePair<*>): this(range.toList())
 
     object Properties : ObjectPropertyDefinitions<Range>() {

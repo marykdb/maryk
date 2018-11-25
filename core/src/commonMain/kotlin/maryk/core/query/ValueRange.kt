@@ -8,8 +8,6 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.query.filters.FilterType
-import maryk.core.query.filters.IsFilter
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -30,9 +28,7 @@ data class ValueRange<T: Any> internal constructor(
     val to: T,
     val inclusiveFrom: Boolean = true,
     val inclusiveTo: Boolean = true
-) : IsFilter {
-    override val filterType = FilterType.Range
-
+) {
     object Properties : ObjectPropertyDefinitions<ValueRange<*>>() {
         val from = add(1, "from", ContextualValueDefinition(
             contextualResolver = { context: RequestContext? ->

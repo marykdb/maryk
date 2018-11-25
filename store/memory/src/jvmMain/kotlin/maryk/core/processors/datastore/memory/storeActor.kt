@@ -13,6 +13,10 @@ internal actual fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Corou
     val listOfData = LinkedList<DataRecord<DM, P>>()
 
     for (msg in channel) { // iterate over incoming messages
-        executor(Unit, store, msg, listOfData)
+        try {
+            executor(Unit, store, msg, listOfData)
+        } catch (e: Throwable) {
+            msg.response.completeExceptionally(e)
+        }
     }
 }

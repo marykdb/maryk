@@ -197,19 +197,24 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         } else when (val matchedValue = values[valueIndex]) {
             is DataRecordValue<*> -> {
                 if (isWithHistory) {
-                    @Suppress("UNCHECKED_CAST")
-                    (values as MutableList<IsDataRecordNode>)[valueIndex] =
-                            DataRecordHistoricValues(
-                                referenceToCompareTo,
-                                listOf(
-                                    matchedValue as DataRecordValue<Any>,
-                                    DataRecordValue(referenceToCompareTo, value, version)
+                    // Only store value if was not already value
+                    if (matchedValue.value != value) {
+                        @Suppress("UNCHECKED_CAST")
+                        (values as MutableList<IsDataRecordNode>)[valueIndex] =
+                                DataRecordHistoricValues(
+                                    referenceToCompareTo,
+                                    listOf(
+                                        matchedValue as DataRecordValue<Any>,
+                                        DataRecordValue(referenceToCompareTo, value, version)
+                                    )
                                 )
-                            )
-
+                    }
                 } else {
-                    (values as MutableList<IsDataRecordNode>)[valueIndex] =
-                            DataRecordValue(referenceToCompareTo, value, version)
+                    val lastValue = (values as MutableList<IsDataRecordNode>).last()
+                    // Only store value if was not already value
+                    if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
+                        values[valueIndex] = DataRecordValue(referenceToCompareTo, value, version)
+                    }
                 }
             }
             is DeletedValue<*> -> {
@@ -217,10 +222,14 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
                         DataRecordValue(referenceToCompareTo, value, version)
             }
             is DataRecordHistoricValues<*> -> {
-                @Suppress("UNCHECKED_CAST")
-                (matchedValue.history as MutableList<DataRecordValue<*>>).add(
-                    DataRecordValue(referenceToCompareTo, value, version)
-                )
+                val lastValue = (values as MutableList<IsDataRecordNode>).last()
+                // Only store value if was not already value
+                if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
+                    @Suppress("UNCHECKED_CAST")
+                    (matchedValue.history as MutableList<DataRecordValue<*>>).add(
+                        DataRecordValue(referenceToCompareTo, value, version)
+                    )
+                }
             }
         }
     }

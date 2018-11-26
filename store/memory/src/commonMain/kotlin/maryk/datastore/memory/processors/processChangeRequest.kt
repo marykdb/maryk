@@ -144,7 +144,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                         }
                     }
                 }
-                else -> return ServerFail("Unsupported operation $objectToChange")
+                else -> return ServerFail("Unsupported operation $change")
             }
         }
 

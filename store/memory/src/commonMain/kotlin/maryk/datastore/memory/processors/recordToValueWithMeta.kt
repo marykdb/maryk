@@ -10,6 +10,7 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
+import maryk.datastore.memory.records.IsDataRecordNode
 
 /**
  * Processes [record] values to a ValuesWithMeta object
@@ -23,6 +24,12 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     val values = this.convertStorageToValues(
         getQualifier = {
             valueIndex++
+
+            // skip deleted values
+            while (valueIndex < record.values.size  && isDeletedNode(record.values[valueIndex])) {
+                valueIndex++
+            }
+
             if (valueIndex < record.values.size) {
                 record.values[valueIndex].reference
             } else null
@@ -61,3 +68,6 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         lastVersion = maxVersion
     )
 }
+
+private fun isDeletedNode(node: IsDataRecordNode) =
+    node is DeletedValue<*> || (node is DataRecordHistoricValues<*> && node.history.last() is DeletedValue<*>)

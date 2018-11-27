@@ -51,11 +51,9 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         version: ULong
     ): IsDataRecordNode? {
         val referenceToCompareTo = getReferenceAsByteArray(reference)
-
         val valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
         }
-
         return deleteByIndex<T>(valueIndex, referenceToCompareTo, version)
     }
 

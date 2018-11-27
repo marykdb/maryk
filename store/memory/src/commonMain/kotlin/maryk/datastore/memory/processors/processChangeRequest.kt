@@ -3,14 +3,18 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.references.SetReference
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.SetChange
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -141,6 +145,26 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 }
                             }
                             objectToChange.setListValue(listChange.reference, list, originalCount, version, isWithHistory)
+                        }
+                    }
+                }
+                is SetChange -> {
+                    if (validationExceptions.isNullOrEmpty()) {
+                        @Suppress("UNCHECKED_CAST")
+                        for (setChange in change.setValueChanges) {
+                            val setDefinition = setChange.reference.propertyDefinition as SetPropertyDefinitionWrapper<Any, IsPropertyContext, Any>
+                            setChange.addValues?.let {
+                                for(value in it) {
+                                    val setItemRef = setDefinition.getItemRef(value, setChange.reference as SetReference<Any, IsPropertyContext>)
+                                    objectToChange.setValue(setItemRef, value, version)
+                                }
+                            }
+                            setChange.deleteValues?.let {
+                                for(value in it) {
+                                    val setItemRef = setDefinition.getItemRef(value, setChange.reference as SetReference<Any, IsPropertyContext>)
+                                    objectToChange.deleteByReference<Any>(setItemRef, version)
+                                }
+                            }
                         }
                     }
                 }

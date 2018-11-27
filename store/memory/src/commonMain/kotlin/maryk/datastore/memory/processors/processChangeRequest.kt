@@ -8,12 +8,14 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.SetReference
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
@@ -163,6 +165,27 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 for(value in it) {
                                     val setItemRef = setDefinition.getItemRef(value, setChange.reference as SetReference<Any, IsPropertyContext>)
                                     objectToChange.deleteByReference<Any>(setItemRef, version)
+                                }
+                            }
+                        }
+                    }
+                }
+                is MapChange -> {
+                    if (validationExceptions.isNullOrEmpty()) {
+                        for (mapChange in change.mapValueChanges) {
+                            @Suppress("UNCHECKED_CAST")
+                            val mapReference = mapChange.reference as MapReference<Any, Any, IsPropertyContext>
+                            val mapDefinition = mapReference.propertyDefinition.definition
+                            mapChange.valuesToAdd?.let {
+                                for((key, value) in it) {
+                                    val mapValueRef = mapDefinition.getValueRef(key, mapReference)
+                                    objectToChange.setValue(mapValueRef, value, version)
+                                }
+                            }
+                            mapChange.keysToDelete?.let {
+                                for(key in it) {
+                                    val mapValueRef = mapDefinition.getValueRef(key, mapReference)
+                                    objectToChange.deleteByReference<Any>(mapValueRef, version)
                                 }
                             }
                         }

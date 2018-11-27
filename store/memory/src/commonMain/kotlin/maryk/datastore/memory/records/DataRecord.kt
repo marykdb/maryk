@@ -158,8 +158,8 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         valueIndex: Int,
         referenceToCompareTo: ByteArray,
         version: ULong
-    ): IsDataRecordNode? {
-        return if (valueIndex < 0) {
+    ) = 
+        if (valueIndex < 0) {
             null
         } else {
             when (val matchedValue = values[valueIndex]) {
@@ -177,7 +177,6 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
                 is DeletedValue<*> -> matchedValue
             }
         }
-    }
 
     private fun setValueAtIndex(
         valueIndex: Int,

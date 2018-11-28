@@ -34,6 +34,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDelet
 
                 val status: IsDeleteResponseStatus<DM> = when {
                     index > -1 -> {
+                        dataStore.removeFromUniqueIndices(dataStore.records[index])
                         if (deleteRequest.hardDelete) {
                             dataStore.records.removeAt(index)
                         } else {

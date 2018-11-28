@@ -42,6 +42,13 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
         throw DefNotFoundException("Model ${this.name}: ${e.message}")
     }
 
+    /** Get PropertyReference by bytes by reading the storage bytes [reader] until [length] is reached. */
+    fun getPropertyReferenceByStorageBytes(length: Int, reader: () -> Byte, context: IsPropertyContext? = null) = try {
+        this.properties.getPropertyReferenceByStorageBytes(length, reader, context)
+    } catch (e: DefNotFoundException) {
+        throw DefNotFoundException("Model ${this.name}: ${e.message}")
+    }
+
     companion object {
         fun calculateKeySize(keyDefinitions: Array<FixedBytesProperty<out Any>>): Int {
             var totalBytes = keyDefinitions.size - 1 // Start with adding size of separators

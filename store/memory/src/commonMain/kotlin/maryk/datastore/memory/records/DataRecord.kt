@@ -21,14 +21,19 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
     val isDeleted: DeleteState = NeverDeleted
 ) {
     /** Get value by [reference] */
-    operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>): T? {
-        val referenceToCompareTo = getReferenceAsByteArray(reference)
+    operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>): T? =
+        get(getReferenceAsByteArray(reference))
 
+    /** Get value by [reference] */
+    operator fun <T : Any> get(reference: ByteArray): T? =
+        getValue<T>(reference)?.value
+
+    /** Get value by [reference] */
+    fun <T : Any> getValue(reference: ByteArray): DataRecordValue<T>? {
         val valueIndex = values.binarySearch {
-            it.reference.compareTo(referenceToCompareTo)
+            it.reference.compareTo(reference)
         }
-
-        return getValueAtIndex<T>(valueIndex)?.value
+        return getValueAtIndex(valueIndex)
     }
 
     fun <T: Any> setValue(
@@ -158,7 +163,7 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         valueIndex: Int,
         referenceToCompareTo: ByteArray,
         version: ULong
-    ) = 
+    ) =
         if (valueIndex < 0) {
             null
         } else {

@@ -27,6 +27,7 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.DataStore
 import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -34,7 +35,7 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataMode
 
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> InMemoryDataStore.processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
-    dataList: MutableList<DataRecord<DM, P>>
+    dataStore: DataStore<DM, P>
 ) {
     val changeRequest = storeAction.request
     val version = Instant.getCurrentEpochTimeInMillis().toULong()
@@ -43,8 +44,8 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> InMemoryData
 
     if (changeRequest.objectChanges.isNotEmpty()) {
         objectChanges@for (objectChange in changeRequest.objectChanges) {
-            val index = dataList.binarySearch { it.key.compareTo(objectChange.key) }
-            val objectToChange = dataList[index]
+            val index = dataStore.records.binarySearch { it.key.compareTo(objectChange.key) }
+            val objectToChange = dataStore.records[index]
 
             val lastVersion = objectChange.lastVersion
             // Check if version is within range

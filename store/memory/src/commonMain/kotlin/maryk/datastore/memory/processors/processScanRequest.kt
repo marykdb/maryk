@@ -3,27 +3,30 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.datastore.memory.StoreAction
-import maryk.datastore.memory.records.DataRecord
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
+import maryk.datastore.memory.StoreAction
+import maryk.datastore.memory.records.DataStore
 
 internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyScanStoreAction = ScanStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanRequest(storeAction: ScanStoreAction<DM, P>, dataList: MutableList<DataRecord<DM, P>>) {
+internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanRequest(
+    storeAction: ScanStoreAction<DM, P>,
+    dataStore: DataStore<DM, P>
+) {
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
 
-    val startIndex = dataList.binarySearch { it.key.compareTo(scanRequest.startKey) }.let {
+    val startIndex = dataStore.records.binarySearch { it.key.compareTo(scanRequest.startKey) }.let {
         // If negative start at first entry point
         if (it < 0) it * -1 + 1 else it
     }
 
-    for (index in startIndex until dataList.size) {
-        val record = dataList[index]
+    for (index in startIndex until dataStore.records.size) {
+        val record = dataStore.records[index]
 
         if (scanRequest.filterData(record)) {
             continue

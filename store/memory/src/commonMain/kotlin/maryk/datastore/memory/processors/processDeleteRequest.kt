@@ -11,7 +11,7 @@ import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.datastore.memory.StoreAction
-import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.DeleteState.Deleted
 import maryk.lib.time.Instant
 
@@ -20,7 +20,7 @@ internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataMode
 
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
-    dataList: MutableList<DataRecord<DM, P>>
+    dataStore: DataStore<DM, P>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
@@ -30,17 +30,17 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDelet
 
         for (key in deleteRequest.objectsToDelete) {
             try {
-                val index = dataList.binarySearch { it.key.compareTo(key) }
+                val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 
                 val status: IsDeleteResponseStatus<DM> = when {
                     index > -1 -> {
                         if (deleteRequest.hardDelete) {
-                            dataList.removeAt(index)
+                            dataStore.records.removeAt(index)
                         } else {
-                            val newRecord = dataList[index].copy(
+                            val newRecord = dataStore.records[index].copy(
                                 isDeleted = Deleted(version)
                             )
-                            dataList[index] = newRecord
+                            dataStore.records[index] = newRecord
                         }
                         Success(version)
                     }

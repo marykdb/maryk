@@ -131,7 +131,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> doFilter(fil
             val regExFilter = filter as RegEx
             for ((propRef, regEx) in regExFilter.referenceValuePairs) {
                 dataRecord[propRef]?.let {
-                    if(!Regex(regEx).matches(it)) return false
+                    if(!regEx.matches(it)) return false
                 }
             }
             return true

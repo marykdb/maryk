@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -10,6 +9,7 @@ import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -24,7 +24,6 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
         context: RequestContext?
     ) {
         writeStartObject()
-
         for (pair in listOfPairs) {
             writeFieldName(
                 ReferenceValuePair.Properties.reference.definition.asString(pair.reference, context)
@@ -32,7 +31,6 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
             ReferenceValuePair.Properties.reference.capture(context, pair.reference)
             ReferenceValuePair.Properties.value.definition.writeJsonValue(pair.value, this, context)
         }
-
         writeEndObject()
     }
 

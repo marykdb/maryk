@@ -180,12 +180,12 @@ class FilterWithFetchRequestKtTest {
     @Test
     fun doRegExFilter() {
         doFilter(
-            RegEx(TestMarykModel.ref { string } with "^h.*$"),
+            RegEx(TestMarykModel.ref { string } with Regex("^h.*$")),
             value1
         ) shouldBe true
 
         doFilter(
-            RegEx(TestMarykModel.ref { string } with "^b.*$"),
+            RegEx(TestMarykModel.ref { string } with Regex("^b.*$")),
             value1
         ) shouldBe false
     }

@@ -4,7 +4,6 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.ReferenceType.MAP
@@ -51,8 +50,7 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
                 // calculate length of index of setDefinition
                 (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
                 // add bytes for map key
-                @Suppress("UNCHECKED_CAST")
-                (mapDefinition.keyDefinition as IsFixedBytesEncodable<K>).calculateStorageByteLength(key)
+                this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key)
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
@@ -61,8 +59,7 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
         // Write set index with a SetValue type
         this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(MAP.value, writer)
         // Write value bytes
-        @Suppress("UNCHECKED_CAST")
-        (mapDefinition.keyDefinition as IsFixedBytesEncodable<K>).writeStorageBytes(key, writer)
+        this.mapDefinition.keyDefinition.writeStorageBytes(key, writer)
     }
 
     override fun resolve(values: Map<K, V>): V? {

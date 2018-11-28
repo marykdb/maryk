@@ -2,6 +2,8 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.protobuf.ProtoBuf
@@ -44,6 +46,19 @@ open class SetReference<T: Any, CX: IsPropertyContext> internal constructor(
             }
             else -> throw ParseException("Unknown Set reference type $protoKey")
         }
+    }
+
+    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+        return if (referenceType == CompleteReferenceType.SET) {
+            @Suppress("UNCHECKED_CAST")
+            val setValueDefinition = (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
+
+            val setItem = setValueDefinition.readStorageBytes(
+                (setValueDefinition as IsFixedBytesEncodable<*>).byteSize,
+                reader
+            )
+            SetItemReference(setItem, propertyDefinition.definition, this)
+        } else throw Exception("Unknown reference type below Set: $referenceType")
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {

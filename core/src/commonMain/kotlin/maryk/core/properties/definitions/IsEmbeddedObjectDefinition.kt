@@ -1,12 +1,8 @@
 package maryk.core.properties.definitions
 
-import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 
@@ -32,23 +28,4 @@ interface IsEmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>,
     /** Read ProtoBuf into ObjectValues */
     fun readTransportBytesToValues(length: Int, reader: () -> Byte, context: CXI?) =
         this.dataModel.readProtoBuf(length, reader, this.dataModel.transformContext(context))
-
-    /** Resolve a reference from [reader] found on a [parentReference] */
-    fun resolveReference(
-        reader: () -> Byte,
-        parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
-    ): IsPropertyReference<Any, *, *> {
-        val index = initIntByVar(reader)
-        return this.dataModel.properties[index]?.getRef(parentReference)
-                ?: throw DefNotFoundException("Embedded Definition with $index not found")
-    }
-
-    /** Resolve a reference from [name] found on a [parentReference] */
-    fun resolveReferenceByName(
-        name: String,
-        parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
-    ): IsPropertyReference<Any, *, *> {
-        return this.dataModel.properties[name]?.getRef(parentReference)
-                ?: throw DefNotFoundException("Embedded Definition with $name not found")
-    }
 }

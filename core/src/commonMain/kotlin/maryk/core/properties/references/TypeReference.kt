@@ -3,9 +3,9 @@ package maryk.core.properties.references
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
@@ -36,17 +36,20 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
     override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.value ?: throw UnexpectedValueException("Expected typed value to get value by reference")
 
     override fun getEmbedded(name: String, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
-        return if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-            this.propertyDefinition.dataModel.properties[name]?.getRef(this)
-                    ?: throw DefNotFoundException("Embedded Definition with $name not found")
+        return if(this.propertyDefinition is IsEmbeddedDefinition<*, *>) {
+            this.propertyDefinition.resolveReferenceByName(name, this)
         } else throw DefNotFoundException("Type reference can not contain embedded name references ($name)")
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
-            val index = initIntByVar(reader)
-            return this.propertyDefinition.dataModel.properties[index]?.getRef(this)
-                    ?: throw DefNotFoundException("Embedded Definition with $index not found")
+            return this.propertyDefinition.resolveReference(reader, this)
+        } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
+    }
+
+    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+        return if(this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *, *>) {
+            this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
         } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
     }
 
@@ -65,11 +68,11 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
         return if(this.parentReference is MultiTypePropertyReference<*, *, *, *>) {
             val parentCount = this.parentReference.parentReference?.calculateStorageByteLength() ?: 0
 
-            parentCount + this.parentReference.propertyDefinition.index.calculateVarByteLength() + 1 + type.index.calculateVarByteLength()
+            parentCount + 1 + this.parentReference.propertyDefinition.index.calculateVarByteLength() + 1 + type.index.calculateVarByteLength()
         } else {
             val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
 
-            parentCount + type.index.calculateVarByteLength()
+            parentCount + 1 + type.index.calculateVarByteLength()
         }
     }
 
@@ -77,14 +80,15 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
         if(this.parentReference is MultiTypePropertyReference<*, *, *, *>) {
             this.parentReference.parentReference?.writeStorageBytes(writer)
 
-            writer(ReferenceSpecialType.TYPE.value)
+            writer(CompleteReferenceType.TYPE.value)
             this.parentReference.propertyDefinition.index.writeVarBytes(writer)
-            type.index.writeVarBytes(writer)
         } else {
             this.parentReference?.writeStorageBytes(writer)
-            // Write type index bytes
-            type.index.writeVarBytes(writer)
         }
+
+        writer(0)
+        // Write type index bytes
+        type.index.writeVarBytes(writer)
     }
 
     override fun resolve(values: TypedValue<E, Any>) = values.value

@@ -29,6 +29,12 @@ interface IsMultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> :
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
     ): IsPropertyReference<Any, *, *>
 
+    /** Resolve a stored reference from [reader] found on a [parentReference] */
+    fun resolveReferenceFromStorage(
+        reader: () -> Byte,
+        parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
+    ): IsPropertyReference<Any, *, *>
+
     /** Resolve a reference from [name] found on a [parentReference] */
     fun resolveReferenceByName(
         name: String,

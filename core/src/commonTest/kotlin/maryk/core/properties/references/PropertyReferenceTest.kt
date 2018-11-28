@@ -1,33 +1,28 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
-import maryk.core.models.ObjectDataModel
-import maryk.core.values.ObjectValues
-import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.models.RootDataModel
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import maryk.test.shouldNotBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
 
-private object Properties : ObjectPropertyDefinitions<Any>() {
-    val definition = Properties.add(1, "test", StringDefinition())
-    val modelDefinition = Properties.add(2, "embeddedObject", EmbeddedValuesDefinition(
-        dataModel = { TestMarykModel }
+private object Properties : PropertyDefinitions() {
+    val definition = add(1, "test", StringDefinition())
+    val modelDefinition = add(2, "embeddedObject", EmbeddedValuesDefinition(
+        dataModel = { Model }
     ))
 }
 
-private object Model : ObjectDataModel<Any, Properties>(
-    "name", Properties
-) {
-    override fun invoke(values: ObjectValues<Any, Properties>): Any { throw Exception("Not implemented") }
-}
-
+private object Model : RootDataModel<Model, Properties>(
+    "name", properties = Properties
+)
 
 private val ref = Properties.definition.getRef()
 private val subRef = Properties.definition.getRef(Properties.modelDefinition.getRef())
@@ -74,7 +69,7 @@ internal class PropertyReferenceTest {
     }
 
     @Test
-    fun writeStorageBytes() {
+    fun writeAndReadTransportBytes() {
         val bc = ByteCollector()
         val cache = WriteCache()
 
@@ -84,5 +79,21 @@ internal class PropertyReferenceTest {
         subRef.writeTransportBytes(cache, bc::write)
 
         bc.bytes!!.toHex() shouldBe "0201"
+
+        Properties.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe subRef
+    }
+
+    @Test
+    fun writeAndReadStorageBytes() {
+        val bc = ByteCollector()
+
+        bc.reserve(
+            subRef.calculateStorageByteLength()
+        )
+        subRef.writeStorageBytes(bc::write)
+
+        bc.bytes!!.toHex() shouldBe "1109"
+
+        Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subRef
     }
 }

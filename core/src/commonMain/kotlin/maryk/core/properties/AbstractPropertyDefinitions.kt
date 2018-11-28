@@ -23,6 +23,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.decodeStorageIndex
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.IsValueItems
 import maryk.core.values.MutableValueItems
@@ -172,7 +173,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
             propertyReference = when (propertyReference) {
                 null -> {
                     val index = initIntByVar(lengthReader)
-                    this[index]?.getRef(propertyReference)
+                    this[index]?.getRef()
                 }
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader, context)
                 else -> throw DefNotFoundException("More property references found on property that cannot have any ")
@@ -180,5 +181,24 @@ abstract class AbstractPropertyDefinitions<DO: Any>(
         }
 
         return propertyReference ?: throw DefNotFoundException("Property reference does not exist")
+    }
+
+    /** Get PropertyReference by storage bytes from [reader] with [length] */
+    final override fun getPropertyReferenceByStorageBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
+        var readLength = 0
+        val lengthReader = {
+            readLength++
+            reader()
+        }
+
+        return decodeStorageIndex(lengthReader) { index, referenceType ->
+            val propertyReference = this[index]?.getRef()
+            when {
+                propertyReference == null -> throw DefNotFoundException("Property reference does not exist")
+                readLength >= length -> propertyReference
+                propertyReference is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(lengthReader, context, referenceType) { readLength >= length }
+                else -> throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
+            }
+        }
     }
 }

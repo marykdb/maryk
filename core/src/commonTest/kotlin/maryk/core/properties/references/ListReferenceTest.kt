@@ -60,7 +60,7 @@ class ListReferenceTest {
     }
 
     @Test
-    fun writeStorageBytes() {
+    fun writeAndReadStorageBytes() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -68,7 +68,9 @@ class ListReferenceTest {
         )
         reference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "7a05"
+        bc.bytes!!.toHex() shouldBe "7a00000005"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe reference
     }
 
     @Test
@@ -80,6 +82,8 @@ class ListReferenceTest {
         )
         subReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "61197a16"
+        bc.bytes!!.toHex() shouldBe "61197a00000016"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subReference
     }
 }

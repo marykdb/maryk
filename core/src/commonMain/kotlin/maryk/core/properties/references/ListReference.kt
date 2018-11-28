@@ -1,6 +1,9 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -27,6 +30,12 @@ open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
             0 -> ListItemReference(initIntByVar(reader), propertyDefinition.definition, this)
             else -> throw ParseException("Unknown List reference type $index")
         }
+    }
+
+    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+        return if (referenceType == CompleteReferenceType.LIST) {
+            ListItemReference(initUInt(reader).toInt(), propertyDefinition.definition, this)
+        } else throw Exception("Unknown reference type below List: $referenceType")
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {

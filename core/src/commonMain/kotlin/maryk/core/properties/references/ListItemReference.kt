@@ -1,12 +1,16 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsValueDefinition
@@ -27,7 +31,7 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
 ) {
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         when(this.propertyDefinition) {
-            is IsEmbeddedObjectDefinition<*, *, *, *, *> ->
+            is IsEmbeddedDefinition<*, *> ->
                 this.propertyDefinition.resolveReferenceByName(name, this)
             is MultiTypeDefinition<*, *> -> {
                 this.propertyDefinition.resolveReferenceByName(name, this)
@@ -37,11 +41,23 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
         return when(this.propertyDefinition) {
-            is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
+            is IsEmbeddedDefinition<*, *> -> {
                 this.propertyDefinition.resolveReference(reader, this)
             }
             is MultiTypeDefinition<*, *> -> {
                 this.propertyDefinition.resolveReference(reader, this)
+            }
+            else -> throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
+        }
+    }
+
+    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+        return when(this.propertyDefinition) {
+            is IsEmbeddedObjectDefinition<*, *, *, *, *> -> {
+                this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
+            }
+            is MultiTypeDefinition<*, *> -> {
+                this.propertyDefinition.resolveReferenceFromStorage(reader, this)
             }
             else -> throw DefNotFoundException("ListItem can not contain embedded index references ($index)")
         }
@@ -70,7 +86,7 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
                 // calculate length of index of setDefinition
                 (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
                 // add bytes for list index
-                index.calculateVarByteLength()
+                Int.SIZE_BYTES
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
@@ -79,7 +95,7 @@ class ListItemReference<T: Any, CX: IsPropertyContext>  internal constructor(
         // Write set index with a SetValue type
         this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(LIST.value, writer)
         // Write index bytes
-        index.writeVarBytes(writer)
+        index.toUInt().writeBytes(writer)
     }
 
     override fun resolve(values: List<T>): T? = values[index]

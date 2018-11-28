@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -13,6 +12,7 @@ import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
+import maryk.core.values.SimpleObjectValues
 
 /** Definition for Set property */
 data class SetDefinition<T: Any, CX: IsPropertyContext>(

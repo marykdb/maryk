@@ -1,6 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.lib.exceptions.ParseException
+import kotlin.experimental.and
 
 /* Reference type to be encoded in last 3 bits of byte */
 enum class ReferenceType(val value: Byte) {
@@ -8,24 +9,32 @@ enum class ReferenceType(val value: Byte) {
     VALUE(1),
     LIST(2),
     SET(3),
-    MAP(4)
+    MAP(4),
     // Only add items that are used regularly in storage to
 }
 
-/** Retrieve reference storage type from the [byte] */
-internal fun referenceStorageTypeOf(byte: Byte) =
-    ReferenceType.values().getOrNull(byte.toInt())
-        ?: throw ParseException("Unknown ReferenceType $byte")
-
-/* Special encoding which use the complete byte */
-enum class ReferenceSpecialType(val value: Byte) {
+/* Reference type to be encoded in last 3 bits of byte */
+enum class CompleteReferenceType(val value: Byte) {
     DELETE(0),
+    VALUE(1),
+    LIST(2),
+    SET(3),
+    MAP(4),
+
+    // These fall outside the space and are encoded with SPECIAL (Last 3 bits 0)
     TYPE(0b1000),
     MAP_KEY(0b10000),
     // Binary counting so next is 0b11000
 }
 
 /** Retrieve reference storage type from the [byte] */
-internal fun referenceStorageSpecialTypeOf(byte: Byte) =
-    ReferenceSpecialType.values().getOrNull(byte.toInt())
-        ?: throw ParseException("Unknown ReferenceSpecialType $byte")
+internal fun referenceStorageTypeOf(byte: Byte): ReferenceType {
+    val byteToCompare = byte and 0b111
+    return ReferenceType.values().firstOrNull { it.value == byteToCompare }
+        ?: throw ParseException("Unknown ReferenceType $byteToCompare")
+}
+
+/** Retrieve reference storage type from the [byte] */
+internal fun completeReferenceTypeOf(byte: Byte) =
+    CompleteReferenceType.values().firstOrNull { it.value == byte }
+        ?: throw ParseException("Unknown CompleteReferenceType $byte")

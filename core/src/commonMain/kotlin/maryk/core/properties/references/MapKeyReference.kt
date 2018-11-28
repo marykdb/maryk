@@ -45,7 +45,6 @@ class MapKeyReference<K: Any, V: Any, CX: IsPropertyContext> internal constructo
 
     override fun calculateStorageByteLength(): Int {
         val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
-
         return parentCount +
                 1 + // The type byte
                 // The map index
@@ -57,8 +56,9 @@ class MapKeyReference<K: Any, V: Any, CX: IsPropertyContext> internal constructo
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
         this.parentReference?.parentReference?.writeStorageBytes(writer)
 
-        writer(ReferenceSpecialType.MAP_KEY.value)
+        writer(CompleteReferenceType.MAP_KEY.value)
         this.parentReference?.propertyDefinition?.index?.writeVarBytes(writer)
+
         this.mapDefinition.keyDefinition.writeStorageBytes(this.key, writer)
     }
 

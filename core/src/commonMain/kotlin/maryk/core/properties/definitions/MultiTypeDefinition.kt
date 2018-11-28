@@ -5,7 +5,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -23,6 +22,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
@@ -235,7 +235,18 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ): IsPropertyReference<Any, *, *> {
         val index = initIntByVar(reader)
-        if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 is not supported")
+        if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
+        val typeIndex = initIntByVar(reader)
+        val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
+        return getTypeRef(type, parentReference)
+    }
+
+    override fun resolveReferenceFromStorage(
+        reader: () -> Byte,
+        parentReference: CanHaveComplexChildReference<*, *, *, *>?
+    ): IsPropertyReference<Any, *, *> {
+        val index = initIntByVar(reader)
+        if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
         val typeIndex = initIntByVar(reader)
         val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
         return getTypeRef(type, parentReference)
@@ -245,9 +256,12 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     override fun resolveReferenceByName(
         name: String,
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
-    ): IsPropertyReference<Any, *, *> {
-        val type = this.typeByName[name.substring(1)] ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
-        return getTypeRef(type, parentReference)
+    ) = when(name[0]) {
+        '*' ->  {
+            val type = this.typeByName[name.substring(1)] ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
+            getTypeRef(type, parentReference)
+        }
+        else -> throw ParseException("Unknown Type type $name[0]")
     }
 
     object Model : ContextualDataModel<MultiTypeDefinition<*, *>, ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>, ContainsDefinitionsContext, MultiTypeDefinitionContext>(

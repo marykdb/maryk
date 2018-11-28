@@ -2,9 +2,11 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
-import maryk.core.properties.references.ReferenceType.MAP
+import maryk.core.properties.references.CompleteReferenceType.MAP
+import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.protobuf.ProtoBuf
 import maryk.lib.exceptions.ParseException
 
@@ -60,6 +62,27 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
                 )
             }
             else -> throw ParseException("Unknown Key reference type ${protoKey.tag}")
+        }
+    }
+
+    override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
+        val mapKeyLength = (this.propertyDefinition.keyDefinition as IsFixedBytesEncodable<*>).byteSize
+        return when (referenceType) {
+            MAP -> {
+                MapValueReference(
+                    this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
+            MAP_KEY -> {
+                MapKeyReference(
+                    this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
+            else -> throw Exception("Unknown map ref type $referenceType")
         }
     }
 

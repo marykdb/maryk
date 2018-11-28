@@ -2,6 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.properties.types.TypedValue
+import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.Option.V1
@@ -35,7 +36,27 @@ class TypeReferenceTest {
     }
 
     @Test
-    fun writeStorageBytes() {
+    fun writeAndReadStringValue() {
+        TestMarykModel.Properties.getPropertyReferenceByName(typeReference.completeName) shouldBe typeReference
+    }
+
+    @Test
+    fun writeAndReadTransportBytes() {
+        val bc = ByteCollector()
+        val cache = WriteCache()
+
+        bc.reserve(
+            typeReference.calculateTransportByteLength(cache)
+        )
+        typeReference.writeTransportBytes(cache, bc::write)
+
+        bc.bytes!!.toHex() shouldBe "0d0002"
+
+        TestMarykModel.Properties.getPropertyReferenceByBytes(bc.size, bc::read) shouldBe typeReference
+    }
+
+    @Test
+    fun writeAndReadStorageBytes() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -43,6 +64,8 @@ class TypeReferenceTest {
         )
         typeReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "080d02"
+        bc.bytes!!.toHex() shouldBe "080d0002"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe typeReference
     }
 }

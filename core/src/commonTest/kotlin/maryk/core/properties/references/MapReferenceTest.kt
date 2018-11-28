@@ -65,7 +65,7 @@ class MapReferenceTest {
     }
 
     @Test
-    fun writeMapRefStorageBytes() {
+    fun writeAndReadMapRefStorageBytes() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -74,10 +74,12 @@ class MapReferenceTest {
         mapReference.writeStorageBytes(bc::write)
 
         bc.bytes!!.toHex() shouldBe "54"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe mapReference
     }
 
     @Test
-    fun writeValueRefStorageBytes() {
+    fun writeAndReadValueRefStorageBytes() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -86,10 +88,12 @@ class MapReferenceTest {
         valReference.writeStorageBytes(bc::write)
 
         bc.bytes!!.toHex() shouldBe "5400d84f"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe valReference
     }
 
     @Test
-    fun writeDeepValueRefStorageBytes() {
+    fun writeAndReadDeepValueRefStorageBytes() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -98,10 +102,12 @@ class MapReferenceTest {
         subReference.writeStorageBytes(bc::write)
 
         bc.bytes!!.toHex() shouldBe "61195400d84f"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subReference
     }
 
     @Test
-    fun writeKeyRefStorageBytes() {
+    fun writeAndReadKeyRefStorageBytes() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -110,10 +116,12 @@ class MapReferenceTest {
         keyReference.writeStorageBytes(bc::write)
 
         bc.bytes!!.toHex() shouldBe "100a00a8c1"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe keyReference
     }
 
     @Test
-    fun writeDeepKeyRefStorageBytes() {
+    fun writeAndReadDeepKeyRefStorageBytes() {
         val bc = ByteCollector()
 
         bc.reserve(
@@ -122,5 +130,7 @@ class MapReferenceTest {
         subKeyReference.writeStorageBytes(bc::write)
 
         bc.bytes!!.toHex() shouldBe "6119100a00d84f"
+
+        TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subKeyReference
     }
 }

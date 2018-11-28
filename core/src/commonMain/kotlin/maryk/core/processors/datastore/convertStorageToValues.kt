@@ -20,15 +20,15 @@ import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
-import maryk.core.properties.references.ReferenceSpecialType.DELETE
-import maryk.core.properties.references.ReferenceSpecialType.MAP_KEY
-import maryk.core.properties.references.ReferenceSpecialType.TYPE
+import maryk.core.properties.references.CompleteReferenceType.DELETE
+import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
+import maryk.core.properties.references.CompleteReferenceType.TYPE
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.properties.references.ReferenceType.SPECIAL
 import maryk.core.properties.references.ReferenceType.VALUE
-import maryk.core.properties.references.referenceStorageSpecialTypeOf
+import maryk.core.properties.references.completeReferenceTypeOf
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
@@ -118,7 +118,7 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
     initIntByVarWithExtraInfo({ qualifier[qIndex++] }) { index, type ->
         val isAtEnd = qualifier.size <= qIndex
         when (referenceStorageTypeOf(type)) {
-            SPECIAL -> when (val specialType = referenceStorageSpecialTypeOf(qualifier[offset])) {
+            SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
                 DELETE -> {} // ignore
                 TYPE, MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
             }
@@ -206,7 +206,8 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
 
                 addValueToOutput(index, map)
             } else {
-                val keyDefinition = ((this.properties[index]!! as IsMapDefinition<*, *, *>).keyDefinition as IsFixedBytesEncodable<*>)
+                val keyDefinition =
+                    ((this.properties[index]!! as IsMapDefinition<*, *, *>).keyDefinition as IsFixedBytesEncodable<*>)
                 var mapItemIndex = qIndex
                 val key = keyDefinition.readStorageBytes(keyDefinition.byteSize) { qualifier[mapItemIndex++] }
                 val mapItemAdder: ValueAdder = { i, value ->

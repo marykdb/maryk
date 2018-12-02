@@ -58,7 +58,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                             @Suppress("UNCHECKED_CAST")
                             val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
-                            dataStore.validateUniqueNotExists(dataRecord, reference, comparableValue)
+                            dataStore.validateUniqueNotExists(comparableValue, dataRecord)
                             when (uniquesToProcess) {
                                 null -> uniquesToProcess = mutableListOf(comparableValue)
                                 else -> uniquesToProcess!!.add(comparableValue)

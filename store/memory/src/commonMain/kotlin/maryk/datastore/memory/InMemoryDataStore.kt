@@ -13,7 +13,7 @@ import maryk.core.query.responses.IsResponse
 import maryk.datastore.memory.records.DataStore
 import kotlin.coroutines.CoroutineContext
 
-internal typealias StoreExecutor<DM, P> = Unit.(InMemoryDataStore, StoreAction<DM, P, *, *>, dataStore: DataStore<DM, P>) -> Unit
+internal typealias StoreExecutor<DM, P> = Unit.(StoreAction<DM, P, *, *>, dataStore: DataStore<DM, P>) -> Unit
 internal typealias StoreActor<DM, P> = SendChannel<StoreAction<DM, P, *, *>>
 
 internal expect fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> CoroutineScope.storeActor(store: InMemoryDataStore, executor: StoreExecutor<DM, P>): StoreActor<DM, P>

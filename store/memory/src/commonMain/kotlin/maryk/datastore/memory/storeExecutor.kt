@@ -18,14 +18,14 @@ import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.records.AnyDataStore
 
 @Suppress("UNCHECKED_CAST")
-internal val storeExecutor: StoreExecutor<*, *> = { store, storeAction, dataStore ->
+internal val storeExecutor: StoreExecutor<*, *> = { storeAction, dataStore ->
     when(storeAction.request) {
         is AddRequest<*, *> ->
             processAddRequest(storeAction as AnyAddStoreAction, dataStore as AnyDataStore)
         is GetRequest<*, *> ->
             processGetRequest(storeAction as AnyGetStoreAction, dataStore as AnyDataStore)
         is ChangeRequest<*> ->
-            store.processChangeRequest(storeAction as AnyChangeStoreAction, dataStore as AnyDataStore)
+            processChangeRequest(storeAction as AnyChangeStoreAction, dataStore as AnyDataStore)
         is DeleteRequest<*> ->
             processDeleteRequest(storeAction as AnyDeleteStoreAction, dataStore as AnyDataStore)
         is ScanRequest<*, *> ->

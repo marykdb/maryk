@@ -24,7 +24,6 @@ import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.datastore.memory.InMemoryDataStore
 import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
@@ -33,7 +32,7 @@ import maryk.lib.time.Instant
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> InMemoryDataStore.processChangeRequest(
+internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataStore: DataStore<DM, P>
 ) {
@@ -62,7 +61,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> InMemoryData
 
             val status: IsChangeResponseStatus<DM> = when {
                 index > -1 -> {
-                    applyChanges(objectToChange, objectChange.changes, version, this.storeAllVersions)
+                    applyChanges(objectToChange, objectChange.changes, version, dataStore.storeAllVersions)
                 }
                 else -> DoesNotExist(objectChange.key)
             }

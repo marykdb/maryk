@@ -12,7 +12,7 @@ internal typealias AnyDataStore = DataStore<IsRootValuesDataModel<PropertyDefini
  * An in memory data store containing records and indices
  */
 internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
-    val storeAllVersions: Boolean
+    val keepAllVersions: Boolean
 ) {
     val records: MutableList<DataRecord<DM, P>> = mutableListOf()
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, P>> = mutableListOf()
@@ -21,7 +21,7 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     fun addToUniqueIndex(record: DataRecord<DM, P>, value: DataRecordValue<Comparable<Any>>, previousValue: DataRecordValue<Comparable<Any>>? = null) {
         val index = getOrCreateUniqueIndex(value.reference)
         previousValue?.let {
-            index.removeFromIndex(record, previousValue, value.version, storeAllVersions)
+            index.removeFromIndex(record, previousValue, value.version, keepAllVersions)
         }
         index.addToIndex(record, value.value, value.version)
     }
@@ -53,7 +53,7 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: ULong) {
         for (indexValues in uniqueIndices) {
             dataRecord.getValue<Comparable<Any>>(indexValues.reference)?.let {
-                indexValues.removeFromIndex(dataRecord, it, version, storeAllVersions)
+                indexValues.removeFromIndex(dataRecord, it, version, keepAllVersions)
             }
         }
     }

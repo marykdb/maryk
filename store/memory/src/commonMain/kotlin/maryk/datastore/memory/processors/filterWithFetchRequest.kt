@@ -22,6 +22,11 @@ import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DeleteState.Deleted
 
+/**
+ * Test if [dataRecord] should be filtered based on given FetchRequest
+ * Filters on soft deleted state and given filters.
+ * Return true if [dataRecord] should be filtered away.
+ */
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsFetchRequest<DM, *>.filterData(
     dataRecord: DataRecord<DM, P>
 ) = when {
@@ -30,6 +35,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsFetchReque
     else -> false
 }
 
+/** Test if [dataRecord] is passing given [filter]. True if filter matches */
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> doFilter(filter: IsFilter, dataRecord: DataRecord<DM, P>): Boolean {
     when(filter.filterType) {
         FilterType.And -> {

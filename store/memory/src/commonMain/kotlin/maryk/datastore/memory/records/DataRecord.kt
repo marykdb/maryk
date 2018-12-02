@@ -15,14 +15,14 @@ import maryk.lib.extensions.compare.compareTo
 
 internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val key: Key<DM>,
-    val values: List<IsDataRecordNode>,
+    val values: List<DataRecordNode>,
     val firstVersion: ULong,
-    val lastVersion: ULong,
-    val isDeleted: DeleteState = NeverDeleted
+    var lastVersion: ULong,
+    var isDeleted: DeleteState = NeverDeleted
 ) {
     /** Get value by [reference] */
     operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>): T? =
-        get(getReferenceAsByteArray(reference))
+        get(convertReferenceToByteArray(reference))
 
     /** Get value by [reference] */
     operator fun <T : Any> get(reference: ByteArray): T? =
@@ -36,34 +36,44 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         return getValueAtIndex(valueIndex)
     }
 
+    /**
+     * Set [value] at [reference] below [version]
+     * Use [keepAllVersions] on true to keep all previous values
+     */
     fun <T: Any> setValue(
         reference: IsPropertyReference<T, *, *>,
         value: T,
         version: ULong,
-        isWithHistory: Boolean = false
+        keepAllVersions: Boolean = false
     ) {
-        val referenceToCompareTo = getReferenceAsByteArray(reference)
+        val referenceToCompareTo = convertReferenceToByteArray(reference)
 
         val valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
         }
 
-        setValueAtIndex(valueIndex, referenceToCompareTo, value, version, isWithHistory)
+        setValueAtIndex(valueIndex, referenceToCompareTo, value, version, keepAllVersions)
     }
 
+    /** Delete value by [reference] and record deletion below [version] */
     fun <T: Any> deleteByReference(
         reference: AnyPropertyReference,
         version: ULong
-    ): IsDataRecordNode? {
-        val referenceToCompareTo = getReferenceAsByteArray(reference)
+    ): DataRecordNode? {
+        val referenceToCompareTo = convertReferenceToByteArray(reference)
         val valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
         }
         return deleteByIndex<T>(valueIndex, referenceToCompareTo, version)
     }
 
-    fun <T: Any> getList(reference: IsPropertyReference<out List<T>, IsPropertyDefinition<out List<T>>, out Any>): MutableList<T> {
-        val referenceToCompareTo = getReferenceAsByteArray(reference)
+    /**
+     * Get list at [reference] by reading and collecting all values from DataRecord
+     */
+    fun <T: Any> getList(
+        reference: IsPropertyReference<out List<T>, IsPropertyDefinition<out List<T>>, out Any>
+    ): MutableList<T> {
+        val referenceToCompareTo = convertReferenceToByteArray(reference)
 
         var valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
@@ -87,23 +97,28 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         return list
     }
 
+    /**
+     * Set a list value for [reference] with a [newList] at new [version].
+     * With [originalCount] it is determined if items need to be deleted.
+     * Use [keepAllVersions] on true to keep old versions
+     */
     fun <T: Any> setListValue(
         reference: IsPropertyReference<out List<T>, IsPropertyDefinition<out List<T>>, out Any>,
         newList: List<T>,
         originalCount: Int,
         version: ULong,
-        isWithHistory: Boolean
+        keepAllVersions: Boolean
     ) {
         @Suppress("UNCHECKED_CAST")
         val listReference = reference as ListReference<T, *>
-        val referenceToCompareTo = getReferenceAsByteArray(listReference)
+        val referenceToCompareTo = convertReferenceToByteArray(listReference)
 
         var valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
         }
 
         // Set the count
-        this.setValueAtIndex(valueIndex, referenceToCompareTo, newList.size, version, isWithHistory)
+        this.setValueAtIndex(valueIndex, referenceToCompareTo, newList.size, version, keepAllVersions)
 
         val toDeleteCount = originalCount - newList.size
         if (toDeleteCount > 0) {
@@ -134,10 +149,11 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
                 } else valueIndex++
             }
 
-            this.setValueAtIndex(valueIndex, newRef, item, version, isWithHistory)
+            this.setValueAtIndex(valueIndex, newRef, item, version, keepAllVersions)
         }
     }
 
+    /** Get a value at [valueIndex] */
     @Suppress("UNCHECKED_CAST")
     private fun <T: Any> getValueAtIndex(valueIndex: Int): DataRecordValue<T>? {
         return if (valueIndex < 0) {
@@ -152,30 +168,35 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         }
     }
 
-    private fun <T : Any> getReferenceAsByteArray(reference: IsPropertyReference<T, *, *>): ByteArray {
+    /** Convert property [reference] to a ByteArray */
+    private fun <T : Any> convertReferenceToByteArray(reference: IsPropertyReference<T, *, *>): ByteArray {
         var index = 0
         val referenceToCompareTo = ByteArray(reference.calculateStorageByteLength())
         reference.writeStorageBytes { referenceToCompareTo[index++] = it }
         return referenceToCompareTo
     }
 
+    /** Delete value at [valueIndex] for [reference] and record it as [version] */
     private fun <T : Any> deleteByIndex(
         valueIndex: Int,
-        referenceToCompareTo: ByteArray,
+        reference: ByteArray,
         version: ULong
     ) =
         if (valueIndex < 0) {
             null
         } else {
+            if (version > this.lastVersion) {
+                this.lastVersion = version
+            }
             when (val matchedValue = values[valueIndex]) {
                 is DataRecordValue<*> -> {
-                    DeletedValue<T>(referenceToCompareTo, version).also {
-                        (values as MutableList<IsDataRecordNode>)[valueIndex] = it
+                    DeletedValue<T>(reference, version).also {
+                        (values as MutableList<DataRecordNode>)[valueIndex] = it
                     }
                 }
                 is DataRecordHistoricValues<*> -> {
                     @Suppress("UNCHECKED_CAST")
-                    DeletedValue<T>(referenceToCompareTo, version).also {
+                    DeletedValue<T>(reference, version).also {
                         (matchedValue.history as MutableList<IsDataRecordValue<*>>).add(it)
                     }
                 }
@@ -183,53 +204,61 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
             }
         }
 
+    /**
+     * Sets a [value] at a specific [valueIndex] and stores it below [reference] at [version]
+     * Use [keepAllVersions] on true to keep all versions
+     */
     private fun setValueAtIndex(
         valueIndex: Int,
-        referenceToCompareTo: ByteArray,
+        reference: ByteArray,
         value: Any,
         version: ULong,
-        isWithHistory: Boolean
+        keepAllVersions: Boolean
     ) {
+        if (version > this.lastVersion) {
+            this.lastVersion = version
+        }
+
         if (valueIndex < 0) {
             // When not found add it
-            (values as MutableList<IsDataRecordNode>).add(
+            (values as MutableList<DataRecordNode>).add(
                 valueIndex * -1 - 1,
-                DataRecordValue(referenceToCompareTo, value, version)
+                DataRecordValue(reference, value, version)
             )
         } else when (val matchedValue = values[valueIndex]) {
             is DataRecordValue<*> -> {
-                if (isWithHistory) {
+                if (keepAllVersions) {
                     // Only store value if was not already value
                     if (matchedValue.value != value) {
                         @Suppress("UNCHECKED_CAST")
-                        (values as MutableList<IsDataRecordNode>)[valueIndex] =
+                        (values as MutableList<DataRecordNode>)[valueIndex] =
                                 DataRecordHistoricValues(
-                                    referenceToCompareTo,
+                                    reference,
                                     listOf(
                                         matchedValue as DataRecordValue<Any>,
-                                        DataRecordValue(referenceToCompareTo, value, version)
+                                        DataRecordValue(reference, value, version)
                                     )
                                 )
                     }
                 } else {
-                    val lastValue = (values as MutableList<IsDataRecordNode>).last()
+                    val lastValue = (values as MutableList<DataRecordNode>).last()
                     // Only store value if was not already value
                     if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
-                        values[valueIndex] = DataRecordValue(referenceToCompareTo, value, version)
+                        values[valueIndex] = DataRecordValue(reference, value, version)
                     }
                 }
             }
             is DeletedValue<*> -> {
-                (values as MutableList<IsDataRecordNode>)[valueIndex] =
-                        DataRecordValue(referenceToCompareTo, value, version)
+                (values as MutableList<DataRecordNode>)[valueIndex] =
+                        DataRecordValue(reference, value, version)
             }
             is DataRecordHistoricValues<*> -> {
-                val lastValue = (values as MutableList<IsDataRecordNode>).last()
+                val lastValue = (values as MutableList<DataRecordNode>).last()
                 // Only store value if was not already value
                 if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
                     @Suppress("UNCHECKED_CAST")
                     (matchedValue.history as MutableList<DataRecordValue<*>>).add(
-                        DataRecordValue(referenceToCompareTo, value, version)
+                        DataRecordValue(reference, value, version)
                     )
                 }
             }
@@ -237,6 +266,7 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
     }
 }
 
+/** Match given [startBytes] against starting bytes of this byte array. Return true if match */
 private fun ByteArray.matchStart(startBytes: ByteArray): Boolean {
     if (startBytes.size > this.size) return false
 

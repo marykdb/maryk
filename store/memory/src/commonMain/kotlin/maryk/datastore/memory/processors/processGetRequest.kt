@@ -13,6 +13,7 @@ import maryk.datastore.memory.records.DataStore
 internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
+/** Processes a GetRequest in a [storeAction] into a [dataStore] */
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processGetRequest(storeAction: GetStoreAction<DM, P>, dataStore: DataStore<DM, P>) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()

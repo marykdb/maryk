@@ -24,7 +24,7 @@ internal expect fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Corou
  */
 @Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
 class InMemoryDataStore(
-    val storeAllVersions: Boolean = false
+    val keepAllVersions: Boolean = false
 ) : IsDataStore, CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = GlobalScope.coroutineContext

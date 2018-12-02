@@ -9,7 +9,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.records.DataStore
 
 internal actual fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> CoroutineScope.storeActor(store: InMemoryDataStore, executor: StoreExecutor<DM, P>): StoreActor<DM, P> = actor {
-    val dataStore = DataStore<DM, P>(store.storeAllVersions)
+    val dataStore = DataStore<DM, P>(store.keepAllVersions)
 
     for (msg in channel) { // iterate over incoming messages
         try {

@@ -48,18 +48,18 @@ internal class UniqueIndexValues<DM: IsRootValuesDataModel<P>, P: PropertyDefini
 
     /**
      * Remove a [record] at [value] from index and records the removal at [version]
-     * Use [storeAllVersions] to keep historical records
+     * Use [keepAllVersions] on true to keep historical records
      */
     fun removeFromIndex(
         record: DataRecord<DM, P>,
         value: DataRecordValue<Comparable<Any>>,
         version: ULong,
-        storeAllVersions: Boolean
+        keepAllVersions: Boolean
     ): Boolean {
         val i = records.binarySearch { value.value.compareTo(it.value) }
         return if (i >= 0 && records[i].record == record) {
             val oldValue = records[i]
-            if (storeAllVersions){
+            if (keepAllVersions) {
                 val newValue = UniqueRecordAtVersion<DM, P>( null, version)
                 if (oldValue is HistoricalUniqueIndexValue<DM, P>) {
                     oldValue.records += newValue

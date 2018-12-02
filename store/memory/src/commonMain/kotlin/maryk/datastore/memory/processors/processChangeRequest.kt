@@ -32,6 +32,7 @@ import maryk.lib.time.Instant
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
+/** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataStore: DataStore<DM, P>
@@ -61,7 +62,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 
             val status: IsChangeResponseStatus<DM> = when {
                 index > -1 -> {
-                    applyChanges(objectToChange, objectChange.changes, version, dataStore.storeAllVersions)
+                    applyChanges(objectToChange, objectChange.changes, version, dataStore.keepAllVersions)
                 }
                 else -> DoesNotExist(objectChange.key)
             }
@@ -78,6 +79,10 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
     )
 }
 
+/**
+ * Apply [changes] to a specific [objectToChange] and record them as [version]
+ * [isWithHistory] determines if history is kept
+ */
 private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
     objectToChange: DataRecord<DM, P>,
     changes: List<IsChange>,

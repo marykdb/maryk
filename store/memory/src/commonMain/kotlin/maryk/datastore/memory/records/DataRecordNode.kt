@@ -2,27 +2,32 @@
 
 package maryk.datastore.memory.records
 
-sealed class IsDataRecordNode {
+/** A sealed class for defines a node in a DataRecord at [reference] */
+sealed class DataRecordNode {
     abstract val reference: ByteArray
 }
 
+/** Defines a [reference] */
 @Suppress("unused")
 interface IsDataRecordValue<T> {
     val reference: ByteArray
 }
 
+/** Defines a [value] at [version] for [reference] */
 class DataRecordValue<T: Any>(
     override val reference: ByteArray,
     val value: T,
     val version: ULong
-): IsDataRecordNode(), IsDataRecordValue<T>
+): DataRecordNode(), IsDataRecordValue<T>
 
+/** Defines a deletion at [version] for [reference] */
 class DeletedValue<T: Any>(
     override val reference: ByteArray,
     val version: ULong
-): IsDataRecordNode(), IsDataRecordValue<T>
+): DataRecordNode(), IsDataRecordValue<T>
 
+/** Defines a [history] for [reference] */
 class DataRecordHistoricValues<T: Any>(
     override val reference: ByteArray,
     val history: List<IsDataRecordValue<T>>
-): IsDataRecordNode()
+): DataRecordNode()

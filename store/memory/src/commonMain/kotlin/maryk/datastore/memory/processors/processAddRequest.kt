@@ -21,13 +21,14 @@ import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.memory.records.IsDataRecordNode
+import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.UniqueException
 import maryk.lib.time.Instant
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
+/** Processes an AddRequest in a [storeAction] into a [dataStore] */
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRequest(storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>, dataStore: DataStore<DM, P>) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
@@ -44,7 +45,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                 val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 
                 if (index < 0) {
-                    val recordValues = ArrayList<IsDataRecordNode>()
+                    val recordValues = ArrayList<DataRecordNode>()
                     var uniquesToProcess: MutableList<DataRecordValue<Comparable<Any>>>? = null
                     val dataRecord = DataRecord(
                         key = key,

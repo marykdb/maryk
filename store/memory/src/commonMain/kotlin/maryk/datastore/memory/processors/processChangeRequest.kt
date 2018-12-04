@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.SetReference
@@ -154,7 +155,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                 is ListChange -> {
                     if (validationExceptions.isNullOrEmpty()) {
                         for (listChange in change.listValueChanges) {
-                            val list = objectToChange.getList(listChange.reference)
+                            val originalList = objectToChange.getList(listChange.reference)
+                            val list = originalList?.toMutableList() ?: mutableListOf()
                             val originalCount = list.size
                             listChange.deleteAtIndex?.let {
                                 for(deleteIndex in it) {
@@ -176,6 +178,17 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     list.add(value)
                                 }
                             }
+
+                            try {
+                                @Suppress("UNCHECKED_CAST")
+                                (listChange.reference as ListReference<Any, *>).propertyDefinition.validate(
+                                    previousValue = originalList,
+                                    newValue = list,
+                                    parentRefFactory = { (listChange.reference as? PropertyReference<Any, *, *, *>)?.parentReference }
+                                )
+                            } catch (e: ValidationException) {
+                                addValidationFail(e)
+                            }
                             objectToChange.setListValue(listChange.reference, list, originalCount, version, isWithHistory)
                         }
                     }
@@ -194,7 +207,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             setChange.deleteValues?.let {
                                 for(value in it) {
                                     val setItemRef = setDefinition.getItemRef(value, setChange.reference as SetReference<Any, IsPropertyContext>)
-                                    objectToChange.deleteByReference<Any>(setItemRef, version)
+                                    objectToChange.deleteByReference(setItemRef, version)
                                 }
                             }
                         }
@@ -215,7 +228,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             mapChange.keysToDelete?.let {
                                 for(key in it) {
                                     val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                    objectToChange.deleteByReference<Any>(mapValueRef, version)
+                                    objectToChange.deleteByReference(mapValueRef, version)
                                 }
                             }
                         }

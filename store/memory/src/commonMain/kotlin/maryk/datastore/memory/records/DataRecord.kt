@@ -82,12 +82,14 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
      */
     fun <T: Any> getList(
         reference: IsPropertyReference<out List<T>, IsPropertyDefinition<out List<T>>, out Any>
-    ): MutableList<T> {
+    ): MutableList<T>? {
         val referenceToCompareTo = convertReferenceToByteArray(reference)
 
         var valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
         }
+
+        if (valueIndex < 0) return null
 
         val count = getValueAtIndex<Int>(valueIndex)?.value ?: 0
         valueIndex++ // skip count index

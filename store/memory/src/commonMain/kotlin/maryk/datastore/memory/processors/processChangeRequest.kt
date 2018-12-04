@@ -5,10 +5,13 @@ package maryk.datastore.memory.processors
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.SetReference
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
@@ -115,14 +118,36 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                         for ((reference, value) in change.referenceValuePairs) {
                             objectToChange.setValue(
                                 reference, value, version, isWithHistory
-                            )
+                            ) { previousValue ->
+                                try {
+                                    reference.propertyDefinition.validate(
+                                        previousValue = previousValue,
+                                        newValue = value,
+                                        parentRefFactory = { (reference as? PropertyReference<*, *, *, *>)?.parentReference }
+                                    )
+                                } catch (e: ValidationException) {
+                                    addValidationFail(e)
+                                }
+                            }
                         }
                     }
                 }
                 is Delete -> {
                     if (validationExceptions.isNullOrEmpty()) {
                         for (reference in change.references) {
-                            objectToChange.deleteByReference<Any>(reference, version)
+                            @Suppress("UNCHECKED_CAST")
+                            val ref = reference as IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, Any>
+                            objectToChange.deleteByReference(ref, version)  { previousValue ->
+                                try {
+                                    ref.propertyDefinition.validate(
+                                        previousValue = previousValue,
+                                        newValue = null,
+                                        parentRefFactory = { (reference as? PropertyReference<*, *, *, *>)?.parentReference }
+                                    )
+                                } catch (e: ValidationException) {
+                                    addValidationFail(e)
+                                }
+                            }
                         }
                     }
                 }

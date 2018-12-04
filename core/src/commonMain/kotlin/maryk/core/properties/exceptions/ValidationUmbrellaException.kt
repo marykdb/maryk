@@ -1,12 +1,12 @@
 package maryk.core.properties.exceptions
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.values.SimpleObjectValues
 
 /**
  * Umbrella for Validation Exception for properties

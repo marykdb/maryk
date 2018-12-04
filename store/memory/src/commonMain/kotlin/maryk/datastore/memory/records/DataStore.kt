@@ -26,6 +26,23 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         index.addToIndex(record, value.value, value.version)
     }
 
+    /** Remove [dataRecord] from all unique indices and register removal below [version] */
+    fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: ULong) {
+        for (indexValues in uniqueIndices) {
+            dataRecord.getValue<Comparable<Any>>(indexValues.reference)?.let {
+                indexValues.removeFromIndex(dataRecord, it, version, keepAllVersions)
+            }
+        }
+    }
+
+    /** Validate if value in [dataRecordValue] does not already exist and if it exists it is not [dataRecord] */
+    fun validateUniqueNotExists(
+        dataRecordValue: DataRecordValue<Comparable<Any>>,
+        dataRecord: DataRecord<DM, P>
+    ) {
+        getOrCreateUniqueIndex(dataRecordValue.reference).validateUniqueNotExists(dataRecord, dataRecordValue)
+    }
+
     /** Get unique index for [reference] or create it if it does not exist. */
     private fun getOrCreateUniqueIndex(reference: ByteArray): UniqueIndexValues<DM, P> {
         val i = uniqueIndices.binarySearch { it.reference.compareTo(reference) }
@@ -38,23 +55,6 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
             }
         } else {
             uniqueIndices[i]
-        }
-    }
-
-    /** Validate if value in [dataRecordValue] does not already exist and if it exists it is not [dataRecord] */
-    fun validateUniqueNotExists(
-        dataRecordValue: DataRecordValue<Comparable<Any>>,
-        dataRecord: DataRecord<DM, P>
-    ) {
-        getOrCreateUniqueIndex(dataRecordValue.reference).validateUniqueNotExists(dataRecord, dataRecordValue)
-    }
-
-    /** Remove [dataRecord] from all unique indices and register removal below [version] */
-    fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: ULong) {
-        for (indexValues in uniqueIndices) {
-            dataRecord.getValue<Comparable<Any>>(indexValues.reference)?.let {
-                indexValues.removeFromIndex(dataRecord, it, version, keepAllVersions)
-            }
         }
     }
 }

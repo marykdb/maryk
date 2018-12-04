@@ -5,7 +5,6 @@ package maryk.core.query.changes
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -15,6 +14,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 
 /**
  * Creates a DataObjectChange which contains [change] until [lastVersion] for a specific DataObject

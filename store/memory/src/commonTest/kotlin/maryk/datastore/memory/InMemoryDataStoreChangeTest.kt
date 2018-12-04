@@ -101,7 +101,7 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel.ref { string } with "value3"
+                        TestMarykModel.ref { string } with "haha3"
                     )
                 )
             )
@@ -118,7 +118,7 @@ class InMemoryDataStoreChangeTest {
         )
 
         getResponse.values.size shouldBe 1
-        getResponse.values.first().values { string } shouldBe "value3"
+        getResponse.values.first().values { string } shouldBe "haha3"
     }
 
     @Test

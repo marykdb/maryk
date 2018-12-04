@@ -6,7 +6,6 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
@@ -39,12 +38,14 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
     /**
      * Set [value] at [reference] below [version]
      * Use [keepAllVersions] on true to keep all previous values
+     * Add [validate] handler to pass previous value for validation
      */
     fun <T: Any> setValue(
         reference: IsPropertyReference<T, *, *>,
         value: T,
         version: ULong,
-        keepAllVersions: Boolean = false
+        keepAllVersions: Boolean = false,
+        validate: ((T?) -> Unit)? = null
     ) {
         val referenceToCompareTo = convertReferenceToByteArray(reference)
 
@@ -52,18 +53,27 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
             it.reference.compareTo(referenceToCompareTo)
         }
 
+        validate?.invoke(getValueAtIndex<T>(valueIndex)?.value)
+
         setValueAtIndex(valueIndex, referenceToCompareTo, value, version, keepAllVersions)
     }
 
-    /** Delete value by [reference] and record deletion below [version] */
+    /**
+     * Delete value by [reference] and record deletion below [version]
+     * Add [validate] handler to pass previous value for validation
+     */
     fun <T: Any> deleteByReference(
-        reference: AnyPropertyReference,
-        version: ULong
+        reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>,
+        version: ULong,
+        validate: ((T?) -> Unit)? = null
     ): DataRecordNode? {
         val referenceToCompareTo = convertReferenceToByteArray(reference)
         val valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
         }
+
+        validate?.invoke(getValueAtIndex<T>(valueIndex)?.value)
+
         return deleteByIndex<T>(valueIndex, referenceToCompareTo, version)
     }
 

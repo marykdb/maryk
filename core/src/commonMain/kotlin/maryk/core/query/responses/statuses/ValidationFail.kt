@@ -2,7 +2,6 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
@@ -12,12 +11,19 @@ import maryk.core.properties.exceptions.ValidationExceptionType
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.mapOfValidationExceptionDefinitions
 import maryk.core.properties.types.TypedValue
+import maryk.core.values.SimpleObjectValues
 
 /** Failure in validation with [exceptions] */
 data class ValidationFail<DM: IsRootDataModel<*>>(
     val exceptions: List<ValidationException>
 ) : IsAddResponseStatus<DM>, IsChangeResponseStatus<DM> {
-    constructor(umbrellaException: ValidationUmbrellaException) : this(umbrellaException.exceptions)
+    constructor(validationException: ValidationException): this(
+        if (validationException is ValidationUmbrellaException) {
+            validationException.exceptions
+        } else {
+            listOf(validationException)
+        }
+    )
 
     override val statusType = StatusType.VALIDATION_FAIL
 

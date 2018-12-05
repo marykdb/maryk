@@ -5,7 +5,9 @@ package maryk.datastore.memory.processors
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
@@ -31,7 +33,9 @@ import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.memory.records.UniqueException
 import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -67,7 +71,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 
             val status: IsChangeResponseStatus<DM> = when {
                 index > -1 -> {
-                    applyChanges(objectToChange, objectChange.changes, version, dataStore.keepAllVersions)
+                    applyChanges(changeRequest.dataModel, dataStore, objectToChange, objectChange.changes, version, dataStore.keepAllVersions)
                 }
                 else -> DoesNotExist(objectChange.key)
             }
@@ -89,6 +93,8 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
  * [keepAllVersions] determines if history is kept
  */
 private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
+    dataModel: DM,
+    dataStore: DataStore<DM, P>,
     objectToChange: DataRecord<DM, P>,
     changes: List<IsChange>,
     version: ULong,
@@ -105,6 +111,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
         }
 
         val valueChangers = mutableListOf<() -> Unit>()
+        var uniquesToProcess: MutableList<DataRecordValue<Comparable<Any>>>? = null
 
         for (change in changes) {
             try {
@@ -122,7 +129,18 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                         for ((reference, value) in change.referenceValuePairs) {
                             objectToChange.createSetValue(
                                 valueChangers::add, reference, value, version, keepAllVersions
-                            ) { previousValue ->
+                            ) { dataRecordValue, previousValue ->
+                                val definition = reference.propertyDefinition.definition
+                                if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                                    @Suppress("UNCHECKED_CAST")
+                                    val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
+                                    dataStore.validateUniqueNotExists(comparableValue, objectToChange)
+                                    when (uniquesToProcess) {
+                                        null -> uniquesToProcess = mutableListOf(comparableValue)
+                                        else -> uniquesToProcess!!.add(comparableValue)
+                                    }
+                                }
+
                                 try {
                                     reference.propertyDefinition.validate(
                                         previousValue = previousValue,
@@ -140,7 +158,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             @Suppress("UNCHECKED_CAST")
                             val ref =
                                 reference as IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, Any>
-                            objectToChange.createDeleteByReference(valueChangers::add, ref, version) { previousValue ->
+                            objectToChange.createDeleteByReference(valueChangers::add, ref, version) { _, previousValue ->
                                 try {
                                     ref.propertyDefinition.validate(
                                         previousValue = previousValue,
@@ -216,7 +234,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                                 setItemRef,
                                                 value,
                                                 version
-                                            ) { prevValue ->
+                                            ) { _, prevValue ->
                                                 prevValue ?: countChange++ // Only count up when value did not exist
                                             }
                                         } catch (e: ValidationException) {
@@ -228,7 +246,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             setChange.deleteValues?.let {
                                 for (value in it) {
                                     val setItemRef = setDefinition.getItemRef(value, setReference)
-                                    objectToChange.createDeleteByReference(valueChangers::add, setItemRef, version) { prevValue ->
+                                    objectToChange.createDeleteByReference(valueChangers::add, setItemRef, version) { _, prevValue ->
                                         prevValue?.let {
                                             countChange-- // only count down if value existed
                                         }
@@ -280,7 +298,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                                 mapValueRef,
                                                 value,
                                                 version
-                                            ) { prevValue ->
+                                            ) { _, prevValue ->
                                                 prevValue ?: countChange++ // Only count up when value did not exist
                                             }
                                         }
@@ -289,7 +307,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 mapChange.keysToDelete?.let {
                                     for (key in it) {
                                         val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                        objectToChange.createDeleteByReference(valueChangers::add, mapValueRef, version) { prevValue ->
+                                        objectToChange.createDeleteByReference(valueChangers::add, mapValueRef, version) { _, prevValue ->
                                             prevValue?.let {
                                                 countChange-- // only count down if value existed
                                             }
@@ -316,6 +334,16 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                 }
             } catch (e: ValidationException) {
                 addValidationFail(e)
+            } catch (ue: UniqueException) {
+                var index = 0
+                val ref = dataModel.getPropertyReferenceByStorageBytes(
+                    ue.reference.size,
+                    { ue.reference[index++] }
+                )
+
+                addValidationFail(
+                    AlreadySetException(ref)
+                )
             }
         }
 

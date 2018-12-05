@@ -4,6 +4,7 @@ package maryk.datastore.memory.records
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.references.IsPropertyReference
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias AnyDataStore = DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>

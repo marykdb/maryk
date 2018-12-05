@@ -5,7 +5,11 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ValidationFail
@@ -67,7 +71,7 @@ class UniqueTest {
     )
 
     @Test
-    fun testUniqueCheck() = runSuspendingTest {
+    fun checkUnique() = runSuspendingTest {
         val addResponse = dataStore.execute(addUniqueItem)
         addResponse.statuses.forEach { status ->
             val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
@@ -83,7 +87,7 @@ class UniqueTest {
     }
 
     @Test
-    fun testUniqueCheckWithHistory() = runSuspendingTest {
+    fun checkUniqueWithHistory() = runSuspendingTest {
         val addResponse = dataStoreWithHistory.execute(addUniqueItem)
 
         addResponse.statuses.forEach { status ->
@@ -95,6 +99,30 @@ class UniqueTest {
         dataStoreWithHistory.execute(UniqueModel.delete(keysForHistory[0]))
 
         dataStoreWithHistory.execute(addUniqueItem).statuses.forEach { status ->
+            shouldBeOfType<AddSuccess<UniqueModel>>(status)
+        }
+    }
+
+    @Test
+    fun checkUniqueChange() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            UniqueModel.change(
+                keys[1].change(
+                    Change(
+                        UniqueModel.ref { email } with "test@test.com"
+                    )
+                )
+            )
+        )
+        changeResponse.statuses.forEach { status ->
+            val fail = shouldBeOfType<ValidationFail<UniqueModel>>(status)
+            val alreadySet = shouldBeOfType<AlreadySetException>(fail.exceptions.first())
+            alreadySet.reference shouldBe UniqueModel.ref { email }
+        }
+
+        dataStore.execute(UniqueModel.delete(keys[0]))
+
+        dataStore.execute(addUniqueItem).statuses.forEach { status ->
             shouldBeOfType<AddSuccess<UniqueModel>>(status)
         }
     }

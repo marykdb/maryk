@@ -181,29 +181,34 @@ class DefinitionsTest {
               indexed: false
               required: false
               final: false
+              maxSize: 5
               valueDefinition: !Date
                 indexed: false
                 required: true
                 final: false
                 unique: false
+                maxValue: 2100-12-31
                 fillWithNow: false
             ? 10: map
             : !Map
               indexed: false
               required: false
               final: false
+              maxSize: 5
               keyDefinition: !Time
                 indexed: false
                 required: true
                 final: false
                 unique: false
                 precision: SECONDS
+                maxValue: '23:00'
                 fillWithNow: false
               valueDefinition: !String
                 indexed: false
                 required: true
                 final: false
                 unique: false
+                maxSize: 10
             ? 11: valueObject
             : !Value
               indexed: false
@@ -256,11 +261,13 @@ class DefinitionsTest {
               indexed: false
               required: false
               final: false
+              maxSize: 6
               valueDefinition: !String
                 indexed: false
                 required: true
                 final: false
                 unique: false
+                maxSize: 10
             ? 16: selfReference
             : !Reference
               indexed: false

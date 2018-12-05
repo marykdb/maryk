@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.OutOfRangeException
-import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
@@ -79,7 +79,7 @@ internal class MapDefinitionTest {
             )
         }
 
-        shouldThrow<TooMuchItemsException> {
+        shouldThrow<TooManyItemsException> {
             def.validateWithRef(
                 newValue = mapOf(
                     12 to "#twelve",

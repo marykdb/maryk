@@ -60,6 +60,6 @@ internal val mapOfValidationExceptionDefinitions = mapOf(
     ValidationExceptionType.OUT_OF_RANGE to EmbeddedObjectDefinition(dataModel = { OutOfRangeException }),
     ValidationExceptionType.REQUIRED to EmbeddedObjectDefinition(dataModel = { RequiredException }),
     ValidationExceptionType.NOT_ENOUGH_ITEMS to EmbeddedObjectDefinition(dataModel = { NotEnoughItemsException }),
-    ValidationExceptionType.TOO_MUCH_ITEMS to EmbeddedObjectDefinition(dataModel = { TooMuchItemsException }),
+    ValidationExceptionType.TOO_MANY_ITEMS to EmbeddedObjectDefinition(dataModel = { TooManyItemsException }),
     ValidationExceptionType.UMBRELLA to EmbeddedObjectDefinition(dataModel = { ValidationUmbrellaException })
 )

@@ -13,7 +13,7 @@ enum class ValidationExceptionType(
     OUT_OF_RANGE(4),
     REQUIRED(5),
     NOT_ENOUGH_ITEMS(6),
-    TOO_MUCH_ITEMS(7),
+    TOO_MANY_ITEMS(7),
     UMBRELLA(8);
 
     companion object: IndexedEnumDefinition<ValidationExceptionType>(

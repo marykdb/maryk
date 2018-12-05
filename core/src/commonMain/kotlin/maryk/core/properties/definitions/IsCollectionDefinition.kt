@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefi
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
-import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.AnyPropertyReference
@@ -64,7 +64,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
             throw NotEnoughItemsException(refGetter(), newSize, this.minSize!!)
         }
         if (isSizeToBig(newSize)) {
-            throw TooMuchItemsException(refGetter(), newSize, this.maxSize!!)
+            throw TooManyItemsException(refGetter(), newSize, this.maxSize!!)
         }
     }
 

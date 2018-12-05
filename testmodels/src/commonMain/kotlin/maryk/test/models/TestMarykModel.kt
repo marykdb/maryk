@@ -1,7 +1,6 @@
 package maryk.test.models
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
-import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -23,6 +22,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.values.Values
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -102,7 +102,10 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 9, name = "set",
             definition = SetDefinition(
                 required = false,
-                valueDefinition = DateDefinition()
+                maxSize = 5,
+                valueDefinition = DateDefinition(
+                    maxValue = Date(2100, 12, 31)
+                )
             )
         )
 
@@ -110,8 +113,13 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 10, name = "map",
             definition = MapDefinition(
                 required = false,
-                keyDefinition = TimeDefinition(),
-                valueDefinition = StringDefinition()
+                maxSize = 5,
+                keyDefinition = TimeDefinition(
+                    maxValue = Time(23, 0, 0)
+                ),
+                valueDefinition = StringDefinition(
+                    maxSize = 10
+                )
             )
         )
 
@@ -158,7 +166,10 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 15, name = "listOfString",
             definition = ListDefinition(
                 required = false,
-                valueDefinition = StringDefinition()
+                maxSize = 6,
+                valueDefinition = StringDefinition(
+                    maxSize = 10
+                )
             )
         )
 

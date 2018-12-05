@@ -188,12 +188,13 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         }
 
         val previousCount = getValueAtIndex<Int>(valueIndex)?.value ?: 0
+        val newCount = previousCount + countChange
 
         addValueChanger {
-            setValueAtIndex(valueIndex, referenceToCompareTo, previousCount + countChange, version, keepAllVersions)
+            setValueAtIndex(valueIndex, referenceToCompareTo, newCount, version, keepAllVersions)
         }
 
-        return previousCount
+        return newCount
     }
 
     /** Get a value at [valueIndex] */

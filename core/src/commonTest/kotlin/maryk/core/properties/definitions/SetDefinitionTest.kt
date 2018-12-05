@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.RequiredException
-import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -60,7 +60,7 @@ internal class SetDefinitionTest {
             def.validateWithRef(newValue = setOf("T"))
         }
 
-        shouldThrow<TooMuchItemsException> {
+        shouldThrow<TooManyItemsException> {
             def.validateWithRef(newValue = setOf("T", "T2", "T3", "T4", "T5"))
         }
     }

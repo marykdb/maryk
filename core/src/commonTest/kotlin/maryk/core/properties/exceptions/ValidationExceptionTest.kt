@@ -21,7 +21,7 @@ class ValidationExceptionTest {
             ref,
             listOf(
                 NotEnoughItemsException(ref, 2, 3),
-                TooMuchItemsException(ref, 10, 3)
+                TooManyItemsException(ref, 10, 3)
             )
         )
     ))

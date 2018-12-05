@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
-import maryk.core.properties.exceptions.TooMuchItemsException
+import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
@@ -96,7 +96,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
             throw NotEnoughItemsException(refGetter(), mapSize, this.minSize!!)
         }
         if (isSizeToBig(mapSize)) {
-            throw TooMuchItemsException(refGetter(), mapSize, this.maxSize!!)
+            throw TooManyItemsException(refGetter(), mapSize, this.maxSize!!)
         }
     }
 

@@ -6,9 +6,9 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
+import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
@@ -85,13 +85,13 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 
 /**
  * Apply [changes] to a specific [objectToChange] and record them as [version]
- * [isWithHistory] determines if history is kept
+ * [keepAllVersions] determines if history is kept
  */
 private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
     objectToChange: DataRecord<DM, P>,
     changes: List<IsChange>,
     version: ULong,
-    isWithHistory: Boolean
+    keepAllVersions: Boolean
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -102,6 +102,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
             }
             validationExceptions!!.add(ve)
         }
+
+        val valueChangers = mutableListOf<() -> Unit>()
 
         for (change in changes) {
             when (change) {
@@ -117,8 +119,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                 is Change -> {
                     if (validationExceptions.isNullOrEmpty()) {
                         for ((reference, value) in change.referenceValuePairs) {
-                            objectToChange.setValue(
-                                reference, value, version, isWithHistory
+                            objectToChange.createSetValue(
+                                valueChangers::add, reference, value, version, keepAllVersions
                             ) { previousValue ->
                                 try {
                                     reference.propertyDefinition.validate(
@@ -138,7 +140,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                         for (reference in change.references) {
                             @Suppress("UNCHECKED_CAST")
                             val ref = reference as IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, Any>
-                            objectToChange.deleteByReference(ref, version)  { previousValue ->
+                            objectToChange.createDeleteByReference(valueChangers::add, ref, version)  { previousValue ->
                                 try {
                                     ref.propertyDefinition.validate(
                                         previousValue = previousValue,
@@ -189,7 +191,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             } catch (e: ValidationException) {
                                 addValidationFail(e)
                             }
-                            objectToChange.setListValue(listChange.reference, list, originalCount, version, isWithHistory)
+                            objectToChange.createSetListValue(valueChangers::add, listChange.reference, list, originalCount, version, keepAllVersions)
                         }
                     }
                 }
@@ -197,19 +199,31 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                     if (validationExceptions.isNullOrEmpty()) {
                         @Suppress("UNCHECKED_CAST")
                         for (setChange in change.setValueChanges) {
-                            val setDefinition = setChange.reference.propertyDefinition as SetPropertyDefinitionWrapper<Any, IsPropertyContext, Any>
+                            val setReference = setChange.reference as SetReference<Any, IsPropertyContext>
+                            val setDefinition = setReference.propertyDefinition
+                            var countChange = 0
                             setChange.addValues?.let {
-                                for(value in it) {
-                                    val setItemRef = setDefinition.getItemRef(value, setChange.reference as SetReference<Any, IsPropertyContext>)
-                                    objectToChange.setValue(setItemRef, value, version)
+                                createValidationUmbrellaException({ setReference }) { addException ->
+                                    for (value in it) {
+                                        val setItemRef = setDefinition.getItemRef(value, setReference)
+                                        try {
+                                            setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
+                                            objectToChange.createSetValue(valueChangers::add, setItemRef, value, version)
+                                            countChange++
+                                        } catch (e: ValidationException) { addException(e) }
+                                    }
                                 }
                             }
                             setChange.deleteValues?.let {
                                 for(value in it) {
-                                    val setItemRef = setDefinition.getItemRef(value, setChange.reference as SetReference<Any, IsPropertyContext>)
-                                    objectToChange.deleteByReference(setItemRef, version)
+                                    val setItemRef = setDefinition.getItemRef(value, setReference)
+                                    objectToChange.createDeleteByReference(valueChangers::add, setItemRef, version)
+                                    countChange--
                                 }
                             }
+
+                            val newSize = objectToChange.createCountUpdater(valueChangers::add, setChange.reference, version, countChange, keepAllVersions)
+                            setDefinition.validateSize(newSize) { setReference }
                         }
                     }
                 }
@@ -219,18 +233,33 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             @Suppress("UNCHECKED_CAST")
                             val mapReference = mapChange.reference as MapReference<Any, Any, IsPropertyContext>
                             val mapDefinition = mapReference.propertyDefinition.definition
+                            var countChange = 0
                             mapChange.valuesToAdd?.let {
-                                for((key, value) in it) {
-                                    val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                    objectToChange.setValue(mapValueRef, value, version)
+                                createValidationUmbrellaException({ mapReference }) { addException ->
+                                    for ((key, value) in it) {
+                                        val mapValueRef = mapDefinition.getValueRef(key, mapReference)
+                                        try {
+                                            mapDefinition.keyDefinition.validateWithRef(null, key) { mapDefinition.getKeyRef(key, mapReference) }
+                                        } catch (e: ValidationException) { addException(e) }
+                                        try {
+                                            mapDefinition.valueDefinition.validateWithRef(null, value) { mapValueRef }
+                                        } catch (e: ValidationException) { addException(e) }
+
+                                        objectToChange.createSetValue(valueChangers::add, mapValueRef, value, version)
+                                        countChange++
+                                    }
                                 }
                             }
                             mapChange.keysToDelete?.let {
                                 for(key in it) {
                                     val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                    objectToChange.deleteByReference(mapValueRef, version)
+                                    objectToChange.createDeleteByReference(valueChangers::add, mapValueRef, version)
+                                    countChange--
                                 }
                             }
+
+                            val newSize = objectToChange.createCountUpdater(valueChangers::add, mapChange.reference, version, countChange, keepAllVersions)
+                            mapDefinition.validateSize(newSize) { mapReference }
                         }
                     }
                 }
@@ -241,6 +270,11 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
         // Return fail if any validationExceptions were caught
         validationExceptions?.let {
             return ValidationFail(it)
+        }
+
+        // Do all value changes now all validations have been done
+        for (valueChanger in valueChangers) {
+            valueChanger()
         }
 
         // Nothing skipped out so must be a success

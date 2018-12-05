@@ -62,12 +62,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
 
         if (newValue != null) {
             val mapSize = newValue.size
-            if (isSizeToSmall(mapSize)) {
-                throw NotEnoughItemsException(refGetter(), mapSize, this.minSize!!)
-            }
-            if (isSizeToBig(mapSize)) {
-                throw TooMuchItemsException(refGetter(), mapSize, this.maxSize!!)
-            }
+            validateSize(mapSize, refGetter)
 
             createValidationUmbrellaException(refGetter) { addException ->
                 for ((key, value) in newValue) {
@@ -89,6 +84,19 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
                     }
                 }
             }
+        }
+    }
+
+    /** Validates size of map and throws exception if it fails*/
+    fun validateSize(
+        mapSize: Int,
+        refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
+    ) {
+        if (isSizeToSmall(mapSize)) {
+            throw NotEnoughItemsException(refGetter(), mapSize, this.minSize!!)
+        }
+        if (isSizeToBig(mapSize)) {
+            throw TooMuchItemsException(refGetter(), mapSize, this.maxSize!!)
         }
     }
 

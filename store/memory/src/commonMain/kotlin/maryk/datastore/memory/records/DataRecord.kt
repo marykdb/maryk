@@ -40,7 +40,8 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
      * Use [keepAllVersions] on true to keep all previous values
      * Add [validate] handler to pass previous value for validation
      */
-    fun <T: Any> setValue(
+    fun <T: Any> createSetValue(
+        addValueChanger: (() -> Unit) -> Boolean,
         reference: IsPropertyReference<T, *, *>,
         value: T,
         version: ULong,
@@ -55,26 +56,31 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
 
         validate?.invoke(getValueAtIndex<T>(valueIndex)?.value)
 
-        setValueAtIndex(valueIndex, referenceToCompareTo, value, version, keepAllVersions)
+        addValueChanger {
+            setValueAtIndex(valueIndex, referenceToCompareTo, value, version, keepAllVersions)
+        }
     }
 
     /**
      * Delete value by [reference] and record deletion below [version]
-     * Add [validate] handler to pass previous value for validation
+     * Add [handlePreviousValue] handler to pass previous value for extra operations
      */
-    fun <T: Any> deleteByReference(
+    fun <T: Any> createDeleteByReference(
+        addValueChanger: (() -> Unit) -> Boolean,
         reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>,
         version: ULong,
-        validate: ((T?) -> Unit)? = null
-    ): DataRecordNode? {
+        handlePreviousValue: ((T?) -> Unit)? = null
+    ) {
         val referenceToCompareTo = convertReferenceToByteArray(reference)
         val valueIndex = values.binarySearch {
             it.reference.compareTo(referenceToCompareTo)
         }
 
-        validate?.invoke(getValueAtIndex<T>(valueIndex)?.value)
+        handlePreviousValue?.invoke(getValueAtIndex<T>(valueIndex)?.value)
 
-        return deleteByIndex<T>(valueIndex, referenceToCompareTo, version)
+        addValueChanger {
+            deleteByIndex<T>(valueIndex, referenceToCompareTo, version)
+        }
     }
 
     /**
@@ -114,7 +120,8 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
      * With [originalCount] it is determined if items need to be deleted.
      * Use [keepAllVersions] on true to keep old versions
      */
-    fun <T: Any> setListValue(
+    fun <T: Any> createSetListValue(
+        addValueChanger: (() -> Unit) -> Boolean,
         reference: IsPropertyReference<out List<T>, IsPropertyDefinition<out List<T>>, out Any>,
         newList: List<T>,
         originalCount: Int,
@@ -129,40 +136,64 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
             it.reference.compareTo(referenceToCompareTo)
         }
 
-        // Set the count
-        this.setValueAtIndex(valueIndex, referenceToCompareTo, newList.size, version, keepAllVersions)
+        addValueChanger {
+            // Set the count
+            this.setValueAtIndex(valueIndex, referenceToCompareTo, newList.size, version, keepAllVersions)
 
-        val toDeleteCount = originalCount - newList.size
-        if (toDeleteCount > 0) {
-            for(i in 0..toDeleteCount) {
-                deleteByIndex<T>(valueIndex + i, getValueAtIndex<T>(valueIndex+i)!!.reference, version)
-            }
-        }
-
-        // Where is last addition
-        val lastAdditionIndex = if (valueIndex > 0 && toDeleteCount < 0) {
-            valueIndex + originalCount
-        } else 0
-
-        // Walk all new values to store
-        newList.forEachIndexed { index, item ->
-            var byteIndex = referenceToCompareTo.size
-            val newRef = referenceToCompareTo.copyOf(byteIndex + 4)
-
-            index.toUInt().writeBytes({
-                newRef[byteIndex++] = it
-            })
-
-            if (valueIndex < 0) {
-                valueIndex--
-            } else {
-                if(lastAdditionIndex <= valueIndex) {
-                    valueIndex = valueIndex * -1 - 2
-                } else valueIndex++
+            val toDeleteCount = originalCount - newList.size
+            if (toDeleteCount > 0) {
+                for (i in 0..toDeleteCount) {
+                    deleteByIndex<T>(valueIndex + i, getValueAtIndex<T>(valueIndex + i)!!.reference, version)
+                }
             }
 
-            this.setValueAtIndex(valueIndex, newRef, item, version, keepAllVersions)
+            // Where is last addition
+            val lastAdditionIndex = if (valueIndex > 0 && toDeleteCount < 0) {
+                valueIndex + originalCount
+            } else 0
+
+            // Walk all new values to store
+            newList.forEachIndexed { index, item ->
+                var byteIndex = referenceToCompareTo.size
+                val newRef = referenceToCompareTo.copyOf(byteIndex + 4)
+
+                index.toUInt().writeBytes({
+                    newRef[byteIndex++] = it
+                })
+
+                if (valueIndex < 0) {
+                    valueIndex--
+                } else {
+                    if (lastAdditionIndex <= valueIndex) {
+                        valueIndex = valueIndex * -1 - 2
+                    } else valueIndex++
+                }
+
+                this.setValueAtIndex(valueIndex, newRef, item, version, keepAllVersions)
+            }
         }
+    }
+
+    fun <T: Any> createCountUpdater(
+        addValueChanger: (() -> Unit) -> Boolean,
+        reference: IsPropertyReference<out T, IsPropertyDefinition<out T>, out Any>,
+        version: ULong,
+        countChange: Int,
+        keepAllVersions: Boolean
+    ): Int {
+        val referenceToCompareTo = convertReferenceToByteArray(reference)
+
+        val valueIndex = values.binarySearch {
+            it.reference.compareTo(referenceToCompareTo)
+        }
+
+        val previousCount = getValueAtIndex<Int>(valueIndex)?.value ?: 0
+
+        addValueChanger {
+            setValueAtIndex(valueIndex, referenceToCompareTo, previousCount + countChange, version, keepAllVersions)
+        }
+
+        return previousCount
     }
 
     /** Get a value at [valueIndex] */

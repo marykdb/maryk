@@ -1744,9 +1744,9 @@ public final class MarykTestProtos {
     int getInt();
 
     /**
-     * <code>sint64 date = 2;</code>
+     * <code>sint32 date = 2;</code>
      */
-    long getDate();
+    int getDate();
   }
   /**
    * Protobuf type {@code ValueMarykObject}
@@ -1762,7 +1762,7 @@ public final class MarykTestProtos {
     }
     private ValueMarykObject() {
       int_ = 0;
-      date_ = 0L;
+      date_ = 0;
     }
 
     @java.lang.Override
@@ -1796,7 +1796,7 @@ public final class MarykTestProtos {
             }
             case 16: {
 
-              date_ = input.readSInt64();
+              date_ = input.readSInt32();
               break;
             }
             default: {
@@ -1841,11 +1841,11 @@ public final class MarykTestProtos {
     }
 
     public static final int DATE_FIELD_NUMBER = 2;
-    private long date_;
+    private int date_;
     /**
-     * <code>sint64 date = 2;</code>
+     * <code>sint32 date = 2;</code>
      */
-    public long getDate() {
+    public int getDate() {
       return date_;
     }
 
@@ -1866,8 +1866,8 @@ public final class MarykTestProtos {
       if (int_ != 0) {
         output.writeSInt32(1, int_);
       }
-      if (date_ != 0L) {
-        output.writeSInt64(2, date_);
+      if (date_ != 0) {
+        output.writeSInt32(2, date_);
       }
       unknownFields.writeTo(output);
     }
@@ -1882,9 +1882,9 @@ public final class MarykTestProtos {
         size += com.google.protobuf.CodedOutputStream
           .computeSInt32Size(1, int_);
       }
-      if (date_ != 0L) {
+      if (date_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(2, date_);
+          .computeSInt32Size(2, date_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1920,8 +1920,7 @@ public final class MarykTestProtos {
       hash = (37 * hash) + INT_FIELD_NUMBER;
       hash = (53 * hash) + getInt();
       hash = (37 * hash) + DATE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getDate());
+      hash = (53 * hash) + getDate();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -2057,7 +2056,7 @@ public final class MarykTestProtos {
         super.clear();
         int_ = 0;
 
-        date_ = 0L;
+        date_ = 0;
 
         return this;
       }
@@ -2138,7 +2137,7 @@ public final class MarykTestProtos {
         if (other.getInt() != 0) {
           setInt(other.getInt());
         }
-        if (other.getDate() != 0L) {
+        if (other.getDate() != 0) {
           setDate(other.getDate());
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -2196,28 +2195,28 @@ public final class MarykTestProtos {
         return this;
       }
 
-      private long date_ ;
+      private int date_ ;
       /**
-       * <code>sint64 date = 2;</code>
+       * <code>sint32 date = 2;</code>
        */
-      public long getDate() {
+      public int getDate() {
         return date_;
       }
       /**
-       * <code>sint64 date = 2;</code>
+       * <code>sint32 date = 2;</code>
        */
-      public Builder setDate(long value) {
+      public Builder setDate(int value) {
         
         date_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>sint64 date = 2;</code>
+       * <code>sint32 date = 2;</code>
        */
       public Builder clearDate() {
         
-        date_ = 0L;
+        date_ = 0;
         onChanged();
         return this;
       }
@@ -2308,9 +2307,9 @@ public final class MarykTestProtos {
     maryk.MarykTestProtos.MarykEnum getEnum();
 
     /**
-     * <code>sint64 date = 5;</code>
+     * <code>sint32 date = 5;</code>
      */
-    long getDate();
+    int getDate();
 
     /**
      * <code>int64 dateTime = 6;</code>
@@ -2388,38 +2387,38 @@ public final class MarykTestProtos {
     int getSet(int index);
 
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
     int getMapCount();
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
     boolean containsMap(
-        long key);
+        int key);
     /**
      * Use {@link #getMapMap()} instead.
      */
     @java.lang.Deprecated
-    java.util.Map<java.lang.Long, java.lang.Integer>
+    java.util.Map<java.lang.Integer, java.lang.Integer>
     getMap();
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
-    java.util.Map<java.lang.Long, java.lang.Integer>
+    java.util.Map<java.lang.Integer, java.lang.Integer>
     getMapMap();
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
 
     int getMapOrDefault(
-        long key,
+        int key,
         int defaultValue);
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
 
     int getMapOrThrow(
-        long key);
+        int key);
 
     /**
      * <code>.CompleteMarykModel.MultiType multi = 16;</code>
@@ -2440,9 +2439,9 @@ public final class MarykTestProtos {
     boolean getBooleanForKey();
 
     /**
-     * <code>sint64 dateForKey = 18;</code>
+     * <code>sint32 dateForKey = 18;</code>
      */
-    long getDateForKey();
+    int getDateForKey();
 
     /**
      * <code>.CompleteMarykModel.MultiForKeyType multiForKey = 19;</code>
@@ -2507,7 +2506,7 @@ public final class MarykTestProtos {
       number_ = 0L;
       boolean_ = false;
       enum_ = 0;
-      date_ = 0L;
+      date_ = 0;
       dateTime_ = 0L;
       time_ = 0;
       fixedBytes_ = com.google.protobuf.ByteString.EMPTY;
@@ -2517,7 +2516,7 @@ public final class MarykTestProtos {
       list_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       set_ = java.util.Collections.emptyList();
       booleanForKey_ = false;
-      dateForKey_ = 0L;
+      dateForKey_ = 0;
       enumEmbedded_ = 0;
       mapWithEnum_ = java.util.Collections.emptyList();
     }
@@ -2570,7 +2569,7 @@ public final class MarykTestProtos {
             }
             case 40: {
 
-              date_ = input.readSInt64();
+              date_ = input.readSInt32();
               break;
             }
             case 48: {
@@ -2652,7 +2651,7 @@ public final class MarykTestProtos {
                     MapDefaultEntryHolder.defaultEntry);
                 mutable_bitField0_ |= 0x00004000;
               }
-              com.google.protobuf.MapEntry<java.lang.Long, java.lang.Integer>
+              com.google.protobuf.MapEntry<java.lang.Integer, java.lang.Integer>
               map__ = input.readMessage(
                   MapDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
               map_.getMutableMap().put(
@@ -2679,7 +2678,7 @@ public final class MarykTestProtos {
             }
             case 144: {
 
-              dateForKey_ = input.readSInt64();
+              dateForKey_ = input.readSInt32();
               break;
             }
             case 154: {
@@ -5044,11 +5043,11 @@ public final class MarykTestProtos {
     }
 
     public static final int DATE_FIELD_NUMBER = 5;
-    private long date_;
+    private int date_;
     /**
-     * <code>sint64 date = 5;</code>
+     * <code>sint32 date = 5;</code>
      */
-    public long getDate() {
+    public int getDate() {
       return date_;
     }
 
@@ -5182,18 +5181,18 @@ public final class MarykTestProtos {
     public static final int MAP_FIELD_NUMBER = 15;
     private static final class MapDefaultEntryHolder {
       static final com.google.protobuf.MapEntry<
-          java.lang.Long, java.lang.Integer> defaultEntry =
+          java.lang.Integer, java.lang.Integer> defaultEntry =
               com.google.protobuf.MapEntry
-              .<java.lang.Long, java.lang.Integer>newDefaultInstance(
+              .<java.lang.Integer, java.lang.Integer>newDefaultInstance(
                   maryk.MarykTestProtos.internal_static_CompleteMarykModel_MapEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.SINT64,
-                  0L,
+                  com.google.protobuf.WireFormat.FieldType.SINT32,
+                  0,
                   com.google.protobuf.WireFormat.FieldType.SINT32,
                   0);
     }
     private com.google.protobuf.MapField<
-        java.lang.Long, java.lang.Integer> map_;
-    private com.google.protobuf.MapField<java.lang.Long, java.lang.Integer>
+        java.lang.Integer, java.lang.Integer> map_;
+    private com.google.protobuf.MapField<java.lang.Integer, java.lang.Integer>
     internalGetMap() {
       if (map_ == null) {
         return com.google.protobuf.MapField.emptyMapField(
@@ -5206,11 +5205,11 @@ public final class MarykTestProtos {
       return internalGetMap().getMap().size();
     }
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
 
     public boolean containsMap(
-        long key) {
+        int key) {
       
       return internalGetMap().getMap().containsKey(key);
     }
@@ -5218,36 +5217,36 @@ public final class MarykTestProtos {
      * Use {@link #getMapMap()} instead.
      */
     @java.lang.Deprecated
-    public java.util.Map<java.lang.Long, java.lang.Integer> getMap() {
+    public java.util.Map<java.lang.Integer, java.lang.Integer> getMap() {
       return getMapMap();
     }
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
 
-    public java.util.Map<java.lang.Long, java.lang.Integer> getMapMap() {
+    public java.util.Map<java.lang.Integer, java.lang.Integer> getMapMap() {
       return internalGetMap().getMap();
     }
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
 
     public int getMapOrDefault(
-        long key,
+        int key,
         int defaultValue) {
       
-      java.util.Map<java.lang.Long, java.lang.Integer> map =
+      java.util.Map<java.lang.Integer, java.lang.Integer> map =
           internalGetMap().getMap();
       return map.containsKey(key) ? map.get(key) : defaultValue;
     }
     /**
-     * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+     * <code>map&lt;sint32, sint32&gt; map = 15;</code>
      */
 
     public int getMapOrThrow(
-        long key) {
+        int key) {
       
-      java.util.Map<java.lang.Long, java.lang.Integer> map =
+      java.util.Map<java.lang.Integer, java.lang.Integer> map =
           internalGetMap().getMap();
       if (!map.containsKey(key)) {
         throw new java.lang.IllegalArgumentException();
@@ -5286,11 +5285,11 @@ public final class MarykTestProtos {
     }
 
     public static final int DATEFORKEY_FIELD_NUMBER = 18;
-    private long dateForKey_;
+    private int dateForKey_;
     /**
-     * <code>sint64 dateForKey = 18;</code>
+     * <code>sint32 dateForKey = 18;</code>
      */
-    public long getDateForKey() {
+    public int getDateForKey() {
       return dateForKey_;
     }
 
@@ -5394,8 +5393,8 @@ public final class MarykTestProtos {
       if (enum_ != maryk.MarykTestProtos.MarykEnum.UNKNOWN.getNumber()) {
         output.writeEnum(4, enum_);
       }
-      if (date_ != 0L) {
-        output.writeSInt64(5, date_);
+      if (date_ != 0) {
+        output.writeSInt32(5, date_);
       }
       if (dateTime_ != 0L) {
         output.writeInt64(6, dateTime_);
@@ -5429,7 +5428,7 @@ public final class MarykTestProtos {
         output.writeSInt32NoTag(set_.get(i));
       }
       com.google.protobuf.GeneratedMessageV3
-        .serializeLongMapTo(
+        .serializeIntegerMapTo(
           output,
           internalGetMap(),
           MapDefaultEntryHolder.defaultEntry,
@@ -5440,8 +5439,8 @@ public final class MarykTestProtos {
       if (booleanForKey_ != false) {
         output.writeBool(17, booleanForKey_);
       }
-      if (dateForKey_ != 0L) {
-        output.writeSInt64(18, dateForKey_);
+      if (dateForKey_ != 0) {
+        output.writeSInt32(18, dateForKey_);
       }
       if (multiForKey_ != null) {
         output.writeMessage(19, getMultiForKey());
@@ -5476,9 +5475,9 @@ public final class MarykTestProtos {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(4, enum_);
       }
-      if (date_ != 0L) {
+      if (date_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(5, date_);
+          .computeSInt32Size(5, date_);
       }
       if (dateTime_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
@@ -5530,9 +5529,9 @@ public final class MarykTestProtos {
         }
         setMemoizedSerializedSize = dataSize;
       }
-      for (java.util.Map.Entry<java.lang.Long, java.lang.Integer> entry
+      for (java.util.Map.Entry<java.lang.Integer, java.lang.Integer> entry
            : internalGetMap().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.Long, java.lang.Integer>
+        com.google.protobuf.MapEntry<java.lang.Integer, java.lang.Integer>
         map__ = MapDefaultEntryHolder.defaultEntry.newBuilderForType()
             .setKey(entry.getKey())
             .setValue(entry.getValue())
@@ -5548,9 +5547,9 @@ public final class MarykTestProtos {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(17, booleanForKey_);
       }
-      if (dateForKey_ != 0L) {
+      if (dateForKey_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeSInt64Size(18, dateForKey_);
+          .computeSInt32Size(18, dateForKey_);
       }
       if (multiForKey_ != null) {
         size += com.google.protobuf.CodedOutputStream
@@ -5651,8 +5650,7 @@ public final class MarykTestProtos {
       hash = (37 * hash) + ENUM_FIELD_NUMBER;
       hash = (53 * hash) + enum_;
       hash = (37 * hash) + DATE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getDate());
+      hash = (53 * hash) + getDate();
       hash = (37 * hash) + DATETIME_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
           getDateTime());
@@ -5690,8 +5688,7 @@ public final class MarykTestProtos {
       hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
           getBooleanForKey());
       hash = (37 * hash) + DATEFORKEY_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getDateForKey());
+      hash = (53 * hash) + getDateForKey();
       if (hasMultiForKey()) {
         hash = (37 * hash) + MULTIFORKEY_FIELD_NUMBER;
         hash = (53 * hash) + getMultiForKey().hashCode();
@@ -5866,7 +5863,7 @@ public final class MarykTestProtos {
 
         enum_ = 0;
 
-        date_ = 0L;
+        date_ = 0;
 
         dateTime_ = 0L;
 
@@ -5899,7 +5896,7 @@ public final class MarykTestProtos {
         }
         booleanForKey_ = false;
 
-        dateForKey_ = 0L;
+        dateForKey_ = 0;
 
         if (multiForKeyBuilder_ == null) {
           multiForKey_ = null;
@@ -6055,7 +6052,7 @@ public final class MarykTestProtos {
         if (other.enum_ != 0) {
           setEnumValue(other.getEnumValue());
         }
-        if (other.getDate() != 0L) {
+        if (other.getDate() != 0) {
           setDate(other.getDate());
         }
         if (other.getDateTime() != 0L) {
@@ -6107,7 +6104,7 @@ public final class MarykTestProtos {
         if (other.getBooleanForKey() != false) {
           setBooleanForKey(other.getBooleanForKey());
         }
-        if (other.getDateForKey() != 0L) {
+        if (other.getDateForKey() != 0) {
           setDateForKey(other.getDateForKey());
         }
         if (other.hasMultiForKey()) {
@@ -6338,28 +6335,28 @@ public final class MarykTestProtos {
         return this;
       }
 
-      private long date_ ;
+      private int date_ ;
       /**
-       * <code>sint64 date = 5;</code>
+       * <code>sint32 date = 5;</code>
        */
-      public long getDate() {
+      public int getDate() {
         return date_;
       }
       /**
-       * <code>sint64 date = 5;</code>
+       * <code>sint32 date = 5;</code>
        */
-      public Builder setDate(long value) {
+      public Builder setDate(int value) {
         
         date_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>sint64 date = 5;</code>
+       * <code>sint32 date = 5;</code>
        */
       public Builder clearDate() {
         
-        date_ = 0L;
+        date_ = 0;
         onChanged();
         return this;
       }
@@ -6810,8 +6807,8 @@ public final class MarykTestProtos {
       }
 
       private com.google.protobuf.MapField<
-          java.lang.Long, java.lang.Integer> map_;
-      private com.google.protobuf.MapField<java.lang.Long, java.lang.Integer>
+          java.lang.Integer, java.lang.Integer> map_;
+      private com.google.protobuf.MapField<java.lang.Integer, java.lang.Integer>
       internalGetMap() {
         if (map_ == null) {
           return com.google.protobuf.MapField.emptyMapField(
@@ -6819,7 +6816,7 @@ public final class MarykTestProtos {
         }
         return map_;
       }
-      private com.google.protobuf.MapField<java.lang.Long, java.lang.Integer>
+      private com.google.protobuf.MapField<java.lang.Integer, java.lang.Integer>
       internalGetMutableMap() {
         onChanged();;
         if (map_ == null) {
@@ -6836,11 +6833,11 @@ public final class MarykTestProtos {
         return internalGetMap().getMap().size();
       }
       /**
-       * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+       * <code>map&lt;sint32, sint32&gt; map = 15;</code>
        */
 
       public boolean containsMap(
-          long key) {
+          int key) {
         
         return internalGetMap().getMap().containsKey(key);
       }
@@ -6848,36 +6845,36 @@ public final class MarykTestProtos {
        * Use {@link #getMapMap()} instead.
        */
       @java.lang.Deprecated
-      public java.util.Map<java.lang.Long, java.lang.Integer> getMap() {
+      public java.util.Map<java.lang.Integer, java.lang.Integer> getMap() {
         return getMapMap();
       }
       /**
-       * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+       * <code>map&lt;sint32, sint32&gt; map = 15;</code>
        */
 
-      public java.util.Map<java.lang.Long, java.lang.Integer> getMapMap() {
+      public java.util.Map<java.lang.Integer, java.lang.Integer> getMapMap() {
         return internalGetMap().getMap();
       }
       /**
-       * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+       * <code>map&lt;sint32, sint32&gt; map = 15;</code>
        */
 
       public int getMapOrDefault(
-          long key,
+          int key,
           int defaultValue) {
         
-        java.util.Map<java.lang.Long, java.lang.Integer> map =
+        java.util.Map<java.lang.Integer, java.lang.Integer> map =
             internalGetMap().getMap();
         return map.containsKey(key) ? map.get(key) : defaultValue;
       }
       /**
-       * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+       * <code>map&lt;sint32, sint32&gt; map = 15;</code>
        */
 
       public int getMapOrThrow(
-          long key) {
+          int key) {
         
-        java.util.Map<java.lang.Long, java.lang.Integer> map =
+        java.util.Map<java.lang.Integer, java.lang.Integer> map =
             internalGetMap().getMap();
         if (!map.containsKey(key)) {
           throw new java.lang.IllegalArgumentException();
@@ -6891,11 +6888,11 @@ public final class MarykTestProtos {
         return this;
       }
       /**
-       * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+       * <code>map&lt;sint32, sint32&gt; map = 15;</code>
        */
 
       public Builder removeMap(
-          long key) {
+          int key) {
         
         internalGetMutableMap().getMutableMap()
             .remove(key);
@@ -6905,15 +6902,15 @@ public final class MarykTestProtos {
        * Use alternate mutation accessors instead.
        */
       @java.lang.Deprecated
-      public java.util.Map<java.lang.Long, java.lang.Integer>
+      public java.util.Map<java.lang.Integer, java.lang.Integer>
       getMutableMap() {
         return internalGetMutableMap().getMutableMap();
       }
       /**
-       * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+       * <code>map&lt;sint32, sint32&gt; map = 15;</code>
        */
       public Builder putMap(
-          long key,
+          int key,
           int value) {
         
         
@@ -6922,11 +6919,11 @@ public final class MarykTestProtos {
         return this;
       }
       /**
-       * <code>map&lt;sint64, sint32&gt; map = 15;</code>
+       * <code>map&lt;sint32, sint32&gt; map = 15;</code>
        */
 
       public Builder putAllMap(
-          java.util.Map<java.lang.Long, java.lang.Integer> values) {
+          java.util.Map<java.lang.Integer, java.lang.Integer> values) {
         internalGetMutableMap().getMutableMap()
             .putAll(values);
         return this;
@@ -7075,28 +7072,28 @@ public final class MarykTestProtos {
         return this;
       }
 
-      private long dateForKey_ ;
+      private int dateForKey_ ;
       /**
-       * <code>sint64 dateForKey = 18;</code>
+       * <code>sint32 dateForKey = 18;</code>
        */
-      public long getDateForKey() {
+      public int getDateForKey() {
         return dateForKey_;
       }
       /**
-       * <code>sint64 dateForKey = 18;</code>
+       * <code>sint32 dateForKey = 18;</code>
        */
-      public Builder setDateForKey(long value) {
+      public Builder setDateForKey(int value) {
         
         dateForKey_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>sint64 dateForKey = 18;</code>
+       * <code>sint32 dateForKey = 18;</code>
        */
       public Builder clearDateForKey() {
         
-        dateForKey_ = 0L;
+        dateForKey_ = 0;
         onChanged();
         return this;
       }
@@ -7611,9 +7608,9 @@ public final class MarykTestProtos {
       "Int64\030\010 \001(\004\022\017\n\007float32\030\t \001(\002\022\017\n\007float64\030" +
       "\n \001(\001\"!\n\020SimpleMarykModel\022\r\n\005value\030\001 \001(\t" +
       "\"-\n\020ValueMarykObject\022\013\n\003int\030\001 \001(\021\022\014\n\004dat" +
-      "e\030\002 \001(\022\"\376\006\n\022CompleteMarykModel\022\016\n\006string" +
+      "e\030\002 \001(\021\"\376\006\n\022CompleteMarykModel\022\016\n\006string" +
       "\030\001 \001(\t\022\016\n\006number\030\002 \001(\004\022\017\n\007boolean\030\003 \001(\010\022" +
-      "\030\n\004enum\030\004 \001(\0162\n.MarykEnum\022\014\n\004date\030\005 \001(\022\022" +
+      "\030\n\004enum\030\004 \001(\0162\n.MarykEnum\022\014\n\004date\030\005 \001(\021\022" +
       "\020\n\010dateTime\030\006 \001(\003\022\014\n\004time\030\007 \001(\r\022\022\n\nfixed" +
       "Bytes\030\010 \001(\014\022\021\n\tflexBytes\030\t \001(\014\022\021\n\trefere" +
       "nce\030\n \001(\014\022#\n\010subModel\030\013 \001(\0132\021.SimpleMary" +
@@ -7621,7 +7618,7 @@ public final class MarykTestProtos {
       "\022\013\n\003set\030\016 \003(\021\022)\n\003map\030\017 \003(\0132\034.CompleteMar" +
       "ykModel.MapEntry\022,\n\005multi\030\020 \001(\0132\035.Comple" +
       "teMarykModel.MultiType\022\025\n\rbooleanForKey\030" +
-      "\021 \001(\010\022\022\n\ndateForKey\030\022 \001(\022\0228\n\013multiForKey" +
+      "\021 \001(\010\022\022\n\ndateForKey\030\022 \001(\021\0228\n\013multiForKey" +
       "\030\023 \001(\0132#.CompleteMarykModel.MultiForKeyT" +
       "ype\022;\n\014enumEmbedded\030\024 \001(\0162%.CompleteMary" +
       "kModel.MarykEnumEmbedded\0229\n\013mapWithEnum\030" +
@@ -7631,7 +7628,7 @@ public final class MarykTestProtos {
       " \001(\tH\000\022\014\n\002o2\030\002 \001(\010H\000B\r\n\013multiForKey\032U\n\020M" +
       "apWithEnumEntry\0222\n\003key\030\001 \001(\0162%.CompleteM" +
       "arykModel.MarykEnumEmbedded\022\r\n\005value\030\002 \001" +
-      "(\t\032*\n\010MapEntry\022\013\n\003key\030\001 \001(\022\022\r\n\005value\030\002 \001" +
+      "(\t\032*\n\010MapEntry\022\013\n\003key\030\001 \001(\021\022\r\n\005value\030\002 \001" +
       "(\021:\0028\001\"8\n\021MarykEnumEmbedded\022\013\n\007UNKNOWN\020\000" +
       "\022\006\n\002E1\020\001\022\006\n\002E2\020\002\022\006\n\002E3\020\003*0\n\tMarykEnum\022\013\n" +
       "\007UNKNOWN\020\000\022\006\n\002O1\020\001\022\006\n\002O2\020\002\022\006\n\002O3\020\003B\007\n\005ma" +

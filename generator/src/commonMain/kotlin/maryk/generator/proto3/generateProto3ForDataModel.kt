@@ -81,7 +81,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is ValueModelDefinition<*, *, *>,
         is ReferenceDefinition<*> -> "bytes"
         is TimeDefinition -> "uint32"
-        is DateDefinition -> "sint64"
+        is DateDefinition -> "sint32"
         is DateTimeDefinition -> "int64"
         is NumberDefinition<*> -> when(this.type.type) {
             NumberType.SInt8,

@@ -3,12 +3,14 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.processors.datastore.toScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.records.DataStore
+import maryk.lib.extensions.compare.compareTo
 
 internal typealias ScanStoreAction<DM, P> = StoreAction<DM, P, ScanRequest<DM, P>, ValuesResponse<DM, P>>
 internal typealias AnyScanStoreAction = ScanStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -21,13 +23,23 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanR
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
 
-    val startIndex = dataStore.records.binarySearch { it.key.compareTo(scanRequest.startKey) }.let {
+    val scanRange = scanRequest.filter.toScanRange(scanRequest.startKey.bytes)
+
+    val startIndex = dataStore.records.binarySearch { it.key.bytes.compareTo(scanRange.start) }.let {
         // If negative start at first entry point
         if (it < 0) it * -1 + 1 else it
     }
 
     for (index in startIndex until dataStore.records.size) {
         val record = dataStore.records[index]
+
+        if (scanRange.keyOutOfRange(record.key.bytes)) {
+            break
+        }
+
+        if (!scanRange.keyMatches(record.key.bytes)) {
+            continue
+        }
 
         if (scanRequest.filterData(record)) {
             continue

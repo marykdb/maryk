@@ -10,7 +10,7 @@ private const val MAX_BYTE: Byte = 0b1111_1111.toByte()
  * a negative number if it's less than [other],
  * or a positive number if it's greater than [other].
  */
-fun ByteArray.compareTo(other: ByteArray): Int {
+operator fun ByteArray.compareTo(other: ByteArray): Int {
     for (it in 0 until minOf(this.size, other.size)) {
         val a = this[it] and MAX_BYTE
         val b = other[it] and MAX_BYTE

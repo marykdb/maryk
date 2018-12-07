@@ -116,7 +116,8 @@ private fun <T: IsPropertyDefinition<*>> processValue(
 
             // Process Set Values
             val setValueDefinition = (definition as SetDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
-            for (setItem in (value as Set<Any>)) {
+            val set = value as Set<Any>
+            for (setItem in set) {
                 val setValueQualifierWriter: QualifierWriter = { writer ->
                     setQualifierWriter.invoke(writer)
                     setValueDefinition.writeStorageBytes(setItem, writer)
@@ -137,7 +138,8 @@ private fun <T: IsPropertyDefinition<*>> processValue(
 
             // Process Map Values
             val mapDefinition = (definition as IsMapDefinition<Any, *, *>)
-            for ((key, mapValue) in (value as Map<Any, Any>)) {
+            val map = value as Map<Any, Any>
+            for ((key, mapValue) in map) {
                 val mapValueQualifierWriter: QualifierWriter = { writer ->
                     mapQualifierWriter.invoke(writer)
                     mapDefinition.keyDefinition.writeStorageBytes(key, writer)

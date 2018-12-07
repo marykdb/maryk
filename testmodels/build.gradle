@@ -20,9 +20,6 @@ kotlin {
             dependencies {
                 api project(":testlib")
                 api project(":core")
-                implementation project(":lib")
-                api project(":json")
-                api project(":yaml")
             }
         }
         jvmMain {

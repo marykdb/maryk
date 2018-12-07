@@ -21,15 +21,11 @@ kotlin {
                 implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
 
-                implementation project(':lib')
-                implementation project(':json')
-                implementation project(':yaml')
                 api project(':core')
             }
         }
         commonTest {
             dependencies {
-                api project(':testlib')
                 api project(':testmodels')
             }
         }
@@ -41,10 +37,6 @@ kotlin {
         jvmMain {
             dependencies {
                 api "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion"
-                implementation project(':lib')
-                implementation project(':json')
-                implementation project(':yaml')
-                implementation project(':core')
             }
         }
         macosMain {

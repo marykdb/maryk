@@ -25,7 +25,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     api project(":generator")
 
-    testImplementation project(":testlib")
     testImplementation project(":testmodels")
     testImplementation "com.google.protobuf:protobuf-java:$protobufVersion"
 }

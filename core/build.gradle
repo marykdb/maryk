@@ -19,6 +19,7 @@ kotlin {
         commonMain {
             dependencies {
                 api project(':yaml')
+                api project(':lib')
             }
         }
         commonTest {

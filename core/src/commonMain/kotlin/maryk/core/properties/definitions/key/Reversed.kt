@@ -5,16 +5,17 @@ import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.DefinitionWithContextDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.values.SimpleObjectValues
-import maryk.core.values.Values
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.SimpleObjectValues
+import maryk.core.values.Values
 import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
@@ -43,6 +44,9 @@ data class Reversed<T: Any>(
             MAX_BYTE xor reader()
         }
     }
+
+    override fun isForPropertyReference(propertyReference: AnyPropertyReference) =
+        this.reference == propertyReference
 
     internal object Model : DefinitionWithContextDataModel<Reversed<out Any>, DefinitionsConversionContext>(
         properties = object : ObjectPropertyDefinitions<Reversed<out Any>>() {

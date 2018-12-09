@@ -1,6 +1,5 @@
 package maryk.core.processors.datastore
 
-import maryk.core.query.filters.IsFilter
 import maryk.lib.extensions.compare.compareTo
 
 /**
@@ -8,18 +7,16 @@ import maryk.lib.extensions.compare.compareTo
  */
 class ScanRange internal constructor(
     val start: ByteArray,
-    private val end: ByteArray? = null,
+    val end: ByteArray? = null,
     private val uniques: List<UniqueToMatch>? = null,
-    private val partialMatches: List<PartialToMatch>? = null
+    private val partialMatches: List<IsPartialToMatch>? = null
 ) {
     fun keyOutOfRange(key: ByteArray) = end?.let { end < key } ?: false
 
     fun keyMatches(key: ByteArray): Boolean {
         partialMatches?.let {
             for (partial in partialMatches) {
-                partial.toMatch.forEachIndexed { index, byte ->
-                    if(key[index + partial.fromIndex] != byte) return false
-                }
+                if(!partial.match(key)) return false
             }
         }
         return true
@@ -31,13 +28,20 @@ internal class UniqueToMatch(
     val value: Comparable<*>
 )
 
-internal class PartialToMatch(
-    val fromIndex: Int,
-    val toMatch: ByteArray
-)
+interface IsPartialToMatch {
+    val fromIndex: Int
+    fun match(bytes: ByteArray): Boolean
+}
 
-fun IsFilter?.toScanRange(startKey: ByteArray): ScanRange {
-    return ScanRange(
-        start = startKey
-    )
+internal class PartialToMatch(
+    override val fromIndex: Int,
+    val toMatch: ByteArray
+): IsPartialToMatch {
+    /** Matches [bytes] to partial and returns true if matches */
+    override fun match(bytes: ByteArray): Boolean {
+        toMatch.forEachIndexed { index, byte ->
+            if(bytes[index + this.fromIndex] != byte) return false
+        }
+        return true
+    }
 }

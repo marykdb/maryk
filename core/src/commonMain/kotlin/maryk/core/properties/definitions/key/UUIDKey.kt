@@ -7,6 +7,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
 import maryk.core.values.ValueItems
@@ -28,6 +29,8 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>> {
         initLong(reader),
         initLong(reader)
     )
+
+    override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) = false
 
     override fun writeStorageBytes(value: Pair<Long, Long>, writer: (byte: Byte) -> Unit) {
         value.first.writeBytes(writer)

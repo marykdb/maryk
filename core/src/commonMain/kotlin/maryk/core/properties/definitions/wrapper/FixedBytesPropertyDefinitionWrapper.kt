@@ -2,7 +2,6 @@ package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
@@ -11,7 +10,10 @@ import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.values.Values
 
 /**
  * Contains a Fixed Bytes property [definition] of [D] which can be used for keys.
@@ -51,4 +53,7 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
         @Suppress("UNCHECKED_CAST")
         return values.original(this.index) as T? ?: throw RequiredException(this.getRef())
     }
+
+    override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) =
+        propertyReference.propertyDefinition == this && propertyReference is PropertyReference<*, *, *, *> && propertyReference.parentReference == null
 }

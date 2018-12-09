@@ -18,6 +18,7 @@ interface IsRootValuesDataModel<P: PropertyDefinitions> : IsRootDataModel<P>, Is
 interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
     val keyDefinitions: Array<FixedBytesProperty<out Any>>
     val keySize: Int
+    val keyIndices: IntArray
 
     /** Get Key by [base64] bytes as string representation */
     fun key(base64: String): Key<*>

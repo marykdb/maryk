@@ -6,8 +6,6 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionWithContextDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.values.SimpleObjectValues
-import maryk.core.values.Values
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -16,9 +14,12 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.exceptions.RequiredException
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.SimpleObjectValues
+import maryk.core.values.Values
 
 /**
  * Defines a key part which refers to a multi type definition with [reference].
@@ -52,6 +53,9 @@ data class TypeId<E: IndexedEnum<E>>(
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         initShort(reader).toInt() - Short.MIN_VALUE
+
+    override fun isForPropertyReference(propertyReference: AnyPropertyReference) =
+        this.reference == propertyReference
 
     internal object Model : DefinitionWithContextDataModel<TypeId<*>, DefinitionsConversionContext>(
         properties = object : ObjectPropertyDefinitions<TypeId<*>>() {

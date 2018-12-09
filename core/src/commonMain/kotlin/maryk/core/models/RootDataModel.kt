@@ -45,6 +45,13 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
     override val primitiveType = PrimitiveType.RootModel
 
     final override val keySize = IsRootDataModel.calculateKeySize(keyDefinitions)
+    final override val keyIndices: IntArray
+
+    init {
+        var index = 0
+        // Add indices to array. Also account for the 1 sized separator
+        keyIndices = keyDefinitions.map { def -> index.also { index += def.byteSize + 1 } }.toIntArray()
+    }
 
     @Suppress("UNCHECKED_CAST")
     private object RootModelProperties: ObjectPropertyDefinitions<RootDataModel<*, *>>() {

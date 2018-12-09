@@ -3,7 +3,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.toScanRange
+import maryk.core.processors.datastore.createScanRange
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
@@ -23,7 +23,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanR
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
 
-    val scanRange = scanRequest.filter.toScanRange(scanRequest.startKey.bytes)
+    val scanRange = scanRequest.dataModel.createScanRange(scanRequest.filter, scanRequest.startKey?.bytes)
 
     val startIndex = dataStore.records.binarySearch { it.key.bytes.compareTo(scanRange.start) }.let {
         // If negative start at first entry point

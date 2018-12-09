@@ -9,7 +9,7 @@ import maryk.core.query.filters.Equals
 import maryk.core.query.filters.IsFilter
 import maryk.lib.extensions.compare.compareTo
 
-fun <DM: IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray): ScanRange {
+fun <DM: IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): ScanRange {
     val listOfParts = mutableListOf<IsPartialToMatch>()
 
     convertFilter(this, filter, listOfParts)
@@ -20,7 +20,7 @@ fun <DM: IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKe
 }
 
 private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
-    startKey: ByteArray,
+    startKey: ByteArray?,
     listOfParts: MutableList<IsPartialToMatch>
 ): ScanRange {
     val start = ByteArray(this.keySize)
@@ -67,7 +67,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     }
 
     return ScanRange(
-        start = if (start < startKey) startKey else start,
+        start = if (startKey != null && start < startKey) startKey else start,
         end = endToPass,
         partialMatches = listOfParts
     )

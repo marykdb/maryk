@@ -9,7 +9,7 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import kotlin.experimental.and
 
 internal object ProtoBuf {
-    /** Write the key for protobuf field */
+    /** Write the key for ProtoBuf field */
     internal fun writeKey(tag: Int, wireType: WireType, writer: (byte: Byte) -> Unit) {
         tag.writeVarIntWithExtraInfo(wireType.type, writer)
     }

@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsValuesDataModel
-import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -11,6 +10,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.values.Values
 
 /**
  * Contains a Embedded Values property [definition] containing Values and Properties described by [P]

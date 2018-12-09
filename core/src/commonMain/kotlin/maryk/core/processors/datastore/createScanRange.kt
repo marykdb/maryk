@@ -9,7 +9,6 @@ import maryk.core.query.filters.Equals
 import maryk.core.query.filters.IsFilter
 import maryk.lib.extensions.compare.compareTo
 
-
 fun <DM: IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray): ScanRange {
     val listOfParts = mutableListOf<IsPartialToMatch>()
 

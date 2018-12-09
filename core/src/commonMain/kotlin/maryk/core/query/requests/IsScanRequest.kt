@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package maryk.core.query.requests
 
@@ -28,7 +28,7 @@ interface IsScanRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsFetchRequest
 
         internal fun <DO: Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt?) =
             definitions.add(8, "limit", NumberDefinition(
-                default = 100.toUInt(),
+                default = 100u,
                 type = UInt32
             ), getter)
     }

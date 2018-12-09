@@ -41,7 +41,6 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
     return long
 }
 
-
 /** Write the bytes of this Long as a variable int to a [writer] */
 internal fun Long.writeVarBytes(writer: (byte: Byte) -> Unit) {
     var value = this

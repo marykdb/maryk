@@ -1,8 +1,8 @@
 package maryk.core.properties.types.numeric
 
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.initInt
-import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.initUInt
+import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import kotlin.random.Random
@@ -16,12 +16,12 @@ object UInt32: UnsignedNumberDescriptor<UInt>(
     MAX_VALUE = UInt.MAX_VALUE,
     type = NumberType.UInt32
 ) {
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = (initInt(reader) + Int.MIN_VALUE).toUInt()
-    override fun writeStorageBytes(value: UInt, writer: (byte: Byte) -> Unit) = (value.toInt() - Int.MIN_VALUE).writeBytes(writer)
-    override fun readTransportBytes(reader: () -> Byte) = initIntByVar(reader).toUInt()
-    override fun calculateTransportByteLength(value: UInt) = value.toInt().calculateVarByteLength()
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = initUInt(reader)
+    override fun writeStorageBytes(value: UInt, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
+    override fun readTransportBytes(reader: () -> Byte) = initUIntByVar(reader)
+    override fun calculateTransportByteLength(value: UInt) = value.calculateVarByteLength()
     override fun writeTransportBytes(value: UInt, writer: (byte: Byte) -> Unit) {
-        value.toInt().writeVarBytes(writer)
+        value.writeVarBytes(writer)
     }
     override fun ofString(value: String) = value.toUInt()
     override fun ofDouble(value: Double) = value.toLong().toUInt()

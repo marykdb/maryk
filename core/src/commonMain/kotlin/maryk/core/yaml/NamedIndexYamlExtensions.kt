@@ -35,7 +35,7 @@ internal fun <DO: Any> IsYamlReader.readNamedIndexField(
         throw IllegalJsonOperation("Expected named index like '? [0: name]'")
     }
 
-    val index = (nextToken() as? JsonToken.FieldName)?.value?.toInt()?.toUInt()
+    val index = (nextToken() as? JsonToken.FieldName)?.value?.toUInt()
             ?: throw IllegalJsonOperation("Expected index integer as field name like '? 0: name'")
     valueMap[indexDescriptor.index] = index
 

@@ -14,12 +14,13 @@ import maryk.core.query.responses.IsResponse
 
 /** Defines a Scan from key request. */
 interface IsScanRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsFetchRequest<DM, RP> {
-    val startKey: Key<DM>
+    val startKey: Key<DM>?
     val limit: UInt
 
     companion object {
         internal fun <DO: IsScanRequest<*, *>, DM: IsRootDataModel<*>> addStartKey(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Key<DM>?) =
             definitions.add(2, "startKey", ContextualReferenceDefinition<RequestContext>(
+                required = false,
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }

@@ -11,9 +11,7 @@ import maryk.test.models.SimpleMarykModel
 private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
 val scanRequest = SimpleMarykModel.run {
-    scan(
-        startKey = key1
-    )
+    scan()
 }
 
 val scanMaxRequest = SimpleMarykModel.run {

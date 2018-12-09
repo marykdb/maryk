@@ -32,7 +32,6 @@ class ScanSelectRequestTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(scanRequest, ScanRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
-        startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
         limit: 100
 

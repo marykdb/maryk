@@ -4,9 +4,9 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.values.ObjectValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import maryk.test.requests.changeRequest
@@ -93,18 +93,15 @@ class RequestsTest {
           maxVersions: 1000
         - !Scan
           dataModel: SimpleMarykModel
-          startKey: Zk6m4QpZQegUg5s13JVYlQ
           filterSoftDeleted: true
           limit: 100
         - !ScanChanges
           dataModel: SimpleMarykModel
-          startKey: Zk6m4QpZQegUg5s13JVYlQ
           filterSoftDeleted: true
           limit: 100
           fromVersion: 1234
         - !ScanVersionedChanges
           dataModel: SimpleMarykModel
-          startKey: Zk6m4QpZQegUg5s13JVYlQ
           filterSoftDeleted: true
           limit: 100
           fromVersion: 1234

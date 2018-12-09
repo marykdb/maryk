@@ -15,10 +15,10 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject from a context resolved from [contextualResolver] */
 class ContextualReferenceDefinition<in CX: IsPropertyContext>(
+    override val required: Boolean = true,
     val contextualResolver: (context: CX?) -> IsRootDataModel<*>
 ): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
     override val indexed = false
-    override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 

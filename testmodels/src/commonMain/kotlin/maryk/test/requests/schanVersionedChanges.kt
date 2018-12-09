@@ -11,7 +11,6 @@ import maryk.test.models.SimpleMarykModel
 private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
 val scanVersionedChangesRequest = SimpleMarykModel.scanVersionedChanges(
-    startKey = key1,
     fromVersion = 1234uL
 )
 

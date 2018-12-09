@@ -4,7 +4,6 @@ import maryk.core.models.key
 import maryk.core.query.filters.Equals
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.toHex
 import maryk.lib.time.DateTime
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR

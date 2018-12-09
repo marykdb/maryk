@@ -5,7 +5,6 @@ package maryk.core.query.requests
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
@@ -13,6 +12,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.values.ObjectValues
 
 /**
  * Creates a Request to scan DataObjects by key from [startKey] until [limit] and only return [select]
@@ -21,7 +21,7 @@ import maryk.core.query.responses.ValuesResponse
  * Results can be ordered with an [order]
  */
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scan(
-    startKey: Key<DM>,
+    startKey: Key<DM>? = null,
     select: RootPropRefGraph<DM>? = null,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -40,7 +40,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scan(
  */
 data class ScanRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
     override val dataModel: DM,
-    override val startKey: Key<DM>,
+    override val startKey: Key<DM>? = null,
     override val select: RootPropRefGraph<DM>? = null,
     override val filter: IsFilter? = null,
     override val order: Order? = null,

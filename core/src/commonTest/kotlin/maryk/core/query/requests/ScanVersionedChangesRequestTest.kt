@@ -34,7 +34,6 @@ class ScanVersionedChangesRequestTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
-        startKey: Zk6m4QpZQegUg5s13JVYlQ
         filterSoftDeleted: true
         limit: 100
         fromVersion: 1234

@@ -5,13 +5,13 @@ package maryk.core.query.requests
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.VersionedChangesResponse
+import maryk.core.values.ObjectValues
 
 /**
  * Creates a request to scan DataObjects by key from [startKey] until [limit]
@@ -20,7 +20,7 @@ import maryk.core.query.responses.VersionedChangesResponse
  * Results can be ordered with an [order]
  */
 fun <DM: IsRootValuesDataModel<*>> DM.scanVersionedChanges(
-    startKey: Key<DM>,
+    startKey: Key<DM>? = null,
     filter: IsFilter? = null,
     order: Order? = null,
     limit: UInt = 100u,
@@ -41,7 +41,7 @@ fun <DM: IsRootValuesDataModel<*>> DM.scanVersionedChanges(
 @Suppress("EXPERIMENTAL_OVERRIDE")
 data class ScanVersionedChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
-    override val startKey: Key<DM>,
+    override val startKey: Key<DM>? = null,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
     override val limit: UInt = 100u,

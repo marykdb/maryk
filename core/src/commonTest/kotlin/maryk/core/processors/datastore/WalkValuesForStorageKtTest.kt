@@ -44,6 +44,6 @@ class WalkValuesForStorageKtTest {
             }
             counter++
         }
-        counter shouldBe 19
+        counter shouldBe 23
     }
 }

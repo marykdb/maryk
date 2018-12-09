@@ -337,6 +337,22 @@ internal class RootDataModelTest {
         			"unique": false,
         			"dataModel": "TestMarykModel"
         		}]
+        	}, {
+        		"index": 17,
+        		"name": "setOfString",
+        		"definition": ["Set", {
+        			"indexed": false,
+        			"required": false,
+        			"final": false,
+        			"maxSize": 6,
+        			"valueDefinition": ["String", {
+        				"indexed": false,
+        				"required": true,
+        				"final": false,
+        				"unique": false,
+        				"maxSize": 10
+        			}]
+        		}]
         	}]
         }""".trimIndent()
     }
@@ -525,6 +541,18 @@ internal class RootDataModelTest {
             final: false
             unique: false
             dataModel: TestMarykModel
+          ? 17: setOfString
+          : !Set
+            indexed: false
+            required: false
+            final: false
+            maxSize: 6
+            valueDefinition: !String
+              indexed: false
+              required: true
+              final: false
+              unique: false
+              maxSize: 10
 
         """.trimIndent()
     }

@@ -20,6 +20,7 @@ import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.CompleteReferenceType.TYPE
@@ -174,13 +175,10 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
 
                 addValueToOutput(index, set)
             } else {
-                val valueDefinition = ((this.properties[index]!! as IsSetDefinition<*, *>).valueDefinition as IsFixedBytesEncodable<*>)
+                val valueDefinition = ((this.properties[index]!! as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                 var setItemIndex = qIndex
-                val key = valueDefinition.readStorageBytes(valueDefinition.byteSize) { qualifier[setItemIndex++] }
 
-                if (qualifier.size > setItemIndex) {
-                    throw ParseException("Sets cannot contain complex data")
-                }
+                val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
 
                 addValueToOutput(index, key)
             }

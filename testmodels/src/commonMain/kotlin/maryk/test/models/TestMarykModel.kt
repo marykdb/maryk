@@ -181,6 +181,17 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
                 dataModel = { TestMarykModel }
             )
         )
+
+        val setOfString = add(
+            index = 17, name = "setOfString",
+            definition = SetDefinition(
+                required = false,
+                maxSize = 6,
+                valueDefinition = StringDefinition(
+                    maxSize = 10
+                )
+            )
+        )
     }
 
     operator fun invoke(
@@ -199,7 +210,8 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         multi: TypedValue<Option, *>? = null,
         reference: Key<TestMarykModel>? = null,
         listOfString: List<String>? = null,
-        selfReference: Key<TestMarykModel>? = null
+        selfReference: Key<TestMarykModel>? = null,
+        setOfString: Set<String>? = null
     ) = this.values {
         mapNonNulls(
             this.string with string,
@@ -217,7 +229,8 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             this.multi with multi,
             this.reference with reference,
             this.listOfString with listOfString,
-            this.selfReference with selfReference
+            this.selfReference with selfReference,
+            this.setOfString with setOfString
         )
     }
 

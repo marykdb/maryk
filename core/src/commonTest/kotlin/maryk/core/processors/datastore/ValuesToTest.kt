@@ -32,6 +32,9 @@ val testMaryk = TestMarykModel(
         model = EmbeddedMarykModel(
             value = "another test"
         )
+    ),
+    setOfString = setOf(
+        "abc", "def", "ghi"
     )
 )
 
@@ -54,5 +57,9 @@ val valuesAsStorables = arrayOf<Pair<String, Any>>(
     "7a" to 3,
     "7a00000000" to "v1",
     "7a00000001" to "v2",
-    "7a00000002" to "v3"
+    "7a00000002" to "v3",
+    "8b01" to 3,
+    "8b01616263" to "abc",
+    "8b01646566" to "def",
+    "8b01676869" to "ghi"
 )

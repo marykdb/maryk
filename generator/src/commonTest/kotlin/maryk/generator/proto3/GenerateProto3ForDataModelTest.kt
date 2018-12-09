@@ -1,10 +1,10 @@
 package maryk.generator.proto3
 
+import maryk.generator.kotlin.GenerationContext
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnum
 import maryk.test.models.NumericMarykModel
 import maryk.test.models.SimpleMarykModel
-import maryk.generator.kotlin.GenerationContext
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -57,7 +57,7 @@ message CompleteMarykModel {
   uint64 number = 2;
   bool boolean = 3;
   MarykEnum enum = 4;
-  sint64 date = 5;
+  sint32 date = 5;
   int64 dateTime = 6;
   uint32 time = 7;
   bytes fixedBytes = 8;
@@ -67,10 +67,10 @@ message CompleteMarykModel {
   bytes valueModel = 12;
   repeated string list = 13;
   repeated sint32 set = 14;
-  map<sint64, sint32> map = 15;
+  map<sint32, sint32> map = 15;
   MultiType multi = 16;
   bool booleanForKey = 17;
-  sint64 dateForKey = 18;
+  sint32 dateForKey = 18;
   MultiForKeyType multiForKey = 19;
   MarykEnumEmbedded enumEmbedded = 20;
   repeated MapWithEnumEntry mapWithEnum = 21;

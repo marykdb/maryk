@@ -2,16 +2,12 @@
 ext.setupJVM = {
     kotlin {
         targets {
-            fromPreset(presets.jvm, 'jvm')
-
-            configure([jvm]) {
-                tasks.getByName(compilations.main.compileKotlinTaskName).kotlinOptions {
-                    allWarningsAsErrors = true
-                    jvmTarget = '1.8'
-                }
-                tasks.getByName(compilations.test.compileKotlinTaskName).kotlinOptions {
-                    allWarningsAsErrors = true
-                    jvmTarget = '1.8'
+            fromPreset(presets.jvm, 'jvm') {
+                configure([compilations.main, compilations.test]) {
+                    tasks.getByName(compileKotlinTaskName).kotlinOptions {
+                        allWarningsAsErrors = true
+                        jvmTarget = '1.8'
+                    }
                 }
             }
         }

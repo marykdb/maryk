@@ -6,7 +6,16 @@ ext.setupJS = { runTests ->
 
     kotlin {
         targets {
-            fromPreset(presets.js, 'js')
+            fromPreset(presets.js, 'js')  {
+                configure([compilations.main, compilations.test]) {
+                    tasks.getByName(compileKotlinTaskName).kotlinOptions {
+                        sourceMap = true
+                        moduleKind = "umd"
+                        metaInfo = true
+                        allWarningsAsErrors = true
+                    }
+                }
+            }
         }
         sourceSets {
             jsMain {
@@ -19,11 +28,6 @@ ext.setupJS = { runTests ->
 
     node {
         nodeModulesDir = file("${project.rootDir}/.nodeTest")
-    }
-
-    [compileKotlinJs, compileTestKotlinJs]*.configure {
-        kotlinOptions.moduleKind = "commonjs"
-        kotlinOptions.sourceMap = true
     }
 
     if (runTests == null || runTests == true) {

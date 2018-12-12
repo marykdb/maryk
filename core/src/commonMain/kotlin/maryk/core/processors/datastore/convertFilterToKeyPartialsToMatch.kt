@@ -54,10 +54,10 @@ fun convertFilterToKeyPartsToMatch(
                 val fromBytes = convertValueToKeyBytes(keyDefinition, value.from)
                 val toBytes = convertValueToKeyBytes(keyDefinition, value.to)
                 listOfKeyParts.add(
-                    KeyPartialToBeBigger(index, fromBytes, value.inclusiveFrom)
+                    KeyPartialToBeSmaller(index, fromBytes, value.inclusiveFrom)
                 )
                 listOfKeyParts.add(
-                    KeyPartialToBeSmaller(index, toBytes, value.inclusiveTo)
+                    KeyPartialToBeBigger(index, toBytes, value.inclusiveTo)
                 )
             }
         }

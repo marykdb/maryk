@@ -25,8 +25,8 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
 
     var currentOffset = 0
     var keyIndex = 0
-    val toRemove = mutableListOf<Int>()
-    for ((keyPartIndex, keyPart) in listOfParts.withIndex()) {
+    val toRemove = mutableListOf<IsKeyPartialToMatch>()
+    for (keyPart in listOfParts) {
         if (currentOffset != keyPart.fromIndex) {
             break
         }
@@ -42,7 +42,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                     start[nextIndex] = 1
                     end[nextIndex] = 1
                 }
-                toRemove.add(keyPartIndex)
+                toRemove.add(keyPart)
             }
             is KeyPartialToBeBigger -> {
                 keyPart.toBeBigger.forEachIndexed { i, b ->
@@ -53,7 +53,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 if (nextIndex < start.size) {
                     start[nextIndex] = if (keyPart.inclusive) 1 else 2
                 }
-                toRemove.add(keyPartIndex)
+                toRemove.add(keyPart)
             }
             is KeyPartialToBeSmaller -> {
                 keyPart.toBeSmaller.forEachIndexed { i, b ->
@@ -64,7 +64,23 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 if (nextIndex < start.size) {
                     end[nextIndex] = if (keyPart.inclusive) 1 else 0
                 }
-                toRemove.add(keyPartIndex)
+                toRemove.add(keyPart)
+            }
+            is KeyPartialToBeOneOf -> {
+                val first = keyPart.toBeOneOf.first()
+                first.forEachIndexed { i, b ->
+                    start[i + currentOffset] = b
+                }
+                keyPart.toBeOneOf.last().forEachIndexed { i, b ->
+                    end[i + currentOffset] = b
+                }
+                val nextIndex = currentOffset + first.size
+                // Separator to 1 so match is exact
+                if (nextIndex < start.size) {
+                    start[nextIndex] = 1
+                    end[nextIndex] = 1
+                }
+                toRemove.add(keyPart)
             }
             else -> throw Exception("Unknown partial type: $keyPart")
         }
@@ -73,8 +89,8 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         }
     }
 
-    for (partToRemoveIndex in toRemove) {
-        listOfParts.removeAt(partToRemoveIndex)
+    for (partToRemove in toRemove) {
+        listOfParts.remove(partToRemove)
     }
 
     return ScanRange(

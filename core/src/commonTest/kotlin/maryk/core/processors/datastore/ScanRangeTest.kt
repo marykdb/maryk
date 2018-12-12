@@ -6,6 +6,8 @@ import maryk.core.query.filters.GreaterThan
 import maryk.core.query.filters.GreaterThanEquals
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
+import maryk.core.query.filters.Range
+import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.toHex
@@ -159,6 +161,60 @@ class ScanRangeTest {
         scanRange.keyMatches(match.bytes) shouldBe true
 
         (scanRange.start < earlier.bytes) shouldBe true
+        scanRange.keyOutOfRange(earlier.bytes) shouldBe false
+        scanRange.keyMatches(earlier.bytes) shouldBe true
+
+        (scanRange.start < later.bytes) shouldBe true
+        scanRange.keyOutOfRange(later.bytes) shouldBe true
+        scanRange.keyMatches(later.bytes) shouldBe true
+    }
+
+    @Test
+    fun convertRangeFilterToRange() {
+        val filter = Range(
+            Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 1, 1) .. DateTime(2018, 12, 8, 12, 33, 55,2)
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        scanRange.start.toHex() shouldBe "7fffffa3f445cc7ffd010000"
+        scanRange.end?.toHex() shouldBe "7fffffa3f446027ffe01ffff"
+
+        (scanRange.start < match.bytes) shouldBe true
+        scanRange.keyOutOfRange(match.bytes) shouldBe false
+        scanRange.keyMatches(match.bytes) shouldBe true
+
+        (scanRange.start < earlier.bytes) shouldBe false
+        scanRange.keyOutOfRange(earlier.bytes) shouldBe false
+        scanRange.keyMatches(earlier.bytes) shouldBe true
+
+        (scanRange.start < later.bytes) shouldBe true
+        scanRange.keyOutOfRange(later.bytes) shouldBe true
+        scanRange.keyMatches(later.bytes) shouldBe true
+    }
+
+    @Test
+    fun convertValueInFilterToRange() {
+        val filter = ValueIn(
+            Log.ref { timestamp } with setOf(
+                DateTime(2018, 12, 8, 12, 1, 1, 1),
+                DateTime(2018, 12, 8, 12, 2, 2, 2),
+                DateTime(2018, 12, 8, 12, 3, 3, 3)
+            )
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        scanRange.start.toHex() shouldBe "7fffffa3f44d087ffc010000"
+        scanRange.end?.toHex() shouldBe "7fffffa3f44d827ffe01ffff"
+
+        val match = Log.key(Log("message", ERROR, DateTime(2018, 12, 8, 12, 2, 2, 2)))
+
+        (scanRange.start < match.bytes) shouldBe true
+        scanRange.keyOutOfRange(match.bytes) shouldBe false
+        scanRange.keyMatches(match.bytes) shouldBe true
+
+        (scanRange.start < earlier.bytes) shouldBe false
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 

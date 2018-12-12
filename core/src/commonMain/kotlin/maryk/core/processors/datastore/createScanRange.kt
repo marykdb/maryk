@@ -80,7 +80,6 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                     start[nextIndex] = 1
                     end[nextIndex] = 1
                 }
-                toRemove.add(keyPart)
             }
             else -> throw Exception("Unknown partial type: $keyPart")
         }

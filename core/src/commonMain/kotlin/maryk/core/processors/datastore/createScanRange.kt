@@ -45,10 +45,10 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 toRemove.add(keyPart)
             }
             is KeyPartialToBeBigger -> {
-                keyPart.toBeBigger.forEachIndexed { i, b ->
+                keyPart.toBeSmaller.forEachIndexed { i, b ->
                     start[i + currentOffset] = b
                 }
-                val nextIndex = currentOffset + keyPart.toBeBigger.size
+                val nextIndex = currentOffset + keyPart.toBeSmaller.size
                 // Separator to 1 so match is exact
                 if (nextIndex < start.size) {
                     start[nextIndex] = if (keyPart.inclusive) 1 else 2
@@ -56,10 +56,10 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 toRemove.add(keyPart)
             }
             is KeyPartialToBeSmaller -> {
-                keyPart.toBeSmaller.forEachIndexed { i, b ->
+                keyPart.toBeBigger.forEachIndexed { i, b ->
                     end[i + currentOffset] = b
                 }
-                val nextIndex = currentOffset + keyPart.toBeSmaller.size
+                val nextIndex = currentOffset + keyPart.toBeBigger.size
                 // Separator to 1 so match is exact
                 if (nextIndex < start.size) {
                     end[nextIndex] = if (keyPart.inclusive) 1 else 0

@@ -20,3 +20,14 @@ operator fun ByteArray.compareTo(other: ByteArray): Int {
     }
     return this.size - other.size
 }
+
+/**
+ * Match given [bytes] to a part from index [fromIndex]
+ */
+fun ByteArray.matchPart(fromIndex: Int, bytes: ByteArray): Boolean {
+    bytes.forEachIndexed { index, byte ->
+        if (this[index + fromIndex] != byte) return false
+    }
+    return true
+}
+

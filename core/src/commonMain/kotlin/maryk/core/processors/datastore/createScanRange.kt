@@ -7,7 +7,6 @@ import maryk.lib.extensions.compare.compareTo
 /** Create a scan range by [filter] and [startKey] */
 fun <DM: IsRootValuesDataModel<*>> DM.createScanRange(filter: IsFilter?, startKey: ByteArray?): ScanRange {
     val listOfParts = mutableListOf<IsKeyPartialToMatch>()
-
     convertFilterToKeyPartsToMatch(this, filter, listOfParts)
 
     listOfParts.sortBy { it.fromIndex }
@@ -27,9 +26,10 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     var keyIndex = 0
     val toRemove = mutableListOf<IsKeyPartialToMatch>()
     for (keyPart in listOfParts) {
-        if (currentOffset != keyPart.fromIndex) {
-            break
+        if (currentOffset < keyPart.fromIndex) {
+            currentOffset = if (this.keyIndices.size > 1) this.keyIndices[++keyIndex] else this.keySize
         }
+
         when (keyPart) {
             is KeyPartialToMatch -> {
                 keyPart.toMatch.forEachIndexed { i, b ->
@@ -83,9 +83,6 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 toRemove.add(keyPart)
             }
             else -> throw Exception("Unknown partial type: $keyPart")
-        }
-        if (keyIndex < this.keyDefinitions.size) {
-            currentOffset = this.keyIndices[keyIndex++]
         }
     }
 

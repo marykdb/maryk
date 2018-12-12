@@ -1,8 +1,8 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.lib.extensions.compare
 
-import kotlin.experimental.and
-
-private const val MAX_BYTE: Byte = 0b1111_1111.toByte()
+private val MAX_BYTE: UByte = 0b1111_1111.toUByte()
 
 /**
  * Compares initByteArrayByHex to [other] initByteArrayByHex.
@@ -12,9 +12,11 @@ private const val MAX_BYTE: Byte = 0b1111_1111.toByte()
  */
 operator fun ByteArray.compareTo(other: ByteArray): Int {
     for (it in 0 until minOf(this.size, other.size)) {
-        val a = this[it] and MAX_BYTE
-        val b = other[it] and MAX_BYTE
-        if (a != b) { return a - b }
+        val a = this[it].toUByte() and MAX_BYTE
+        val b = other[it].toUByte() and MAX_BYTE
+        if (a != b) {
+            return (a.toUByte() - b.toUByte()).toInt()
+        }
     }
     return this.size - other.size
 }

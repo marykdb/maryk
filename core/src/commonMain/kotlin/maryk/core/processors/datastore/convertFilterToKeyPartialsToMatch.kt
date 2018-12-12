@@ -5,6 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThan
 import maryk.core.query.filters.GreaterThanEquals
@@ -75,6 +76,11 @@ fun convertFilterToKeyPartsToMatch(
                 listOfKeyParts.add(
                     KeyPartialToBeOneOf(index, list)
                 )
+            }
+        }
+        is And -> {
+            for (aFilter in filter.filters) {
+                convertFilterToKeyPartsToMatch(dataModel, aFilter, listOfKeyParts)
             }
         }
         else -> { /** Skip since other filters are not supported for key scan ranges*/ }

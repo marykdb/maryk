@@ -17,7 +17,7 @@ import maryk.test.models.Severity.INFO
 enum class Severity(
     override val index: Int
 ): IndexedEnum<Severity> {
-    ERROR(1), DEBUG(2), INFO(3);
+    INFO(1), DEBUG(2), ERROR(3);
 
     companion object: IndexedEnumDefinition<Severity>("Severity", Severity::values)
 }

@@ -2,15 +2,15 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.values.ObjectValues
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /** Referenced values in [referenceValuePairs] should match with prefixes */
 data class Prefix internal constructor(
-    val referenceValuePairs: List<ReferenceValuePair<String>>
-) : IsFilter {
+    override val referenceValuePairs: List<ReferenceValuePair<String>>
+) : IsReferenceValuePairsFilter<String> {
     override val filterType = FilterType.Prefix
 
     constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())

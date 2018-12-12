@@ -2,15 +2,15 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.values.ObjectValues
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /** Referenced values in [referenceValuePairs] should be less than and not equal given value */
 data class LessThan internal constructor(
-    val referenceValuePairs: List<ReferenceValuePair<Any>>
-) : IsFilter {
+    override val referenceValuePairs: List<ReferenceValuePair<Any>>
+) : IsReferenceValuePairsFilter<Any> {
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 

@@ -2,8 +2,13 @@ package maryk.core.processors.datastore
 
 import maryk.core.models.key
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.GreaterThan
+import maryk.core.query.filters.GreaterThanEquals
+import maryk.core.query.filters.LessThan
+import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.pairs.with
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.toHex
 import maryk.lib.time.DateTime
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
@@ -19,8 +24,8 @@ class ScanRangeTest {
             UniqueToMatch(byteArrayOf(1, 2), "unique")
         ),
         partialMatches = listOf(
-            PartialToMatch(1, byteArrayOf(2, 4)),
-            PartialToMatch(3, byteArrayOf(5, 6))
+            KeyPartialToMatch(1, byteArrayOf(2, 4)),
+            KeyPartialToMatch(3, byteArrayOf(5, 6))
         )
     )
 
@@ -37,26 +42,123 @@ class ScanRangeTest {
         scanRange.keyMatches(byteArrayOf(3, 2, 4, 6, 6)) shouldBe false
     }
 
-    @Suppress("UNUSED_VARIABLE")
+    private val match = Log.key(Log("message", ERROR, DateTime(2018, 12, 8, 12, 33, 23)))
+    // Dont be confused that the time is reversed. Later is referring to it is later in table, not in time.
+    private val earlier = Log.key(Log("message", ERROR, DateTime(2019, 12, 8, 12, 33, 23)))
+    private val later = Log.key(Log("message", ERROR, DateTime(2017, 12, 8, 12, 33, 23)))
+
     @Test
-    fun convertSimpleFilterToRange() {
-        val match = Log.key(Log("message", ERROR, DateTime(2018, 12, 8, 12, 33, 23)))
-
-        // Dont be confused that the time is reversed. Later is referring to it is later in table, not in time.
-        val earlier = Log.key(Log("message", ERROR, DateTime(2019, 12, 8, 12, 33, 23)))
-        val later = Log.key(Log("message", ERROR, DateTime(2017, 12, 8, 12, 33, 23)))
-
+    fun convertSimpleEqualFilterToRange() {
         val filter = Equals(
             Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 23)
         )
 
-        val scanRange = Log.createScanRange(filter, ByteArray(Log.keySize))
+        val scanRange = Log.createScanRange(filter, null)
+
+        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff010000"
+        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff01ffff"
 
         (scanRange.start < match.bytes) shouldBe true
         scanRange.keyOutOfRange(match.bytes) shouldBe false
         scanRange.keyMatches(match.bytes) shouldBe true
 
         (scanRange.start < earlier.bytes) shouldBe false
+        scanRange.keyOutOfRange(earlier.bytes) shouldBe false
+        scanRange.keyMatches(earlier.bytes) shouldBe true
+
+        (scanRange.start < later.bytes) shouldBe true
+        scanRange.keyOutOfRange(later.bytes) shouldBe true
+        scanRange.keyMatches(later.bytes) shouldBe true
+    }
+
+    @Test
+    fun convertGreaterThanFilterToRange() {
+        val filter = GreaterThan(
+            Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 23)
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff020000"
+        scanRange.end?.toHex() shouldBe "ffffffffffffffffffffffff"
+
+        (scanRange.start < match.bytes) shouldBe false // Because should skip
+        scanRange.keyOutOfRange(match.bytes) shouldBe false
+        scanRange.keyMatches(match.bytes) shouldBe true
+
+        (scanRange.start < earlier.bytes) shouldBe false
+        scanRange.keyOutOfRange(earlier.bytes) shouldBe false
+        scanRange.keyMatches(earlier.bytes) shouldBe true
+
+        (scanRange.start < later.bytes) shouldBe true
+        scanRange.keyOutOfRange(later.bytes) shouldBe false
+        scanRange.keyMatches(later.bytes) shouldBe true
+    }
+
+    @Test
+    fun convertGreaterThanEqualsFilterToRange() {
+        val filter = GreaterThanEquals(
+            Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 23)
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        scanRange.start.toHex() shouldBe "7fffffa3f445ec7fff010000"
+        scanRange.end?.toHex() shouldBe "ffffffffffffffffffffffff"
+
+        (scanRange.start < match.bytes) shouldBe true
+        scanRange.keyOutOfRange(match.bytes) shouldBe false
+        scanRange.keyMatches(match.bytes) shouldBe true
+
+        (scanRange.start < earlier.bytes) shouldBe false
+        scanRange.keyOutOfRange(earlier.bytes) shouldBe false
+        scanRange.keyMatches(earlier.bytes) shouldBe true
+
+        (scanRange.start < later.bytes) shouldBe true
+        scanRange.keyOutOfRange(later.bytes) shouldBe false
+        scanRange.keyMatches(later.bytes) shouldBe true
+    }
+
+    @Test
+    fun convertLessThanFilterToRange() {
+        val filter = LessThan(
+            Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 23)
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        scanRange.start.toHex() shouldBe "000000000000000000000000"
+        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff00ffff"
+
+        (scanRange.start < match.bytes) shouldBe true
+        scanRange.keyOutOfRange(match.bytes) shouldBe true // because should not be included
+        scanRange.keyMatches(match.bytes) shouldBe true
+
+        (scanRange.start < earlier.bytes) shouldBe true
+        scanRange.keyOutOfRange(earlier.bytes) shouldBe false
+        scanRange.keyMatches(earlier.bytes) shouldBe true
+
+        (scanRange.start < later.bytes) shouldBe true
+        scanRange.keyOutOfRange(later.bytes) shouldBe true
+        scanRange.keyMatches(later.bytes) shouldBe true
+    }
+
+    @Test
+    fun convertLessThanEqualsFilterToRange() {
+        val filter = LessThanEquals(
+            Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 23)
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        scanRange.start.toHex() shouldBe "000000000000000000000000"
+        scanRange.end?.toHex() shouldBe "7fffffa3f445ec7fff01ffff"
+
+        (scanRange.start < match.bytes) shouldBe true
+        scanRange.keyOutOfRange(match.bytes) shouldBe false
+        scanRange.keyMatches(match.bytes) shouldBe true
+
+        (scanRange.start < earlier.bytes) shouldBe true
         scanRange.keyOutOfRange(earlier.bytes) shouldBe false
         scanRange.keyMatches(earlier.bytes) shouldBe true
 

@@ -55,4 +55,12 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, V: Any> {
         }
         return refList
     }
+
+    /** Convert property reference to a ByteArray */
+    fun toStorageByteArray(): ByteArray {
+        var index = 0
+        val referenceToCompareTo = ByteArray(this.calculateStorageByteLength())
+        this.writeStorageBytes { referenceToCompareTo[index++] = it }
+        return referenceToCompareTo
+    }
 }

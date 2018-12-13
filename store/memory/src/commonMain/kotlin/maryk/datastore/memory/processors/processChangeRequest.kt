@@ -32,6 +32,11 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.memory.StoreAction
+import maryk.datastore.memory.processors.changers.createCountUpdater
+import maryk.datastore.memory.processors.changers.deleteByReference
+import maryk.datastore.memory.processors.changers.getList
+import maryk.datastore.memory.processors.changers.setListValue
+import maryk.datastore.memory.processors.changers.setValue
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
@@ -110,8 +115,12 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
             validationExceptions!!.add(ve)
         }
 
-        val valueChangers = mutableListOf<() -> Unit>()
         var uniquesToProcess: MutableList<DataRecordValue<Comparable<Any>>>? = null
+
+        val newValueList = objectToChange.values.toMutableList()
+
+        var isChanged = false
+        val setChanged = { didChange: Boolean -> if (didChange) isChanged = true }
 
         for (change in changes) {
             try {
@@ -127,8 +136,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                     }
                     is Change -> {
                         for ((reference, value) in change.referenceValuePairs) {
-                            objectToChange.createSetValue(
-                                valueChangers::add, reference, value, version, keepAllVersions
+                            setValue(
+                                newValueList, reference, value, version, keepAllVersions
                             ) { dataRecordValue, previousValue ->
                                 val definition = reference.propertyDefinition.definition
                                 if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
@@ -150,7 +159,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 } catch (e: ValidationException) {
                                     addValidationFail(e)
                                 }
-                            }
+                            }.also(setChanged)
                         }
                     }
                     is Delete -> {
@@ -158,7 +167,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             @Suppress("UNCHECKED_CAST")
                             val ref =
                                 reference as IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, Any>
-                            objectToChange.createDeleteByReference(valueChangers::add, ref, version) { _, previousValue ->
+                            deleteByReference(newValueList, ref, version) { _, previousValue ->
                                 try {
                                     ref.propertyDefinition.validate(
                                         previousValue = previousValue,
@@ -168,12 +177,12 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 } catch (e: ValidationException) {
                                     addValidationFail(e)
                                 }
-                            }
+                            }.also(setChanged)
                         }
                     }
                     is ListChange -> {
                         for (listChange in change.listValueChanges) {
-                            val originalList = objectToChange.getList(listChange.reference)
+                            val originalList = getList(newValueList, listChange.reference)
                             val list = originalList?.toMutableList() ?: mutableListOf()
                             val originalCount = list.size
                             listChange.deleteAtIndex?.let {
@@ -207,14 +216,14 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             } catch (e: ValidationException) {
                                 addValidationFail(e)
                             }
-                            objectToChange.createSetListValue(
-                                valueChangers::add,
+                            setListValue(
+                                newValueList,
                                 listChange.reference,
                                 list,
                                 originalCount,
                                 version,
                                 keepAllVersions
-                            )
+                            ).also(setChanged)
                         }
                     }
                     is SetChange -> {
@@ -229,14 +238,14 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                         val setItemRef = setDefinition.getItemRef(value, setReference)
                                         try {
                                             setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
-                                            objectToChange.createSetValue(
-                                                valueChangers::add,
+                                            setValue(
+                                                newValueList,
                                                 setItemRef,
                                                 value,
                                                 version
                                             ) { _, prevValue ->
                                                 prevValue ?: countChange++ // Only count up when value did not exist
-                                            }
+                                            }.also(setChanged)
                                         } catch (e: ValidationException) {
                                             addException(e)
                                         }
@@ -246,16 +255,16 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             setChange.deleteValues?.let {
                                 for (value in it) {
                                     val setItemRef = setDefinition.getItemRef(value, setReference)
-                                    objectToChange.createDeleteByReference(valueChangers::add, setItemRef, version) { _, prevValue ->
+                                    deleteByReference(newValueList, setItemRef, version) { _, prevValue ->
                                         prevValue?.let {
                                             countChange-- // only count down if value existed
                                         }
-                                    }
+                                    }.also(setChanged)
                                 }
                             }
 
-                            val newSize = objectToChange.createCountUpdater(
-                                valueChangers::add,
+                            val newSize = createCountUpdater(
+                                newValueList,
                                 setChange.reference,
                                 version,
                                 countChange,
@@ -276,11 +285,11 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 mapChange.keysToDelete?.let {
                                     for (key in it) {
                                         val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                        objectToChange.createDeleteByReference(valueChangers::add, mapValueRef, version) { _, prevValue ->
+                                        deleteByReference(newValueList, mapValueRef, version) { _, prevValue ->
                                             prevValue?.let {
                                                 countChange-- // only count down if value existed
                                             }
-                                        }
+                                        }.also(setChanged)
                                     }
                                 }
                                 mapChange.valuesToAdd?.let {
@@ -304,20 +313,20 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                                 addException(e)
                                             }
 
-                                            objectToChange.createSetValue(
-                                                valueChangers::add,
+                                            setValue(
+                                                newValueList,
                                                 mapValueRef,
                                                 value,
                                                 version
                                             ) { _, prevValue ->
                                                 prevValue ?: countChange++ // Only count up when value did not exist
-                                            }
+                                            }.also(setChanged)
                                         }
                                     }
                                 }
 
-                                val newSize = objectToChange.createCountUpdater(
-                                    valueChangers::add,
+                                val newSize = createCountUpdater(
+                                    newValueList,
                                     mapChange.reference,
                                     version,
                                     countChange,
@@ -356,10 +365,14 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
             }
         }
 
-        // Do all value changes now all validations have been done
-        for (valueChanger in valueChangers) {
-            valueChanger()
+        if (isChanged) {
+            if (version > objectToChange.lastVersion) {
+                objectToChange.lastVersion = version
+            }
         }
+
+        // Apply the new values now all validations have been accepted
+        objectToChange.values = newValueList
 
         // Nothing skipped out so must be a success
         return Success(version)

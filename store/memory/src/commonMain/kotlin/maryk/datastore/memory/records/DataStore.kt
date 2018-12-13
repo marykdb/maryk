@@ -4,7 +4,7 @@ package maryk.datastore.memory.records
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.references.IsPropertyReference
+import maryk.datastore.memory.processors.changers.getValue
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias AnyDataStore = DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -30,7 +30,7 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     /** Remove [dataRecord] from all unique indices and register removal below [version] */
     fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: ULong) {
         for (indexValues in uniqueIndices) {
-            dataRecord.getValue<Comparable<Any>>(indexValues.reference)?.let {
+            getValue<Comparable<Any>>(dataRecord.values, indexValues.reference)?.let {
                 indexValues.removeFromIndex(dataRecord, it, version, keepAllVersions)
             }
         }

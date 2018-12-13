@@ -272,6 +272,17 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 val mapReference = mapChange.reference as MapReference<Any, Any, IsPropertyContext>
                                 val mapDefinition = mapReference.propertyDefinition.definition
                                 var countChange = 0
+                                // First keys to delete since they don't change indices because of tombstones
+                                mapChange.keysToDelete?.let {
+                                    for (key in it) {
+                                        val mapValueRef = mapDefinition.getValueRef(key, mapReference)
+                                        objectToChange.createDeleteByReference(valueChangers::add, mapValueRef, version) { _, prevValue ->
+                                            prevValue?.let {
+                                                countChange-- // only count down if value existed
+                                            }
+                                        }
+                                    }
+                                }
                                 mapChange.valuesToAdd?.let {
                                     createValidationUmbrellaException({ mapReference }) { addException ->
                                         for ((key, value) in it) {
@@ -300,16 +311,6 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                                 version
                                             ) { _, prevValue ->
                                                 prevValue ?: countChange++ // Only count up when value did not exist
-                                            }
-                                        }
-                                    }
-                                }
-                                mapChange.keysToDelete?.let {
-                                    for (key in it) {
-                                        val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                        objectToChange.createDeleteByReference(valueChangers::add, mapValueRef, version) { _, prevValue ->
-                                            prevValue?.let {
-                                                countChange-- // only count down if value existed
                                             }
                                         }
                                     }

@@ -57,8 +57,6 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
         val newDataValue = setValueAtIndex(addValueChanger, valueIndex, referenceToCompareTo, value, version, keepAllVersions)
 
         validate?.invoke(newDataValue, getValueAtIndex<T>(valueIndex)?.value)
-
-
     }
 
     /**

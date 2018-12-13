@@ -27,7 +27,11 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanR
 
     val startIndex = dataStore.records.binarySearch { it.key.bytes.compareTo(scanRange.start) }.let {
         // If negative start at first entry point
-        if (it < 0) it * -1 + 1 else it
+        if (it < 0) {
+            it * -1 + 1
+        } else if (!scanRange.startInclusive) {
+            it + 1 // Skip the match if not inclusive
+        } else  { it }
     }
 
     for (index in startIndex until dataStore.records.size) {

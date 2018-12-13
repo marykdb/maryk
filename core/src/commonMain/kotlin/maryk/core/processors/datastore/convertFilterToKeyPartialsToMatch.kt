@@ -17,7 +17,7 @@ import maryk.core.query.filters.Range
 import maryk.core.query.filters.ValueIn
 import maryk.lib.extensions.compare.compareTo
 
-/** Convert key parts to match for [filter] for [dataModel] into [listOfKeyParts] */
+/** Convert [filter] for [dataModel] into [listOfKeyParts] */
 fun convertFilterToKeyPartsToMatch(
     dataModel: IsRootValuesDataModel<*>,
     filter: IsFilter?,
@@ -115,7 +115,7 @@ private fun <T: Any> walkFilterReferencesAndValues(
     }
 }
 
-/** Get key definition by [reference] and [processKeyDefinitionIfFound] using [dataModel] */
+/** Get key definition by [reference] and [processKeyDefinitionIfFound] using [dataModel] or null if not part of key */
 private fun <T: Any> getKeyDefinitionOrNull(
     dataModel: IsRootValuesDataModel<*>,
     reference: IsPropertyReference<out T, IsValuePropertyDefinitionWrapper<out T, *, IsPropertyContext, *>, *>,

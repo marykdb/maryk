@@ -18,9 +18,7 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class PropertyDefinitions(
-    properties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>> = mutableListOf()
-) : AbstractPropertyDefinitions<Any>(properties)
+abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>()
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
 internal class MutablePropertyDefinitions : PropertyDefinitions(), MutableCollection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>> {

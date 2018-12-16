@@ -3,7 +3,6 @@ package maryk.core.properties
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.Values
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -31,6 +30,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -39,9 +39,7 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 /** A collection of Property Definitions which can be used to model a ObjectDataModel */
-abstract class ObjectPropertyDefinitions<DO: Any>(
-    properties: MutableList<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, DO>> = mutableListOf()
-) : AbstractPropertyDefinitions<DO>(properties) {
+abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<DO>() {
     /** Get a method to retrieve property from DataObject by [name] */
     fun getPropertyGetter(name: String): ((DO) -> Any?)? = { nameToDefinition[name]?.getPropertyAndSerialize(it, null) }
     /** Get a method to retrieve property from DataObject by [index] */

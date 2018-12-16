@@ -1,5 +1,7 @@
 package maryk.core.processors.datastore
 
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.lib.extensions.compare.compareTo
 
 /**
@@ -10,8 +12,8 @@ class ScanRange internal constructor(
     val startInclusive: Boolean,
     val end: ByteArray? = null,
     val endInclusive: Boolean,
-    private val uniques: List<UniqueToMatch>? = null,
-    private val partialMatches: List<IsKeyPartialToMatch>? = null
+    val uniques: List<UniqueToMatch>? = null,
+    val partialMatches: List<IsKeyPartialToMatch>? = null
 ) {
     fun keyBeforeStart(key: ByteArray) = if (startInclusive) start < key else start <= key
     fun keyOutOfRange(key: ByteArray) = end?.let { if (endInclusive) end < key else end <= key } ?: false
@@ -26,7 +28,8 @@ class ScanRange internal constructor(
     }
 }
 
-internal class UniqueToMatch(
+class UniqueToMatch(
     val reference: ByteArray,
+    val definition: IsComparableDefinition<Comparable<Any>, IsPropertyContext>,
     val value: Comparable<*>
 )

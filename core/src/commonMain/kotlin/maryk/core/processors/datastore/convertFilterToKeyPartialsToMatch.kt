@@ -3,6 +3,8 @@ package maryk.core.processors.datastore
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
+import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
@@ -21,11 +23,16 @@ import maryk.lib.extensions.compare.compareTo
 fun convertFilterToKeyPartsToMatch(
     dataModel: IsRootValuesDataModel<*>,
     filter: IsFilter?,
-    listOfKeyParts: MutableList<IsKeyPartialToMatch>
+    listOfKeyParts: MutableList<IsKeyPartialToMatch>,
+    listOfUniqueFilters: MutableList<UniqueToMatch>
 ) {
     when (filter) {
         null -> {} // Skip
-        is Equals -> walkFilterReferencesAndValues(filter, dataModel) { index, byteArray ->
+        is Equals -> walkFilterReferencesAndValues(
+            filter,
+            dataModel,
+            listOfUniqueFilters::add
+        ) { index, byteArray ->
             listOfKeyParts.add(
                 KeyPartialToMatch(index, byteArray)
             )
@@ -77,10 +84,21 @@ fun convertFilterToKeyPartsToMatch(
                     KeyPartialToBeOneOf(index, list)
                 )
             }
+
+            // Add all unique matchers for every item in valueIn
+            reference.propertyDefinition.definition.let {
+                if (it is IsComparableDefinition<*, *> && it.unique) {
+                    for (uniqueToMatch in value) {
+                        listOfUniqueFilters.add(
+                            createUniqueToMatch(reference, it, uniqueToMatch)
+                        )
+                    }
+                }
+            }
         }
         is And -> {
             for (aFilter in filter.filters) {
-                convertFilterToKeyPartsToMatch(dataModel, aFilter, listOfKeyParts)
+                convertFilterToKeyPartsToMatch(dataModel, aFilter, listOfKeyParts, listOfUniqueFilters)
             }
         }
         else -> { /** Skip since other filters are not supported for key scan ranges*/ }
@@ -100,20 +118,40 @@ private fun convertValueToKeyBytes(
     return byteArray
 }
 
-/** Walk [referenceValuePairs] using [dataModel] into [handleBytes] */
+/** Walk [referenceValuePairs] using [dataModel] into [handleKeyBytes] */
 private fun <T: Any> walkFilterReferencesAndValues(
     referenceValuePairs: IsReferenceValuePairsFilter<T>,
     dataModel: IsRootValuesDataModel<*>,
-    handleBytes: (Int, ByteArray) -> Unit
+    handleUniqueMatchers : ((UniqueToMatch) -> Boolean)? = null,
+    handleKeyBytes: (Int, ByteArray) -> Unit
 ) {
     for ((reference, value) in referenceValuePairs.referenceValuePairs) {
         getKeyDefinitionOrNull(dataModel, reference) { index, keyDefinition ->
             val byteArray = convertValueToKeyBytes(keyDefinition, value)
+            handleKeyBytes(dataModel.keyIndices[index], byteArray)
+        }
 
-            handleBytes(dataModel.keyIndices[index], byteArray)
+        // Add unique to match if
+        reference.propertyDefinition.definition.let {
+            if (it is IsComparableDefinition<*, *> && it.unique) {
+                handleUniqueMatchers?.invoke(
+                    createUniqueToMatch(reference, it, value)
+                )
+            }
         }
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun <T : Any> createUniqueToMatch(
+    reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
+    it: IsSerializablePropertyDefinition<T, IsPropertyContext>,
+    value: T
+) = UniqueToMatch(
+    reference.toStorageByteArray(),
+    it as IsComparableDefinition<Comparable<Any>, IsPropertyContext>,
+    value as Comparable<*>
+)
 
 /** Get key definition by [reference] and [processKeyDefinitionIfFound] using [dataModel] or null if not part of key */
 private fun <T: Any> getKeyDefinitionOrNull(

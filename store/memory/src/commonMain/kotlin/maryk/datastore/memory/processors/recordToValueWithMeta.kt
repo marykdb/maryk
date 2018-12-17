@@ -8,16 +8,17 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.query.ValuesWithMetaData
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
+import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
-import maryk.datastore.memory.records.DataRecordNode
 
 /**
  * Processes [record] values to a ValuesWithMeta object
  */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordToValueWithMeta(
+    @Suppress("UNUSED_PARAMETER") toVersion: ULong?,
     record: DataRecord<DM, P>
-): ValuesWithMetaData<DM, P> {
+): ValuesWithMetaData<DM, P>? {
     var valueIndex = -1
     var maxVersion = record.firstVersion
 
@@ -38,10 +39,13 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
             val node = record.values[valueIndex]
             when (node) {
                 is DataRecordValue<*> -> {
-                    if (node.version > maxVersion) {
-                        maxVersion = node.version
-                    }
-                    node.value
+                    // Only add if  below expected version
+                    if (toVersion == null || node.version < toVersion) {
+                        if (node.version > maxVersion) {
+                            maxVersion = node.version
+                        }
+                        node.value
+                    } else null
                 }
                 is DataRecordHistoricValues<*> -> {
                     when (val latest = node.history.last()) {
@@ -60,6 +64,10 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         }
     )
 
+    if(values.size == 0){
+        // Return null if no ValueItems were found
+        return null
+    }
     return ValuesWithMetaData(
         key = record.key,
         values = values,

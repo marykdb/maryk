@@ -52,12 +52,21 @@ class FilterWithFetchRequestKtTest {
     fun doExistsFilter() {
         doFilter(
             Exists(TestMarykModel.ref { string }),
-            value1
+            value1,
+            null
         ) shouldBe true
+
+        // Below version it did not exist
+        doFilter(
+            Exists(TestMarykModel.ref { string }),
+            value1,
+            1233uL
+        ) shouldBe false
 
         doFilter(
             Exists(TestMarykModel.ref { reference }),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -65,12 +74,20 @@ class FilterWithFetchRequestKtTest {
     fun doEqualsFilter() {
         doFilter(
             Equals(TestMarykModel.ref { string } with "haha1"),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
+            Equals(TestMarykModel.ref { string } with "haha1"),
+            value1,
+            1233uL
+        ) shouldBe false
+
+        doFilter(
             Equals(TestMarykModel.ref { string } with "wrong"),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -78,12 +95,14 @@ class FilterWithFetchRequestKtTest {
     fun doPrefixFilter() {
         doFilter(
             Prefix(TestMarykModel.ref { string } with "ha"),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             Prefix(TestMarykModel.ref { string } with "wrong"),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -91,17 +110,20 @@ class FilterWithFetchRequestKtTest {
     fun doLessThanFilter() {
         doFilter(
             LessThan(TestMarykModel.ref { int } with 6),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             LessThan(TestMarykModel.ref { int } with 5),
-            value1
+            value1,
+            null
         ) shouldBe false
 
         doFilter(
             LessThan(TestMarykModel.ref { int } with 2),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -109,17 +131,20 @@ class FilterWithFetchRequestKtTest {
     fun doLessThanEqualsFilter() {
         doFilter(
             LessThanEquals(TestMarykModel.ref { int } with 6),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             LessThanEquals(TestMarykModel.ref { int } with 5),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             LessThanEquals(TestMarykModel.ref { int } with 2),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -127,17 +152,20 @@ class FilterWithFetchRequestKtTest {
     fun doGreaterThanFilter() {
         doFilter(
             GreaterThan(TestMarykModel.ref { int } with 4),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             GreaterThan(TestMarykModel.ref { int } with 5),
-            value1
+            value1,
+            null
         ) shouldBe false
 
         doFilter(
             GreaterThan(TestMarykModel.ref { int } with 6),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -145,17 +173,20 @@ class FilterWithFetchRequestKtTest {
     fun doGreaterThanEqualsFilter() {
         doFilter(
             GreaterThanEquals(TestMarykModel.ref { int } with 4),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             GreaterThanEquals(TestMarykModel.ref { int } with 5),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             GreaterThanEquals(TestMarykModel.ref { int } with 6),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -163,17 +194,20 @@ class FilterWithFetchRequestKtTest {
     fun doRangeFilter() {
         doFilter(
             Range(TestMarykModel.ref { int } with (2..8)),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             Range(TestMarykModel.ref { int } with (2..5)),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             Range(TestMarykModel.ref { int } with (2..3)),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -181,12 +215,14 @@ class FilterWithFetchRequestKtTest {
     fun doRegExFilter() {
         doFilter(
             RegEx(TestMarykModel.ref { string } with Regex("^h.*$")),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             RegEx(TestMarykModel.ref { string } with Regex("^b.*$")),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -194,12 +230,14 @@ class FilterWithFetchRequestKtTest {
     fun doValueInFilter() {
         doFilter(
             ValueIn(TestMarykModel.ref { string } with setOf("haha1", "haha2")),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
             ValueIn(TestMarykModel.ref { string } with setOf("no1", "no2")),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -207,12 +245,14 @@ class FilterWithFetchRequestKtTest {
     fun doNotFilter() {
         doFilter(
             Not(Exists(TestMarykModel.ref { string })),
-            value1
+            value1,
+            null
         ) shouldBe false
 
         doFilter(
             Not(Exists(TestMarykModel.ref { reference })),
-            value1
+            value1,
+            null
         ) shouldBe true
     }
 
@@ -223,7 +263,8 @@ class FilterWithFetchRequestKtTest {
                 Exists(TestMarykModel.ref { int }),
                 Exists(TestMarykModel.ref { string })
             ),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
@@ -231,7 +272,8 @@ class FilterWithFetchRequestKtTest {
                 Exists(TestMarykModel.ref { reference }),
                 Exists(TestMarykModel.ref { string })
             ),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 
@@ -242,7 +284,8 @@ class FilterWithFetchRequestKtTest {
                 Exists(TestMarykModel.ref { int }),
                 Exists(TestMarykModel.ref { string })
             ),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
@@ -250,7 +293,8 @@ class FilterWithFetchRequestKtTest {
                 Exists(TestMarykModel.ref { reference }),
                 Exists(TestMarykModel.ref { string })
             ),
-            value1
+            value1,
+            null
         ) shouldBe true
 
         doFilter(
@@ -258,7 +302,8 @@ class FilterWithFetchRequestKtTest {
                 Exists(TestMarykModel.ref { reference }),
                 Not(Exists(TestMarykModel.ref { string }))
             ),
-            value1
+            value1,
+            null
         ) shouldBe false
     }
 }

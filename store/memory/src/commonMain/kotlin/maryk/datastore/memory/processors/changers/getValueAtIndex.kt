@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.datastore.memory.processors.changers
 
 import maryk.datastore.memory.records.DataRecordHistoricValues
@@ -8,16 +10,35 @@ import maryk.datastore.memory.records.DataRecordValue
 @Suppress("UNCHECKED_CAST")
 internal fun <T: Any> getValueAtIndex(
     values: List<DataRecordNode>,
-    valueIndex: Int
+    valueIndex: Int,
+    toVersion: ULong? = null
 ): DataRecordValue<T>? {
     return if (valueIndex < 0) {
         null
-    } else  when (val node = values[valueIndex]) {
-        is DataRecordValue<*> -> node as DataRecordValue<T>
-        is DataRecordHistoricValues<*> -> when (val lastValue = node.history.last()) {
-            is DataRecordValue<*> -> lastValue as DataRecordValue<T>
-            else -> null // deletion
-        }
-        else -> null
+    } else when (val node = values[valueIndex]) {
+        is DataRecordValue<*> -> if (toVersion != null) {
+            // Get value if fits in version range
+            if (node.version <= toVersion) node as DataRecordValue<T> else null
+        } else node as DataRecordValue<T>
+        is DataRecordHistoricValues<*> ->
+            if (toVersion == null) {
+                // Just get latest value
+                when (val lastValue = node.history.last()) {
+                    is DataRecordValue<*> -> lastValue as DataRecordValue<T>
+                    else -> null // deletion
+                }
+            } else {
+                // Get historic value max at given value
+                for (historicValue in node.history.asReversed()) {
+                    if (historicValue.version <= toVersion) {
+                        return when (historicValue) {
+                            is DataRecordValue<*> -> historicValue as DataRecordValue<T>
+                            else -> null // deletion
+                        }
+                    }
+                }
+                null // not found
+            }
+        else -> null // Unknown type
     }
 }

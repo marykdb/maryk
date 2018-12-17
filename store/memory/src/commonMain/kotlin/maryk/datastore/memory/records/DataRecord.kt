@@ -22,10 +22,10 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
     var isDeleted: DeleteState = NeverDeleted
 ) {
     /** Get value by [reference] */
-    operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>): T? =
-        get(reference.toStorageByteArray())
+    operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>, toVersion: ULong? = null): T? =
+        get(reference.toStorageByteArray(), toVersion)
 
     /** Get value by [reference] */
-    operator fun <T : Any> get(reference: ByteArray): T? =
-        getValue<T>(this.values, reference)?.value
+    operator fun <T : Any> get(reference: ByteArray, toVersion: ULong? = null): T? =
+        getValue<T>(this.values, reference, toVersion)?.value
 }

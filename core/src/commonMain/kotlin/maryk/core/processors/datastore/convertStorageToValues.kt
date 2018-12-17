@@ -38,7 +38,7 @@ import maryk.lib.exceptions.ParseException
 
 private typealias QualifierProcessor = (ByteArray) -> Unit
 private typealias CacheProcessor = (Int, QualifierProcessor) -> Unit
-typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<Any>?) -> Any
+typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<Any>?) -> Any?
 typealias ValueAdder = (Int, Any) -> Unit
 
 /**
@@ -131,6 +131,7 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
             SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
                 DELETE -> {} // ignore
                 TYPE, MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
+                else -> throw Exception("Not recognized special type $specialType")
             }
             VALUE -> readValue(isAtEnd, index, qualifier, qIndex, addValueToOutput, readValueFromStorage, addToCache)
             LIST -> if (isAtEnd) {
@@ -138,16 +139,18 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                 val listCount = readValueFromStorage(
                     ListCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
                     this.properties[index]!!
-                ) as Int
+                ) as Int?
 
-                val list = ArrayList<Any>(listCount)
-                val listValueAdder: ValueAdder = { i, value -> list.add(i, value) }
+                if (listCount != null) {
+                    val list = ArrayList<Any>(listCount)
+                    val listValueAdder: ValueAdder = { i, value -> list.add(i, value) }
 
-                addToCache(offset) { q ->
-                    this.readQualifier(q, offset, listValueAdder, readValueFromStorage, addToCache)
-                }
+                    addToCache(offset) { q ->
+                        this.readQualifier(q, offset, listValueAdder, readValueFromStorage, addToCache)
+                    }
 
-                addValueToOutput(index, list)
+                    addValueToOutput(index, list)
+                } else null
             } else {
                 var listItemIndex = qIndex
                 val itemIndex = initUInt(reader = {
@@ -159,30 +162,32 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                 }
 
                 @Suppress("UNCHECKED_CAST")
-                addValueToOutput(
-                    itemIndex,
-                    readValueFromStorage(
-                        Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                        this.properties[index]!!
-                    )
-                )
+                readValueFromStorage(
+                    Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                    this.properties[index]!!
+                )?.let {
+                    // Only add to output if value read from storage is not null
+                    addValueToOutput(itemIndex, it)
+                }
             }
             SET -> if (isAtEnd) {
                 @Suppress("UNCHECKED_CAST")
-                val set = LinkedHashSet<Any>(
-                    readValueFromStorage(
-                        SetCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                        this.properties[index]!!
-                    ) as Int
-                )
+                val setSize = readValueFromStorage(
+                    SetCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                    this.properties[index]!!
+                ) as Int?
 
-                val setValueAdder: ValueAdder = { _, value -> set += value }
+                if (setSize != null) {
+                    val set = LinkedHashSet<Any>(setSize)
 
-                addToCache(offset) { q ->
-                    this.readQualifier(q, offset, setValueAdder, readValueFromStorage, addToCache)
-                }
+                    val setValueAdder: ValueAdder = { _, value -> set += value }
 
-                addValueToOutput(index, set)
+                    addToCache(offset) { q ->
+                        this.readQualifier(q, offset, setValueAdder, readValueFromStorage, addToCache)
+                    }
+
+                    addValueToOutput(index, set)
+                } else null
             } else {
                 val valueDefinition = ((this.properties[index]!! as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                 var setItemIndex = qIndex
@@ -193,25 +198,27 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
             }
             MAP -> if (isAtEnd) {
                 @Suppress("UNCHECKED_CAST")
-                val map = LinkedHashMap<Any, Any>(
-                    readValueFromStorage(
-                        MapCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                        this.properties[index]!!
-                    ) as Int
-                )
+                val mapSize = readValueFromStorage(
+                    MapCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                    this.properties[index]!!
+                ) as Int?
 
-                @Suppress("UNCHECKED_CAST")
-                val mapValueAdder: ValueAdder = { _, value ->
-                    val (k, v) = value as Pair<Any, Any>
-                    map[k] = v
-                }
+                if (mapSize != null) {
+                    val map = LinkedHashMap<Any, Any>(mapSize)
 
-                // For later map items the above map value adder is used
-                addToCache(offset) { q ->
-                    this.readQualifier(q, offset, mapValueAdder, readValueFromStorage, addToCache)
-                }
+                    @Suppress("UNCHECKED_CAST")
+                    val mapValueAdder: ValueAdder = { _, value ->
+                        val (k, v) = value as Pair<Any, Any>
+                        map[k] = v
+                    }
 
-                addValueToOutput(index, map)
+                    // For later map items the above map value adder is used
+                    addToCache(offset) { q ->
+                        this.readQualifier(q, offset, mapValueAdder, readValueFromStorage, addToCache)
+                    }
+
+                    addValueToOutput(index, map)
+                } else null
             } else {
                 val keyDefinition =
                     ((this.properties[index]!! as IsMapDefinition<*, *, *>).keyDefinition as IsFixedBytesEncodable<*>)
@@ -255,13 +262,12 @@ private fun <P : AbstractPropertyDefinitions<*>> IsDataModel<P>.readValue(
 ) {
     if (isAtEnd) {
         @Suppress("UNCHECKED_CAST")
-        addValueToOutput(
-            index,
-            readValueFromStorage(
-                Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                this.properties[index]!!
-            )
-        )
+        readValueFromStorage(
+            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+            this.properties[index]!!
+        )?.let {
+            addValueToOutput(index, it)
+        }
     } else {
         when (val definition = this.properties[index]) {
             is IsEmbeddedDefinition<*, *> -> {

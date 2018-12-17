@@ -16,6 +16,7 @@ import kotlin.test.Test
 class InMemoryDataStoreGetTest {
     private val dataStore = InMemoryDataStore()
     private val keys = mutableListOf<Key<SimpleMarykModel>>()
+    private var lowestVersion = ULong.MAX_VALUE
 
     init {
         runSuspendingTest {
@@ -25,12 +26,16 @@ class InMemoryDataStoreGetTest {
             addResponse.statuses.forEach { status ->
                 val response = shouldBeOfType<AddSuccess<SimpleMarykModel>>(status)
                 keys.add(response.key)
+                if (response.version < lowestVersion) {
+                    // Add lowest version for scan test
+                    lowestVersion = response.version
+                }
             }
         }
     }
 
     @Test
-    fun executeAddAndSimpleGetRequest() = runSuspendingTest {
+    fun executeSimpleGetRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(*keys.toTypedArray())
         )
@@ -40,5 +45,14 @@ class InMemoryDataStoreGetTest {
         getResponse.values.forEachIndexed { index, value ->
             value.values shouldBe addRequest.objectsToAdd[index]
         }
+    }
+
+    @Test
+    fun executeToVersionGetRequest() = runSuspendingTest {
+        val getResponse = dataStore.execute(
+            SimpleMarykModel.get(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
+        )
+
+        getResponse.values.size shouldBe 0
     }
 }

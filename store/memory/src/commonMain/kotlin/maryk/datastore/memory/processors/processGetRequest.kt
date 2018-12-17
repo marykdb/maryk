@@ -25,11 +25,18 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processGetRe
         if (index > -1) {
             val record = dataStore.records[index]
 
-            if (getRequest.filterData(record)) {
+            if (getRequest.filterData(record, getRequest.toVersion)) {
                 continue
             }
 
-            valuesWithMeta += getRequest.dataModel.recordToValueWithMeta(record)
+            getRequest.dataModel.recordToValueWithMeta(
+                getRequest.select,
+                getRequest.toVersion,
+                record
+            )?.let {
+                // Only add if not null
+                valuesWithMeta += it
+            }
         }
     }
 

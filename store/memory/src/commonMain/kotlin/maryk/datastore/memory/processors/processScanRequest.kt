@@ -45,11 +45,18 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanR
             continue
         }
 
-        if (scanRequest.filterData(record)) {
+        if (scanRequest.filterData(record, scanRequest.toVersion)) {
             continue
         }
 
-        valuesWithMeta += scanRequest.dataModel.recordToValueWithMeta(record)
+        scanRequest.dataModel.recordToValueWithMeta(
+            scanRequest.select,
+            scanRequest.toVersion,
+            record
+        )?.let {
+            // Only add if not null
+            valuesWithMeta += it
+        }
 
         // Break when limit is found
         if (valuesWithMeta.size.toUInt() == scanRequest.limit) break

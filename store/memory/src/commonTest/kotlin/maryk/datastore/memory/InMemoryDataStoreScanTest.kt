@@ -18,6 +18,7 @@ import kotlin.test.Test
 class InMemoryDataStoreScanTest {
     private val dataStore = InMemoryDataStore()
     private val keys = mutableListOf<Key<Log>>()
+    private var lowestVersion = ULong.MAX_VALUE
 
     private val logs = arrayOf(
         Log("Something happened", timestamp = DateTime(2018, 11, 14, 11, 22, 33, 40)),
@@ -34,6 +35,10 @@ class InMemoryDataStoreScanTest {
             addResponse.statuses.forEach { status ->
                 val response = shouldBeOfType<AddSuccess<Log>>(status)
                 keys.add(response.key)
+                if (response.version < lowestVersion) {
+                    // Add lowest version for scan test
+                    lowestVersion = response.version
+                }
             }
         }
     }
@@ -74,5 +79,14 @@ class InMemoryDataStoreScanTest {
             it.values shouldBe logs[2]
             it.key shouldBe keys[2]
         }
+    }
+
+    @Test
+    fun executeScanRequestWithToVersion() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(startKey = keys[2], toVersion = lowestVersion - 1uL)
+        )
+
+        scanResponse.values.size shouldBe 0
     }
 }

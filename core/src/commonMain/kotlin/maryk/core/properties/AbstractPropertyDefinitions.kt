@@ -3,7 +3,6 @@ package maryk.core.properties
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -14,7 +13,6 @@ import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.IsAnyPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper

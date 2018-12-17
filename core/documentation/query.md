@@ -267,122 +267,21 @@ val scanRequest = Logs.run {
 ```
 
 ### Scan/Get Changes
-In stores which support it, it is possible to request all the changes with 
-[`GetChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetChangesRequest.kt)
-or [`ScanChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanChangesRequest.kt)
-by defining the `fromVersion` parameter. For the rest this call is the same
-as [`GetRequest`](#get) / [`ScanRequest`](#scan)
-
-When applied it will deliver an [`ChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangesResponse.kt)
-with a list with [`DataObjectChange`](../src/commonMain/kotlin/maryk/core/query/changes/DataObjectChange.kt)
-containing the `key`, the `lastVersion` and a list of `changes`.
-
-Get with all options
-Maryk YAML:
-```yaml
-!GetChanges
-  dataModel: Person
-  keys: 
-  - WWurg6ysTsozoMei/SurOw
-  - awfbjYrVQ+cdXblfQKV10A
-  select:
-  - firstName
-  - lastName
-  filter: !And
-  - !Equals
-    firstName: Clark
-  - !Exists lastName
-  order: !Desc lastName
-  toVersion: 2000
-  filterSoftDeleted: false
-  fromVersion: 1000
-```
-Kotlin:
-```kotlin
-val person1Key // Containing the key of person 1 to change
-val person2Key // Containing the key of person 2 to change
-
-val getRequest = Person.run {
-    getChanges(
-        person1Key,
-        person2Key,
-        select = props {
-            RootPropRefGraph<Person>(
-                firstName,
-                lastName
-            )
-        },
-        filter = And(
-            Equals(ref { firstName } with "Clark"),
-            Exists(ref { lastName })
-        ),
-        order = ref { lastName }.ascending(),
-        toVersion = 2000L,
-        filterSoftDeleted = false,    
-        fromVersion = 1000L
-    )
-}
-```
-
-Scan with all options
-Maryk YAML:
-```yaml
-!ScanChanges
-  dataModel: Logs
-  startKey: Zk6m4QpZQegUg5s13JVYlQ
-  select:
-  - timeStamp
-  - severity
-  - message
-  filter: !GreaterThanEquals
-    severity: ERROR
-  order: !Desc timeStamp
-  filterSoftDeleted: false
-  limit: 50
-  fromVersion: 1000
-  toVersion: 2000
-```
-Kotlin:
-```kotlin
-val timedKey // Key which start at certain time
-
-val scanRequest = Logs.scanChanges(
-    startKey = timedKey,
-    select = props {
-        RootPropRefGraph<Person>(
-            timeStamp,
-            severity,
-            message
-        )
-    },
-    filter = GreaterThanEquals(
-        Logs.ref { severity } with Severity.ERROR
-    ),
-    order = ref { timeStamp }.descending(),
-    filterSoftDeleted = false,  
-    limit = 50,
-    fromVersion = 1000L,
-    toVersion = 2000L
-)
-```
-
-### Scan/Get Versioned Changes
-In stores which support it, it is possible to request all the changes ordered
-by version with 
-[`GetVersionedChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetVersionedChangesRequest.kt).
-or [`ScanVersionedChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanVersionedChangesRequest.kt).
-`maxVersions` (default=1000) can be used to control how many versions are returned
+In stores which support it, it is possible to request all the changes ordered by version with 
+[`GetChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetChangesRequest.kt).
+or [`ScanChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanChangesRequest.kt).
+`maxVersions` (default=1) can be used to control how many versions are returned
 at maximum.  
 For the rest this call is the same as [`GetChangesRequest`/`ScanChangesRequest`](#Scan/Get Changes)
 
-When applied it will deliver an [`VersionedChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/VersionedChangesResponse.kt)
+When applied it will deliver an [`ChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangesResponse.kt)
 with a list with [`DataObjectVersionedChange`](../src/commonMain/kotlin/maryk/core/query/changes/DataObjectVersionedChange.kt)
 containing the `key` and `changes` with a list of objects containing the version and changes.
 
 Get versioned changes with all options
 Maryk YAML:
 ```yaml
-!GetVersionedChanges
+!GetChanges
   dataModel: Person
   keys: 
   - WWurg6ysTsozoMei/SurOw
@@ -403,7 +302,7 @@ val person1Key // Containing the key of person 1 to change
 val person2Key // Containing the key of person 2 to change
 
 val getRequest = Person.run {
-    getVersionedChanges(
+    getChanges(
         person1Key,
         person2Key,
         select = props {
@@ -428,7 +327,7 @@ val getRequest = Person.run {
 Scan versioned changes with all options
 Maryk YAML:
 ```yaml
-!ScanVersionedChanges
+!ScanChanges
   dataModel: Logs
   startKey: Zk6m4QpZQegUg5s13JVYlQ
   filter: !GreaterThanEquals
@@ -444,7 +343,7 @@ Kotlin:
 ```kotlin
 val timedKey // Key which start at certain time
 
-val scanRequest = Logs.scanVersionedChanges(
+val scanRequest = Logs.scanChanges(
     startKey = timedKey,
     select = props {
         RootPropRefGraph<Person>(

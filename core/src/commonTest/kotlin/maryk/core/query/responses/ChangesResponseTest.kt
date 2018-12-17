@@ -23,12 +23,12 @@ import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class VersionedChangesResponseTest {
+class ChangesResponseTest {
     private val key = TestMarykModel.key("AAACKwEBAQAC")
 
     private val subModel = TestMarykModel.ref { embeddedValues }
 
-    private val objectVersionedChangesResponse = VersionedChangesResponse(
+    private val objectChangesResponse = ChangesResponse(
         TestMarykModel,
         listOf(
             DataObjectVersionedChange(
@@ -66,17 +66,17 @@ class VersionedChangesResponseTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.objectVersionedChangesResponse, VersionedChangesResponse, { this.context })
+        checkProtoBufConversion(this.objectChangesResponse, ChangesResponse, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.objectVersionedChangesResponse, VersionedChangesResponse, { this.context })
+        checkJsonConversion(this.objectChangesResponse, ChangesResponse, { this.context })
     }
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.objectVersionedChangesResponse, VersionedChangesResponse, { this.context }) shouldBe """
+        checkYamlConversion(this.objectChangesResponse, ChangesResponse, { this.context }) shouldBe """
         dataModel: TestMarykModel
         changes:
         - key: AAACKwEBAQAC

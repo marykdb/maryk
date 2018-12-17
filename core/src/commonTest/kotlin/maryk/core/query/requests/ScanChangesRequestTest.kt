@@ -8,40 +8,40 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
-import maryk.test.requests.scanVersionedChangesMaxRequest
-import maryk.test.requests.scanVersionedChangesRequest
+import maryk.test.requests.scanChangesMaxRequest
+import maryk.test.requests.scanChangesRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class ScanVersionedChangesRequestTest {
+class ScanChangesRequestTest {
     private val context = RequestContext(mapOf(
         SimpleMarykModel.name toUnitLambda { SimpleMarykModel }
     ))
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context })
-        checkProtoBufConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context })
+        checkProtoBufConversion(scanChangesRequest, ScanChangesRequest, { this.context })
+        checkProtoBufConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context })
-        checkJsonConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context })
+        checkJsonConversion(scanChangesRequest, ScanChangesRequest, { this.context })
+        checkJsonConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context })
     }
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(scanVersionedChangesRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
+        checkYamlConversion(scanChangesRequest, ScanChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         filterSoftDeleted: true
         limit: 100
         fromVersion: 1234
-        maxVersions: 1000
+        maxVersions: 1
 
         """.trimIndent()
 
-        checkYamlConversion(scanVersionedChangesMaxRequest, ScanVersionedChangesRequest, { this.context }) shouldBe """
+        checkYamlConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context }) shouldBe """
         dataModel: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         select:

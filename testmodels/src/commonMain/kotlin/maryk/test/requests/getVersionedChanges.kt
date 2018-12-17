@@ -5,20 +5,20 @@ package maryk.test.requests
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
-import maryk.core.query.requests.getVersionedChanges
+import maryk.core.query.requests.getChanges
 import maryk.test.models.SimpleMarykModel
 
 private val key1 = SimpleMarykModel.key("WWurg6ysTsozoMei/SurOw")
 private val key2 = SimpleMarykModel.key("awfbjYrVQ+cdXblfQKV10A")
 
-val getVersionedChangesRequest = SimpleMarykModel.getVersionedChanges(
+val getChangesRequest = SimpleMarykModel.getChanges(
     key1,
     key2,
     fromVersion = 1234uL
 )
 
-val getVersionedChangesMaxRequest = SimpleMarykModel.run {
-    getVersionedChanges(
+val getChangesMaxRequest = SimpleMarykModel.run {
+    getChanges(
         key1,
         key2,
         filter = Exists(ref { value }),

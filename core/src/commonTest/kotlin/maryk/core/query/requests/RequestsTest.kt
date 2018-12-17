@@ -12,10 +12,10 @@ import maryk.test.requests.addRequest
 import maryk.test.requests.changeRequest
 import maryk.test.requests.collectRequest
 import maryk.test.requests.deleteRequest
+import maryk.test.requests.getChangesRequest
 import maryk.test.requests.getRequest
-import maryk.test.requests.getVersionedChangesRequest
+import maryk.test.requests.scanChangesRequest
 import maryk.test.requests.scanRequest
-import maryk.test.requests.scanVersionedChangesRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -25,9 +25,9 @@ class RequestsTest {
         changeRequest,
         deleteRequest,
         getRequest,
-        getVersionedChangesRequest,
+        getChangesRequest,
         scanRequest,
-        scanVersionedChangesRequest,
+        scanChangesRequest,
         collectRequest
     )
 
@@ -75,22 +75,22 @@ class RequestsTest {
           dataModel: SimpleMarykModel
           keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
           filterSoftDeleted: true
-        - !GetVersionedChanges
+        - !GetChanges
           dataModel: SimpleMarykModel
           keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
           filterSoftDeleted: true
           fromVersion: 1234
-          maxVersions: 1000
+          maxVersions: 1
         - !Scan
           dataModel: SimpleMarykModel
           filterSoftDeleted: true
           limit: 100
-        - !ScanVersionedChanges
+        - !ScanChanges
           dataModel: SimpleMarykModel
           filterSoftDeleted: true
           limit: 100
           fromVersion: 1234
-          maxVersions: 1000
+          maxVersions: 1
         - !Collect
           testName: !Get
             dataModel: SimpleMarykModel

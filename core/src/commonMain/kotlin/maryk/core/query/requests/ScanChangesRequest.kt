@@ -10,7 +10,7 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
-import maryk.core.query.responses.VersionedChangesResponse
+import maryk.core.query.responses.ChangesResponse
 import maryk.core.values.ObjectValues
 
 /**
@@ -19,18 +19,18 @@ import maryk.core.values.ObjectValues
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootValuesDataModel<*>> DM.scanVersionedChanges(
+fun <DM: IsRootValuesDataModel<*>> DM.scanChanges(
     startKey: Key<DM>? = null,
     filter: IsFilter? = null,
     order: Order? = null,
     limit: UInt = 100u,
     fromVersion: ULong,
     toVersion: ULong? = null,
-    maxVersions: UInt = 1000u,
+    maxVersions: UInt = 1u,
     select: RootPropRefGraph<DM>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    ScanVersionedChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
+    ScanChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit] for specific [dataModel]
@@ -39,7 +39,7 @@ fun <DM: IsRootValuesDataModel<*>> DM.scanVersionedChanges(
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 @Suppress("EXPERIMENTAL_OVERRIDE")
-data class ScanVersionedChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
+data class ScanChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val filter: IsFilter? = null,
@@ -47,32 +47,32 @@ data class ScanVersionedChangesRequest<DM: IsRootValuesDataModel<*>> internal co
     override val limit: UInt = 100u,
     override val fromVersion: ULong,
     override val toVersion: ULong? = null,
-    override val maxVersions: UInt = 1000u,
+    override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM, VersionedChangesResponse<DM>>, IsVersionedChangesRequest<DM, VersionedChangesResponse<DM>> {
-    override val requestType = RequestType.ScanVersionedChanges
+) : IsScanRequest<DM, ChangesResponse<DM>>, IsChangesRequest<DM, ChangesResponse<DM>> {
+    override val requestType = RequestType.ScanChanges
     @Suppress("UNCHECKED_CAST")
-    override val responseModel = VersionedChangesResponse as IsObjectDataModel<VersionedChangesResponse<DM>, *>
+    override val responseModel = ChangesResponse as IsObjectDataModel<ChangesResponse<DM>, *>
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<ScanVersionedChangesRequest<*>>() {
-        val dataModel = IsObjectRequest.addDataModel(this, ScanVersionedChangesRequest<*>::dataModel)
-        val startKey = IsScanRequest.addStartKey(this, ScanVersionedChangesRequest<*>::startKey)
-        val select = IsFetchRequest.addSelect(this, ScanVersionedChangesRequest<*>::select)
-        val filter = IsFetchRequest.addFilter(this, ScanVersionedChangesRequest<*>::filter)
-        val order = IsFetchRequest.addOrder(this, ScanVersionedChangesRequest<*>::order)
-        val toVersion = IsFetchRequest.addToVersion(this, ScanVersionedChangesRequest<*>::toVersion)
-        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanVersionedChangesRequest<*>::filterSoftDeleted)
-        val limit = IsScanRequest.addLimit(this, ScanVersionedChangesRequest<*>::limit)
-        val fromVersion = IsChangesRequest.addFromVersion(9, this, ScanVersionedChangesRequest<*>::fromVersion)
-        val maxVersions = IsVersionedChangesRequest.addMaxVersions(10, this, ScanVersionedChangesRequest<*>::maxVersions)
+    object Properties : ObjectPropertyDefinitions<ScanChangesRequest<*>>() {
+        val dataModel = IsObjectRequest.addDataModel(this, ScanChangesRequest<*>::dataModel)
+        val startKey = IsScanRequest.addStartKey(this, ScanChangesRequest<*>::startKey)
+        val select = IsFetchRequest.addSelect(this, ScanChangesRequest<*>::select)
+        val filter = IsFetchRequest.addFilter(this, ScanChangesRequest<*>::filter)
+        val order = IsFetchRequest.addOrder(this, ScanChangesRequest<*>::order)
+        val toVersion = IsFetchRequest.addToVersion(this, ScanChangesRequest<*>::toVersion)
+        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, ScanChangesRequest<*>::filterSoftDeleted)
+        val limit = IsScanRequest.addLimit(this, ScanChangesRequest<*>::limit)
+        val fromVersion = IsChangesRequest.addFromVersion(9, this, ScanChangesRequest<*>::fromVersion)
+        val maxVersions = IsChangesRequest.addMaxVersions(10, this, ScanChangesRequest<*>::maxVersions)
     }
 
-    companion object: QueryDataModel<ScanVersionedChangesRequest<*>, Properties>(
+    companion object: QueryDataModel<ScanChangesRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<ScanVersionedChangesRequest<*>, Properties>) = ScanVersionedChangesRequest(
+        override fun invoke(values: ObjectValues<ScanChangesRequest<*>, Properties>) = ScanChangesRequest(
             dataModel = values(1),
             startKey = values(2),
             select = values(3),

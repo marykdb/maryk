@@ -5,13 +5,13 @@ package maryk.core.query.requests
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
-import maryk.core.query.responses.VersionedChangesResponse
+import maryk.core.query.responses.ChangesResponse
+import maryk.core.values.ObjectValues
 
 /**
  * Creates a request to get DataObject its versioned changes by value [keys]
@@ -19,17 +19,17 @@ import maryk.core.query.responses.VersionedChangesResponse
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootValuesDataModel<*>> DM.getVersionedChanges(
+fun <DM: IsRootValuesDataModel<*>> DM.getChanges(
     vararg keys: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
     fromVersion: ULong,
     toVersion: ULong? = null,
-    maxVersions: UInt = 1000u,
+    maxVersions: UInt = 1u,
     select: RootPropRefGraph<DM>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    GetVersionedChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
+    GetChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
 
 /**
  * A Request to get DataObject its versioned changes by value [keys] for specific [dataModel] of type [DM]
@@ -38,38 +38,38 @@ fun <DM: IsRootValuesDataModel<*>> DM.getVersionedChanges(
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 @Suppress("EXPERIMENTAL_OVERRIDE")
-data class GetVersionedChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
+data class GetChangesRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
     override val fromVersion: ULong,
     override val toVersion: ULong? = null,
-    override val maxVersions: UInt = 1000u,
+    override val maxVersions: UInt = 1u,
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsGetRequest<DM, VersionedChangesResponse<DM>>, IsVersionedChangesRequest<DM, VersionedChangesResponse<DM>> {
-    override val requestType = RequestType.GetVersionedChanges
+) : IsGetRequest<DM, ChangesResponse<DM>>, IsChangesRequest<DM, ChangesResponse<DM>> {
+    override val requestType = RequestType.GetChanges
     @Suppress("UNCHECKED_CAST")
-    override val responseModel = VersionedChangesResponse as IsObjectDataModel<VersionedChangesResponse<DM>, *>
+    override val responseModel = ChangesResponse as IsObjectDataModel<ChangesResponse<DM>, *>
 
     @Suppress("unused")
-    object Properties : ObjectPropertyDefinitions<GetVersionedChangesRequest<*>>() {
-        val dataModel = IsObjectRequest.addDataModel(this, GetVersionedChangesRequest<*>::dataModel)
-        val keys = IsGetRequest.addKeys(this, GetVersionedChangesRequest<*>::keys)
-        val select = IsFetchRequest.addSelect(this, GetVersionedChangesRequest<*>::select)
-        val filter = IsFetchRequest.addFilter(this,  GetVersionedChangesRequest<*>::filter)
-        val order = IsFetchRequest.addOrder(this, GetVersionedChangesRequest<*>::order)
-        val toVersion = IsFetchRequest.addToVersion(this, GetVersionedChangesRequest<*>::toVersion)
-        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetVersionedChangesRequest<*>::filterSoftDeleted)
-        val fromVersion = IsChangesRequest.addFromVersion(8, this, GetVersionedChangesRequest<*>::fromVersion)
-        val maxVersions = IsVersionedChangesRequest.addMaxVersions(9, this, GetVersionedChangesRequest<*>::maxVersions)
+    object Properties : ObjectPropertyDefinitions<GetChangesRequest<*>>() {
+        val dataModel = IsObjectRequest.addDataModel(this, GetChangesRequest<*>::dataModel)
+        val keys = IsGetRequest.addKeys(this, GetChangesRequest<*>::keys)
+        val select = IsFetchRequest.addSelect(this, GetChangesRequest<*>::select)
+        val filter = IsFetchRequest.addFilter(this,  GetChangesRequest<*>::filter)
+        val order = IsFetchRequest.addOrder(this, GetChangesRequest<*>::order)
+        val toVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*>::toVersion)
+        val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*>::filterSoftDeleted)
+        val fromVersion = IsChangesRequest.addFromVersion(8, this, GetChangesRequest<*>::fromVersion)
+        val maxVersions = IsChangesRequest.addMaxVersions(9, this, GetChangesRequest<*>::maxVersions)
     }
 
-    companion object: QueryDataModel<GetVersionedChangesRequest<*>, Properties>(
+    companion object: QueryDataModel<GetChangesRequest<*>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<GetVersionedChangesRequest<*>, Properties>) = GetVersionedChangesRequest(
+        override fun invoke(values: ObjectValues<GetChangesRequest<*>, Properties>) = GetChangesRequest(
             dataModel = values(1),
             keys = values(2),
             select = values(3),

@@ -50,7 +50,6 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanR
         }
 
         scanRequest.dataModel.recordToValueWithMeta(
-            scanRequest.select,
             scanRequest.toVersion,
             record
         )?.let {

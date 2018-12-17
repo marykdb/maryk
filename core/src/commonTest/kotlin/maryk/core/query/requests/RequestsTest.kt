@@ -12,10 +12,8 @@ import maryk.test.requests.addRequest
 import maryk.test.requests.changeRequest
 import maryk.test.requests.collectRequest
 import maryk.test.requests.deleteRequest
-import maryk.test.requests.getChangesRequest
 import maryk.test.requests.getRequest
 import maryk.test.requests.getVersionedChangesRequest
-import maryk.test.requests.scanChangesRequest
 import maryk.test.requests.scanRequest
 import maryk.test.requests.scanVersionedChangesRequest
 import maryk.test.shouldBe
@@ -27,10 +25,8 @@ class RequestsTest {
         changeRequest,
         deleteRequest,
         getRequest,
-        getChangesRequest,
         getVersionedChangesRequest,
         scanRequest,
-        scanChangesRequest,
         scanVersionedChangesRequest,
         collectRequest
     )
@@ -79,12 +75,6 @@ class RequestsTest {
           dataModel: SimpleMarykModel
           keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
           filterSoftDeleted: true
-        - !GetChanges
-          dataModel: SimpleMarykModel
-          keys: [uBu6L+ARRCgpUuyks8f73g, CXTD69pnTdsytwq0yxPryA]
-          toVersion: 3456
-          filterSoftDeleted: true
-          fromVersion: 1234
         - !GetVersionedChanges
           dataModel: SimpleMarykModel
           keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
@@ -95,11 +85,6 @@ class RequestsTest {
           dataModel: SimpleMarykModel
           filterSoftDeleted: true
           limit: 100
-        - !ScanChanges
-          dataModel: SimpleMarykModel
-          filterSoftDeleted: true
-          limit: 100
-          fromVersion: 1234
         - !ScanVersionedChanges
           dataModel: SimpleMarykModel
           filterSoftDeleted: true

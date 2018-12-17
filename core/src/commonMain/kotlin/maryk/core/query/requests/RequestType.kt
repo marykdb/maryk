@@ -26,10 +26,8 @@ val mapOfRequestTypeEmbeddedObjectDefinitions = mapOf(
     RequestType.Change to EmbeddedObjectDefinition(dataModel = { ChangeRequest }),
     RequestType.Delete to EmbeddedObjectDefinition(dataModel = { DeleteRequest }),
     RequestType.Get to EmbeddedObjectDefinition(dataModel = { GetRequest }),
-    RequestType.GetChanges to EmbeddedObjectDefinition(dataModel = { GetChangesRequest }),
     RequestType.GetVersionedChanges to EmbeddedObjectDefinition(dataModel = { GetVersionedChangesRequest }),
     RequestType.Scan to EmbeddedObjectDefinition(dataModel = { ScanRequest }),
-    RequestType.ScanChanges to EmbeddedObjectDefinition(dataModel = { ScanChangesRequest }),
     RequestType.ScanVersionedChanges to EmbeddedObjectDefinition(dataModel = { ScanVersionedChangesRequest }),
     RequestType.Collect to EmbeddedObjectDefinition(dataModel = { CollectRequest })
 )

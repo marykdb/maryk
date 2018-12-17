@@ -50,37 +50,46 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToVa
     getQualifier: () -> ByteArray?,
     processValue: ValueReader
 ): Values<DM, P> {
+    // Used to collect all found ValueItems
     val mutableValuesItems = MutableValueItems()
 
+    // Adds valueItems to collection
     val valueAdder: ValueAdder = { index: Int, value: Any ->
         mutableValuesItems += ValueItem(index, value)
     }
 
     var lastQualifier: ByteArray? = null
-    val processorList = mutableListOf<Pair<Int, QualifierProcessor>>()
     var qualifier = getQualifier()
+    // Stack of processors to process qualifier. Since definitions are nested we need a stack
+    val processorStack = mutableListOf<Pair<Int, QualifierProcessor>>()
 
     while (qualifier != null) {
+        // Remove anything from processor stack that does not match anymore
         lastQualifier?.let { last ->
             val nonMatchIndex = last.firstNonMatchIndex(qualifier!!)
-            for (i in (processorList.size - 1 downTo 0)) {
-                if (processorList[i].first >= nonMatchIndex) {
-                    processorList.removeAt(i)
+            for (i in (processorStack.size - 1 downTo 0)) {
+                if (processorStack[i].first >= nonMatchIndex) {
+                    processorStack.removeAt(i)
                 }
             }
         }
 
         @Suppress("UNCHECKED_CAST")
-        processorList.lastOrNull()?.second?.invoke(qualifier) ?:
+        // Try to process qualifier with last qualifier processor in list
+        processorStack.lastOrNull()?.second?.invoke(qualifier) ?:
+            // Otherwise try to get a new qualifier processor from DataModel
             (this as IsDataModel<AbstractPropertyDefinitions<*>>).readQualifier(qualifier, 0, valueAdder, processValue) { index, processor ->
-                processorList += Pair(index, processor)
+                processorStack += Pair(index, processor)
             }
 
+        // Last qualifier to remove processors in next iteration
         lastQualifier = qualifier
 
+        // Get next qualifier
         qualifier = getQualifier()
     }
 
+    // Create Values
     return this.values(null) {
         mutableValuesItems
     }

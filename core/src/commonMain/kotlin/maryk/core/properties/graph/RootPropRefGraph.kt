@@ -3,13 +3,14 @@ package maryk.core.properties.graph
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -27,6 +28,19 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
         val properties = this.addProperties(1, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
             context?.dataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
+    }
+
+    override fun toString(): String {
+        var values = ""
+        properties.forEach {
+            if (values.isNotBlank()) values += ", "
+            values += when (it) {
+                is IsPropertyDefinitionWrapper<*, *, *, *> -> it.name
+                is PropRefGraph<*, *> -> it.toString()
+                else -> throw Exception("Unknown Graphable type")
+            }
+        }
+        return "RootPropRefGraph { $values }"
     }
 
     companion object : ContextualDataModel<RootPropRefGraph<*>, Properties, ContainsDataModelContext<*>, GraphContext>(

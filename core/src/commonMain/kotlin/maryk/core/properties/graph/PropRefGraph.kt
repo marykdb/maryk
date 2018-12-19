@@ -36,6 +36,19 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
 ) : IsPropRefGraphable<PDM> {
     override val graphType = PropRefGraphType.Graph
 
+    override fun toString(): String {
+        var values = ""
+        properties.forEach {
+            if (values.isNotBlank()) values += ", "
+            values += when (it) {
+                is IsPropertyDefinitionWrapper<*, *, *, *> -> it.name
+                is PropRefGraph<*, *> -> it.toString()
+                else -> throw Exception("Unknown Graphable type")
+            }
+        }
+        return "Graph { $values }"
+    }
+
     object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *>>() {
         val parent = add(1, "parent",
             ContextualPropertyReferenceDefinition(

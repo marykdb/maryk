@@ -22,7 +22,7 @@ import maryk.core.values.ObjectValues
  */
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scan(
     startKey: Key<DM>? = null,
-    select: RootPropRefGraph<DM>? = null,
+    select: RootPropRefGraph<P>? = null,
     filter: IsFilter? = null,
     order: Order? = null,
     limit: UInt = 100u,
@@ -41,13 +41,13 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scan(
 data class ScanRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
-    override val select: RootPropRefGraph<DM>? = null,
+    override val select: RootPropRefGraph<P>? = null,
     override val filter: IsFilter? = null,
     override val order: Order? = null,
     override val limit: UInt = 100u,
     override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true
-) : IsScanRequest<DM, ValuesResponse<DM, P>> {
+) : IsScanRequest<DM, P, ValuesResponse<DM, P>> {
     override val requestType = RequestType.Scan
     @Suppress("UNCHECKED_CAST")
     override val responseModel = ValuesResponse as IsObjectDataModel<ValuesResponse<DM, P>, *>

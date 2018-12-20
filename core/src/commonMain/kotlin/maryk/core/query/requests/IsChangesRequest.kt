@@ -3,6 +3,7 @@ package maryk.core.query.requests
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.types.numeric.UInt32
@@ -11,7 +12,7 @@ import maryk.core.query.responses.IsResponse
 
 /** Request for all versioned changes from a version and later */
 @Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
-interface IsChangesRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsFetchRequest<DM, RP> {
+interface IsChangesRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsResponse> : IsFetchRequest<DM, P, RP> {
     val fromVersion: ULong
     val maxVersions: UInt
 

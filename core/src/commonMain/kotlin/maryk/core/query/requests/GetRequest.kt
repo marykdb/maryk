@@ -5,7 +5,6 @@ package maryk.core.query.requests
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
@@ -13,6 +12,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.values.ObjectValues
 
 /**
  * Creates a Request to get [select] values of DataObjects by [keys] and [filter] for the DataModel of type [DM].
@@ -21,7 +21,7 @@ import maryk.core.query.responses.ValuesResponse
  */
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.get(
     vararg keys: Key<DM>,
-    select: RootPropRefGraph<DM>? = null,
+    select: RootPropRefGraph<P>? = null,
     filter: IsFilter? = null,
     order: Order? = null,
     toVersion: ULong? = null,
@@ -37,12 +37,12 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.get(
 data class GetRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
-    override val select: RootPropRefGraph<DM>? = null,
+    override val select: RootPropRefGraph<P>? = null,
     override val filter: IsFilter?,
     override val order: Order?,
     override val toVersion: ULong?,
     override val filterSoftDeleted: Boolean
-) : IsGetRequest<DM, ValuesResponse<DM, P>> {
+) : IsGetRequest<DM, P, ValuesResponse<DM, P>> {
     override val requestType = RequestType.Get
     @Suppress("UNCHECKED_CAST")
     override val responseModel = ValuesResponse as IsObjectDataModel<ValuesResponse<DM, P>, *>

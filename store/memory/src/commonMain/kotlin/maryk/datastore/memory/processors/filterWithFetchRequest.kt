@@ -29,7 +29,7 @@ import maryk.datastore.memory.records.DeleteState.Deleted
  * Filters on soft deleted state and given filters.
  * Return true if [dataRecord] should be filtered away.
  */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsFetchRequest<DM, *>.filterData(
+internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsFetchRequest<DM, P, *>.filterData(
     dataRecord: DataRecord<DM, P>,
     toVersion: ULong?
 ) = when {

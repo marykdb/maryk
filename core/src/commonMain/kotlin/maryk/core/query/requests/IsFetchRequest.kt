@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -17,8 +18,8 @@ import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
 @Suppress("EXPERIMENTAL_API_USAGE")
-interface IsFetchRequest<DM: IsRootDataModel<*>, RP: IsResponse> : IsStoreRequest<DM, RP> {
-    val select: RootPropRefGraph<DM>?
+interface IsFetchRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsResponse> : IsStoreRequest<DM, RP> {
+    val select: RootPropRefGraph<P>?
     val filter: IsFilter?
     val order: Order?
     val toVersion: ULong?

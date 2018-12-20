@@ -1,10 +1,10 @@
 package maryk.core.models
 
-import maryk.core.values.AbstractValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.values.AbstractValues
 
 /** A DataModel which holds properties and can be validated */
 interface IsDataModel<P: IsPropertyDefinitions> {

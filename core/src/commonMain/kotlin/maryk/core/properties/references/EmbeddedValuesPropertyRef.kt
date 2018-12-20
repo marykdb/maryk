@@ -18,14 +18,13 @@ import maryk.core.values.Values
 class EmbeddedValuesPropertyRef<
     DM : IsValuesDataModel<P>,
     P: PropertyDefinitions,
-    CX: IsPropertyContext,
-    PDM: IsValuesDataModel<P>
+    CX: IsPropertyContext
 > internal constructor(
-    propertyDefinition: EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX, PDM>,
+    propertyDefinition: EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-): CanHaveComplexChildReference<Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX, PDM>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
+): CanHaveComplexChildReference<Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
-), HasEmbeddedPropertyReference<Values<DM, P>>, IsValuePropertyReference<Values<DM, P>, Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX, PDM>, CanHaveComplexChildReference<*, *, *, *>> {
+), HasEmbeddedPropertyReference<Values<DM, P>>, IsValuePropertyReference<Values<DM, P>, Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =

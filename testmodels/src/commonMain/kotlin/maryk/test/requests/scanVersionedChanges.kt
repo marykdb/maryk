@@ -2,7 +2,7 @@
 
 package maryk.test.requests
 
-import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.graph.graph
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.scanChanges
@@ -23,10 +23,6 @@ val scanChangesMaxRequest = SimpleMarykModel.run {
         toVersion = 2345uL,
         fromVersion = 1234uL,
         maxVersions = 10u,
-        select = SimpleMarykModel.props {
-            RootPropRefGraph<SimpleMarykModel>(
-                value
-            )
-        }
+        select = graph { listOf(value) }
     )
 }

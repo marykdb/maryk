@@ -10,15 +10,15 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 class PropRefGraphTest {
-    private val graph = TestMarykModel.properties.embeddedValues.props { props ->
-        props.graph(
-            value,
-            model.props {
-                it.graph(
-                    marykModel
-                )
-            }
-        )
+    private val graph = TestMarykModel.properties.run {
+        graph(embeddedValues) {
+            listOf(
+                value,
+                graph(model) {
+                    listOf(marykModel)
+                }
+            )
+        }
     }
 
     private val context = RequestContext(

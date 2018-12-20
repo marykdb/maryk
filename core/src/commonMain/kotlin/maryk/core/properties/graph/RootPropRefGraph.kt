@@ -2,7 +2,7 @@ package maryk.core.properties.graph
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.models.IsDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -16,13 +16,18 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
+/** For quick notation to make graph of list of graphables that operates with [runner] on Properties */
+fun <DM: IsRootDataModel<P>, P: PropertyDefinitions> DM.graph(
+    runner: P.() -> List<IsPropRefGraphable<P>>
+) = RootPropRefGraph(runner(this.properties))
+
 /**
  * Create a Root graph with references to [properties]
  */
-data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
-    val properties: List<IsPropRefGraphable<DM>>
+data class RootPropRefGraph<P: PropertyDefinitions> internal constructor(
+    val properties: List<IsPropRefGraphable<P>>
 ) {
-    constructor(vararg property: IsPropRefGraphable<DM>) : this(property.toList())
+    constructor(vararg property: IsPropRefGraphable<P>) : this(property.toList())
 
     object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
         val properties = this.addProperties(1, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
@@ -36,7 +41,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
             if (values.isNotBlank()) values += ", "
             values += when (it) {
                 is IsPropertyDefinitionWrapper<*, *, *, *> -> it.name
-                is PropRefGraph<*, *> -> it.toString()
+                is PropRefGraph<*, *, *> -> it.toString()
                 else -> throw Exception("Unknown Graphable type")
             }
         }
@@ -49,7 +54,7 @@ data class RootPropRefGraph<DM: IsDataModel<*>> internal constructor(
             GraphContext(it?.dataModel)
         }
     ) {
-        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<IsDataModel<*>>(
+        override fun invoke(values: ObjectValues<RootPropRefGraph<*>, Properties>) = RootPropRefGraph<PropertyDefinitions>(
             properties = values(1)
         )
 

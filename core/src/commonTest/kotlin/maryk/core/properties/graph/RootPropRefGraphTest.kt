@@ -11,17 +11,15 @@ import kotlin.test.Test
 
 
 class RootPropRefGraphTest {
-    private val graph = TestMarykModel.props {
-        RootPropRefGraph(
+    private val graph = TestMarykModel.graph {
+        listOf(
             string,
             set,
-            embeddedValues.props { embeddedValuesProps ->
-                embeddedValuesProps.graph(
+            graph(embeddedValues) {
+                listOf(
                     value,
-                    model.props {
-                        it.graph(
-                            value
-                        )
+                    graph(model) {
+                        listOf(value)
                     }
                 )
             }

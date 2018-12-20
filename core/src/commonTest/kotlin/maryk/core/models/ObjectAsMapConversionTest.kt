@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.graph.graph
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
@@ -27,10 +27,8 @@ class ObjectAsMapConversionTest {
         mapNonNulls(
             dataModel with SimpleMarykModel,
             keys with listOf(key1, key2),
-            select with SimpleMarykModel.props {
-                RootPropRefGraph<SimpleMarykModel>(
-                    value
-                )
+            select with SimpleMarykModel.graph {
+                listOf(value)
             },
             filter with Exists(SimpleMarykModel.ref { value }),
             order with SimpleMarykModel.ref { value }.descending(),

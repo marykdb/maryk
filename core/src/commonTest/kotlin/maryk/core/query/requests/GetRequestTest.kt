@@ -6,7 +6,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.graph.graph
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists
@@ -42,10 +42,8 @@ class GetRequestTest {
                 order with SimpleMarykModel.ref { value }.descending(),
                 toVersion with 333uL,
                 filterSoftDeleted with true,
-                select with SimpleMarykModel.props {
-                    RootPropRefGraph<SimpleMarykModel>(
-                        value
-                    )
+                select with SimpleMarykModel.graph {
+                    listOf(value)
                 }
             )
         }.toDataObject() shouldBe getMaxRequest

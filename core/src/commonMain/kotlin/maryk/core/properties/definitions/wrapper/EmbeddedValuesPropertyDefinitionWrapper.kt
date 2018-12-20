@@ -21,8 +21,7 @@ import maryk.core.values.Values
 data class EmbeddedValuesPropertyDefinitionWrapper<
     DM: IsValuesDataModel<P>,
     P: PropertyDefinitions,
-    CX: IsPropertyContext,
-    PDM: IsValuesDataModel<P>
+    CX: IsPropertyContext
 > internal constructor(
     override val index: Int,
     override val name: String,
@@ -63,7 +62,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
 
     /** For quick notation to return [T] that operates with [runner] on Properties */
     fun <T: Any> props(
-        runner: P.(EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX, PDM>) -> T
+        runner: P.(EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>) -> T
     ): T {
         return runner(this.definition.dataModel.properties, this)
     }

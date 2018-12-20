@@ -22,18 +22,20 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** Get a graph for property references of an embedded object */
-fun <PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> EmbeddedValuesPropertyDefinitionWrapper<DM, *, IsPropertyContext, PDM>.graph(
-    vararg property: IsPropRefGraphable<DM>
-) = PropRefGraph(this, property.toList())
+/** To make graph with [runner] on Properties to return list of graphables */
+@Suppress("unused")
+fun <P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> P.graph(
+    embed: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
+    runner: PS.() -> List<IsPropRefGraphable<PS>>
+) = PropRefGraph<P, DM, PS>(embed, runner(embed.definition.dataModel.properties))
 
 /**
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
  */
-data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> internal constructor(
-    val parent: EmbeddedValuesPropertyDefinitionWrapper<DM, *, IsPropertyContext, PDM>,
-    val properties: List<IsPropRefGraphable<DM>>
-) : IsPropRefGraphable<PDM> {
+data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> internal constructor(
+    val parent: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
+    val properties: List<IsPropRefGraphable<PS>>
+) : IsPropRefGraphable<P> {
     override val graphType = PropRefGraphType.Graph
 
     override fun toString(): String {
@@ -42,14 +44,14 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             if (values.isNotBlank()) values += ", "
             values += when (it) {
                 is IsPropertyDefinitionWrapper<*, *, *, *> -> it.name
-                is PropRefGraph<*, *> -> it.toString()
+                is PropRefGraph<*, *, *> -> it.toString()
                 else -> throw Exception("Unknown Graphable type")
             }
         }
         return "Graph { $values }"
     }
 
-    object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *>>() {
+    object Properties : ObjectPropertyDefinitions<PropRefGraph<*, *, *>>() {
         val parent = add(1, "parent",
             ContextualPropertyReferenceDefinition(
                 contextualResolver = { context: GraphContext? ->
@@ -57,7 +59,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
                 }
             ),
             capturer = { context, value ->
-                context.subDataModel = (value.propertyDefinition as EmbeddedValuesPropertyDefinitionWrapper<*, *, *, *>).dataModel
+                context.subDataModel = (value.propertyDefinition as EmbeddedValuesPropertyDefinitionWrapper<*, *, *>).dataModel
             },
             toSerializable = { value: IsPropertyDefinitionWrapper<*, *, *, *>?, _ ->
                 value?.getRef()
@@ -65,15 +67,15 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             fromSerializable = { value ->
                 value?.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>?
             },
-            getter = PropRefGraph<*, *>::parent
+            getter = PropRefGraph<*, *, *>::parent
         )
 
-        val properties = addProperties(2, PropRefGraph<*, *>::properties) { context: GraphContext? ->
+        val properties = addProperties(2, PropRefGraph<*, *, *>::properties) { context: GraphContext? ->
             context?.subDataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
         }
     }
 
-    companion object : ContextualDataModel<PropRefGraph<*, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
+    companion object : ContextualDataModel<PropRefGraph<*, *, *>, Properties, ContainsDataModelContext<*>, GraphContext>(
         properties = Properties,
         contextTransformer = {
             if (it is GraphContext && it.subDataModel != null) {
@@ -83,12 +85,12 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             }
         }
     ) {
-        override fun invoke(values: ObjectValues<PropRefGraph<*, *>, Properties>) = PropRefGraph<IsValuesDataModel<*>, IsValuesDataModel<*>>(
+        override fun invoke(values: ObjectValues<PropRefGraph<*, *, *>, Properties>) = PropRefGraph<PropertyDefinitions, IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
             parent = values(1),
             properties = values(2)
         )
 
-        override fun writeJson(obj: PropRefGraph<*, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
+        override fun writeJson(obj: PropRefGraph<*, *, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
             writeJsonValues(obj.parent.getRef(), obj.properties, writer, context)
         }
 
@@ -108,7 +110,7 @@ data class PropRefGraph<PDM: IsValuesDataModel<*>, DM: IsValuesDataModel<*>> int
             writer.writeEndObject()
         }
 
-        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ObjectValues<PropRefGraph<*, *>, Properties> {
+        override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ObjectValues<PropRefGraph<*, *, *>, Properties> {
             if (reader.currentToken == JsonToken.StartDocument){
                 reader.nextToken()
             }
@@ -205,7 +207,7 @@ internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
             value.let {
                 when (it) {
                     is IsPropertyDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.getRef())
-                    is PropRefGraph<*, *> -> TypedValue(it.graphType, it)
+                    is PropRefGraph<*, *, *> -> TypedValue(it.graphType, it)
                     else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
                 }
             }
@@ -213,7 +215,7 @@ internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
         fromSerializable = { value: TypedValue<PropRefGraphType, *> ->
             when (value.value) {
                 is AnyPropertyReference -> value.value.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>
-                is PropRefGraph<*, *> -> value.value
+                is PropRefGraph<*, *, *> -> value.value
                 else -> throw ParseException("Unknown PropRefGraphType ${value.type}")
             }
         },
@@ -231,7 +233,7 @@ internal fun writePropertiesToJson(
     writer.writeStartArray()
     for (graphable in transformed) {
         when (graphable.value) {
-            is PropRefGraph<*, *> -> PropRefGraph.writeJson(
+            is PropRefGraph<*, *, *> -> PropRefGraph.writeJson(
                 graphable.value, writer, context
             )
             is AnyPropertyReference -> {

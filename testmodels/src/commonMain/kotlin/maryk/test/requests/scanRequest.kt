@@ -2,7 +2,6 @@
 
 package maryk.test.requests
 
-import maryk.core.properties.graph.graph
 import maryk.core.query.ascending
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.scan

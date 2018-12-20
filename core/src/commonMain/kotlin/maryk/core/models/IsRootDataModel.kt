@@ -10,6 +10,8 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.graph.IsPropRefGraphable
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 
@@ -28,6 +30,11 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
 
     /** Get Key by [bytes] array */
     fun key(bytes: ByteArray): Key<*>
+
+    /** Create Property reference graph with list of graphables that are generated with [runner] on Properties */
+    fun graph(
+        runner: P.() -> List<IsPropRefGraphable<P>>
+    ) = RootPropRefGraph(runner(this.properties))
 
     /** Get PropertyReference by [referenceName] */
     fun getPropertyReferenceByName(referenceName: String, context: IsPropertyContext? = null) = try {

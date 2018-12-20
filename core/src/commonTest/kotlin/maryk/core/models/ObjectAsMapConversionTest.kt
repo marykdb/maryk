@@ -6,7 +6,6 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.properties.graph.graph
 import maryk.core.query.RequestContext
 import maryk.core.query.descending
 import maryk.core.query.filters.Exists

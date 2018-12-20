@@ -305,8 +305,8 @@ val getRequest = Person.run {
     getChanges(
         person1Key,
         person2Key,
-        select = props {
-            RootPropRefGraph<Person>(
+        select = graph {
+            listOf(
                 firstName,
                 lastName
             )
@@ -345,8 +345,8 @@ val timedKey // Key which start at certain time
 
 val scanRequest = Logs.scanChanges(
     startKey = timedKey,
-    select = props {
-        RootPropRefGraph<Person>(
+    select = graph {
+        listOf(
             timeStamp,
             severity,
             message

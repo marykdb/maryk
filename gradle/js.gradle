@@ -12,7 +12,6 @@ ext.setupJS = { runTests ->
                         sourceMap = true
                         moduleKind = "umd"
                         metaInfo = true
-                        allWarningsAsErrors = true
                     }
                 }
             }
@@ -60,7 +59,7 @@ ext.setupJS = { runTests ->
 
             // Use mocha as the test runner
             task runMocha(type: NodeTask, dependsOn: [copyJsMainOutputAndDependencies, copyJsTestOutput, installMocha]) {
-                script = file("../.nodeTest/node_modules/mocha/bin/mocha")
+                script = file("${project.rootDir}/.nodeTest/node_modules/mocha/bin/mocha")
                 args = ["${testDir}/${projectName}_test.js"]
             }
 

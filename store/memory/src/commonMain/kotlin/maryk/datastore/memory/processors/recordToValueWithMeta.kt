@@ -5,6 +5,7 @@ package maryk.datastore.memory.processors
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.convertStorageToValues
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.ValuesWithMetaData
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
@@ -16,7 +17,8 @@ import maryk.datastore.memory.records.DeletedValue
  * Processes [record] values to a ValuesWithMeta object
  */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordToValueWithMeta(
-    @Suppress("UNUSED_PARAMETER") toVersion: ULong?,
+    select: RootPropRefGraph<P>?,
+    toVersion: ULong?,
     record: DataRecord<DM, P>
 ): ValuesWithMetaData<DM, P>? {
     var valueIndex = -1
@@ -35,6 +37,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                 record.values[valueIndex].reference
             } else null
         },
+        select = select,
         processValue = { _, _ ->
             val node = record.values[valueIndex]
             when (node) {

@@ -21,8 +21,8 @@ import maryk.lib.exceptions.ParseException
  * [properties] should always be sorted by index so processing graphs is a lot easier
  */
 data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
-    val properties: List<IsPropRefGraphable<P>>
-) {
+    override val properties: List<IsPropRefGraphNode<P>>
+): IsPropRefGraph<P> {
     object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
         val properties = this.addProperties(1, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
             context?.dataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()
@@ -58,11 +58,11 @@ data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
 
         @Suppress("UNUSED_PARAMETER")
         private fun writeJsonValues(
-            listOfPropRefGraphables: List<IsPropRefGraphable<*>>,
+            listOfPropRefGraphNodes: List<IsPropRefGraphNode<*>>,
             writer: IsJsonLikeWriter,
             context: GraphContext?
         ) {
-            writePropertiesToJson(listOfPropRefGraphables, writer, context)
+            writePropertiesToJson(listOfPropRefGraphNodes, writer, context)
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: GraphContext?): ObjectValues<RootPropRefGraph<*>, Properties> {

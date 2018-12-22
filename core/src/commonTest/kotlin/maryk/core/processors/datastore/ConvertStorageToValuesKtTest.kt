@@ -15,6 +15,7 @@ class ConvertStorageToValuesKtTest {
                     initByteArrayByHex(it.first)
                 }
             },
+            select = null,
             processValue = { _, _ -> valuesAsStorables[qualifierIndex].second }
         )
 

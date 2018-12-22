@@ -9,6 +9,7 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
+import maryk.test.models.Severity.INFO
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
@@ -88,5 +89,33 @@ class InMemoryDataStoreScanTest {
         )
 
         scanResponse.values.size shouldBe 0
+    }
+
+    @Test
+    fun executeScanRequestWithSelect() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                startKey = keys[2],
+                select = Log.graph {
+                    listOf(
+                        timestamp,
+                        severity
+                    )
+                }
+            )
+        )
+
+        scanResponse.values.size shouldBe 3
+
+        // Mind that Log is sorted in reverse so it goes back in time going forward
+        scanResponse.values[0].let {
+            it.values shouldBe Log.values {
+                mapNonNulls(
+                    this.severity with INFO,
+                    this.timestamp with DateTime(2018, 11, 14, 12, 33, 22, 111)
+                )
+            }
+            it.key shouldBe keys[2]
+        }
     }
 }

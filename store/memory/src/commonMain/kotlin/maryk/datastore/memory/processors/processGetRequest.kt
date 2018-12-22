@@ -30,6 +30,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processGetRe
             }
 
             getRequest.dataModel.recordToValueWithMeta(
+                getRequest.select,
                 getRequest.toVersion,
                 record
             )?.let {

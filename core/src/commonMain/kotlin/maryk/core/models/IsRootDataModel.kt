@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
-import maryk.core.properties.graph.IsPropRefGraphable
+import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
@@ -36,7 +36,7 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
      * The graphables are sorted after generation so the RootPropRefGraph can be processed quicker.
      */
     fun graph(
-        runner: P.() -> List<IsPropRefGraphable<P>>
+        runner: P.() -> List<IsPropRefGraphNode<P>>
     ) = RootPropRefGraph(runner(this.properties).sortedBy { it.index })
 
     /** Get PropertyReference by [referenceName] */

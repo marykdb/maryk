@@ -16,7 +16,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
 import maryk.core.properties.exceptions.ValidationException
-import maryk.core.properties.graph.IsPropRefGraphable
+import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -41,7 +41,7 @@ import maryk.yaml.YamlWriter
  */
 interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, in DO> :
     IsSerializablePropertyDefinition<T, CX>,
-    IsPropRefGraphable<PropertyDefinitions>
+    IsPropRefGraphNode<PropertyDefinitions>
 {
     override val index: Int
     val name: String

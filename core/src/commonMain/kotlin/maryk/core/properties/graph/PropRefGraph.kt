@@ -29,7 +29,7 @@ import maryk.lib.exceptions.ParseException
 @Suppress("unused")
 fun <P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> P.graph(
     embed: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
-    runner: PS.() -> List<IsPropRefGraphable<PS>>
+    runner: PS.() -> List<IsPropRefGraphNode<PS>>
 ) = PropRefGraph<P, DM, PS>(embed, runner(embed.definition.dataModel.properties).sortedBy { it.index })
 
 /**
@@ -38,8 +38,8 @@ fun <P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions>
  */
 data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> internal constructor(
     val parent: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
-    val properties: List<IsPropRefGraphable<PS>>
-) : IsPropRefGraphable<P> {
+    override val properties: List<IsPropRefGraphNode<PS>>
+) : IsPropRefGraphNode<P>, IsPropRefGraph<PS> {
     override val index = parent.index
     override val graphType = PropRefGraphType.Graph
 
@@ -102,7 +102,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
         @Suppress("UNUSED_PARAMETER")
         private fun writeJsonValues(
             reference: AnyPropertyReference,
-            listOfPropRefGraphables: List<IsPropRefGraphable<*>>,
+            listOfPropRefGraphNodes: List<IsPropRefGraphNode<*>>,
             writer: IsJsonLikeWriter,
             context: GraphContext?
         ) {
@@ -110,7 +110,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
 
             writer.writeStartObject()
             writer.writeFieldName(reference.completeName)
-            writePropertiesToJson(listOfPropRefGraphables, writer, context)
+            writePropertiesToJson(listOfPropRefGraphNodes, writer, context)
 
             writer.writeEndObject()
         }
@@ -191,7 +191,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
  */
 internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
     index: Int,
-    getter: (DO) -> List<IsPropRefGraphable<*>>,
+    getter: (DO) -> List<IsPropRefGraphNode<*>>,
     contextResolver: (GraphContext?) -> PropertyDefinitions
 ) =
     add(index, "properties",
@@ -208,7 +208,7 @@ internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
                 typeEnum = PropRefGraphType
             )
         ),
-        toSerializable = { value: IsPropRefGraphable<*> ->
+        toSerializable = { value: IsPropRefGraphNode<*> ->
             value.let {
                 when (it) {
                     is IsPropertyDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.getRef())
@@ -229,11 +229,11 @@ internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
 
 /** Write properties to JSON with [writer] in [context] */
 internal fun writePropertiesToJson(
-    listOfPropRefGraphables: List<IsPropRefGraphable<*>>,
+    listOfPropRefGraphNodes: List<IsPropRefGraphNode<*>>,
     writer: IsJsonLikeWriter,
     context: GraphContext?
 ) {
-    val transformed = PropRefGraph.Properties.properties.toSerializable!!.invoke(listOfPropRefGraphables, context)!!
+    val transformed = PropRefGraph.Properties.properties.toSerializable!!.invoke(listOfPropRefGraphNodes, context)!!
 
     writer.writeStartArray()
     for (graphable in transformed) {

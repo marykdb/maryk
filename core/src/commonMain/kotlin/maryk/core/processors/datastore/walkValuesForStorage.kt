@@ -6,9 +6,9 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsDataModel
-import maryk.core.processors.datastore.StorageTypeEnum.ListCount
-import maryk.core.processors.datastore.StorageTypeEnum.MapCount
-import maryk.core.processors.datastore.StorageTypeEnum.SetCount
+import maryk.core.processors.datastore.StorageTypeEnum.ListSize
+import maryk.core.processors.datastore.StorageTypeEnum.MapSize
+import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -36,9 +36,9 @@ import maryk.core.values.AnyAbstractValues
 @kotlin.Suppress("unused")
 sealed class StorageTypeEnum<T: IsPropertyDefinition<*>>(val referenceType: ReferenceType) {
     object Value: StorageTypeEnum<IsSimpleValueDefinition<Any, IsPropertyContext>>(VALUE)
-    object ListCount: StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
-    object SetCount: StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
-    object MapCount: StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
+    object ListSize: StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
+    object SetSize: StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
+    object MapSize: StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
     object TypeValue: StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>(VALUE)
 
     @Suppress("UNCHECKED_CAST")
@@ -91,7 +91,7 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val listQualifierWriter = createQualifierWriter(qualifierWriter, index, LIST)
             val listQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             // Process List Count
-            valueProcessor(ListCount as StorageTypeEnum<T>, writeQualifier(listQualifierCount, listQualifierWriter), definition, value.size) // for list count
+            valueProcessor(ListSize as StorageTypeEnum<T>, writeQualifier(listQualifierCount, listQualifierWriter), definition, value.size) // for list count
 
             // Process List values
             val listValueDefinition = (definition as ListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
@@ -112,7 +112,7 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val setQualifierWriter = createQualifierWriter(qualifierWriter, index, SET)
             val setQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             // Process Set Count
-            valueProcessor(SetCount as StorageTypeEnum<T>, writeQualifier(setQualifierCount, setQualifierWriter), definition, value.size) // for set count
+            valueProcessor(SetSize as StorageTypeEnum<T>, writeQualifier(setQualifierCount, setQualifierWriter), definition, value.size) // for set count
 
             // Process Set Values
             val setValueDefinition = (definition as SetDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
@@ -134,7 +134,7 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val mapQualifierWriter = createQualifierWriter(qualifierWriter, index, MAP)
             val mapQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             // Process Map Count
-            valueProcessor(MapCount as StorageTypeEnum<T>, writeQualifier(mapQualifierCount, mapQualifierWriter), definition, value.size) // for map count
+            valueProcessor(MapSize as StorageTypeEnum<T>, writeQualifier(mapQualifierCount, mapQualifierWriter), definition, value.size) // for map count
 
             // Process Map Values
             val mapDefinition = (definition as IsMapDefinition<Any, *, *>)

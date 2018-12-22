@@ -8,9 +8,9 @@ import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.values
-import maryk.core.processors.datastore.StorageTypeEnum.ListCount
-import maryk.core.processors.datastore.StorageTypeEnum.MapCount
-import maryk.core.processors.datastore.StorageTypeEnum.SetCount
+import maryk.core.processors.datastore.StorageTypeEnum.ListSize
+import maryk.core.processors.datastore.StorageTypeEnum.MapSize
+import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -60,7 +60,8 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToVa
 
     var lastQualifier: ByteArray? = null
     var qualifier = getQualifier()
-    // Stack of processors to process qualifier. Since definitions are nested we need a stack
+    // Stack of processors to process qualifier and if matched the values.
+    // Since definitions are nested we need a stack
     val processorStack = mutableListOf<Pair<Int, QualifierProcessor>>()
 
     while (qualifier != null) {
@@ -119,10 +120,6 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
     readValueFromStorage: ValueReader,
     addToCache: CacheProcessor
 ) {
-    addToCache(offset) { q ->
-        this.readQualifier(q, offset, addValueToOutput, readValueFromStorage, addToCache)
-    }
-
     var qIndex = offset
 
     initIntByVarWithExtraInfo({ qualifier[qIndex++] }) { index, type ->
@@ -135,16 +132,19 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
             }
             VALUE -> readValue(isAtEnd, index, qualifier, qIndex, addValueToOutput, readValueFromStorage, addToCache)
             LIST -> if (isAtEnd) {
+                // If at end it means that this is a list size
                 @Suppress("UNCHECKED_CAST")
-                val listCount = readValueFromStorage(
-                    ListCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                val listSize = readValueFromStorage(
+                    ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
                     this.properties[index]!!
                 ) as Int?
 
-                if (listCount != null) {
-                    val list = ArrayList<Any>(listCount)
+                if (listSize != null) {
+                    // If not null we can create an empty list of listSize
+                    val list = ArrayList<Any>(listSize)
                     val listValueAdder: ValueAdder = { i, value -> list.add(i, value) }
 
+                    // Add value processor to cache starting at current index
                     addToCache(offset) { q ->
                         this.readQualifier(q, offset, listValueAdder, readValueFromStorage, addToCache)
                     }
@@ -152,6 +152,7 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                     addValueToOutput(index, list)
                 } else null
             } else {
+                // First read list item index
                 var listItemIndex = qIndex
                 val itemIndex = initUInt(reader = {
                     qualifier[listItemIndex++]
@@ -161,6 +162,7 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                     throw ParseException("Lists cannot contain complex data")
                 }
 
+                // Read list item
                 @Suppress("UNCHECKED_CAST")
                 readValueFromStorage(
                     Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
@@ -171,13 +173,15 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                 }
             }
             SET -> if (isAtEnd) {
+                // If at end it means that this is a set size
                 @Suppress("UNCHECKED_CAST")
                 val setSize = readValueFromStorage(
-                    SetCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                    SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
                     this.properties[index]!!
                 ) as Int?
 
                 if (setSize != null) {
+                    // If not null we can create a set of setSize
                     val set = LinkedHashSet<Any>(setSize)
 
                     val setValueAdder: ValueAdder = { _, value -> set += value }
@@ -189,6 +193,7 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                     addValueToOutput(index, set)
                 } else null
             } else {
+                // Read set contents. Always a simple value for set since it is in qualifier
                 val valueDefinition = ((this.properties[index]!! as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                 var setItemIndex = qIndex
 
@@ -197,13 +202,15 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                 addValueToOutput(index, key)
             }
             MAP -> if (isAtEnd) {
+                // If at end it means that this is a map count
                 @Suppress("UNCHECKED_CAST")
                 val mapSize = readValueFromStorage(
-                    MapCount as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                    MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>,
                     this.properties[index]!!
                 ) as Int?
 
                 if (mapSize != null) {
+                    // If not null we can create a map of mapSize
                     val map = LinkedHashMap<Any, Any>(mapSize)
 
                     @Suppress("UNCHECKED_CAST")
@@ -220,14 +227,18 @@ private fun <P: AbstractPropertyDefinitions<*>> IsDataModel<P>.readQualifier(
                     addValueToOutput(index, map)
                 } else null
             } else {
+                // Read key first
                 val keyDefinition =
                     ((this.properties[index]!! as IsMapDefinition<*, *, *>).keyDefinition as IsFixedBytesEncodable<*>)
                 var mapItemIndex = qIndex
                 val key = keyDefinition.readStorageBytes(keyDefinition.byteSize) { qualifier[mapItemIndex++] }
+
+                // Create map Item adder
                 val mapItemAdder: ValueAdder = { i, value ->
                     addValueToOutput(i, Pair(key, value))
                 }
 
+                // Begin to read map value
                 this.readValue(
                     qualifier.size <= mapItemIndex,
                     index,

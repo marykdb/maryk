@@ -1,8 +1,8 @@
 package maryk.core.processors.datastore
 
-import maryk.core.processors.datastore.StorageTypeEnum.ListCount
-import maryk.core.processors.datastore.StorageTypeEnum.MapCount
-import maryk.core.processors.datastore.StorageTypeEnum.SetCount
+import maryk.core.processors.datastore.StorageTypeEnum.ListSize
+import maryk.core.processors.datastore.StorageTypeEnum.MapSize
+import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.definitions.IsListDefinition
@@ -29,13 +29,13 @@ class WalkValuesForStorageKtTest {
                 Value -> {
                     shouldBeOfType<IsSimpleValueDefinition<*, *>>(type.castDefinition(definition))
                 }
-                ListCount -> {
+                ListSize -> {
                     shouldBeOfType<IsListDefinition<*, *>>(type.castDefinition(definition))
                 }
-                SetCount -> {
+                SetSize -> {
                     shouldBeOfType<IsSetDefinition<*, *>>(type.castDefinition(definition))
                 }
-                MapCount -> {
+                MapSize -> {
                     shouldBeOfType<IsMapDefinition<*, *, *>>(type.castDefinition(definition))
                 }
                 TypeValue -> {

@@ -18,12 +18,11 @@ import maryk.lib.exceptions.ParseException
 
 /**
  * Create a Root graph with references to [properties]
+ * [properties] should always be sorted by index so processing graphs is a lot easier
  */
 data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
     val properties: List<IsPropRefGraphable<P>>
 ) {
-    constructor(vararg property: IsPropRefGraphable<P>) : this(property.toList())
-
     object Properties : ObjectPropertyDefinitions<RootPropRefGraph<*>>() {
         val properties = this.addProperties(1, RootPropRefGraph<*>::properties)  { context: GraphContext? ->
             context?.dataModel?.properties as? PropertyDefinitions? ?: throw ContextNotFoundException()

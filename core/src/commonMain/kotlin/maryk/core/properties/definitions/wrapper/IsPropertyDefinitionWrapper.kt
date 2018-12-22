@@ -43,7 +43,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     IsSerializablePropertyDefinition<T, CX>,
     IsPropRefGraphable<PropertyDefinitions>
 {
-    val index: Int
+    override val index: Int
     val name: String
     val definition: IsSerializablePropertyDefinition<T, CX>
     val getter: (DO) -> TO?

@@ -22,20 +22,25 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** To make graph with [runner] on Properties to return list of graphables */
+/**
+ * To make graph with [runner] on Properties to return list of graphables
+ * The graphables are sorted after generation so the PropRefGraph can be processed quicker.
+ */
 @Suppress("unused")
 fun <P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> P.graph(
     embed: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
     runner: PS.() -> List<IsPropRefGraphable<PS>>
-) = PropRefGraph<P, DM, PS>(embed, runner(embed.definition.dataModel.properties))
+) = PropRefGraph<P, DM, PS>(embed, runner(embed.definition.dataModel.properties).sortedBy { it.index })
 
 /**
  * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
+ * [properties] should always be sorted by index so processing graphs is a lot easier
  */
 data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: PropertyDefinitions> internal constructor(
     val parent: EmbeddedValuesPropertyDefinitionWrapper<DM, PS, IsPropertyContext>,
     val properties: List<IsPropRefGraphable<PS>>
 ) : IsPropRefGraphable<P> {
+    override val index = parent.index
     override val graphType = PropRefGraphType.Graph
 
     override fun toString(): String {

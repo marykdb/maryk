@@ -31,10 +31,13 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
     /** Get Key by [bytes] array */
     fun key(bytes: ByteArray): Key<*>
 
-    /** Create Property reference graph with list of graphables that are generated with [runner] on Properties */
+    /**
+     * Create Property reference graph with list of graphables that are generated with [runner] on Properties
+     * The graphables are sorted after generation so the RootPropRefGraph can be processed quicker.
+     */
     fun graph(
         runner: P.() -> List<IsPropRefGraphable<P>>
-    ) = RootPropRefGraph(runner(this.properties))
+    ) = RootPropRefGraph(runner(this.properties).sortedBy { it.index })
 
     /** Get PropertyReference by [referenceName] */
     fun getPropertyReferenceByName(referenceName: String, context: IsPropertyContext? = null) = try {

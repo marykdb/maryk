@@ -4,15 +4,11 @@ plugins {
 
 apply {
     from("../../gradle/common.gradle")
-    from("../../gradle/js.gradle")
     from("../../gradle/jvm.gradle")
-    from("../../gradle/native.gradle")
 }
 
 setupCommon()
 setupJVM()
-setupJS()
-setupNative()
 
 kotlin {
     sourceSets {
@@ -32,19 +28,9 @@ kotlin {
                 api project(':testmodels')
             }
         }
-        jsMain {
-            dependencies {
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion"
-            }
-        }
         jvmMain {
             dependencies {
                 api "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion"
-            }
-        }
-        macosMain {
-            dependencies {
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion"
             }
         }
     }

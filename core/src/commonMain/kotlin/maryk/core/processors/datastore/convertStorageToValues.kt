@@ -37,10 +37,8 @@ import maryk.core.values.ValueItem
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
 
-private typealias QualifierProcessor = (ByteArray) -> Unit
-private typealias CacheProcessor = (Int, QualifierProcessor) -> Unit
 typealias ValueReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<Any>?) -> Any?
-typealias ValueAdder = (Int, Any) -> Unit
+private typealias ValueAdder = (Int, Any) -> Unit
 
 /**
  * Convert storage bytes to values.
@@ -60,53 +58,15 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToVa
         mutableValuesItems += ValueItem(index, value)
     }
 
-    var lastQualifier: ByteArray? = null
-    var qualifier = getQualifier()
-    // Stack of processors to process qualifier and if matched the values.
-    // Since definitions are nested we need a stack
-    val processorStack = mutableListOf<Pair<Int, QualifierProcessor>>()
-
-    while (qualifier != null) {
-        // Remove anything from processor stack that does not match anymore
-        lastQualifier?.let { last ->
-            val nonMatchIndex = last.firstNonMatchIndex(qualifier!!)
-            for (i in (processorStack.size - 1 downTo 0)) {
-                if (processorStack[i].first >= nonMatchIndex) {
-                    processorStack.removeAt(i)
-                }
-            }
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        // Try to process qualifier with last qualifier processor in list
-        processorStack.lastOrNull()?.second?.invoke(qualifier) ?:
-            // Otherwise try to get a new qualifier processor from DataModel
-            (this as IsDataModel<P>).readQualifier(qualifier, 0, select, valueAdder, processValue) { index, processor ->
-                processorStack += Pair(index, processor)
-            }
-
-        // Last qualifier to remove processors in next iteration
-        lastQualifier = qualifier
-
-        // Get next qualifier
-        qualifier = getQualifier()
+    processQualifiers(getQualifier) { qualifier, addToCache ->
+        // Otherwise try to get a new qualifier processor from DataModel
+        (this as IsDataModel<P>).readQualifier(qualifier, 0, select, valueAdder, processValue, addToCache)
     }
 
     // Create Values
     return this.values(null) {
         mutableValuesItems
     }
-}
-
-/**
- * Find the first non match index against [comparedTo]
- */
-private fun ByteArray.firstNonMatchIndex(comparedTo: ByteArray): Int {
-    var index = -1
-    while (++index < this.size) {
-        if (comparedTo[index] != this[index]) break
-    }
-    return index
 }
 
 /**

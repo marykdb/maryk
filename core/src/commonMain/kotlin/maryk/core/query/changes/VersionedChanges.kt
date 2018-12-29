@@ -3,19 +3,21 @@
 package maryk.core.query.changes
 
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.values.ObjectValues
 
 /** Contains a list of [changes] that belongs to a [version] */
 data class VersionedChanges(
     val version: ULong,
     val changes: List<IsChange>
 ) {
+    override fun toString() = "VersionedChanges($version)[${changes.joinToString()}]"
+
     object Properties : ObjectPropertyDefinitions<VersionedChanges>() {
         val version = add(1, "version", NumberDefinition(
             type = UInt64

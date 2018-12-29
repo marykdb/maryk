@@ -2,7 +2,6 @@ package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsValueDefinition
@@ -10,14 +9,17 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.RequestContext
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 
 /** Compares given [values] set of type [T] against referenced value [reference] */
 data class ReferenceValueSetPair<T: Any> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
     val values: Set<T>
 ) : DefinedByReference<T> {
+    override fun toString() = "$reference: $values]"
+
     object Properties: ObjectPropertyDefinitions<ReferenceValueSetPair<*>>() {
         val reference = DefinedByReference.addReference(
             this,

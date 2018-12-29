@@ -14,6 +14,9 @@ data class ReferenceValueRegexPair internal constructor(
     override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *, IsPropertyContext, *>, *>,
     val regex: Regex
 ) : DefinedByReference<String> {
+
+    override fun toString() = "$reference: ${regex.pattern}"
+
     override fun equals(other: Any?): Boolean {
         if (other !is ReferenceValueRegexPair) return false
         if (this.reference != other.reference) return false

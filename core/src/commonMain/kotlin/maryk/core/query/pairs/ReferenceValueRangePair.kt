@@ -15,6 +15,9 @@ data class ReferenceValueRangePair<T: Comparable<T>> internal constructor(
     override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
     val range: ValueRange<T>
 ) : DefinedByReference<T> {
+
+    override fun toString() = "$reference: $range"
+
     object Properties: ObjectPropertyDefinitions<ReferenceValueRangePair<*>>() {
         val reference = DefinedByReference.addReference(
             this,

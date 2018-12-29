@@ -2,9 +2,9 @@ package maryk.core.query.changes
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.values.ObjectValues
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /** Defines changes to properties defined by [referenceValuePairs] */
@@ -15,6 +15,8 @@ data class Change internal constructor(
 
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
+
+    override fun toString() = "Change[${referenceValuePairs.joinToString()}]"
 
     object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, Change>() {
         override val referenceValuePairs = addReferenceValuePairsDefinition(Change::referenceValuePairs)

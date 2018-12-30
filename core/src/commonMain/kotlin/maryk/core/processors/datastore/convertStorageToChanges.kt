@@ -5,6 +5,7 @@ package maryk.core.processors.datastore
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -12,6 +13,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.AnyValuePropertyReference
 import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.CompleteReferenceType.TYPE
@@ -26,11 +28,21 @@ import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.ListValueChanges
+import maryk.core.query.changes.MapChange
+import maryk.core.query.changes.MapValueChanges
+import maryk.core.query.changes.SetChange
+import maryk.core.query.changes.SetValueChanges
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.ReferenceValuePair
 
 typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<Any>?, (ULong, Any?) -> Unit) -> Unit
-private typealias ChangeAdder = (ULong, IsChange) -> Unit
+private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
+
+private enum class ChangeType {
+    CHANGE, DELETE, MAP, LIST, SET
+}
 
 /**
  * Convert storage bytes to values.
@@ -46,16 +58,16 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToCh
     val mutableVersionedChanges = mutableListOf<VersionedChanges>()
 
     // Adds changes to versionedChangesCollection
-    val changeAdder: ChangeAdder = { version: ULong, change: IsChange ->
+    val changeAdder: ChangeAdder = { version: ULong, changeType: ChangeType, changePart: Any ->
         val index = mutableVersionedChanges.binarySearch { it.version.compareTo(version) }
 
         if (index < 0) {
             mutableVersionedChanges.add(
                 (index * -1) - 1,
-                VersionedChanges(version, mutableListOf(change))
+                VersionedChanges(version, mutableListOf(createChange(changeType, changePart)))
             )
         } else {
-            (mutableVersionedChanges[index].changes as MutableList<IsChange>).add(change)
+            (mutableVersionedChanges[index].changes as MutableList<IsChange>).addChange(changeType, changePart)
         }
     }
 
@@ -66,6 +78,27 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToCh
 
     // Create Values
     return mutableVersionedChanges
+}
+
+/** Adds change to existing list or creates a new change*/
+private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: Any) {
+    @Suppress("UNCHECKED_CAST")
+    when(changeType) {
+        ChangeType.CHANGE -> this.find { it is Change }?.also { ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(changePart as ReferenceValuePair<*>) }
+        ChangeType.DELETE -> this.find { it is Delete }?.also { ((it as Delete).references as MutableList<AnyValuePropertyReference>).add(changePart as AnyValuePropertyReference) }
+        ChangeType.MAP -> this.find { it is MapChange }?.also { ((it as MapChange).mapValueChanges as MutableList<MapValueChanges<*, *>>).add(changePart as MapValueChanges<*, *>) }
+        ChangeType.LIST -> this.find { it is ListChange }?.also { ((it as ListChange).listValueChanges as MutableList<ListValueChanges<*>>).add(changePart as ListValueChanges<*>) }
+        ChangeType.SET -> this.find { it is SetChange }?.also { ((it as SetChange).setValueChanges as MutableList<SetValueChanges<*>>).add(changePart as SetValueChanges<*>) }
+    } ?: this.add(createChange(changeType, changePart))
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun createChange(changeType: ChangeType, changePart: Any) = when(changeType) {
+    ChangeType.CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
+    ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
+    ChangeType.MAP -> MapChange(mutableListOf(changePart as MapValueChanges<*, *>))
+    ChangeType.LIST -> ListChange(mutableListOf(changePart as ListValueChanges<*>))
+    ChangeType.SET -> SetChange(mutableListOf(changePart as SetValueChanges<*>))
 }
 
 /**
@@ -138,9 +171,9 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readValue(
         ) { version, value ->
             val ref = propDefinition.getRef() as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
             if (value != null) {
-                addChangeToOutput(version, Change(ReferenceValuePair(ref, value)))
+                addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
             } else {
-                addChangeToOutput(version, Delete(ref))
+                addChangeToOutput(version, ChangeType.DELETE,ref)
             }
         }
     } else {

@@ -1,10 +1,13 @@
 package maryk.core.properties.references
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 
 typealias AnyPropertyReference = IsPropertyReference<*, *, *>
+typealias AnyValuePropertyReference = IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>
 
 /**
  * Abstract for reference to a property of type [T] defined by [D] in Values [V]

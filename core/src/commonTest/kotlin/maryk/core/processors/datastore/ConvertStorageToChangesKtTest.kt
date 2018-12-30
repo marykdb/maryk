@@ -51,15 +51,19 @@ class ConvertStorageToChangesKtTest {
             VersionedChanges(
                 1234UL,
                 listOf(
-                    Change(TestMarykModel.ref { string } with "hello world"),
-                    Change(TestMarykModel.ref { int } with 5)
+                    Change(
+                        TestMarykModel.ref { string } with "hello world",
+                        TestMarykModel.ref { int } with 5
+                    )
                 )
             ),
             VersionedChanges(
                 1235UL,
                 listOf(
-                    Change(TestMarykModel.ref { uint } with 3u),
-                    Change(TestMarykModel.ref { enum } with V1)
+                    Change(
+                        TestMarykModel.ref { uint } with 3u,
+                        TestMarykModel.ref { enum } with V1
+                    )
                 )
             )
         )

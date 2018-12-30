@@ -2,21 +2,19 @@ package maryk.core.query.changes
 
 import maryk.core.models.ReferencesDataModel
 import maryk.core.models.ReferencesObjectPropertyDefinitions
-import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.AnyValuePropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 /** Delete of a property referred by [references] */
 data class Delete internal constructor(
-    val references: List<IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>>
+    val references: List<AnyValuePropertyReference>
 ) : IsChange {
     override val changeType = ChangeType.Delete
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg reference: IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>): this(reference.toList())
+    constructor(vararg reference: AnyValuePropertyReference): this(reference.toList())
 
     override fun toString() = "Delete[${references.joinToString()}]"
 

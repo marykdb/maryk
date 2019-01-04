@@ -12,8 +12,7 @@ private val key2 = SimpleMarykModel.key("awfbjYrVQ+cdXblfQKV10A")
 
 val getChangesRequest = SimpleMarykModel.getChanges(
     key1,
-    key2,
-    fromVersion = 1234uL
+    key2
 )
 
 val getChangesMaxRequest = SimpleMarykModel.run {

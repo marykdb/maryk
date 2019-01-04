@@ -50,7 +50,7 @@ class InMemoryDataStoreScanChangesTest {
     @Test
     fun executeSimpleScanRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
-            Log.scanChanges(startKey = keys[2], fromVersion = 0uL)
+            Log.scanChanges(startKey = keys[2])
         )
 
         scanResponse.changes.size shouldBe 3
@@ -97,7 +97,7 @@ class InMemoryDataStoreScanChangesTest {
     @Test
     fun executeScanRequestWithLimit() = runSuspendingTest {
         val scanResponse = dataStore.execute(
-            Log.scanChanges(startKey = keys[2], limit = 1u, fromVersion = 0uL)
+            Log.scanChanges(startKey = keys[2], limit = 1u)
         )
 
         scanResponse.changes.size shouldBe 1
@@ -120,7 +120,7 @@ class InMemoryDataStoreScanChangesTest {
     @Test
     fun executeScanRequestWithToVersion() = runSuspendingTest {
         val scanResponse = dataStore.execute(
-            Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL, fromVersion = 0uL)
+            Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
         )
 
         scanResponse.changes.size shouldBe 0
@@ -136,8 +136,7 @@ class InMemoryDataStoreScanChangesTest {
                         timestamp,
                         severity
                     )
-                },
-                fromVersion = 0uL
+                }
             )
         )
 

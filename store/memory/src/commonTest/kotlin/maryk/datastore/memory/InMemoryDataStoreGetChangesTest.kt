@@ -40,7 +40,7 @@ class InMemoryDataStoreGetChangesTest {
     @Test
     fun executeSimpleGetChangesRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
-            SimpleMarykModel.getChanges(*keys.toTypedArray(), fromVersion = 0uL)
+            SimpleMarykModel.getChanges(*keys.toTypedArray())
         )
 
         getResponse.changes.size shouldBe 2
@@ -61,7 +61,7 @@ class InMemoryDataStoreGetChangesTest {
     @Test
     fun executeToVersionGetChangesRequest() = runSuspendingTest {
         val getResponse = dataStore.execute(
-            SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL, fromVersion = 0uL)
+            SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
         )
 
         getResponse.changes.size shouldBe 0

@@ -9,9 +9,7 @@ import maryk.test.models.SimpleMarykModel
 
 private val key1 = SimpleMarykModel.key("Zk6m4QpZQegUg5s13JVYlQ")
 
-val scanChangesRequest = SimpleMarykModel.scanChanges(
-    fromVersion = 1234uL
-)
+val scanChangesRequest = SimpleMarykModel.scanChanges()
 
 val scanChangesMaxRequest = SimpleMarykModel.run {
     scanChanges(

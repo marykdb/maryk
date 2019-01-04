@@ -34,7 +34,7 @@ class GetChangesRequestTest {
         dataModel: SimpleMarykModel
         keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
         filterSoftDeleted: true
-        fromVersion: 1234
+        fromVersion: 0
         maxVersions: 1
 
         """.trimIndent()

@@ -36,7 +36,7 @@ class ScanChangesRequestTest {
         dataModel: SimpleMarykModel
         filterSoftDeleted: true
         limit: 100
-        fromVersion: 1234
+        fromVersion: 0
         maxVersions: 1
 
         """.trimIndent()

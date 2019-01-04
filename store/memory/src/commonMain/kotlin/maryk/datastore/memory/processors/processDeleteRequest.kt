@@ -11,12 +11,15 @@ import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.datastore.memory.StoreAction
+import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.memory.records.DeleteState.Deleted
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.time.Instant
 
 internal typealias DeleteStoreAction<DM, P> = StoreAction<DM, P, DeleteRequest<DM>, DeleteResponse<DM>>
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+
+internal val objectSoftDeleteQualifier = byteArrayOf(0)
 
 /** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
 internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDeleteRequest(
@@ -39,8 +42,18 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDelet
                         if (deleteRequest.hardDelete) {
                             dataStore.records.removeAt(index)
                         } else {
-                            val newRecord = dataStore.records[index].copy(
-                                isDeleted = Deleted(version)
+                            val oldRecord = dataStore.records[index]
+                            val newValues = oldRecord.values.toMutableList()
+
+                            val valueIndex = oldRecord.values.binarySearch {
+                                it.reference.compareTo(objectSoftDeleteQualifier)
+                            }
+                            setValueAtIndex(
+                                newValues, valueIndex, objectSoftDeleteQualifier, true, version, dataStore.keepAllVersions
+                            )
+
+                            val newRecord = oldRecord.copy(
+                                values = newValues
                             )
                             dataStore.records[index] = newRecord
                         }

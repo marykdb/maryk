@@ -31,8 +31,6 @@ internal fun <T: Any> setValue(
         values, valueIndex, referenceToCompareTo, value, version, keepAllVersions
     )
 
-
-
     // Validate value if it changed
     newDataValue?.let {
         validate?.invoke(newDataValue, getValueAtIndex<T>(values, valueIndex)?.value)

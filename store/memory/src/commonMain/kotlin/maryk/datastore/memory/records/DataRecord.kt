@@ -7,7 +7,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.memory.processors.changers.getValue
-import maryk.datastore.memory.records.DeleteState.NeverDeleted
+import maryk.datastore.memory.processors.objectSoftDeleteQualifier
 
 /**
  * A DataRecord stored at [key] with [values]
@@ -18,9 +18,11 @@ internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefiniti
     val key: Key<DM>,
     var values: List<DataRecordNode>,
     val firstVersion: ULong,
-    var lastVersion: ULong,
-    var isDeleted: DeleteState = NeverDeleted
+    var lastVersion: ULong
 ) {
+    fun isDeleted(toVersion: ULong?): Boolean =
+        getValue<Boolean>(this.values, objectSoftDeleteQualifier, toVersion)?.value ?: false
+
     /** Get value by [reference] */
     operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>, toVersion: ULong? = null): T? =
         get(reference.toStorageByteArray(), toVersion)

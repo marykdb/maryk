@@ -8,9 +8,12 @@ import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
+import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
+import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -48,6 +51,7 @@ import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.ListValueChanges
 import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.MapValueChanges
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.SetValueChanges
 import maryk.core.query.changes.VersionedChanges
@@ -57,8 +61,10 @@ typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, 
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
-    CHANGE, DELETE, MAP_ADD, MAP_DELETE, LIST_ADD, LIST_DELETE, SET_ADD, SET_DELETE
+    OBJECT_DELETE, CHANGE, DELETE, MAP_ADD, MAP_DELETE, LIST_ADD, LIST_DELETE, SET_ADD, SET_DELETE
 }
+
+private val objectDeletePropertyDefinition = BooleanDefinition()
 
 /**
  * Convert storage bytes to values.
@@ -100,6 +106,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToCh
 private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: Any) {
     @Suppress("UNCHECKED_CAST")
     when(changeType) {
+        ChangeType.OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
         ChangeType.CHANGE -> this.find { it is Change }?.also { ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(changePart as ReferenceValuePair<*>) }
         ChangeType.DELETE -> this.find { it is Delete }?.also { ((it as Delete).references as MutableList<AnyValuePropertyReference>).add(changePart as AnyValuePropertyReference) }
         ChangeType.LIST_ADD -> {
@@ -143,6 +150,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
 
 @Suppress("UNCHECKED_CAST")
 private fun createChange(changeType: ChangeType, changePart: Any) = when(changeType) {
+    ChangeType.OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
     ChangeType.CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
     ChangeType.LIST_ADD-> {
@@ -234,7 +242,14 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
             val isAtEnd = qualifier.size <= qIndex
             when (referenceStorageTypeOf(type)) {
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
-                    DELETE -> TODO("Implement object delete")
+                    DELETE -> {
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(ObjectDelete as StorageTypeEnum<IsPropertyDefinition<Any>>, objectDeletePropertyDefinition as IsPropertyDefinition<Any>) { version, value ->
+                            if (value != null) {
+                                addChangeToOutput(version, OBJECT_DELETE, value)
+                            }
+                        }
+                    }
                     TYPE, MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
                     else -> throw Exception("Not recognized special type $specialType")
                 }

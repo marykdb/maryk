@@ -3,8 +3,10 @@
 package maryk.datastore.memory
 
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
+import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.StatusType.SUCCESS
 import maryk.core.query.responses.statuses.Success
@@ -56,6 +58,24 @@ class InMemoryDataStoreDeleteTest {
             addRequest.dataModel.get(keys[0], filterSoftDeleted = false)
         )
         getResponseWithDeleted.values.isEmpty() shouldBe false
+        getResponseWithDeleted.values[0].isDeleted shouldBe true
+
+        val getChangesResponse = dataStore.execute(
+            addRequest.dataModel.getChanges(keys[0])
+        )
+
+        getChangesResponse.changes.isEmpty() shouldBe true
+
+        val getChangesWithDeletedResponse = dataStore.execute(
+            addRequest.dataModel.getChanges(keys[0], filterSoftDeleted = false)
+        )
+
+        getChangesWithDeletedResponse.changes.size shouldBe 1
+        getChangesWithDeletedResponse.changes[0].changes.size shouldBe 2
+        getChangesWithDeletedResponse.changes[0].changes.last().let {
+            it.changes.size shouldBe 1
+            it.changes.first() shouldBe ObjectSoftDeleteChange(true)
+        }
     }
 
     @Test

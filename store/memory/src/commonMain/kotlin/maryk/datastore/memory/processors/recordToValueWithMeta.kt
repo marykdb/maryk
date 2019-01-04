@@ -75,7 +75,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     return ValuesWithMetaData(
         key = record.key,
         values = values,
-        isDeleted = false,
+        isDeleted = record.isDeleted(toVersion),
         firstVersion = record.firstVersion,
         lastVersion = maxVersion
     )

@@ -1,9 +1,9 @@
 package maryk.core.query.changes
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
+import maryk.core.values.SimpleObjectValues
 
 /** Defines a change in DataObject Soft Delete state to [isDeleted] */
 data class ObjectSoftDeleteChange(

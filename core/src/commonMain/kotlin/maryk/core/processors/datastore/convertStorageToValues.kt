@@ -95,7 +95,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
             val isAtEnd = qualifier.size <= qIndex
             when (referenceStorageTypeOf(type)) {
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
-                    DELETE -> {} // ignore
+                    DELETE -> {} // Ignore since it should be handled on higher level
                     TYPE, MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
                     else -> throw Exception("Not recognized special type $specialType")
                 }

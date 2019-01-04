@@ -22,7 +22,6 @@ import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.memory.records.DataRecord
-import maryk.datastore.memory.records.DeleteState.Deleted
 
 /**
  * Test if [dataRecord] should be filtered based on given FetchRequest
@@ -33,7 +32,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsFetchReque
     dataRecord: DataRecord<DM, P>,
     toVersion: ULong?
 ) = when {
-    this.filterSoftDeleted && dataRecord.isDeleted is Deleted -> true
+    this.filterSoftDeleted && dataRecord.isDeleted(toVersion) -> true
     this.filter != null -> doFilter(this.filter as IsFilter, dataRecord, toVersion)
     else -> false
 }

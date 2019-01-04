@@ -16,6 +16,7 @@ import maryk.datastore.memory.records.DeletedValue
 /** Processes [record] values to a DataObjectWithChanges object */
 internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordToObjectChanges(
     select: RootPropRefGraph<P>?,
+    fromVersion: ULong,
     toVersion: ULong?,
     record: DataRecord<DM, P>
 ): DataObjectVersionedChange<DM>? {
@@ -40,24 +41,28 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
             when (node) {
                 is DataRecordValue<*> -> {
                     // Only add if  below expected version
-                    if (toVersion == null || node.version < toVersion) {
+                    if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {
                         valueWithVersionReader(node.version, node.value)
                     }
                 }
                 is DataRecordHistoricValues<*> -> {
-                    when (val latest = node.history.findLast { toVersion == null || it.version < toVersion }) {
-                        null -> {} // skip because not a value
-                        is DataRecordValue<*> -> {
-                            valueWithVersionReader(latest.version, latest.value)
+                    if (node.history.last().version < fromVersion) {
+                        // skip because last is below
+                    } else {
+                        when (val latest = node.history.findLast { it.version >= fromVersion && (toVersion == null || it.version < toVersion) }) {
+                            null -> {} // skip because not a value
+                            is DataRecordValue<*> -> {
+                                valueWithVersionReader(latest.version, latest.value)
+                            }
+                            is DeletedValue<*> -> {
+                                valueWithVersionReader(latest.version, null)
+                            }
+                            else -> throw Exception("Unknown value type")
                         }
-                        is DeletedValue<*> -> {
-                            valueWithVersionReader(latest.version, null)
-                        }
-                        else -> throw Exception("Unknown value type")
                     }
                 }
                 is DeletedValue<*> -> {
-                    if (toVersion == null || node.version < toVersion) {
+                    if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {
                         valueWithVersionReader(node.version, null)
                     }
                 }

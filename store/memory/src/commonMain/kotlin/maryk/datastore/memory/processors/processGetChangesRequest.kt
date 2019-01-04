@@ -31,6 +31,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processGetCh
 
             getRequest.dataModel.recordToObjectChanges(
                 getRequest.select,
+                getRequest.fromVersion,
                 getRequest.toVersion,
                 record
             )?.let {

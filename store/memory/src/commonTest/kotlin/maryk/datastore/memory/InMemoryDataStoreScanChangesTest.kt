@@ -127,6 +127,15 @@ class InMemoryDataStoreScanChangesTest {
     }
 
     @Test
+    fun executeScanRequestWithFromVersion() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            Log.scanChanges(startKey = keys[2], fromVersion = lowestVersion + 1uL)
+        )
+
+        scanResponse.changes.size shouldBe 0
+    }
+
+    @Test
     fun executeScanRequestWithSelect() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scanChanges(

@@ -51,6 +51,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanC
 
         scanRequest.dataModel.recordToObjectChanges(
             scanRequest.select,
+            scanRequest.fromVersion,
             scanRequest.toVersion,
             record
         )?.let {

@@ -271,10 +271,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     @Suppress("UNCHECKED_CAST")
                     readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
-                        if (value != null) {
-                            addChangeToOutput(version, ChangeType.LIST_ADD, listDefinition.getItemRef(listIndex, reference) to value)
-                        } else {
+                        if (value == null) {
                             addChangeToOutput(version, ChangeType.LIST_DELETE, listDefinition.getItemRef(listIndex, reference))
+                        } else {
+                            addChangeToOutput(version, ChangeType.LIST_ADD, listDefinition.getItemRef(listIndex, reference) to value)
                         }
                     }
                 }
@@ -295,10 +295,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     @Suppress("UNCHECKED_CAST")
                     readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
-                        if (value != null) {
-                            addChangeToOutput(version, ChangeType.SET_ADD, setDefinition.getItemRef(key, reference))
-                        } else {
+                        if (value == null) {
                             addChangeToOutput(version, ChangeType.SET_DELETE, setDefinition.getItemRef(key, reference))
+                        } else {
+                            addChangeToOutput(version, ChangeType.SET_ADD, setDefinition.getItemRef(key, reference))
                         }
                     }
                 }
@@ -320,10 +320,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     @Suppress("UNCHECKED_CAST")
                     readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
-                        if (value != null) {
-                            addChangeToOutput(version, ChangeType.MAP_ADD, Pair(reference, Pair(key, value)))
-                        } else {
+                        if (value == null) {
                             addChangeToOutput(version, ChangeType.MAP_DELETE, mapDefinition.getValueRef(key, reference))
+                        } else {
+                            addChangeToOutput(version, ChangeType.MAP_ADD, Pair(reference, Pair(key, value)))
                         }
                     }
                 }

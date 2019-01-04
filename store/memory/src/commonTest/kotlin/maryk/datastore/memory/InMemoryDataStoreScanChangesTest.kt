@@ -48,7 +48,7 @@ class InMemoryDataStoreScanChangesTest {
     }
 
     @Test
-    fun executeSimpleScanRequest() = runSuspendingTest {
+    fun executeSimpleScanChangesRequest() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2])
         )
@@ -95,7 +95,7 @@ class InMemoryDataStoreScanChangesTest {
     }
 
     @Test
-    fun executeScanRequestWithLimit() = runSuspendingTest {
+    fun executeScanChangesRequestWithLimit() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2], limit = 1u)
         )
@@ -118,7 +118,7 @@ class InMemoryDataStoreScanChangesTest {
     }
 
     @Test
-    fun executeScanRequestWithToVersion() = runSuspendingTest {
+    fun executeScanChangesRequestWithToVersion() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
         )
@@ -127,7 +127,7 @@ class InMemoryDataStoreScanChangesTest {
     }
 
     @Test
-    fun executeScanRequestWithFromVersion() = runSuspendingTest {
+    fun executeScanChangesRequestWithFromVersion() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scanChanges(startKey = keys[2], fromVersion = lowestVersion + 1uL)
         )
@@ -136,14 +136,13 @@ class InMemoryDataStoreScanChangesTest {
     }
 
     @Test
-    fun executeScanRequestWithSelect() = runSuspendingTest {
+    fun executeScanChangesRequestWithSelect() = runSuspendingTest {
         val scanResponse = dataStore.execute(
             Log.scanChanges(
                 startKey = keys[2],
                 select = Log.graph {
                     listOf(
-                        timestamp,
-                        severity
+                        timestamp
                     )
                 }
             )
@@ -156,7 +155,6 @@ class InMemoryDataStoreScanChangesTest {
             it.changes shouldBe listOf(
                 VersionedChanges(version = lowestVersion, changes = listOf(
                     Change(
-                        Log.ref { severity } with INFO,
                         Log.ref { timestamp } with DateTime(2018, 11, 14, 12, 33, 22, 111)
                     )
                 ))

@@ -75,4 +75,27 @@ class InMemoryDataStoreGetChangesTest {
 
         getResponse.changes.size shouldBe 0
     }
+
+    @Test
+    fun executeGetChangesRequestWithSelect() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            SimpleMarykModel.getChanges(
+                *keys.toTypedArray(),
+                select = SimpleMarykModel.graph {
+                    listOf(value)
+                }
+            )
+        )
+
+        scanResponse.changes.size shouldBe 2
+
+        scanResponse.changes[0].let {
+            it.changes shouldBe listOf(
+                VersionedChanges(version = lowestVersion, changes = listOf(
+                    Change(SimpleMarykModel.ref { value } with "haha1")
+                ))
+            )
+            it.key shouldBe keys[0]
+        }
+    }
 }

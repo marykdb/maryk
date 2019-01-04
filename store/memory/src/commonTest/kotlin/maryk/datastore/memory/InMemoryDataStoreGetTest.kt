@@ -55,4 +55,23 @@ class InMemoryDataStoreGetTest {
 
         getResponse.values.size shouldBe 0
     }
+
+    @Test
+    fun executeGetRequestWithSelect() = runSuspendingTest {
+        val scanResponse = dataStore.execute(
+            SimpleMarykModel.get(
+                *keys.toTypedArray(),
+                select = SimpleMarykModel.graph {
+                    listOf(value)
+                }
+            )
+        )
+
+        scanResponse.values.size shouldBe 2
+
+        scanResponse.values[0].let {
+            it.values shouldBe SimpleMarykModel(value = "haha1")
+            it.key shouldBe keys[0]
+        }
+    }
 }

@@ -3,12 +3,14 @@
 package maryk.core.processors.datastore
 
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
+import maryk.core.extensions.bytes.initUInt
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
@@ -23,6 +25,8 @@ import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.CompleteReferenceType.TYPE
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListItemReference
+import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.ReferenceType.LIST
@@ -50,7 +54,7 @@ typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, 
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
-    CHANGE, DELETE, MAPADD, MAPDELETE, LIST, SETADD, SETDELETE
+    CHANGE, DELETE, MAPADD, MAPDELETE, LISTADD, LISTDELETE, SETADD, SETDELETE
 }
 
 /**
@@ -95,7 +99,18 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
     when(changeType) {
         ChangeType.CHANGE -> this.find { it is Change }?.also { ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(changePart as ReferenceValuePair<*>) }
         ChangeType.DELETE -> this.find { it is Delete }?.also { ((it as Delete).references as MutableList<AnyValuePropertyReference>).add(changePart as AnyValuePropertyReference) }
-        ChangeType.LIST -> this.find { it is ListChange }?.also { ((it as ListChange).listValueChanges as MutableList<ListValueChanges<*>>).add(changePart as ListValueChanges<*>) }
+        ChangeType.LISTADD -> {
+            this.find { it is ListChange }?.also { change ->
+                val refToValue = changePart as Pair<ListItemReference<*, *>, Any>
+                (((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>).find { it.reference == refToValue.first.parentReference }?.addValuesAtIndex as MutableMap<Int, Any>)[refToValue.first.index] = refToValue.second
+            }
+        }
+        ChangeType.LISTDELETE -> {
+            this.find { it is ListChange }?.also { change ->
+                val ref = changePart as ListItemReference<*, *>
+                (((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>).find { it.reference == ref.parentReference }?.deleteAtIndex as MutableSet<Any>).add(ref.index)
+            }
+        }
         ChangeType.MAPADD -> {
             this.find { it is MapChange }?.also { change ->
                 val refAndPair = changePart as Pair<IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *, *>, *>, Pair<Any, Any>>
@@ -127,7 +142,26 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
 private fun createChange(changeType: ChangeType, changePart: Any) = when(changeType) {
     ChangeType.CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
-    ChangeType.LIST -> ListChange(mutableListOf(changePart as ListValueChanges<*>))
+    ChangeType.LISTADD-> {
+        val refToValue = changePart as Pair<ListItemReference<*, *>, Any>
+        ListChange(mutableListOf(
+            ListValueChanges(
+                refToValue.first.parentReference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *>,
+                addValuesAtIndex = mutableMapOf(refToValue.first.index to refToValue.second),
+                deleteAtIndex = mutableSetOf()
+            )
+        ))
+    }
+    ChangeType.LISTDELETE-> {
+        val ref = changePart as ListItemReference<*, *>
+        ListChange(mutableListOf(
+            ListValueChanges(
+                ref.parentReference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *>,
+                addValuesAtIndex = mutableMapOf(),
+                deleteAtIndex = mutableSetOf(ref.index)
+            )
+        ))
+    }
     ChangeType.MAPADD -> {
         val refAndPair = changePart as Pair<IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *, *>, *>, Pair<Any, Any>>
         MapChange(mutableListOf(
@@ -201,7 +235,30 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     else -> throw Exception("Not recognized special type $specialType")
                 }
                 VALUE -> readValue(isAtEnd, index, qualifier, select, qIndex, addChangeToOutput, readValueFromStorage, addToCache)
-                LIST -> TODO("Implement List")
+                LIST -> if (isAtEnd) {
+                    // Used for the list size. Is Ignored for changes
+                } else {
+                    val definition = this.properties[index]!!
+                    @Suppress("UNCHECKED_CAST")
+                    val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
+                    @Suppress("UNCHECKED_CAST")
+                    val reference = definition.getRef() as ListReference<Any, IsPropertyContext>
+
+                    // Read set contents. Always a simple value for set since it is in qualifier
+                    val valueDefinition = ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+                    var listItemIndex = qIndex
+
+                    val listIndex = initUInt(reader = { qualifier[listItemIndex++] }).toInt()
+
+                    @Suppress("UNCHECKED_CAST")
+                    readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+                        if (value != null) {
+                            addChangeToOutput(version, ChangeType.LISTADD, listDefinition.getItemRef(listIndex, reference) to value)
+                        } else {
+                            addChangeToOutput(version, ChangeType.LISTDELETE, listDefinition.getItemRef(listIndex, reference))
+                        }
+                    }
+                }
                 SET -> if (isAtEnd) {
                     // Used for the set size. Is Ignored for changes
                 } else {

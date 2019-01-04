@@ -4,6 +4,7 @@ package maryk.core.processors.datastore
 
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
+import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
@@ -36,7 +37,13 @@ val valuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
     "54009ff9" to (1234uL to "eleven"),
     "54009fe9" to (1234uL to null),
     "5400ae46" to (1234uL to "twelve"),
-    "5400ac46" to (1234uL to null)
+    "5400ac46" to (1234uL to null),
+    "7a" to (1234uL to 3),
+    "7a00000000" to (1233uL to "v1"),
+    "7a00000001" to (1234uL to "v2"),
+    "7a00000002" to (1234uL to "v3"),
+    "7a00000003" to (1234uL to null),
+    "7a00000004" to (1234uL to null)
 )
 
 class ConvertStorageToChangesKtTest {
@@ -74,6 +81,12 @@ class ConvertStorageToChangesKtTest {
                             valuesToAdd = mapOf(Time(10, 14, 1) to "ten"),
                             keysToDelete = setOf()
                         )
+                    ),
+                    ListChange(
+                        TestMarykModel.ref { listOfString }.change(
+                            addValuesAtIndex = mapOf(0 to "v1"),
+                            deleteAtIndex = setOf()
+                        )
                     )
                 )
             ),
@@ -93,6 +106,12 @@ class ConvertStorageToChangesKtTest {
                             keysToDelete = setOf(
                                 Time(11, 22, 17), Time(12, 15, 2)
                             )
+                        )
+                    ),
+                    ListChange(
+                        TestMarykModel.ref { listOfString }.change(
+                            addValuesAtIndex = mapOf(1 to "v2", 2 to "v3"),
+                            deleteAtIndex = setOf(3, 4)
                         )
                     )
                 )

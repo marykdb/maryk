@@ -5,11 +5,14 @@ package maryk.core.processors.datastore
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.models.IsDataModel
+import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
+import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -86,7 +89,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToCh
 
     processQualifiers(getQualifier) { qualifier, addToCache ->
         // Otherwise try to get a new qualifier processor from DataModel
-        (this as IsDataModel<P>).readQualifier(qualifier, 0, select, changeAdder, processValue, addToCache)
+        (this as IsDataModel<P>).readQualifier(qualifier, 0, select, null, changeAdder, processValue, addToCache)
     }
 
     // Create Values
@@ -214,6 +217,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
     qualifier: ByteArray,
     offset: Int,
     select: IsPropRefGraph<P>?,
+    parentReference: IsPropertyReference<*, *, *>?,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,
     addToCache: CacheProcessor
@@ -234,7 +238,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     TYPE, MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
                     else -> throw Exception("Not recognized special type $specialType")
                 }
-                VALUE -> readValue(isAtEnd, index, qualifier, select, qIndex, addChangeToOutput, readValueFromStorage, addToCache)
+                VALUE -> readValue(isAtEnd, index, qualifier, select, parentReference, qIndex, addChangeToOutput, readValueFromStorage, addToCache)
                 LIST -> if (isAtEnd) {
                     // Used for the list size. Is Ignored for changes
                 } else {
@@ -242,7 +246,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     @Suppress("UNCHECKED_CAST")
                     val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
                     @Suppress("UNCHECKED_CAST")
-                    val reference = definition.getRef() as ListReference<Any, IsPropertyContext>
+                    val reference = definition.getRef(parentReference) as ListReference<Any, IsPropertyContext>
 
                     // Read set contents. Always a simple value for set since it is in qualifier
                     val valueDefinition = ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
@@ -266,7 +270,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     @Suppress("UNCHECKED_CAST")
                     val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
                     @Suppress("UNCHECKED_CAST")
-                    val reference = definition.getRef() as SetReference<Any, IsPropertyContext>
+                    val reference = definition.getRef(parentReference) as SetReference<Any, IsPropertyContext>
 
                     // Read set contents. Always a simple value for set since it is in qualifier
                     val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
@@ -290,7 +294,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     @Suppress("UNCHECKED_CAST")
                     val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
                     @Suppress("UNCHECKED_CAST")
-                    val reference = definition.getRef() as MapReference<Any, Any, IsPropertyContext>
+                    val reference = definition.getRef(parentReference) as MapReference<Any, Any, IsPropertyContext>
 
                     // Read set contents. Always a simple value for set since it is in qualifier
                     val keyDefinition = ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
@@ -329,6 +333,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readValue(
     index: Int,
     qualifier: ByteArray,
     select: IsPropRefGraph<P>?,
+    parentReference: IsPropertyReference<*, *, *>?,
     offset: Int,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,
@@ -342,7 +347,7 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readValue(
             Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
             propDefinition
         ) { version, value ->
-            val ref = propDefinition.getRef() as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
+            val ref = propDefinition.getRef(parentReference) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
             if (value != null) {
                 addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
             } else {
@@ -350,7 +355,36 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readValue(
             }
         }
     } else {
-        TODO("Implement complex")
+        when (val definition = this.properties[index]) {
+            is IsEmbeddedDefinition<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                val dataModel = (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
+
+                val reference = definition.getRef(parentReference)
+
+                // If select is Graph then resolve sub graph.
+                // Otherwise is null or is property itself so needs to be completely selected thus set as null.
+                val specificSelect = if (select is IsPropRefGraph<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    select as IsPropRefGraph<PropertyDefinitions>
+                } else null
+
+                addToCache(offset - 1) { q ->
+                    dataModel.readQualifier(q, offset, specificSelect, reference, addChangeToOutput, readValueFromStorage, addToCache)
+                }
+
+                dataModel.readQualifier(
+                    qualifier,
+                    offset,
+                    specificSelect,
+                    reference,
+                    addChangeToOutput,
+                    readValueFromStorage,
+                    addToCache
+                )
+            }
+            else -> throw Exception("Can only use Embedded as values with deeper values $definition")
+        }
     }
 }
 

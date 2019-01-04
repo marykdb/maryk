@@ -38,6 +38,8 @@ val valuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
     "54009fe9" to (1234uL to null),
     "5400ae46" to (1234uL to "twelve"),
     "5400ac46" to (1234uL to null),
+    "6109" to (1234uL to "test"),
+    "611109" to (1234uL to "another test"),
     "7a" to (1234uL to 3),
     "7a00000000" to (1233uL to "v1"),
     "7a00000001" to (1234uL to "v2"),
@@ -95,7 +97,9 @@ class ConvertStorageToChangesKtTest {
                 listOf(
                     Change(
                         TestMarykModel.ref { string } with "hello world",
-                        TestMarykModel.ref { int } with 5
+                        TestMarykModel.ref { int } with 5,
+                        TestMarykModel { embeddedValues.ref { value } } with "test",
+                        TestMarykModel { embeddedValues { model.ref { value } } } with "another test"
                     ),
                     MapChange(
                         TestMarykModel.ref { map }.change(

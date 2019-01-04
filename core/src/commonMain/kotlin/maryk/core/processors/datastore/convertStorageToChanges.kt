@@ -10,6 +10,8 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -23,6 +25,8 @@ import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.properties.references.ReferenceType.SPECIAL
 import maryk.core.properties.references.ReferenceType.VALUE
+import maryk.core.properties.references.SetItemReference
+import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.completeReferenceTypeOf
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.query.changes.Change
@@ -41,7 +45,7 @@ typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, 
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
-    CHANGE, DELETE, MAP, LIST, SET
+    CHANGE, DELETE, MAP, LIST, SETADD, SETDELETE
 }
 
 /**
@@ -88,7 +92,18 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
         ChangeType.DELETE -> this.find { it is Delete }?.also { ((it as Delete).references as MutableList<AnyValuePropertyReference>).add(changePart as AnyValuePropertyReference) }
         ChangeType.MAP -> this.find { it is MapChange }?.also { ((it as MapChange).mapValueChanges as MutableList<MapValueChanges<*, *>>).add(changePart as MapValueChanges<*, *>) }
         ChangeType.LIST -> this.find { it is ListChange }?.also { ((it as ListChange).listValueChanges as MutableList<ListValueChanges<*>>).add(changePart as ListValueChanges<*>) }
-        ChangeType.SET -> this.find { it is SetChange }?.also { ((it as SetChange).setValueChanges as MutableList<SetValueChanges<*>>).add(changePart as SetValueChanges<*>) }
+        ChangeType.SETADD -> {
+            this.find { it is SetChange }?.also { change ->
+                val ref = changePart as SetItemReference<*, *>
+                (((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>).find { it.reference == ref.parentReference }?.addValues as MutableSet<Any>).add(ref.value)
+            }
+        }
+        ChangeType.SETDELETE -> {
+            this.find { it is SetChange }?.also { change ->
+                val ref = changePart as SetItemReference<*, *>
+                (((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>).find { it.reference == ref.parentReference }?.deleteValues as MutableSet<Any>).add(ref.value)
+            }
+        }
     } ?: this.add(createChange(changeType, changePart))
 }
 
@@ -98,7 +113,26 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when(changeT
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
     ChangeType.MAP -> MapChange(mutableListOf(changePart as MapValueChanges<*, *>))
     ChangeType.LIST -> ListChange(mutableListOf(changePart as ListValueChanges<*>))
-    ChangeType.SET -> SetChange(mutableListOf(changePart as SetValueChanges<*>))
+    ChangeType.SETADD-> {
+        val ref = changePart as SetItemReference<*, *>
+        SetChange(mutableListOf(
+            SetValueChanges(
+                ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
+                addValues = mutableSetOf(ref.value),
+                deleteValues = mutableSetOf()
+            )
+        ))
+    }
+    ChangeType.SETDELETE-> {
+        val ref = changePart as SetItemReference<*, *>
+        SetChange(mutableListOf(
+            SetValueChanges(
+                ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
+                addValues = mutableSetOf(),
+                deleteValues = mutableSetOf(ref.value)
+            )
+        ))
+    }
 }
 
 /**
@@ -133,7 +167,30 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                 }
                 VALUE -> readValue(isAtEnd, index, qualifier, select, qIndex, addChangeToOutput, readValueFromStorage, addToCache)
                 LIST -> TODO("Implement List")
-                SET -> TODO("Implement Set")
+                SET -> if (isAtEnd) {
+                    // Used for the set size. Is Ignored for changes
+                } else {
+                    val definition = this.properties[index]!!
+                    @Suppress("UNCHECKED_CAST")
+                    val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
+                    @Suppress("UNCHECKED_CAST")
+                    val reference = definition.getRef() as SetReference<Any, IsPropertyContext>
+
+                    // Read set contents. Always a simple value for set since it is in qualifier
+                    val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+                    var setItemIndex = qIndex
+
+                    val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
+
+                    @Suppress("UNCHECKED_CAST")
+                    readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+                        if (value != null) {
+                            addChangeToOutput(version, ChangeType.SETADD, setDefinition.getItemRef(key, reference))
+                        } else {
+                            addChangeToOutput(version, ChangeType.SETDELETE, setDefinition.getItemRef(key, reference))
+                        }
+                    }
+                }
                 MAP -> TODO("Implement Map")
             }
         }

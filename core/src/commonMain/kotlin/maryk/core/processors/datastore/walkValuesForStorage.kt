@@ -2,8 +2,10 @@
 
 package maryk.core.processors.datastore
 
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -13,6 +15,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -143,14 +146,22 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val mapDefinition = (definition as IsMapDefinition<Any, *, *>)
             val map = value as Map<Any, Any>
             for ((key, mapValue) in map) {
+                val keyByteSize = mapDefinition.keyDefinition.calculateStorageByteLength(key)
+                val isFixedBytesEncodable = mapDefinition.keyDefinition !is IsFixedBytesEncodable<*> && mapDefinition.valueDefinition !is IsSimpleValueDefinition<*, *>
+                val keyByteCountSize = if (isFixedBytesEncodable) keyByteSize.calculateVarByteLength() else 0
+
                 val mapValueQualifierWriter: QualifierWriter = { writer ->
                     mapQualifierWriter.invoke(writer)
+                    if (isFixedBytesEncodable) {
+                        keyByteSize.writeVarBytes(writer)
+                    }
+
                     mapDefinition.keyDefinition.writeStorageBytes(key, writer)
                 }
                 processValue(
                     -1, mapDefinition.valueDefinition, mapValue,
                     valueProcessor as ValueProcessor<IsSubDefinition<*, *>>,
-                    mapQualifierCount + mapDefinition.keyDefinition.calculateStorageByteLength(key),
+                    mapQualifierCount + keyByteSize + keyByteCountSize,
                     mapValueQualifierWriter
                 )
             }

@@ -46,4 +46,17 @@ class WalkValuesForStorageKtTest {
         }
         counter shouldBe 24
     }
+
+    @Test
+    fun testWalkComplexValues() {
+        var counter = 0
+        complexValues.walkForStorage { _: StorageTypeEnum<*>, bytes: ByteArray, _: IsPropertyDefinition<*>, value ->
+            complexValuesAsStorables[counter].let { (hex, compareValue) ->
+                bytes.toHex() shouldBe hex
+                value shouldBe compareValue
+            }
+            counter++
+        }
+        counter shouldBe 3
+    }
 }

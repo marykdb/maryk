@@ -2,6 +2,7 @@
 
 package maryk.core.processors.datastore
 
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.models.IsDataModel
@@ -203,11 +204,19 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         addValueToOutput(index, map)
                     } else null
                 } else {
-                    // Read key first
-                    val keyDefinition =
-                        ((this.properties[index]!! as IsMapDefinition<*, *, *>).keyDefinition as IsFixedBytesEncodable<*>)
+                    val mapDefinition = (this.properties[index]!! as IsMapDefinition<*, *, *>)
+                    val keyDefinition = mapDefinition.keyDefinition
                     var mapItemIndex = qIndex
-                    val key = keyDefinition.readStorageBytes(keyDefinition.byteSize) { qualifier[mapItemIndex++] }
+                    val qualifierReader = {qualifier[mapItemIndex++]}
+
+                    val key = if (keyDefinition is IsFixedBytesEncodable<*>) {
+                        keyDefinition.readStorageBytes(keyDefinition.byteSize, qualifierReader)
+                    } else if (mapDefinition.valueDefinition is IsSimpleValueDefinition<*, *>) {
+                        keyDefinition.readStorageBytes(qualifier.size - mapItemIndex, qualifierReader)
+                    } else {
+                        val keySize = initIntByVar(qualifierReader)
+                        keyDefinition.readStorageBytes(keySize, qualifierReader)
+                    }
 
                     // Create map Item adder
                     val mapItemAdder: ValueAdder = { i, value ->

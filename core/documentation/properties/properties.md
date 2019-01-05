@@ -9,7 +9,7 @@ and stored.
 
 |Type                                     |Keyable |MapKey|MapValue|List/Set|Indexable   |
 |:----------------------------------------|:------:|:----:|:------:|:------:|:----------:|
-|[String](types/string.md)                |false   |false |true    |true    |true        |
+|[String](types/string.md)                |false   |true  |true    |true    |true        |
 |[Boolean](types/boolean.md)              |true    |true  |true    |true    |true        |
 |[Number](types/number.md)*               |true    |true  |true    |true    |true        |
 |[Enum](types/enum.md)                    |true    |true  |true    |true    |true        |
@@ -18,7 +18,7 @@ and stored.
 |[DateTime](types/datetime.md)            |true    |true  |true    |true    |true        |
 |[Reference](types/reference.md)          |true    |true  |true    |true    |true        |
 |[FixedBytes](types/fixedBytes.md)        |true    |true  |true    |true    |true        |
-|[FlexBytes](types/flexBytes.md)          |false   |false |true    |true    |true        |
+|[FlexBytes](types/flexBytes.md)          |false   |true  |true    |true    |true        |
 |[MultiType](types/multiType.md)          |typeId**|false |false   |false   |true        |
 |[List](types/list.md)                    |false   |false |false   |false   |true        |
 |[Set](types/set.md)                      |false   |false |false   |false   |true        |

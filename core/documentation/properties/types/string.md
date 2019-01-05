@@ -7,7 +7,7 @@ Basic String property to represent text.
 
 ## Usage options
 - Value
-- Map Value
+- Map Key or Value
 - Inside List/Set
 
 ## Validation Options

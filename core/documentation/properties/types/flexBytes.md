@@ -7,7 +7,7 @@ Defines a property of a flexible bytes length.
 
 ## Usage options
 - Value
-- Map Value
+- Map Key or Value
 - List
 
 ## Validation Options

@@ -2,6 +2,7 @@
 
 package maryk.core.processors.datastore
 
+import maryk.core.properties.types.TypedValue
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -33,6 +34,7 @@ val testMaryk = TestMarykModel(
             value = "another test"
         )
     ),
+    multi = TypedValue(V1, "test"),
     setOfString = setOf(
         "abc", "def", "ghi"
     )
@@ -54,6 +56,7 @@ val valuesAsStorables = arrayOf<Pair<String, Any>>(
     "5400ae46" to "twelve",
     "6109" to "test",
     "611109" to "another test",
+    "69" to TypedValue(V1, "test"),
     "7a" to 3,
     "7a00000000" to "v1",
     "7a00000001" to "v2",

@@ -168,7 +168,14 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
 
-                    addValueToOutput(index, key)
+                    @Suppress("UNCHECKED_CAST")
+                    readValueFromStorage(
+                        Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                        this.properties[index]!!
+                    )?.let {
+                        // Only add to output if value read from storage is not null
+                        addValueToOutput(index, key)
+                    }
                 }
                 MAP -> if (isAtEnd) {
                     // If at end it means that this is a map count

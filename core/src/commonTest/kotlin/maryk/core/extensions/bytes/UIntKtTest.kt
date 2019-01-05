@@ -10,23 +10,23 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class UIntKtTest {
-    private val intsToTest = uintArrayOf(
-        UInt.MIN_VALUE,
-        0u,
-        1u,
-        2222u,
-        923587636u,
-        UInt.MAX_VALUE
-    )
-
     @Test
     fun testStreamingConversion() {
         val bc = ByteCollector()
-        intsToTest.forEach {
+        arrayOf(
+            UInt.MIN_VALUE to "00000000",
+            0u to "00000000",
+            1u to "00000001",
+            2222u to "000008ae",
+            923587636u to "370cd434",
+            UInt.MAX_VALUE to "ffffffff"
+        ).forEach { (value, hex) ->
             bc.reserve(4)
-            it.writeBytes(bc::write)
+            value.writeBytes(bc::write)
 
-            initUInt(bc::read) shouldBe it
+            bc.bytes?.toHex() shouldBe hex
+
+            initUInt(bc::read) shouldBe value
             bc.reset()
         }
     }

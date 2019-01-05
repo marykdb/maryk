@@ -17,8 +17,8 @@ import kotlin.test.Test
 
 val testComplexMap = ComplexMapModel(
     stringString = mapOf("v1" to "a", "v2" to "b"),
-    intObject = mapOf(1 to SimpleMarykModel("t1"), 2 to SimpleMarykModel("t2")),
-    intMulti = mapOf(2 to TypedValue(V3, SimpleMarykModel("m3")))
+    intObject = mapOf(1u to SimpleMarykModel("t1"), 2u to SimpleMarykModel("t2")),
+    intMulti = mapOf(2u to TypedValue(V3, SimpleMarykModel("m3")))
 )
 
 internal class ComplexDataModelMapTest {
@@ -94,7 +94,7 @@ internal class ComplexDataModelMapTest {
 
         ComplexMapModel.writeProtoBuf(testComplexMap, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a070a0276311201610a070a0276321201621208080212040a0274311208080412040a0274321a0a080412061a040a026d33"
+        bc.bytes!!.toHex() shouldBe "0a070a0276311201610a070a0276321201621208080112040a0274311208080212040a0274321a0a080212061a040a026d33"
 
         ComplexMapModel.readProtoBuf(bc.size, bc::read) shouldBe testComplexMap
     }

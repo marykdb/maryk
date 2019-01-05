@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package maryk.test.models
 
 import maryk.core.models.RootDataModel
@@ -10,6 +12,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
 import maryk.test.models.ComplexMapModel.Properties
 import maryk.test.models.Option.V1
@@ -40,7 +43,7 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
             definition = MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
-                    type = SInt32
+                    type = UInt32
                 ),
                 valueDefinition = EmbeddedValuesDefinition(
                     dataModel = { SimpleMarykModel }
@@ -54,7 +57,7 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
             definition = MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
-                    type = SInt32
+                    type = UInt32
                 ),
                 valueDefinition = MultiTypeDefinition<Option, IsPropertyContext>(
                     typeEnum = Option,
@@ -72,8 +75,8 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
 
     operator fun invoke(
         stringString: Map<String,String>? = null,
-        intObject: Map<Int, Values<SimpleMarykModel, SimpleMarykModel.Properties>>? = null,
-        intMulti: Map<Int, TypedValue<Option, *>>? = null
+        intObject: Map<UInt, Values<SimpleMarykModel, SimpleMarykModel.Properties>>? = null,
+        intMulti: Map<UInt, TypedValue<Option, *>>? = null
     ) = this.values {
         mapNonNulls(
             this.stringString with stringString,

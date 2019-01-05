@@ -15,7 +15,7 @@ import maryk.core.query.DefinitionsContext
 import maryk.core.values.SimpleObjectValues
 
 /** Definition for Set property */
-data class SetDefinition<T: Any, CX: IsPropertyContext>(
+data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -29,6 +29,16 @@ data class SetDefinition<T: Any, CX: IsPropertyContext>(
     init {
         require(valueDefinition.required) { "Definition for value should have required=true on set" }
     }
+
+    constructor(
+        indexed: Boolean = false,
+        required: Boolean = true,
+        final: Boolean = false,
+        minSize: Int? = null,
+        maxSize: Int? = null,
+        valueDefinition: IsSimpleValueDefinition<T, CX>,
+        default: Set<T>? = null
+    ): this(indexed, required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
 

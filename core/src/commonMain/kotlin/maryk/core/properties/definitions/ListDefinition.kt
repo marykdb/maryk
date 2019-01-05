@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -13,9 +12,10 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsContext
+import maryk.core.values.SimpleObjectValues
 
 /** Definition for List property */
-data class ListDefinition<T: Any, CX: IsPropertyContext>(
+data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -29,6 +29,16 @@ data class ListDefinition<T: Any, CX: IsPropertyContext>(
     init {
         require(valueDefinition.required) { "Definition for value should have required=true on List" }
     }
+    
+    constructor(
+        indexed: Boolean = false,
+        required: Boolean = true,
+        final: Boolean = false,
+        minSize: Int? = null,
+        maxSize: Int? = null,
+        valueDefinition: IsSimpleValueDefinition<T, CX>,
+        default: List<T>? = null
+    ): this(indexed, required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()
 

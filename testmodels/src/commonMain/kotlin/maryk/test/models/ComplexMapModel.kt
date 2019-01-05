@@ -46,7 +46,7 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
                     type = UInt32
                 ),
                 valueDefinition = EmbeddedValuesDefinition(
-                    dataModel = { SimpleMarykModel }
+                    dataModel = { EmbeddedMarykModel }
                 )
             )
         )
@@ -65,7 +65,7 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
                         V1 to StringDefinition(),
                         V2 to NumberDefinition(type = SInt32),
                         V3 to EmbeddedValuesDefinition(
-                            dataModel = { SimpleMarykModel }
+                            dataModel = { EmbeddedMarykModel }
                         )
                     )
                 )
@@ -75,7 +75,7 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
 
     operator fun invoke(
         stringString: Map<String,String>? = null,
-        intObject: Map<UInt, Values<SimpleMarykModel, SimpleMarykModel.Properties>>? = null,
+        intObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
         intMulti: Map<UInt, TypedValue<Option, *>>? = null
     ) = this.values {
         mapNonNulls(

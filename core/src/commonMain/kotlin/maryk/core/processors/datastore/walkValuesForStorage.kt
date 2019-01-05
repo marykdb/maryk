@@ -147,12 +147,12 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val map = value as Map<Any, Any>
             for ((key, mapValue) in map) {
                 val keyByteSize = mapDefinition.keyDefinition.calculateStorageByteLength(key)
-                val isFixedBytesEncodable = mapDefinition.keyDefinition !is IsFixedBytesEncodable<*> && mapDefinition.valueDefinition !is IsSimpleValueDefinition<*, *>
-                val keyByteCountSize = if (isFixedBytesEncodable) keyByteSize.calculateVarByteLength() else 0
+                val needsByteCount = mapDefinition.keyDefinition !is IsFixedBytesEncodable<*> && mapDefinition.valueDefinition !is IsSimpleValueDefinition<*, *>
+                val keyByteCountSize = if (needsByteCount) keyByteSize.calculateVarByteLength() else 0
 
                 val mapValueQualifierWriter: QualifierWriter = { writer ->
                     mapQualifierWriter.invoke(writer)
-                    if (isFixedBytesEncodable) {
+                    if (needsByteCount) {
                         keyByteSize.writeVarBytes(writer)
                     }
 
@@ -167,8 +167,8 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             }
         }
         is AbstractValues<*, *, *> -> {
-            val indexWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
-            val abstractValuesQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+            val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
+            val abstractValuesQualifierCount = if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             (value as AnyAbstractValues).walkForStorage(abstractValuesQualifierCount, indexWriter, valueProcessor as ValueProcessor<IsPropertyDefinition<*>>)
         }
         is TypedValue<*, *> -> {

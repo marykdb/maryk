@@ -9,16 +9,16 @@ import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexMapModel
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V3
-import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
 val testComplexMap = ComplexMapModel(
     stringString = mapOf("v1" to "a", "v2" to "b"),
-    intObject = mapOf(1u to SimpleMarykModel("t1"), 2u to SimpleMarykModel("t2")),
-    intMulti = mapOf(2u to TypedValue(V3, SimpleMarykModel("m3")))
+    intObject = mapOf(1u to EmbeddedMarykModel("t1"), 2u to EmbeddedMarykModel("t2")),
+    intMulti = mapOf(2u to TypedValue(V3, EmbeddedMarykModel("m3")))
 )
 
 internal class ComplexDataModelMapTest {

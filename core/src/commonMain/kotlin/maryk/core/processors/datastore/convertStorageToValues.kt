@@ -14,7 +14,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMapDefinition
@@ -209,13 +208,17 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     var mapItemIndex = qIndex
                     val qualifierReader = {qualifier[mapItemIndex++]}
 
-                    val key = if (keyDefinition is IsFixedBytesEncodable<*>) {
-                        keyDefinition.readStorageBytes(keyDefinition.byteSize, qualifierReader)
-                    } else if (mapDefinition.valueDefinition is IsSimpleValueDefinition<*, *>) {
-                        keyDefinition.readStorageBytes(qualifier.size - mapItemIndex, qualifierReader)
-                    } else {
-                        val keySize = initIntByVar(qualifierReader)
-                        keyDefinition.readStorageBytes(keySize, qualifierReader)
+                    val key = when {
+                        keyDefinition is IsFixedBytesEncodable<*> -> {
+                            keyDefinition.readStorageBytes(keyDefinition.byteSize, qualifierReader)
+                        }
+                        mapDefinition.valueDefinition is IsSimpleValueDefinition<*, *> -> {
+                            keyDefinition.readStorageBytes(qualifier.size - mapItemIndex, qualifierReader)
+                        }
+                        else -> {
+                            val keySize = initIntByVar(qualifierReader)
+                            keyDefinition.readStorageBytes(keySize, qualifierReader)
+                        }
                     }
 
                     // Create map Item adder
@@ -270,38 +273,76 @@ private fun <P : PropertyDefinitions> IsDataModel<P>.readValue(
         }
     } else {
         when (val definition = this.properties[index]) {
-            is IsEmbeddedDefinition<*, *> -> {
-                @Suppress("UNCHECKED_CAST")
-                val dataModel = (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
-                val values = dataModel.values { MutableValueItems() }
-
-                addValueToOutput(index, values)
-
-                val valuesItemAdder: ValueAdder = { i, value ->
-                    values.add(i, value)
+            is IsMapDefinition<*, *, *> -> {
+                if (definition.valueDefinition !is IsEmbeddedDefinition<*, *>) {
+                    throw Exception("Can only use Embedded as value type in Map $definition")
                 }
-
-                // If select is Graph then resolve sub graph.
-                // Otherwise is null or is property itself so needs to be completely selected thus set as null.
-                val specificSelect = if (select is IsPropRefGraph<*>) {
-                    @Suppress("UNCHECKED_CAST")
-                    select as IsPropRefGraph<PropertyDefinitions>
-                } else null
-
-                addToCache(offset - 1) { q ->
-                    dataModel.readQualifier(q, offset, specificSelect, valuesItemAdder, readValueFromStorage, addToCache)
-                }
-
-                dataModel.readQualifier(
-                    qualifier,
+                readEmbeddedValues(
+                    definition.valueDefinition as IsEmbeddedDefinition<*, *>,
+                    addValueToOutput,
+                    index,
+                    select,
+                    addToCache,
                     offset,
-                    specificSelect,
-                    valuesItemAdder,
                     readValueFromStorage,
-                    addToCache
+                    qualifier
+                )
+            }
+            is IsEmbeddedDefinition<*, *> -> {
+                readEmbeddedValues(
+                    definition,
+                    addValueToOutput,
+                    index,
+                    select,
+                    addToCache,
+                    offset,
+                    readValueFromStorage,
+                    qualifier
                 )
             }
             else -> throw Exception("Can only use Embedded as values with deeper values $definition")
         }
     }
+}
+
+/** Read embedded values within a map */
+private fun <P : PropertyDefinitions> readEmbeddedValues(
+    definition: IsEmbeddedDefinition<*, *>,
+    addValueToOutput: ValueAdder,
+    index: Int,
+    select: IsPropRefGraph<P>?,
+    addToCache: CacheProcessor,
+    offset: Int,
+    readValueFromStorage: ValueReader,
+    qualifier: ByteArray
+) {
+    @Suppress("UNCHECKED_CAST")
+    val dataModel = definition.dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
+    val values = dataModel.values { MutableValueItems() }
+
+    addValueToOutput(index, values)
+
+    val valuesItemAdder: ValueAdder = { i, value ->
+        values.add(i, value)
+    }
+
+    // If select is Graph then resolve sub graph.
+    // Otherwise is null or is property itself so needs to be completely selected thus set as null.
+    val specificSelect = if (select is IsPropRefGraph<*>) {
+        @Suppress("UNCHECKED_CAST")
+        select as IsPropRefGraph<PropertyDefinitions>
+    } else null
+
+    addToCache(offset - 1) { q ->
+        dataModel.readQualifier(q, offset, specificSelect, valuesItemAdder, readValueFromStorage, addToCache)
+    }
+
+    dataModel.readQualifier(
+        qualifier,
+        offset,
+        specificSelect,
+        valuesItemAdder,
+        readValueFromStorage,
+        addToCache
+    )
 }

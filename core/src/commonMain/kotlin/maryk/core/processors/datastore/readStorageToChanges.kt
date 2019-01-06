@@ -77,7 +77,7 @@ private val objectDeletePropertyDefinition = BooleanDefinition()
  * [getQualifier] gets a qualifier until none is available and returns null
  * [processValue] processes the storage value with given type and definition
  */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.convertStorageToChanges(
+fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.readStorageToChanges(
     getQualifier: () -> ByteArray?,
     select: RootPropRefGraph<P>?,
     processValue: ValueWithVersionReader

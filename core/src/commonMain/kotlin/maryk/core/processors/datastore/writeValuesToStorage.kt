@@ -52,53 +52,53 @@ sealed class StorageTypeEnum<T: IsPropertyDefinition<*>>(val referenceType: Comp
     fun castDefinition(definition: IsPropertyDefinition<*>) = definition as T
 }
 
-typealias ValueProcessor<T> = (StorageTypeEnum<T>, ByteArray, T, Any) -> Unit
+typealias ValueWriter<T> = (StorageTypeEnum<T>, ByteArray, T, Any) -> Unit
 private typealias QualifierWriter = ((Byte) -> Unit) -> Unit
 
 /**
  * Walk Values and process storable values.
- * Pass [valueProcessor] to process values
+ * Pass [valueWriter] to process values
  */
-fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.walkForStorage(
-    valueProcessor: ValueProcessor<IsPropertyDefinition<*>>
-) = this.walkForStorage(0, null, valueProcessor)
+fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
+    valueWriter: ValueWriter<IsPropertyDefinition<*>>
+) = this.writeToStorage(0, null, valueWriter)
 
 /**
  * Walk Values and process storable values.
  * [qualifierCount], [qualifierWriter] define the count and writer for any parent property
- * Pass [valueProcessor] to process values
+ * Pass [valueWriter] to process values
  */
-private fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.walkForStorage(
+private fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
     qualifierCount: Int = 0,
     qualifierWriter: QualifierWriter? = null,
-    valueProcessor: ValueProcessor<IsPropertyDefinition<*>>
+    valueWriter: ValueWriter<IsPropertyDefinition<*>>
 ) {
     for ((index, value) in this.values) {
         val definition = this.dataModel.properties[index]!!
-        processValue(definition.index, definition.definition, value, valueProcessor, qualifierCount, qualifierWriter)
+        writeValue(definition.index, qualifierCount, qualifierWriter, definition.definition, value, valueWriter)
     }
 }
 
 /**
- * Process a single value with [valueProcessor] at [index] with [definition] and [value]
+ * Process a single value with [valueWriter] at [index] with [definition] and [value]
  * [qualifierLength], [qualifierWriter] define the count and writer for any parent property
  * If index is -1, this value has no index.
  */
 @Suppress("UNCHECKED_CAST")
-private fun <T: IsPropertyDefinition<*>> processValue(
+private fun <T: IsPropertyDefinition<*>> writeValue(
     index: Int,
+    qualifierLength: Int,
+    qualifierWriter: QualifierWriter? = null,
     definition: T,
     value: Any,
-    valueProcessor: ValueProcessor<T>,
-    qualifierLength: Int,
-    qualifierWriter: QualifierWriter? = null
+    valueWriter: ValueWriter<T>
 ) {
     when (value) {
         is List<*> -> {
             val listQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.LIST)
             val listQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             // Process List Count
-            valueProcessor(ListSize as StorageTypeEnum<T>, writeQualifier(listQualifierCount, listQualifierWriter), definition, value.size) // for list count
+            valueWriter(ListSize as StorageTypeEnum<T>, writeQualifier(listQualifierCount, listQualifierWriter), definition, value.size) // for list count
 
             // Process List values
             val listValueDefinition = (definition as ListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
@@ -107,11 +107,11 @@ private fun <T: IsPropertyDefinition<*>> processValue(
                     listQualifierWriter.invoke(writer)
                     listIndex.toUInt().writeBytes(writer, 4)
                 }
-                processValue(
-                    -1, listValueDefinition, listItem,
-                    valueProcessor as ValueProcessor<IsValueDefinition<*, *>>,
-                    listQualifierCount + 4,
-                    listValueQualifierWriter
+                writeValue(
+                    -1, listQualifierCount + 4, listValueQualifierWriter,
+                    listValueDefinition,
+                    listItem,
+                    valueWriter as ValueWriter<IsValueDefinition<*, *>>
                 )
             }
         }
@@ -119,7 +119,7 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val setQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.SET)
             val setQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             // Process Set Count
-            valueProcessor(SetSize as StorageTypeEnum<T>, writeQualifier(setQualifierCount, setQualifierWriter), definition, value.size) // for set count
+            valueWriter(SetSize as StorageTypeEnum<T>, writeQualifier(setQualifierCount, setQualifierWriter), definition, value.size) // for set count
 
             // Process Set Values
             val setValueDefinition = (definition as SetDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
@@ -129,11 +129,13 @@ private fun <T: IsPropertyDefinition<*>> processValue(
                     setQualifierWriter.invoke(writer)
                     setValueDefinition.writeStorageBytes(setItem, writer)
                 }
-                processValue(
-                    -1, setValueDefinition, setItem,
-                    valueProcessor as ValueProcessor<IsValueDefinition<*, *>>,
+                writeValue(
+                    -1,
                     setQualifierCount + setValueDefinition.calculateStorageByteLength(setItem),
-                    setValueQualifierWriter
+                    setValueQualifierWriter,
+                    setValueDefinition,
+                    setItem,
+                    valueWriter as ValueWriter<IsValueDefinition<*, *>>
                 )
             }
         }
@@ -141,7 +143,7 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val mapQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.MAP)
             val mapQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             // Process Map Count
-            valueProcessor(MapSize as StorageTypeEnum<T>, writeQualifier(mapQualifierCount, mapQualifierWriter), definition, value.size)
+            valueWriter(MapSize as StorageTypeEnum<T>, writeQualifier(mapQualifierCount, mapQualifierWriter), definition, value.size)
 
             // Process Map Values
             val mapDefinition = (definition as IsMapDefinition<Any, *, *>)
@@ -159,18 +161,18 @@ private fun <T: IsPropertyDefinition<*>> processValue(
 
                     mapDefinition.keyDefinition.writeStorageBytes(key, writer)
                 }
-                processValue(
-                    -1, mapDefinition.valueDefinition, mapValue,
-                    valueProcessor as ValueProcessor<IsSubDefinition<*, *>>,
-                    mapQualifierCount + keyByteSize + keyByteCountSize,
-                    mapValueQualifierWriter
+                writeValue(
+                    -1, mapQualifierCount + keyByteSize + keyByteCountSize, mapValueQualifierWriter,
+                    mapDefinition.valueDefinition,
+                    mapValue,
+                    valueWriter as ValueWriter<IsSubDefinition<*, *>>
                 )
             }
         }
         is AbstractValues<*, *, *> -> {
             val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
             val abstractValuesQualifierCount = if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
-            (value as AnyAbstractValues).walkForStorage(abstractValuesQualifierCount, indexWriter, valueProcessor as ValueProcessor<IsPropertyDefinition<*>>)
+            (value as AnyAbstractValues).writeToStorage(abstractValuesQualifierCount, indexWriter, valueWriter as ValueWriter<IsPropertyDefinition<*>>)
         }
         is TypedValue<*, *> -> {
             val multiDefinition = definition as MultiTypeDefinition<*, *>
@@ -185,11 +187,18 @@ private fun <T: IsPropertyDefinition<*>> processValue(
                         createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
                     )
                 }
-                valueProcessor(TypeValue as StorageTypeEnum<T>, qualifier, definition, value)
+                valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, value)
             } else {
                 val qualifierTypeWriter = createQualifierWriter(qualifierWriter, value.type.index, ReferenceType.TYPE)
                 val qualifierTypeLength = qualifierLength + value.type.index.calculateVarIntWithExtraInfoByteSize()
-                processValue(-1, valueDefinition, value.value, valueProcessor as ValueProcessor<IsPropertyDefinition<Any>>, qualifierTypeLength, qualifierTypeWriter)
+                writeValue(
+                    -1,
+                    qualifierTypeLength,
+                    qualifierTypeWriter,
+                    valueDefinition,
+                    value.value,
+                    valueWriter as ValueWriter<IsPropertyDefinition<Any>>
+                )
             }
         }
         else -> {
@@ -200,7 +209,7 @@ private fun <T: IsPropertyDefinition<*>> processValue(
                 )
             } else writeQualifier(qualifierLength, qualifierWriter)
 
-            valueProcessor(Value as StorageTypeEnum<T>, qualifier, definition, value)
+            valueWriter(Value as StorageTypeEnum<T>, qualifier, definition, value)
         }
     }
 }

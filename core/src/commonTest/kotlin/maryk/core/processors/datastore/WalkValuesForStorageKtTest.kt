@@ -20,7 +20,7 @@ class WalkValuesForStorageKtTest {
     @Test
     fun testWalkValues() {
         var counter = 0
-        testMaryk.walkForStorage { type: StorageTypeEnum<*>, bytes: ByteArray, definition: IsPropertyDefinition<*>, value ->
+        testMaryk.writeToStorage { type: StorageTypeEnum<*>, bytes: ByteArray, definition: IsPropertyDefinition<*>, value ->
             valuesAsStorables[counter].let { (hex, compareValue) ->
                 bytes.toHex() shouldBe hex
                 value shouldBe compareValue
@@ -50,7 +50,7 @@ class WalkValuesForStorageKtTest {
     @Test
     fun testWalkComplexValues() {
         var counter = 0
-        complexValues.walkForStorage { _: StorageTypeEnum<*>, bytes: ByteArray, _: IsPropertyDefinition<*>, value ->
+        complexValues.writeToStorage { _: StorageTypeEnum<*>, bytes: ByteArray, _: IsPropertyDefinition<*>, value ->
             complexValuesAsStorables[counter].let { (hex, compareValue) ->
                 bytes.toHex() shouldBe hex
                 value shouldBe compareValue

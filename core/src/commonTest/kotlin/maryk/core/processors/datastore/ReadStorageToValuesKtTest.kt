@@ -9,7 +9,7 @@ import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-class ConvertStorageToValuesKtTest {
+class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToValues() {
         var qualifierIndex = -1

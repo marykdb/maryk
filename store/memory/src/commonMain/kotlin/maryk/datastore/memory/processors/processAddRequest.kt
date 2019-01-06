@@ -4,7 +4,7 @@ package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.key
-import maryk.core.processors.datastore.walkForStorage
+import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.AlreadySetException
@@ -54,7 +54,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                         lastVersion = version
                     )
 
-                    objectToAdd.walkForStorage { _, reference, definition, value ->
+                    objectToAdd.writeToStorage { _, reference, definition, value ->
                         val dataRecordValue  = DataRecordValue(reference, value, version)
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                             @Suppress("UNCHECKED_CAST")

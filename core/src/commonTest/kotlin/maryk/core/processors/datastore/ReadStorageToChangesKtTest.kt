@@ -48,11 +48,11 @@ val valuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
     "7a00000004" to (1234uL to null)
 )
 
-class ConvertStorageToChangesKtTest {
+class ReadStorageToChangesKtTest {
     @Test
     fun convertStorageToChanges() {
         var qualifierIndex = -1
-        val values = TestMarykModel.convertStorageToChanges(
+        val values = TestMarykModel.readStorageToChanges(
             getQualifier = {
                 valuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)

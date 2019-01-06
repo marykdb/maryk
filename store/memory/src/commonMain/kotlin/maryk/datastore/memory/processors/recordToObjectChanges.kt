@@ -3,7 +3,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.processors.datastore.convertStorageToChanges
+import maryk.core.processors.datastore.readStorageToChanges
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -22,7 +22,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
 ): DataObjectVersionedChange<DM>? {
     var valueIndex = -1
 
-    val changes = this.convertStorageToChanges(
+    val changes = this.readStorageToChanges(
         getQualifier = {
             valueIndex++
 

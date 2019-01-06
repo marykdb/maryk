@@ -185,8 +185,14 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
                 val qualifier = writeQualifier(valueQualifierSize, valueQualifierWriter)
                 valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, value)
             } else {
-                val qualifierTypeWriter = createQualifierWriter(valueQualifierWriter, value.type.index, ReferenceType.TYPE)
                 val qualifierTypeLength = valueQualifierSize + value.type.index.calculateVarIntWithExtraInfoByteSize()
+                val qualifierTypeWriter = createQualifierWriter(valueQualifierWriter, value.type.index, ReferenceType.TYPE)
+
+                // Write parent value to contain current type. So possible lingering old types are not read.
+                val qualifier = writeQualifier(valueQualifierSize, valueQualifierWriter)
+                valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, TypedValue(value.type as IndexedEnum<IndexedEnum<*>>, Unit))
+
+                // write sub value(s)
                 writeValue(
                     -1,
                     qualifierTypeLength,

@@ -57,6 +57,6 @@ class WriteValuesToStorageKtTest {
             }
             counter++
         }
-        counter shouldBe 13
+        counter shouldBe 15
     }
 }

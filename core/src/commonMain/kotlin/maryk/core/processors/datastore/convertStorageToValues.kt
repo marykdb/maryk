@@ -26,7 +26,6 @@ import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
-import maryk.core.properties.references.CompleteReferenceType.TYPE
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
@@ -102,7 +101,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
             when (referenceStorageTypeOf(type)) {
                 SPECIAL -> when (val specialType = completeReferenceTypeOf(qualifier[offset])) {
                     DELETE -> {} // Ignore since it should be handled on higher level
-                    TYPE, MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
+                    MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
                     else -> throw Exception("Not recognized special type $specialType")
                 }
                 VALUE -> {

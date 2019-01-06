@@ -35,7 +35,6 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyValuePropertyReference
 import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
-import maryk.core.properties.references.CompleteReferenceType.TYPE
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
@@ -311,7 +310,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             }
                         }
                     }
-                    TYPE, MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
+                    MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
                     else -> throw Exception("Not recognized special type $specialType")
                 }
                 VALUE -> readValue(isAtEnd, index, qualifier, select, parentReference, qIndex, addChangeToOutput, readValueFromStorage, addToCache)

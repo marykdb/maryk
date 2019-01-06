@@ -3,7 +3,9 @@ package maryk.core.properties.references
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -68,11 +70,11 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
         return if(this.parentReference is MultiTypePropertyReference<*, *, *, *>) {
             val parentCount = this.parentReference.parentReference?.calculateStorageByteLength() ?: 0
 
-            parentCount + 1 + this.parentReference.propertyDefinition.index.calculateVarByteLength() + 1 + type.index.calculateVarByteLength()
+            parentCount + 1 + this.parentReference.propertyDefinition.index.calculateVarByteLength() + type.index.calculateVarIntWithExtraInfoByteSize()
         } else {
             val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
 
-            parentCount + 1 + type.index.calculateVarByteLength()
+            parentCount + type.index.calculateVarIntWithExtraInfoByteSize()
         }
     }
 
@@ -80,8 +82,10 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
         if(this.parentReference is MultiTypePropertyReference<*, *, *, *>) {
             this.parentReference.parentReference?.writeStorageBytes(writer)
 
-            writer(CompleteReferenceType.TYPE.value)
-            this.parentReference.propertyDefinition.index.writeVarBytes(writer)
+            this.parentReference.propertyDefinition.index.writeVarIntWithExtraInfo(
+                CompleteReferenceType.TYPE.value,
+                writer
+            )
         } else {
             this.parentReference?.writeStorageBytes(writer)
         }

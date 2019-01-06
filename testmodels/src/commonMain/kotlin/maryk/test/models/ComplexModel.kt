@@ -14,18 +14,34 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
-import maryk.test.models.ComplexMapModel.Properties
+import maryk.test.models.ComplexModel.Properties
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 
-object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
-    name = "ComplexMapModel",
+object ComplexModel: RootDataModel<ComplexModel, Properties>(
+    name = "ComplexModel",
     properties = Properties
 ) {
     object Properties : PropertyDefinitions() {
-        val stringString = add(
-            index = 1, name = "stringString",
+        @Suppress("RemoveExplicitTypeArguments")
+        val multi = add(
+            index = 1, name = "multi",
+            definition = MultiTypeDefinition<Option, IsPropertyContext>(
+                required = false,
+                typeEnum = Option,
+                definitionMap = mapOf(
+                    V1 to StringDefinition(),
+                    V2 to NumberDefinition(type = SInt32),
+                    V3 to EmbeddedValuesDefinition(
+                        dataModel = { EmbeddedMarykModel }
+                    )
+                )
+            )
+        )
+
+        val mapStringString = add(
+            index = 2, name = "mapStringString",
             definition = MapDefinition(
                 required = false,
                 keyDefinition = StringDefinition(
@@ -38,8 +54,8 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
             )
         )
 
-        val intObject = add(
-            index = 2, name = "intObject",
+        val mapIntObject = add(
+            index = 3, name = "mapIntObject",
             definition = MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
@@ -52,8 +68,8 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
         )
 
         @Suppress("RemoveExplicitTypeArguments")
-        val intMulti = add(
-            index = 3, name = "intMulti",
+        val mapIntMulti = add(
+            index = 4, name = "mapIntMulti",
             definition = MapDefinition(
                 required = false,
                 keyDefinition = NumberDefinition(
@@ -74,14 +90,16 @@ object ComplexMapModel: RootDataModel<ComplexMapModel, Properties>(
     }
 
     operator fun invoke(
-        stringString: Map<String,String>? = null,
-        intObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
-        intMulti: Map<UInt, TypedValue<Option, *>>? = null
+        multi: TypedValue<Option, Any>? = null,
+        mapStringString: Map<String,String>? = null,
+        mapIntObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
+        mapIntMulti: Map<UInt, TypedValue<Option, *>>? = null
     ) = this.values {
         mapNonNulls(
-            this.stringString with stringString,
-            this.intObject with intObject,
-            this.intMulti with intMulti
+            this.multi with multi,
+            this.mapStringString with mapStringString,
+            this.mapIntObject with mapIntObject,
+            this.mapIntMulti with mapIntMulti
         )
     }
 }

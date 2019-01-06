@@ -178,19 +178,19 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
             val multiDefinition = definition as MultiTypeDefinition<*, *>
             val valueDefinition = multiDefinition.definitionMap[value.type] as IsPropertyDefinition<Any>
 
+            val valueQualifierWriter = if (index > -1) {
+                createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
+            } else qualifierWriter
+            val valueQualifierSize = if (index > -1) {
+                qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+            } else qualifierLength
+
             if (valueDefinition is IsSimpleValueDefinition<*, *>) {
-                val qualifier = if (index == -1) {
-                    writeQualifier(qualifierLength, qualifierWriter)
-                } else {
-                    writeQualifier(
-                        qualifierLength + index.calculateVarIntWithExtraInfoByteSize(),
-                        createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
-                    )
-                }
+                val qualifier = writeQualifier(valueQualifierSize, valueQualifierWriter)
                 valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, value)
             } else {
-                val qualifierTypeWriter = createQualifierWriter(qualifierWriter, value.type.index, ReferenceType.TYPE)
-                val qualifierTypeLength = qualifierLength + value.type.index.calculateVarIntWithExtraInfoByteSize()
+                val qualifierTypeWriter = createQualifierWriter(valueQualifierWriter, value.type.index, ReferenceType.TYPE)
+                val qualifierTypeLength = valueQualifierSize + value.type.index.calculateVarIntWithExtraInfoByteSize()
                 writeValue(
                     -1,
                     qualifierTypeLength,

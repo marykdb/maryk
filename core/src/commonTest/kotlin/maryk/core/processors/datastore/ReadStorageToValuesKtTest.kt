@@ -3,7 +3,7 @@ package maryk.core.processors.datastore
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.time.Date
 import maryk.lib.time.Time
-import maryk.test.models.ComplexMapModel
+import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
@@ -29,7 +29,7 @@ class ReadStorageToValuesKtTest {
     @Test
     fun convertStorageToComplexValues() {
         var qualifierIndex = -1
-        val values = ComplexMapModel.convertStorageToValues(
+        val values = ComplexModel.convertStorageToValues(
             getQualifier = {
                 complexValuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)

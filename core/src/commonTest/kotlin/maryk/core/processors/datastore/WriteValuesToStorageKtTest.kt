@@ -16,9 +16,9 @@ import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
-class WalkValuesForStorageKtTest {
+class WriteValuesToStorageKtTest {
     @Test
-    fun testWalkValues() {
+    fun writeValuesToStorage() {
         var counter = 0
         testMaryk.writeToStorage { type: StorageTypeEnum<*>, bytes: ByteArray, definition: IsPropertyDefinition<*>, value ->
             valuesAsStorables[counter].let { (hex, compareValue) ->
@@ -48,7 +48,7 @@ class WalkValuesForStorageKtTest {
     }
 
     @Test
-    fun testWalkComplexValues() {
+    fun writeComplexValuesToStorage() {
         var counter = 0
         complexValues.writeToStorage { _: StorageTypeEnum<*>, bytes: ByteArray, _: IsPropertyDefinition<*>, value ->
             complexValuesAsStorables[counter].let { (hex, compareValue) ->
@@ -57,6 +57,6 @@ class WalkValuesForStorageKtTest {
             }
             counter++
         }
-        counter shouldBe 11
+        counter shouldBe 13
     }
 }

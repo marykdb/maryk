@@ -107,17 +107,28 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                 VALUE -> {
                     val definition = this.properties[index]
                         ?: throw Exception("No definition for $index in $this at $index")
+                    val valueAdder: AddValue = { addValueToOutput(index, it) }
+
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)?.let {
-                            addValueToOutput(index, it)
-                        }
+                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)?.let(valueAdder)
                     } else {
                         when (definition) {
+                            is IsMultiTypeDefinition<*, *> -> {
+                                readTypedValue(
+                                    qualifier,
+                                    qIndex,
+                                    readValueFromStorage,
+                                    definition,
+                                    valueAdder,
+                                    select,
+                                    addToCache
+                                )
+                            }
                             is IsEmbeddedDefinition<*, *> -> {
                                 readEmbeddedValues(definition, { addValueToOutput(index, it) }, select, addToCache, qIndex, readValueFromStorage, qualifier)
                             }
-                            else -> throw Exception("Can only use Embedded as values with deeper values $definition")
+                            else -> throw Exception("Can only use Embedded as values with deeper values, not $definition")
                         }
                     }
                 }
@@ -250,24 +261,15 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         } else {
                             when (val valueDefinition = mapDefinition.valueDefinition) {
                                 is IsMultiTypeDefinition<*, *> -> {
-                                    if (qualifier.size <= qIndex) {
-                                        @Suppress("UNCHECKED_CAST")
-                                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition)?.let {
-                                            mapItemAdder(it)
-                                        }
-                                    } else {
-                                        initIntByVarWithExtraInfo({ qualifier[qIndex++] }) { typeIndex, _ ->
-                                            valueDefinition.readTypedValue(
-                                                typeIndex,
-                                                mapItemAdder,
-                                                qualifier,
-                                                qIndex,
-                                                readValueFromStorage,
-                                                select,
-                                                addToCache
-                                            )
-                                        }
-                                    }
+                                    readTypedValue(
+                                        qualifier,
+                                        qIndex,
+                                        readValueFromStorage,
+                                        valueDefinition,
+                                        mapItemAdder,
+                                        select,
+                                        addToCache
+                                    )
                                 }
                                 is IsEmbeddedDefinition<*, *> -> {
                                     readEmbeddedValues(
@@ -289,17 +291,49 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val definition = this.properties[index]
                         ?: throw Exception("No definition for $index in $this at $index")
                     @Suppress("UNCHECKED_CAST")
-                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<*, *> ?: throw Exception("Definition ${this.properties[index]!!.definition} should be a TypedDefinition")
+                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<*, *>
+                        ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
 
-                    typedDefinition.readTypedValue(index, { addValueToOutput(index, it) }, qualifier, qIndex, readValueFromStorage, select, addToCache)
+                    typedDefinition.readComplexTypedValue(index, { addValueToOutput(index, it) }, qualifier, qIndex, readValueFromStorage, select, addToCache)
                 }
             }
         }
     }
 }
 
+/** Read a typed value */
+private fun readTypedValue(
+    qualifier: ByteArray,
+    offset: Int,
+    readValueFromStorage: ValueReader,
+    valueDefinition: IsMultiTypeDefinition<*, *>,
+    mapItemAdder: AddValue,
+    select: IsPropRefGraph<*>?,
+    addToCache: CacheProcessor
+) {
+    var qIndex1 = offset
+    if (qualifier.size <= qIndex1) {
+        @Suppress("UNCHECKED_CAST")
+        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>)?.let {
+            mapItemAdder(it)
+        }
+    } else {
+        initIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
+            valueDefinition.readComplexTypedValue(
+                typeIndex,
+                mapItemAdder,
+                qualifier,
+                qIndex1,
+                readValueFromStorage,
+                select,
+                addToCache
+            )
+        }
+    }
+}
+
 /** Read a complex Typed value from qualifier */
-private fun IsMultiTypeDefinition<*, *>.readTypedValue(
+private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     index: Int,
     addValueToOutput: AddValue,
     qualifier: ByteArray,

@@ -8,17 +8,17 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.models.ComplexMapModel
+import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V3
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 
-val testComplexMap = ComplexMapModel(
-    stringString = mapOf("v1" to "a", "v2" to "b"),
-    intObject = mapOf(1u to EmbeddedMarykModel("t1"), 2u to EmbeddedMarykModel("t2")),
-    intMulti = mapOf(2u to TypedValue(V3, EmbeddedMarykModel("m3")))
+val testComplexMap = ComplexModel(
+    mapStringString = mapOf("v1" to "a", "v2" to "b"),
+    mapIntObject = mapOf(1u to EmbeddedMarykModel("t1"), 2u to EmbeddedMarykModel("t2")),
+    mapIntMulti = mapOf(2u to TypedValue(V3, EmbeddedMarykModel("m3")))
 )
 
 internal class ComplexDataModelMapTest {
@@ -29,15 +29,15 @@ internal class ComplexDataModelMapTest {
             output += it
         }
 
-        ComplexMapModel.writeJson(testComplexMap, writer)
+        ComplexModel.writeJson(testComplexMap, writer)
 
         output shouldBe """
         {
-        	"stringString": {
+        	"mapStringString": {
         		"v1": "a",
         		"v2": "b"
         	},
-        	"intObject": {
+        	"mapIntObject": {
         		"1": {
         			"value": "t1"
         		},
@@ -45,7 +45,7 @@ internal class ComplexDataModelMapTest {
         			"value": "t2"
         		}
         	},
-        	"intMulti": {
+        	"mapIntMulti": {
         		"2": ["V3", {
         			"value": "m3"
         		}]
@@ -55,7 +55,7 @@ internal class ComplexDataModelMapTest {
 
         var index = 0
         val reader = { JsonReader(reader = { output[index++] }) }
-        ComplexMapModel.readJson(reader = reader()) shouldBe testComplexMap
+        ComplexModel.readJson(reader = reader()) shouldBe testComplexMap
     }
 
     @Test
@@ -65,18 +65,18 @@ internal class ComplexDataModelMapTest {
             output += it
         }
 
-        ComplexMapModel.writeJson(testComplexMap, writer)
+        ComplexModel.writeJson(testComplexMap, writer)
 
         output shouldBe """
-        stringString:
+        mapStringString:
           v1: a
           v2: b
-        intObject:
+        mapIntObject:
           1:
             value: t1
           2:
             value: t2
-        intMulti:
+        mapIntMulti:
           2: !V3
             value: m3
 
@@ -89,13 +89,13 @@ internal class ComplexDataModelMapTest {
         val cache = WriteCache()
 
         bc.reserve(
-            ComplexMapModel.calculateProtoBufLength(testComplexMap, cache)
+            ComplexModel.calculateProtoBufLength(testComplexMap, cache)
         )
 
-        ComplexMapModel.writeProtoBuf(testComplexMap, cache, bc::write)
+        ComplexModel.writeProtoBuf(testComplexMap, cache, bc::write)
 
-        bc.bytes!!.toHex() shouldBe "0a070a0276311201610a070a0276321201621208080112040a0274311208080212040a0274321a0a080212061a040a026d33"
+        bc.bytes!!.toHex() shouldBe "12070a02763112016112070a0276321201621a08080112040a0274311a08080212040a027432220a080212061a040a026d33"
 
-        ComplexMapModel.readProtoBuf(bc.size, bc::read) shouldBe testComplexMap
+        ComplexModel.readProtoBuf(bc.size, bc::read) shouldBe testComplexMap
     }
 }

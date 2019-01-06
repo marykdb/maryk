@@ -228,6 +228,7 @@ class DefinitionsTest {
               required: false
               final: false
               typeEnum: Option
+              typeIsFinal: true
               definitionMap:
                 ? 1: V1
                 : !String

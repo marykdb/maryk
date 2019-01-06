@@ -5,6 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.types.TypedValue
@@ -13,6 +14,7 @@ import maryk.test.ByteCollector
 import maryk.test.models.Option
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V3
+import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -69,6 +71,14 @@ internal class MultiTypeDefinitionTest {
         shouldThrow<InvalidValueException> {
             def.validateWithRef(newValue = TypedValue(Option.V1, "WRONG"))
         }
+
+        shouldThrow<AlreadySetException> {
+            def.validateWithRef(
+                previousValue = TypedValue(Option.V1, "WRONG"),
+                newValue = TypedValue(Option.V2, 400),
+                refGetter = { TestMarykModel.properties.multi.getRef()  }
+            )
+        }.reference.toString() shouldBe "multi.*V2"
     }
 
     @Test
@@ -109,6 +119,7 @@ internal class MultiTypeDefinitionTest {
         required: false
         final: true
         typeEnum: Option
+        typeIsFinal: true
         definitionMap:
           ? 1: V1
           : !String

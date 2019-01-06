@@ -26,6 +26,7 @@ or photos.
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `indexed` - default false
+- `typeIsFinal` - default true. Set to true to make type non changable once set.
 - `definitionMap` - Map which maps shorts to a property definition
 
 ## Examples

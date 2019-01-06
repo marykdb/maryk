@@ -13,6 +13,7 @@ import maryk.core.properties.definitions.descriptors.convertMultiTypeDescriptors
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -44,6 +45,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     override val required: Boolean = true,
     override val final: Boolean = false,
     val typeEnum: IndexedEnumDefinition<E>,
+    override val typeIsFinal: Boolean = true,
     override val definitionMap: Map<E, IsSubDefinition<out Any, CX>>,
     override val default: TypedValue<E, *>? = null,
     internal val keepAsValues: Boolean = false
@@ -55,14 +57,21 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     private val typeByIndex = definitionMap.map { Pair(it.key.index, it.key) }.toMap()
     private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
 
+    init {
+        if (this.final) {
+            require(this.typeIsFinal) { "typeIsFinal should be true if multi type definition is final" }
+        }
+    }
+
     constructor(
         indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
         typeEnum: IndexedEnumDefinition<E>,
+        typeIsFinal: Boolean = true,
         definitionMap: Map<E, IsUsableInMultiType<out Any, CX>>,
         default: TypedValue<E, *>? = null
-    ) : this(indexed, required, final, typeEnum, definitionMap as Map<E, IsSubDefinition<out Any, CX>>, default)
+    ) : this(indexed, required, final, typeEnum, typeIsFinal, definitionMap as Map<E, IsSubDefinition<out Any, CX>>, default)
 
     override fun definition(index: Int) = definitionMapByIndex[index]
     override fun type(index: Int) = typeByIndex[index]
@@ -83,6 +92,12 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     override fun validateWithRef(previousValue: TypedValue<E, Any>?, newValue: TypedValue<E, Any>?, refGetter: () -> IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, *>?) {
         super.validateWithRef(previousValue, newValue, refGetter)
         if (newValue != null) {
+            if (this.typeIsFinal && previousValue != null) {
+                if (newValue.type != previousValue.type) {
+                    throw AlreadySetException(this.getTypeRef(newValue.type, refGetter() as CanHaveComplexChildReference<*, *, *, *>?))
+                }
+            }
+
             @Suppress("UNCHECKED_CAST")
             val definition = this.definitionMapByIndex[newValue.type.index] as IsSubDefinition<Any, CX>?
                     ?: throw DefNotFoundException("No def found for index ${newValue.type}")
@@ -219,6 +234,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         if (indexed != other.indexed) return false
         if (required != other.required) return false
         if (final != other.final) return false
+        if (typeIsFinal != other.typeIsFinal) return false
         if (definitionMap != other.definitionMap) {
             if(definitionMap.size != other.definitionMap.size) return false
             definitionMap.entries.zip(other.definitionMap.entries).map {
@@ -238,6 +254,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         result = 31 * result + required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + definitionMap.hashCode()
+        result = 31 * result + typeIsFinal.hashCode()
         return result
     }
 
@@ -296,10 +313,12 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
                     fromSerializable = { null }
                 )
 
-                this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
+                add(5, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
+
+                this.addDescriptorPropertyWrapperWrapper(6, "definitionMap")
 
                 @Suppress("UNCHECKED_CAST")
-                add(6, "default",
+                add(7, "default",
                     ContextualValueDefinition(
                         required = false,
                         contextTransformer = { context: MultiTypeDefinitionContext? ->
@@ -316,7 +335,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     ) {
         override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
-                values(5)
+                values(6)
             )
 
             val typeOptions = definitionMap.keys.toTypedArray()
@@ -330,8 +349,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
                 required = values(2),
                 final = values(3),
                 typeEnum = typeEnum,
+                typeIsFinal = values(5),
                 definitionMap = definitionMap,
-                default = values(6)
+                default = values(7)
             )
         }
     }

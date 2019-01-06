@@ -270,6 +270,7 @@ internal class RootDataModelTest {
         			"required": false,
         			"final": false,
         			"typeEnum": "Option",
+        			"typeIsFinal": true,
         			"definitionMap": [{
         				"index": 1,
         				"name": "V1",
@@ -494,6 +495,7 @@ internal class RootDataModelTest {
             required: false
             final: false
             typeEnum: Option
+            typeIsFinal: true
             definitionMap:
               ? 1: V1
               : !String

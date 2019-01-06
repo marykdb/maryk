@@ -15,6 +15,7 @@ interface IsMultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> :
     HasDefaultValueDefinition<TypedValue<E, Any>>,
     IsUsableInMapValue<TypedValue<E, Any>, CX>
 {
+    val typeIsFinal: Boolean
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 
     /** Get definition by [index] */

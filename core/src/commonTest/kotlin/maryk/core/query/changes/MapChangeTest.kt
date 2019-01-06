@@ -45,7 +45,7 @@ class MapChangeTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.mapPropertyChange, MapChange, { this.context }) shouldBe """
         map:
-          valuesToAdd:
+          valuesToSet:
             23:00: Test4
             05:51:53: Test5
             11:10:09: Test6

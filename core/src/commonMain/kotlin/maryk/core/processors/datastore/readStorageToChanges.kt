@@ -150,11 +150,11 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
                 val refAndPair = changePart as Pair<IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *, *>, *>, Pair<Any, Any>>
                 val mapValueChanges = (change as MapChange).mapValueChanges as MutableList<MapValueChanges<*, *>>
                 mapValueChanges.find { it.reference == refAndPair.first }?.also {
-                    (it.valuesToAdd as MutableMap<Any, Any>)[refAndPair.second.first] = refAndPair.second.second
+                    (it.valuesToSet as MutableMap<Any, Any>)[refAndPair.second.first] = refAndPair.second.second
                 } ?: mapValueChanges.add(
                     MapValueChanges(
                         refAndPair.first,
-                        valuesToAdd = mutableMapOf(refAndPair.second),
+                        valuesToSet = mutableMapOf(refAndPair.second),
                         keysToDelete = mutableSetOf()
                     )
                 )
@@ -169,7 +169,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
                 } ?: mapValueChanges.add(
                     MapValueChanges(
                         ref.parentReference as IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *, *>, *>,
-                        valuesToAdd = mutableMapOf(),
+                        valuesToSet = mutableMapOf(),
                         keysToDelete = mutableSetOf(ref.key)
                     )
                 )
@@ -238,7 +238,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when(changeT
         MapChange(mutableListOf(
             MapValueChanges(
                 refAndPair.first,
-                valuesToAdd = mutableMapOf(refAndPair.second),
+                valuesToSet = mutableMapOf(refAndPair.second),
                 keysToDelete = mutableSetOf()
             )
         ))
@@ -248,7 +248,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when(changeT
         MapChange(mutableListOf(
             MapValueChanges(
                 ref.parentReference as IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *, *>, *>,
-                valuesToAdd = mutableMapOf(),
+                valuesToSet = mutableMapOf(),
                 keysToDelete = mutableSetOf(ref.key)
             )
         ))

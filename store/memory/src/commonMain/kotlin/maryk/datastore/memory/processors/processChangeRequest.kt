@@ -292,7 +292,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                         }.also(setChanged)
                                     }
                                 }
-                                mapChange.valuesToAdd?.let {
+                                mapChange.valuesToSet?.let {
                                     createValidationUmbrellaException({ mapReference }) { addException ->
                                         for ((key, value) in it) {
                                             val mapValueRef = mapDefinition.getValueRef(key, mapReference)

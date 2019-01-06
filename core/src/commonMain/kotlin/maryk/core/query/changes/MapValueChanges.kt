@@ -18,12 +18,12 @@ import maryk.core.values.ObjectValues
 
 /**
  * Changes for a map property containing keys [K] and values [V] referred by [reference]
- * It is possible to add by [valuesToAdd] or to delete with [keysToDelete]
+ * It is possible to set by [valuesToSet] or to delete with [keysToDelete]
  * First keys will be deleted before values are added
  */
 data class MapValueChanges<K: Any, V: Any> internal constructor(
     override val reference: IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper<K, V, *, *, *>, *>,
-    val valuesToAdd: Map<K, V>? = null,
+    val valuesToSet: Map<K, V>? = null,
     val keysToDelete: Set<K>? = null
 ) : DefinedByReference<Map<K, V>> {
     @Suppress("unused")
@@ -31,7 +31,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
         val reference = DefinedByReference.addReference(this, MapValueChanges<*, *>::reference)
 
         @Suppress("UNCHECKED_CAST")
-        val valuesToAdd = add(2, "valuesToAdd",
+        val valuesToAdd = add(2, "valuesToSet",
             ContextualMapDefinition(
                 required = false,
                 contextualResolver = { context: RequestContext? ->
@@ -40,7 +40,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
                             ?: throw ContextNotFoundException()
                 }
             ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, RequestContext>,
-            MapValueChanges<*, *>::valuesToAdd
+            MapValueChanges<*, *>::valuesToSet
         )
 
         @Suppress("UNCHECKED_CAST")
@@ -64,7 +64,7 @@ data class MapValueChanges<K: Any, V: Any> internal constructor(
     ) {
         override fun invoke(values: ObjectValues<MapValueChanges<*, *>, Properties>) = MapValueChanges<Any, Any>(
             reference = values(1),
-            valuesToAdd = values(2),
+            valuesToSet = values(2),
             keysToDelete = values(3)
         )
     }
@@ -83,5 +83,5 @@ fun <K: Any, V: Any> IsPropertyReference<Map<K, V>, MapPropertyDefinitionWrapper
     MapValueChanges(
         reference = this,
         keysToDelete = keysToDelete,
-        valuesToAdd = valuesToAdd
+        valuesToSet = valuesToAdd
     )

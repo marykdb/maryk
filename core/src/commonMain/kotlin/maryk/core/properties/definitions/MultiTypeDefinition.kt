@@ -55,6 +55,9 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     private val typeByIndex = definitionMap.map { Pair(it.key.index, it.key) }.toMap()
     private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
 
+    override fun definition(index: Int) = definitionMapByIndex[index]
+    override fun type(index: Int) = typeByIndex[index]
+
     override fun asString(value: TypedValue<E, Any>, context: CX?): String {
         var string = ""
         this.writeJsonValue(value, JsonWriter {

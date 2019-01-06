@@ -8,7 +8,13 @@ import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ChangeType.CHANGE
+import maryk.core.processors.datastore.ChangeType.LIST_ADD
+import maryk.core.processors.datastore.ChangeType.LIST_DELETE
+import maryk.core.processors.datastore.ChangeType.MAP_ADD
+import maryk.core.processors.datastore.ChangeType.MAP_DELETE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
+import maryk.core.processors.datastore.ChangeType.SET_ADD
+import maryk.core.processors.datastore.ChangeType.SET_DELETE
 import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
@@ -35,6 +41,7 @@ import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
@@ -112,37 +119,91 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
         ChangeType.LIST_ADD -> {
             this.find { it is ListChange }?.also { change ->
                 val refToValue = changePart as Pair<ListItemReference<*, *>, Any>
-                (((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>).find { it.reference == refToValue.first.parentReference }?.addValuesAtIndex as MutableMap<Int, Any>)[refToValue.first.index] = refToValue.second
+                val listValueChanges = ((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>)
+                listValueChanges.find { it.reference == refToValue.first.parentReference }?.also {
+                    (it.addValuesAtIndex as MutableMap<Int, Any>).put(refToValue.first.index, refToValue.second)
+                } ?: listValueChanges.add(
+                    ListValueChanges(
+                        refToValue.first.parentReference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *>,
+                        addValuesAtIndex = mutableMapOf(refToValue.first.index to refToValue.second),
+                        deleteAtIndex = mutableSetOf()
+                    )
+                )
             }
         }
         ChangeType.LIST_DELETE -> {
             this.find { it is ListChange }?.also { change ->
                 val ref = changePart as ListItemReference<*, *>
-                (((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>).find { it.reference == ref.parentReference }?.deleteAtIndex as MutableSet<Any>).add(ref.index)
+                val listValueChanges = ((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>)
+                listValueChanges.find { it.reference == ref.parentReference }?.also {
+                    (it.deleteAtIndex as MutableSet<Any>).add(ref.index)
+                } ?: listValueChanges.add(
+                    ListValueChanges(
+                        ref.parentReference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *>,
+                        addValuesAtIndex = mutableMapOf(),
+                        deleteAtIndex = mutableSetOf(ref.index)
+                    )
+                )
             }
         }
         ChangeType.MAP_ADD -> {
             this.find { it is MapChange }?.also { change ->
                 val refAndPair = changePart as Pair<IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *, *>, *>, Pair<Any, Any>>
-                (((change as MapChange).mapValueChanges as MutableList<MapValueChanges<*, *>>).find { it.reference == refAndPair.first }?.valuesToAdd as MutableMap<Any, Any>)[refAndPair.second.first] = refAndPair.second.second
+                val mapValueChanges = (change as MapChange).mapValueChanges as MutableList<MapValueChanges<*, *>>
+                mapValueChanges.find { it.reference == refAndPair.first }?.also {
+                    (it.valuesToAdd as MutableMap<Any, Any>)[refAndPair.second.first] = refAndPair.second.second
+                } ?: mapValueChanges.add(
+                    MapValueChanges(
+                        refAndPair.first,
+                        valuesToAdd = mutableMapOf(refAndPair.second),
+                        keysToDelete = mutableSetOf()
+                    )
+                )
             }
         }
         ChangeType.MAP_DELETE -> {
             this.find { it is MapChange }?.also { change ->
                 val ref = changePart as MapValueReference<*, *, *>
-                (((change as MapChange).mapValueChanges as MutableList<MapValueChanges<*, *>>).find { it.reference == ref.parentReference }?.keysToDelete as MutableSet<Any>).add(ref.key)
+                val mapValueChanges = (change as MapChange).mapValueChanges as MutableList<MapValueChanges<*, *>>
+                mapValueChanges.find { it.reference == ref.parentReference }?.also {
+                    (it.keysToDelete as MutableSet<Any>).add(ref.key)
+                } ?: mapValueChanges.add(
+                    MapValueChanges(
+                        ref.parentReference as IsPropertyReference<Map<Any, Any>, MapPropertyDefinitionWrapper<Any, Any, *, *, *>, *>,
+                        valuesToAdd = mutableMapOf(),
+                        keysToDelete = mutableSetOf(ref.key)
+                    )
+                )
             }
         }
         ChangeType.SET_ADD -> {
             this.find { it is SetChange }?.also { change ->
                 val ref = changePart as SetItemReference<*, *>
-                (((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>).find { it.reference == ref.parentReference }?.addValues as MutableSet<Any>).add(ref.value)
+                val setValueChanges = ((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>)
+                setValueChanges.find { it.reference == ref.parentReference }?.also {
+                    (it.addValues as MutableSet<Any>).add(ref.value)
+                } ?: setValueChanges.add(
+                    SetValueChanges(
+                        ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
+                        addValues = mutableSetOf(ref.value),
+                        deleteValues = mutableSetOf()
+                    )
+                )
             }
         }
         ChangeType.SET_DELETE -> {
             this.find { it is SetChange }?.also { change ->
                 val ref = changePart as SetItemReference<*, *>
-                (((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>).find { it.reference == ref.parentReference }?.deleteValues as MutableSet<Any>).add(ref.value)
+                val setValueChanges = ((change as SetChange).setValueChanges as MutableList<SetValueChanges<*>>)
+                setValueChanges.find { it.reference == ref.parentReference }?.also {
+                    (it.deleteValues as MutableSet<Any>).add(ref.value)
+                } ?: setValueChanges.add(
+                    SetValueChanges(
+                        ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
+                        addValues = mutableSetOf(),
+                        deleteValues = mutableSetOf(ref.value)
+                    )
+                )
             }
         }
     } ?: this.add(createChange(changeType, changePart))
@@ -272,9 +333,9 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     @Suppress("UNCHECKED_CAST")
                     readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
                         if (value == null) {
-                            addChangeToOutput(version, ChangeType.LIST_DELETE, listDefinition.getItemRef(listIndex, reference))
+                            addChangeToOutput(version, LIST_DELETE, listDefinition.getItemRef(listIndex, reference))
                         } else {
-                            addChangeToOutput(version, ChangeType.LIST_ADD, listDefinition.getItemRef(listIndex, reference) to value)
+                            addChangeToOutput(version, LIST_ADD, listDefinition.getItemRef(listIndex, reference) to value)
                         }
                     }
                 }
@@ -296,9 +357,9 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     @Suppress("UNCHECKED_CAST")
                     readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
                         if (value == null) {
-                            addChangeToOutput(version, ChangeType.SET_DELETE, setDefinition.getItemRef(key, reference))
+                            addChangeToOutput(version, SET_DELETE, setDefinition.getItemRef(key, reference))
                         } else {
-                            addChangeToOutput(version, ChangeType.SET_ADD, setDefinition.getItemRef(key, reference))
+                            addChangeToOutput(version, SET_ADD, setDefinition.getItemRef(key, reference))
                         }
                     }
                 }
@@ -321,12 +382,13 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     @Suppress("UNCHECKED_CAST")
                     readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
                         if (value == null) {
-                            addChangeToOutput(version, ChangeType.MAP_DELETE, mapDefinition.getValueRef(key, reference))
+                            addChangeToOutput(version, MAP_DELETE, mapDefinition.getValueRef(key, reference))
                         } else {
-                            addChangeToOutput(version, ChangeType.MAP_ADD, Pair(reference, Pair(key, value)))
+                            addChangeToOutput(version, MAP_ADD, Pair(reference, Pair(key, value)))
                         }
                     }
                 }
+                ReferenceType.TYPE -> TODO()
             }
         }
     }

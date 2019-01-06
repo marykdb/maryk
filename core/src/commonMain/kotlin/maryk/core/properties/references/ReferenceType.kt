@@ -10,6 +10,7 @@ enum class ReferenceType(val value: Byte) {
     LIST(2),
     SET(3),
     MAP(4),
+    TYPE(5)
     // Only add items that are used regularly in storage to
 }
 

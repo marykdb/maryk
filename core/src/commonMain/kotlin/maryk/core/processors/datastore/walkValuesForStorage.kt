@@ -25,6 +25,7 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.CompleteReferenceType
@@ -140,7 +141,7 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             val mapQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.MAP)
             val mapQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             // Process Map Count
-            valueProcessor(MapSize as StorageTypeEnum<T>, writeQualifier(mapQualifierCount, mapQualifierWriter), definition, value.size) // for map count
+            valueProcessor(MapSize as StorageTypeEnum<T>, writeQualifier(mapQualifierCount, mapQualifierWriter), definition, value.size)
 
             // Process Map Values
             val mapDefinition = (definition as IsMapDefinition<Any, *, *>)
@@ -172,11 +173,24 @@ private fun <T: IsPropertyDefinition<*>> processValue(
             (value as AnyAbstractValues).walkForStorage(abstractValuesQualifierCount, indexWriter, valueProcessor as ValueProcessor<IsPropertyDefinition<*>>)
         }
         is TypedValue<*, *> -> {
-            val qualifier = writeQualifier(
-                qualifierLength + index.calculateVarIntWithExtraInfoByteSize(),
-                createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
-            )
-            valueProcessor(TypeValue as StorageTypeEnum<T>, qualifier, definition, value)
+            val multiDefinition = definition as MultiTypeDefinition<*, *>
+            val valueDefinition = multiDefinition.definitionMap[value.type] as IsPropertyDefinition<Any>
+
+            if (valueDefinition is IsSimpleValueDefinition<*, *>) {
+                val qualifier = if (index == -1) {
+                    writeQualifier(qualifierLength, qualifierWriter)
+                } else {
+                    writeQualifier(
+                        qualifierLength + index.calculateVarIntWithExtraInfoByteSize(),
+                        createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
+                    )
+                }
+                valueProcessor(TypeValue as StorageTypeEnum<T>, qualifier, definition, value)
+            } else {
+                val qualifierTypeWriter = createQualifierWriter(qualifierWriter, value.type.index, ReferenceType.TYPE)
+                val qualifierTypeLength = qualifierLength + value.type.index.calculateVarIntWithExtraInfoByteSize()
+                processValue(-1, valueDefinition, value.value, valueProcessor as ValueProcessor<IsPropertyDefinition<Any>>, qualifierTypeLength, qualifierTypeWriter)
+            }
         }
         else -> {
             val qualifier = if (index > -1) {

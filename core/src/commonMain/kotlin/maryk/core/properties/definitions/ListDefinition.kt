@@ -29,14 +29,14 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     init {
         require(valueDefinition.required) { "Definition for value should have required=true on List" }
     }
-    
+
     constructor(
         indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
         minSize: Int? = null,
         maxSize: Int? = null,
-        valueDefinition: IsSimpleValueDefinition<T, CX>,
+        valueDefinition: IsUsableInCollection<T, CX>,
         default: List<T>? = null
     ): this(indexed, required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 

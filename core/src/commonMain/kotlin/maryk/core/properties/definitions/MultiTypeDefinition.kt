@@ -39,7 +39,7 @@ import maryk.yaml.YamlWriter
  * The type mapping is defined in the given [definitionMap] mapped by enum [E].
  * Receives context of [CX]
  */
-data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
+data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> internal constructor(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -54,6 +54,15 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext>(
     private val typeByName = definitionMap.map { Pair(it.key.name, it.key) }.toMap()
     private val typeByIndex = definitionMap.map { Pair(it.key.index, it.key) }.toMap()
     private val definitionMapByIndex = definitionMap.map { Pair(it.key.index, it.value) }.toMap()
+
+    constructor(
+        indexed: Boolean = false,
+        required: Boolean = true,
+        final: Boolean = false,
+        typeEnum: IndexedEnumDefinition<E>,
+        definitionMap: Map<E, IsUsableInMultiType<out Any, CX>>,
+        default: TypedValue<E, *>? = null
+    ) : this(indexed, required, final, typeEnum, definitionMap as Map<E, IsSubDefinition<out Any, CX>>, default)
 
     override fun definition(index: Int) = definitionMapByIndex[index]
     override fun type(index: Int) = typeByIndex[index]

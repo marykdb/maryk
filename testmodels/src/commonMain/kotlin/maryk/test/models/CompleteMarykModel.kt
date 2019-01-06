@@ -3,7 +3,6 @@
 package maryk.test.models
 
 import maryk.core.models.RootDataModel
-import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -13,7 +12,6 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -34,6 +32,7 @@ import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.values.Values
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
@@ -271,12 +270,12 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         )
         val multi = add(
             index = 16, name = "multi",
-            definition = MultiTypeDefinition(
+            definition = MultiTypeDefinition<MarykEnum, IsPropertyContext>(
                 indexed = true,
                 required = false,
                 final = true,
                 typeEnum = MarykEnum,
-                definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(
+                definitionMap = mapOf(
                     MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
@@ -299,10 +298,10 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         )
         val multiForKey = add(
             index = 19, name = "multiForKey",
-            definition = MultiTypeDefinition(
+            definition = MultiTypeDefinition<MarykEnum, IsPropertyContext>(
                 final = true,
                 typeEnum = MarykEnum,
-                definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(
+                definitionMap = mapOf(
                     MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),

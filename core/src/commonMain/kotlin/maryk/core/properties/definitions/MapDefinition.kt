@@ -30,7 +30,7 @@ import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Map property */
-data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
+data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -52,6 +52,17 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext>(
         require(keyDefinition.required) { "Definition for key should be required on map" }
         require(valueDefinition.required) { "Definition for value should be required on map" }
     }
+
+    constructor(
+        indexed: Boolean = false,
+        required: Boolean = true,
+        final: Boolean = false,
+        minSize: Int? = null,
+        maxSize: Int? = null,
+        keyDefinition: IsSimpleValueDefinition<K, CX>,
+        valueDefinition: IsUsableInMapValue<V, CX>,
+        default: Map<K, V>? = null
+    ) : this(indexed, required, final, minSize, maxSize, keyDefinition, valueDefinition as IsSubDefinition<V, CX>, default)
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 

@@ -10,7 +10,9 @@ interface IsEmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefin
     IsValueDefinition<Values<DM, P>, CX>,
     IsTransportablePropertyDefinitionType<Values<DM, P>>,
     HasDefaultValueDefinition<Values<DM, P>>,
-    IsEmbeddedDefinition<DM, P>
+    IsEmbeddedDefinition<DM, P>,
+    IsUsableInMultiType<Values<DM, P>, CX>,
+    IsUsableInMapValue<Values<DM, P>, CX>
 {
     override val dataModel: DM
 }

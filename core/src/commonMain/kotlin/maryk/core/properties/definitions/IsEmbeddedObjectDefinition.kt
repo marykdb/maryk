@@ -11,7 +11,9 @@ interface IsEmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>,
     IsValueDefinition<DO, CXI>,
     IsTransportablePropertyDefinitionType<DO>,
     HasDefaultValueDefinition<DO>,
-    IsEmbeddedDefinition<DM, P>
+    IsEmbeddedDefinition<DM, P>,
+    IsUsableInMultiType<DO, CXI>,
+    IsUsableInMapValue<DO, CXI>
 {
     override val dataModel: DM
 

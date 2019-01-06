@@ -36,7 +36,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         final: Boolean = false,
         minSize: Int? = null,
         maxSize: Int? = null,
-        valueDefinition: IsSimpleValueDefinition<T, CX>,
+        valueDefinition: IsUsableInCollection<T, CX>,
         default: Set<T>? = null
     ): this(indexed, required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 

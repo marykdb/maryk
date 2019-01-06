@@ -12,7 +12,8 @@ interface IsMultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> :
     IsValueDefinition<TypedValue<E, Any>, CX>,
     IsSerializablePropertyDefinition<TypedValue<E, Any>, CX>,
     IsTransportablePropertyDefinitionType<TypedValue<E, Any>>,
-    HasDefaultValueDefinition<TypedValue<E, Any>>
+    HasDefaultValueDefinition<TypedValue<E, Any>>,
+    IsUsableInMapValue<TypedValue<E, Any>, CX>
 {
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 

@@ -14,7 +14,12 @@ import maryk.lib.exceptions.ParseException
  *
  * This is used for simple single value properties and not for lists and maps.
  */
-interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> : IsValueDefinition<T, CX> {
+interface IsSimpleValueDefinition<T: Any, in CX: IsPropertyContext> :
+    IsValueDefinition<T, CX>,
+    IsUsableInMultiType<T, CX>,
+    IsUsableInMapValue<T, CX>,
+    IsUsableInCollection<T, CX>
+{
     /**
      * Read stored bytes with [reader] until [length] and return value
      * @throws DefNotFoundException if definition is not found to translate bytes

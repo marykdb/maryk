@@ -15,7 +15,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -234,18 +233,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         val keyDefinition = mapDefinition.keyDefinition
                         val qualifierReader = {qualifier[qIndex++]}
 
-                        val key = when {
-                            keyDefinition is IsFixedBytesEncodable<*> -> {
-                                keyDefinition.readStorageBytes(keyDefinition.byteSize, qualifierReader)
-                            }
-                            mapDefinition.valueDefinition is IsSimpleValueDefinition<*, *> -> {
-                                keyDefinition.readStorageBytes(qualifier.size - qIndex, qualifierReader)
-                            }
-                            else -> {
-                                val keySize = initIntByVar(qualifierReader)
-                                keyDefinition.readStorageBytes(keySize, qualifierReader)
-                            }
-                        }
+                        val keySize = initIntByVar(qualifierReader)
+                        val key = keyDefinition.readStorageBytes(keySize, qualifierReader)
 
                         // Create map Item adder
                         val mapItemAdder: AddValue = { value ->

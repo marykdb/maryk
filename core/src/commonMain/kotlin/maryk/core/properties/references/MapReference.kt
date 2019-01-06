@@ -1,8 +1,8 @@
 package maryk.core.properties.references
 
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.references.CompleteReferenceType.MAP
@@ -66,7 +66,7 @@ open class MapReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
     }
 
     override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
-        val mapKeyLength = (this.propertyDefinition.keyDefinition as IsFixedBytesEncodable<*>).byteSize
+        val mapKeyLength = initIntByVar(reader)
         return when (referenceType) {
             MAP -> {
                 MapValueReference(

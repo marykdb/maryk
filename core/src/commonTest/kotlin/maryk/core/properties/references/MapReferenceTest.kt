@@ -87,7 +87,7 @@ class MapReferenceTest {
         )
         valReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "5400d84f"
+        bc.bytes!!.toHex() shouldBe "540300d84f"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe valReference
     }
@@ -101,7 +101,7 @@ class MapReferenceTest {
         )
         subReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "61195400d84f"
+        bc.bytes!!.toHex() shouldBe "6119540300d84f"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subReference
     }
@@ -115,7 +115,7 @@ class MapReferenceTest {
         )
         keyReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "080a00a8c1"
+        bc.bytes!!.toHex() shouldBe "080a0300a8c1"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe keyReference
     }
@@ -129,7 +129,7 @@ class MapReferenceTest {
         )
         subKeyReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "6119080a00d84f"
+        bc.bytes!!.toHex() shouldBe "6119080a0300d84f"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subKeyReference
     }

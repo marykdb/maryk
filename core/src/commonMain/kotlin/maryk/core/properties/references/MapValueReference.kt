@@ -1,7 +1,9 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsMapDefinition
@@ -45,12 +47,15 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
     override fun calculateStorageByteLength(): Int {
         // Calculate bytes above the setReference parent
         val parentCount = this.parentReference?.parentReference?.calculateStorageByteLength() ?: 0
+        val keyLength = this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key)
 
         return parentCount +
                 // calculate length of index of setDefinition
                 (this.parentReference?.propertyDefinition?.index?.calculateVarIntWithExtraInfoByteSize() ?: 0) +
+                // Add key length size
+                keyLength.calculateVarByteLength() +
                 // add bytes for map key
-                this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key)
+                keyLength
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
@@ -58,6 +63,8 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
         this.parentReference?.parentReference?.writeStorageBytes(writer)
         // Write set index with a SetValue type
         this.parentReference?.propertyDefinition?.index?.writeVarIntWithExtraInfo(MAP.value, writer)
+        // Write key length
+        this.mapDefinition.keyDefinition.calculateStorageByteLength(this.key).writeVarBytes(writer)
         // Write value bytes
         this.mapDefinition.keyDefinition.writeStorageBytes(key, writer)
     }

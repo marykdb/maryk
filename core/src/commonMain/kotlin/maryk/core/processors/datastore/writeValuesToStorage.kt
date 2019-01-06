@@ -15,7 +15,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -150,14 +149,11 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
             val map = value as Map<Any, Any>
             for ((key, mapValue) in map) {
                 val keyByteSize = mapDefinition.keyDefinition.calculateStorageByteLength(key)
-                val needsByteCount = mapDefinition.keyDefinition !is IsFixedBytesEncodable<*> && mapDefinition.valueDefinition !is IsSimpleValueDefinition<*, *>
-                val keyByteCountSize = if (needsByteCount) keyByteSize.calculateVarByteLength() else 0
+                val keyByteCountSize = keyByteSize.calculateVarByteLength()
 
                 val mapValueQualifierWriter: QualifierWriter = { writer ->
                     mapQualifierWriter.invoke(writer)
-                    if (needsByteCount) {
-                        keyByteSize.writeVarBytes(writer)
-                    }
+                    keyByteSize.writeVarBytes(writer)
 
                     mapDefinition.keyDefinition.writeStorageBytes(key, writer)
                 }

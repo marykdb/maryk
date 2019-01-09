@@ -5,9 +5,11 @@ package maryk.datastore.memory.processors.changers
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
@@ -34,8 +36,11 @@ internal fun <T: Any> deleteByReference(
 
     // Get previous value and convert if of complex type
     @Suppress("UNCHECKED_CAST")
-    val prevValue: T? = getValueAtIndex<T>(values, valueIndex)?.value.let {
-        if(it == null) null else {
+    val prevValue: T = getValueAtIndex<T>(values, valueIndex)?.value.let {
+        if(it == null){
+            // does not exist so nothing to delete
+            return false
+        } else {
             // With delete the prev value for complex types needs to be set to check final and required states
             // Only current values are checked on content
             when (reference) {
@@ -43,10 +48,20 @@ internal fun <T: Any> deleteByReference(
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
                 is MapValueReference<*, *, *> -> {
-                    val mapValueReference = reference.parentReference as MapReference<Any, Any, IsPropertyContext>
-                    val mapDefinition = mapValueReference.propertyDefinition.definition
-                    createCountUpdater(values, mapValueReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, out Any>, version, -1, keepAllVersions) { newCount ->
-                        mapDefinition.validateSize(newCount) { mapValueReference }
+                    val mapReference = reference.parentReference as MapReference<Any, Any, IsPropertyContext>
+                    val mapDefinition = mapReference.propertyDefinition.definition
+                    createCountUpdater(values, mapReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, out Any>, version, -1, keepAllVersions) { newCount ->
+                        mapDefinition.validateSize(newCount) { mapReference }
+                    }
+                    // Map values can be set to null to be deleted.
+                    shouldHandlePrevValue = false
+                    it
+                }
+                is SetItemReference<*, *> -> {
+                    val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
+                    val setDefinition = setReference.propertyDefinition.definition
+                    createCountUpdater(values, setReference as IsPropertyReference<Set<*>, IsPropertyDefinition<Set<*>>, out Any>, version, -1, keepAllVersions) { newCount ->
+                        setDefinition.validateSize(newCount) { setReference }
                     }
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false

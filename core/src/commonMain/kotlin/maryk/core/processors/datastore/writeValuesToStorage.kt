@@ -15,6 +15,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -157,8 +158,17 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
 
                     mapDefinition.keyDefinition.writeStorageBytes(key, writer)
                 }
+                val mapValueQualifierLength = mapQualifierCount + keyByteSize + keyByteCountSize
+
+                // Write complex map existence indicator
+                if (mapDefinition.valueDefinition is EmbeddedValuesDefinition<*, *>) {
+                    // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
+                    val qualifier = writeQualifier(mapValueQualifierLength, mapValueQualifierWriter)
+                    valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, Unit)
+                }
+
                 writeValue(
-                    -1, mapQualifierCount + keyByteSize + keyByteCountSize, mapValueQualifierWriter,
+                    -1, mapValueQualifierLength, mapValueQualifierWriter,
                     mapDefinition.valueDefinition,
                     mapValue,
                     valueWriter as ValueWriter<IsSubDefinition<*, *>>

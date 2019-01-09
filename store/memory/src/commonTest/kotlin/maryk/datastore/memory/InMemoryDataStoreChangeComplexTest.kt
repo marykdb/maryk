@@ -13,6 +13,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.Success
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.Option.V1
 import maryk.test.models.Option.V3
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
@@ -31,12 +32,15 @@ class InMemoryDataStoreChangeComplexTest {
             val addResponse = dataStore.execute(
                 ComplexModel.add(
                     ComplexModel(
-                        multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3")))
-                    ),
-                    ComplexModel(
+                        multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
                         mapStringString = mapOf("a" to "b", "c" to "d")
                     ),
                     ComplexModel(
+                        multi = TypedValue(V1, "value"),
+                        mapStringString = mapOf("a" to "b", "c" to "d")
+                    ),
+                    ComplexModel(
+                        mapStringString = mapOf("a" to "b", "c" to "d"),
                         mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
                     )
                 )
@@ -70,7 +74,33 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.get(keys[0])
         )
 
-        getResponse.values.size shouldBe 0
+        getResponse.values.size shouldBe 1
+
+        getResponse.values.first().values { multi } shouldBe null
+    }
+
+    @Test
+    fun executeChangeDeleteMapRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            ComplexModel.change(
+                keys[2].change(
+                    Delete(ComplexModel.ref { mapIntObject })
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
+            shouldBeRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            ComplexModel.get(keys[2])
+        )
+
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().values { mapIntObject } shouldBe null
     }
 
     @Test

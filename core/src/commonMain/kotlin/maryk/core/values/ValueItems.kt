@@ -16,7 +16,7 @@ interface IsValueItemsImpl: IsValueItems {
     val list: List<ValueItem>
 }
 
-fun ValueItems(): IsValueItems = MutableValueItems()
+val EmptyValueItems: IsValueItems = MutableValueItems()
 fun ValueItems(vararg item: ValueItem): IsValueItems = MutableValueItems(*item)
 
 inline class MutableValueItems(

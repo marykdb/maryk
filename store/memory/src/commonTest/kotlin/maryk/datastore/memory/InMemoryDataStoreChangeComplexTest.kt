@@ -17,6 +17,7 @@ import maryk.test.models.Option.V3
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
+import maryk.test.shouldNotBe
 import kotlin.test.Test
 
 @Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
@@ -34,6 +35,9 @@ class InMemoryDataStoreChangeComplexTest {
                     ),
                     ComplexModel(
                         mapStringString = mapOf("a" to "b", "c" to "d")
+                    ),
+                    ComplexModel(
+                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
                     )
                 )
             )
@@ -70,11 +74,11 @@ class InMemoryDataStoreChangeComplexTest {
     }
 
     @Test
-    fun executeChangeDeleteCompleteMapRequest() = runSuspendingTest {
+    fun executeChangeDeleteMapValueRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             ComplexModel.change(
-                keys[1].change(
-                    Delete(ComplexModel.ref { mapStringString })
+                keys[2].change(
+                    Delete(ComplexModel { mapIntObject refAt 2u })
                 )
             )
         )
@@ -86,9 +90,14 @@ class InMemoryDataStoreChangeComplexTest {
         }
 
         val getResponse = dataStore.execute(
-            ComplexModel.get(keys[1])
+            ComplexModel.get(keys[2])
         )
 
-        getResponse.values.size shouldBe 0
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().values { mapIntObject }.let {
+            it shouldNotBe null
+            it?.size shouldBe 1
+            it?.get(2u) shouldBe null
+        }
     }
 }

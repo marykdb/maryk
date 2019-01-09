@@ -9,8 +9,8 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.EmptyValueItems
 import maryk.core.values.SimpleObjectValues
-import maryk.core.values.ValueItems
 import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.lib.uuid.generateUUID
@@ -44,7 +44,7 @@ object UUIDKey: FixedBytesProperty<Pair<Long, Long>> {
 
         override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?): SimpleObjectValues<UUIDKey> {
             return if (reader is IsYamlReader) {
-                this.values { ValueItems() }
+                this.values { EmptyValueItems }
             } else {
                 super.readJson(reader, context)
             }

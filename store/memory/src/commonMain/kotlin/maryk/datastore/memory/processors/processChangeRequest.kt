@@ -6,7 +6,7 @@ import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -166,13 +166,13 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                         for (reference in change.references) {
                             @Suppress("UNCHECKED_CAST")
                             val ref =
-                                reference as IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, Any>
-                            deleteByReference(newValueList, ref, version) { _, previousValue ->
+                                reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>
+                            deleteByReference(newValueList, ref, version, keepAllVersions) { _, previousValue ->
                                 try {
-                                    ref.propertyDefinition.validate(
+                                    ref.propertyDefinition.validateWithRef(
                                         previousValue = previousValue,
                                         newValue = null,
-                                        parentRefFactory = { (reference as? PropertyReference<*, *, *, *>)?.parentReference }
+                                        refGetter = { ref }
                                     )
                                 } catch (e: ValidationException) {
                                     addValidationFail(e)
@@ -255,7 +255,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             setChange.deleteValues?.let {
                                 for (value in it) {
                                     val setItemRef = setDefinition.getItemRef(value, setReference)
-                                    deleteByReference(newValueList, setItemRef, version) { _, prevValue ->
+                                    deleteByReference(newValueList, setItemRef, version, keepAllVersions) { _, prevValue ->
                                         prevValue?.let {
                                             countChange-- // only count down if value existed
                                         }
@@ -263,15 +263,15 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 }
                             }
 
-                            val newSize = createCountUpdater(
+                            createCountUpdater(
                                 newValueList,
                                 setChange.reference,
                                 version,
                                 countChange,
                                 keepAllVersions
-                            )
-
-                            setDefinition.validateSize(newSize) { setReference }
+                            ) {
+                                setDefinition.validateSize(it) { setReference }
+                            }
                         }
                     }
                     is MapChange -> {
@@ -285,7 +285,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 mapChange.keysToDelete?.let {
                                     for (key in it) {
                                         val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                        deleteByReference(newValueList, mapValueRef, version) { _, prevValue ->
+                                        deleteByReference(newValueList, mapValueRef, version, keepAllVersions) { _, prevValue ->
                                             prevValue?.let {
                                                 countChange-- // only count down if value existed
                                             }
@@ -325,14 +325,15 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     }
                                 }
 
-                                val newSize = createCountUpdater(
+                                createCountUpdater(
                                     newValueList,
                                     mapChange.reference,
                                     version,
                                     countChange,
                                     keepAllVersions
-                                )
-                                mapDefinition.validateSize(newSize) { mapReference }
+                                ) {
+                                    mapDefinition.validateSize(it) { mapReference }
+                                }
                             }
                         }
                     }

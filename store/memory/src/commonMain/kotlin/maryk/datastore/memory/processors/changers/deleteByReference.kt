@@ -2,10 +2,12 @@
 
 package maryk.datastore.memory.processors.changers
 
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
@@ -20,12 +22,15 @@ internal fun <T: Any> deleteByReference(
     values: MutableList<DataRecordNode>,
     reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>,
     version: ULong,
+    keepAllVersions: Boolean,
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {
     val referenceToCompareTo = reference.toStorageByteArray()
     val valueIndex = values.binarySearch {
         it.reference.compareTo(referenceToCompareTo)
     }
+
+    var shouldHandlePrevValue = true
 
     // Get previous value and convert if of complex type
     @Suppress("UNCHECKED_CAST")
@@ -37,13 +42,25 @@ internal fun <T: Any> deleteByReference(
                 is MapReference<*, *, *> -> mapOf<Any, Any>() as T
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
+                is MapValueReference<*, *, *> -> {
+                    val mapValueReference = reference.parentReference as MapReference<Any, Any, IsPropertyContext>
+                    val mapDefinition = mapValueReference.propertyDefinition.definition
+                    createCountUpdater(values, mapValueReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, out Any>, version, -1, keepAllVersions) { newCount ->
+                        mapDefinition.validateSize(newCount) { mapValueReference }
+                    }
+                    // Map values can be set to null to be deleted.
+                    shouldHandlePrevValue = false
+                    it
+                }
                 else -> it
             }
         }
     }
 
-    // Primarily for validations
-    handlePreviousValue?.invoke(referenceToCompareTo, prevValue)
+    if (shouldHandlePrevValue) {
+        // Primarily for validations
+        handlePreviousValue?.invoke(referenceToCompareTo, prevValue)
+    }
 
     // Delete complex sub parts below same reference
     for (index in valueIndex until values.size) {

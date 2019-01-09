@@ -16,8 +16,9 @@ internal fun <T: Any> createCountUpdater(
     reference: IsPropertyReference<out T, IsPropertyDefinition<out T>, out Any>,
     version: ULong,
     countChange: Int,
-    keepAllVersions: Boolean
-): Int {
+    keepAllVersions: Boolean,
+    sizeValidator: (Int) -> Unit
+) {
     val referenceToCompareTo = reference.toStorageByteArray()
 
     val valueIndex = values.binarySearch {
@@ -27,7 +28,7 @@ internal fun <T: Any> createCountUpdater(
     val previousCount = getValueAtIndex<Int>(values, valueIndex)?.value ?: 0
     val newCount = previousCount + countChange
 
-    setValueAtIndex(values, valueIndex, referenceToCompareTo, newCount, version, keepAllVersions)
+    sizeValidator(newCount)
 
-    return newCount
+    setValueAtIndex(values, valueIndex, referenceToCompareTo, newCount, version, keepAllVersions)
 }

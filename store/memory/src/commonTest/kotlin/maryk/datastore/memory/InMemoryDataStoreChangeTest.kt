@@ -5,6 +5,7 @@ package maryk.datastore.memory
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.types.Date
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
@@ -21,6 +22,7 @@ import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.models.Option.V1
 import maryk.test.models.TestMarykModel
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
@@ -39,7 +41,8 @@ class InMemoryDataStoreChangeTest {
                 TestMarykModel.add(
                     TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true, listOfString = listOf("a", "b", "c"), map = mapOf(Time(2, 3, 5) to "test"), set = setOf(Date(2018, 3, 4))),
                     TestMarykModel("haha2", 3, 8u, 1.244, DateTime(2018, 1, 2), false, listOfString = listOf("c", "d", "e"), map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"), set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))),
-                    TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, reference = TestMarykModel.key("AAACKwEBAQAC"))
+                    TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, reference = TestMarykModel.key("AAACKwEBAQAC")),
+                    TestMarykModel("haha4", 4, 14u, 1.644, DateTime(2019, 1, 2), false, multi = TypedValue(V1, "string"), listOfString = listOf("f", "g", "h"), map = mapOf(Time(1, 33, 45) to "an other", Time(13, 44, 55) to "an other2"), set = setOf(Date(2015, 11, 25), Date(2001, 12, 5)))
                 )
             )
 
@@ -143,6 +146,36 @@ class InMemoryDataStoreChangeTest {
 
         getResponse.values.size shouldBe 1
         getResponse.values.first().values { reference } shouldBe null
+    }
+
+    @Test
+    fun executeChangeDeleteComplexRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[3].change(
+                    Delete(TestMarykModel.ref { map }),
+                    Delete(TestMarykModel.ref { listOfString }),
+                    Delete(TestMarykModel.ref { set }),
+                    Delete(TestMarykModel.ref { multi })
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
+            shouldBeRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            TestMarykModel.get(keys[3])
+        )
+
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().values { map } shouldBe null
+        getResponse.values.first().values { listOfString } shouldBe null
+        getResponse.values.first().values { set } shouldBe null
+        getResponse.values.first().values { multi } shouldBe null
     }
 
     @Test

@@ -4,8 +4,12 @@ package maryk.datastore.memory.processors.changers
 
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.SetReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matchPart
 
 /**
  * Delete value by [reference] in [values] and record deletion below [version]
@@ -23,7 +27,34 @@ internal fun <T: Any> deleteByReference(
         it.reference.compareTo(referenceToCompareTo)
     }
 
-    handlePreviousValue?.invoke(referenceToCompareTo, getValueAtIndex<T>(values, valueIndex)?.value)
+    // Get previous value and convert if of complex type
+    @Suppress("UNCHECKED_CAST")
+    val prevValue: T? = getValueAtIndex<T>(values, valueIndex)?.value.let {
+        if(it == null) null else {
+            // With delete the prev value for complex types needs to be set to check final and required states
+            // Only current values are checked on content
+            when (reference) {
+                is MapReference<*, *, *> -> mapOf<Any, Any>() as T
+                is ListReference<*, *> -> listOf<Any>() as T
+                is SetReference<*, *> -> setOf<Any>() as T
+                else -> it
+            }
+        }
+    }
+
+    // Primarily for validations
+    handlePreviousValue?.invoke(referenceToCompareTo, prevValue)
+
+    // Delete complex sub parts below same reference
+    for (index in valueIndex until values.size) {
+        val value = values[index]
+
+        if(value.reference.matchPart(0, referenceToCompareTo)) {
+            deleteByIndex<T>(values, index, value.reference, version)
+        } else {
+            break
+        }
+    }
 
     return deleteByIndex<T>(values, valueIndex, referenceToCompareTo, version) != null
 }

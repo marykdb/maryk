@@ -56,9 +56,8 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
         referenceGetter: P.() ->
             (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) ->
                 IsPropertyReference<T, W, *>
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> {
-        return { this.definition.dataModel(this.getRef(it), referenceGetter) }
-    }
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
+        { this.definition.dataModel(this.getRef(it), referenceGetter) }
 
     /** For quick notation to return [T] that operates with [runner] on Properties */
     fun <T: Any> props(

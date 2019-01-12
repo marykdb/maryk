@@ -1,7 +1,12 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package maryk.core.models
 
+import maryk.core.properties.definitions.wrapper.at
+import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.lib.time.Date
 import maryk.lib.time.Time
+import maryk.test.models.ComplexModel
 import maryk.test.models.Option.V1
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
@@ -27,5 +32,8 @@ internal class DataObjectPropertyReferenceTest {
         TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.completeName shouldBe "embeddedValues.marykModel.map.@12:23"
 
         TestMarykModel { multi ofType V1 }.completeName shouldBe "multi.*V1"
+
+        ComplexModel { mapIntObject.refAtKey(2u) { value } }.completeName shouldBe "mapIntObject.@2.value"
+        ComplexModel { mapIntObject.at(2u) { model ref { value } } }.completeName shouldBe "mapIntObject.@2.model.value"
     }
 }

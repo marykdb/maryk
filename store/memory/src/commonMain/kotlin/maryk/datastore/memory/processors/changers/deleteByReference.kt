@@ -11,6 +11,7 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.TypeReference
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
@@ -28,6 +29,10 @@ internal fun <T: Any> deleteByReference(
     keepAllVersions: Boolean,
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {
+    if (reference is TypeReference<*, *>) {
+        throw Exception("Type Reference not allowed for deletes. Use the multi type parent.")
+    }
+
     val referenceToCompareTo = reference.toStorageByteArray()
     var referenceOfParent: ByteArray? = null
     var toShiftListCount = 0

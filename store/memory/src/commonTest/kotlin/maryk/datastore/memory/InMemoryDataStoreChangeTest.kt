@@ -18,6 +18,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.lib.time.DateTime
@@ -188,6 +189,7 @@ class InMemoryDataStoreChangeTest {
                     Delete(TestMarykModel { map refAt Time(3, 3, 3) }),
                     Delete(TestMarykModel { listOfString refAt 1 }),
                     Delete(TestMarykModel { set refAt Date(2001, 1, 1) })
+//                    , Delete(TestMarykModel { multi ofType V1 })
                 )
             )
         )
@@ -218,6 +220,22 @@ class InMemoryDataStoreChangeTest {
         }
         getResponse.values.first().values { multi }.let {
             it shouldNotBe null
+        }
+    }
+
+    @Test
+    fun executeChangeDeleteFailOnOfTypeRefsItemsRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[4].change(
+                    Delete(TestMarykModel { multi ofType V1 })
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            shouldBeOfType<ServerFail<*>>(status)
         }
     }
 

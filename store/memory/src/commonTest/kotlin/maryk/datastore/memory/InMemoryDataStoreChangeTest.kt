@@ -186,6 +186,7 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[4].change(
                     Delete(TestMarykModel { map refAt Time(3, 3, 3) }),
+                    Delete(TestMarykModel { listOfString refAt 1 }),
                     Delete(TestMarykModel { set refAt Date(2001, 1, 1) })
                 )
             )
@@ -205,6 +206,11 @@ class InMemoryDataStoreChangeTest {
         getResponse.values.first().values { map }.let {
             it shouldNotBe null
             it?.size shouldBe 1
+        }
+        getResponse.values.first().values { listOfString }.let {
+            it shouldNotBe null
+            it!! shouldBe listOf("f", "h")
+            it.size shouldBe 2
         }
         getResponse.values.first().values { set }.let {
             it shouldNotBe null

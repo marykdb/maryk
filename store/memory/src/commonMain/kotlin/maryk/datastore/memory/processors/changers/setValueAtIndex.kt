@@ -46,12 +46,11 @@ internal fun <T: Any> setValueAtIndex(
                     }
                 } else null
             } else {
-                val lastValue = (values as MutableList<DataRecordNode>).last()
                 // Only store value if was not already value
-                @Suppress("UNCHECKED_CAST")
-                if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
+                if (matchedValue.value != value) {
                     DataRecordValue(reference, value, version).also {
-                        values[valueIndex] = it
+                        @Suppress("UNCHECKED_CAST")
+                        (values as MutableList<DataRecordNode>)[valueIndex] = it
                     }
                 } else null
             }
@@ -62,11 +61,11 @@ internal fun <T: Any> setValueAtIndex(
             }
         }
         is DataRecordHistoricValues<*> -> {
-            val lastValue = (values as MutableList<DataRecordNode>).last()
+            val lastValue = matchedValue.history.last()
             // Only store value if was not already value
-            @Suppress("UNCHECKED_CAST")
             if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
                 DataRecordValue(reference, value, version).also {
+                    @Suppress("UNCHECKED_CAST")
                     (matchedValue.history as MutableList<DataRecordValue<*>>).add(
                         DataRecordValue(reference, value, version)
                     )

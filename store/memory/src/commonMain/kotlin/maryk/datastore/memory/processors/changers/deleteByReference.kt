@@ -12,6 +12,7 @@ import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.datastore.memory.records.DataRecordNode
+import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchPart
 
@@ -28,6 +29,8 @@ internal fun <T: Any> deleteByReference(
     handlePreviousValue: ((ByteArray, T?) -> Unit)? = null
 ): Boolean {
     val referenceToCompareTo = reference.toStorageByteArray()
+    var referenceOfParent: ByteArray? = null
+    var toShiftListCount = 0
     val valueIndex = values.binarySearch {
         it.reference.compareTo(referenceToCompareTo)
     }
@@ -57,6 +60,18 @@ internal fun <T: Any> deleteByReference(
                     shouldHandlePrevValue = false
                     it
                 }
+                is ListItemReference<*, *> -> {
+                    val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
+                    val listDefinition = listReference.propertyDefinition.definition
+                    createCountUpdater(values, listReference as IsPropertyReference<List<*>, IsPropertyDefinition<List<*>>, out Any>, version, -1, keepAllVersions) { newCount ->
+                        toShiftListCount = newCount - reference.index
+                        listDefinition.validateSize(newCount) { listReference }
+                    }
+                    referenceOfParent = listReference.toStorageByteArray()
+                    // Map values can be set to null to be deleted.
+                    shouldHandlePrevValue = false
+                    it
+                }
                 is SetItemReference<*, *> -> {
                     val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
                     val setDefinition = setReference.propertyDefinition.definition
@@ -77,16 +92,33 @@ internal fun <T: Any> deleteByReference(
         handlePreviousValue?.invoke(referenceToCompareTo, prevValue)
     }
 
-    // Delete complex sub parts below same reference
+    var isDeleted = false
+
+    // Delete value and complex sub parts below same reference
     for (index in valueIndex until values.size) {
         val value = values[index]
+        val refOfParent = referenceOfParent
 
         if(value.reference.matchPart(0, referenceToCompareTo)) {
-            deleteByIndex<T>(values, index, value.reference, version)
+            if (toShiftListCount <= 0) {
+                // Delete if not a list or no further list items
+                isDeleted = deleteByIndex<T>(values, index, value.reference, version) != null
+            }
+        } else if (refOfParent != null && value.reference.matchPart(0, refOfParent)) {
+            // To handle list shifting
+            if (toShiftListCount > 0) {
+                @Suppress("UNCHECKED_CAST")
+                setValueAtIndex(values, index - 1, values[index - 1].reference, (value as DataRecordValue<Any>).value, version, keepAllVersions)
+                toShiftListCount--
+            }
+
+            if (toShiftListCount <= 0) {
+                isDeleted = deleteByIndex<T>(values, index, value.reference, version) != null
+            }
         } else {
             break
         }
     }
 
-    return deleteByIndex<T>(values, valueIndex, referenceToCompareTo, version) != null
+    return isDeleted
 }

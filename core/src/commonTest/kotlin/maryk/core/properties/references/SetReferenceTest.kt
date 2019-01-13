@@ -61,7 +61,7 @@ class SetReferenceTest {
         )
         setReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "61194b"
+        bc.bytes!!.toHex() shouldBe "661e4b"
     }
 
     @Test
@@ -87,7 +87,7 @@ class SetReferenceTest {
         )
         subReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "61194b80002c96"
+        bc.bytes!!.toHex() shouldBe "661e4b80002c96"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subReference
     }

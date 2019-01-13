@@ -44,7 +44,7 @@ class WriteValuesToStorageKtTest {
             }
             counter++
         }
-        counter shouldBe 24
+        counter shouldBe 26
     }
 
     @Test
@@ -57,6 +57,6 @@ class WriteValuesToStorageKtTest {
             }
             counter++
         }
-        counter shouldBe 17
+        counter shouldBe 22
     }
 }

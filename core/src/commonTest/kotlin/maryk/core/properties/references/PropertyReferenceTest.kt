@@ -92,7 +92,7 @@ internal class PropertyReferenceTest {
         )
         subRef.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "1109"
+        bc.bytes!!.toHex() shouldBe "1609"
 
         Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe subRef
     }

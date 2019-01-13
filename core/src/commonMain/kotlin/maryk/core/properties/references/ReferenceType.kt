@@ -10,7 +10,8 @@ enum class ReferenceType(val value: Byte) {
     LIST(2),
     SET(3),
     MAP(4),
-    TYPE(5)
+    TYPE(5),
+    EMBED(6),
     // Only add items that are used regularly in storage to
 }
 
@@ -22,6 +23,7 @@ enum class CompleteReferenceType(val value: Byte) {
     SET(3),
     MAP(4),
     TYPE(5),
+    EMBED(6),
 
     // These fall outside the space and are encoded with SPECIAL (Last 3 bits 0)
     MAP_KEY(0b1000)

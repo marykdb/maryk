@@ -23,8 +23,10 @@ val complexValues = ComplexModel(
 
 val complexValuesAsStorables = arrayOf(
     "09" to TypedValue(V3, Unit),
+    "091d" to Unit,
     "091d09" to "u3",
-    "091d1109" to "ue3",
+    "091d16" to Unit,
+    "091d1609" to "ue3",
     "14" to 2,
     "14027631" to "a",
     "1403763232" to "b",
@@ -33,10 +35,13 @@ val complexValuesAsStorables = arrayOf(
     "1c040000000109" to "t1",
     "1c0400000002" to Unit,
     "1c040000000209" to "t2",
-    "1c04000000021109" to "te2",
+    "1c040000000216" to Unit,
+    "1c04000000021609" to "te2",
     "24" to 2,
     "240400000002" to TypedValue(V3, Unit),
+    "2404000000021d" to Unit,
     "2404000000021d09" to "m3",
-    "2404000000021d1109" to "me3",
+    "2404000000021d16" to Unit,
+    "2404000000021d1609" to "me3",
     "240400000005" to TypedValue(V1, "TEST")
 )

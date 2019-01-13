@@ -1,10 +1,12 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectPropertyDefinitionWrapper
+import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.values.AbstractValues
 
 /**
@@ -35,4 +37,9 @@ class EmbeddedObjectPropertyRef<
 
     override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference =
         this.propertyDefinition.resolveReferenceFromStorage(reader, parentReference, context, isDoneReading)
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeStorageBytes(writer)
+        this.propertyDefinition.index.writeVarIntWithExtraInfo(EMBED.value, writer)
+    }
 }

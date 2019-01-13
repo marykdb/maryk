@@ -2,6 +2,7 @@
 
 package maryk.datastore.memory
 
+import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Delete
@@ -42,6 +43,10 @@ class InMemoryDataStoreChangeComplexTest {
                     ComplexModel(
                         mapStringString = mapOf("a" to "b", "c" to "d"),
                         mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
+                    ),
+                    ComplexModel(
+                        mapStringString = mapOf("a" to "b", "c" to "d"),
+                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1", EmbeddedMarykModel("sub")), 2u to EmbeddedMarykModel("v2"))
                     )
                 )
             )
@@ -128,6 +133,34 @@ class InMemoryDataStoreChangeComplexTest {
             it shouldNotBe null
             it?.size shouldBe 1
             it?.get(2u) shouldBe null
+        }
+    }
+
+    @Test
+    fun executeChangeDeleteMapSubValueRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            ComplexModel.change(
+                keys[3].change(
+                    Delete(ComplexModel { mapIntObject.refAtKey(1u) { model } })
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
+            shouldBeRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            ComplexModel.get(keys[3])
+        )
+
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().values { mapIntObject }.let {
+            it shouldNotBe null
+            it?.size shouldBe 2
+            it?.get(1u) shouldBe EmbeddedMarykModel("v1")
         }
     }
 }

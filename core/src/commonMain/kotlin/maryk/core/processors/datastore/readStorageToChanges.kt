@@ -41,6 +41,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.ReferenceType
+import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
@@ -120,7 +121,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
                 val refToValue = changePart as Pair<ListItemReference<*, *>, Any>
                 val listValueChanges = ((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>)
                 listValueChanges.find { it.reference == refToValue.first.parentReference }?.also {
-                    (it.addValuesAtIndex as MutableMap<Int, Any>).put(refToValue.first.index, refToValue.second)
+                    (it.addValuesAtIndex as MutableMap<Int, Any>)[refToValue.first.index] = refToValue.second
                 } ?: listValueChanges.add(
                     ListValueChanges(
                         refToValue.first.parentReference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *>,
@@ -313,7 +314,70 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     MAP_KEY -> throw Exception("Cannot handle Special type $specialType in qualifier")
                     else -> throw Exception("Not recognized special type $specialType")
                 }
-                VALUE -> readValue(isAtEnd, index, qualifier, select, parentReference, qIndex, addChangeToOutput, readValueFromStorage, addToCache)
+                VALUE -> {
+                    if (!isAtEnd) {
+                        throw Exception("Expected a simple value but got complex value in qualifier")
+                    }
+                    val propDefinition = this.properties[index]!!
+
+                    @Suppress("UNCHECKED_CAST")
+                    readValueFromStorage(
+                        Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                        propDefinition
+                    ) { version, value ->
+                        val ref = propDefinition.getRef(parentReference) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
+                        if (value != null) {
+                            addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
+                        } else {
+                            addChangeToOutput(version, ChangeType.DELETE,ref)
+                        }
+                    }
+                }
+                EMBED -> {
+                    if (isAtEnd) {
+                        // Ignore since is indicator
+                    } else {
+                        when (val definition = this.properties[index]) {
+                            is IsEmbeddedDefinition<*, *> -> {
+                                @Suppress("UNCHECKED_CAST")
+                                val dataModel =
+                                    (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
+
+                                val reference = definition.getRef(parentReference)
+
+                                // If select is Graph then resolve sub graph.
+                                // Otherwise is null or is property itself so needs to be completely selected thus set as null.
+                                val specificSelect = if (select is IsPropRefGraph<*>) {
+                                    @Suppress("UNCHECKED_CAST")
+                                    select as IsPropRefGraph<PropertyDefinitions>
+                                } else null
+
+                                addToCache(qIndex - 1) { q ->
+                                    dataModel.readQualifier(
+                                        q,
+                                        qIndex,
+                                        specificSelect,
+                                        reference,
+                                        addChangeToOutput,
+                                        readValueFromStorage,
+                                        addToCache
+                                    )
+                                }
+
+                                dataModel.readQualifier(
+                                    qualifier,
+                                    qIndex,
+                                    specificSelect,
+                                    reference,
+                                    addChangeToOutput,
+                                    readValueFromStorage,
+                                    addToCache
+                                )
+                            }
+                            else -> throw Exception("Can only use Embedded as values with deeper values $definition")
+                        }
+                    }
+                }
                 LIST -> if (isAtEnd) {
                     // Used for the list size. Is Ignored for changes
                 } else {
@@ -392,74 +456,3 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
         }
     }
 }
-
-/**
- * Reads a specific value type
- * [isAtEnd] if qualifier is at the end
- * [index] of the item to be injected in output
- * [qualifier] in storage of current value
- * [select] to only process selected values
- * [offset] in bytes from where qualifier
- * [addChangeToOutput] / [readValueFromStorage]
- * [addToCache] so next qualifiers do not need to reprocess qualifier
- */
-private fun <P : PropertyDefinitions> IsDataModel<P>.readValue(
-    isAtEnd: Boolean,
-    index: Int,
-    qualifier: ByteArray,
-    select: IsPropRefGraph<P>?,
-    parentReference: IsPropertyReference<*, *, *>?,
-    offset: Int,
-    addChangeToOutput: ChangeAdder,
-    readValueFromStorage: ValueWithVersionReader,
-    addToCache: CacheProcessor
-) {
-    if (isAtEnd) {
-        val propDefinition = this.properties[index]!!
-
-        @Suppress("UNCHECKED_CAST")
-        readValueFromStorage(
-            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-            propDefinition
-        ) { version, value ->
-            val ref = propDefinition.getRef(parentReference) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
-            if (value != null) {
-                addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
-            } else {
-                addChangeToOutput(version, ChangeType.DELETE,ref)
-            }
-        }
-    } else {
-        when (val definition = this.properties[index]) {
-            is IsEmbeddedDefinition<*, *> -> {
-                @Suppress("UNCHECKED_CAST")
-                val dataModel = (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
-
-                val reference = definition.getRef(parentReference)
-
-                // If select is Graph then resolve sub graph.
-                // Otherwise is null or is property itself so needs to be completely selected thus set as null.
-                val specificSelect = if (select is IsPropRefGraph<*>) {
-                    @Suppress("UNCHECKED_CAST")
-                    select as IsPropRefGraph<PropertyDefinitions>
-                } else null
-
-                addToCache(offset - 1) { q ->
-                    dataModel.readQualifier(q, offset, specificSelect, reference, addChangeToOutput, readValueFromStorage, addToCache)
-                }
-
-                dataModel.readQualifier(
-                    qualifier,
-                    offset,
-                    specificSelect,
-                    reference,
-                    addChangeToOutput,
-                    readValueFromStorage,
-                    addToCache
-                )
-            }
-            else -> throw Exception("Can only use Embedded as values with deeper values $definition")
-        }
-    }
-}
-

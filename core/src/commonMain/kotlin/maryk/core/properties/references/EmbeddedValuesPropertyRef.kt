@@ -2,11 +2,13 @@ package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesPropertyDefinitionWrapper
+import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.AbstractValues
 import maryk.core.values.Values
@@ -62,5 +64,10 @@ class EmbeddedValuesPropertyRef<
                 }
             }
         }
+    }
+
+    override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
+        this.parentReference?.writeStorageBytes(writer)
+        this.propertyDefinition.index.writeVarIntWithExtraInfo(EMBED.value, writer)
     }
 }

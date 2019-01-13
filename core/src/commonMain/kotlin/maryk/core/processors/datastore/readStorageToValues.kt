@@ -13,6 +13,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -20,12 +21,14 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.ReferenceType
+import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
@@ -112,24 +115,37 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)?.let(valueAdder)
                     } else {
-                        when (definition) {
-                            is IsMultiTypeDefinition<*, *> -> {
-                                readTypedValue(
-                                    qualifier,
-                                    qIndex,
-                                    readValueFromStorage,
-                                    definition,
-                                    valueAdder,
-                                    select,
-                                    addToCache
-                                )
-                            }
-                            is IsEmbeddedDefinition<*, *> -> {
-                                readEmbeddedValues(definition, { addValueToOutput(index, it) }, select, addToCache, qIndex, readValueFromStorage, qualifier)
-                            }
-                            else -> throw Exception("Can only use Embedded as values with deeper values, not $definition")
-                        }
+                        readComplexValueFromStorage(
+                            definition,
+                            qualifier,
+                            qIndex,
+                            readValueFromStorage,
+                            valueAdder,
+                            select,
+                            addToCache,
+                            addValueToOutput,
+                            index
+                        )
                     }
+                }
+                EMBED -> {
+                    val definition = this.properties[index]
+                        ?: throw Exception("No definition for $index in $this at $index")
+                    val valueAdder: AddValue = { addValueToOutput(index, it) }
+
+                    if (!isAtEnd) {
+                        readComplexValueFromStorage(
+                            definition,
+                            qualifier,
+                            qIndex,
+                            readValueFromStorage,
+                            valueAdder,
+                            select,
+                            addToCache,
+                            addValueToOutput,
+                            index
+                        )
+                    } else null // ignore containing value
                 }
                 LIST -> {
                     val definition = this.properties[index]
@@ -290,6 +306,44 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
     }
 }
 
+private fun readComplexValueFromStorage(
+    definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+    qualifier: ByteArray,
+    qIndex: Int,
+    readValueFromStorage: ValueReader,
+    valueAdder: AddValue,
+    select: IsPropRefGraph<*>?,
+    addToCache: CacheProcessor,
+    addValueToOutput: AddToValues,
+    index: Int
+) {
+    when (definition) {
+        is IsMultiTypeDefinition<*, *> -> {
+            readTypedValue(
+                qualifier,
+                qIndex,
+                readValueFromStorage,
+                definition,
+                valueAdder,
+                select,
+                addToCache
+            )
+        }
+        is IsEmbeddedDefinition<*, *> -> {
+            readEmbeddedValues(
+                definition,
+                { addValueToOutput(index, it) },
+                select,
+                addToCache,
+                qIndex,
+                readValueFromStorage,
+                qualifier
+            )
+        }
+        else -> throw Exception("Can only use Embedded as values with deeper values, not $definition")
+    }
+}
+
 /** Read a typed value */
 private fun readTypedValue(
     qualifier: ByteArray,
@@ -339,7 +393,8 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }
 
     if (qualifier.size <= qIndex) {
-        throw Exception("Type in qualifier should only be used for complex types")
+        // skip for indicator items
+        return
     }
 
     when (definition) {

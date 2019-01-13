@@ -8,6 +8,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsDataModel
+import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
@@ -16,6 +17,7 @@ import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -30,6 +32,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.CompleteReferenceType
 import maryk.core.properties.references.CompleteReferenceType.DELETE
+import maryk.core.properties.references.CompleteReferenceType.EMBED
 import maryk.core.properties.references.CompleteReferenceType.LIST
 import maryk.core.properties.references.CompleteReferenceType.MAP
 import maryk.core.properties.references.CompleteReferenceType.SET
@@ -47,6 +50,7 @@ sealed class StorageTypeEnum<T: IsPropertyDefinition<*>>(val referenceType: Comp
     object SetSize: StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize: StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
     object TypeValue: StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>(VALUE)
+    object Embed: StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")
     fun castDefinition(definition: IsPropertyDefinition<*>) = definition as T
@@ -160,13 +164,6 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
                 }
                 val mapValueQualifierLength = mapQualifierCount + keyByteSize + keyByteCountSize
 
-                // Write complex map existence indicator
-                if (mapDefinition.valueDefinition is EmbeddedValuesDefinition<*, *>) {
-                    // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
-                    val qualifier = writeQualifier(mapValueQualifierLength, mapValueQualifierWriter)
-                    valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, Unit)
-                }
-
                 writeValue(
                     -1, mapValueQualifierLength, mapValueQualifierWriter,
                     mapDefinition.valueDefinition,
@@ -176,8 +173,18 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
             }
         }
         is AbstractValues<*, *, *> -> {
-            val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
+            val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
             val abstractValuesQualifierCount = if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
+
+            if (definition !is EmbeddedValuesDefinition<*, *>) {
+                throw Exception("Expected Embedded Values Definition for Values object")
+            }
+
+            // Write complex values existence indicator
+            // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
+            val qualifier = writeQualifier(abstractValuesQualifierCount, indexWriter)
+            valueWriter(Embed as StorageTypeEnum<T>, qualifier, definition, Unit)
+
             (value as AnyAbstractValues).writeToStorage(abstractValuesQualifierCount, indexWriter, valueWriter as ValueWriter<IsPropertyDefinition<*>>)
         }
         is TypedValue<*, *> -> {

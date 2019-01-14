@@ -19,7 +19,7 @@ interface IsMultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> :
     val definitionMap: Map<E, IsSubDefinition<out Any, CX>>
 
     /** Get definition by [index] */
-    fun definition(index: Int):  IsSubDefinition<out Any, CX>?
+    fun definition(index: Int): IsSubDefinition<out Any, CX>?
 
     /** Get type by [index] */
     fun type(index: Int): E?

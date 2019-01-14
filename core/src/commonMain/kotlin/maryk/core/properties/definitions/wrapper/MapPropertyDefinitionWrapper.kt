@@ -5,8 +5,10 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -14,6 +16,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.types.TypedValue
 import maryk.core.values.Values
 
 /**
@@ -67,6 +70,19 @@ fun <K: Any, V: Values<*, P>, DM: IsValuesDataModel<P>, P: PropertyDefinitions, 
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
     { (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.ref(this.getValueRef(key, it), propertyDefinitionGetter) }
 
+/** Specific extension to support fetching sub refs on Map values by [key] and [type] */
+@Suppress("UNCHECKED_CAST")
+fun <K: Any, E: IndexedEnum<E>, P: PropertyDefinitions, T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.refAtKeyAndType(
+    key: K,
+    type: E,
+    @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
+    propertyDefinitionGetter: P.()-> W
+): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
+    {
+        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
+        val typeRef = multiTypeDef.getTypeRef(type, this.getValueRef(key, it))
+        (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(typeRef, propertyDefinitionGetter)
+    }
 
 /** Specific extension to support fetching deeper references on Map values by [key] */
 @Suppress("UNCHECKED_CAST")
@@ -77,3 +93,19 @@ fun <K: Any, V: Values<*, P>, DM: IsValuesDataModel<P>, P: PropertyDefinitions, 
             IsPropertyReference<T, W, *>
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
     { (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(this.getValueRef(key, it), referenceGetter) }
+
+/** Specific extension to support fetching deeper references on Map values by [key] and [type] */
+@Suppress("UNCHECKED_CAST")
+fun <K: Any, E: IndexedEnum<E>, P: PropertyDefinitions, T: Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.atWithType(
+    key: K,
+    type: E,
+    @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
+    referenceGetter: P.() ->
+        (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) ->
+            IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>
+): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *> =
+    {
+        val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
+        val typeRef = multiTypeDef.getTypeRef(type, this.getValueRef(key, it))
+        (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(typeRef, referenceGetter)
+    }

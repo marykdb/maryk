@@ -36,7 +36,7 @@ import maryk.core.properties.references.CompleteReferenceType.EMBED
 import maryk.core.properties.references.CompleteReferenceType.LIST
 import maryk.core.properties.references.CompleteReferenceType.MAP
 import maryk.core.properties.references.CompleteReferenceType.SET
-import maryk.core.properties.references.CompleteReferenceType.VALUE
+import maryk.core.properties.references.CompleteReferenceType.TYPE
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.AbstractValues
@@ -49,7 +49,7 @@ sealed class StorageTypeEnum<T: IsPropertyDefinition<*>>(val referenceType: Comp
     object ListSize: StorageTypeEnum<IsListDefinition<Any, IsPropertyContext>>(LIST)
     object SetSize: StorageTypeEnum<IsSetDefinition<Any, IsPropertyContext>>(SET)
     object MapSize: StorageTypeEnum<IsMapDefinition<Any, Any, IsPropertyContext>>(MAP)
-    object TypeValue: StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>(VALUE)
+    object TypeValue: StorageTypeEnum<IsMultiTypeDefinition<IndexedEnum<Any>, IsPropertyContext>>(TYPE)
     object Embed: StorageTypeEnum<IsEmbeddedValuesDefinition<*, *, *>>(EMBED)
 
     @Suppress("UNCHECKED_CAST")

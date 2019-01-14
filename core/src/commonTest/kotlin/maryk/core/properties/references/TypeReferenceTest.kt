@@ -64,7 +64,7 @@ class TypeReferenceTest {
         )
         typeReference.writeStorageBytes(bc::write)
 
-        bc.bytes!!.toHex() shouldBe "6d02"
+        bc.bytes!!.toHex() shouldBe "6915"
 
         TestMarykModel.Properties.getPropertyReferenceByStorageBytes(bc.size, bc::read) shouldBe typeReference
     }

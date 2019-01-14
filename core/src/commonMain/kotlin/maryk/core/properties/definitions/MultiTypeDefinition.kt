@@ -4,6 +4,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.models.ContextualDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -16,6 +17,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ReferenceType.TYPE
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
@@ -274,7 +276,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         reader: () -> Byte,
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ): IsPropertyReference<Any, *, *> {
-        val typeIndex = initIntByVar(reader)
+        val typeIndex = initIntByVarWithExtraInfo(reader) { index, type ->
+            if (type != TYPE.value) throw Exception("Expected TypedValue")
+            index
+        }
         val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
         return getTypeRef(type, parentReference)
     }

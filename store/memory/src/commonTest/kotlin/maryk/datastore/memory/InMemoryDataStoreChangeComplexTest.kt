@@ -2,7 +2,9 @@
 
 package maryk.datastore.memory
 
+import maryk.core.properties.definitions.wrapper.atWithType
 import maryk.core.properties.definitions.wrapper.refAtKey
+import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Delete
@@ -47,6 +49,10 @@ class InMemoryDataStoreChangeComplexTest {
                     ComplexModel(
                         mapStringString = mapOf("a" to "b", "c" to "d"),
                         mapIntObject = mapOf(1u to EmbeddedMarykModel("v1", EmbeddedMarykModel("sub")), 2u to EmbeddedMarykModel("v2"))
+                    ),
+                    ComplexModel(
+                        mapStringString = mapOf("a" to "b", "c" to "d"),
+                        mapIntMulti = mapOf(1u to TypedValue(V3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))), 2u to TypedValue(V1, "string"), 3u to TypedValue(V3, EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))))
                     )
                 )
             )
@@ -161,6 +167,36 @@ class InMemoryDataStoreChangeComplexTest {
             it shouldNotBe null
             it?.size shouldBe 2
             it?.get(1u) shouldBe EmbeddedMarykModel("v1")
+        }
+    }
+
+    @Test
+    fun executeChangeDeleteMapTypedSubValueRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            ComplexModel.change(
+                keys[4].change(
+                    Delete(ComplexModel { mapIntMulti.atWithType(1u, V3, EmbeddedMarykModel.Properties) { model ref { model } } }),
+                    Delete(ComplexModel { mapIntMulti.refAtKeyAndType(3u, V3, EmbeddedMarykModel.Properties) { model } })
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
+            shouldBeRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            ComplexModel.get(keys[4])
+        )
+
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().values { mapIntMulti }.let {
+            it shouldNotBe null
+            it?.size shouldBe 3
+            it?.get(1u) shouldBe TypedValue(V3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1")))
+            it?.get(3u) shouldBe TypedValue(V3, EmbeddedMarykModel("v2"))
         }
     }
 }

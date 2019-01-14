@@ -67,31 +67,18 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
     }
 
     override fun calculateStorageByteLength(): Int {
-        return if(this.parentReference is MultiTypePropertyReference<*, *, *, *>) {
-            val parentCount = this.parentReference.parentReference?.calculateStorageByteLength() ?: 0
-
-            parentCount + this.parentReference.propertyDefinition.index.calculateVarByteLength() + type.index.calculateVarIntWithExtraInfoByteSize()
-        } else {
-            val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
-
-            parentCount + type.index.calculateVarIntWithExtraInfoByteSize()
-        }
+        val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
+        return parentCount + type.index.calculateVarIntWithExtraInfoByteSize()
     }
 
     override fun writeStorageBytes(writer: (byte: Byte) -> Unit) {
-        if(this.parentReference is MultiTypePropertyReference<*, *, *, *>) {
-            this.parentReference.parentReference?.writeStorageBytes(writer)
-
-            this.parentReference.propertyDefinition.index.writeVarIntWithExtraInfo(
-                CompleteReferenceType.TYPE.value,
-                writer
-            )
-        } else {
-            this.parentReference?.writeStorageBytes(writer)
-        }
+        this.parentReference?.writeStorageBytes(writer)
 
         // Write type index bytes
-        type.index.writeVarBytes(writer)
+        type.index.writeVarIntWithExtraInfo(
+            CompleteReferenceType.TYPE.value,
+            writer
+        )
     }
 
     override fun resolve(values: TypedValue<E, Any>) = values.value

@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.wrapper.at
 import maryk.core.properties.definitions.wrapper.atWithType
 import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.definitions.wrapper.refAtKeyAndType
+import maryk.lib.extensions.toHex
 import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
@@ -42,5 +43,32 @@ internal class DataObjectPropertyReferenceTest {
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.completeName shouldBe "mapIntMulti.@2.*V3.value"
         ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.completeName shouldBe "mapIntMulti.@2.*V3.model.value"
+    }
+
+    @Test
+    fun testReferenceAsStorage() {
+        TestMarykModel.ref { string }.toStorageByteArray().toHex() shouldBe "09"
+        TestMarykModel.ref { bool }.toStorageByteArray().toHex() shouldBe "31"
+
+        TestMarykModel { embeddedValues ref { value } }.toStorageByteArray().toHex() shouldBe "6609"
+
+        TestMarykModel { embeddedValues ref { model } }.toStorageByteArray().toHex() shouldBe "6616"
+        TestMarykModel { embeddedValues { model { model ref { value } } } }.toStorageByteArray().toHex() shouldBe "66161609"
+        TestMarykModel { embeddedValues { model { model { model ref { value } } } } }.toStorageByteArray().toHex() shouldBe "6616161609"
+
+        TestMarykModel { embeddedValues { marykModel { list refAt 5 } } }.toStorageByteArray().toHex() shouldBe "661e4200000005"
+
+        TestMarykModel { embeddedValues { marykModel { set refAt Date(2017, 12, 5) } } }.toStorageByteArray().toHex() shouldBe "661e4b80004461"
+
+        TestMarykModel { embeddedValues { marykModel { map refToKey Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e080a0300ae24"
+        TestMarykModel { embeddedValues { marykModel { map refAt Time(12, 23) } } }.toStorageByteArray().toHex() shouldBe "661e540300ae24"
+
+        TestMarykModel { multi ofType V1 }.toStorageByteArray().toHex() shouldBe "6d01"
+
+        ComplexModel { mapIntObject.refAtKey(2u) { value } }.toStorageByteArray().toHex() shouldBe "1c040000000209"
+        ComplexModel { mapIntObject.at(2u) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"
+
+        ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000020309"
+        ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "240400000002031609"
     }
 }

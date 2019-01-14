@@ -274,8 +274,6 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         reader: () -> Byte,
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ): IsPropertyReference<Any, *, *> {
-        val index = initIntByVar(reader)
-        if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
         val typeIndex = initIntByVar(reader)
         val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
         return getTypeRef(type, parentReference)

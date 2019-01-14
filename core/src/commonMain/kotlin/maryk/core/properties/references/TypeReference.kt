@@ -70,7 +70,7 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
         return if(this.parentReference is MultiTypePropertyReference<*, *, *, *>) {
             val parentCount = this.parentReference.parentReference?.calculateStorageByteLength() ?: 0
 
-            parentCount + 1 + this.parentReference.propertyDefinition.index.calculateVarByteLength() + type.index.calculateVarIntWithExtraInfoByteSize()
+            parentCount + this.parentReference.propertyDefinition.index.calculateVarByteLength() + type.index.calculateVarIntWithExtraInfoByteSize()
         } else {
             val parentCount = this.parentReference?.calculateStorageByteLength() ?: 0
 
@@ -90,7 +90,6 @@ class TypeReference<E: IndexedEnum<E>, in CX: IsPropertyContext>  internal const
             this.parentReference?.writeStorageBytes(writer)
         }
 
-        writer(0)
         // Write type index bytes
         type.index.writeVarBytes(writer)
     }

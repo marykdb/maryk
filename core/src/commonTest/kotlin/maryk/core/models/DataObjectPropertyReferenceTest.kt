@@ -11,6 +11,7 @@ import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.Properties
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
@@ -43,6 +44,8 @@ internal class DataObjectPropertyReferenceTest {
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.completeName shouldBe "mapIntMulti.@2.*V3.value"
         ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.completeName shouldBe "mapIntMulti.@2.*V3.model.value"
+
+        ComplexModel { multi.withType(V3, Properties) { model ref { value } } }.completeName shouldBe "multi.*V3.model.value"
     }
 
     @Test
@@ -70,5 +73,7 @@ internal class DataObjectPropertyReferenceTest {
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
+
+        ComplexModel { multi.withType(V3, Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "091d1609"
     }
 }

@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.PropertyDefinitions
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.IndexedEnum
@@ -38,4 +41,17 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
     infix fun ofType(type: E): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypeReference<E, CX> {
         return { this.getTypeRef(type, this.getRef(it)) }
     }
+
+    /** Specific extension to support fetching deeper references with [type] */
+    @Suppress("UNCHECKED_CAST")
+    fun <P: PropertyDefinitions, T: Any, R: IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> withType(
+        type: E,
+        @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
+        referenceGetter: P.() ->
+            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
+        {
+            val typeRef = this.getTypeRef(type, this.getRef(it))
+            (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(typeRef, referenceGetter)
+        }
 }

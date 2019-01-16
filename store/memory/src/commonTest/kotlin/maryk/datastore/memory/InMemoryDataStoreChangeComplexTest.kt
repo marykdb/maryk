@@ -218,7 +218,8 @@ class InMemoryDataStoreChangeComplexTest {
                 keys[5].change(
                     Change(
                         ComplexModel { mapIntMulti.atWithType(1u, V3, Properties) { model { model ref { value } } } } with "changed",
-                        ComplexModel { mapIntObject.refAtKey(1u) { value } } with "mapIntObjectChanged"
+                        ComplexModel { mapIntObject.refAtKey(1u) { value } } with "mapIntObjectChanged",
+                        ComplexModel { multi.withType(V3, Properties) { model ref { value } } } with "multi sub changed"
                     )
                 )
             )
@@ -246,6 +247,10 @@ class InMemoryDataStoreChangeComplexTest {
                 it shouldNotBe null
                 it?.size shouldBe 2
                 it?.get(1u) shouldBe EmbeddedMarykModel("mapIntObjectChanged")
+            }
+
+            valuesWithMetaData.values { multi }.let {
+                it shouldBe TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("multi sub changed")))
             }
         }
     }

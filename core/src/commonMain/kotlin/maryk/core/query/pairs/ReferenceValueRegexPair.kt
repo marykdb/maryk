@@ -3,15 +3,15 @@ package maryk.core.query.pairs
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [regex] */
 data class ReferenceValueRegexPair internal constructor(
-    override val reference: IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *, IsPropertyContext, *>, *>,
+    override val reference: IsPropertyReference<String, IsChangeableValueDefinition<String, IsPropertyContext>, *>,
     val regex: Regex
 ) : DefinedByReference<String> {
 
@@ -60,5 +60,5 @@ data class ReferenceValueRegexPair internal constructor(
 }
 
 /** Convenience infix method to create Reference [regex] pairs */
-infix fun IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *, IsPropertyContext, *>, *>.with(regex: Regex) =
+infix fun IsPropertyReference<String, IsChangeableValueDefinition<String, IsPropertyContext>, *>.with(regex: Regex) =
     ReferenceValueRegexPair(this, regex)

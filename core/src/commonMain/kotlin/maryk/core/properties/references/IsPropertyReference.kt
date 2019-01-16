@@ -16,6 +16,17 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, V: Any> {
     val completeName: String
     val propertyDefinition: D
 
+    /** Wrapper could be passed. This makes sure it is the lowest property definition */
+    val comparablePropertyDefinition: D get() =
+        this.propertyDefinition.let {
+            if (it is IsValuePropertyDefinitionWrapper<*, *, *, *>) {
+                @Suppress("UNCHECKED_CAST")
+                it.definition as D
+            } else {
+                it
+            }
+        }
+
     /**
      * Calculate the transport length of encoding this reference
      * and stores result in [cacher] if relevant
@@ -30,14 +41,10 @@ interface IsPropertyReference<T: Any, out D: IsPropertyDefinition<T>, V: Any> {
 
     /**
      * Calculate the storage length of encoding this reference
-     * and stores result in [cacher] if relevant
      */
     fun calculateStorageByteLength(): Int
 
-    /**
-     * Write storage bytes of property reference to [writer] and gets any needed
-     * cached values from [cacheGetter]
-     */
+    /** Write storage bytes of property reference to [writer] */
     fun writeStorageBytes(writer: (byte: Byte) -> Unit)
 
     /** Resolve the value from the given [values] */

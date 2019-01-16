@@ -139,7 +139,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             setValue(
                                 newValueList, reference, value, version, keepAllVersions
                             ) { dataRecordValue, previousValue ->
-                                val definition = reference.propertyDefinition.definition
+                                val definition = reference.comparablePropertyDefinition
                                 if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                                     @Suppress("UNCHECKED_CAST")
                                     val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
@@ -151,10 +151,10 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 }
 
                                 try {
-                                    reference.propertyDefinition.validate(
+                                    reference.propertyDefinition.validateWithRef(
                                         previousValue = previousValue,
                                         newValue = value,
-                                        parentRefFactory = { (reference as? PropertyReference<*, *, *, *>)?.parentReference }
+                                        refGetter = { reference }
                                     )
                                 } catch (e: ValidationException) {
                                     addValidationFail(e)

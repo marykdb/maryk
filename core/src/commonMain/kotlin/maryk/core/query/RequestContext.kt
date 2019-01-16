@@ -5,12 +5,12 @@ import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.values.AbstractValues
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.requests.IsRequest
 import maryk.core.query.responses.IsResponse
+import maryk.core.values.AbstractValues
 
 sealed class ModelTypeToCollect<DM: IsDataModel<*>>(val model: DM) {
     class Request<RP: IsResponse>(val request: IsRequest<RP>): ModelTypeToCollect<IsObjectDataModel<RP, *>>(request.responseModel)
@@ -24,13 +24,13 @@ sealed class ModelTypeToCollect<DM: IsDataModel<*>>(val model: DM) {
 class RequestContext(
     val definitionsContext: ContainsDefinitionsContext,
     override var dataModel: IsDataModel<*>? = null,
-    var reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>? = null
+    var reference: IsPropertyReference<*, IsChangeableValueDefinition<*, *>, *>? = null
 ) : ContainsDataModelContext<IsDataModel<*>>, ContainsDefinitionsContext by definitionsContext {
     /** For test use */
     internal constructor(
         dataModels: Map<String, Unit.() -> IsNamedDataModel<*>>,
         dataModel: IsDataModel<*>? = null,
-        reference: IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>? = null
+        reference: IsPropertyReference<*, IsChangeableValueDefinition<*, *>, *>? = null
     ) : this(
         DefinitionsContext(dataModels.toMutableMap()),
         dataModel,

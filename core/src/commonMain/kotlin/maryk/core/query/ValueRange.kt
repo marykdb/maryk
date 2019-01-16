@@ -42,7 +42,7 @@ data class ValueRange<T: Comparable<T>> internal constructor(
         val from = add(1, "from", ContextualValueDefinition(
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
+                context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
                         ?: throw ContextNotFoundException()
             }
         ), ValueRange<*>::from)
@@ -50,7 +50,7 @@ data class ValueRange<T: Comparable<T>> internal constructor(
         val to = add(2, "to", ContextualValueDefinition(
             contextualResolver = { context: RequestContext? ->
                 @Suppress("UNCHECKED_CAST")
-                context?.reference?.propertyDefinition?.definition as? IsValueDefinition<Any, IsPropertyContext>?
+                context?.reference?.comparablePropertyDefinition as? IsValueDefinition<Any, IsPropertyContext>?
                         ?: throw ContextNotFoundException()
             }
         ), ValueRange<*>::to)

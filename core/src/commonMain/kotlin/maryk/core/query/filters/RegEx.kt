@@ -5,8 +5,8 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValueRegexPair
@@ -94,7 +94,7 @@ data class RegEx internal constructor(
                         @Suppress("UNCHECKED_CAST")
                         listOfRegexes.add(
                             ReferenceValueRegexPair(
-                                reference as IsPropertyReference<String, IsValuePropertyDefinitionWrapper<String, *, IsPropertyContext, *>, *>,
+                                reference as IsPropertyReference<String, IsChangeableValueDefinition<String, IsPropertyContext>, *>,
                                 Regex(regex)
                             )
                         )

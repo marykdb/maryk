@@ -4,7 +4,7 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.ValueRange
@@ -12,7 +12,7 @@ import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [range] of type [T] */
 data class ReferenceValueRangePair<T: Comparable<T>> internal constructor(
-    override val reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
+    override val reference: IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>,
     val range: ValueRange<T>
 ) : DefinedByReference<T> {
 
@@ -43,10 +43,10 @@ data class ReferenceValueRangePair<T: Comparable<T>> internal constructor(
 }
 
 /** Convenience infix method to create Reference [range] pairs */
-infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(range: ValueRange<T>) =
+infix fun <T: Comparable<T>> IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>.with(range: ValueRange<T>) =
     ReferenceValueRangePair(this, range)
 
 /** Creates a reference value [range] pair */
-infix fun <T: Comparable<T>> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(
+infix fun <T: Comparable<T>> IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>.with(
     range: ClosedRange<T>
 ) = ReferenceValueRangePair(this, ValueRange(range.start, range.endInclusive, true, true))

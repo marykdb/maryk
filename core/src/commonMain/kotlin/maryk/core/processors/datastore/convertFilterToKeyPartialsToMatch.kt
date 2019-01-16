@@ -3,9 +3,9 @@ package maryk.core.processors.datastore
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.FixedBytesProperty
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -86,7 +86,7 @@ fun convertFilterToKeyPartsToMatch(
             }
 
             // Add all unique matchers for every item in valueIn
-            reference.propertyDefinition.definition.let {
+            reference.comparablePropertyDefinition.let {
                 if (it is IsComparableDefinition<*, *> && it.unique) {
                     for (uniqueToMatch in value) {
                         listOfUniqueFilters.add(
@@ -132,7 +132,7 @@ private fun <T: Any> walkFilterReferencesAndValues(
         }
 
         // Add unique to match if
-        reference.propertyDefinition.definition.let {
+        reference.comparablePropertyDefinition.let {
             if (it is IsComparableDefinition<*, *> && it.unique) {
                 handleUniqueMatchers?.invoke(
                     createUniqueToMatch(reference, it, value)
@@ -144,7 +144,7 @@ private fun <T: Any> walkFilterReferencesAndValues(
 
 @Suppress("UNCHECKED_CAST")
 private fun <T : Any> createUniqueToMatch(
-    reference: IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>,
+    reference: IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>,
     it: IsSerializablePropertyDefinition<T, IsPropertyContext>,
     value: T
 ) = UniqueToMatch(
@@ -156,7 +156,7 @@ private fun <T : Any> createUniqueToMatch(
 /** Get key definition by [reference] and [processKeyDefinitionIfFound] using [dataModel] or null if not part of key */
 private fun <T: Any> getKeyDefinitionOrNull(
     dataModel: IsRootValuesDataModel<*>,
-    reference: IsPropertyReference<out T, IsValuePropertyDefinitionWrapper<out T, *, IsPropertyContext, *>, *>,
+    reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
     processKeyDefinitionIfFound: (Int, FixedBytesProperty<Any>) -> Unit
 ){
     for ((index, keyDef) in dataModel.keyDefinitions.withIndex()) {

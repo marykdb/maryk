@@ -3,8 +3,8 @@ package maryk.core.models
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
@@ -51,7 +51,7 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
             val reference = ReferenceValuePair.Properties.reference.definition.fromString(
                 currentToken.value ?: throw ParseException("Reference cannot be empty in filter"),
                 context
-            ) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
+            ) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
             reader.nextToken()
 
             ReferenceValuePair.Properties.reference.capture(context, reference)

@@ -4,9 +4,9 @@ import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.ValueRange
@@ -97,7 +97,7 @@ data class Range internal constructor(
                         @Suppress("UNCHECKED_CAST")
                         listOfRanges.add(
                             ReferenceValueRangePair(
-                                reference as IsPropertyReference<Comparable<Any>, IsValuePropertyDefinitionWrapper<Comparable<Any>, *, IsPropertyContext, *>, *>,
+                                reference as IsPropertyReference<Comparable<Any>, IsChangeableValueDefinition<Comparable<Any>, IsPropertyContext>, *>,
                                 range as ValueRange<Comparable<Any>>
                             )
                         )

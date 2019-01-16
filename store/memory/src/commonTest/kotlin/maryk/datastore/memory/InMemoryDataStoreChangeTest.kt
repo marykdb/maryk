@@ -107,7 +107,8 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel.ref { string } with "haha3"
+                        TestMarykModel.ref { string } with "haha3",
+                        TestMarykModel { listOfString refAt 0 } with "z"
                     )
                 )
             )
@@ -124,7 +125,10 @@ class InMemoryDataStoreChangeTest {
         )
 
         getResponse.values.size shouldBe 1
-        getResponse.values.first().values { string } shouldBe "haha3"
+        getResponse.values.first().let {
+            it.values { string } shouldBe "haha3"
+            it.values { listOfString }!![0] shouldBe "z"
+        }
     }
 
     @Test
@@ -189,7 +193,6 @@ class InMemoryDataStoreChangeTest {
                     Delete(TestMarykModel { map refAt Time(3, 3, 3) }),
                     Delete(TestMarykModel { listOfString refAt 1 }),
                     Delete(TestMarykModel { set refAt Date(2001, 1, 1) })
-//                    , Delete(TestMarykModel { multi ofType V1 })
                 )
             )
         )
@@ -234,9 +237,7 @@ class InMemoryDataStoreChangeTest {
         )
 
         changeResponse.statuses.size shouldBe 1
-        changeResponse.statuses[0].let { status ->
-            shouldBeOfType<ServerFail<*>>(status)
-        }
+        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     @Test

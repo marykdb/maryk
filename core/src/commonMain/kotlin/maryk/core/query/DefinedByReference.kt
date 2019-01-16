@@ -3,9 +3,9 @@ package maryk.core.query
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 
@@ -27,7 +27,7 @@ interface DefinedByReference<T: Any> {
                 getter = getter,
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
-                    context.reference = value as IsPropertyReference<*, IsPropertyDefinitionWrapper<*, *, *, *>, *>
+                    context.reference = value as IsPropertyReference<*, IsChangeableValueDefinition<*, *>, *>
                 }
             )
     }

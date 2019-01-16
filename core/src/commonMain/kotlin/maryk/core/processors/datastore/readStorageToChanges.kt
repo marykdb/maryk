@@ -28,6 +28,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.graph.IsPropRefGraph
@@ -325,7 +326,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
                         propDefinition
                     ) { version, value ->
-                        val ref = propDefinition.getRef(parentReference) as IsPropertyReference<Any, IsValuePropertyDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
+                        val ref = propDefinition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                         if (value != null) {
                             addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
                         } else {

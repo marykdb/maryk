@@ -26,8 +26,7 @@ abstract class SimpleFilterDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>>(
         values: MutableValueItems,
         context: RequestContext?
     ) {
-        val referenceProperty =
-            this.properties[0]
+        val referenceProperty = this.properties[0]
         val referencePropertyDefinition = referenceProperty?.definition as? IsValueDefinition<*, RequestContext>
             ?: throw Exception("No first property found")
 

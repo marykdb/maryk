@@ -102,13 +102,20 @@ class InMemoryDataStoreChangeTest {
     }
 
     @Test
+    @Suppress("UNUSED_VARIABLE")
     fun executeChangeChangeRequest() = runSuspendingTest {
+        val a = TestMarykModel { map refAt Time(12, 33, 45) }
+
+        val b = TestMarykModel { listOfString refAt 0 }
+        val c = TestMarykModel.ref { string }
+
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
                     Change(
                         TestMarykModel.ref { string } with "haha3",
-                        TestMarykModel { listOfString refAt 0 } with "z"
+                        TestMarykModel { listOfString refAt 0 } with "z",
+                        TestMarykModel { map refAt Time(12, 33, 45) } with "changed"
                     )
                 )
             )
@@ -128,6 +135,7 @@ class InMemoryDataStoreChangeTest {
         getResponse.values.first().let {
             it.values { string } shouldBe "haha3"
             it.values { listOfString }!![0] shouldBe "z"
+            it.values { map }!![Time(12, 33, 45)] shouldBe "changed"
         }
     }
 

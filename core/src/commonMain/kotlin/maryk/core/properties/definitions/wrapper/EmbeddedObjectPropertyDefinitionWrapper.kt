@@ -63,18 +63,9 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
         { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
-    operator fun <T: Any, W: IsPropertyDefinition<T>> invoke(
+    operator fun <T: Any, W: IsPropertyDefinition<T>, R: IsPropertyReference<T, W, *>> invoke(
         referenceGetter: P.() ->
-            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) ->
-                IsPropertyReference<T, W, *>
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> {
-        return { this.definition.dataModel(this.getRef(it), referenceGetter) }
-    }
-
-    /** For quick notation to return [T] that operates with [runner] on Properties */
-    fun <T: Any> props(
-        runner: P.(EmbeddedObjectPropertyDefinitionWrapper<EODO, TO, P, DM, CXI, CX, DO>) -> T
-    ): T {
-        return runner(this.definition.dataModel.properties, this)
-    }
+            (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
+        { this.definition.dataModel(this.getRef(it), referenceGetter) }
 }

@@ -7,6 +7,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -50,6 +51,5 @@ data class ReferenceValuePair<T: Any> internal constructor(
 }
 
 /** Convenience infix method to create Reference [value] pairs */
-@Suppress("UNCHECKED_CAST")
-infix fun <T: Any> IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>.with(value: T) =
+infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
     ReferenceValuePair(this, value)

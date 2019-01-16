@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.ReferenceType.MAP
@@ -13,6 +14,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.pairs.ReferenceValuePair
 
 /** Reference to map value [V] below [key] of [K] contained in map referred by [parentReference] */
 class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
@@ -25,6 +27,11 @@ class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal construc
     override val completeName get() = this.parentReference?.let {
         "${it.completeName}.@$key"
     } ?: "@$key"
+
+    /** Convenience infix method to create Reference [value] pairs */
+    @Suppress("UNCHECKED_CAST")
+    infix fun <T: Any> with(value: T) =
+        ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
 
     override fun resolveFromAny(value: Any): Any {
         @Suppress("UNCHECKED_CAST")

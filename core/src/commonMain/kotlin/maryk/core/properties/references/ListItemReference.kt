@@ -10,6 +10,7 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -20,6 +21,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.pairs.ReferenceValuePair
 
 /** Reference to a List Item on [parentReference] with [T] by [index] */
 class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
@@ -29,6 +31,11 @@ class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
 ) : HasEmbeddedPropertyReference<T>, CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
     listDefinition.valueDefinition, parentReference
 ) {
+    /** Convenience infix method to create Reference [value] pairs */
+    @Suppress("UNCHECKED_CAST")
+    infix fun <T: Any> with(value: T) =
+        ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         when(this.propertyDefinition) {
             is IsEmbeddedDefinition<*, *> ->

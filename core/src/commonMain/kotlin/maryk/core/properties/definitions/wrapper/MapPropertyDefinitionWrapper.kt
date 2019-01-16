@@ -86,24 +86,22 @@ fun <K: Any, E: IndexedEnum<E>, P: PropertyDefinitions, T: Any, W: IsPropertyDef
 
 /** Specific extension to support fetching deeper references on Map values by [key] */
 @Suppress("UNCHECKED_CAST")
-fun <K: Any, V: Values<*, P>, DM: IsValuesDataModel<P>, P: PropertyDefinitions, T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.at(
+fun <K: Any, V: Values<*, P>, DM: IsValuesDataModel<P>, P: PropertyDefinitions, T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>, R: IsPropertyReference<T, W, *>> MapPropertyDefinitionWrapper<K, V, *, *, *>.at(
     key: K,
     referenceGetter: P.() ->
-        (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) ->
-            IsPropertyReference<T, W, *>
-): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
+        (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
+): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
     { (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(this.getValueRef(key, it), referenceGetter) }
 
 /** Specific extension to support fetching deeper references on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
-fun <K: Any, E: IndexedEnum<E>, P: PropertyDefinitions, T: Any> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.atWithType(
+fun <K: Any, E: IndexedEnum<E>, P: PropertyDefinitions, T: Any, R: IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>> MapPropertyDefinitionWrapper<K, TypedValue<E, Any>, *, *, *>.atWithType(
     key: K,
     type: E,
     @Suppress("UNUSED_PARAMETER") properties: P, // So it is not needed to pass in types
     referenceGetter: P.() ->
-        (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) ->
-            IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *>
-): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *> =
+        (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
+): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
     {
         val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
         val typeRef = multiTypeDef.getTypeRef(type, this.getValueRef(key, it))

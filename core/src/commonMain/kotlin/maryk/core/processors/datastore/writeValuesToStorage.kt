@@ -1,14 +1,9 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.core.processors.datastore
 
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
-import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
-import maryk.core.processors.datastore.StorageTypeEnum.ListSize
-import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -20,10 +15,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
-import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
-import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.CompleteReferenceType
 import maryk.core.properties.references.CompleteReferenceType.DELETE
@@ -94,52 +86,32 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
 ) {
     when (value) {
         is List<*> -> {
+            if (definition !is IsListDefinition<*, *>) {
+                throw Exception("Definition should be a ListDefinition for a List")
+            }
             val listQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.LIST)
             val listQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
-            // Process List Count
-            valueWriter(ListSize as StorageTypeEnum<T>, writeQualifier(listQualifierCount, listQualifierWriter), definition, value.size) // for list count
-
-            // Process List values
-            val listValueDefinition = (definition as ListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
-            for ((listIndex, listItem) in (value as List<Any>).withIndex()) {
-                val listValueQualifierWriter: QualifierWriter = { writer ->
-                    listQualifierWriter.invoke(writer)
-                    listIndex.toUInt().writeBytes(writer, 4)
-                }
-                writeValue(
-                    -1, listQualifierCount + 4, listValueQualifierWriter,
-                    listValueDefinition,
-                    listItem,
-                    valueWriter as ValueWriter<IsValueDefinition<*, *>>
-                )
-            }
+            writeListToStorage(
+                listQualifierWriter,
+                listQualifierCount,
+                valueWriter,
+                definition,
+                value
+            )
         }
         is Set<*> -> {
             val setQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.SET)
             val setQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
-            // Process Set Count
-            valueWriter(SetSize as StorageTypeEnum<T>, writeQualifier(setQualifierCount, setQualifierWriter), definition, value.size) // for set count
-
-            // Process Set Values
-            val setValueDefinition = (definition as SetDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
-            val set = value as Set<Any>
-            for (setItem in set) {
-                val setValueQualifierWriter: QualifierWriter = { writer ->
-                    setQualifierWriter.invoke(writer)
-                    setValueDefinition.writeStorageBytes(setItem, writer)
-                }
-                writeValue(
-                    -1,
-                    setQualifierCount + setValueDefinition.calculateStorageByteLength(setItem),
-                    setValueQualifierWriter,
-                    setValueDefinition,
-                    setItem,
-                    valueWriter as ValueWriter<IsValueDefinition<*, *>>
-                )
-            }
+            writeSetToStorage(
+                setQualifierWriter,
+                setQualifierCount,
+                valueWriter,
+                definition,
+                value
+            )
         }
         is Map<*, *> -> {
-            if (definition !is MapDefinition<*, *, *>) {
+            if (definition !is IsMapDefinition<*, *, *>) {
                 throw Exception("Definition should be a MapDefinition for a Map")
             }
             val mapQualifierWriter = createQualifierWriter(

@@ -5,8 +5,10 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
@@ -57,6 +59,16 @@ data class ReferenceValuePair<T: Any> internal constructor(
 /** Convenience infix method to create Reference [value] pairs */
 infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
     ReferenceValuePair(this, value)
+
+/** Convenience infix method to create Reference [value] pairs with a list */
+@Suppress("UNCHECKED_CAST")
+infix fun <T: Any, D: IsListDefinition<T, *>> IsPropertyReference<List<T>, D, *>.with(list: List<T>): ReferenceValuePair<List<T>> =
+    ReferenceValuePair(this as IsPropertyReference<List<T>, IsChangeableValueDefinition<List<T>, IsPropertyContext>, *>, list)
+
+/** Convenience infix method to create Reference [value] pairs with a set */
+@Suppress("UNCHECKED_CAST")
+infix fun <T: Any, D: IsSetDefinition<T, *>> IsPropertyReference<Set<T>, D, *>.with(set: Set<T>): ReferenceValuePair<Set<T>> =
+    ReferenceValuePair(this as IsPropertyReference<Set<T>, IsChangeableValueDefinition<Set<T>, IsPropertyContext>, *>, set)
 
 /** Convenience infix method to create Reference [value] pairs with a map */
 @Suppress("UNCHECKED_CAST")

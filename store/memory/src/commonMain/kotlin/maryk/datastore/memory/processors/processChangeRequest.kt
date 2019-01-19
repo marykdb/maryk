@@ -4,7 +4,9 @@ package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ValueWriter
+import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.processors.datastore.writeMapToStorage
+import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -166,6 +168,46 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
                                     writeMapToStorage(mapReference, valueWriter, value)
+                                }
+                                is List<*> -> {
+                                    if (reference !is ListReference<*, *>) {
+                                        throw Exception("Expected a ListReference for a List")
+                                    }
+                                    @Suppress("UNCHECKED_CAST")
+                                    val listReference = reference as ListReference<Any, IsPropertyContext>
+
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue = deleteByReference(newValueList, listReference, version, keepAllVersions)
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    reference.propertyDefinition.definition.validateWithRef(
+                                        if (hadPrevValue) listOf() else null,
+                                        value as List<Any>
+                                    ) { listReference }
+
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
+
+                                    writeListToStorage(listReference, valueWriter, value)
+                                }
+                                is Set<*> -> {
+                                    if (reference !is SetReference<*, *>) {
+                                        throw Exception("Expected a SetReference for a Set")
+                                    }
+                                    @Suppress("UNCHECKED_CAST")
+                                    val setReference = reference as SetReference<Any, IsPropertyContext>
+
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue = deleteByReference(newValueList, setReference, version, keepAllVersions)
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    reference.propertyDefinition.definition.validateWithRef(
+                                        if (hadPrevValue) setOf() else null,
+                                        value as Set<Any>
+                                    ) { setReference }
+
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
+
+                                    writeSetToStorage(setReference, valueWriter, value)
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference !is MultiTypePropertyReference<*, *, *, *>) {

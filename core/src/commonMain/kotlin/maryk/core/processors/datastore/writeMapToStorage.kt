@@ -6,21 +6,12 @@ import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.references.MapReference
 
-/** Write a complete [map] referenced by [reference] to storage with [valueWriter]. */
-fun <K: Any, V: Any> writeMapToStorage(
-    reference: MapReference<K, V, *>,
-    valueWriter: ValueWriter<IsPropertyDefinition<*>>,
-    map: Map<K, V>
-) {
-    writeMapToStorage(reference::writeStorageBytes, reference.calculateStorageByteLength(), valueWriter, reference.propertyDefinition.definition, map)
-}
-
+/** Write a complete [map] defined by [definition] with [qualifierWriter] of [qualifierSize] to storage with [valueWriter]. */
 @Suppress("UNCHECKED_CAST")
-internal fun <T : IsPropertyDefinition<*>, K: Any, V: Any> writeMapToStorage(
-    qualifierWriter: QualifierWriter?,
+fun <T : IsPropertyDefinition<*>, K: Any, V: Any> writeMapToStorage(
     qualifierLength: Int,
+    qualifierWriter: QualifierWriter?,
     valueWriter: ValueWriter<T>,
     definition: T,
     map: Map<K, V>

@@ -4,25 +4,16 @@ package maryk.core.processors.datastore
 
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.references.ListReference
 
-/** Write a complete [list] referenced by [reference] to storage with [valueWriter]. */
-fun <T: Any> writeListToStorage(
-    reference: ListReference<T, *>,
-    valueWriter: ValueWriter<IsPropertyDefinition<*>>,
-    list: List<T>
-) {
-    writeListToStorage(reference::writeStorageBytes, reference.calculateStorageByteLength(), valueWriter, reference.propertyDefinition.definition, list)
-}
-
+/** Write a complete [list] defined by [definition] with [qualifierWriter] of [qualifierSize] to storage with [valueWriter]. */
 @Suppress("UNCHECKED_CAST")
-internal fun <T : IsPropertyDefinition<*>> writeListToStorage(
-    qualifierWriter: QualifierWriter,
+fun <T : IsPropertyDefinition<*>> writeListToStorage(
     qualifierCount: Int,
+    qualifierWriter: QualifierWriter,
     valueWriter: ValueWriter<T>,
     definition: T,
     value: List<*>
@@ -33,10 +24,10 @@ internal fun <T : IsPropertyDefinition<*>> writeListToStorage(
         writeQualifier(qualifierCount, qualifierWriter),
         definition,
         value.size
-    ) // for list count
+    )
 
     // Process List values
-    val listValueDefinition = (definition as ListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
+    val listValueDefinition = (definition as IsListDefinition<Any, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
     for ((listIndex, listItem) in (value as List<Any>).withIndex()) {
         val listValueQualifierWriter: QualifierWriter = { writer ->
             qualifierWriter.invoke(writer)

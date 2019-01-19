@@ -59,7 +59,7 @@ fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM
  * [qualifierCount], [qualifierWriter] define the count and writer for any parent property
  * Pass [valueWriter] to process values
  */
-private fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
+fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValues<*, DM, P>.writeToStorage(
     qualifierCount: Int = 0,
     qualifierWriter: QualifierWriter? = null,
     valueWriter: ValueWriter<IsPropertyDefinition<*>>
@@ -92,8 +92,8 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
             val listQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.LIST)
             val listQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             writeListToStorage(
-                listQualifierWriter,
                 listQualifierCount,
+                listQualifierWriter,
                 valueWriter,
                 definition,
                 value
@@ -103,8 +103,8 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
             val setQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.SET)
             val setQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             writeSetToStorage(
-                setQualifierWriter,
                 setQualifierCount,
+                setQualifierWriter,
                 valueWriter,
                 definition,
                 value
@@ -120,15 +120,21 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
                 ReferenceType.MAP
             )
             val mapQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
-            writeMapToStorage(mapQualifierWriter, mapQualifierCount, valueWriter as ValueWriter<MapDefinition<Any, Any, *>>, definition as MapDefinition<Any, Any, *>, value as Map<Any, Any>)
+            writeMapToStorage(
+                mapQualifierCount,
+                mapQualifierWriter,
+                valueWriter as ValueWriter<MapDefinition<Any, Any, *>>,
+                definition as MapDefinition<Any, Any, *>,
+                value as Map<Any, Any>
+            )
         }
         is AbstractValues<*, *, *> -> {
-            val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
-            val abstractValuesQualifierCount = if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
-
             if (definition !is EmbeddedValuesDefinition<*, *>) {
                 throw Exception("Expected Embedded Values Definition for Values object")
             }
+
+            val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
+            val abstractValuesQualifierCount = if (index == -1) qualifierLength else qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
 
             // Write complex values existence indicator
             // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
@@ -150,8 +156,8 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
             } else qualifierLength
 
             writeTypedValueToStorage(
-                valueQualifierWriter,
                 valueQualifierSize,
+                valueQualifierWriter,
                 valueWriter,
                 definition,
                 value

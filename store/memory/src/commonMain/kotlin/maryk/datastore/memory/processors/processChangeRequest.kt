@@ -3,10 +3,13 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.values
 import maryk.core.processors.datastore.ValueWriter
 import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.processors.datastore.writeMapToStorage
 import maryk.core.processors.datastore.writeSetToStorage
+import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -19,6 +22,7 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
+import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
@@ -40,6 +44,8 @@ import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.Success
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.values.EmptyValueItems
+import maryk.core.values.Values
 import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.processors.changers.createCountUpdater
 import maryk.datastore.memory.processors.changers.deleteByReference
@@ -167,7 +173,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeMapToStorage(mapReference, valueWriter, value)
+                                    writeMapToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
                                 }
                                 is List<*> -> {
                                     if (reference !is ListReference<*, *>) {
@@ -187,7 +193,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeListToStorage(listReference, valueWriter, value)
+                                    writeListToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
                                 }
                                 is Set<*> -> {
                                     if (reference !is SetReference<*, *>) {
@@ -207,7 +213,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeSetToStorage(setReference, valueWriter, value)
+                                    writeSetToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference !is MultiTypePropertyReference<*, *, *, *>) {
@@ -229,7 +235,30 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeTypedValueToStorage(reference, valueWriter, value)
+                                    writeTypedValueToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
+                                }
+                                is Values<*, *> -> {
+                                    if (reference !is EmbeddedValuesPropertyRef<*, *, *>) {
+                                        throw Exception("Expected a EmbeddedValuesPropertyRef for Values")
+                                    }
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    val valuesReference = reference as EmbeddedValuesPropertyRef<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, IsPropertyContext>
+                                    val valuesDefinition = valuesReference.propertyDefinition.definition
+
+                                    // Delete all existing values in placeholder
+                                    @Suppress("UNCHECKED_CAST")
+                                    val hadPrevValue = deleteByReference(newValueList, valuesReference as IsPropertyReference<Values<*, *>, IsPropertyDefinition<Values<*, *>>, *>, version, keepAllVersions)
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    valuesDefinition.validateWithRef(
+                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
+                                        value as Values<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
+                                    ) { valuesReference }
+
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
+
+                                    value.writeToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter)
                                 }
                                 else -> {
                                     setValue(

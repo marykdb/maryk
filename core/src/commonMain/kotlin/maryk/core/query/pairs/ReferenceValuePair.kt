@@ -1,10 +1,13 @@
 package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -18,6 +21,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
+import maryk.core.values.Values
 
 /** Compares given [value] of type [T] against referenced value [reference] */
 data class ReferenceValuePair<T: Any> internal constructor(
@@ -79,3 +83,8 @@ infix fun <K: Any, V: Any, D: IsMapDefinition<K, V, *>> IsPropertyReference<Map<
 @Suppress("UNCHECKED_CAST")
 infix fun <E: IndexedEnum<E>, D: IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(map: TypedValue<E, *>): ReferenceValuePair<TypedValue<E, *>> =
     ReferenceValuePair(this as IsPropertyReference<TypedValue<E, *>, IsChangeableValueDefinition<TypedValue<E, *>, IsPropertyContext>, *>, map)
+
+/** Convenience infix method to create Reference [values] pairs with a set */
+@Suppress("UNCHECKED_CAST")
+infix fun <DM: IsValuesDataModel<P>, P: PropertyDefinitions, D: IsEmbeddedValuesDefinition<DM, P, *>> IsPropertyReference<Values<DM, P>, D, *>.with(values: Values<DM, P>): ReferenceValuePair<Values<DM, P>> =
+    ReferenceValuePair(this as IsPropertyReference<Values<DM, P>, IsChangeableValueDefinition<Values<DM, P>, IsPropertyContext>, *>, values)

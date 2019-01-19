@@ -275,65 +275,63 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                         }
                     }
                     is MapChange -> {
-                        if (validationExceptions.isNullOrEmpty()) {
-                            for (mapChange in change.mapValueChanges) {
-                                @Suppress("UNCHECKED_CAST")
-                                val mapReference = mapChange.reference as MapReference<Any, Any, IsPropertyContext>
-                                val mapDefinition = mapReference.propertyDefinition.definition
-                                var countChange = 0
-                                // First keys to delete since they don't change indices because of tombstones
-                                mapChange.keysToDelete?.let {
-                                    for (key in it) {
+                        for (mapChange in change.mapValueChanges) {
+                            @Suppress("UNCHECKED_CAST")
+                            val mapReference = mapChange.reference as MapReference<Any, Any, IsPropertyContext>
+                            val mapDefinition = mapReference.propertyDefinition.definition
+                            var countChange = 0
+                            // First keys to delete since they don't change indices because of tombstones
+                            mapChange.keysToDelete?.let {
+                                for (key in it) {
+                                    val mapValueRef = mapDefinition.getValueRef(key, mapReference)
+                                    deleteByReference(newValueList, mapValueRef, version, keepAllVersions) { _, prevValue ->
+                                        prevValue?.let {
+                                            countChange-- // only count down if value existed
+                                        }
+                                    }.also(setChanged)
+                                }
+                            }
+                            mapChange.valuesToSet?.let {
+                                createValidationUmbrellaException({ mapReference }) { addException ->
+                                    for ((key, value) in it) {
                                         val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                        deleteByReference(newValueList, mapValueRef, version, keepAllVersions) { _, prevValue ->
-                                            prevValue?.let {
-                                                countChange-- // only count down if value existed
-                                            }
+                                        try {
+                                            mapDefinition.keyDefinition.validateWithRef(
+                                                null,
+                                                key
+                                            ) { mapDefinition.getKeyRef(key, mapReference) }
+                                        } catch (e: ValidationException) {
+                                            addException(e)
+                                        }
+                                        try {
+                                            mapDefinition.valueDefinition.validateWithRef(
+                                                null,
+                                                value
+                                            ) { mapValueRef }
+                                        } catch (e: ValidationException) {
+                                            addException(e)
+                                        }
+
+                                        setValue(
+                                            newValueList,
+                                            mapValueRef,
+                                            value,
+                                            version
+                                        ) { _, prevValue ->
+                                            prevValue ?: countChange++ // Only count up when value did not exist
                                         }.also(setChanged)
                                     }
                                 }
-                                mapChange.valuesToSet?.let {
-                                    createValidationUmbrellaException({ mapReference }) { addException ->
-                                        for ((key, value) in it) {
-                                            val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                            try {
-                                                mapDefinition.keyDefinition.validateWithRef(
-                                                    null,
-                                                    key
-                                                ) { mapDefinition.getKeyRef(key, mapReference) }
-                                            } catch (e: ValidationException) {
-                                                addException(e)
-                                            }
-                                            try {
-                                                mapDefinition.valueDefinition.validateWithRef(
-                                                    null,
-                                                    value
-                                                ) { mapValueRef }
-                                            } catch (e: ValidationException) {
-                                                addException(e)
-                                            }
+                            }
 
-                                            setValue(
-                                                newValueList,
-                                                mapValueRef,
-                                                value,
-                                                version
-                                            ) { _, prevValue ->
-                                                prevValue ?: countChange++ // Only count up when value did not exist
-                                            }.also(setChanged)
-                                        }
-                                    }
-                                }
-
-                                createCountUpdater(
-                                    newValueList,
-                                    mapChange.reference,
-                                    version,
-                                    countChange,
-                                    keepAllVersions
-                                ) {
-                                    mapDefinition.validateSize(it) { mapReference }
-                                }
+                            createCountUpdater(
+                                newValueList,
+                                mapChange.reference,
+                                version,
+                                countChange,
+                                keepAllVersions
+                            ) {
+                                mapDefinition.validateSize(it) { mapReference }
                             }
                         }
                     }

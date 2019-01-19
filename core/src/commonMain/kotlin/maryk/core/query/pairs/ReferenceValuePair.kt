@@ -6,10 +6,13 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -59,3 +62,8 @@ infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *,
 @Suppress("UNCHECKED_CAST")
 infix fun <K: Any, V: Any, D: IsMapDefinition<K, V, *>> IsPropertyReference<Map<K, V>, D, *>.with(map: Map<K, V>): ReferenceValuePair<Map<K, V>> =
     ReferenceValuePair(this as IsPropertyReference<Map<K, V>, IsChangeableValueDefinition<Map<K, V>, IsPropertyContext>, *>, map)
+
+/** Convenience infix method to create Reference [value] pairs with a typed value */
+@Suppress("UNCHECKED_CAST")
+infix fun <E: IndexedEnum<E>, D: IsMultiTypeDefinition<E, *>> IsPropertyReference<TypedValue<E, *>, D, *>.with(map: TypedValue<E, *>): ReferenceValuePair<TypedValue<E, *>> =
+    ReferenceValuePair(this as IsPropertyReference<TypedValue<E, *>, IsChangeableValueDefinition<TypedValue<E, *>, IsPropertyContext>, *>, map)

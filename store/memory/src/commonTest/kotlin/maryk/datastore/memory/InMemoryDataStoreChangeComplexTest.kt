@@ -257,11 +257,19 @@ class InMemoryDataStoreChangeComplexTest {
 
     @Test
     fun executeChangeChangeReplaceComplexValueRequest() = runSuspendingTest {
+        val newMultiValue = TypedValue(V3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
+        val newMapStringString = mapOf("e" to "f", "g" to "h")
+        val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
+        val newMapIntMulti = mapOf(5u to TypedValue(V3, EmbeddedMarykModel("v101", EmbeddedMarykModel("suba1", EmbeddedMarykModel("suba2")))), 10u to TypedValue(V1, "new"), 3u to TypedValue(V3, EmbeddedMarykModel("v222", EmbeddedMarykModel("2asub1", EmbeddedMarykModel("2asub2")))))
+
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[5].change(
                     Change(
-                        ComplexModel.ref { mapStringString } with mapOf("e" to "f", "g" to "h")
+                        ComplexModel.ref { multi } with newMultiValue,
+                        ComplexModel.ref { mapStringString } with newMapStringString,
+                        ComplexModel.ref { mapIntObject } with newMapIntObject,
+                        ComplexModel.ref { mapIntMulti } with newMapIntMulti
                     )
                 )
             )
@@ -279,9 +287,10 @@ class InMemoryDataStoreChangeComplexTest {
 
         getResponse.values.size shouldBe 1
         getResponse.values.first().let { valuesWithMetaData ->
-            valuesWithMetaData.values { mapStringString }.let {
-                it shouldBe mapOf("e" to "f", "g" to "h")
-            }
+            valuesWithMetaData.values { multi } shouldBe newMultiValue
+            valuesWithMetaData.values { mapStringString } shouldBe newMapStringString
+            valuesWithMetaData.values { mapIntObject } shouldBe newMapIntObject
+            valuesWithMetaData.values { mapIntMulti } shouldBe newMapIntMulti
         }
     }
 }

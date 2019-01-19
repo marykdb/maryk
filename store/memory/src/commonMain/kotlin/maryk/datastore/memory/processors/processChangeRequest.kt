@@ -5,11 +5,13 @@ package maryk.datastore.memory.processors
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.processors.datastore.ValueWriter
 import maryk.core.processors.datastore.writeMapToStorage
+import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.MapDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -18,8 +20,10 @@ import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
@@ -42,6 +46,7 @@ import maryk.datastore.memory.processors.changers.setListValue
 import maryk.datastore.memory.processors.changers.setValue
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.UniqueException
@@ -147,27 +152,42 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                         throw Exception("Expected a MapReference for a map")
                                     }
                                     @Suppress("UNCHECKED_CAST")
-                                    val mapDefinition = reference.propertyDefinition.definition as MapDefinition<Any, Any, IsPropertyContext>
+                                    val mapReference = reference as MapReference<Any, Any, IsPropertyContext>
 
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
+                                    val hadPrevValue = deleteByReference(newValueList, mapReference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
-                                    mapDefinition.validateWithRef(
+                                    reference.propertyDefinition.definition.validateWithRef(
                                         if (hadPrevValue) mapOf() else null,
                                         value as Map<Any, Any>
-                                    ) { reference as MapReference<Any, Any, IsPropertyContext> }
+                                    ) { mapReference }
 
-                                    val valueWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
-                                        val valueIndex = newValueList.binarySearch {
-                                            it.reference.compareTo(qualifier)
-                                        }
-                                        setValueAtIndex(
-                                            newValueList, valueIndex, qualifier, mapValue, version, keepAllVersions
-                                        )
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
+
+                                    writeMapToStorage(mapReference, valueWriter, value)
+                                }
+                                is TypedValue<*, *> -> {
+                                    if (reference !is MultiTypePropertyReference<*, *, *, *>) {
+                                        throw Exception("Expected a MultiTypePropertyReference for a typedValue")
                                     }
+                                    @Suppress("UNCHECKED_CAST")
+                                    val multiTypeReference = reference as MultiTypePropertyReference<AnyIndexedEnum, Any, *, *>
+                                    @Suppress("UNCHECKED_CAST")
+                                    val multiTypeDefinition = multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
 
-                                    writeMapToStorage(reference as MapReference<*, *, *>, valueWriter, reference.comparablePropertyDefinition, value)
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue = deleteByReference<TypedValue<AnyIndexedEnum, Any>>(newValueList, multiTypeReference, version, keepAllVersions)
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    multiTypeDefinition.validateWithRef(
+                                        if (hadPrevValue) value as TypedValue<AnyIndexedEnum, Any> else null,
+                                        value as TypedValue<AnyIndexedEnum, Any>
+                                    ) { multiTypeReference }
+
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
+
+                                    writeTypedValueToStorage(reference, valueWriter, value)
                                 }
                                 else -> {
                                     setValue(
@@ -414,4 +434,21 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
     } catch (e: Throwable) {
         return ServerFail(e.toString())
     }
+}
+
+/**
+ * Create a ValueWriter to [newValueList] at [version]
+ * Use [keepAllVersions] at true to keep all past versions
+ */
+private fun createValueWriter(
+    newValueList: MutableList<DataRecordNode>,
+    version: ULong,
+    keepAllVersions: Boolean
+): ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
+    val valueIndex = newValueList.binarySearch {
+        it.reference.compareTo(qualifier)
+    }
+    setValueAtIndex(
+        newValueList, valueIndex, qualifier, mapValue, version, keepAllVersions
+    )
 }

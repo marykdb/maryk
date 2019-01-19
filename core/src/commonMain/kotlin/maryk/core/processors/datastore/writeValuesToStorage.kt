@@ -9,7 +9,6 @@ import maryk.core.models.IsDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
-import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -23,7 +22,7 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.CompleteReferenceType
@@ -140,13 +139,16 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
             }
         }
         is Map<*, *> -> {
+            if (definition !is MapDefinition<*, *, *>) {
+                throw Exception("Definition should be a MapDefinition for a Map")
+            }
             val mapQualifierWriter = createQualifierWriter(
                 qualifierWriter,
                 index,
                 ReferenceType.MAP
             )
             val mapQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
-            writeMapToStorage(mapQualifierWriter, mapQualifierCount, valueWriter, definition, value)
+            writeMapToStorage(mapQualifierWriter, mapQualifierCount, valueWriter as ValueWriter<MapDefinition<Any, Any, *>>, definition as MapDefinition<Any, Any, *>, value as Map<Any, Any>)
         }
         is AbstractValues<*, *, *> -> {
             val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
@@ -164,8 +166,9 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
             (value as AnyAbstractValues).writeToStorage(abstractValuesQualifierCount, indexWriter, valueWriter as ValueWriter<IsPropertyDefinition<*>>)
         }
         is TypedValue<*, *> -> {
-            val multiDefinition = definition as MultiTypeDefinition<*, *>
-            val valueDefinition = multiDefinition.definitionMap[value.type] as IsPropertyDefinition<Any>
+            if (definition !is IsMultiTypeDefinition<*, *>) {
+                throw Exception("Definition should be a MultiTypeDefinition for a TypedValue")
+            }
 
             val valueQualifierWriter = if (index > -1) {
                 createQualifierWriter(qualifierWriter, index, ReferenceType.VALUE)
@@ -174,27 +177,13 @@ internal fun <T: IsPropertyDefinition<*>> writeValue(
                 qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
             } else qualifierLength
 
-            if (valueDefinition is IsSimpleValueDefinition<*, *>) {
-                val qualifier = writeQualifier(valueQualifierSize, valueQualifierWriter)
-                valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, value)
-            } else {
-                val qualifierTypeLength = valueQualifierSize + value.type.index.calculateVarIntWithExtraInfoByteSize()
-                val qualifierTypeWriter = createQualifierWriter(valueQualifierWriter, value.type.index, ReferenceType.TYPE)
-
-                // Write parent value to contain current type. So possible lingering old types are not read.
-                val qualifier = writeQualifier(valueQualifierSize, valueQualifierWriter)
-                valueWriter(TypeValue as StorageTypeEnum<T>, qualifier, definition, TypedValue(value.type as IndexedEnum<IndexedEnum<*>>, Unit))
-
-                // write sub value(s)
-                writeValue(
-                    -1,
-                    qualifierTypeLength,
-                    qualifierTypeWriter,
-                    valueDefinition,
-                    value.value,
-                    valueWriter as ValueWriter<IsPropertyDefinition<Any>>
-                )
-            }
+            writeTypedValueToStorage(
+                valueQualifierWriter,
+                valueQualifierSize,
+                valueWriter,
+                definition,
+                value
+            )
         }
         else -> {
             val qualifier = if (index > -1) {

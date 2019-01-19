@@ -8,35 +8,33 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.references.MapReference
 
-@Suppress("UNCHECKED_CAST")
-fun <T : IsPropertyDefinition<*>> writeMapToStorage(
-    reference: MapReference<*, *, *>,
-    valueWriter: ValueWriter<T>,
-    definition: T,
-    value: Map<*, *>
+/** Write a complete [map] referenced by [reference] to storage with [valueWriter]. */
+fun <K: Any, V: Any> writeMapToStorage(
+    reference: MapReference<K, V, *>,
+    valueWriter: ValueWriter<IsPropertyDefinition<*>>,
+    map: Map<K, V>
 ) {
-    writeMapToStorage(reference::writeStorageBytes, reference.calculateStorageByteLength(), valueWriter, definition, value)
+    writeMapToStorage(reference::writeStorageBytes, reference.calculateStorageByteLength(), valueWriter, reference.propertyDefinition.definition, map)
 }
 
 @Suppress("UNCHECKED_CAST")
-internal fun <T : IsPropertyDefinition<*>> writeMapToStorage(
+internal fun <T : IsPropertyDefinition<*>, K: Any, V: Any> writeMapToStorage(
     qualifierWriter: QualifierWriter?,
     qualifierLength: Int,
     valueWriter: ValueWriter<T>,
     definition: T,
-    value: Map<*, *>
+    map: Map<K, V>
 ) {
     // Process Map Count
     valueWriter(
         MapSize as StorageTypeEnum<T>,
         writeQualifier(qualifierLength, qualifierWriter),
         definition,
-        value.size
+        map.size
     )
 
     // Process Map Values
     val mapDefinition = (definition as IsMapDefinition<Any, *, *>)
-    val map = value as Map<Any, Any>
     for ((key, mapValue) in map) {
         val keyByteSize = mapDefinition.keyDefinition.calculateStorageByteLength(key)
         val keyByteCountSize = keyByteSize.calculateVarByteLength()

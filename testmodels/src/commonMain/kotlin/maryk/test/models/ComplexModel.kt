@@ -30,6 +30,7 @@ object ComplexModel: RootDataModel<ComplexModel, Properties>(
             definition = MultiTypeDefinition<Option, IsPropertyContext>(
                 required = false,
                 typeEnum = Option,
+                typeIsFinal = false,
                 definitionMap = mapOf(
                     V1 to StringDefinition(),
                     V2 to NumberDefinition(type = SInt32),

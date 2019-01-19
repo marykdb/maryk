@@ -3,10 +3,13 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.processors.datastore.ValueWriter
+import maryk.core.processors.datastore.writeMapToStorage
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -37,10 +40,12 @@ import maryk.datastore.memory.processors.changers.deleteByReference
 import maryk.datastore.memory.processors.changers.getList
 import maryk.datastore.memory.processors.changers.setListValue
 import maryk.datastore.memory.processors.changers.setValue
+import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.UniqueException
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -136,30 +141,61 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                     }
                     is Change -> {
                         for ((reference, value) in change.referenceValuePairs) {
-                            setValue(
-                                newValueList, reference, value, version, keepAllVersions
-                            ) { dataRecordValue, previousValue ->
-                                val definition = reference.comparablePropertyDefinition
-                                if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                                    @Suppress("UNCHECKED_CAST")
-                                    val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
-                                    dataStore.validateUniqueNotExists(comparableValue, objectToChange)
-                                    when (uniquesToProcess) {
-                                        null -> uniquesToProcess = mutableListOf(comparableValue)
-                                        else -> uniquesToProcess!!.add(comparableValue)
+                            when (value) {
+                                is Map<*, *> -> {
+                                    if (reference !is MapReference<*, *, *>) {
+                                        throw Exception("Expected a MapReference for a map")
                                     }
-                                }
+                                    @Suppress("UNCHECKED_CAST")
+                                    val mapDefinition = reference.propertyDefinition.definition as MapDefinition<Any, Any, IsPropertyContext>
 
-                                try {
-                                    reference.propertyDefinition.validateWithRef(
-                                        previousValue = previousValue,
-                                        newValue = value,
-                                        refGetter = { reference }
-                                    )
-                                } catch (e: ValidationException) {
-                                    addValidationFail(e)
+                                    // Delete all existing values in placeholder
+                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
+
+                                    @Suppress("UNCHECKED_CAST")
+                                    mapDefinition.validateWithRef(
+                                        if (hadPrevValue) mapOf() else null,
+                                        value as Map<Any, Any>
+                                    ) { reference as MapReference<Any, Any, IsPropertyContext> }
+
+                                    val valueWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
+                                        val valueIndex = newValueList.binarySearch {
+                                            it.reference.compareTo(qualifier)
+                                        }
+                                        setValueAtIndex(
+                                            newValueList, valueIndex, qualifier, mapValue, version, keepAllVersions
+                                        )
+                                    }
+
+                                    writeMapToStorage(reference as MapReference<*, *, *>, valueWriter, reference.comparablePropertyDefinition, value)
                                 }
-                            }.also(setChanged)
+                                else -> {
+                                    setValue(
+                                        newValueList, reference, value, version, keepAllVersions
+                                    ) { dataRecordValue, previousValue ->
+                                        val definition = reference.comparablePropertyDefinition
+                                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                                            @Suppress("UNCHECKED_CAST")
+                                            val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
+                                            dataStore.validateUniqueNotExists(comparableValue, objectToChange)
+                                            when (uniquesToProcess) {
+                                                null -> uniquesToProcess = mutableListOf(comparableValue)
+                                                else -> uniquesToProcess!!.add(comparableValue)
+                                            }
+                                        }
+
+                                        try {
+                                            reference.propertyDefinition.validateWithRef(
+                                                previousValue = previousValue,
+                                                newValue = value,
+                                                refGetter = { reference }
+                                            )
+                                        } catch (e: ValidationException) {
+                                            addValidationFail(e)
+                                        }
+                                    }.also(setChanged)
+                                }
+                            }
                         }
                     }
                     is Delete -> {

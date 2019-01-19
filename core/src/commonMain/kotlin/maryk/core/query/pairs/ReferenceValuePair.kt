@@ -5,6 +5,7 @@ import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
@@ -53,3 +54,8 @@ data class ReferenceValuePair<T: Any> internal constructor(
 /** Convenience infix method to create Reference [value] pairs */
 infix fun <T: Any> IsPropertyReference<T, IsValuePropertyDefinitionWrapper<T, *, IsPropertyContext, *>, *>.with(value: T) =
     ReferenceValuePair(this, value)
+
+/** Convenience infix method to create Reference [value] pairs with a map */
+@Suppress("UNCHECKED_CAST")
+infix fun <K: Any, V: Any, D: IsMapDefinition<K, V, *>> IsPropertyReference<Map<K, V>, D, *>.with(map: Map<K, V>): ReferenceValuePair<Map<K, V>> =
+    ReferenceValuePair(this as IsPropertyReference<Map<K, V>, IsChangeableValueDefinition<Map<K, V>, IsPropertyContext>, *>, map)

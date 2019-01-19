@@ -2,15 +2,12 @@
 
 package maryk.core.processors.datastore
 
-import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
-import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
@@ -24,7 +21,6 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -57,7 +53,7 @@ sealed class StorageTypeEnum<T: IsPropertyDefinition<*>>(val referenceType: Comp
 }
 
 typealias ValueWriter<T> = (StorageTypeEnum<T>, ByteArray, T, Any) -> Unit
-private typealias QualifierWriter = ((Byte) -> Unit) -> Unit
+internal typealias QualifierWriter = ((Byte) -> Unit) -> Unit
 
 /**
  * Walk Values and process storable values.
@@ -89,7 +85,7 @@ private fun <DM: IsDataModel<P>, P: AbstractPropertyDefinitions<*>> AbstractValu
  * If index is -1, this value has no index.
  */
 @Suppress("UNCHECKED_CAST")
-private fun <T: IsPropertyDefinition<*>> writeValue(
+internal fun <T: IsPropertyDefinition<*>> writeValue(
     index: Int,
     qualifierLength: Int,
     qualifierWriter: QualifierWriter? = null,
@@ -144,33 +140,13 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
             }
         }
         is Map<*, *> -> {
-            val mapQualifierWriter = createQualifierWriter(qualifierWriter, index, ReferenceType.MAP)
+            val mapQualifierWriter = createQualifierWriter(
+                qualifierWriter,
+                index,
+                ReferenceType.MAP
+            )
             val mapQualifierCount = qualifierLength + index.calculateVarIntWithExtraInfoByteSize()
-            // Process Map Count
-            valueWriter(MapSize as StorageTypeEnum<T>, writeQualifier(mapQualifierCount, mapQualifierWriter), definition, value.size)
-
-            // Process Map Values
-            val mapDefinition = (definition as IsMapDefinition<Any, *, *>)
-            val map = value as Map<Any, Any>
-            for ((key, mapValue) in map) {
-                val keyByteSize = mapDefinition.keyDefinition.calculateStorageByteLength(key)
-                val keyByteCountSize = keyByteSize.calculateVarByteLength()
-
-                val mapValueQualifierWriter: QualifierWriter = { writer ->
-                    mapQualifierWriter.invoke(writer)
-                    keyByteSize.writeVarBytes(writer)
-
-                    mapDefinition.keyDefinition.writeStorageBytes(key, writer)
-                }
-                val mapValueQualifierLength = mapQualifierCount + keyByteSize + keyByteCountSize
-
-                writeValue(
-                    -1, mapValueQualifierLength, mapValueQualifierWriter,
-                    mapDefinition.valueDefinition,
-                    mapValue,
-                    valueWriter as ValueWriter<IsSubDefinition<*, *>>
-                )
-            }
+            writeMapToStorage(mapQualifierWriter, mapQualifierCount, valueWriter, definition, value)
         }
         is AbstractValues<*, *, *> -> {
             val indexWriter = if (index == -1) qualifierWriter else createQualifierWriter(qualifierWriter, index, ReferenceType.EMBED)
@@ -237,7 +213,7 @@ private fun <T: IsPropertyDefinition<*>> writeValue(
  * Create a qualifier writer which writes an [index] and [referenceType]
  * Also first writes with a [parentQualifierWriter] if not null
  */
-private fun createQualifierWriter(
+internal fun createQualifierWriter(
     parentQualifierWriter: QualifierWriter?,
     index: Int,
     referenceType: ReferenceType
@@ -249,7 +225,7 @@ private fun createQualifierWriter(
 /**
  * Write a specific qualifier with passed [qualifierLength] and [qualifierWriter]
  */
-private fun writeQualifier(
+internal fun writeQualifier(
     qualifierLength: Int,
     qualifierWriter: QualifierWriter?
 ): ByteArray {

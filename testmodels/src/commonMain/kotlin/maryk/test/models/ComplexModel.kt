@@ -44,6 +44,8 @@ object ComplexModel: RootDataModel<ComplexModel, Properties>(
             index = 2, name = "mapStringString",
             definition = MapDefinition(
                 required = false,
+                minSize = 1,
+                maxSize = 3,
                 keyDefinition = StringDefinition(
                     minSize = 1,
                     maxSize = 20

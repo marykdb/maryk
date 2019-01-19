@@ -30,7 +30,7 @@ internal fun <T: Any> setValueAtIndex(
         }
     } else when (val matchedValue = values[valueIndex]) {
         is DataRecordValue<*> -> {
-            if (keepAllVersions) {
+            if (keepAllVersions && matchedValue.version != version) {
                 // Only store value if was not already value
                 @Suppress("UNCHECKED_CAST")
                 if (matchedValue.value != value) {
@@ -56,17 +56,26 @@ internal fun <T: Any> setValueAtIndex(
             }
         }
         is DeletedValue<*> -> {
+            // Cannot be historic otherwise delete would be written inside DataRecordHistoricValues
+            // So simple overwrite
             DataRecordValue(reference, value, version).also {
                 (values as MutableList<DataRecordNode>)[valueIndex] = it
             }
         }
         is DataRecordHistoricValues<*> -> {
-            val lastValue = matchedValue.history.last()
+            @Suppress("UNCHECKED_CAST")
+            val mutableHistory = matchedValue.history as MutableList<DataRecordNode>
+            var lastValue = matchedValue.history.last()
+            // If already set at this version, overwrite last version
+            if (lastValue.version == version) {
+                mutableHistory.dropLast(1)
+                lastValue = matchedValue.history.last()
+            }
+
             // Only store value if was not already value
             if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
                 DataRecordValue(reference, value, version).also {
-                    @Suppress("UNCHECKED_CAST")
-                    (matchedValue.history as MutableList<DataRecordValue<*>>).add(
+                    mutableHistory.add(
                         DataRecordValue(reference, value, version)
                     )
                 }

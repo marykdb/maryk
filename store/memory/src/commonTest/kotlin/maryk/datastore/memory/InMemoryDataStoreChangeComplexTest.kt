@@ -254,4 +254,34 @@ class InMemoryDataStoreChangeComplexTest {
             }
         }
     }
+
+    @Test
+    fun executeChangeChangeReplaceComplexValueRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            ComplexModel.change(
+                keys[5].change(
+                    Change(
+                        ComplexModel.ref { mapStringString } with mapOf("e" to "f", "g" to "h")
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val success = shouldBeOfType<Success<*>>(status)
+            shouldBeRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            ComplexModel.get(keys[5])
+        )
+
+        getResponse.values.size shouldBe 1
+        getResponse.values.first().let { valuesWithMetaData ->
+            valuesWithMetaData.values { mapStringString }.let {
+                it shouldBe mapOf("e" to "f", "g" to "h")
+            }
+        }
+    }
 }

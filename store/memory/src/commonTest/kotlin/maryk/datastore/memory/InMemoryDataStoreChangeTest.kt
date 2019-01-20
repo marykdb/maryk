@@ -46,7 +46,8 @@ class InMemoryDataStoreChangeTest {
                     TestMarykModel("haha2", 3, 8u, 1.244, DateTime(2018, 1, 2), false, embeddedValues = EmbeddedMarykModel("value"),list = listOf(1, 4, 6), listOfString = listOf("c", "d", "e"), map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"), set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))),
                     TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, reference = TestMarykModel.key("AAACKwEBAQAC")),
                     TestMarykModel("haha4", 4, 14u, 1.644, DateTime(2019, 1, 2), false, multi = TypedValue(V1, "string"), listOfString = listOf("f", "g", "h"), map = mapOf(Time(1, 33, 45) to "an other", Time(13, 44, 55) to "an other2"), set = setOf(Date(2015, 11, 25), Date(2001, 12, 5))),
-                    TestMarykModel("haha5", 5, 13u, 3.44, DateTime(1, 1, 2), true, multi = TypedValue(V1, "v1"), listOfString = listOf("f", "g", "h"), map = mapOf(Time(3, 3, 3) to "three", Time(4, 4, 4) to "4"), set = setOf(Date(2001, 1, 1), Date(2002, 2, 2)))
+                    TestMarykModel("haha5", 5, 13u, 3.44, DateTime(1, 1, 2), true, multi = TypedValue(V1, "v1"), listOfString = listOf("f", "g", "h"), map = mapOf(Time(3, 3, 3) to "three", Time(4, 4, 4) to "4"), set = setOf(Date(2001, 1, 1), Date(2002, 2, 2))),
+                    TestMarykModel("haha6", 1, 13u, 3.44, DateTime(1, 1, 2), false)
                 )
             )
 
@@ -142,6 +143,38 @@ class InMemoryDataStoreChangeTest {
             it.values { set }!! shouldBe newDateSet
             it.values { embeddedValues }!! shouldBe newValues
         }
+    }
+
+    @Test
+    fun executeChangeChangeListItemDoesNotExistRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[5].change(
+                    Change(
+                        TestMarykModel { listOfString refAt 0 } with "z"
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
+    }
+
+    @Test
+    fun executeChangeChangeMapDoesNotExistRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[5].change(
+                    Change(
+                        TestMarykModel { map refAt Time(1, 2, 3) } with "new"
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
     }
 
     @Test

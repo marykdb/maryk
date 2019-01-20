@@ -24,8 +24,10 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.SetReference
@@ -50,6 +52,7 @@ import maryk.datastore.memory.StoreAction
 import maryk.datastore.memory.processors.changers.createCountUpdater
 import maryk.datastore.memory.processors.changers.deleteByReference
 import maryk.datastore.memory.processors.changers.getList
+import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.processors.changers.setListValue
 import maryk.datastore.memory.processors.changers.setValue
 import maryk.datastore.memory.processors.changers.setValueAtIndex
@@ -272,6 +275,16 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                             when (uniquesToProcess) {
                                                 null -> uniquesToProcess = mutableListOf(comparableValue)
                                                 else -> uniquesToProcess!!.add(comparableValue)
+                                            }
+                                        }
+
+                                        if (previousValue == null) {
+                                            when (reference) {
+                                                is ListItemReference<*, *> -> throw Exception("ListItem can only be changed if it exists. To add a new one use ListChange.")
+                                                is MapValueReference<*, *, *> -> {
+                                                    getValue<Any>(newValueList, reference.parentReference!!.toStorageByteArray())
+                                                        ?: throw Exception("MapValueReference can only be changed if parent map exists. Add a new Map to set it.")
+                                                }
                                             }
                                         }
 

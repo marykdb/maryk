@@ -178,6 +178,22 @@ class InMemoryDataStoreChangeTest {
     }
 
     @Test
+    fun executeChangeChangeEmbedDoesNotExistRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[5].change(
+                    Change(
+                        TestMarykModel { embeddedValues.ref { value } } with "test"
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        shouldBeOfType<ServerFail<*>>(changeResponse.statuses[0])
+    }
+
+    @Test
     fun executeChangeDeleteRequest() = runSuspendingTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(

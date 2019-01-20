@@ -27,7 +27,6 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
-import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.SetReference
@@ -281,9 +280,9 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                         if (previousValue == null) {
                                             when (reference) {
                                                 is ListItemReference<*, *> -> throw Exception("ListItem can only be changed if it exists. To add a new one use ListChange.")
-                                                is MapValueReference<*, *, *> -> {
+                                                is PropertyReference<*, *, *, *> -> {
                                                     getValue<Any>(newValueList, reference.parentReference!!.toStorageByteArray())
-                                                        ?: throw Exception("MapValueReference can only be changed if parent map exists. Add a new Map to set it.")
+                                                        ?: throw Exception("Property '${reference.completeName}' can only be changed if parent exists. Set the parent property to set this value.")
                                                 }
                                             }
                                         }

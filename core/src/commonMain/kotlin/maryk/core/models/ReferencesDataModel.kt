@@ -8,7 +8,6 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
-import maryk.core.query.filters.Exists
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItems
 import maryk.json.IsJsonLikeReader
@@ -25,11 +24,11 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
         context: RequestContext?
     ) {
         if (references.size == 1) {
-            Exists.Properties.references.definition.valueDefinition.writeJsonValue(references[0], this, context)
+            properties.references.definition.valueDefinition.writeJsonValue(references[0], this, context)
         } else {
             writeStartArray()
             for (it in references) {
-                Exists.Properties.references.definition.valueDefinition.writeJsonValue(it, this, context)
+                properties.references.definition.valueDefinition.writeJsonValue(it, this, context)
             }
             writeEndArray()
         }
@@ -49,14 +48,14 @@ abstract class ReferencesDataModel<DO: Any, P: ReferencesObjectPropertyDefinitio
         val valueMap = when (currentToken) {
             is JsonToken.Value<*> -> {
                 ValueItems(
-                    Exists.Properties.references withNotNull listOf(
-                        Exists.Properties.references.definition.valueDefinition.fromString(currentToken.value as String, context)
+                    properties.references withNotNull listOf(
+                        properties.references.definition.valueDefinition.fromString(currentToken.value as String, context)
                     )
                 )
             }
             is JsonToken.StartArray -> {
                 ValueItems(
-                    Exists.Properties.references withNotNull Exists.Properties.references.readJson(reader, context)
+                    properties.references withNotNull properties.references.readJson(reader, context)
                 )
             }
             else -> throw ParseException("Expected a list or a single property reference in Exists filter")

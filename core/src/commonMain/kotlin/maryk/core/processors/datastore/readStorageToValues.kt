@@ -350,7 +350,7 @@ private fun readTypedValue(
     offset: Int,
     readValueFromStorage: ValueReader,
     valueDefinition: IsMultiTypeDefinition<*, *>,
-    mapItemAdder: AddValue,
+    valueAdder: AddValue,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor
 ) {
@@ -358,13 +358,13 @@ private fun readTypedValue(
     if (qualifier.size <= qIndex1) {
         @Suppress("UNCHECKED_CAST")
         readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>)?.let {
-            mapItemAdder(it)
+            valueAdder(it)
         }
     } else {
         initIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
             valueDefinition.readComplexTypedValue(
                 typeIndex,
-                mapItemAdder,
+                valueAdder,
                 qualifier,
                 qIndex1,
                 readValueFromStorage,

@@ -5,7 +5,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsTypedRootDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -15,6 +14,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 import maryk.lib.safeLazy
 
@@ -110,7 +110,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = { it: ReferenceDefinition<*> ->
+                    getter = {
                         { it.dataModel }
                     },
                     toSerializable = { value: (Unit.() -> IsRootDataModel<*>)? , _ ->

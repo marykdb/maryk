@@ -194,7 +194,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
     }
 
     object Model : ContextualDataModel<MapDefinition<*, *, *>, ObjectPropertyDefinitions<MapDefinition<*, *, *>>, ContainsDefinitionsContext, KeyValueDefinitionContext>(
-        contextTransformer = { it: ContainsDefinitionsContext? -> KeyValueDefinitionContext(it) },
+        contextTransformer = { KeyValueDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)

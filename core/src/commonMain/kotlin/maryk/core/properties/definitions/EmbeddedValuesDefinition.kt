@@ -6,8 +6,6 @@ import maryk.core.models.AbstractValuesDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.DataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.values.ObjectValues
-import maryk.core.values.Values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -22,6 +20,8 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.ObjectValues
+import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
@@ -148,7 +148,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = { it: EmbeddedValuesDefinition<*, *> ->
+                    getter = {
                         { it.dataModel as DataModel<*, *> }
                     },
                     toSerializable = { value: (Unit.() -> DataModel<*, *>)?, _ ->
@@ -156,7 +156,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                             DataModelReference(model.name, value)
                         }
                     },
-                    fromSerializable = { it: IsDataModelReference<DataModel<*, *>>? -> it?.get },
+                    fromSerializable = { it?.get },
                     capturer = { context: ModelContext, dataModel: IsDataModelReference<DataModel<*, *>> ->
                         context.definitionsContext?.let {
                             if (!it.dataModels.containsKey(dataModel.name)) {

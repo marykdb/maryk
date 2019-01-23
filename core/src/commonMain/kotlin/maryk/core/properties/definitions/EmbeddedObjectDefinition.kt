@@ -150,7 +150,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                             } ?: throw ContextNotFoundException()
                         }
                     ),
-                    getter = { it: EmbeddedObjectDefinition<*, *, *, *, *> ->
+                    getter = {
                         { it.dataModel as ObjectDataModel<*, *> }
                     },
                     toSerializable = { value: (Unit.() -> ObjectDataModel<*, *>)?, _ ->

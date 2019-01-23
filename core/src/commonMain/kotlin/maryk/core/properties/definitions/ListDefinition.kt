@@ -58,7 +58,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     }
 
     object Model : ContextualDataModel<ListDefinition<*, *>, ObjectPropertyDefinitions<ListDefinition<*, *>>, ContainsDefinitionsContext, ListDefinitionContext>(
-        contextTransformer = { it: ContainsDefinitionsContext? -> ListDefinitionContext(it) },
+        contextTransformer = { ListDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<ListDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)

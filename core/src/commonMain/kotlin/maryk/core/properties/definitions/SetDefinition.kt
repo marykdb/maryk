@@ -64,7 +64,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     }
 
     object Model : ContextualDataModel<SetDefinition<*, *>, ObjectPropertyDefinitions<SetDefinition<*, *>>, ContainsDefinitionsContext, SetDefinitionContext>(
-        contextTransformer = { it: ContainsDefinitionsContext? -> SetDefinitionContext(it) },
+        contextTransformer = { SetDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
             init {
                 IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)

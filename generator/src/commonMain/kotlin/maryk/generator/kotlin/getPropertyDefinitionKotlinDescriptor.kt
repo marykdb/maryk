@@ -81,7 +81,7 @@ private val definitionNamesMap = mapOf(
     ),
     PropertyDefinitionType.Enum to PropertyDefinitionKotlinDescriptor(
         className = "EnumDefinition",
-        kotlinTypeName = { it: EnumDefinition<*> -> it.enum.name },
+        kotlinTypeName = { it.enum.name },
         definitionModel = EnumDefinition.Model as IsSimpleObjectDataModel<EnumDefinition<IndexedEnum<IndexedEnum<*>>>>,
         propertyValueOverride = mapOf(
             "maxValue" to { definition, value, _ ->

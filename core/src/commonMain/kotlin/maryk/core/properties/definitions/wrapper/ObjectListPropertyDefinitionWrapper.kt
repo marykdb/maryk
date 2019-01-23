@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.values.AbstractValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -9,6 +8,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.values.AbstractValues
 
 /**
  * Contains a List property [definition] which contains values of type [ODO] and [P]
@@ -55,7 +55,7 @@ data class ObjectListPropertyDefinitionWrapper<
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
     @Suppress("UNCHECKED_CAST")
-    fun <T: Any> ref(
+    fun <T: Any> refAt(
         index: Int,
         propertyDefinitionGetter: P.()-> IsPropertyDefinitionWrapper<T, *, *, *>
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, IsPropertyDefinitionWrapper<T, *, *, *>, *> {

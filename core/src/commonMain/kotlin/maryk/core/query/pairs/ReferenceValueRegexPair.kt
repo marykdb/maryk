@@ -1,12 +1,13 @@
 package maryk.core.query.pairs
 
-import maryk.core.models.SimpleObjectDataModel
+import maryk.core.models.QueryDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [regex] */
@@ -30,13 +31,13 @@ data class ReferenceValueRegexPair internal constructor(
         return result
     }
 
-    object Properties: ObjectPropertyDefinitions<ReferenceValueRegexPair>() {
-        val reference = DefinedByReference.addReference(
+    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceValueRegexPair, Regex>() {
+        override val reference = DefinedByReference.addReference(
             this,
             ReferenceValueRegexPair::reference
         )
         @Suppress("UNCHECKED_CAST")
-        val regex = add(
+        override val value = add(
             index = 2, name = "regex",
             definition = StringDefinition(),
             fromSerializable = { value: String? ->
@@ -46,10 +47,10 @@ data class ReferenceValueRegexPair internal constructor(
                 value?.pattern
             },
             getter = ReferenceValueRegexPair::regex
-        )
+        ) as IsPropertyDefinitionWrapper<Any, Regex, RequestContext, ReferenceValueRegexPair>
     }
 
-    companion object: SimpleObjectDataModel<ReferenceValueRegexPair, Properties>(
+    companion object: QueryDataModel<ReferenceValueRegexPair, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ReferenceValueRegexPair, Properties>) = ReferenceValueRegexPair(

@@ -2,10 +2,8 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
-import maryk.json.IsJsonLikeWriter
 
 /** Referenced values in [referenceValuePairs] should be greater than and equal given value */
 data class GreaterThanEquals(
@@ -16,19 +14,18 @@ data class GreaterThanEquals(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, GreaterThanEquals>() {
-        override val referenceValuePairs = addReferenceValuePairsDefinition(GreaterThanEquals::referenceValuePairs)
-    }
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<GreaterThanEquals, ReferenceValuePair<Any>>(
+        pairName = "referenceValuePairs",
+        pairGetter = GreaterThanEquals::referenceValuePairs,
+        pairModel = ReferenceValuePair
+    )
 
-    companion object: ReferencePairDataModel<Any, GreaterThanEquals, Properties>(
-        properties = Properties
+    companion object: ReferencePairDataModel<GreaterThanEquals, Properties, ReferenceValuePair<Any>, Any>(
+        properties = Properties,
+        pairProperties = ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<GreaterThanEquals, Properties>) = GreaterThanEquals(
             referenceValuePairs = values(1)
         )
-
-        override fun writeJson(obj: GreaterThanEquals, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeJsonMapObject(obj.referenceValuePairs, context)
-        }
     }
 }

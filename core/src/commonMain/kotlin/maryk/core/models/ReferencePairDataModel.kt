@@ -1,35 +1,58 @@
 package maryk.core.models
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
-import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.ListDefinition
-import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
-import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
-import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.query.changes.MultiTypeChange.Properties
+import maryk.core.query.pairs.ReferenceValuePairPropertyDefinitions
 import maryk.core.values.ObjectValues
+import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** For data models which contains only reference pairs */
-abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<T, DO>>(
-    properties: P
-) : AbstractObjectDataModel<DO, P, RequestContext, RequestContext>(properties){
-    internal fun IsJsonLikeWriter.writeJsonMapObject(
-        listOfPairs: List<ReferenceValuePair<*>>,
+/** For data models which contains only reference pairs of type [R] */
+abstract class ReferencePairDataModel<DO: Any, P: ReferenceValuePairsObjectPropertyDefinitions<DO, R>, R: DefinedByReference<*>, T: Any>(
+    properties: P,
+    private val pairProperties: ReferenceValuePairPropertyDefinitions<R, T>
+) : QueryDataModel<DO, P>(properties){
+    override fun writeJson(
+        values: ObjectValues<DO, P>,
+        writer: IsJsonLikeWriter,
+        context: RequestContext?
+    ) {
+        val referenceTypePairs = values { referenceValuePairs } ?: throw ParseException("ranges was not set on Range")
+        writer.writeJsonTypePairs(referenceTypePairs, context)
+    }
+
+    override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: RequestContext?) {
+        @Suppress("UNCHECKED_CAST")
+        val pairs = properties[1]?.getter?.invoke(obj) as? List<R> ?: throw Exception("No pairs defined on $obj")
+
+        writer.writeJsonTypePairs(pairs, context)
+    }
+
+    private fun IsJsonLikeWriter.writeJsonTypePairs(
+        referencePairs: List<R>,
         context: RequestContext?
     ) {
         writeStartObject()
-        for (pair in listOfPairs) {
+        for (it in referencePairs) {
             writeFieldName(
-                ReferenceValuePair.Properties.reference.definition.asString(pair.reference, context)
+                pairProperties.reference.definition.asString(it.reference)
             )
-            ReferenceValuePair.Properties.reference.capture(context, pair.reference)
-            ReferenceValuePair.Properties.value.definition.writeJsonValue(pair.value, this, context)
+            pairProperties.reference.capture(context, it.reference)
+
+            @Suppress("UNCHECKED_CAST")
+            pairProperties.value.writeJsonValue(
+                pairProperties.value.getPropertyAndSerialize(it, context)
+                    ?: throw Exception("No pair value defined on $it"),
+                this,
+                context
+            )
         }
         writeEndObject()
     }
@@ -40,51 +63,64 @@ abstract class ReferencePairDataModel<T: Any, DO: Any, P: ReferenceValuePairsObj
         }
 
         if (reader.currentToken !is JsonToken.StartObject) {
-            throw ParseException("JSON value should be an Object")
+            throw IllegalJsonOperation("Expected object at start of JSON")
         }
-        val list = mutableListOf<ReferenceValuePair<T>>()
 
-        var currentToken = reader.nextToken()
+        val listOfTypePairs = mutableListOf<R>()
+        reader.nextToken()
 
-        while (currentToken is JsonToken.FieldName) {
-            @Suppress("UNCHECKED_CAST")
-            val reference = ReferenceValuePair.Properties.reference.definition.fromString(
-                currentToken.value ?: throw ParseException("Reference cannot be empty in filter"),
-                context
-            ) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+        walker@ do {
+            val token = reader.currentToken
+            when (token) {
+                is JsonToken.FieldName -> {
+                    val refName = token.value ?: throw ParseException("Empty field name not allowed in JSON")
+
+                    val reference = pairProperties.reference.definition.fromString(refName, context)
+                    pairProperties.reference.capture(context, reference)
+
+                    reader.nextToken()
+
+                    @Suppress("UNCHECKED_CAST")
+                    val value = pairProperties.value.readJson(reader, context) as T?
+
+                    @Suppress("UNCHECKED_CAST")
+                    listOfTypePairs.add(
+                        properties.pairModel.values {
+                            mapNonNulls(
+                                pairProperties.reference with reference,
+                                pairProperties.value with value
+                            )
+                        }.toDataObject()
+                    )
+                }
+                else -> break@walker
+            }
             reader.nextToken()
-
-            ReferenceValuePair.Properties.reference.capture(context, reference)
-
-            val value = ReferenceValuePair.Properties.value.readJson(reader, context)
-
-            @Suppress("UNCHECKED_CAST")
-            list.add(ReferenceValuePair(reference, value) as ReferenceValuePair<T>)
-
-            currentToken = reader.nextToken()
-        }
+        } while (token !is JsonToken.Stopped)
 
         return this.values(context) {
-            mapNonNulls(
-                referenceValuePairs withSerializable list
+            Properties.mapNonNulls(
+                properties.referenceValuePairs withSerializable listOfTypePairs
             )
         }
     }
 }
 
-abstract class ReferenceValuePairsObjectPropertyDefinitions<T: Any, DO: Any> : ObjectPropertyDefinitions<DO>() {
-    abstract val referenceValuePairs: ListPropertyDefinitionWrapper<ReferenceValuePair<T>, ReferenceValuePair<T>, IsPropertyContext, DO>
-
-    protected fun <T: Any> addReferenceValuePairsDefinition(getter: (DO) -> List<ReferenceValuePair<T>>?) =
-        this.add(1, "referenceValuePairs",
-            ListDefinition(
-                valueDefinition = EmbeddedObjectDefinition(
-                    dataModel = {
-                        @Suppress("UNCHECKED_CAST")
-                        ReferenceValuePair as SimpleObjectDataModel<ReferenceValuePair<T>, ObjectPropertyDefinitions<ReferenceValuePair<T>>>
-                    }
-                )
-            ),
-            getter = getter
-        )
+/** Defines the PropertyDefinitions of DataModels with only Reference Value pairs */
+abstract class ReferenceValuePairsObjectPropertyDefinitions<DO: Any, R: DefinedByReference<*>>(
+    val pairName: String,
+    pairGetter: (DO) -> List<R>?,
+    val pairModel: QueryDataModel<R, *>
+) : ObjectPropertyDefinitions<DO>() {
+    val referenceValuePairs = add(1, this.pairName,
+        ListDefinition(
+            valueDefinition = EmbeddedObjectDefinition(
+                dataModel = {
+                    @Suppress("UNCHECKED_CAST")
+                    pairModel as QueryDataModel<R, ObjectPropertyDefinitions<R>>
+                }
+            )
+        ),
+        getter = pairGetter
+    )
 }

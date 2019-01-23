@@ -2,10 +2,8 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
-import maryk.json.IsJsonLikeWriter
 
 /** Referenced values in [referenceValuePairs] should be equal given value */
 data class Equals internal constructor(
@@ -16,19 +14,18 @@ data class Equals internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<*>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    object Properties: ReferenceValuePairsObjectPropertyDefinitions<Any, Equals>() {
-        override val referenceValuePairs = addReferenceValuePairsDefinition(Equals::referenceValuePairs)
-    }
+    object Properties: ReferenceValuePairsObjectPropertyDefinitions<Equals, ReferenceValuePair<Any>>(
+        pairName = "referenceValuePairs",
+        pairGetter = Equals::referenceValuePairs,
+        pairModel = ReferenceValuePair
+    )
 
-    companion object: ReferencePairDataModel<Any, Equals, Properties>(
-        properties = Properties
+    companion object: ReferencePairDataModel<Equals, Properties, ReferenceValuePair<Any>, Any>(
+        properties = Properties,
+        pairProperties = ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<Equals, Properties>) = Equals(
             referenceValuePairs = values(1)
         )
-
-        override fun writeJson(obj: Equals, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeJsonMapObject(obj.referenceValuePairs, context)
-        }
     }
 }

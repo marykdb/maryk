@@ -1,11 +1,11 @@
 package maryk.core.query.filters
 
+import maryk.core.models.QueryDataModel
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.query.pairs.ReferenceValuePairPropertyDefinitions
 import maryk.core.values.ObjectValues
-import maryk.json.IsJsonLikeWriter
 
 /** Referenced values in [referenceValuePairs] should match with prefixes */
 data class Prefix internal constructor(
@@ -15,19 +15,20 @@ data class Prefix internal constructor(
 
     constructor(vararg referenceValuePair: ReferenceValuePair<String>): this(referenceValuePair.toList())
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<String, Prefix>() {
-        override val referenceValuePairs = addReferenceValuePairsDefinition(Prefix::referenceValuePairs)
-    }
+    @Suppress("UNCHECKED_CAST")
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Prefix, ReferenceValuePair<String>>(
+        pairName = "referenceValuePairs",
+        pairGetter = Prefix::referenceValuePairs,
+        pairModel = ReferenceValuePair as QueryDataModel<ReferenceValuePair<String>, *>
+    )
 
-    companion object: ReferencePairDataModel<String, Prefix, Properties>(
-        properties = Properties
+    @Suppress("UNCHECKED_CAST")
+    companion object: ReferencePairDataModel<Prefix, Properties, ReferenceValuePair<String>, String>(
+        properties = Properties,
+        pairProperties = ReferenceValuePair.Properties as ReferenceValuePairPropertyDefinitions<ReferenceValuePair<String>, String>
     ) {
         override fun invoke(values: ObjectValues<Prefix, Properties>) = Prefix(
             referenceValuePairs = values(1)
         )
-
-        override fun writeJson(obj: Prefix, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeJsonMapObject(obj.referenceValuePairs, context)
-        }
     }
 }

@@ -2,11 +2,12 @@ package maryk.core.query.pairs
 
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
+import maryk.core.query.RequestContext
 import maryk.core.query.ValueRange
 import maryk.core.values.ObjectValues
 
@@ -18,18 +19,19 @@ data class ReferenceValueRangePair<T: Comparable<T>> internal constructor(
 
     override fun toString() = "$reference: $range"
 
-    object Properties: ObjectPropertyDefinitions<ReferenceValueRangePair<*>>() {
-        val reference = DefinedByReference.addReference(
+    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceValueRangePair<*>, ValueRange<*>>() {
+        override val reference = DefinedByReference.addReference(
             this,
             ReferenceValueRangePair<*>::reference
         )
-        val range = add(
+        @Suppress("UNCHECKED_CAST")
+        override val value = add(
             index = 2, name = "range",
             definition = EmbeddedObjectDefinition(
                 dataModel = { ValueRange }
             ),
             getter = ReferenceValueRangePair<*>::range
-        )
+        ) as IsPropertyDefinitionWrapper<Any, ValueRange<*>, RequestContext, ReferenceValueRangePair<*>>
     }
 
     companion object: SimpleObjectDataModel<ReferenceValueRangePair<*>, Properties>(

@@ -3,11 +3,11 @@ package maryk.core.query.pairs
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -20,12 +20,13 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
 ) : DefinedByReference<T> {
     override fun toString() = "$reference: $values]"
 
-    object Properties: ObjectPropertyDefinitions<ReferenceValueSetPair<*>>() {
-        val reference = DefinedByReference.addReference(
+    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceValueSetPair<*>, Set<*>>() {
+        override val reference = DefinedByReference.addReference(
             this,
             ReferenceValueSetPair<*>::reference
         )
-        val values = add(2, "values", SetDefinition(
+        @Suppress("UNCHECKED_CAST")
+        override val value = add(2, "values", SetDefinition(
             valueDefinition = ContextualValueDefinition(
                 contextualResolver = { context: RequestContext? ->
                     context?.reference?.let {
@@ -34,7 +35,7 @@ data class ReferenceValueSetPair<T: Any> internal constructor(
                     } ?: throw ContextNotFoundException()
                 }
             )
-        ), ReferenceValueSetPair<*>::values)
+        ), ReferenceValueSetPair<*>::values) as IsPropertyDefinitionWrapper<Any, Set<*>, RequestContext, ReferenceValueSetPair<*>>
     }
 
     companion object: SimpleObjectDataModel<ReferenceValueSetPair<*>, Properties>(

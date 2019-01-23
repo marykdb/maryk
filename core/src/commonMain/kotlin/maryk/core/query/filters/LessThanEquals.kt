@@ -2,10 +2,8 @@ package maryk.core.query.filters
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
-import maryk.json.IsJsonLikeWriter
 
 /** Referenced values in [referenceValuePairs] should be less than and not equal given value */
 data class LessThanEquals internal constructor(
@@ -16,19 +14,18 @@ data class LessThanEquals internal constructor(
     @Suppress("UNCHECKED_CAST")
     constructor(vararg referenceValuePair: ReferenceValuePair<out Any>): this(referenceValuePair.toList() as List<ReferenceValuePair<Any>>)
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, LessThanEquals>() {
-        override val referenceValuePairs = addReferenceValuePairsDefinition(LessThanEquals::referenceValuePairs)
-    }
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<LessThanEquals, ReferenceValuePair<Any>>(
+        pairName = "referenceValuePairs",
+        pairGetter = LessThanEquals::referenceValuePairs,
+        pairModel = ReferenceValuePair
+    )
 
-    companion object: ReferencePairDataModel<Any, LessThanEquals, Properties>(
-        properties = Properties
+    companion object: ReferencePairDataModel<LessThanEquals, Properties, ReferenceValuePair<Any>, Any>(
+        properties = Properties,
+        pairProperties = ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<LessThanEquals, Properties>) = LessThanEquals(
             referenceValuePairs = values(1)
         )
-
-        override fun writeJson(obj: LessThanEquals, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeJsonMapObject(obj.referenceValuePairs, context)
-        }
     }
 }

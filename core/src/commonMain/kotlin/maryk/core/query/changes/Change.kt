@@ -2,10 +2,8 @@ package maryk.core.query.changes
 
 import maryk.core.models.ReferencePairDataModel
 import maryk.core.models.ReferenceValuePairsObjectPropertyDefinitions
-import maryk.core.query.RequestContext
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.ObjectValues
-import maryk.json.IsJsonLikeWriter
 
 /** Defines changes to properties defined by [referenceValuePairs] */
 data class Change internal constructor(
@@ -18,19 +16,18 @@ data class Change internal constructor(
 
     override fun toString() = "Change[${referenceValuePairs.joinToString()}]"
 
-    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Any, Change>() {
-        override val referenceValuePairs = addReferenceValuePairsDefinition(Change::referenceValuePairs)
-    }
+    object Properties : ReferenceValuePairsObjectPropertyDefinitions<Change, ReferenceValuePair<Any>>(
+        pairName = "referenceValuePairs",
+        pairGetter = Change::referenceValuePairs,
+        pairModel = ReferenceValuePair
+    )
 
-    companion object: ReferencePairDataModel<Any, Change, Properties>(
-        properties = Properties
+    companion object: ReferencePairDataModel<Change, Properties, ReferenceValuePair<Any>, Any>(
+        Properties,
+        ReferenceValuePair.Properties
     ) {
         override fun invoke(values: ObjectValues<Change, Properties>) = Change(
             referenceValuePairs = values(1)
         )
-
-        override fun writeJson(obj: Change, writer: IsJsonLikeWriter, context: RequestContext?) {
-            writer.writeJsonMapObject(obj.referenceValuePairs, context)
-        }
     }
 }

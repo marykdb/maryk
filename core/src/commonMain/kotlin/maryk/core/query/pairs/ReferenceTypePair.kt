@@ -2,9 +2,9 @@ package maryk.core.query.pairs
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
-import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualIndexedEnumDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.enum.IndexedEnum
@@ -15,7 +15,7 @@ import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
-/** Defines a pair of a [reference] and [range] of type [T] */
+/** Defines a pair of a [reference] and [type] of type [E] */
 data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
     override val reference: MultiTypePropertyReference<E, *, MultiTypeDefinitionWrapper<E, *, *, *>, *>,
     val type: E
@@ -23,13 +23,13 @@ data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
 
     override fun toString() = "$reference: $type"
 
-    object Properties: ObjectPropertyDefinitions<ReferenceTypePair<*>>() {
-        val reference = DefinedByReference.addReference(
+    object Properties: ReferenceValuePairPropertyDefinitions<ReferenceTypePair<*>, AnyIndexedEnum>() {
+        override val reference = DefinedByReference.addReference(
             this,
             ReferenceTypePair<*>::reference
         )
         @Suppress("UNCHECKED_CAST")
-        val type = add(
+        override val value = add(
             index = 2, name = "type",
             definition = ContextualIndexedEnumDefinition<RequestContext, RequestContext, AnyIndexedEnum, IsMultiTypeDefinition<AnyIndexedEnum, RequestContext>>(
                 contextualResolver = {
@@ -38,7 +38,7 @@ data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
                 }
             ),
             getter = ReferenceTypePair<*>::type as (ReferenceTypePair<*>) -> AnyIndexedEnum
-        )
+        ) as IsPropertyDefinitionWrapper<Any, AnyIndexedEnum, RequestContext, ReferenceTypePair<*>>
     }
 
     companion object: QueryDataModel<ReferenceTypePair<*>, Properties>(

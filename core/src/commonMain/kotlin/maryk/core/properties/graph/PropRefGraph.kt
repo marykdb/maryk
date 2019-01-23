@@ -163,7 +163,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
                         propertiesValue.add(
                             TypedValue(
                                 PropRefGraphType.PropRef,
-                                multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
+                                multiTypeDefinition.definitionMap.getValue(PropRefGraphType.PropRef)
                                     .readJson(reader, context) as AnyPropertyReference
                             )
                         )

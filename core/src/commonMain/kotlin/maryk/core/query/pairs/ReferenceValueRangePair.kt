@@ -51,4 +51,4 @@ infix fun <T: Comparable<T>> IsPropertyReference<T, IsChangeableValueDefinition<
 /** Creates a reference value [range] pair */
 infix fun <T: Comparable<T>> IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>.with(
     range: ClosedRange<T>
-) = ReferenceValueRangePair(this, ValueRange(range.start, range.endInclusive, true, true))
+) = ReferenceValueRangePair(this, ValueRange(range.start, range.endInclusive, inclusiveFrom = true, inclusiveTo = true))

@@ -40,7 +40,7 @@ val testMaryk = TestMarykModel(
     )
 )
 
-val valuesAsStorables = arrayOf<Pair<String, Any>>(
+val valuesAsStorables = arrayOf(
     "09" to "hello world",
     "11" to 5,
     "19" to 3u,

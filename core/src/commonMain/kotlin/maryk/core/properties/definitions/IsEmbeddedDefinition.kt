@@ -13,7 +13,7 @@ import maryk.core.properties.references.decodeStorageIndex
 
 typealias IsAnyEmbeddedDefinition = IsEmbeddedDefinition<IsDataModel<AbstractPropertyDefinitions<Any>>, AbstractPropertyDefinitions<Any>>
 
-/** Interface for property definitions containing embedded DataObjects of [DO] and context [CX]. */
+/** Interface for property definitions containing embedded DataObjects of [DM] and definitions [P]. */
 interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P: AbstractPropertyDefinitions<*>> {
     val dataModel: DM
 

@@ -6,7 +6,7 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 
-/** Write a complete [set] defined by [definition] with [qualifierWriter] of [qualifierSize] to storage with [valueWriter]. */
+/** Write a complete [set] defined by [definition] with [qualifierWriter] of [qualifierCount] to storage with [valueWriter]. */
 @Suppress("UNCHECKED_CAST")
 fun <T : IsPropertyDefinition<*>> writeSetToStorage(
     qualifierCount: Int,

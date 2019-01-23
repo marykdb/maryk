@@ -94,7 +94,7 @@ data class RootPropRefGraph<P: IsPropertyDefinitions> internal constructor(
                         propertiesList.add(
                             TypedValue(
                                 PropRefGraphType.PropRef,
-                                multiTypeDefinition.definitionMap[PropRefGraphType.PropRef]!!
+                                multiTypeDefinition.definitionMap.getValue(PropRefGraphType.PropRef)
                                     .readJson(reader, context) as AnyPropertyReference
                             )
                         )

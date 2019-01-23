@@ -13,7 +13,8 @@ enum class ChangeType(
     ObjectDelete(4),
     ListChange(5),
     SetChange(6),
-    MapChange(7);
+    MapChange(7),
+    TypeChange(8);
 
     companion object: IndexedEnumDefinition<ChangeType>(
         "ChangeType", ChangeType::values

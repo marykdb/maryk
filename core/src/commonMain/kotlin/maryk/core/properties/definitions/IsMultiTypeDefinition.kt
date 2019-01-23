@@ -24,6 +24,9 @@ interface IsMultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> :
     /** Get type by [index] */
     fun type(index: Int): E?
 
+    /** Get type by [name] */
+    fun type(name: String): E?
+
     /**
      * Creates a reference referring to [type] of multi type below [parentReference]
      * so reference can be strongly typed

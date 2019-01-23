@@ -47,6 +47,15 @@ data class Range internal constructor(
             referenceRangePairs = values(1)
         )
 
+        override fun writeJson(
+            values: ObjectValues<Range, Properties>,
+            writer: IsJsonLikeWriter,
+            context: RequestContext?
+        ) {
+            val ranges = values { ranges } ?: throw ParseException("ranges was not set on Range")
+            writer.writeJsonRanges(ranges, context)
+        }
+
         override fun writeJson(obj: Range, writer: IsJsonLikeWriter, context: RequestContext?) {
             val ranges = obj.referenceRangePairs
 

@@ -77,6 +77,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
 
     override fun definition(index: Int) = definitionMapByIndex[index]
     override fun type(index: Int) = typeByIndex[index]
+    override fun type(name: String) = typeByName[name]
 
     override fun asString(value: TypedValue<E, Any>, context: CX?): String {
         var string = ""

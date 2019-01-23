@@ -13,12 +13,14 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.MapChange
+import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -40,7 +42,8 @@ class ChangesResponseTest {
                             ObjectSoftDeleteChange(true),
                             ListChange(TestMarykModel.ref { list }.change()),
                             SetChange(TestMarykModel.ref { set }.change()),
-                            MapChange(TestMarykModel.ref { map }.change())
+                            MapChange(TestMarykModel.ref { map }.change()),
+                            MultiTypeChange(TestMarykModel.ref { multi } with V3)
                         )
                     ),
                     VersionedChanges(
@@ -91,6 +94,8 @@ class ChangesResponseTest {
               set:
             - !MapChange
               map:
+            - !TypeChange
+              multi: V3
           - version: 319674127
             changes:
             - !Change

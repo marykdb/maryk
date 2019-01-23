@@ -60,7 +60,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
 
                 val injectionContext = Inject.transformContext(context as RequestContext)
                 Inject.writeJson(value, writer, injectionContext)
-            }else {
+            } else {
                 definition.capture(context, value)
                 writeJsonValue(definition, writer, value, context)
             }

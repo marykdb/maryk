@@ -255,6 +255,14 @@ internal class JsonReaderTest {
     }
 
     @Test
+    fun readSimpleValue() {
+        createJsonReader(""""test"""").apply {
+            assertValue("test")
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun readDoubleQuoteWithSpecialChars() {
         createJsonReader("""["te\"\b\f\n\t\\\/\r'\x"]""").apply {
             assertStartArray()

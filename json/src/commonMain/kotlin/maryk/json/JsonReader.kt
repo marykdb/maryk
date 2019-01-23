@@ -1,5 +1,7 @@
 package maryk.json
 
+import maryk.json.JsonComplexType.OBJECT
+import maryk.json.JsonToken.EndDocument
 import maryk.lib.extensions.HEX_CHARS
 import maryk.lib.extensions.isDigit
 import maryk.lib.extensions.isLineBreak
@@ -63,10 +65,10 @@ class JsonReader(
                     readValue(this::constructJsonValueToken)
                 }
                 is JsonToken.Value<*> -> {
-                    if (typeStack.last() == JsonComplexType.OBJECT) {
-                        readObject()
-                    } else {
-                        readArray()
+                    when {
+                        typeStack.isEmpty() -> currentToken = EndDocument
+                        typeStack.last() == OBJECT -> readObject()
+                        else -> readArray()
                     }
                 }
                 JsonToken.ObjectSeparator -> {
@@ -367,7 +369,9 @@ class JsonReader(
         }
         currentToken = currentTokenCreator(storedValue)
 
-        readSkipWhitespace()
+        if(!typeStack.isEmpty()) {
+            readSkipWhitespace()
+        }
     }
 
     private fun startObject() {

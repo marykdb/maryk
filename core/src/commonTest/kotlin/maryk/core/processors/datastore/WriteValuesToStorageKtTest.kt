@@ -1,10 +1,13 @@
 package maryk.core.processors.datastore
 
+import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
+import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.TypeValue
 import maryk.core.processors.datastore.StorageTypeEnum.Value
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -40,6 +43,12 @@ class WriteValuesToStorageKtTest {
                 }
                 TypeValue -> {
                     shouldBeOfType<IsMultiTypeDefinition<*, *>>(type.castDefinition(definition))
+                }
+                Embed -> {
+                    shouldBeOfType<EmbeddedValuesDefinition<*, *>>(type.castDefinition(definition))
+                }
+                ObjectDelete -> {
+                    // Not in this write
                 }
             }
             counter++

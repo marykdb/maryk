@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id "com.google.protobuf" version "0.8.6"
+    id "com.google.protobuf" version "0.8.8"
     id "kotlin-platform-jvm"
     id "idea"
 }
 
 ext {
-    protobufVersion = '3.6.0'
+    protobufVersion = '3.6.1'
 }
 
 protobuf {

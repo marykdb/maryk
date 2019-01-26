@@ -30,7 +30,8 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
     override val getter: (Any) -> Values<DM, P>? = { null },
     override val capturer: ((CX, Values<DM, P>) -> Unit)? = null,
     override val toSerializable: ((Values<DM, P>?, CX?) -> Values<DM, P>?)? = null,
-    override val fromSerializable: ((Values<DM, P>?) -> Values<DM, P>?)? = null
+    override val fromSerializable: ((Values<DM, P>?) -> Values<DM, P>?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, P, CX> by definition,

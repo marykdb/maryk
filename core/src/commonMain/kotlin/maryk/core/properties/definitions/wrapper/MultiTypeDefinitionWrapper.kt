@@ -26,7 +26,8 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, TypedValue<E, Any>) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> TypedValue<E, Any>?)? = null,
-    override val fromSerializable: ((TypedValue<E, Any>?) -> TO?)? = null
+    override val fromSerializable: ((TypedValue<E, Any>?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsMultiTypeDefinition<E, CX> by definition,

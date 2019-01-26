@@ -53,8 +53,9 @@ abstract class ObjectPropertyDefinitions<DO: Any> : AbstractPropertyDefinitions<
         getter: (DO) -> TO?,
         toSerializable: (TO?, CX?) -> T?,
         fromSerializable: (T?) -> TO?,
+        shouldSerialize: ((Any) -> Boolean)? = null,
         capturer: ((CX, T) -> Unit)? = null
-    ) = PropertyDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable).apply {
+    ) = PropertyDefinitionWrapper(index, name, definition, getter, capturer, toSerializable, fromSerializable, shouldSerialize).apply {
         addSingle(this)
     }
 
@@ -343,6 +344,7 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO: 
 
     override val toSerializable: ((ObjectPropertyDefinitions<Any>?, DefinitionsConversionContext?) -> ObjectPropertyDefinitions<Any>?)? = null
     override val fromSerializable: ((ObjectPropertyDefinitions<Any>?) -> ObjectPropertyDefinitions<Any>?)? = null
+    override val shouldSerialize: ((Any) -> Boolean)? = null
     override val capturer: ((DefinitionsConversionContext, ObjectPropertyDefinitions<Any>) -> Unit)? = null
 
     override fun getRef(parentRef: AnyPropertyReference?) = throw Throwable("Not implemented")

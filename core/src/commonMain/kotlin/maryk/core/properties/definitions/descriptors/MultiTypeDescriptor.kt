@@ -188,6 +188,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
     override val definition: ContextCollectionTransformerDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, MultiTypeDefinitionContext, ContainsDefinitionsContext>,
     override val toSerializable: ((List<MultiTypeDescriptor>?, MultiTypeDefinitionContext?) -> List<MultiTypeDescriptor>?)? = null,
     override val fromSerializable: ((List<MultiTypeDescriptor>?) -> List<MultiTypeDescriptor>?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null,
     override val capturer: ((MultiTypeDefinitionContext, List<MultiTypeDescriptor>) -> Unit)? = null,
     override val getter: (MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext>) -> List<MultiTypeDescriptor>?
 ) :

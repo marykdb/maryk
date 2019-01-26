@@ -50,6 +50,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     val capturer: ((CX, T) -> Unit)?
     val toSerializable: ((TO?, CX?) -> T?)?
     val fromSerializable: ((T?) -> TO?)?
+    val shouldSerialize: ((Any) -> Boolean)?
 
     /** Create an index [value] pair for maps */
     infix fun withNotNull(value: Any): ValueItem {
@@ -59,9 +60,13 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     /** Create an index [value] pair for maps */
     infix fun with(value: TO?) = value?.let {
         val serializedValue = try {
-            toSerializable?.let { serializer ->
-                serializer(value, null) ?: value
-            } ?: value
+            if (shouldSerialize == null || shouldSerialize!!(value)) {
+                toSerializable?.let { serializer ->
+                    serializer(value, null) ?: value
+                } ?: value
+            } else {
+                value
+            }
         } catch (_: Throwable) {
             value
         }

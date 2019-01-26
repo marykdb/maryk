@@ -46,6 +46,7 @@ data class ReferenceValueRegexPair internal constructor(
             toSerializable = { value: Regex?, _ ->
                 value?.pattern
             },
+            shouldSerialize = { it is Regex },
             getter = ReferenceValueRegexPair::regex
         ) as IsPropertyDefinitionWrapper<Any, Regex, RequestContext, ReferenceValueRegexPair>
     }

@@ -33,6 +33,7 @@ interface IsObjectRequest<out DM: IsRootDataModel<*>, RP: IsResponse>: IsRequest
                     }
                 },
                 fromSerializable = { it?.get?.invoke(Unit) },
+                shouldSerialize = { it !is DataModelReference<*> },
                 capturer = { context, value ->
                     @Suppress("UNCHECKED_CAST")
                     context.dataModel = value.get(Unit) as IsRootDataModel<IsPropertyDefinitions>

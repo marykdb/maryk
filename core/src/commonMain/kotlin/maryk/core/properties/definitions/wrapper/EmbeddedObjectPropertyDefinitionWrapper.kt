@@ -35,7 +35,8 @@ data class EmbeddedObjectPropertyDefinitionWrapper<
     override val getter: (DO) -> TO?,
     override val capturer: ((CXI, EODO) -> Unit)? = null,
     override val toSerializable: ((TO?, CXI?) -> EODO?)? = null,
-    override val fromSerializable: ((EODO?) -> TO?)? = null
+    override val fromSerializable: ((EODO?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsEmbeddedObjectDefinition<EODO, P, DM, CXI, CX> by definition,

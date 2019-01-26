@@ -18,7 +18,8 @@ data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: I
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, T) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> T?)? = null,
-    override val fromSerializable: ((T?) -> TO?)? = null
+    override val fromSerializable: ((T?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsSerializableFlexBytesEncodable<T, CX> by definition,

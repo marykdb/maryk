@@ -27,7 +27,8 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, T) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> T?)? = null,
-    override val fromSerializable: ((T?) -> TO?)? = null
+    override val fromSerializable: ((T?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsSerializableFixedBytesEncodable<T, CX> by definition,

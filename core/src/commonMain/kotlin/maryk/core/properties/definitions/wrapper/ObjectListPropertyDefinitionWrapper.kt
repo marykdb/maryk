@@ -29,7 +29,8 @@ data class ObjectListPropertyDefinitionWrapper<
     override val getter: (DO) -> List<TO>? = { null },
     override val capturer: ((CX, List<ODO>) -> Unit)? = null,
     override val toSerializable: ((List<TO>?, CX?) -> List<ODO>?)? = null,
-    override val fromSerializable: ((List<ODO>?) -> List<TO>?)? = null
+    override val fromSerializable: ((List<ODO>?) -> List<TO>?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractPropertyDefinitionWrapper(index, name),
     IsListDefinition<ODO, CX> by definition,

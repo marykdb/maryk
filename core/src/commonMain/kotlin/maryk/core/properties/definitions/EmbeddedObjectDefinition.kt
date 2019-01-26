@@ -6,7 +6,6 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
@@ -20,6 +19,7 @@ import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -158,7 +158,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                             DataModelReference(model.name, value)
                         }
                     },
-                    fromSerializable = { it: IsDataModelReference<ObjectDataModel<*, *>>? -> it?.get },
+                    fromSerializable = { it?.get },
                     capturer = { context: ModelContext, dataModel: IsDataModelReference<ObjectDataModel<*, *>> ->
                         context.definitionsContext?.let {
                             if (!it.dataModels.containsKey(dataModel.name)) {

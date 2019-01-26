@@ -236,7 +236,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
                     ),
                     getter = MapDefinition<*, *, *>::valueDefinition,
                     toSerializable = { value, _ ->
-                    val defType = value!! as IsTransportablePropertyDefinitionType<*>
+                        val defType = value!! as IsTransportablePropertyDefinitionType<*>
                         TypedValue(defType.propertyDefinitionType, value)
                     },
                     fromSerializable = {

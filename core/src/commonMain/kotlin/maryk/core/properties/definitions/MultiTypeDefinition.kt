@@ -6,6 +6,7 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -25,6 +26,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.values.EmptyValueItems
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -105,8 +107,23 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
             val definition = this.definitionMapByIndex[newValue.type.index] as IsSubDefinition<Any, CX>?
                     ?: throw DefNotFoundException("No def found for index ${newValue.type}")
 
+            val prevValue = previousValue?.let {
+                // Convert prev value to a basic value for Unit types
+                // This is done so type changes can be checked in storage situations where actual value is not yet read
+                if (it.value == Unit) {
+                    val value: Any = when (definition) {
+                        is IsEmbeddedValuesDefinition<*, *, *> -> (definition.dataModel as IsTypedValuesDataModel<*, *>).values(null) { EmptyValueItems }
+                        is IsListDefinition<*, *> -> emptyList<Any>()
+                        is IsSetDefinition<*, *> -> emptySet<Any>()
+                        is IsMapDefinition<*, *, *> -> emptyMap<Any, Any>()
+                        else -> throw Exception("Not supported complex multitype")
+                    }
+                    TypedValue(it.type, value)
+                } else previousValue
+            }
+
             definition.validateWithRef(
-                previousValue?.value,
+                prevValue?.value,
                 newValue.value
             ) {
                 @Suppress("UNCHECKED_CAST")

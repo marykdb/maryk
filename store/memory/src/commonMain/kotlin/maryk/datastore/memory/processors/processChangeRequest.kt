@@ -224,12 +224,16 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     @Suppress("UNCHECKED_CAST")
                                     val multiTypeDefinition = multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
 
+                                    // Previous value to find
+                                    var prevValue: TypedValue<*, *>? = null
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference<TypedValue<AnyIndexedEnum, Any>>(newValueList, multiTypeReference, version, keepAllVersions)
+                                    val hadPrevValue = deleteByReference<TypedValue<AnyIndexedEnum, Any>>(newValueList, multiTypeReference, version, keepAllVersions) { _, prevTypedValue ->
+                                        prevValue = prevTypedValue
+                                    }
 
                                     @Suppress("UNCHECKED_CAST")
                                     multiTypeDefinition.validateWithRef(
-                                        if (hadPrevValue) value as TypedValue<AnyIndexedEnum, Any> else null,
+                                        if (hadPrevValue) prevValue as TypedValue<AnyIndexedEnum, Any> else null,
                                         value as TypedValue<AnyIndexedEnum, Any>
                                     ) { multiTypeReference }
 

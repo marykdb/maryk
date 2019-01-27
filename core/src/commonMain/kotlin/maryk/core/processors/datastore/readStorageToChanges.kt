@@ -15,25 +15,32 @@ import maryk.core.processors.datastore.ChangeType.MAP_DELETE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
 import maryk.core.processors.datastore.ChangeType.SET_ADD
 import maryk.core.processors.datastore.ChangeType.SET_DELETE
+import maryk.core.processors.datastore.ChangeType.TYPE
 import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsAnyEmbeddedDefinition
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
+import maryk.core.properties.enum.AnyIndexedEnum
+import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyValuePropertyReference
+import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.CompleteReferenceType.DELETE
 import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.IsPropertyReference
@@ -41,6 +48,7 @@ import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
@@ -50,8 +58,10 @@ import maryk.core.properties.references.ReferenceType.SPECIAL
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.completeReferenceTypeOf
 import maryk.core.properties.references.referenceStorageTypeOf
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
@@ -59,17 +69,19 @@ import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.ListValueChanges
 import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.MapValueChanges
+import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.SetValueChanges
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.query.pairs.ReferenceValuePair
 
 typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<Any>>, IsPropertyDefinition<Any>?, (ULong, Any?) -> Unit) -> Unit
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
-    OBJECT_DELETE, CHANGE, DELETE, MAP_ADD, MAP_DELETE, LIST_ADD, LIST_DELETE, SET_ADD, SET_DELETE
+    OBJECT_DELETE, CHANGE, DELETE, MAP_ADD, MAP_DELETE, LIST_ADD, LIST_DELETE, SET_ADD, SET_DELETE, TYPE
 }
 
 private val objectDeletePropertyDefinition = BooleanDefinition()
@@ -117,6 +129,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
         ChangeType.OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
         ChangeType.CHANGE -> this.find { it is Change }?.also { ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(changePart as ReferenceValuePair<*>) }
         ChangeType.DELETE -> this.find { it is Delete }?.also { ((it as Delete).references as MutableList<AnyValuePropertyReference>).add(changePart as AnyValuePropertyReference) }
+        ChangeType.TYPE -> this.find { it is MultiTypeChange }?.also { ((it as MultiTypeChange).referenceTypePairs as MutableList<ReferenceTypePair<*>>).add(changePart as ReferenceTypePair<*>) }
         ChangeType.LIST_ADD -> {
             this.find { it is ListChange }?.also { change ->
                 val refToValue = changePart as Pair<ListItemReference<*, *>, Any>
@@ -215,6 +228,7 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when(changeT
     ChangeType.OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
     ChangeType.CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValuePropertyDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
+    ChangeType.TYPE -> MultiTypeChange(mutableListOf(changePart as ReferenceTypePair<*>))
     ChangeType.LIST_ADD-> {
         val refToValue = changePart as Pair<ListItemReference<*, *>, Any>
         ListChange(mutableListOf(
@@ -316,67 +330,72 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     else -> throw Exception("Not recognized special type $specialType")
                 }
                 VALUE -> {
-                    if (!isAtEnd) {
-                        throw Exception("Expected a simple value but got complex value in qualifier")
-                    }
-                    val propDefinition = this.properties[index]!!
+                    val definition = this.properties[index]
+                        ?: throw Exception("No definition for $index in $this at $index")
 
-                    @Suppress("UNCHECKED_CAST")
-                    readValueFromStorage(
-                        Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
-                        propDefinition
-                    ) { version, value ->
-                        val ref = propDefinition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
-                        if (value != null) {
-                            addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
-                        } else {
-                            addChangeToOutput(version, ChangeType.DELETE,ref)
+                    if (isAtEnd) {
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(
+                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) { version, value ->
+                            val ref =
+                                definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            if (value == null) {
+                                addChangeToOutput(version, ChangeType.DELETE, ref)
+                            } else {
+                                if (value !is TypedValue<*, *> || value.value != Unit) {
+                                    addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
+                                } else { // Is a TypedValue with Unit as value
+                                    @Suppress("UNCHECKED_CAST")
+                                    readTypedValue(ref, qualifier, qIndex, readValueFromStorage, definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>, addChangeToOutput, select, addToCache)
+                                }
+                            }
                         }
+                    } else { // Is Complex value
+                        val reference = definition.getRef(parentReference)
+                        readComplexChanges(
+                            qualifier,
+                            qIndex,
+                            definition,
+                            reference,
+                            select,
+                            addToCache,
+                            addChangeToOutput,
+                            readValueFromStorage
+                        )
                     }
                 }
                 EMBED -> {
+                    val definition = this.properties[index]
+                        ?: throw Exception("No definition for $index in $this at $index")
+
+                    val reference = definition.getRef(parentReference)
+
                     if (isAtEnd) {
-                        // Ignore since is indicator
-                    } else {
-                        when (val definition = this.properties[index]) {
-                            is IsEmbeddedDefinition<*, *> -> {
-                                @Suppress("UNCHECKED_CAST")
-                                val dataModel =
-                                    (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
-
-                                val reference = definition.getRef(parentReference)
-
-                                // If select is Graph then resolve sub graph.
-                                // Otherwise is null or is property itself so needs to be completely selected thus set as null.
-                                val specificSelect = if (select is IsPropRefGraph<*>) {
-                                    @Suppress("UNCHECKED_CAST")
-                                    select as IsPropRefGraph<PropertyDefinitions>
-                                } else null
-
-                                addToCache(qIndex - 1) { q ->
-                                    dataModel.readQualifier(
-                                        q,
-                                        qIndex,
-                                        specificSelect,
-                                        reference,
-                                        addChangeToOutput,
-                                        readValueFromStorage,
-                                        addToCache
-                                    )
-                                }
-
-                                dataModel.readQualifier(
-                                    qualifier,
-                                    qIndex,
-                                    specificSelect,
-                                    reference,
-                                    addChangeToOutput,
-                                    readValueFromStorage,
-                                    addToCache
-                                )
-                            }
-                            else -> throw Exception("Can only use Embedded as values with deeper values $definition")
+                        // Handle embed deletes
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(
+                            Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
+                            definition
+                        ) { version, value ->
+                            val ref =
+                                definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            if (value == null) {
+                                addChangeToOutput(version, ChangeType.DELETE, ref)
+                            } // Else this value just exists
                         }
+                    } else {
+                        readComplexChanges(
+                            qualifier,
+                            qIndex,
+                            definition,
+                            reference,
+                            select,
+                            addToCache,
+                            addChangeToOutput,
+                            readValueFromStorage
+                        )
                     }
                 }
                 LIST -> if (isAtEnd) {
@@ -427,33 +446,217 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         }
                     }
                 }
-                MAP -> if (isAtEnd) {
-                    // Used for the map size. Is Ignored for changes
-                } else {
+                MAP -> {
                     val definition = this.properties[index]!!
                     @Suppress("UNCHECKED_CAST")
                     val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
                     @Suppress("UNCHECKED_CAST")
                     val reference = definition.getRef(parentReference) as MapReference<Any, Any, IsPropertyContext>
 
-                    // Read set contents. Always a simple value for set since it is in qualifier
-                    val keyDefinition = ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
-                    val valueDefinition = ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
-                    var mapItemIndex = qIndex
+                    if (isAtEnd) {
+                        // Used for the map size. Is Ignored for changes
+                    } else {
+                        // Read set contents. Always a simple value for set since it is in qualifier
+                        val keyDefinition = ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
+                        val valueDefinition = ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
+                        var mapItemIndex = qIndex
 
-                    val key = keyDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[mapItemIndex++] }
+                        val key = keyDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[mapItemIndex++] }
 
-                    @Suppress("UNCHECKED_CAST")
-                    readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
-                        if (value == null) {
-                            addChangeToOutput(version, MAP_DELETE, mapDefinition.getValueRef(key, reference))
-                        } else {
-                            addChangeToOutput(version, MAP_ADD, Pair(reference, Pair(key, value)))
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+                            if (value == null) {
+                                addChangeToOutput(version, MAP_DELETE, mapDefinition.getValueRef(key, reference))
+                            } else {
+                                addChangeToOutput(version, MAP_ADD, Pair(reference, Pair(key, value)))
+                            }
                         }
                     }
                 }
-                ReferenceType.TYPE -> TODO()
+                ReferenceType.TYPE -> {
+                    val definition = this.properties[index]
+                        ?: throw Exception("No definition for $index in $this at $index")
+                    @Suppress("UNCHECKED_CAST")
+                    val typedDefinition = definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
+                        ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
+
+                    typedDefinition.readComplexTypedValue(parentReference, index, addChangeToOutput, qualifier, qIndex, readValueFromStorage, select, addToCache)
+                }
             }
         }
     }
+}
+
+private fun <P : PropertyDefinitions> readComplexChanges(
+    qualifier: ByteArray,
+    offset: Int,
+    definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+    parentReference: IsPropertyReference<*, *, *>?,
+    select: IsPropRefGraph<P>?,
+    addToCache: CacheProcessor,
+    addChangeToOutput: ChangeAdder,
+    readValueFromStorage: ValueWithVersionReader
+) {
+    when (definition) {
+        is IsMultiTypeDefinition<*, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            readTypedValue(
+                parentReference, qualifier, offset, readValueFromStorage, definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>, addChangeToOutput, select, addToCache
+            )
+        }
+        is IsEmbeddedDefinition<*, *> -> {
+            readEmbeddedValues(
+                definition,
+                parentReference,
+                select,
+                addToCache,
+                offset,
+                addChangeToOutput,
+                readValueFromStorage,
+                qualifier
+            )
+        }
+        else -> throw Exception("Can only use Embedded as values with deeper values $definition")
+    }
+}
+
+/** Read a typed value */
+private fun readTypedValue(
+    reference: IsPropertyReference<*, *, *>?,
+    qualifier: ByteArray,
+    offset: Int,
+    readValueFromStorage: ValueWithVersionReader,
+    valueDefinition: IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+    changeAdder: ChangeAdder,
+    select: IsPropRefGraph<*>?,
+    addToCache: CacheProcessor
+) {
+    var qIndex1 = offset
+    if (qualifier.size <= qIndex1) {
+        @Suppress("UNCHECKED_CAST")
+        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+            if (value == null) {
+                changeAdder(version, ChangeType.DELETE, reference as Any)
+            } else {
+                if (value is TypedValue<*, *>) {
+                    if (value.value == Unit) {
+                        changeAdder(
+                            version, TYPE,
+                            ReferenceTypePair(
+                                reference as MultiTypePropertyReference<AnyIndexedEnum, *, MultiTypeDefinitionWrapper<AnyIndexedEnum, *, *, *>, *>,
+                                value.type as AnyIndexedEnum
+                            )
+                        )
+                    } else {
+                        changeAdder(
+                            version,
+                            CHANGE,
+                            ReferenceValuePair(
+                                reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+                                value
+                            )
+                        )
+                    }
+                } else {
+                    throw Exception("Unexpected stored value for TypedValue.")
+                }
+            }
+        }
+    } else {
+        initIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
+            valueDefinition.readComplexTypedValue(
+                reference,
+                typeIndex,
+                changeAdder,
+                qualifier,
+                qIndex1,
+                readValueFromStorage,
+                select,
+                addToCache
+            )
+        }
+    }
+}
+
+/** Read a complex Typed value from qualifier */
+private fun <E: IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
+    reference: IsPropertyReference<*, *, *>?,
+    index: Int,
+    addChangeToOutput: ChangeAdder,
+    qualifier: ByteArray,
+    qIndex: Int,
+    readValueFromStorage: ValueWithVersionReader,
+    select: IsPropRefGraph<*>?,
+    addToCache: CacheProcessor
+) {
+    @Suppress("UNCHECKED_CAST")
+    val definition = this.definition(index)
+    @Suppress("UNCHECKED_CAST")
+    val type = this.type(index) ?: throw Exception("Unknown type $index for $this")
+    val typedReference = TypeReference(type, this, reference as CanHaveComplexChildReference<*, *, *, *>?)
+
+    if (qualifier.size <= qIndex) {
+        return // Skip because is only complex exists indicator
+    }
+
+    when (definition) {
+        is IsEmbeddedDefinition<*, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            readEmbeddedValues(
+                definition,
+                typedReference,
+                select,
+                addToCache,
+                qIndex,
+                addChangeToOutput,
+                readValueFromStorage,
+                qualifier
+            )
+        }
+        else -> throw Exception("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
+    }
+}
+
+private fun <P : PropertyDefinitions> readEmbeddedValues(
+    definition: IsEmbeddedDefinition<*, *>,
+    parentReference: IsPropertyReference<*, *, *>?,
+    select: IsPropRefGraph<P>?,
+    addToCache: CacheProcessor,
+    index: Int,
+    addChangeToOutput: ChangeAdder,
+    readValueFromStorage: ValueWithVersionReader,
+    qualifier: ByteArray
+) {
+    @Suppress("UNCHECKED_CAST")
+    val dataModel =
+        (definition as IsAnyEmbeddedDefinition).dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
+
+    // If select is Graph then resolve sub graph.
+    // Otherwise is null or is property itself so needs to be completely selected thus set as null.
+    val specificSelect = if (select is IsPropRefGraph<*>) {
+        @Suppress("UNCHECKED_CAST")
+        select as IsPropRefGraph<PropertyDefinitions>
+    } else null
+
+    addToCache(index - 1) { q ->
+        dataModel.readQualifier(
+            q,
+            index,
+            specificSelect,
+            parentReference,
+            addChangeToOutput,
+            readValueFromStorage,
+            addToCache
+        )
+    }
+
+    dataModel.readQualifier(
+        qualifier,
+        index,
+        specificSelect,
+        parentReference,
+        addChangeToOutput,
+        readValueFromStorage,
+        addToCache
+    )
 }

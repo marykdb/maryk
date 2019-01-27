@@ -1,5 +1,7 @@
+import groovy.lang.Closure
+
 plugins {
-    id 'kotlin-multiplatform'
+    id("kotlin-multiplatform")
 }
 
 apply {
@@ -9,23 +11,23 @@ apply {
     from("../gradle/native.gradle")
 }
 
-setupCommon()
-setupJVM()
-setupJS()
-setupNative()
+(extra["setupCommon"] as Closure<*>)()
+(extra["setupJVM"] as Closure<*>)()
+(extra["setupJS"] as Closure<*>)()
+(extra["setupNative"] as Closure<*>)()
 
 kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api project(':core')
-                api project(':yaml')
+                api(project(":lib"))
             }
         }
         commonTest {
             dependencies {
-                implementation project(':testmodels')
+                implementation(project(":testlib"))
             }
         }
     }
 }
+

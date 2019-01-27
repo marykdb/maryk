@@ -1,5 +1,7 @@
+import groovy.lang.Closure
+
 plugins {
-    id 'kotlin-multiplatform'
+    kotlin("multiplatform")
 }
 
 apply {
@@ -7,8 +9,10 @@ apply {
     from("../../gradle/jvm.gradle")
 }
 
-setupCommon()
-setupJVM()
+(extra["setupCommon"] as Closure<*>)()
+(extra["setupJVM"] as Closure<*>)()
+
+val coroutinesVersion = rootProject.extra["coroutinesVersion"]
 
 kotlin {
     sourceSets {
@@ -17,17 +21,17 @@ kotlin {
                 implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
 
-                api project(':core')
+                api(project(":core"))
             }
         }
         commonTest {
             dependencies {
-                api project(':testmodels')
+                api(project(":testmodels"))
             }
         }
-        jvmMain {
+        jvm().compilations["main"].defaultSourceSet {
             dependencies {
-                api "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion"
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
             }
         }
     }

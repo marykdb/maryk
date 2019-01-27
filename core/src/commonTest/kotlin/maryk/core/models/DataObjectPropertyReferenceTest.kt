@@ -45,6 +45,7 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.completeName shouldBe "mapIntMulti.@2.*V3.value"
         ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.completeName shouldBe "mapIntMulti.@2.*V3.model.value"
 
+        ComplexModel { multi.refWithType(V3, Properties) { value } }.completeName shouldBe "multi.*V3.value"
         ComplexModel { multi.withType(V3, Properties) { model ref { value } } }.completeName shouldBe "multi.*V3.model.value"
     }
 
@@ -74,6 +75,7 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
         ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
 
+        ComplexModel { multi.refWithType(V3, Properties) { value } }.toStorageByteArray().toHex() shouldBe "091d09"
         ComplexModel { multi.withType(V3, Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "091d1609"
     }
 }

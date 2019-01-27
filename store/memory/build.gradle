@@ -18,9 +18,6 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
 
                 api project(':core')
-                api project(':lib')
-                api project(':json')
-                api project(':yaml')
             }
         }
         commonTest {

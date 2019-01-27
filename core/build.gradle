@@ -19,12 +19,10 @@ kotlin {
         commonMain {
             dependencies {
                 api project(':yaml')
-                api project(':lib')
             }
         }
         commonTest {
             dependencies {
-                implementation project(':testlib')
                 implementation project(':testmodels')
             }
         }

@@ -5,21 +5,17 @@ ext.setupJS = { runTests ->
     }
 
     kotlin {
-        targets {
-            fromPreset(presets.js, 'js')  {
-                configure([compilations.main, compilations.test]) {
-                    tasks.getByName(compileKotlinTaskName).kotlinOptions {
-                        sourceMap = true
-                        moduleKind = "umd"
-                        metaInfo = true
-                    }
+        js {
+            compilations.all {
+                kotlinOptions {
+                    sourceMap = true
+                    moduleKind = "umd"
+                    metaInfo = true
                 }
             }
-        }
-        sourceSets {
-            jsMain {
+            compilations.main.defaultSourceSet {
                 dependencies {
-                    implementation 'org.jetbrains.kotlin:kotlin-stdlib-js'
+                    implementation kotlin('stdlib-js')
                 }
             }
         }

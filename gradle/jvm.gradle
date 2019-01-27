@@ -1,20 +1,16 @@
 // Gradle script to setup a JVM multi-platform project
 ext.setupJVM = {
     kotlin {
-        targets {
-            fromPreset(presets.jvm, 'jvm') {
-                configure([compilations.main, compilations.test]) {
-                    tasks.getByName(compileKotlinTaskName).kotlinOptions {
-                        allWarningsAsErrors = true
-                        jvmTarget = '1.8'
-                    }
+        jvm {
+            compilations.all {
+                kotlinOptions {
+                    allWarningsAsErrors = true
+                    jvmTarget = '1.8'
                 }
             }
-        }
-        sourceSets {
-            jvmMain {
+            compilations.main.defaultSourceSet {
                 dependencies {
-                    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+                    implementation kotlin('stdlib-jdk8')
                 }
             }
         }

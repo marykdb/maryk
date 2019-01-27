@@ -1,8 +1,6 @@
 // Gradle script to setup a Native multi-platform project
 ext.setupNative = {
     kotlin {
-        targets {
-            fromPreset(presets.macosX64, 'macos')
-        }
+        macosX64('macos')
     }
 }

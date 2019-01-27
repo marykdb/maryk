@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_FEATURE_WARNING", "EXPERIMENTAL_API_USAGE")
-
 package maryk.core.properties.types.numeric
 
 import maryk.core.extensions.bytes.calculateVarByteLength

@@ -2,7 +2,6 @@ package maryk.core.query.responses.statuses
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
@@ -14,9 +13,9 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.changes.ChangeType
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.mapOfChangeDefinitions
+import maryk.core.values.SimpleObjectValues
 
 /** Successful add of given object with [key], [version] and added [changes] */
-@Suppress("EXPERIMENTAL_API_USAGE")
 data class AddSuccess<DM: IsRootDataModel<*>>(
     val key: Key<DM>,
     val version: ULong,

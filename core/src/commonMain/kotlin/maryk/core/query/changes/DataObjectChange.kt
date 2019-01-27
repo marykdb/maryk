@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "unused")
+@file:Suppress("unused")
 
 package maryk.core.query.changes
 

@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.core.properties.types.numeric
 
 import maryk.lib.extensions.toHex

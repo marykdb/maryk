@@ -24,7 +24,6 @@ interface HasSizeDefinition {
     } ?: false
 
     companion object {
-        @Suppress("EXPERIMENTAL_API_USAGE")
         internal fun <DO: Any> addMinSize(
             index: Int,
             definitions: ObjectPropertyDefinitions<DO>,
@@ -40,7 +39,6 @@ interface HasSizeDefinition {
             )
         }
 
-        @Suppress("EXPERIMENTAL_API_USAGE")
         internal fun <DO: Any> addMaxSize(
             index: Int,
             definitions: ObjectPropertyDefinitions<DO>,

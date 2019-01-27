@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
-
 package maryk.core.processors.datastore
 
 import maryk.core.properties.types.TypedValue

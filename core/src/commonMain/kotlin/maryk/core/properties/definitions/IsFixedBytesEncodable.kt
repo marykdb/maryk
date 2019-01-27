@@ -18,7 +18,6 @@ interface IsFixedBytesEncodable<T: Any> {
     fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit)
 
     companion object {
-        @Suppress("EXPERIMENTAL_API_USAGE")
         internal fun <DO:Any> addByteSize(index: Int, definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) {
             definitions.add(index, "byteSize",
                 NumberDefinition(type = UInt32),

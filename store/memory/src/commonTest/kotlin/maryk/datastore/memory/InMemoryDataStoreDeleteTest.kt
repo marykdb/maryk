@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.datastore.memory
 
 import maryk.core.properties.types.Key
@@ -17,7 +15,6 @@ import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
-@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 class InMemoryDataStoreDeleteTest {
     private val dataStore = InMemoryDataStore()
     private val keys = mutableListOf<Key<SimpleMarykModel>>()

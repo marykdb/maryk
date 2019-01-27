@@ -25,7 +25,6 @@ internal fun YamlWriter.writeNamedIndexField(name: String, index: Int) {
  * Read a complex named index field from yaml and write values
  * to [valueMap] using [nameDescriptor] and [indexDescriptor]
  */
-@ExperimentalUnsignedTypes
 internal fun <DO: Any> IsYamlReader.readNamedIndexField(
     valueMap: MutableValueItems,
     nameDescriptor: PropertyDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, DO>,

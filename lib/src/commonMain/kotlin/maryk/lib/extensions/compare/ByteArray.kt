@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.lib.extensions.compare
 
 private val MAX_BYTE: UByte = 0b1111_1111.toUByte()

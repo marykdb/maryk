@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
-
 package maryk.core.properties.definitions
 
 import maryk.checkJsonConversion

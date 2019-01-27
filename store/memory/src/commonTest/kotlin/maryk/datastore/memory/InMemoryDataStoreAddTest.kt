@@ -1,14 +1,12 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.datastore.memory
 
 import maryk.core.models.key
-import maryk.core.values.Values
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
+import maryk.core.values.Values
 import maryk.lib.time.DateTime
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
@@ -17,7 +15,6 @@ import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
-@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 class InMemoryDataStoreAddTest {
     private val dataStore = InMemoryDataStore()
 

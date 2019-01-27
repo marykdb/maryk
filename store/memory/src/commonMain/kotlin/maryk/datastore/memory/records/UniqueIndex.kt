@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.datastore.memory.records
 
 import maryk.core.models.IsRootValuesDataModel

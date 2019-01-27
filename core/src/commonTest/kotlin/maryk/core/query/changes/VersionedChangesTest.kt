@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
-
 package maryk.core.query.changes
 
 import maryk.checkJsonConversion

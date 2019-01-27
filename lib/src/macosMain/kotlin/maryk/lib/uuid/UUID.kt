@@ -6,7 +6,6 @@ import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import platform.Foundation.NSUUID
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 actual fun generateUUID(): Pair<Long, Long> {
     memScoped {
         val uuidBytes = allocArray<UByteVar>(16)

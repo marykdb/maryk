@@ -9,7 +9,6 @@ import kotlin.random.Random
 import kotlin.random.nextULong
 
 /** Object for 64 bit/8 byte unsigned integers */
-@Suppress("EXPERIMENTAL_API_USAGE")
 object UInt64 : UnsignedNumberDescriptor<ULong>(
     size = ULong.SIZE_BYTES,
     MIN_VALUE = ULong.MIN_VALUE,

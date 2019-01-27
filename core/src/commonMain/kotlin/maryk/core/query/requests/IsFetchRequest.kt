@@ -17,7 +17,6 @@ import maryk.core.query.filters.mapOfFilterDefinitions
 import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
-@Suppress("EXPERIMENTAL_API_USAGE")
 interface IsFetchRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsResponse> : IsStoreRequest<DM, RP> {
     val select: RootPropRefGraph<P>?
     val filter: IsFilter?

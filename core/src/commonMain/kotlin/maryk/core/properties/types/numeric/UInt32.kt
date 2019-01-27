@@ -9,7 +9,6 @@ import kotlin.random.Random
 import kotlin.random.nextUInt
 
 /** Base object for 32 bit/4 byte unsigned integers */
-@Suppress("EXPERIMENTAL_API_USAGE")
 object UInt32: UnsignedNumberDescriptor<UInt>(
     size = UInt.SIZE_BYTES,
     MIN_VALUE = UInt.MIN_VALUE,

@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.datastore.memory
 
 import maryk.core.properties.definitions.wrapper.atWithType
@@ -27,7 +25,6 @@ import maryk.test.shouldBeOfType
 import maryk.test.shouldNotBe
 import kotlin.test.Test
 
-@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 class InMemoryDataStoreChangeComplexTest {
     private val dataStore = InMemoryDataStore()
     private val keys = mutableListOf<Key<ComplexModel>>()

@@ -4,7 +4,6 @@ import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.values.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -23,10 +22,11 @@ import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
+import maryk.core.values.ValuesImpl
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
-@Suppress("UNCHECKED_CAST", "EXPERIMENTAL_API_USAGE")
+@Suppress("UNCHECKED_CAST")
 internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: Any, addImport: (String) -> Unit): String = when(value) {
     is String -> """"$value""""
     is TimePrecision -> {

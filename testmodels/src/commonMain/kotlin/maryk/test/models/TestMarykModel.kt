@@ -27,7 +27,6 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
-@Suppress("EXPERIMENTAL_API_USAGE")
 object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     name = "TestMarykModel",
     keyDefinitions = arrayOf(

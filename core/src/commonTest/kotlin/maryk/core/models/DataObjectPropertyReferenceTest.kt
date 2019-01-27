@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
-
 package maryk.core.models
 
 import maryk.core.properties.definitions.wrapper.at

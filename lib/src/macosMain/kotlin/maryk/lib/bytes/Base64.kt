@@ -24,7 +24,6 @@ actual object Base64 {
         @Suppress("UNCHECKED_CAST")
         val bytePtr = (data.bytes as CPointer<uint8_tVar>)
 
-        @Suppress("EXPERIMENTAL_API_USAGE")
         return ByteArray(data.length.toInt()) { index ->
             bytePtr[index].toByte()
         }
@@ -32,7 +31,6 @@ actual object Base64 {
 
     /** Encode [bytes] array into a base64 String */
     actual fun encode(bytes: ByteArray) = memScoped {
-        @Suppress("EXPERIMENTAL_API_USAGE")
         NSData.create(
             bytesNoCopy = bytes.toCValues().getPointer(this),
             length = bytes.size.toULong()

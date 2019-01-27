@@ -126,7 +126,6 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     companion object {
-        @Suppress("EXPERIMENTAL_API_USAGE")
         private fun <DO:Any> addIndex(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Int) =
             definitions.add(1, "index",
                 NumberDefinition(type = UInt32),
@@ -190,7 +189,6 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
             }
         }
 
-        @Suppress("EXPERIMENTAL_API_USAGE")
         override fun readJson(reader: IsJsonLikeReader, context: IsPropertyContext?): SimpleObjectValues<IsPropertyDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>> {
             // When reading YAML, use YAML optimized format with complex field names
             return if (reader is IsYamlReader) {

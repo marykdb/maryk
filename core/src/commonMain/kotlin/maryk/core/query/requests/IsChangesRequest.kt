@@ -11,7 +11,6 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.responses.IsResponse
 
 /** Request for all versioned changes from a version and later */
-@Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 interface IsChangesRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsResponse> : IsFetchRequest<DM, P, RP> {
     val fromVersion: ULong
     val maxVersions: UInt

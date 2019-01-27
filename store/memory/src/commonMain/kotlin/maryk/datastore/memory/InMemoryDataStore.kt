@@ -22,7 +22,6 @@ internal expect fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> Corou
  * DataProcessor that stores all data changes in local memory.
  * Very useful for tests.
  */
-@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
 class InMemoryDataStore(
     val keepAllVersions: Boolean = false
 ) : IsDataStore, CoroutineScope {

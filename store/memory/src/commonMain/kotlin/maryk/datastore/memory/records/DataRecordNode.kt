@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.datastore.memory.records
 
 /** A sealed class for defines a node in a DataRecord at [reference] */

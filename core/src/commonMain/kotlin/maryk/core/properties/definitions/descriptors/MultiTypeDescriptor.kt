@@ -49,7 +49,6 @@ private data class MultiTypeDescriptor(
     val definition: IsSubDefinition<out Any, ContainsDefinitionsContext>
 ) {
     private object Properties: ObjectPropertyDefinitions<MultiTypeDescriptor>() {
-        @ExperimentalUnsignedTypes
         val index = add(1, "index",
             NumberDefinition(type = UInt32),
             MultiTypeDescriptor::index,
@@ -86,7 +85,6 @@ private data class MultiTypeDescriptor(
                 this.values(context as? RequestContext) {
                     val valueMap = MutableValueItems()
 
-                    @Suppress("EXPERIMENTAL_API_USAGE")
                     reader.readNamedIndexField(valueMap, name, index)
                     valueMap += definition withNotNull definition.readJson(reader, context as ContainsDefinitionsContext?)
 

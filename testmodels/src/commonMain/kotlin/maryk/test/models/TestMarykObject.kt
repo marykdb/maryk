@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.test.models
 import maryk.core.models.ObjectDataModel
 import maryk.core.properties.IsPropertyContext

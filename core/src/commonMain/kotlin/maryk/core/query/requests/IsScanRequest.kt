@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
-
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException

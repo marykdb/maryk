@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package maryk.datastore.memory.processors.changers
 
 import maryk.datastore.memory.records.DataRecordNode

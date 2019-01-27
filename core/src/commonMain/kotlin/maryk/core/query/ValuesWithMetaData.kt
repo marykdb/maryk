@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "unused")
+@file:Suppress("unused")
 
 package maryk.core.query
 
@@ -8,8 +8,6 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
-import maryk.core.values.Values
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -19,6 +17,8 @@ import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefi
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt64
+import maryk.core.values.ObjectValues
+import maryk.core.values.Values
 
 data class ValuesWithMetaData<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val key: Key<DM>,

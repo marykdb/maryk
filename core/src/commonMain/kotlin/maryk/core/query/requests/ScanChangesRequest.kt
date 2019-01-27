@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS", "unused")
-
 package maryk.core.query.requests
 
 import maryk.core.models.IsObjectDataModel

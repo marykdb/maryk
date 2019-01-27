@@ -20,8 +20,17 @@ abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefin
     properties: P,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, T, CX, DO>
 ) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {
+    override fun writeJson(values: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
+        val value = values.original { singlePropertyDefinition } ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
+        writeJsonValue(value, writer, context)
+    }
+
     override fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX?) {
         val value = singlePropertyDefinition.getPropertyAndSerialize(obj, context) ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
+        writeJsonValue(value, writer, context)
+    }
+
+    fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) {
         singlePropertyDefinition.writeJsonValue(value, writer, context)
         singlePropertyDefinition.capture(context, value)
     }

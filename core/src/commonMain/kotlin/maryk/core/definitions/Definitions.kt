@@ -5,7 +5,6 @@ import maryk.core.models.DataModel
 import maryk.core.models.QuerySingleValueDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsSubDefinition
@@ -18,6 +17,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.ObjectValues
 import maryk.lib.exceptions.ParseException
 
 /**

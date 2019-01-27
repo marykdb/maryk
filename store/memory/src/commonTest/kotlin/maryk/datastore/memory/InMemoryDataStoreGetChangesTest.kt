@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package maryk.datastore.memory
 
@@ -15,7 +15,6 @@ import maryk.test.shouldBe
 import maryk.test.shouldBeOfType
 import kotlin.test.Test
 
-@Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 class InMemoryDataStoreGetChangesTest {
     private val dataStore = InMemoryDataStore()
     private val keys = mutableListOf<Key<SimpleMarykModel>>()

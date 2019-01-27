@@ -7,7 +7,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 
-/** Write a complete [map] defined by [definition] with [qualifierWriter] of [qualifierCount] to storage with [valueWriter]. */
+/** Write a complete [map] defined by [definition] with [qualifierWriter] of [qualifierLength] to storage with [valueWriter]. */
 @Suppress("UNCHECKED_CAST")
 fun <T : IsPropertyDefinition<*>, K: Any, V: Any> writeMapToStorage(
     qualifierLength: Int,

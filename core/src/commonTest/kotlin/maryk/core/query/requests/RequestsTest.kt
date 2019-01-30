@@ -62,7 +62,7 @@ class RequestsTest {
           - value: haha2
         - !Change
           to: SimpleMarykModel
-          objectChanges:
+          objects:
           - key: MYc6LBYcT38nWxoE1ahNxA
             changes:
           - key: lneV6ioyQL0vnbkLqwVw+A

@@ -17,7 +17,7 @@ class ChangeRequestTest {
 
     @Test
     fun testChangeRequest(){
-        changeRequest.objectChanges.size shouldBe 2
+        changeRequest.objects.size shouldBe 2
         changeRequest.dataModel shouldBe SimpleMarykModel
     }
 
@@ -35,7 +35,7 @@ class ChangeRequestTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(changeRequest, ChangeRequest, { this.context }) shouldBe """
         to: SimpleMarykModel
-        objectChanges:
+        objects:
         - key: MYc6LBYcT38nWxoE1ahNxA
           changes:
         - key: lneV6ioyQL0vnbkLqwVw+A

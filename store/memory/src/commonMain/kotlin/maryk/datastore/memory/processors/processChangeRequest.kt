@@ -74,8 +74,8 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 
-    if (changeRequest.objectChanges.isNotEmpty()) {
-        objectChanges@for (objectChange in changeRequest.objectChanges) {
+    if (changeRequest.objects.isNotEmpty()) {
+        objectChanges@for (objectChange in changeRequest.objects) {
             val index = dataStore.records.binarySearch { it.key.compareTo(objectChange.key) }
             val objectToChange = dataStore.records[index]
 

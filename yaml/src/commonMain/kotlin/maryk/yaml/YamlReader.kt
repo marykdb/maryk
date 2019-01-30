@@ -223,7 +223,7 @@ internal class YamlReaderImpl(
         val startDepth = this.tokenDepth
         nextToken()
         while(
-            !(currentToken is JsonToken.FieldName && this.tokenDepth <= startDepth)
+            !((currentToken is JsonToken.FieldName || currentToken is JsonToken.StartComplexFieldName) && this.tokenDepth <= startDepth)
             && currentToken !is JsonToken.Stopped
         ) {
             handleSkipToken?.invoke(this.currentToken)

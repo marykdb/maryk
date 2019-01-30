@@ -56,44 +56,44 @@ class RequestsTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.requests, Requests, { this.context }) shouldBe """
         - !Add
-          dataModel: SimpleMarykModel
-          objectsToAdd:
+          to: SimpleMarykModel
+          objects:
           - value: haha1
           - value: haha2
         - !Change
-          dataModel: SimpleMarykModel
+          to: SimpleMarykModel
           objectChanges:
           - key: MYc6LBYcT38nWxoE1ahNxA
             changes:
           - key: lneV6ioyQL0vnbkLqwVw+A
             changes:
         - !Delete
-          dataModel: SimpleMarykModel
-          objectsToDelete: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]
+          from: SimpleMarykModel
+          keys: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]
           hardDelete: true
         - !Get
-          dataModel: SimpleMarykModel
+          from: SimpleMarykModel
           keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
           filterSoftDeleted: true
         - !GetChanges
-          dataModel: SimpleMarykModel
+          from: SimpleMarykModel
           keys: [WWurg6ysTsozoMei/SurOw, awfbjYrVQ+cdXblfQKV10A]
           filterSoftDeleted: true
           fromVersion: 0
           maxVersions: 1
         - !Scan
-          dataModel: SimpleMarykModel
+          from: SimpleMarykModel
           filterSoftDeleted: true
           limit: 100
         - !ScanChanges
-          dataModel: SimpleMarykModel
+          from: SimpleMarykModel
           filterSoftDeleted: true
           limit: 100
           fromVersion: 0
           maxVersions: 1
         - !Collect
           testName: !Get
-            dataModel: SimpleMarykModel
+            from: SimpleMarykModel
             keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
             filterSoftDeleted: true
 

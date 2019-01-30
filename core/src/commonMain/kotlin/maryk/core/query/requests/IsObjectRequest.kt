@@ -15,14 +15,14 @@ interface IsObjectRequest<out DM: IsRootDataModel<*>, RP: IsResponse>: IsRequest
     val dataModel: DM
 
     companion object {
-        internal fun <DM: Any> addDataModel(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) =
+        internal fun <DM: Any> addDataModel(name: String, definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsRootDataModel<*>?) =
             definitions.add(
-                1, "dataModel",
+                1, name,
                 ContextualModelReferenceDefinition<IsRootDataModel<*>, RequestContext>(
-                    contextualResolver = { context, name ->
+                    contextualResolver = { context, modelName ->
                         context?.let {
                             @Suppress("UNCHECKED_CAST")
-                            it.dataModels[name] as (Unit.() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("DataModel of name $name not found on dataModels")
+                            it.dataModels[modelName] as (Unit.() -> IsRootDataModel<*>)? ?: throw DefNotFoundException("DataModel of name $modelName not found on dataModels")
                         } ?: throw ContextNotFoundException()
                     }
                 ),

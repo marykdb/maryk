@@ -44,7 +44,7 @@ class ObjectAsMapConversionTest {
                 a.toDataObject() shouldBe b.toDataObject()
             }
         ) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         select:
         - value

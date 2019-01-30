@@ -33,8 +33,8 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
 
     val version = Instant.getCurrentEpochTimeInMillis().toULong()
 
-    if (addRequest.objectsToAdd.isNotEmpty()) {
-        for (objectToAdd in addRequest.objectsToAdd) {
+    if (addRequest.objects.isNotEmpty()) {
+        for (objectToAdd in addRequest.objects) {
             try {
                 objectToAdd.validate()
 

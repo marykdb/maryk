@@ -34,7 +34,7 @@ class ChangeRequestTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(changeRequest, ChangeRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
+        to: SimpleMarykModel
         objectChanges:
         - key: MYc6LBYcT38nWxoE1ahNxA
           changes:

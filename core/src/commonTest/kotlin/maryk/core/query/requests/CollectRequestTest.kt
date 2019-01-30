@@ -29,7 +29,7 @@ class CollectRequestTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(collectRequest, CollectRequest, { this.context }) shouldBe """
         testName: !Get
-          dataModel: SimpleMarykModel
+          from: SimpleMarykModel
           keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
           filterSoftDeleted: true
 

@@ -68,7 +68,7 @@ class InjectInRequestTest {
             { context },
             checker = ::checker
         ) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         keys: !:Inject
           keysToInject: keys
         select:
@@ -91,7 +91,7 @@ class InjectInRequestTest {
             { context },
             checker = ::checker
         ) shouldBe """
-        {"dataModel":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"filter":["Exists","value"],"order":{"propertyReference":"value","direction":"DESC"},"toVersion":"333","filterSoftDeleted":true}
+        {"from":"SimpleMarykModel","?keys":{"keysToInject":"keys"},"select":["value"],"filter":["Exists","value"],"order":{"propertyReference":"value","direction":"DESC"},"toVersion":"333","filterSoftDeleted":true}
         """.trimIndent()
     }
 

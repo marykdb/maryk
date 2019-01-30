@@ -31,7 +31,7 @@ class ScanChangesRequestTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(scanChangesRequest, ScanChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         filterSoftDeleted: true
         limit: 100
         fromVersion: 0
@@ -40,7 +40,7 @@ class ScanChangesRequestTest {
         """.trimIndent()
 
         checkYamlConversion(scanChangesMaxRequest, ScanChangesRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         select:
         - value

@@ -61,14 +61,14 @@ class GetRequestTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(getRequest, GetRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filterSoftDeleted: true
 
         """.trimIndent()
 
         checkYamlConversion(getMaxRequest, GetRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         select:
         - value
@@ -83,7 +83,7 @@ class GetRequestTest {
     @Test
     fun convertBasicDefinitionFromYAML() {
         val simpleYaml = """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         keys: [dR9gVdRcSPw2molM1AiOng, Vc4WgX/mQHYCSEoLtfLSUQ]
         filter:
         select:

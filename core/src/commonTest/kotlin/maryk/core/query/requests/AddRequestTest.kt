@@ -28,8 +28,8 @@ class AddRequestTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(addRequest, AddRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
-        objectsToAdd:
+        to: SimpleMarykModel
+        objects:
         - value: haha1
         - value: haha2
 

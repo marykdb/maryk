@@ -28,8 +28,8 @@ class DeleteRequestTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(deleteRequest, DeleteRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
-        objectsToDelete: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]
+        from: SimpleMarykModel
+        keys: [B4CeT0fDRxYnEmSTQuLA2A, oDHjQh7GSDwyPX2kTUAniQ]
         hardDelete: true
 
         """.trimIndent()

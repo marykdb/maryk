@@ -56,7 +56,7 @@ data class GetChangesRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<GetChangesRequest<*, *>>() {
-        val dataModel = IsObjectRequest.addDataModel(this, GetChangesRequest<*, *>::dataModel)
+        val dataModel = IsObjectRequest.addDataModel("from", this, GetChangesRequest<*, *>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetChangesRequest<*, *>::keys)
         val select = IsFetchRequest.addSelect(this, GetChangesRequest<*, *>::select)
         val filter = IsFetchRequest.addFilter(this,  GetChangesRequest<*, *>::filter)

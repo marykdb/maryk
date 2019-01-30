@@ -56,7 +56,7 @@ data class ScanChangesRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ScanChangesRequest<*, *>>() {
-        val dataModel = IsObjectRequest.addDataModel(this, ScanChangesRequest<*, *>::dataModel)
+        val dataModel = IsObjectRequest.addDataModel("from", this, ScanChangesRequest<*, *>::dataModel)
         val startKey = IsScanRequest.addStartKey(this, ScanChangesRequest<*, *>::startKey)
         val select = IsFetchRequest.addSelect(this, ScanChangesRequest<*, *>::select)
         val filter = IsFetchRequest.addFilter(this, ScanChangesRequest<*, *>::filter)

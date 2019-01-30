@@ -5,7 +5,6 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -13,6 +12,7 @@ import maryk.core.properties.definitions.contextual.ContextualReferenceDefinitio
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.DeleteResponse
+import maryk.core.values.ObjectValues
 
 /**
  * Creates a Request to delete [objectsToDelete] from [DM]. If [hardDelete] is false the data will still exist but is
@@ -24,12 +24,12 @@ fun <DM: IsRootValuesDataModel<*>> DM.delete(
 ) = DeleteRequest(this, objectsToDelete.toList(), hardDelete)
 
 /**
- * A Request to delete [objectsToDelete] from [dataModel]. If [hardDelete] is false the data will still exist but is
+ * A Request to delete [keys] from [dataModel]. If [hardDelete] is false the data will still exist but is
  * not possible to request from server.
  */
 data class DeleteRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     override val dataModel: DM,
-    val objectsToDelete: List<Key<DM>>,
+    val keys: List<Key<DM>>,
     val hardDelete: Boolean
 ) : IsStoreRequest<DM, DeleteResponse<DM>> {
     override val requestType = RequestType.Delete
@@ -38,15 +38,15 @@ data class DeleteRequest<DM: IsRootValuesDataModel<*>> internal constructor(
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<DeleteRequest<*>>() {
-        val dataModel = IsObjectRequest.addDataModel(this, DeleteRequest<*>::dataModel)
+        val dataModel = IsObjectRequest.addDataModel("from", this, DeleteRequest<*>::dataModel)
 
-        val objectsToDelete = add(2, "objectsToDelete", ListDefinition(
+        val objectsToDelete = add(2, "keys", ListDefinition(
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as IsRootDataModel<*>? ?: throw ContextNotFoundException()
                 }
             )
-        ), DeleteRequest<*>::objectsToDelete)
+        ), DeleteRequest<*>::keys)
 
         val hardDelete = add(3, "hardDelete",
             BooleanDefinition(default = false),
@@ -59,7 +59,7 @@ data class DeleteRequest<DM: IsRootValuesDataModel<*>> internal constructor(
     ) {
         override fun invoke(values: ObjectValues<DeleteRequest<*>, Properties>) = DeleteRequest(
             dataModel = values(1),
-            objectsToDelete = values(2),
+            keys = values(2),
             hardDelete = values(3)
         )
     }

@@ -31,14 +31,14 @@ class ScanSelectRequestTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(scanRequest, ScanRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         filterSoftDeleted: true
         limit: 100
 
         """.trimIndent()
 
         checkYamlConversion(scanMaxRequest, ScanRequest, { this.context }) shouldBe """
-        dataModel: SimpleMarykModel
+        from: SimpleMarykModel
         startKey: Zk6m4QpZQegUg5s13JVYlQ
         select:
         - value

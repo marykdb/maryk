@@ -27,7 +27,7 @@ data class ChangeRequest<DM: IsRootValuesDataModel<*>> internal constructor(
 
     @Suppress("unused")
     object Properties : ObjectPropertyDefinitions<ChangeRequest<*>>() {
-        val dataModel = IsObjectRequest.addDataModel(this, ChangeRequest<*>::dataModel)
+        val dataModel = IsObjectRequest.addDataModel("to", this, ChangeRequest<*>::dataModel)
         val objectChanges = add(2, "objectChanges",
             ListDefinition(
                 valueDefinition = EmbeddedObjectDefinition(

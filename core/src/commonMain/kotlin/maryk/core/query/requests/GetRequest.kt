@@ -46,7 +46,7 @@ data class GetRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> inte
     override val responseModel = ValuesResponse as IsObjectDataModel<ValuesResponse<DM, P>, *>
 
     object Properties : ObjectPropertyDefinitions<GetRequest<*, *>>() {
-        val dataModel = IsObjectRequest.addDataModel(this, GetRequest<*, *>::dataModel)
+        val dataModel = IsObjectRequest.addDataModel("from", this, GetRequest<*, *>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetRequest<*, *>::keys)
         val select = IsFetchRequest.addSelect(this, GetRequest<*, *>::select)
         val filter = IsFetchRequest.addFilter(this, GetRequest<*, *>::filter)

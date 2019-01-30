@@ -27,10 +27,10 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDelet
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
 
-    if (deleteRequest.objectsToDelete.isNotEmpty()) {
+    if (deleteRequest.keys.isNotEmpty()) {
         val version = Instant.getCurrentEpochTimeInMillis().toULong()
 
-        for (key in deleteRequest.objectsToDelete) {
+        for (key in deleteRequest.keys) {
             try {
                 val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 

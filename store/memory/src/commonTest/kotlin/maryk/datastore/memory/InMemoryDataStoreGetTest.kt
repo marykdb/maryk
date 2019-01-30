@@ -40,7 +40,7 @@ class InMemoryDataStoreGetTest {
         getResponse.values.size shouldBe 2
 
         getResponse.values.forEachIndexed { index, value ->
-            value.values shouldBe addRequest.objectsToAdd[index]
+            value.values shouldBe addRequest.objects[index]
         }
     }
 

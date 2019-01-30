@@ -7,7 +7,6 @@ import maryk.core.extensions.bytes.initShortByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
@@ -18,6 +17,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Enum properties */
@@ -41,11 +41,11 @@ class EnumDefinition<E : IndexedEnum<E>>(
     override val byteSize = 2
 
     private val valueByString: Map<String, E> by lazy {
-        enum.values().associate { Pair(it.name, it) }
+        enum.cases().associate { Pair(it.name, it) }
     }
 
     private val valueByIndex: Map<Int, E> by lazy {
-        enum.values().associate { Pair(it.index, it) }
+        enum.cases().associate { Pair(it.index, it) }
     }
 
     private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
@@ -75,7 +75,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
 
     override fun fromNativeType(value: Any): E? = null
 
-    /** Override equals to handle enum values comparison */
+    /** Override equals to handle enum cases comparison */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is EnumDefinition<*>) return false
@@ -88,14 +88,14 @@ class EnumDefinition<E : IndexedEnum<E>>(
         if (maxValue != other.maxValue && maxValue?.index != other.maxValue?.index) return false
         if (default != other.default && default?.index != other.default?.index) return false
         if (enum.name != other.enum.name) return false
-        if (!areEnumsEqual(enum.values(), other.enum.values())) return false
+        if (!areEnumsEqual(enum.cases(), other.enum.cases())) return false
         if (wireType != other.wireType) return false
         if (byteSize != other.byteSize) return false
 
         return true
     }
 
-    /** Override hashCode to handle enum values comparison */
+    /** Override hashCode to handle enum cases comparison */
     override fun hashCode(): Int {
         var result = indexed.hashCode()
         result = 31 * result + required.hashCode()
@@ -105,7 +105,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
         result = 31 * result + (maxValue?.index?.hashCode() ?: 0)
         result = 31 * result + (default?.index?.hashCode() ?: 0)
         result = 31 * result + enum.name.hashCode()
-        result = 31 * result + enumsHashCode(enum.values())
+        result = 31 * result + enumsHashCode(enum.cases())
         result = 31 * result + wireType.hashCode()
         result = 31 * result + byteSize
         return result
@@ -131,7 +131,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                             }
                         ),
                         valueTransformer = { context, value ->
-                            if (value.optionalValues == null) {
+                            if (value.optionalCases == null) {
                                 context?.let { c ->
                                     c.definitionsContext?.let {
                                         it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?

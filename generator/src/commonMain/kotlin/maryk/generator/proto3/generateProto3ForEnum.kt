@@ -5,7 +5,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 /** Generates protobuf schema string for IndexedEnumDefinition */
 fun IndexedEnumDefinition<*>.generateProto3Schema(writer: (String) -> Unit) {
     val values = mutableListOf<String>()
-    for (value in this.values()) {
+    for (value in this.cases()) {
         values.add("${value.name} = ${value.index};")
     }
 

@@ -17,14 +17,14 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-/** Enum Definitions with a [name] and [values] */
+/** Enum Definitions with a [name] and [cases] */
 open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
-    internal val optionalValues: (() -> Array<E>)?,
+    internal val optionalCases: (() -> Array<E>)?,
     override val name: String
 ): MarykPrimitive {
-    constructor(name: String, values: () -> Array<E>) : this(name = name, optionalValues = values)
+    constructor(name: String, values: () -> Array<E>) : this(name = name, optionalCases = values)
 
-    val values get() = optionalValues!!
+    val cases get() = optionalCases!!
 
     override val primitiveType = PrimitiveType.EnumDefinition
 
@@ -42,16 +42,16 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         )
 
         @Suppress("UNCHECKED_CAST")
-        val values = add(2, "values",
+        val values = add(2, "cases",
             MapDefinition(
                 keyDefinition = NumberDefinition(
                     type = SInt32
                 ),
                 valueDefinition = StringDefinition()
             ) as MapDefinition<Int, String, EnumNameContext>,
-            IndexedEnumDefinition<*>::values,
+            IndexedEnumDefinition<*>::cases,
             toSerializable = { value, context ->
-                // If Enum was defined before and is thus available in context, don't include the values again
+                // If Enum was defined before and is thus available in context, don't include the cases again
                 val toReturnNull = context?.let { enumNameContext ->
                     if (enumNameContext.isOriginalDefinition == true) {
                         false
@@ -95,7 +95,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         override fun invoke(values: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>) =
             IndexedEnumDefinition<IndexedEnum<Any>>(
                 name = values(1),
-                optionalValues = values(2)
+                optionalCases = values(2)
             )
 
         override fun writeJson(

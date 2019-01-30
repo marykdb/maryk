@@ -18,7 +18,7 @@ enum class MarykEnum(
     O3(3);
 
     companion object: IndexedEnumDefinition<MarykEnum>(
-        "MarykEnum", MarykEnum::values
+        "MarykEnum", MarykEnum::cases
     )
 }
 """.trimIndent()

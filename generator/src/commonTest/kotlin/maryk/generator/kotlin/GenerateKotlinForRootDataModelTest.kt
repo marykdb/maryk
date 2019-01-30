@@ -84,7 +84,7 @@ enum class MarykEnumEmbedded(
     E3(3);
 
     companion object: IndexedEnumDefinition<MarykEnumEmbedded>(
-        "MarykEnumEmbedded", MarykEnumEmbedded::values
+        "MarykEnumEmbedded", MarykEnumEmbedded::cases
     )
 }
 

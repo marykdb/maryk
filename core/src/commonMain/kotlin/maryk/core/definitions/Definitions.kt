@@ -70,14 +70,14 @@ data class Definitions(
                             }
                         ),
                         PrimitiveType.EnumDefinition to ContextCaptureDefinition(
-                            // This transformer takes care to catch Enums without values to replace them
+                            // This transformer takes care to catch Enums without cases to replace them
                             // with previously defined Enums which are stored in the context
                             definition = ContextValueTransformDefinition(
                                 definition = EmbeddedObjectDefinition(
                                     dataModel = { IndexedEnumDefinition.Model }
                                 ),
                                 valueTransformer = { context, value ->
-                                    if (value.optionalValues == null) {
+                                    if (value.optionalCases == null) {
                                         context?.let {
                                             it.enums[value.name] as IndexedEnumDefinition<IndexedEnum<Any>>?
                                                 ?: throw ParseException("Enum ${value.name} has not been defined")

@@ -22,7 +22,7 @@ fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlinClass(addImport: 
     addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 
     val values = mutableListOf<String>()
-    for (value in this.values()) {
+    for (value in this.cases()) {
         values.add("${value.name}(${value.index})")
     }
 
@@ -33,7 +33,7 @@ fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlinClass(addImport: 
         ${values.joinToString(",\n").prependIndent().prependIndent().trimStart()};
 
         companion object: IndexedEnumDefinition<${this.name}>(
-            "${this.name}", ${this.name}::values
+            "${this.name}", ${this.name}::cases
         )
     }
     """.trimIndent()

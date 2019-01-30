@@ -175,7 +175,7 @@ internal class RootDataModelTest {
         			"unique": false,
         			"enum": {
         				"name": "Option",
-        				"values": {
+        				"cases": {
         					"1": "V1",
         					"2": "V2",
         					"3": "V3"
@@ -424,7 +424,7 @@ internal class RootDataModelTest {
             unique: false
             enum:
               name: Option
-              values:
+              cases:
                 1: V1
                 2: V2
                 3: V3
@@ -577,7 +577,7 @@ internal class RootDataModelTest {
           : !Enum
             enum:
               name: Option
-              values:
+              cases:
                 1: V1
                 2: V2
                 3: V3

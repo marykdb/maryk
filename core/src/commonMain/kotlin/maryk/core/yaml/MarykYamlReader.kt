@@ -39,5 +39,5 @@ val marykTypeMap: Map<String, TokenType> = arrayOf<Pair<String, TokenType>>()
         PropertyDefinitionType.values().map { it.name to it }
     )
     .plus(
-        KeyPartType.values().map { it.name to it }
+        KeyPartType.cases().map { it.name to it }
     ).toMap()

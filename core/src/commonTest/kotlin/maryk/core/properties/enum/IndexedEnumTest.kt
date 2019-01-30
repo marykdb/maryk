@@ -44,7 +44,7 @@ class IndexedEnumTest {
             ::compareEnumDefinitions
         ) shouldBe """
         name: Option
-        values:
+        cases:
           1: V1
           2: V2
           3: V3
@@ -65,7 +65,7 @@ class IndexedEnumTest {
         ).toDataObject()
 
         enum.name shouldBe "Option"
-        enum.optionalValues shouldBe null
+        enum.optionalCases shouldBe null
     }
 }
 
@@ -74,11 +74,11 @@ internal fun compareEnumDefinitions(
     against: IndexedEnumDefinition<*>
 ) {
     value.name shouldBe against.name
-    value.values().size shouldBe against.values().size
+    value.cases().size shouldBe against.cases().size
 
-    val valueMap = value.values().map { Pair(it.index, it.name) }.toMap()
+    val valueMap = value.cases().map { Pair(it.index, it.name) }.toMap()
 
-    for (enum in against.values()) {
+    for (enum in against.cases()) {
         valueMap[enum.index] shouldBe enum.name
     }
 }

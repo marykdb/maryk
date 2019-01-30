@@ -4,7 +4,6 @@ import maryk.core.models.DataModel
 import maryk.core.models.IsNamedDataModel
 import maryk.core.models.ObjectDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -13,7 +12,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Date
@@ -170,7 +169,7 @@ private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (St
 
     for(property in this.properties) {
         @Suppress("UNCHECKED_CAST")
-        val wrapper = property as IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>
+        val wrapper = property as AnyPropertyDefinitionWrapper
         property.getter(value)?.let {
             values.add("${property.name} = ${generateKotlinValue(wrapper.definition, it, addImport)}")
         }

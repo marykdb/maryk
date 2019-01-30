@@ -22,13 +22,12 @@ contains methods to generate a key.
 **Maryk Model YAML:**
 ```yaml
 name: Person
-properties:
-  ? 1: firstName
-  : !String
-  ? 2: lastName
-  : !String
-  ? 3: dateOfBirth
-  : !Date
+? 1: firstName
+: !String
+? 2: lastName
+: !String
+? 3: dateOfBirth
+: !Date
 ```
 
 **Kotlin implementation.** Can be generated from Maryk Model YAML
@@ -86,13 +85,12 @@ A generic DataModel extends from DataModel class. In Yaml you add ```embeddable 
 
 ```yaml
 name: Address
-properties:
-  ? 1: streetName
-  : !String
-  ? 2: city
-  : !String
-  ? 3: zipCode
-  : !String
+? 1: streetName
+: !String
+? 2: city
+: !String
+? 3: zipCode
+: !String
 ```
 
 ## RootDataModel
@@ -122,22 +120,21 @@ this would make them lose their fixed amount of bytes.
 **Maryk Yaml Description:**
 ```yaml
 name: PersonRoleInPeriod
-properties:
-  ? 1: person
-  : !Reference
-    dataModel: Person
-  ? 2: role
-  : !Enum
-    dataModel: Role
-  ? 3: startDate
-  : !Date
-  ? 4: endDate:
-  : !Date
+? 1: person
+: !Reference
+  dataModel: Person
+? 2: role
+: !Enum
+  dataModel: Role
+? 3: startDate
+: !Date
+? 4: endDate:
+: !Date
 ```
  
 ```yaml
 // Role.enum.yml
-values:
+cases:
   Admin: 1
   Moderator: 2
   User: 3

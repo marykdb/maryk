@@ -57,29 +57,28 @@ internal class ValueDataModelTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels) shouldBe  """
         name: TestValueObject
-        properties:
-          ? 1: int
-          : !Number
-            indexed: false
-            required: true
-            final: false
-            unique: false
-            type: SInt32
-            maxValue: 6
-            random: false
-          ? 2: dateTime
-          : !DateTime
-            indexed: false
-            required: true
-            final: false
-            unique: false
-            precision: SECONDS
-            fillWithNow: false
-          ? 3: bool
-          : !Boolean
-            indexed: false
-            required: true
-            final: false
+        ? 1: int
+        : !Number
+          indexed: false
+          required: true
+          final: false
+          unique: false
+          type: SInt32
+          maxValue: 6
+          random: false
+        ? 2: dateTime
+        : !DateTime
+          indexed: false
+          required: true
+          final: false
+          unique: false
+          precision: SECONDS
+          fillWithNow: false
+        ? 3: bool
+        : !Boolean
+          indexed: false
+          required: true
+          final: false
 
         """.trimIndent()
     }

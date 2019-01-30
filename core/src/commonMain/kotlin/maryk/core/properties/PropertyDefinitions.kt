@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
+import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
@@ -21,13 +22,13 @@ import maryk.yaml.YamlWriter
 abstract class PropertyDefinitions : AbstractPropertyDefinitions<Any>()
 
 /** Mutable variant of ObjectPropertyDefinitions for a IsCollectionDefinition implementation */
-internal class MutablePropertyDefinitions : PropertyDefinitions(), MutableCollection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>> {
-    override fun add(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>): Boolean {
+internal class MutablePropertyDefinitions : PropertyDefinitions(), IsMutablePropertyDefinitions<AnyPropertyDefinitionWrapper> {
+    override fun add(element: AnyPropertyDefinitionWrapper): Boolean {
         this.addSingle(propertyDefinitionWrapper = element)
         return true
     }
 
-    override fun addAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>): Boolean {
+    override fun addAll(elements: Collection<AnyPropertyDefinitionWrapper>): Boolean {
         elements.forEach {
             this.addSingle(it)
         }
@@ -35,29 +36,29 @@ internal class MutablePropertyDefinitions : PropertyDefinitions(), MutableCollec
     }
 
     override fun clear() {}
-    override fun remove(element: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>) = false
-    override fun removeAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>) = false
-    override fun retainAll(elements: Collection<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>) = false
+    override fun remove(element: AnyPropertyDefinitionWrapper) = false
+    override fun removeAll(elements: Collection<AnyPropertyDefinitionWrapper>) = false
+    override fun retainAll(elements: Collection<AnyPropertyDefinitionWrapper>) = false
 }
 
 /** Definition for a collection of Property Definitions for in a ObjectPropertyDefinitions */
 internal data class PropertyDefinitionsCollectionDefinition(
-    private val capturer: (DefinitionsConversionContext?, PropertyDefinitions) -> Unit
+    override val capturer: (DefinitionsConversionContext?, PropertyDefinitions) -> Unit
 ) : IsCollectionDefinition<
-    IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+    AnyPropertyDefinitionWrapper,
     PropertyDefinitions,
     DefinitionsConversionContext,
     EmbeddedObjectDefinition<
-        IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
-        ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>,
+        AnyPropertyDefinitionWrapper,
+        ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>,
         SimpleObjectDataModel<
-                IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
-                ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>
+                AnyPropertyDefinitionWrapper,
+                ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>
         >,
         IsPropertyContext,
         IsPropertyContext
     >
-> {
+>, IsPropertyDefinitionsCollectionDefinition<PropertyDefinitions> {
     override val indexed = false
     override val required = true
     override val final = true
@@ -68,14 +69,14 @@ internal data class PropertyDefinitionsCollectionDefinition(
     override val valueDefinition = EmbeddedObjectDefinition(
         dataModel = {
             @Suppress("UNCHECKED_CAST")
-            IsPropertyDefinitionWrapper.Model as SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>
+            IsPropertyDefinitionWrapper.Model as SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>
         }
     )
 
     override fun validateCollectionForExceptions(
         refGetter: () -> IsPropertyReference<PropertyDefinitions, IsPropertyDefinition<PropertyDefinitions>, *>?,
         newValue: PropertyDefinitions,
-        validator: (item: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, itemRefFactory: () -> IsPropertyReference<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, IsPropertyDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, *>?) -> Any
+        validator: (item: AnyPropertyDefinitionWrapper, itemRefFactory: () -> IsPropertyReference<AnyPropertyDefinitionWrapper, IsPropertyDefinition<AnyPropertyDefinitionWrapper>, *>?) -> Any
     ) {}
 
     override fun newMutableCollection(context: DefinitionsConversionContext?) =
@@ -128,7 +129,7 @@ internal data class PropertyDefinitionsCollectionDefinitionWrapper<in DO: Any>(
     override val definition: PropertyDefinitionsCollectionDefinition,
     override val getter: (DO) -> PropertyDefinitions?
 ) :
-    IsCollectionDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, PropertyDefinitions, DefinitionsConversionContext, EmbeddedObjectDefinition<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>, SimpleObjectDataModel<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>, ObjectPropertyDefinitions<IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>>>, IsPropertyContext, IsPropertyContext>> by definition,
+    IsCollectionDefinition<AnyPropertyDefinitionWrapper, PropertyDefinitions, DefinitionsConversionContext, EmbeddedObjectDefinition<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>, SimpleObjectDataModel<AnyPropertyDefinitionWrapper, ObjectPropertyDefinitions<AnyPropertyDefinitionWrapper>>, IsPropertyContext, IsPropertyContext>> by definition,
     IsPropertyDefinitionWrapper<PropertyDefinitions, PropertyDefinitions, DefinitionsConversionContext, DO>
 {
     override val graphType = PropRefGraphType.PropRef

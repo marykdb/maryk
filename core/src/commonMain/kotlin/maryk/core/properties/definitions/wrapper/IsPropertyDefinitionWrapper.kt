@@ -35,6 +35,8 @@ import maryk.json.IsJsonLikeWriter
 import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
+typealias AnyPropertyDefinitionWrapper = IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>
+
 /**
  * Wraps a Property Definition of type [T] to give it more context [CX] about
  * DataObject [DO] which contains this Definition.

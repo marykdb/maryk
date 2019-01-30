@@ -19,8 +19,8 @@ Example:
 Maryk YAML:
 ```yaml
 !Add
-  dataModel: Person
-  objectsToAdd:
+  to: Person
+  objects:
   - firstName: Jurriaan
     lastName: Mous
   - firstName: John
@@ -53,8 +53,8 @@ Example:
 Maryk YAML:
 ```yaml
 !Change
-  dataModel: SimpleMarykObject
-  objectChanges:
+  to: SimpleMarykObject
+  objects:
   - key: MYc6LBYcT38nWxoE1ahNxA
     changes:
       !Check
@@ -112,7 +112,7 @@ with a status on each delete.
 Maryk YAML:
 ```yaml
 !Delete
-  dataModel: Person
+  from: Person
   keys: 
   - WWurg6ysTsozoMei/SurOw
   - awfbjYrVQ+cdXblfQKV10A
@@ -147,7 +147,7 @@ containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 Maryk YAML:
 ```yaml
 !Get
-  dataModel: Person
+  from: Person
   keys: 
   - WWurg6ysTsozoMei/SurOw
   - awfbjYrVQ+cdXblfQKV10A
@@ -167,7 +167,7 @@ With all options
 Maryk YAML:
 ```yaml
 !Get
-  dataModel: Person
+  from: Person
   keys: 
   - WWurg6ysTsozoMei/SurOw
   - awfbjYrVQ+cdXblfQKV10A
@@ -219,7 +219,7 @@ containing the `key`, `object`, `firstVersion`, `lastVersion` and `isDeleted`.
 Maryk YAML:
 ```yaml
 !Scan
-  dataModel: Logs
+  from: Logs
   startKey: Zk6m4QpZQegUg5s13JVYlQ
 ```
 Kotlin:
@@ -235,7 +235,7 @@ With all options
 Maryk YAML:
 ```yaml
 !Scan
-  dataModel: Logs
+  from: Logs
   startKey: Zk6m4QpZQegUg5s13JVYlQ
   select:
     - timeStamp

@@ -3,8 +3,11 @@ package maryk.core.models
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.properties.IsDataModelPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.MutableObjectPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
+import maryk.core.properties.ObjectPropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
@@ -49,7 +52,6 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
         }
         return this(this.values { values })
     }
-
 
     /** Creates bytes for given [values] */
     protected fun toBytes(values: ObjectValues<DO, P>): ByteArray {
@@ -112,11 +114,12 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
         }
     }
 
-    private object ValueDataModelProperties : ObjectPropertyDefinitions<ValueDataModel<*, *>>() {
-        val name = IsNamedDataModel.addName(this, ValueDataModel<*, *>::name)
-        init {
-            ObjectDataModel.addProperties(this)
-        }
+    private object ValueDataModelProperties :
+        ObjectPropertyDefinitions<ValueDataModel<*, *>>(),
+        IsDataModelPropertyDefinitions<ValueDataModel<*, *>, ObjectPropertyDefinitionsCollectionDefinitionWrapper<ValueDataModel<*, *>>>
+    {
+        override val name = IsNamedDataModel.addName(this, ValueDataModel<*, *>::name)
+        override val properties = ObjectDataModel.addProperties(this)
     }
 
     internal object Model : DefinitionDataModel<ValueDataModel<*, *>>(
@@ -140,28 +143,15 @@ abstract class ValueDataModel<DO: ValueDataObject, P: ObjectPropertyDefinitions<
         }
 
         override fun writeJson(obj: ValueDataModel<*, *>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
-            // Only skip when DefinitionsContext was set
-            val toSkip = when {
-                context != null && context.currentDefinitionName == obj.name -> listOf(ValueDataModelProperties.name)
-                else -> null
-            }
-            super.writeJson(obj, writer, context, toSkip)
+            this.writeDataModelJson(writer, context, obj, ValueDataModelProperties)
         }
 
-        override fun readJsonToMap(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?): MutableValueItems {
-            val map = super.readJsonToMap(reader, context)
-
-            context?.currentDefinitionName?.let { name ->
-                if (name.isNotBlank()) {
-                    if (map.contains(ValueDataModelProperties.name.index)) {
-                        throw Exception("Name $name was already defined by map")
-                    }
-
-                    map[ValueDataModelProperties.name.index] = name
-                }
-            }
-
-            return map
+        override fun walkJsonToRead(
+            reader: IsJsonLikeReader,
+            values: MutableValueItems,
+            context: ContainsDefinitionsContext?
+        ) {
+            readDataModelJson(context, reader, values, ValueDataModelProperties, { MutableObjectPropertyDefinitions<ValueDataModel<*, *>>() })
         }
     }
 }

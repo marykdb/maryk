@@ -44,245 +44,241 @@ class DefinitionsTest {
             2: V2
             3: V3
         TestValueObject: !ValueModel
-          properties:
-            ? 1: int
-            : !Number
-              indexed: false
-              required: true
-              final: false
-              unique: false
-              type: SInt32
-              maxValue: 6
-              random: false
-            ? 2: dateTime
-            : !DateTime
-              indexed: false
-              required: true
-              final: false
-              unique: false
-              precision: SECONDS
-              fillWithNow: false
-            ? 3: bool
-            : !Boolean
-              indexed: false
-              required: true
-              final: false
+          ? 1: int
+          : !Number
+            indexed: false
+            required: true
+            final: false
+            unique: false
+            type: SInt32
+            maxValue: 6
+            random: false
+          ? 2: dateTime
+          : !DateTime
+            indexed: false
+            required: true
+            final: false
+            unique: false
+            precision: SECONDS
+            fillWithNow: false
+          ? 3: bool
+          : !Boolean
+            indexed: false
+            required: true
+            final: false
         SimpleMarykModel: !RootModel
           key:
           - !UUID
-          properties:
-            ? 1: value
-            : !String
-              indexed: false
-              required: true
-              final: false
-              unique: false
-              default: haha
-              regEx: ha.*
+          ? 1: value
+          : !String
+            indexed: false
+            required: true
+            final: false
+            unique: false
+            default: haha
+            regEx: ha.*
         EmbeddedMarykModel: !Model
-          properties:
-            ? 1: value
-            : !String
-              indexed: false
-              required: true
-              final: false
-              unique: false
-            ? 2: model
-            : !Embed
-              indexed: false
-              required: false
-              final: false
-              dataModel: EmbeddedMarykModel
-            ? 3: marykModel
-            : !Embed
-              indexed: false
-              required: false
-              final: false
-              dataModel: TestMarykModel
+          ? 1: value
+          : !String
+            indexed: false
+            required: true
+            final: false
+            unique: false
+          ? 2: model
+          : !Embed
+            indexed: false
+            required: false
+            final: false
+            dataModel: EmbeddedMarykModel
+          ? 3: marykModel
+          : !Embed
+            indexed: false
+            required: false
+            final: false
+            dataModel: TestMarykModel
         TestMarykModel: !RootModel
           key:
           - !Ref uint
           - !Ref bool
           - !Ref enum
-          properties:
-            ? 1: string
-            : !String
-              indexed: false
-              required: true
-              final: false
-              unique: false
-              default: haha
-              regEx: ha.*
-            ? 2: int
-            : !Number
+          ? 1: string
+          : !String
+            indexed: false
+            required: true
+            final: false
+            unique: false
+            default: haha
+            regEx: ha.*
+          ? 2: int
+          : !Number
+            indexed: false
+            required: true
+            final: false
+            unique: false
+            type: SInt32
+            maxValue: 6
+            random: false
+          ? 3: uint
+          : !Number
+            indexed: false
+            required: true
+            final: true
+            unique: false
+            type: UInt32
+            random: false
+          ? 4: double
+          : !Number
+            indexed: false
+            required: true
+            final: false
+            unique: false
+            type: Float64
+            random: false
+          ? 5: dateTime
+          : !DateTime
+            indexed: false
+            required: true
+            final: false
+            unique: false
+            precision: SECONDS
+            fillWithNow: false
+          ? 6: bool
+          : !Boolean
+            indexed: false
+            required: true
+            final: true
+          ? 7: enum
+          : !Enum
+            indexed: false
+            required: true
+            final: true
+            unique: false
+            enum: Option
+            default: V1
+          ? 8: list
+          : !List
+            indexed: false
+            required: false
+            final: false
+            valueDefinition: !Number
               indexed: false
               required: true
               final: false
               unique: false
               type: SInt32
-              maxValue: 6
               random: false
-            ? 3: uint
-            : !Number
-              indexed: false
-              required: true
-              final: true
-              unique: false
-              type: UInt32
-              random: false
-            ? 4: double
-            : !Number
+          ? 9: set
+          : !Set
+            indexed: false
+            required: false
+            final: false
+            maxSize: 5
+            valueDefinition: !Date
               indexed: false
               required: true
               final: false
               unique: false
-              type: Float64
-              random: false
-            ? 5: dateTime
-            : !DateTime
+              maxValue: 2100-12-31
+              fillWithNow: false
+          ? 10: map
+          : !Map
+            indexed: false
+            required: false
+            final: false
+            maxSize: 5
+            keyDefinition: !Time
               indexed: false
               required: true
               final: false
               unique: false
               precision: SECONDS
+              maxValue: '23:00'
               fillWithNow: false
-            ? 6: bool
-            : !Boolean
+            valueDefinition: !String
               indexed: false
               required: true
-              final: true
-            ? 7: enum
-            : !Enum
-              indexed: false
-              required: true
-              final: true
-              unique: false
-              enum: Option
-              default: V1
-            ? 8: list
-            : !List
-              indexed: false
-              required: false
               final: false
-              valueDefinition: !Number
+              unique: false
+              maxSize: 10
+          ? 11: valueObject
+          : !Value
+            indexed: false
+            required: false
+            final: false
+            unique: false
+            dataModel: TestValueObject
+          ? 12: embeddedValues
+          : !Embed
+            indexed: false
+            required: false
+            final: false
+            dataModel: EmbeddedMarykModel
+          ? 13: multi
+          : !MultiType
+            indexed: false
+            required: false
+            final: false
+            typeEnum: Option
+            typeIsFinal: true
+            definitionMap:
+              ? 1: V1
+              : !String
+                indexed: false
+                required: true
+                final: false
+                unique: false
+              ? 2: V2
+              : !Number
                 indexed: false
                 required: true
                 final: false
                 unique: false
                 type: SInt32
                 random: false
-            ? 9: set
-            : !Set
-              indexed: false
-              required: false
-              final: false
-              maxSize: 5
-              valueDefinition: !Date
+              ? 3: V3
+              : !Embed
                 indexed: false
                 required: true
                 final: false
-                unique: false
-                maxValue: 2100-12-31
-                fillWithNow: false
-            ? 10: map
-            : !Map
+                dataModel: EmbeddedMarykModel
+          ? 14: reference
+          : !Reference
+            indexed: false
+            required: false
+            final: false
+            unique: false
+            dataModel: TestMarykModel
+          ? 15: listOfString
+          : !List
+            indexed: false
+            required: false
+            final: false
+            maxSize: 6
+            valueDefinition: !String
               indexed: false
-              required: false
-              final: false
-              maxSize: 5
-              keyDefinition: !Time
-                indexed: false
-                required: true
-                final: false
-                unique: false
-                precision: SECONDS
-                maxValue: '23:00'
-                fillWithNow: false
-              valueDefinition: !String
-                indexed: false
-                required: true
-                final: false
-                unique: false
-                maxSize: 10
-            ? 11: valueObject
-            : !Value
-              indexed: false
-              required: false
+              required: true
               final: false
               unique: false
-              dataModel: TestValueObject
-            ? 12: embeddedValues
-            : !Embed
+              maxSize: 10
+          ? 16: selfReference
+          : !Reference
+            indexed: false
+            required: false
+            final: false
+            unique: false
+            dataModel: TestMarykModel
+          ? 17: setOfString
+          : !Set
+            indexed: false
+            required: false
+            final: false
+            maxSize: 6
+            valueDefinition: !String
               indexed: false
-              required: false
-              final: false
-              dataModel: EmbeddedMarykModel
-            ? 13: multi
-            : !MultiType
-              indexed: false
-              required: false
-              final: false
-              typeEnum: Option
-              typeIsFinal: true
-              definitionMap:
-                ? 1: V1
-                : !String
-                  indexed: false
-                  required: true
-                  final: false
-                  unique: false
-                ? 2: V2
-                : !Number
-                  indexed: false
-                  required: true
-                  final: false
-                  unique: false
-                  type: SInt32
-                  random: false
-                ? 3: V3
-                : !Embed
-                  indexed: false
-                  required: true
-                  final: false
-                  dataModel: EmbeddedMarykModel
-            ? 14: reference
-            : !Reference
-              indexed: false
-              required: false
+              required: true
               final: false
               unique: false
-              dataModel: TestMarykModel
-            ? 15: listOfString
-            : !List
-              indexed: false
-              required: false
-              final: false
-              maxSize: 6
-              valueDefinition: !String
-                indexed: false
-                required: true
-                final: false
-                unique: false
-                maxSize: 10
-            ? 16: selfReference
-            : !Reference
-              indexed: false
-              required: false
-              final: false
-              unique: false
-              dataModel: TestMarykModel
-            ? 17: setOfString
-            : !Set
-              indexed: false
-              required: false
-              final: false
-              maxSize: 6
-              valueDefinition: !String
-                indexed: false
-                required: true
-                final: false
-                unique: false
-                maxSize: 10
+              maxSize: 10
 
         """.trimIndent()
     }

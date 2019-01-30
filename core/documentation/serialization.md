@@ -21,16 +21,15 @@ Example DataModel definition
 name: User
 key:
 - !Ref username
-properties:
-  ? 0: username
-  : !String
-    required: true
-    final: true
-    unique: true
-  ? 1: email
-  : !String
-    required: true
-    unique: true
+? 0: username
+: !String
+  required: true
+  final: true
+  unique: true
+? 1: email
+: !String
+  required: true
+  unique: true
 ```
 
 Example User object

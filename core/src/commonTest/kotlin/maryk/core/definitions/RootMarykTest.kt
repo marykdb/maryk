@@ -56,15 +56,14 @@ class RootMarykTest {
           SimpleMarykModel: !RootModel
             key:
             - !UUID
-            properties:
-              ? 1: value
-              : !String
-                indexed: false
-                required: true
-                final: false
-                unique: false
-                default: haha
-                regEx: ha.*
+            ? 1: value
+            : !String
+              indexed: false
+              required: true
+              final: false
+              unique: false
+              default: haha
+              regEx: ha.*
         - !Request
           - !Add
             to: SimpleMarykModel

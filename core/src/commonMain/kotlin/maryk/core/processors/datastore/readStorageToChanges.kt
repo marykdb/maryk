@@ -29,7 +29,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
@@ -488,7 +488,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 private fun <P : PropertyDefinitions> readComplexChanges(
     qualifier: ByteArray,
     offset: Int,
-    definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+    definition: AnyPropertyDefinitionWrapper,
     parentReference: IsPropertyReference<*, *, *>?,
     select: IsPropRefGraph<P>?,
     addToCache: CacheProcessor,

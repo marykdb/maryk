@@ -4,6 +4,8 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.properties.AbstractPropertyDefinitions
+import maryk.core.properties.IsDataModelPropertyDefinitions
+import maryk.core.properties.MutablePropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinition
@@ -28,12 +30,12 @@ abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
 ), MarykPrimitive {
     override val primitiveType = PrimitiveType.Model
 
-    private object Properties : ObjectPropertyDefinitions<DataModel<*, *>>() {
-        val name = IsNamedDataModel.addName(this, DataModel<*, *>::name)
-
-        init {
-            DataModel.addProperties(this)
-        }
+    private object Properties :
+        ObjectPropertyDefinitions<DataModel<*, *>>(),
+        IsDataModelPropertyDefinitions<DataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<DataModel<*, *>>>
+    {
+        override val name = IsNamedDataModel.addName(this, DataModel<*, *>::name)
+        override val properties = DataModel.addProperties(this)
     }
 
     internal object Model : DefinitionDataModel<DataModel<*, *>>(
@@ -54,26 +56,15 @@ abstract class DataModel<DM: IsValuesDataModel<P>, P: PropertyDefinitions>(
         }
 
         override fun writeJson(obj: DataModel<*, *>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
-            // Only skip when DefinitionsContext was set
-            val toSkip = when {
-                context != null && context.currentDefinitionName == obj.name -> listOf(Properties.name)
-                else -> null
-            }
-            super.writeJson(obj, writer, context, toSkip)
+            this.writeDataModelJson(writer, context, obj, Properties)
         }
 
-        override fun readJsonToMap(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?): MutableValueItems {
-            val map = super.readJsonToMap(reader, context)
-
-            context?.currentDefinitionName?.let { name ->
-                if (name.isNotBlank() && map.contains(Properties.name.index)) {
-                    throw Exception("Name $name was already defined by map")
-                }
-
-                map[Properties.name.index] = name
-            }
-
-            return map
+        override fun walkJsonToRead(
+            reader: IsJsonLikeReader,
+            values: MutableValueItems,
+            context: ContainsDefinitionsContext?
+        ) {
+            readDataModelJson(context, reader, values, Properties, ::MutablePropertyDefinitions)
         }
     }
 

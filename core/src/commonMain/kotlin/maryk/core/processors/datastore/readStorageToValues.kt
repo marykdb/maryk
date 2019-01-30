@@ -11,7 +11,6 @@ import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -19,7 +18,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.AnyPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -305,7 +304,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 }
 
 private fun readComplexValueFromStorage(
-    definition: IsPropertyDefinitionWrapper<Any, Any, IsPropertyContext, Any>,
+    definition: AnyPropertyDefinitionWrapper,
     qualifier: ByteArray,
     qIndex: Int,
     readValueFromStorage: ValueReader,

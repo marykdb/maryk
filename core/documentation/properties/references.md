@@ -11,23 +11,21 @@ These operations can be defined in Kotlin or any of the serialization formats Ma
 This Person model has 2 top level fields (firstName, lastName) and an Embed named Address 
 ```yaml
 name: Person
-properties:
-  ? 0: firstName
-  : !String
-  ? 1: lastName
-  : !String
-  ? 2: livingAddress
-  : !Embed
-    dataModel: Address
+? 0: firstName
+: !String
+? 1: lastName
+: !String
+? 2: livingAddress
+: !Embed
+  dataModel: Address
 ```
 
 ```yaml
 name: Address
-properties:
-  ? 0: street
-  : !String
-  ? 1: city
-  : !String
+? 0: street
+: !String
+? 1: city
+: !String
 ```
 
 ## Creating property references in Kotlin

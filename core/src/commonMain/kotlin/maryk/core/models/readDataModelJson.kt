@@ -87,6 +87,8 @@ internal fun <DM: IsNamedDataModel<*>, P: IsDataModelPropertyDefinitions<DM, *>>
             if (values.contains(properties.name.index)) {
                 throw Exception("Name $name was already defined by map")
             }
+            // Reset it so no deeper value can reuse it
+            context.currentDefinitionName = ""
 
             values[properties.name.index] = name
         }

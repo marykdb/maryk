@@ -24,7 +24,10 @@ AbstractDataModel<DM, P2, *, ContainsDefinitionsContext, ContainsDefinitionsCont
     for (def in this.properties) {
         if (def == properties.properties) continue // skip properties to write last
         // Skip name if defined higher
-        if (def == properties.name && context != null && context.currentDefinitionName == obj.name) continue
+        if (def == properties.name && context != null && context.currentDefinitionName == obj.name) {
+            context.currentDefinitionName = "" // Reset after use
+            continue
+        }
 
         val value = def.getPropertyAndSerialize(obj, context) ?: continue
         this.writeJsonValue(def, writer, value, context)

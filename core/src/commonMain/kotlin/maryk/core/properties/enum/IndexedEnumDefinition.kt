@@ -42,7 +42,7 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         )
 
         @Suppress("UNCHECKED_CAST")
-        val values = add(2, "cases",
+        val cases = add(2, "cases",
             MapDefinition(
                 keyDefinition = NumberDefinition(
                     type = SInt32
@@ -115,11 +115,20 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 Properties.name.capture(context, value)
             } else {
                 // Only skip when DefinitionsContext was set
-                val toSkip = when {
-                    context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> listOf(Properties.name)
-                    else -> null
+                when {
+                    context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> {
+                        // Write only cases if it is inside Definitions
+                        Properties.cases.writeJsonValue(
+                            Properties.cases.toSerializable!!.invoke(obj.cases, context)!!,
+                            writer,
+                            context
+                        )
+                        context.definitionsContext.currentDefinitionName = ""
+                    }
+                    else -> {
+                        super.writeJson(obj, writer, context)
+                    }
                 }
-                super.writeJson(obj, writer, context, toSkip)
             }
         }
 
@@ -142,20 +151,19 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             }
         }
 
-        override fun readJsonToMap(reader: IsJsonLikeReader, context: EnumNameContext?): MutableValueItems {
-            val map = super.readJsonToMap(reader, context)
-
-            context?.definitionsContext?.currentDefinitionName?.let { name ->
-                if (name.isNotBlank()) {
-                    if (map.contains(Properties.name.index)) {
-                        throw Exception("Name $name was already defined by map")
+        override fun readJsonToMap(reader: IsJsonLikeReader, context: EnumNameContext?) =
+            context?.definitionsContext?.currentDefinitionName.let { name ->
+                when (name) {
+                    null, "" -> super.readJsonToMap(reader, context)
+                    else -> {
+                        context?.definitionsContext?.currentDefinitionName = ""
+                        // If a name was defined, read map as values
+                        MutableValueItems().also {
+                            it[Properties.name.index] = name
+                            it[Properties.cases.index] = Properties.cases.readJson(reader, context)
+                        }
                     }
-
-                    map[Properties.name.index] = name
                 }
             }
-
-            return map
-        }
     }
 }

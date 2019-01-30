@@ -39,10 +39,9 @@ class DefinitionsTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true) shouldBe """
         Option: !EnumDefinition
-          cases:
-            1: V1
-            2: V2
-            3: V3
+          1: V1
+          2: V2
+          3: V3
         TestValueObject: !ValueModel
           ? 1: int
           : !Number

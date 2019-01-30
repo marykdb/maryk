@@ -48,14 +48,12 @@ class RootMarykTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.rootMaryk, RootMaryk, { DefinitionsContext() }, ::compareRootMaryk, true) shouldBe """
         - !Define
-          - !EnumDefinition
-            name: Option
+          Option: !EnumDefinition
             values:
               1: V1
               2: V2
               3: V3
-          - !RootModel
-            name: SimpleMarykModel
+          SimpleMarykModel: !RootModel
             key:
             - !UUID
             properties:

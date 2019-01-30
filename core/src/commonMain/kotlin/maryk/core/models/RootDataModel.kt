@@ -17,6 +17,7 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -55,11 +56,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
     @Suppress("UNCHECKED_CAST")
     private object RootModelProperties: ObjectPropertyDefinitions<RootDataModel<*, *>>() {
-        init {
-            IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModelImpl>) {
-                it.name
-            }
-        }
+        val name = IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModelImpl>, RootDataModel<*, *>::name)
         val properties = DataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModelImpl>)
         val key = add(3, "key",
             ListDefinition(
@@ -81,7 +78,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
     }
 
     @Suppress("UNCHECKED_CAST")
-    object Model : SimpleObjectDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>(
+    object Model : AbstractObjectDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
         properties = RootModelProperties
     ) {
         override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
@@ -95,13 +92,23 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
             }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<FixedBytesProperty<out Any>>
         ){}
 
+        override fun writeJson(
+            values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>,
+            writer: IsJsonLikeWriter,
+            context: ContainsDefinitionsContext?
+        ) {
+            throw Exception("Cannot write definitions from Values")
+        }
+
         /**
          * Overridden to handle earlier definition of keys compared to Properties
          */
-        override fun writeJson(obj: RootDataModel<*, *>, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        override fun writeJson(obj: RootDataModel<*, *>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
             writer.writeStartObject()
             for (def in this.properties) {
                 if (def == RootModelProperties.properties) continue // skip properties to write last
+                // Skip name if defined higher
+                if (def == RootModelProperties.name && context != null && context.currentDefinitionName == obj.name) continue
 
                 val value = def.getPropertyAndSerialize(obj, context) ?: continue
                 this.writeJsonValue(def, writer, value, context)
@@ -121,7 +128,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         override fun walkJsonToRead(
             reader: IsJsonLikeReader,
             values: MutableValueItems,
-            context: IsPropertyContext?
+            context: ContainsDefinitionsContext?
         ) {
             var keyDefinitionsToProcessLater: List<JsonToken>? = null
             var propertiesAreProcessed = false
@@ -174,6 +181,17 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
                 if (reader is IsYamlReader) {
                     reader.nextToken()
+                }
+            }
+
+            // Inject name if it was defined as a map key in a higher level
+            context?.currentDefinitionName?.let { name ->
+                if (name.isNotBlank()) {
+                    if (values.contains(RootModelProperties.name.index)) {
+                        throw Exception("Name $name was already defined by map")
+                    }
+
+                    values[RootModelProperties.name.index] = name
                 }
             }
         }

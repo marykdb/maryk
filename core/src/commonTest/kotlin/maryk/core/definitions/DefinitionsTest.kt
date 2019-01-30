@@ -38,14 +38,12 @@ class DefinitionsTest {
     @Test
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true) shouldBe """
-        - !EnumDefinition
-          name: Option
+        Option: !EnumDefinition
           values:
             1: V1
             2: V2
             3: V3
-        - !ValueModel
-          name: TestValueObject
+        TestValueObject: !ValueModel
           properties:
             ? 1: int
             : !Number
@@ -69,8 +67,7 @@ class DefinitionsTest {
               indexed: false
               required: true
               final: false
-        - !RootModel
-          name: SimpleMarykModel
+        SimpleMarykModel: !RootModel
           key:
           - !UUID
           properties:
@@ -82,8 +79,7 @@ class DefinitionsTest {
               unique: false
               default: haha
               regEx: ha.*
-        - !Model
-          name: EmbeddedMarykModel
+        EmbeddedMarykModel: !Model
           properties:
             ? 1: value
             : !String
@@ -103,8 +99,7 @@ class DefinitionsTest {
               required: false
               final: false
               dataModel: TestMarykModel
-        - !RootModel
-          name: TestMarykModel
+        TestMarykModel: !RootModel
           key:
           - !Ref uint
           - !Ref bool

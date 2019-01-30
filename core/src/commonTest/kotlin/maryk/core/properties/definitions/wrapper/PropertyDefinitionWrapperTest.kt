@@ -11,7 +11,7 @@ fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *
     converted.index shouldBe original.index
     converted.name shouldBe original.name
     // Make sure JS tests correct
-    assertTrue("${converted.name} should match with original ${original.name}") {
+    assertTrue("${converted.name} should match with original ${original.name}. $converted to $original") {
         original.definition == converted.definition
     }
 }

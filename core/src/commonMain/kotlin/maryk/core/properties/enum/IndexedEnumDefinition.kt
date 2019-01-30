@@ -3,7 +3,6 @@ package maryk.core.properties.enum
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
@@ -11,6 +10,8 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -97,6 +98,14 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 optionalValues = values(2)
             )
 
+        override fun writeJson(
+            values: ObjectValues<IndexedEnumDefinition<IndexedEnum<Any>>, Properties>,
+            writer: IsJsonLikeWriter,
+            context: EnumNameContext?
+        ) {
+            throw Exception("Cannot write definitions from Values")
+        }
+
         override fun writeJson(obj: IndexedEnumDefinition<IndexedEnum<Any>>, writer: IsJsonLikeWriter, context: EnumNameContext?) {
             if (context?.definitionsContext?.enums?.containsKey(obj.name) == true) {
                 // Write a single string name if no options was defined
@@ -105,7 +114,12 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
                 Properties.name.writeJsonValue(value, writer, context)
                 Properties.name.capture(context, value)
             } else {
-                super.writeJson(obj, writer, context)
+                // Only skip when DefinitionsContext was set
+                val toSkip = when {
+                    context?.definitionsContext != null && context.definitionsContext.currentDefinitionName == obj.name -> listOf(Properties.name)
+                    else -> null
+                }
+                super.writeJson(obj, writer, context, toSkip)
             }
         }
 
@@ -126,6 +140,22 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
             } else {
                 super.readJson(reader, context)
             }
+        }
+
+        override fun readJsonToMap(reader: IsJsonLikeReader, context: EnumNameContext?): MutableValueItems {
+            val map = super.readJsonToMap(reader, context)
+
+            context?.definitionsContext?.currentDefinitionName?.let { name ->
+                if (name.isNotBlank()) {
+                    if (map.contains(Properties.name.index)) {
+                        throw Exception("Name $name was already defined by map")
+                    }
+
+                    map[Properties.name.index] = name
+                }
+            }
+
+            return map
         }
     }
 }

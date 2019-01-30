@@ -18,6 +18,9 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -100,12 +103,49 @@ data class Definitions(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal companion object: QuerySingleValueDataModel<List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
+    internal companion object: QuerySingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
         properties = Properties,
-        singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<MarykPrimitive>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
+        singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
     ) {
         override fun invoke(values: ObjectValues<Definitions, Properties>) = Definitions(
             definitions = values(1)
         )
+
+        override fun writeJsonValue(value: List<TypedValue<PrimitiveType, MarykPrimitive>>, writer: IsJsonLikeWriter, context: ContainsDefinitionsContext?) {
+            writer.writeStartObject()
+            for (item in value) {
+                writer.writeFieldName(item.value.name)
+                context?.currentDefinitionName = item.value.name
+                Properties.definitions.valueDefinition.writeJsonValue(item, writer, context)
+            }
+            writer.writeEndObject()
+        }
+
+        override fun readJsonValue(
+            reader: IsJsonLikeReader,
+            context: ContainsDefinitionsContext?
+        ): List<TypedValue<PrimitiveType, MarykPrimitive>> {
+            if (reader.currentToken !is JsonToken.StartObject) {
+                throw ParseException("JSON value should be an Object")
+            }
+            val definitions = mutableListOf<TypedValue<PrimitiveType, MarykPrimitive>>()
+
+            while (reader.nextToken() !== JsonToken.EndObject) {
+                reader.currentToken.apply {
+                    if (this is JsonToken.FieldName) {
+                        if (context == null) throw ContextNotFoundException()
+                        context.currentDefinitionName = this.value ?: throw ParseException("Map key cannot be null")
+
+                        reader.nextToken()
+                        definitions.add(
+                            Properties.definitions.valueDefinition.readJson(reader, context)
+                        )
+                    } else {
+                        throw ParseException("JSON value should be an Object Field but was ${this.name}")
+                    }
+                }
+            }
+            return definitions
+        }
     }
 }

@@ -10,15 +10,17 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
+typealias QuerySingleTypedValueDataModel<T, DO, P, CX> = QuerySingleValueDataModel<T, T, DO, P, CX>
+
 /**
  * ObjectDataModel of type [DO] with [properties] definitions with a single property to contain
  * query actions so they can be validated and transported.
  *
  * In JSON/YAML this model is represented as just that property.
  */
-abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
+abstract class QuerySingleValueDataModel<T: Any, TO: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
     properties: P,
-    private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, T, CX, DO>
+    private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, TO, CX, DO>
 ) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {
     override fun writeJson(values: ObjectValues<DO, P>, writer: IsJsonLikeWriter, context: CX?) {
         val value = values.original { singlePropertyDefinition } ?: throw ParseException("Missing ${singlePropertyDefinition.name} value")
@@ -30,7 +32,7 @@ abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefin
         writeJsonValue(value, writer, context)
     }
 
-    fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) {
+    open fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) {
         singlePropertyDefinition.writeJsonValue(value, writer, context)
         singlePropertyDefinition.capture(context, value)
     }
@@ -40,8 +42,7 @@ abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefin
             reader.nextToken()
         }
 
-        val value = singlePropertyDefinition.readJson(reader, context)
-        singlePropertyDefinition.capture(context, value)
+        val value = readJsonValue(reader, context)
 
         return this.values(context as? RequestContext) {
             mapNonNulls(
@@ -49,4 +50,9 @@ abstract class QuerySingleValueDataModel<T: Any, DO: Any, P: ObjectPropertyDefin
             )
         }
     }
+
+    open fun readJsonValue(reader: IsJsonLikeReader, context: CX?) =
+        singlePropertyDefinition.readJson(reader, context).also {
+            singlePropertyDefinition.capture(context, it)
+        }
 }

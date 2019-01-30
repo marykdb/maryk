@@ -45,7 +45,11 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
      * Write [values] for this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    open fun writeJson(values: V, writer: IsJsonLikeWriter, context: CX? = null) {
+    open fun writeJson(
+        values: V,
+        writer: IsJsonLikeWriter,
+        context: CX? = null
+    ) {
         writer.writeStartObject()
         for ((index, value) in values) {
             val definition = properties[index] ?: continue

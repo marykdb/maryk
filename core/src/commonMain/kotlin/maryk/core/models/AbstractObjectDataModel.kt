@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -12,6 +11,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 
 typealias SimpleObjectDataModel<DO, P> = AbstractObjectDataModel<DO, P, IsPropertyContext, IsPropertyContext>
@@ -47,13 +47,29 @@ abstract class AbstractObjectDataModel<DO: Any, P: ObjectPropertyDefinitions<DO>
         }
     }
 
+    open fun writeJson(
+        obj: DO,
+        writer: IsJsonLikeWriter,
+        context: CX? = null
+    ) {
+        this.writeJson(obj, writer, context, null)
+    }
+
     /**
      * Write an [obj] of this ObjectDataModel to JSON with [writer]
      * Optionally pass a [context] when needed for more complex property types
      */
-    open fun writeJson(obj: DO, writer: IsJsonLikeWriter, context: CX? = null) {
+    fun writeJson(
+        obj: DO,
+        writer: IsJsonLikeWriter,
+        context: CX? = null,
+        skip: List<IsPropertyDefinitionWrapper<*, *, *, DO>>? = null
+    ) {
         writer.writeStartObject()
         for (definition in this.properties) {
+            if (skip != null && skip.contains(definition)) {
+                continue
+            }
             val value = getValueWithDefinition(definition, obj, context) ?: continue
 
             definition.capture(context, value)

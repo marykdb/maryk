@@ -2,7 +2,6 @@ package maryk.core.processors.datastore
 
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
-import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
@@ -30,11 +29,11 @@ val valuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
     "4b80001ba2" to (1235uL to null),
     "4b80001ba3" to (1235uL to null),
     "54" to (1234uL to 3),
-    "54008fe9" to (1233uL to "ten"),
-    "54009ff9" to (1234uL to "eleven"),
-    "54009fe9" to (1234uL to null),
-    "5400ae46" to (1234uL to "twelve"),
-    "5400ac46" to (1234uL to null),
+    "5403008fe9" to (1233uL to "ten"),
+    "5403009ff9" to (1234uL to "eleven"),
+    "5403009fe9" to (1234uL to null),
+    "540300ae46" to (1234uL to "twelve"),
+    "540300ac46" to (1234uL to null),
     "6609" to (1234uL to "test"),
     "661609" to (1234uL to "another test"),
     "7a" to (1234uL to 3),
@@ -70,16 +69,12 @@ class ReadStorageToChangesKtTest {
                     Delete(TestMarykModel.ref { double }),
                     Change(
                         TestMarykModel.ref { dateTime } with DateTime(2018, 7, 18),
+                        TestMarykModel { map refAt Time(10, 14, 1) } with "ten",
                         TestMarykModel { listOfString refAt 0u } with "v1"
                     ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
                             addValues = setOf(Date(2018,9, 9))
-                        )
-                    ),
-                    MapChange(
-                        TestMarykModel.ref { map }.change(
-                            valuesToAdd = mapOf(Time(10, 14, 1) to "ten")
                         )
                     )
                 )
@@ -90,18 +85,12 @@ class ReadStorageToChangesKtTest {
                     Change(
                         TestMarykModel.ref { string } with "hello world",
                         TestMarykModel.ref { int } with 5,
+                        TestMarykModel { map refAt Time(11, 22, 33) } with "eleven",
+                        TestMarykModel { map refAt Time(12, 23, 34) } with "twelve",
                         TestMarykModel { embeddedValues.ref { value } } with "test",
                         TestMarykModel { embeddedValues { model.ref { value } } } with "another test",
                         TestMarykModel { listOfString refAt 1u } with "v2",
                         TestMarykModel { listOfString refAt 2u } with "v3"
-                    ),
-                    MapChange(
-                        TestMarykModel.ref { map }.change(
-                            valuesToAdd = mapOf(
-                                Time(11, 22, 33) to "eleven",
-                                Time(12, 23, 34) to "twelve"
-                            )
-                        )
                     ),
                     Delete(
                         TestMarykModel { map refAt Time(11, 22, 17) },

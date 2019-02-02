@@ -1,5 +1,6 @@
 package maryk.datastore.memory
 
+import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -12,6 +13,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.EmbeddedMarykModel.Properties
+import maryk.test.models.Option.V1
 import maryk.test.models.Option.V3
 import maryk.test.runSuspendingTest
 import maryk.test.shouldBe
@@ -28,7 +30,9 @@ class InMemoryDataStoreGetChangesComplexTest {
             val addResponse = dataStore.execute(
                 ComplexModel.add(
                     ComplexModel(
-                        multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3")))
+                        multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
+                        mapStringString = mapOf("a" to "b", "c" to "d"),
+                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
                     )
                 )
             )
@@ -56,7 +60,13 @@ class InMemoryDataStoreGetChangesComplexTest {
                 MultiTypeChange(ComplexModel.ref { multi } with V3),
                 Change(
                     ComplexModel { multi.refWithType(V3, Properties) { value } } with "u3",
-                    ComplexModel { multi.withType(V3, Properties) { model ref { value } } } with "ue3"
+                    ComplexModel { multi.withType(V3, Properties) { model ref { value } } } with "ue3",
+                    ComplexModel { mapStringString refAt "a" } with "b",
+                    ComplexModel { mapStringString refAt "c" } with "d",
+                    ComplexModel { mapIntObject refAt 1u } with Unit,
+                    ComplexModel { mapIntObject.refAtKey(1u) { value } } with "v1",
+                    ComplexModel { mapIntObject refAt 2u } with Unit,
+                    ComplexModel { mapIntObject.refAtKey(2u) { value } } with "v2"
                 )
             ))
         )

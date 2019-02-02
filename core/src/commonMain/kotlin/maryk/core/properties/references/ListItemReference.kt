@@ -23,7 +23,7 @@ import maryk.core.query.pairs.ReferenceValuePair
 
 /** Reference to a List Item on [parentReference] with [T] by [index] */
 class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
-    val index: Int,
+    val index: UInt,
     listDefinition: IsListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>, CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
@@ -103,8 +103,8 @@ class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
         index.toUInt().writeBytes(writer)
     }
 
-    override fun resolve(values: List<T>): T? = values[index]
+    override fun resolve(values: List<T>): T? = values[index.toInt()]
 
     @Suppress("UNCHECKED_CAST")
-    override fun resolveFromAny(value: Any) = (value as? List<Any>)?.get(this.index) ?: throw UnexpectedValueException("Expected List to get value by reference")
+    override fun resolveFromAny(value: Any) = (value as? List<Any>)?.get(this.index.toInt()) ?: throw UnexpectedValueException("Expected List to get value by reference")
 }

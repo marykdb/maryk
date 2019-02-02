@@ -12,9 +12,9 @@ import kotlin.test.Test
 class ListChangeTest {
     private val listPropertyChange = ListChange(
         TestMarykModel.ref { listOfString }.change(
-            addValuesAtIndex = mapOf(2 to "a", 3 to "abc"),
+            addValuesAtIndex = mapOf(2u to "a", 3u to "abc"),
             addValuesToEnd = listOf("four", "five"),
-            deleteAtIndex = setOf(0, 1),
+            deleteAtIndex = setOf(0u, 1u),
             deleteValues = listOf("three")
         )
     )

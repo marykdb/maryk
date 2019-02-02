@@ -133,7 +133,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
                 val refToValue = changePart as Pair<ListItemReference<*, *>, Any>
                 val listValueChanges = ((change as ListChange).listValueChanges as MutableList<ListValueChanges<*>>)
                 listValueChanges.find { it.reference == refToValue.first.parentReference }?.also {
-                    (it.addValuesAtIndex as MutableMap<Int, Any>)[refToValue.first.index] = refToValue.second
+                    (it.addValuesAtIndex as MutableMap<UInt, Any>)[refToValue.first.index] = refToValue.second
                 } ?: listValueChanges.add(
                     ListValueChanges(
                         refToValue.first.parentReference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *>,
@@ -409,7 +409,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val valueDefinition = ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
                     var listItemIndex = qIndex
 
-                    val listIndex = initUInt(reader = { qualifier[listItemIndex++] }).toInt()
+                    val listIndex = initUInt(reader = { qualifier[listItemIndex++] })
 
                     @Suppress("UNCHECKED_CAST")
                     readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->

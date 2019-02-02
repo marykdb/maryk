@@ -13,7 +13,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
-import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
@@ -25,9 +25,9 @@ import maryk.core.values.ObjectValues
  */
 data class ListValueChanges<T: Any> internal constructor(
     override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>,
-    val deleteAtIndex: Set<Int>? = null,
+    val deleteAtIndex: Set<UInt>? = null,
     val deleteValues: List<T>? = null,
-    val addValuesAtIndex: Map<Int, T>? = null,
+    val addValuesAtIndex: Map<UInt, T>? = null,
     val addValuesToEnd: List<T>? = null
 ) : DefinedByReference<List<T>> {
     @Suppress("unused")
@@ -38,7 +38,7 @@ data class ListValueChanges<T: Any> internal constructor(
 
         val addValuesAtIndex = add(3, "addValuesAtIndex", MapDefinition(
             required = false,
-            keyDefinition = NumberDefinition(type = SInt32),
+            keyDefinition = NumberDefinition(type = UInt32),
             valueDefinition = valueDefinition
         ), ListValueChanges<*>::addValuesAtIndex)
 
@@ -46,7 +46,7 @@ data class ListValueChanges<T: Any> internal constructor(
 
         val deleteAtIndex = add(5, "deleteAtIndex", SetDefinition(
             required = false,
-            valueDefinition = NumberDefinition(type = SInt32)
+            valueDefinition = NumberDefinition(type = UInt32)
         ), ListValueChanges<*>::deleteAtIndex)
     }
 
@@ -83,9 +83,9 @@ private val valueListDefinition = ListDefinition(
  * This is also the order of operation so mind changed indices while changing
  */
 fun <T: Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>, *>.change(
-    deleteAtIndex: Set<Int>? = null,
+    deleteAtIndex: Set<UInt>? = null,
     deleteValues: List<T>? = null,
-    addValuesAtIndex: Map<Int, T>? = null,
+    addValuesAtIndex: Map<UInt, T>? = null,
     addValuesToEnd: List<T>? = null
 ) =
     ListValueChanges(

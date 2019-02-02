@@ -61,7 +61,7 @@ class ValuesResponseTest {
 
     @Test
     fun referenceToValuesAndGetOnObject() {
-        val valuesResponseRef = ValuesResponse { values.refAt(0){ values } }
+        val valuesResponseRef = ValuesResponse { values.refAt(0u){ values } }
         val simpleValueRef = SimpleMarykObject.ref(valuesResponseRef) { value }
 
         valuesResponseRef.completeName shouldBe "values.@0.values"

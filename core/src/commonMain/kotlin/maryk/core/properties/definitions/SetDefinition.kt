@@ -43,7 +43,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
 
     override fun getItemPropertyRefCreator(
-        index: Int,
+        index: UInt,
         item: T
     ) = { parentRef: AnyPropertyReference? ->
         @Suppress("UNCHECKED_CAST")

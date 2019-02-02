@@ -84,7 +84,7 @@ class ReadStorageToChangesKtTest {
                     ),
                     ListChange(
                         TestMarykModel.ref { listOfString }.change(
-                            addValuesAtIndex = mapOf(0 to "v1"),
+                            addValuesAtIndex = mapOf(0u to "v1"),
                             deleteAtIndex = setOf()
                         )
                     )
@@ -112,8 +112,8 @@ class ReadStorageToChangesKtTest {
                     ),
                     ListChange(
                         TestMarykModel.ref { listOfString }.change(
-                            addValuesAtIndex = mapOf(1 to "v2", 2 to "v3"),
-                            deleteAtIndex = setOf(3, 4)
+                            addValuesAtIndex = mapOf(1u to "v2", 2u to "v3"),
+                            deleteAtIndex = setOf(3u, 4u)
                         )
                     )
                 )

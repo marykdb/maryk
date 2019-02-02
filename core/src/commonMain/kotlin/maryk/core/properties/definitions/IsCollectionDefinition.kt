@@ -125,7 +125,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
 
                 value.forEachIndexed { position, item ->
                     if (context is RequestContext) {
-                        context.collectInjectLevel(this, this.getItemPropertyRefCreator(position, item))
+                        context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                     }
 
                     totalByteSize += valueDefinition.calculateTransportByteLength(item, cacher, context)
@@ -137,7 +137,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
             }
             else -> value.forEachIndexed { position, item ->
                 if (context is RequestContext) {
-                    context.collectInjectLevel(this, this.getItemPropertyRefCreator(position, item))
+                    context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                 }
 
                 totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(index, item, cacher, context)
@@ -167,7 +167,7 @@ interface IsCollectionDefinition<T: Any, C: Collection<T>, in CX: IsPropertyCont
     }
 
     /** Get a property reference creator for collection [item] and [index] */
-    fun getItemPropertyRefCreator(index: Int, item: T): (AnyPropertyReference?) -> IsPropertyReference<Any, *, *> {
+    fun getItemPropertyRefCreator(index: UInt, item: T): (AnyPropertyReference?) -> IsPropertyReference<Any, *, *> {
         throw NotImplementedError()
     }
 

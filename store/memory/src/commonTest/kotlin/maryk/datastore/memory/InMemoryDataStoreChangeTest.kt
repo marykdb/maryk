@@ -111,7 +111,7 @@ class InMemoryDataStoreChangeTest {
                 keys[1].change(
                     Change(
                         TestMarykModel.ref { string } with "haha3",
-                        TestMarykModel { listOfString refAt 0 } with "z",
+                        TestMarykModel { listOfString refAt 0u } with "z",
                         TestMarykModel { map refAt Time(12, 33, 45) } with "changed",
                         TestMarykModel.ref { list } with newIntList,
                         TestMarykModel.ref { set } with newDateSet,
@@ -148,7 +148,7 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[5].change(
                     Change(
-                        TestMarykModel { listOfString refAt 0 } with "z"
+                        TestMarykModel { listOfString refAt 0u } with "z"
                     )
                 )
             )
@@ -250,7 +250,7 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[4].change(
                     Delete(TestMarykModel { map refAt Time(3, 3, 3) }),
-                    Delete(TestMarykModel { listOfString refAt 1 }),
+                    Delete(TestMarykModel { listOfString refAt 1u }),
                     Delete(TestMarykModel { set refAt Date(2001, 1, 1) })
                 )
             )
@@ -306,10 +306,10 @@ class InMemoryDataStoreChangeTest {
                 keys[0].change(
                     ListChange(
                         TestMarykModel.ref { listOfString }.change(
-                            deleteAtIndex = setOf(1),
+                            deleteAtIndex = setOf(1u),
                             deleteValues = listOf("c"),
                             addValuesAtIndex = mapOf(
-                                0 to "zero"
+                                0u to "zero"
                             ),
                             addValuesToEnd = listOf("x", "y", "z")
                         )

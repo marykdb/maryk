@@ -64,7 +64,7 @@ class InjectTest {
         context.addToCollect("testSimpleConvert", EmbeddedMarykModel)
     }
 
-    private val firstResponseValueRef = ValuesResponse { values.refAt(0) { values } }
+    private val firstResponseValueRef = ValuesResponse { values.refAt(0u) { values } }
 
     private val inject =
         Inject("testCollection", TestMarykModel.ref(firstResponseValueRef) { string })

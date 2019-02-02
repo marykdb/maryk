@@ -149,7 +149,7 @@ class InMemoryDataStoreChangeValidationTest {
                     ListChange(
                         TestMarykModel.ref { listOfString }.change(
                             addValuesAtIndex = mapOf(
-                                0 to "verylongwrongvalue"
+                                0u to "verylongwrongvalue"
                             )
                         )
                     )
@@ -163,7 +163,7 @@ class InMemoryDataStoreChangeValidationTest {
             validationFail.exceptions.apply {
                 size shouldBe 1
                 shouldBeOfType<InvalidSizeException>(first()).apply {
-                    reference shouldBe TestMarykModel{ listOfString refAt 0 }
+                    reference shouldBe TestMarykModel{ listOfString refAt 0u }
                     value shouldBe "verylongwrongvalue"
                 }
             }

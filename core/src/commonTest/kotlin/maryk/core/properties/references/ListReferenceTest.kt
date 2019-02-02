@@ -11,8 +11,8 @@ import kotlin.test.Test
 
 class ListReferenceTest {
     private val listReference = TestMarykModel { embeddedValues { marykModel ref { listOfString } } }
-    private val reference = TestMarykModel { listOfString refAt 5 }
-    private val subReference = TestMarykModel { embeddedValues { marykModel { listOfString refAt 22 } } }
+    private val reference = TestMarykModel { listOfString refAt 5u }
+    private val subReference = TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } }
     val cache = WriteCache()
 
     @Test

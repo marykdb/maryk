@@ -42,7 +42,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
 
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()
 
-    override fun getItemPropertyRefCreator(index: Int, item: T) =
+    override fun getItemPropertyRefCreator(index: UInt, item: T) =
         { parentRef: AnyPropertyReference? ->
             @Suppress("UNCHECKED_CAST")
             this.getItemRef(index, parentRef as ListReference<T, CX>?) as IsPropertyReference<Any, *, *>
@@ -52,7 +52,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         newValue.forEachIndexed { index, item ->
             validator(item) {
                 @Suppress("UNCHECKED_CAST")
-                this.getItemRef(index, refGetter() as ListReference<T, CX>?)
+                this.getItemRef(index.toUInt(), refGetter() as ListReference<T, CX>?)
             }
         }
     }

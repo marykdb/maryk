@@ -328,7 +328,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             val originalCount = list.size
                             listChange.deleteAtIndex?.let {
                                 for (deleteIndex in it) {
-                                    list.removeAt(deleteIndex)
+                                    list.removeAt(deleteIndex.toInt())
                                 }
                             }
                             listChange.deleteValues?.let {
@@ -338,7 +338,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             }
                             listChange.addValuesAtIndex?.let {
                                 for ((index, value) in it) {
-                                    list.add(index, value)
+                                    list.add(index.toInt(), value)
                                 }
                             }
                             listChange.addValuesToEnd?.let {

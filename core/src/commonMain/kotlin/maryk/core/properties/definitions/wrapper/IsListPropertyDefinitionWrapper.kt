@@ -28,11 +28,11 @@ interface IsListPropertyDefinitionWrapper<T: Any, TO: Any, LD: ListDefinition<T,
         ListReference(this as IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
-    fun getItemRef(index: Int, parentRef: AnyPropertyReference? = null) =
+    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) =
         this.definition.getItemRef(index, this.getRef(parentRef))
 
     /** For quick notation to get a list item reference by [index] */
-    infix fun refAt(index: Int): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListItemReference<T, CX> {
+    infix fun refAt(index: UInt): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListItemReference<T, CX> {
         return { this.getItemRef(index, it) }
     }
 }

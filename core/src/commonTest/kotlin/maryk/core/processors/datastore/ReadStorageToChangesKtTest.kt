@@ -2,7 +2,6 @@ package maryk.core.processors.datastore
 
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
-import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
@@ -69,23 +68,18 @@ class ReadStorageToChangesKtTest {
                 1233UL,
                 listOf(
                     Delete(TestMarykModel.ref { double }),
-                    Change(TestMarykModel.ref { dateTime } with DateTime(2018, 7, 18)),
+                    Change(
+                        TestMarykModel.ref { dateTime } with DateTime(2018, 7, 18),
+                        TestMarykModel { listOfString refAt 0u } with "v1"
+                    ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
-                            addValues = setOf(Date(2018,9, 9)),
-                            deleteValues = setOf() // For comparison purposes
+                            addValues = setOf(Date(2018,9, 9))
                         )
                     ),
                     MapChange(
                         TestMarykModel.ref { map }.change(
-                            valuesToAdd = mapOf(Time(10, 14, 1) to "ten"),
-                            keysToDelete = setOf()
-                        )
-                    ),
-                    ListChange(
-                        TestMarykModel.ref { listOfString }.change(
-                            addValuesAtIndex = mapOf(0u to "v1"),
-                            deleteAtIndex = setOf()
+                            valuesToAdd = mapOf(Time(10, 14, 1) to "ten")
                         )
                     )
                 )
@@ -97,24 +91,23 @@ class ReadStorageToChangesKtTest {
                         TestMarykModel.ref { string } with "hello world",
                         TestMarykModel.ref { int } with 5,
                         TestMarykModel { embeddedValues.ref { value } } with "test",
-                        TestMarykModel { embeddedValues { model.ref { value } } } with "another test"
+                        TestMarykModel { embeddedValues { model.ref { value } } } with "another test",
+                        TestMarykModel { listOfString refAt 1u } with "v2",
+                        TestMarykModel { listOfString refAt 2u } with "v3"
                     ),
                     MapChange(
                         TestMarykModel.ref { map }.change(
                             valuesToAdd = mapOf(
                                 Time(11, 22, 33) to "eleven",
                                 Time(12, 23, 34) to "twelve"
-                            ),
-                            keysToDelete = setOf(
-                                Time(11, 22, 17), Time(12, 15, 2)
                             )
                         )
                     ),
-                    ListChange(
-                        TestMarykModel.ref { listOfString }.change(
-                            addValuesAtIndex = mapOf(1u to "v2", 2u to "v3"),
-                            deleteAtIndex = setOf(3u, 4u)
-                        )
+                    Delete(
+                        TestMarykModel { map refAt Time(11, 22, 17) },
+                        TestMarykModel { map refAt Time(12, 15, 2) },
+                        TestMarykModel { listOfString refAt 3u },
+                        TestMarykModel { listOfString refAt 4u }
                     )
                 )
             ),
@@ -127,9 +120,12 @@ class ReadStorageToChangesKtTest {
                     ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
-                            addValues = setOf(Date(1981,12, 5), Date(1981,12, 6)),
-                            deleteValues = setOf(Date(1989, 5, 15), Date(1989, 5, 16))
+                            addValues = setOf(Date(1981,12, 5), Date(1981,12, 6))
                         )
+                    ),
+                    Delete(
+                        TestMarykModel { set refAt Date(1989, 5, 15) },
+                        TestMarykModel { set refAt Date(1989, 5, 16) }
                     )
                 )
             )

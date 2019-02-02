@@ -15,15 +15,15 @@ import maryk.json.ValueType
 /** Indexed type of property definitions */
 sealed class KeyPartType(
     override val name: String,
-    override val index: Int
+    override val index: UInt
 ): IndexedEnum<KeyPartType>, TokenType {
     override fun compareTo(other: KeyPartType) =
         this.index.compareTo(other.index)
 
-    object UUID: KeyPartType("UUID", 1), ValueType.IsNullValueType
-    object Reference: KeyPartType("Ref", 2), ValueType<String>
-    object TypeId: KeyPartType("TypeId", 3), ValueType<String>
-    object Reversed: KeyPartType("Reversed", 4), ValueType<String>
+    object UUID: KeyPartType("UUID", 1u), ValueType.IsNullValueType
+    object Reference: KeyPartType("Ref", 2u), ValueType<String>
+    object TypeId: KeyPartType("TypeId", 3u), ValueType<String>
+    object Reversed: KeyPartType("Reversed", 4u), ValueType<String>
 
     companion object: IndexedEnumDefinition<KeyPartType>(
         "KeyPartType", { keyPartValues }

@@ -2,8 +2,8 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.calculateVarByteLength
-import maryk.core.extensions.bytes.initShort
-import maryk.core.extensions.bytes.initShortByVar
+import maryk.core.extensions.bytes.initUInt
+import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
@@ -44,23 +44,23 @@ class EnumDefinition<E : IndexedEnum<E>>(
         enum.cases().associate { Pair(it.name, it) }
     }
 
-    private val valueByIndex: Map<Int, E> by lazy {
+    private val valueByIndex: Map<UInt, E> by lazy {
         enum.cases().associate { Pair(it.index, it) }
     }
 
-    private fun getEnumByIndex(index: Int) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
+    private fun getEnumByIndex(index: UInt) = valueByIndex[index] ?: throw ParseException("Enum index does not exist $index")
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        getEnumByIndex(initShort(reader).toInt() - Short.MIN_VALUE)
+        getEnumByIndex(initUInt(reader, 2))
 
     override fun calculateStorageByteLength(value: E) = this.byteSize
 
     override fun writeStorageBytes(value: E, writer: (byte: Byte) -> Unit) {
-        value.indexAsShortToStore.writeBytes(writer)
+        value.index.writeBytes(writer, 2)
     }
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: IsPropertyContext?) =
-        getEnumByIndex(initShortByVar(reader).toInt())
+        getEnumByIndex(initUIntByVar(reader))
 
     override fun calculateTransportByteLength(value: E) =
         value.index.calculateVarByteLength()

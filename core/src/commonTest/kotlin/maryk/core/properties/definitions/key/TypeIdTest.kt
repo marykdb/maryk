@@ -66,12 +66,12 @@ internal class TypeIdTest {
         val specificDef = keyDef as TypeId<*>
         specificDef.reference shouldBe MarykModel.Properties.multi.getRef()
 
-        specificDef.getValue(MarykModel, obj) shouldBe 2
+        specificDef.getValue(MarykModel, obj) shouldBe 2u
 
         val bc = ByteCollector()
         bc.reserve(2)
-        specificDef.writeStorageBytes(1, bc::write)
-        specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1
+        specificDef.writeStorageBytes(1u, bc::write)
+        specificDef.readStorageBytes(bc.size, bc::read) shouldBe 1u
     }
 
     private val context = DefinitionsConversionContext(

@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
-import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -45,10 +45,10 @@ open class IndexedEnumDefinition<E: IndexedEnum<E>> private constructor(
         val cases = add(2, "cases",
             MapDefinition(
                 keyDefinition = NumberDefinition(
-                    type = SInt32
+                    type = UInt32
                 ),
                 valueDefinition = StringDefinition()
-            ) as MapDefinition<Int, String, EnumNameContext>,
+            ) as MapDefinition<UInt, String, EnumNameContext>,
             IndexedEnumDefinition<*>::cases,
             toSerializable = { value, context ->
                 // If Enum was defined before and is thus available in context, don't include the cases again

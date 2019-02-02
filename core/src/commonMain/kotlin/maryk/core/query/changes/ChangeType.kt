@@ -5,16 +5,16 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 
 /** Indexed type of changes */
 enum class ChangeType(
-    override val index: Int
+    override val index: UInt
 ): IndexedEnum<ChangeType> {
-    Check(1),
-    Change(2),
-    Delete(3),
-    ObjectDelete(4),
-    ListChange(5),
-    SetChange(6),
-    MapChange(7),
-    TypeChange(8);
+    Check(1u),
+    Change(2u),
+    Delete(3u),
+    ObjectDelete(4u),
+    ListChange(5u),
+    SetChange(6u),
+    MapChange(7u),
+    TypeChange(8u);
 
     companion object: IndexedEnumDefinition<ChangeType>(
         "ChangeType", ChangeType::values

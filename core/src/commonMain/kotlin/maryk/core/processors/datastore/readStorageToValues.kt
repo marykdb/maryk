@@ -3,6 +3,7 @@ package maryk.core.processors.datastore
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
+import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
@@ -296,7 +297,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val typedDefinition = definition.definition as? IsMultiTypeDefinition<*, *>
                         ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
 
-                    typedDefinition.readComplexTypedValue(index, { addValueToOutput(index, it) }, qualifier, qIndex, readValueFromStorage, select, addToCache)
+                    typedDefinition.readComplexTypedValue(index.toUInt(), { addValueToOutput(index, it) }, qualifier, qIndex, readValueFromStorage, select, addToCache)
                 }
             }
         }
@@ -358,7 +359,7 @@ private fun readTypedValue(
             valueAdder(it)
         }
     } else {
-        initIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
+        initUIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
             valueDefinition.readComplexTypedValue(
                 typeIndex,
                 valueAdder,
@@ -374,7 +375,7 @@ private fun readTypedValue(
 
 /** Read a complex Typed value from qualifier */
 private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
-    index: Int,
+    index: UInt,
     addValueToOutput: AddValue,
     qualifier: ByteArray,
     qIndex: Int,

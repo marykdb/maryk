@@ -66,7 +66,7 @@ data class ContextualIndexedEnumDefinition<CX: IsPropertyContext, CXI: IsPropert
 
     @Suppress("UNCHECKED_CAST")
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?): T {
-        val index = initUIntByVar(reader).toInt()
+        val index = initUIntByVar(reader)
         return contextualResolver(context).type(index) as T?
             ?: throw ParseException("Unknown Type enum index $index")
     }

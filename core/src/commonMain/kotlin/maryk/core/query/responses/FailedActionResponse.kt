@@ -1,21 +1,21 @@
 package maryk.core.query.responses
 
 import maryk.core.models.SimpleQueryDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.values.SimpleObjectValues
 
 /** Types of failures */
 enum class FailType(
-    override val index: Int
+    override val index: UInt
 ) : IndexedEnum<FailType> {
-    CONNECTION(1), // Problems with Connection at the server
-    STORE_STATE(2), // Problems with the state of the store
-    REQUEST(3), // Problems with the request content
-    AUTH(4); // Problems with the Authentication
+    CONNECTION(1u), // Problems with Connection at the server
+    STORE_STATE(2u), // Problems with the state of the store
+    REQUEST(3u), // Problems with the request content
+    AUTH(4u); // Problems with the Authentication
 
     companion object: IndexedEnumDefinition<FailType>("FailType", FailType::values)
 }

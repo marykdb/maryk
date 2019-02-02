@@ -12,7 +12,7 @@ import maryk.yaml.IsYamlReader
 import maryk.yaml.YamlWriter
 
 /** Write a complex field name with [index]: [name] as key value pair */
-internal fun YamlWriter.writeNamedIndexField(name: String, index: Int) {
+internal fun YamlWriter.writeNamedIndexField(name: String, index: UInt) {
     this.writeStartComplexField()
     this.writeStartObject()
     this.writeFieldName(index.toString())

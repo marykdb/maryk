@@ -20,8 +20,8 @@ import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
 
 /** Direction Enumeration */
-enum class Direction(override val index: Int) : IndexedEnum<Direction> {
-    ASC(1), DESC(2);
+enum class Direction(override val index: UInt) : IndexedEnum<Direction> {
+    ASC(1u), DESC(2u);
 
     companion object: IndexedEnumDefinition<Direction>("Direction", Direction::values)
 }

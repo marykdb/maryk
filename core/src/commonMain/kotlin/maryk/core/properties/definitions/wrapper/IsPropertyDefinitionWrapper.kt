@@ -183,7 +183,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
                 val typedDefinition = Properties.definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
                         ?: throw Exception("Unknown type ${obj.definition} so cannot serialize contents")
 
-                writer.writeNamedIndexField(obj.name, obj.index)
+                writer.writeNamedIndexField(obj.name, obj.index.toUInt())
 
                 Properties.definition.writeJsonValue(typedDefinition, writer, context)
             } else {

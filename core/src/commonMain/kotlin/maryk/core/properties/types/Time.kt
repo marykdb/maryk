@@ -6,8 +6,8 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.lib.time.Time
 
-enum class TimePrecision(override val index: Int): IndexedEnum<TimePrecision> {
-    SECONDS(1), MILLIS(2);
+enum class TimePrecision(override val index: UInt): IndexedEnum<TimePrecision> {
+    SECONDS(1u), MILLIS(2u);
 
     companion object: IndexedEnumDefinition<TimePrecision>(
         "TimePrecision", TimePrecision::values

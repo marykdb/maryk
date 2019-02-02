@@ -4,7 +4,8 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
+import maryk.core.extensions.bytes.initUIntByVar
+import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsTypedValuesDataModel
 import maryk.core.properties.IsPropertyContext
@@ -77,8 +78,8 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         default: TypedValue<E, *>? = null
     ) : this(indexed, required, final, typeEnum, typeIsFinal, definitionMap as Map<E, IsSubDefinition<out Any, CX>>, default)
 
-    override fun definition(index: Int) = definitionMapByIndex[index]
-    override fun type(index: Int) = typeByIndex[index]
+    override fun definition(index: UInt) = definitionMapByIndex[index]
+    override fun type(index: UInt) = typeByIndex[index]
     override fun type(name: String) = typeByName[name]
 
     override fun asString(value: TypedValue<E, Any>, context: CX?): String {
@@ -198,7 +199,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         // Read the protobuf where the key tag is the type
         val key = ProtoBuf.readKey(reader)
 
-        val type = this.typeByIndex[key.tag] ?: throw ParseException("Unknown multi type index ${key.tag}")
+        val type = this.typeByIndex[key.tag.toUInt()] ?: throw ParseException("Unknown multi type index ${key.tag}")
         val def = this.definitionMapByIndex[type.index] ?: throw ParseException("Unknown multi type ${key.tag}")
 
         val value = if(def is IsEmbeddedObjectDefinition<*, *, *, *, *> && keepAsValues) {
@@ -231,7 +232,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        totalByteLength += def.calculateTransportByteLengthWithKey(value.type.index, value.value, cacher, context)
+        totalByteLength += def.calculateTransportByteLengthWithKey(value.type.index.toInt(), value.value, cacher, context)
 
         if (context is RequestContext) {
             context.closeInjectLevel(this)
@@ -244,7 +245,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         @Suppress("UNCHECKED_CAST")
         val def = this.definitionMapByIndex[value.type.index] as IsSubDefinition<Any, CX>?
                 ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        def.writeTransportBytesWithKey(value.type.index, value.value, cacheGetter, writer, context)
+        def.writeTransportBytesWithKey(value.type.index.toInt(), value.value, cacheGetter, writer, context)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -285,7 +286,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     ): IsPropertyReference<Any, *, *> {
         val index = initIntByVar(reader)
         if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
-        val typeIndex = initIntByVar(reader)
+        val typeIndex = initUIntByVar(reader)
         val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
         return getTypeRef(type, parentReference)
     }
@@ -294,7 +295,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         reader: () -> Byte,
         parentReference: CanHaveComplexChildReference<*, *, *, *>?
     ): IsPropertyReference<Any, *, *> {
-        val typeIndex = initIntByVarWithExtraInfo(reader) { index, type ->
+        val typeIndex = initUIntByVarWithExtraInfo(reader) { index, type ->
             if (type != TYPE.value) throw Exception("Expected TypedValue")
             index
         }

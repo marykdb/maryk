@@ -44,16 +44,14 @@ import maryk.yaml.YamlWriter
  * It also contains a [definition] to describe this type of the multi type
  */
 private data class MultiTypeDescriptor(
-    val index: Int,
+    val index: UInt,
     val name: String,
     val definition: IsSubDefinition<out Any, ContainsDefinitionsContext>
 ) {
     private object Properties: ObjectPropertyDefinitions<MultiTypeDescriptor>() {
         val index = add(1, "index",
             NumberDefinition(type = UInt32),
-            MultiTypeDescriptor::index,
-            toSerializable = { value, _ -> value?.toUInt() },
-            fromSerializable = { it?.toInt() }
+            MultiTypeDescriptor::index
         )
         val name = add(2, "name", StringDefinition(), MultiTypeDescriptor::name)
 

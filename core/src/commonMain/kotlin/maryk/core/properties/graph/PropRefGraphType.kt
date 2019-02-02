@@ -5,10 +5,10 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 
 /** Indexed type of property reference graph elements */
 enum class PropRefGraphType(
-    override val index: Int
+    override val index: UInt
 ): IndexedEnum<PropRefGraphType> {
-    PropRef(1),
-    Graph(2);
+    PropRef(1u),
+    Graph(2u);
 
     companion object: IndexedEnumDefinition<PropRefGraphType>(
         "PropRefGraphType", PropRefGraphType::values

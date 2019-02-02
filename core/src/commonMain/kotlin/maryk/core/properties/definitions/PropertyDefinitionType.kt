@@ -3,7 +3,6 @@ package maryk.core.properties.definitions
 import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.values.ValuesImpl
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
@@ -20,29 +19,30 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.ValuesImpl
 import maryk.json.MapType
 
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(
-    override val index: Int
+    override val index: UInt
 ): IndexedEnum<PropertyDefinitionType>, MapType {
-    Boolean(1),
-    Date(2),
-    DateTime(3),
-    Enum(4),
-    FixedBytes(5),
-    FlexBytes(6),
-    List(7),
-    Map(8),
-    MultiType(9),
-    Number(10),
-    Reference(11),
-    Set(12),
-    String(13),
-    Embed(14),
-    EmbedObject(15),
-    Time(16),
-    Value(17);
+    Boolean(1u),
+    Date(2u),
+    DateTime(3u),
+    Enum(4u),
+    FixedBytes(5u),
+    FlexBytes(6u),
+    List(7u),
+    Map(8u),
+    MultiType(9u),
+    Number(10u),
+    Reference(11u),
+    Set(12u),
+    String(13u),
+    Embed(14u),
+    EmbedObject(15u),
+    Time(16u),
+    Value(17u);
 
     companion object: IndexedEnumDefinition<PropertyDefinitionType>("PropertyDefinitionType", PropertyDefinitionType::values)
 }

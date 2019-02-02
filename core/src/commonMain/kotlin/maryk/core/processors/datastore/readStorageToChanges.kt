@@ -2,6 +2,7 @@ package maryk.core.processors.datastore
 
 import maryk.core.extensions.bytes.initIntByVarWithExtraInfo
 import maryk.core.extensions.bytes.initUInt
+import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
@@ -478,7 +479,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val typedDefinition = definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
                         ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
 
-                    typedDefinition.readComplexTypedValue(parentReference, index, addChangeToOutput, qualifier, qIndex, readValueFromStorage, select, addToCache)
+                    typedDefinition.readComplexTypedValue(parentReference, index.toUInt(), addChangeToOutput, qualifier, qIndex, readValueFromStorage, select, addToCache)
                 }
             }
         }
@@ -561,7 +562,7 @@ private fun readTypedValue(
             }
         }
     } else {
-        initIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
+        initUIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
             valueDefinition.readComplexTypedValue(
                 reference,
                 typeIndex,
@@ -579,7 +580,7 @@ private fun readTypedValue(
 /** Read a complex Typed value from qualifier */
 private fun <E: IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
     reference: IsPropertyReference<*, *, *>?,
-    index: Int,
+    index: UInt,
     addChangeToOutput: ChangeAdder,
     qualifier: ByteArray,
     qIndex: Int,

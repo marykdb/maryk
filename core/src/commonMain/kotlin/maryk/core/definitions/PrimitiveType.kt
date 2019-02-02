@@ -4,9 +4,9 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class PrimitiveType(
-    override val index: Int
+    override val index: UInt
 ) : IndexedEnum<PrimitiveType> {
-    RootModel(1), Model(2), ValueModel(3), EnumDefinition(4);
+    RootModel(1u), Model(2u), ValueModel(3u), EnumDefinition(4u);
 
     companion object : IndexedEnumDefinition<PrimitiveType>(
         "PrimitiveType", { PrimitiveType.values() }

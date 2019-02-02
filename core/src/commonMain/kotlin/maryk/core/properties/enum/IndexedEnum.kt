@@ -6,13 +6,11 @@ typealias AnyIndexedEnum = IndexedEnum<IndexedEnum<IndexedEnum<Any>>>
  * Interface for Enums so they have indexes and can be transported and stored
  */
 interface IndexedEnum<in E>: Comparable<E>{
-    val index: Int
-    val indexAsShortToStore: Short get() = (this.index + Short.MIN_VALUE).toShort()
-
+    val index: UInt
     val name: String
 
     companion object {
-        internal operator fun invoke(index: Int, name: String) = object :
+        internal operator fun invoke(index: UInt, name: String) = object :
             AnyIndexedEnum {
             override val index = index
             override val name = name

@@ -15,9 +15,9 @@ import maryk.test.models.Log.Properties.timestamp
 import maryk.test.models.Severity.INFO
 
 enum class Severity(
-    override val index: Int
+    override val index: UInt
 ): IndexedEnum<Severity> {
-    INFO(1), DEBUG(2), ERROR(3);
+    INFO(1u), DEBUG(2u), ERROR(3u);
 
     companion object: IndexedEnumDefinition<Severity>("Severity", Severity::values)
 }

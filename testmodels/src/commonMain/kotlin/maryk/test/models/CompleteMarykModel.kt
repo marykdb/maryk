@@ -36,11 +36,11 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
 enum class MarykEnumEmbedded(
-    override val index: Int
+    override val index: UInt
 ): IndexedEnum<MarykEnumEmbedded> {
-    E1(1),
-    E2(2),
-    E3(3);
+    E1(1u),
+    E2(2u),
+    E3(3u);
 
     companion object: IndexedEnumDefinition<MarykEnumEmbedded>(
         "MarykEnumEmbedded", MarykEnumEmbedded::values

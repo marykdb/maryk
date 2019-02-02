@@ -43,14 +43,14 @@ object ComplexModel: RootDataModel<ComplexModel, Properties>(
             index = 2, name = "mapStringString",
             definition = MapDefinition(
                 required = false,
-                minSize = 1,
-                maxSize = 3,
+                minSize = 1u,
+                maxSize = 3u,
                 keyDefinition = StringDefinition(
-                    minSize = 1,
-                    maxSize = 20
+                    minSize = 1u,
+                    maxSize = 20u
                 ),
                 valueDefinition = StringDefinition(
-                    maxSize = 500
+                    maxSize = 500u
                 )
             )
         )

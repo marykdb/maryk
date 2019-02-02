@@ -271,8 +271,8 @@ internal data class ObjectPropertyDefinitionsCollectionDefinition(
     override val indexed = false
     override val required = true
     override val final = true
-    override val minSize: Int? = null
-    override val maxSize: Int? = null
+    override val minSize: UInt? = null
+    override val maxSize: UInt? = null
     override val propertyDefinitionType = PropertyDefinitionType.List
 
     override val valueDefinition = EmbeddedObjectDefinition(

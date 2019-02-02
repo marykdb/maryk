@@ -31,16 +31,16 @@ internal class StringDefinitionTest {
     )
 
     private val def = StringDefinition(
-        minSize = 3,
-        maxSize = 6
+        minSize = 3u,
+        maxSize = 6u
     )
     private val defMaxDefined = StringDefinition(
         indexed = true,
         required = false,
         final = true,
         unique = true,
-        minSize = 3,
-        maxSize = 6,
+        minSize = 3u,
+        maxSize = 6u,
         default = "aaa",
         regEx = "^[abcd]{3,4}$",
         minValue = "aaa",

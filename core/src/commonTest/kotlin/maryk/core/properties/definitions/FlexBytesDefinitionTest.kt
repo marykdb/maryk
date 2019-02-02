@@ -19,8 +19,8 @@ internal class FlexBytesDefinitionTest {
     )
 
     val def = FlexBytesDefinition(
-        minSize = 4,
-        maxSize = 10
+        minSize = 4u,
+        maxSize = 10u
     )
 
     val defMaxDefined = FlexBytesDefinition(
@@ -30,8 +30,8 @@ internal class FlexBytesDefinitionTest {
         unique = true,
         minValue = Bytes.ofHex("0000000000"),
         maxValue = Bytes.ofHex("AAAAAAAAAA"),
-        minSize = 4,
-        maxSize = 10,
+        minSize = 4u,
+        maxSize = 10u,
         default = Bytes.ofHex("0000000001")
     )
 

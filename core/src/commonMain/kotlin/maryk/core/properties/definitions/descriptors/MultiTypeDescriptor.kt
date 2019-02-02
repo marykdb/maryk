@@ -118,8 +118,8 @@ private data class MultiTypeDescriptorListDefinition(
     override val indexed: Boolean = false
     override val required: Boolean = true
     override val final: Boolean = false
-    override val minSize: Int? = null
-    override val maxSize: Int? = null
+    override val minSize: UInt? = null
+    override val maxSize: UInt? = null
 
     override val propertyDefinitionType = PropertyDefinitionType.List
 

@@ -36,7 +36,7 @@ internal fun <T: Any> deleteByReference(
 
     val referenceToCompareTo = reference.toStorageByteArray()
     var referenceOfParent: ByteArray? = null
-    var toShiftListCount = 0
+    var toShiftListCount = 0u
     val valueIndex = values.binarySearch {
         it.reference.compareTo(referenceToCompareTo)
     }
@@ -70,8 +70,8 @@ internal fun <T: Any> deleteByReference(
                     val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
                     val listDefinition = listReference.propertyDefinition.definition
                     createCountUpdater(values, listReference as IsPropertyReference<List<*>, IsPropertyDefinition<List<*>>, out Any>, version, -1, keepAllVersions) { newCount ->
-                        toShiftListCount = newCount - reference.index
-                        listDefinition.validateSize(newCount) { listReference }
+                        toShiftListCount = newCount - reference.index.toUInt()
+                        listDefinition.validateSize(newCount.toUInt()) { listReference }
                     }
                     referenceOfParent = listReference.toStorageByteArray()
                     // Map values can be set to null to be deleted.
@@ -105,19 +105,19 @@ internal fun <T: Any> deleteByReference(
         val refOfParent = referenceOfParent
 
         if(value.reference.matchPart(0, referenceToCompareTo)) {
-            if (toShiftListCount <= 0) {
+            if (toShiftListCount <= 0u) {
                 // Delete if not a list or no further list items
                 isDeleted = deleteByIndex<T>(values, index, value.reference, version) != null
             }
         } else if (refOfParent != null && value.reference.matchPart(0, refOfParent)) {
             // To handle list shifting
-            if (toShiftListCount > 0) {
+            if (toShiftListCount > 0u) {
                 @Suppress("UNCHECKED_CAST")
                 setValueAtIndex(values, index - 1, values[index - 1].reference, (value as DataRecordValue<Any>).value, version, keepAllVersions)
                 toShiftListCount--
             }
 
-            if (toShiftListCount <= 0) {
+            if (toShiftListCount <= 0u) {
                 isDeleted = deleteByIndex<T>(values, index, value.reference, version) != null
             }
         } else {

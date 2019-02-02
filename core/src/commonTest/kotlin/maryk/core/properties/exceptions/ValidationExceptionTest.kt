@@ -13,15 +13,15 @@ class ValidationExceptionTest {
 
     private val validationUmbrellaException = ValidationUmbrellaException(null, listOf(
         AlreadySetException(ref),
-        InvalidSizeException(ref, "wrong", 1, 3),
+        InvalidSizeException(ref, "wrong", 1u, 3u),
         InvalidValueException(ref, "wrong"),
         OutOfRangeException(ref, "wrong", "a", "g"),
         RequiredException(ref),
         ValidationUmbrellaException(
             ref,
             listOf(
-                NotEnoughItemsException(ref, 2, 3),
-                TooManyItemsException(ref, 10, 3)
+                NotEnoughItemsException(ref, 2u, 3u),
+                TooManyItemsException(ref, 10u, 3u)
             )
         )
     ))

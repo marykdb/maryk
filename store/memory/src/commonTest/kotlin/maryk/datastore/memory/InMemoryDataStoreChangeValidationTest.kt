@@ -128,7 +128,7 @@ class InMemoryDataStoreChangeValidationTest {
             validationFail.exceptions.apply {
                 size shouldBe 1
                 shouldBeOfType<TooManyItemsException>(first()).apply {
-                    size shouldBe 9
+                    size shouldBe 9u
                 }
             }
         }
@@ -202,7 +202,7 @@ class InMemoryDataStoreChangeValidationTest {
             validationFail.exceptions.apply {
                 size shouldBe 1
                 shouldBeOfType<TooManyItemsException>(first()).apply {
-                    size shouldBe 6
+                    size shouldBe 6u
                 }
             }
         }
@@ -275,7 +275,7 @@ class InMemoryDataStoreChangeValidationTest {
             validationFail.exceptions.apply {
                 size shouldBe 1
                 shouldBeOfType<TooManyItemsException>(first()).apply {
-                    size shouldBe 6
+                    size shouldBe 6u
                 }
             }
         }

@@ -26,8 +26,8 @@ internal class SetDefinitionTest {
     )
 
     private val def = SetDefinition(
-        minSize = 2,
-        maxSize = 4,
+        minSize = 2u,
+        maxSize = 4u,
         valueDefinition = subDef
     )
 
@@ -35,8 +35,8 @@ internal class SetDefinitionTest {
         indexed = true,
         final = true,
         required = false,
-        minSize = 2,
-        maxSize = 4,
+        minSize = 2u,
+        maxSize = 4u,
         valueDefinition = subDef,
         default = setOf("T1", "T2", "T3")
     )

@@ -28,8 +28,8 @@ internal class ListDefinitionTest {
     )
 
     private val def = ListDefinition(
-        minSize = 2,
-        maxSize = 4,
+        minSize = 2u,
+        maxSize = 4u,
         valueDefinition = subDef
     )
 
@@ -37,8 +37,8 @@ internal class ListDefinitionTest {
         indexed = true,
         final = true,
         required = false,
-        minSize = 2,
-        maxSize = 4,
+        minSize = 2u,
+        maxSize = 4u,
         valueDefinition = subDef,
         default = listOf("Tic", "Tac", "Toe")
     )

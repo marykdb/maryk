@@ -31,8 +31,8 @@ internal class MapDefinitionTest {
     )
 
     private val def = MapDefinition(
-        minSize = 2,
-        maxSize = 4,
+        minSize = 2u,
+        maxSize = 4u,
         keyDefinition = intDef,
         valueDefinition = stringDef
     )
@@ -41,8 +41,8 @@ internal class MapDefinitionTest {
         indexed = true,
         final = true,
         required = false,
-        minSize = 2,
-        maxSize = 4,
+        minSize = 2u,
+        maxSize = 4u,
         keyDefinition = intDef,
         valueDefinition = stringDef,
         default = mapOf(

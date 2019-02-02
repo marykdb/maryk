@@ -101,7 +101,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 9, name = "set",
             definition = SetDefinition(
                 required = false,
-                maxSize = 5,
+                maxSize = 5u,
                 valueDefinition = DateDefinition(
                     maxValue = Date(2100, 12, 31)
                 )
@@ -112,12 +112,12 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 10, name = "map",
             definition = MapDefinition(
                 required = false,
-                maxSize = 5,
+                maxSize = 5u,
                 keyDefinition = TimeDefinition(
                     maxValue = Time(23, 0, 0)
                 ),
                 valueDefinition = StringDefinition(
-                    maxSize = 10
+                    maxSize = 10u
                 )
             )
         )
@@ -165,9 +165,9 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 15, name = "listOfString",
             definition = ListDefinition(
                 required = false,
-                maxSize = 6,
+                maxSize = 6u,
                 valueDefinition = StringDefinition(
-                    maxSize = 10
+                    maxSize = 10u
                 )
             )
         )
@@ -185,9 +185,9 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 17, name = "setOfString",
             definition = SetDefinition(
                 required = false,
-                maxSize = 6,
+                maxSize = 6u,
                 valueDefinition = StringDefinition(
-                    maxSize = 10
+                    maxSize = 10u
                 )
             )
         )

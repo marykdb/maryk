@@ -8,18 +8,18 @@ import maryk.core.properties.types.numeric.UInt32
  */
 interface HasSizeDefinition {
     /** The min allowed size for defined property */
-    val minSize: Int?
+    val minSize: UInt?
 
     /** The max allowed size for defined property */
-    val maxSize: Int?
+    val maxSize: UInt?
 
     /** Checks if given [newSize] is too small compared to defined minSize */
-    fun isSizeToSmall(newSize: Int): Boolean = this.minSize?.let {
+    fun isSizeToSmall(newSize: UInt): Boolean = this.minSize?.let {
         newSize < it
     } ?: false
 
     /** Checks if given [newSize] is too big compared to defined maxSize */
-    fun isSizeToBig(newSize: Int): Boolean = this.maxSize?.let {
+    fun isSizeToBig(newSize: UInt): Boolean = this.maxSize?.let {
         newSize > it
     } ?: false
 
@@ -27,30 +27,26 @@ interface HasSizeDefinition {
         internal fun <DO: Any> addMinSize(
             index: Int,
             definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> Int?
+            getter: (DO) -> UInt?
         ) {
             definitions.add(
                 index = index,
                 name = "minSize",
                 definition = NumberDefinition(type = UInt32),
-                getter = getter,
-                toSerializable = { value, _ -> value?.toUInt() },
-                fromSerializable = { it?.toInt() }
+                getter = getter
             )
         }
 
         internal fun <DO: Any> addMaxSize(
             index: Int,
             definitions: ObjectPropertyDefinitions<DO>,
-            getter: (DO) -> Int?
+            getter: (DO) -> UInt?
         ) {
             definitions.add(
                 index = index,
                 name = "maxSize",
                 definition = NumberDefinition(type = UInt32),
-                getter = getter,
-                toSerializable = { value, _ -> value?.toUInt() },
-                fromSerializable = { it?.toInt() }
+                getter = getter
             )
         }
     }

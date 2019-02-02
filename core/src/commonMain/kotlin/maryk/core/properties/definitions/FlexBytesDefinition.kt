@@ -1,13 +1,13 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.core.protobuf.WireType
+import maryk.core.values.SimpleObjectValues
 
 /** Definition for a bytes array with fixed length */
 data class FlexBytesDefinition(
@@ -18,8 +18,8 @@ data class FlexBytesDefinition(
     override val minValue: Bytes? = null,
     override val maxValue: Bytes? = null,
     override val default: Bytes? = null,
-    override val minSize: Int? = null,
-    override val maxSize: Int? = null
+    override val minSize: UInt? = null,
+    override val maxSize: UInt? = null
 ):
     IsComparableDefinition<Bytes, IsPropertyContext>,
     HasSizeDefinition,
@@ -50,7 +50,7 @@ data class FlexBytesDefinition(
     override fun validateWithRef(previousValue: Bytes?, newValue: Bytes?, refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>, *>?) {
         super<IsSerializableFlexBytesEncodable>.validateWithRef(previousValue, newValue, refGetter)
 
-        if (newValue != null && (isSizeToSmall(newValue.size) || isSizeToBig(newValue.size))) {
+        if (newValue != null && (isSizeToSmall(newValue.size.toUInt()) || isSizeToBig(newValue.size.toUInt()))) {
             throw InvalidSizeException(
                 refGetter(), newValue.toHex(), this.minSize, this.maxSize
             )

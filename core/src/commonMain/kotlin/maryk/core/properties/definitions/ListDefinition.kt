@@ -19,8 +19,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
-    override val minSize: Int? = null,
-    override val maxSize: Int? = null,
+    override val minSize: UInt? = null,
+    override val maxSize: UInt? = null,
     override val valueDefinition: IsValueDefinition<T, CX>,
     override val default: List<T>? = null
 ) : IsListDefinition<T, CX> {
@@ -34,8 +34,8 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
-        minSize: Int? = null,
-        maxSize: Int? = null,
+        minSize: UInt? = null,
+        maxSize: UInt? = null,
         valueDefinition: IsUsableInCollection<T, CX>,
         default: List<T>? = null
     ): this(indexed, required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)

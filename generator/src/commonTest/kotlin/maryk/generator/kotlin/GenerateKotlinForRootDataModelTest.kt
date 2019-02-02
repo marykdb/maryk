@@ -109,8 +109,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 minValue = "a",
                 maxValue = "zzzz",
                 default = "string",
-                minSize = 1,
-                maxSize = 10,
+                minSize = 1u,
+                maxSize = 10u,
                 regEx = "ha.*"
             )
         )
@@ -214,8 +214,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 minValue = Bytes("AA"),
                 maxValue = Bytes("f39/f39/fw"),
                 default = Bytes("AAECAw"),
-                minSize = 1,
-                maxSize = 7
+                minSize = 1u,
+                maxSize = 7u
             )
         )
         val reference = add(
@@ -270,8 +270,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 indexed = true,
                 required = false,
                 final = true,
-                minSize = 1,
-                maxSize = 5,
+                minSize = 1u,
+                maxSize = 5u,
                 valueDefinition = StringDefinition(
                     regEx = "ha.*"
                 ),
@@ -284,8 +284,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 indexed = true,
                 required = false,
                 final = true,
-                minSize = 1,
-                maxSize = 5,
+                minSize = 1u,
+                maxSize = 5u,
                 valueDefinition = NumberDefinition(
                     type = SInt32
                 ),
@@ -298,8 +298,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 indexed = true,
                 required = false,
                 final = true,
-                minSize = 1,
-                maxSize = 5,
+                minSize = 1u,
+                maxSize = 5u,
                 keyDefinition = DateDefinition(),
                 valueDefinition = NumberDefinition(
                     type = SInt32
@@ -361,8 +361,8 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 indexed = true,
                 required = false,
                 final = true,
-                minSize = 1,
-                maxSize = 5,
+                minSize = 1u,
+                maxSize = 5u,
                 keyDefinition = EnumDefinition(
                     enum = MarykEnumEmbedded
                 ),

@@ -34,8 +34,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
     override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
-    override val minSize: Int? = null,
-    override val maxSize: Int? = null,
+    override val minSize: UInt? = null,
+    override val maxSize: UInt? = null,
     override val keyDefinition: IsSimpleValueDefinition<K, CX>,
     override val valueDefinition: IsSubDefinition<V, CX>,
     override val default: Map<K, V>? = null
@@ -57,8 +57,8 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
-        minSize: Int? = null,
-        maxSize: Int? = null,
+        minSize: UInt? = null,
+        maxSize: UInt? = null,
         keyDefinition: IsSimpleValueDefinition<K, CX>,
         valueDefinition: IsUsableInMapValue<V, CX>,
         default: Map<K, V>? = null
@@ -72,7 +72,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         super<IsByteTransportableMap>.validateWithRef(previousValue, newValue, refGetter)
 
         if (newValue != null) {
-            val mapSize = newValue.size
+            val mapSize = newValue.size.toUInt()
             validateSize(mapSize, refGetter)
 
             createValidationUmbrellaException(refGetter) { addException ->
@@ -100,7 +100,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
 
     /** Validates size of map and throws exception if it fails*/
     fun validateSize(
-        mapSize: Int,
+        mapSize: UInt,
         refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
     ) {
         if (isSizeToSmall(mapSize)) {

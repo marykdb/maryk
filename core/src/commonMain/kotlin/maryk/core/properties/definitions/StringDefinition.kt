@@ -1,13 +1,13 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.protobuf.WireType
+import maryk.core.values.SimpleObjectValues
 import maryk.lib.bytes.calculateUTF8ByteLength
 import maryk.lib.bytes.initString
 import maryk.lib.bytes.writeUTF8Bytes
@@ -21,8 +21,8 @@ data class StringDefinition(
     override val minValue: String? = null,
     override val maxValue: String? = null,
     override val default: String? = null,
-    override val minSize: Int? = null,
-    override val maxSize: Int? = null,
+    override val minSize: UInt? = null,
+    override val maxSize: UInt? = null,
     val regEx: String? = null
 ) :
     IsComparableDefinition<String, IsPropertyContext>,
@@ -60,8 +60,9 @@ data class StringDefinition(
 
         when {
             newValue != null -> {
+                val length = newValue.length.toUInt()
                 when {
-                    isSizeToSmall(newValue.length) || isSizeToBig(newValue.length)
+                    isSizeToSmall(length) || isSizeToBig(length)
                     -> throw InvalidSizeException(
                         refGetter(), newValue, this.minSize, this.maxSize
                     )

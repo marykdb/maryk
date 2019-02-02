@@ -15,7 +15,7 @@ internal fun <T: Any> createCountUpdater(
     version: ULong,
     countChange: Int,
     keepAllVersions: Boolean,
-    sizeValidator: (Int) -> Unit
+    sizeValidator: (UInt) -> Unit
 ) {
     val referenceToCompareTo = reference.toStorageByteArray()
 
@@ -26,7 +26,7 @@ internal fun <T: Any> createCountUpdater(
     val previousCount = getValueAtIndex<Int>(values, valueIndex)?.value ?: 0
     val newCount = previousCount + countChange
 
-    sizeValidator(newCount)
+    sizeValidator(newCount.toUInt())
 
     setValueAtIndex(values, valueIndex, referenceToCompareTo, newCount, version, keepAllVersions)
 }

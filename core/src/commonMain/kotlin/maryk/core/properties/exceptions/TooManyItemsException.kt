@@ -4,7 +4,7 @@ import maryk.core.models.SimpleQueryDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.SimpleObjectValues
 
 /**
@@ -13,8 +13,8 @@ import maryk.core.values.SimpleObjectValues
  */
 data class TooManyItemsException internal constructor(
     val reference: AnyPropertyReference?,
-    val size: Int,
-    val maxSize: Int
+    val size: UInt,
+    val maxSize: UInt
 ) : ValidationException(
     reference = reference,
     reason = "has too many items: $size over max of $maxSize items"
@@ -25,8 +25,8 @@ data class TooManyItemsException internal constructor(
         properties = object : ObjectPropertyDefinitions<TooManyItemsException>() {
             init {
                 ValidationException.addReference(this, TooManyItemsException::reference)
-                add(2, "size", NumberDefinition(type = SInt32), TooManyItemsException::size)
-                add(3, "maxSize", NumberDefinition(type = SInt32), TooManyItemsException::maxSize)
+                add(2, "size", NumberDefinition(type = UInt32), TooManyItemsException::size)
+                add(3, "maxSize", NumberDefinition(type = UInt32), TooManyItemsException::maxSize)
             }
         }
     ) {

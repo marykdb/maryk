@@ -1,6 +1,8 @@
 package maryk.datastore.memory
 
+import maryk.core.properties.definitions.wrapper.atWithType
 import maryk.core.properties.definitions.wrapper.refAtKey
+import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -32,7 +34,24 @@ class InMemoryDataStoreGetChangesComplexTest {
                     ComplexModel(
                         multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
                         mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2"))
+                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
+                        mapIntMulti = mapOf(
+                            1u to TypedValue(V3,
+                                EmbeddedMarykModel("v1",
+                                    EmbeddedMarykModel("sub1",
+                                        EmbeddedMarykModel("sub2")
+                                    )
+                                )
+                            ),
+                            2u to TypedValue(V1, "string"),
+                            3u to TypedValue(V3,
+                                EmbeddedMarykModel("v2",
+                                    EmbeddedMarykModel("2sub1",
+                                        EmbeddedMarykModel("2sub2")
+                                    )
+                                )
+                            )
+                        )
                     )
                 )
             )
@@ -66,7 +85,14 @@ class InMemoryDataStoreGetChangesComplexTest {
                     ComplexModel { mapIntObject refAt 1u } with Unit,
                     ComplexModel { mapIntObject.refAtKey(1u) { value } } with "v1",
                     ComplexModel { mapIntObject refAt 2u } with Unit,
-                    ComplexModel { mapIntObject.refAtKey(2u) { value } } with "v2"
+                    ComplexModel { mapIntObject.refAtKey(2u) { value } } with "v2",
+                    ComplexModel { mapIntMulti.refAtKeyAndType(1u, V3, EmbeddedMarykModel.Properties) { value } } with "v1",
+                    ComplexModel { mapIntMulti.atWithType(1u, V3, EmbeddedMarykModel.Properties) { model ref { value } } } with "sub1",
+                    ComplexModel { mapIntMulti.atWithType(1u, V3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "sub2",
+                    ComplexModel { mapIntMulti.refAt(2u) } with TypedValue(V1, "string"),
+                    ComplexModel { mapIntMulti.refAtKeyAndType(3u, V3, EmbeddedMarykModel.Properties) { value } } with "v2",
+                    ComplexModel { mapIntMulti.atWithType(3u, V3, EmbeddedMarykModel.Properties) { model ref { value } } } with "2sub1",
+                    ComplexModel { mapIntMulti.atWithType(3u, V3, EmbeddedMarykModel.Properties) { model { model ref { value } } } } with "2sub2"
                 )
             ))
         )

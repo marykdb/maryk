@@ -331,10 +331,13 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
                                 valueDefinition as IsPropertyDefinition<Any>
                             ) { version, value ->
+                                val valueReference = mapDefinition.getValueRef(key, reference)
                                 if (value == null) {
-                                    addChangeToOutput(version, ChangeType.DELETE, mapDefinition.getValueRef(key, reference))
+                                    addChangeToOutput(version, ChangeType.DELETE, valueReference)
                                 } else {
-                                    addChangeToOutput(version, CHANGE, mapDefinition.getValueRef(key, reference) with value)
+                                    if (value !is TypedValue<*, *> || value.value != Unit) {
+                                        addChangeToOutput(version, CHANGE, valueReference with value)
+                                    } // Else ignore since the Type is contained in sub values
                                 }
                             }
                         } else {

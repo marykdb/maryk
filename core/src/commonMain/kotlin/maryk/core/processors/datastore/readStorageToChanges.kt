@@ -209,7 +209,16 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                                     addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
                                 } else { // Is a TypedValue with Unit as value
                                     @Suppress("UNCHECKED_CAST")
-                                    readTypedValue(ref, qualifier, qIndex, readValueFromStorage, definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>, addChangeToOutput, select, addToCache)
+                                    readTypedValue(
+                                        ref,
+                                        qualifier,
+                                        qIndex,
+                                        readValueFromStorage,
+                                        definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+                                        select,
+                                        addToCache,
+                                        addChangeToOutput
+                                    )
                                 }
                             }
                         }
@@ -320,12 +329,10 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         // Read set contents. Always a simple value for set since it is in qualifier
                         val keyDefinition = ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
                         val valueDefinition = ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
-                        var mapItemIndex = qIndex
+                        val keySize = initIntByVar { qualifier[qIndex++] }
+                        val key = keyDefinition.readStorageBytes(keySize) { qualifier[qIndex++] }
 
-                        val keySize = initIntByVar { qualifier[mapItemIndex++] }
-                        val key = keyDefinition.readStorageBytes(keySize) { qualifier[mapItemIndex++] }
-
-                        if (qualifier.size <= mapItemIndex) {
+                        if (qualifier.size <= qIndex) {
                             @Suppress("UNCHECKED_CAST")
                             readValueFromStorage(
                                 Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
@@ -343,7 +350,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         } else {
                             readComplexChanges(
                                 qualifier,
-                                mapItemIndex,
+                                qIndex,
                                 valueDefinition,
                                 mapDefinition.getValueRef(key, reference),
                                 select,
@@ -361,7 +368,16 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val typedDefinition = definition.definition as? IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
                         ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
 
-                    typedDefinition.readComplexTypedValue(parentReference, index.toUInt(), addChangeToOutput, qualifier, qIndex, readValueFromStorage, select, addToCache)
+                    typedDefinition.readComplexTypedValue(
+                        parentReference,
+                        index.toUInt(),
+                        qualifier,
+                        qIndex,
+                        readValueFromStorage,
+                        select,
+                        addToCache,
+                        addChangeToOutput
+                    )
                 }
             }
         }
@@ -382,7 +398,14 @@ private fun <P : PropertyDefinitions> readComplexChanges(
         is IsMultiTypeDefinition<*, *> -> {
             @Suppress("UNCHECKED_CAST")
             readTypedValue(
-                parentReference, qualifier, offset, readValueFromStorage, definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>, addChangeToOutput, select, addToCache
+                parentReference,
+                qualifier,
+                offset,
+                readValueFromStorage,
+                definition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+                select,
+                addToCache,
+                addChangeToOutput
             )
         }
         is IsEmbeddedDefinition<*, *> -> {
@@ -390,11 +413,11 @@ private fun <P : PropertyDefinitions> readComplexChanges(
                 definition,
                 parentReference,
                 select,
-                addToCache,
-                offset,
-                addChangeToOutput,
                 readValueFromStorage,
-                qualifier
+                addToCache,
+                qualifier,
+                offset,
+                addChangeToOutput
             )
         }
         else -> throw Exception("Can only use Embedded as values with deeper values $definition")
@@ -408,20 +431,20 @@ private fun readTypedValue(
     offset: Int,
     readValueFromStorage: ValueWithVersionReader,
     valueDefinition: IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
-    changeAdder: ChangeAdder,
     select: IsPropRefGraph<*>?,
-    addToCache: CacheProcessor
+    addToCache: CacheProcessor,
+    addChangeToOutput: ChangeAdder
 ) {
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
         @Suppress("UNCHECKED_CAST")
         readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
             if (value == null) {
-                changeAdder(version, ChangeType.DELETE, reference as Any)
+                addChangeToOutput(version, ChangeType.DELETE, reference as Any)
             } else {
                 if (value is TypedValue<*, *>) {
                     if (value.value == Unit) {
-                        changeAdder(
+                        addChangeToOutput(
                             version, TYPE,
                             ReferenceTypePair(
                                 reference as MultiTypePropertyReference<AnyIndexedEnum, *, MultiTypeDefinitionWrapper<AnyIndexedEnum, *, *, *>, *>,
@@ -429,7 +452,7 @@ private fun readTypedValue(
                             )
                         )
                     } else {
-                        changeAdder(
+                        addChangeToOutput(
                             version,
                             CHANGE,
                             ReferenceValuePair(
@@ -448,12 +471,12 @@ private fun readTypedValue(
             valueDefinition.readComplexTypedValue(
                 reference,
                 typeIndex,
-                changeAdder,
                 qualifier,
                 qIndex1,
                 readValueFromStorage,
                 select,
-                addToCache
+                addToCache,
+                addChangeToOutput
             )
         }
     }
@@ -463,12 +486,12 @@ private fun readTypedValue(
 private fun <E: IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.readComplexTypedValue(
     reference: IsPropertyReference<*, *, *>?,
     index: UInt,
-    addChangeToOutput: ChangeAdder,
     qualifier: ByteArray,
     qIndex: Int,
     readValueFromStorage: ValueWithVersionReader,
     select: IsPropRefGraph<*>?,
-    addToCache: CacheProcessor
+    addToCache: CacheProcessor,
+    addChangeToOutput: ChangeAdder
 ) {
     @Suppress("UNCHECKED_CAST")
     val definition = this.definition(index)
@@ -487,11 +510,11 @@ private fun <E: IndexedEnum<E>> IsMultiTypeDefinition<E, IsPropertyContext>.read
                 definition,
                 typedReference,
                 select,
-                addToCache,
-                qIndex,
-                addChangeToOutput,
                 readValueFromStorage,
-                qualifier
+                addToCache,
+                qualifier,
+                qIndex,
+                addChangeToOutput
             )
         }
         else -> throw Exception("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
@@ -502,11 +525,11 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     definition: IsEmbeddedDefinition<*, *>,
     parentReference: IsPropertyReference<*, *, *>?,
     select: IsPropRefGraph<P>?,
-    addToCache: CacheProcessor,
-    index: Int,
-    addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,
-    qualifier: ByteArray
+    addToCache: CacheProcessor,
+    qualifier: ByteArray,
+    offset: Int,
+    addChangeToOutput: ChangeAdder
 ) {
     @Suppress("UNCHECKED_CAST")
     val dataModel =
@@ -519,10 +542,10 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
         select as IsPropRefGraph<PropertyDefinitions>
     } else null
 
-    addToCache(index - 1) { q ->
+    addToCache(offset - 1) { q ->
         dataModel.readQualifier(
             q,
-            index,
+            offset,
             specificSelect,
             parentReference,
             addChangeToOutput,
@@ -533,7 +556,7 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
 
     dataModel.readQualifier(
         qualifier,
-        index,
+        offset,
         specificSelect,
         parentReference,
         addChangeToOutput,

@@ -269,20 +269,20 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                                         qIndex,
                                         readValueFromStorage,
                                         valueDefinition,
-                                        mapItemAdder,
                                         select,
-                                        addToCache
+                                        addToCache,
+                                        mapItemAdder
                                     )
                                 }
                                 is IsEmbeddedDefinition<*, *> -> {
                                     readEmbeddedValues(
                                         valueDefinition as IsEmbeddedDefinition<*, *>,
-                                        mapItemAdder,
                                         select,
-                                        addToCache,
-                                        qIndex,
                                         readValueFromStorage,
-                                        qualifier
+                                        addToCache,
+                                        qualifier,
+                                        qIndex,
+                                        mapItemAdder
                                     )
                                 }
                                 else -> throw Exception("Can only use Embedded/MultiType as complex value type in Map $mapDefinition")
@@ -297,7 +297,14 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val typedDefinition = definition.definition as? IsMultiTypeDefinition<*, *>
                         ?: throw Exception("Definition($index) ${definition.definition} should be a TypedDefinition")
 
-                    typedDefinition.readComplexTypedValue(index.toUInt(), { addValueToOutput(index, it) }, qualifier, qIndex, readValueFromStorage, select, addToCache)
+                    typedDefinition.readComplexTypedValue(
+                        index.toUInt(),
+                        qualifier,
+                        qIndex,
+                        readValueFromStorage,
+                        select,
+                        addToCache,
+                        { addValueToOutput(index, it) })
                 }
             }
         }
@@ -322,20 +329,20 @@ private fun readComplexValueFromStorage(
                 qIndex,
                 readValueFromStorage,
                 definition,
-                valueAdder,
                 select,
-                addToCache
+                addToCache,
+                valueAdder
             )
         }
         is IsEmbeddedDefinition<*, *> -> {
             readEmbeddedValues(
                 definition,
-                { addValueToOutput(index, it) },
                 select,
-                addToCache,
-                qIndex,
                 readValueFromStorage,
-                qualifier
+                addToCache,
+                qualifier,
+                qIndex,
+                { addValueToOutput(index, it) }
             )
         }
         else -> throw Exception("Can only use Embedded as values with deeper values, not $definition")
@@ -348,26 +355,26 @@ private fun readTypedValue(
     offset: Int,
     readValueFromStorage: ValueReader,
     valueDefinition: IsMultiTypeDefinition<*, *>,
-    valueAdder: AddValue,
     select: IsPropRefGraph<*>?,
-    addToCache: CacheProcessor
+    addToCache: CacheProcessor,
+    addValueToOutput: AddValue
 ) {
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
         @Suppress("UNCHECKED_CAST")
         readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>)?.let {
-            valueAdder(it)
+            addValueToOutput(it)
         }
     } else {
         initUIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
             valueDefinition.readComplexTypedValue(
                 typeIndex,
-                valueAdder,
                 qualifier,
                 qIndex1,
                 readValueFromStorage,
                 select,
-                addToCache
+                addToCache,
+                addValueToOutput
             )
         }
     }
@@ -376,12 +383,12 @@ private fun readTypedValue(
 /** Read a complex Typed value from qualifier */
 private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     index: UInt,
-    addValueToOutput: AddValue,
     qualifier: ByteArray,
     qIndex: Int,
     readValueFromStorage: ValueReader,
     select: IsPropRefGraph<*>?,
-    addToCache: CacheProcessor
+    addToCache: CacheProcessor,
+    addValueToOutput: AddValue
 ) {
     val definition = this.definition(index)
     @Suppress("UNCHECKED_CAST")
@@ -399,12 +406,12 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
         is IsEmbeddedDefinition<*, *> -> {
             readEmbeddedValues(
                 definition as IsEmbeddedDefinition<*, *>,
-                addMultiTypeToOutput,
                 select,
-                addToCache,
-                qIndex,
                 readValueFromStorage,
-                qualifier
+                addToCache,
+                qualifier,
+                qIndex,
+                addMultiTypeToOutput
             )
         }
         else -> throw Exception("Can only use Embedded/MultiType as complex value type in Multi Type $definition")
@@ -414,12 +421,12 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
 /** Read embedded values into Values object */
 private fun <P : PropertyDefinitions> readEmbeddedValues(
     definition: IsEmbeddedDefinition<*, *>,
-    addValueToOutput: AddValue,
     select: IsPropRefGraph<P>?,
-    addToCache: CacheProcessor,
-    offset: Int,
     readValueFromStorage: ValueReader,
-    qualifier: ByteArray
+    addToCache: CacheProcessor,
+    qualifier: ByteArray,
+    offset: Int,
+    addValueToOutput: AddValue
 ) {
     @Suppress("UNCHECKED_CAST")
     val dataModel = definition.dataModel as IsDataModelWithValues<*, PropertyDefinitions, *>
@@ -439,7 +446,14 @@ private fun <P : PropertyDefinitions> readEmbeddedValues(
     } else null
 
     addToCache(offset - 1) { q ->
-        dataModel.readQualifier(q, offset, specificSelect, valuesItemAdder, readValueFromStorage, addToCache)
+        dataModel.readQualifier(
+            q,
+            offset,
+            specificSelect,
+            valuesItemAdder,
+            readValueFromStorage,
+            addToCache
+        )
     }
 
     dataModel.readQualifier(

@@ -34,6 +34,7 @@ import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.AnyValuePropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.CompleteReferenceType.DELETE
@@ -41,6 +42,7 @@ import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.PropertyReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
@@ -116,7 +118,21 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
     when(changeType) {
         ChangeType.OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
         ChangeType.CHANGE -> this.find { it is Change }?.also { ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(changePart as ReferenceValuePair<*>) }
-        ChangeType.DELETE -> this.find { it is Delete }?.also { ((it as Delete).references as MutableList<AnyValuePropertyReference>).add(changePart as AnyValuePropertyReference) }
+        ChangeType.DELETE -> this.find { it is Delete }?.also {
+            val reference = changePart as AnyValuePropertyReference
+            val toDelete = ((it as Delete).references as MutableList<AnyValuePropertyReference>)
+            if (reference is PropertyReference<*, *, *, *>) {
+                var toSearch: AnyPropertyReference? = reference
+                while (toSearch is PropertyReference<*, *, *, *>) {
+                    if (toDelete.contains(toSearch as AnyValuePropertyReference)) {
+                        return@also
+                    }
+
+                    toSearch = toSearch.parentReference ?: break
+                }
+            }
+            toDelete.add(reference)
+        }
         ChangeType.TYPE -> this.find { it is MultiTypeChange }?.also { ((it as MultiTypeChange).referenceTypePairs as MutableList<ReferenceTypePair<*>>).add(changePart as ReferenceTypePair<*>) }
         ChangeType.SET_ADD -> {
             this.find { it is SetChange }?.also { change ->
@@ -203,8 +219,6 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             val ref =
                                 definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
-                                // ignore any sub values since value was deleted
-                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } else {
                                 if (value !is TypedValue<*, *>) {
@@ -254,8 +268,6 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             val ref =
                                 definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
-                                // ignore any sub values since embed was deleted
-                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } // Else this value just exists
                         }
@@ -280,8 +292,6 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                // ignore any sub values since list was deleted
-                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
                             }
                         }
@@ -315,8 +325,6 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                // ignore any sub values since set was deleted
-                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
                             }
                         }
@@ -353,8 +361,6 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                // ignore any sub values since map was deleted
-                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
                             }
                         }

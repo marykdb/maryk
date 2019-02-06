@@ -11,39 +11,40 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.Option.V1
+import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 val valuesAsStorablesWithVersion = arrayOf(
-    "09" to (1234uL to "hello world"),
-    "11" to (1234uL to 5),
-    "19" to (1235uL to 3u),
-    "21" to (1233uL to null),
-    "29" to (1233uL to DateTime(2018, 7, 18)),
-    "39" to (1235uL to V1),
-    "4b" to (1235uL to 2),
-    "4b80004577" to (1233uL to Date(2018, 9, 9)),
-    "4b80001104" to (1235uL to Date(1981, 12, 5)),
-    "4b80001105" to (1235uL to Date(1981, 12, 6)),
-    "4b80001ba2" to (1235uL to null),
-    "4b80001ba3" to (1235uL to null),
-    "54" to (1234uL to 3),
-    "5403008fe9" to (1233uL to "ten"),
-    "5403009ff9" to (1234uL to "eleven"),
-    "5403009fe9" to (1234uL to null),
-    "540300ae46" to (1234uL to "twelve"),
-    "540300ac46" to (1234uL to null),
-    "66" to (1233uL to Unit),
-    "6609" to (1234uL to "test"),
-    "6616" to (1234uL to Unit),
-    "661609" to (1234uL to "another test"),
-    "7a" to (1234uL to 3),
-    "7a00000000" to (1233uL to "v1"),
-    "7a00000001" to (1234uL to "v2"),
-    "7a00000002" to (1234uL to "v3"),
-    "7a00000003" to (1234uL to null),
-    "7a00000004" to (1234uL to null)
+    "09" to arrayOf(1234uL to "hello world", 1235uL to "hello universe"),
+    "11" to arrayOf(1234uL to 5, 1235uL to 7),
+    "19" to arrayOf(1235uL to 3u),
+    "21" to arrayOf(1233uL to null),
+    "29" to arrayOf(1233uL to DateTime(2018, 7, 18), 1235uL to null),
+    "39" to arrayOf(1234uL to V2, 1235uL to V1),
+    "4b" to arrayOf(1233uL to 1, 1235uL to 2, 1236uL to 2),
+    "4b80004577" to arrayOf(1233uL to Date(2018, 9, 9)),
+    "4b80001104" to arrayOf(1235uL to Date(1981, 12, 5)),
+    "4b80001105" to arrayOf(1235uL to Date(1981, 12, 6), 1236uL to null),
+    "4b80001ba2" to arrayOf(1235uL to null),
+    "4b80001ba3" to arrayOf(1235uL to null),
+    "54" to arrayOf(1234uL to 3, 1236uL to null),
+    "5403008fe9" to arrayOf(1233uL to "ten", 1235uL to null),
+    "5403009ff9" to arrayOf(1234uL to "eleven", 1236uL to null),
+    "5403009fe9" to arrayOf(1234uL to null),
+    "540300ae46" to arrayOf(1234uL to "twelve", 1236uL to null),
+    "540300ac46" to arrayOf(1234uL to null),
+    "66" to arrayOf(1233uL to Unit, 1236uL to null),
+    "6609" to arrayOf(1234uL to "test", 1236uL to null),
+    "6616" to arrayOf(1234uL to Unit),
+    "661609" to arrayOf(1234uL to "another test", 1235uL to null),
+    "7a" to arrayOf(1234uL to 3, 1235uL to 2),
+    "7a00000000" to arrayOf(1233uL to "v1"),
+    "7a00000001" to arrayOf(1234uL to "v2"),
+    "7a00000002" to arrayOf(1234uL to "v3", 1235uL to null),
+    "7a00000003" to arrayOf(1234uL to null),
+    "7a00000004" to arrayOf(1234uL to null)
 )
 
 class ReadStorageToChangesKtTest {
@@ -58,8 +59,8 @@ class ReadStorageToChangesKtTest {
             },
             select = null,
             processValue = { _, _ , changer ->
-                valuesAsStorablesWithVersion[qualifierIndex].second.apply {
-                    changer(first, second)
+                valuesAsStorablesWithVersion[qualifierIndex].second.forEach {
+                    changer(it.first, it.second)
                 }
             }
         )
@@ -87,6 +88,7 @@ class ReadStorageToChangesKtTest {
                     Change(
                         TestMarykModel.ref { string } with "hello world",
                         TestMarykModel.ref { int } with 5,
+                        TestMarykModel.ref { enum } with V2,
                         TestMarykModel { map refAt Time(11, 22, 33) } with "eleven",
                         TestMarykModel { map refAt Time(12, 23, 34) } with "twelve",
                         TestMarykModel { embeddedValues.ref { value } } with "test",
@@ -106,71 +108,33 @@ class ReadStorageToChangesKtTest {
                 1235UL,
                 listOf(
                     Change(
+                        TestMarykModel.ref { string } with "hello universe",
+                        TestMarykModel.ref { int } with 7,
                         TestMarykModel.ref { uint } with 3u,
                         TestMarykModel.ref { enum } with V1
+                    ),
+                    Delete(
+                        TestMarykModel.ref { dateTime },
+                        TestMarykModel { set refAt Date(1989, 5, 15) },
+                        TestMarykModel { set refAt Date(1989, 5, 16) },
+                        TestMarykModel { map refAt Time(10, 14, 1) },
+                        TestMarykModel { embeddedValues { model.ref { value } } },
+                        TestMarykModel { listOfString.refAt(2u) }
                     ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
                             addValues = setOf(Date(1981,12, 5), Date(1981,12, 6))
                         )
-                    ),
-                    Delete(
-                        TestMarykModel { set refAt Date(1989, 5, 15) },
-                        TestMarykModel { set refAt Date(1989, 5, 16) }
-                    )
-                )
-            )
-        )
-    }
-
-    @Test
-    fun convertStorageToValuesWithNullMapListSetValues() {
-        val unsetValuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
-            "4b" to (1235uL to null), // set
-            "4b80004577" to (1233uL to Date(2018, 9, 9)),
-            "54" to (1234uL to null), // map
-            "5403008fe9" to (1233uL to "ten"),
-            "66" to (1234uL to null), // embeddedValues
-            "6609" to (1234uL to "test"),
-            "69" to (1234uL to null),
-            "691d" to (1234uL to Unit),
-            "691d09" to (1234uL to "m3"),
-            "7a" to (1234uL to null), // listOfString
-            "7a00000000" to (1233uL to "v1")
-        )
-
-        var qualifierIndex = -1
-        val values = TestMarykModel.readStorageToChanges(
-            getQualifier = {
-                unsetValuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
-                }
-            },
-            select = null,
-            processValue = { _, _ , changer ->
-                unsetValuesAsStorablesWithVersion[qualifierIndex].second.apply {
-                    changer(first, second)
-                }
-            }
-        )
-
-        values shouldBe listOf(
-            VersionedChanges(
-                1234uL,
-                listOf(
-                    Delete(
-                        TestMarykModel.ref { map },
-                        TestMarykModel.ref { embeddedValues },
-                        TestMarykModel.ref { multi },
-                        TestMarykModel.ref { listOfString }
                     )
                 )
             ),
             VersionedChanges(
-                1235uL,
+                1236UL,
                 listOf(
                     Delete(
-                        TestMarykModel.ref { set }
+                        TestMarykModel { set refAt Date(1981, 12, 6) },
+                        TestMarykModel.ref { map },
+                        TestMarykModel.ref { embeddedValues }
                     )
                 )
             )

@@ -11,7 +11,10 @@ import maryk.core.processors.datastore.ChangeType.CHANGE
 import maryk.core.processors.datastore.ChangeType.OBJECT_DELETE
 import maryk.core.processors.datastore.ChangeType.SET_ADD
 import maryk.core.processors.datastore.ChangeType.TYPE
+import maryk.core.processors.datastore.StorageTypeEnum.ListSize
+import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.ObjectDelete
+import maryk.core.processors.datastore.StorageTypeEnum.SetSize
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
@@ -252,6 +255,9 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             val ref =
                                 definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
+                                addToCache(qIndex - 1) {
+                                    // ignore any sub values since embed was deleted
+                                }
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } // Else this value just exists
                         }
@@ -268,51 +274,75 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         )
                     }
                 }
-                LIST -> if (isAtEnd) {
-                    // Used for the list size. Is Ignored for changes
-                } else {
-                    val definition = this.properties[index]!!
-                    @Suppress("UNCHECKED_CAST")
-                    val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
-                    @Suppress("UNCHECKED_CAST")
-                    val reference = definition.getRef(parentReference) as ListReference<Any, IsPropertyContext>
+                LIST -> {
+                    val definition = this.properties[index]
+                        ?: throw Exception("No definition for $index in $this at $index")
 
-                    // Read set contents. Always a simple value for set since it is in qualifier
-                    val valueDefinition = ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                    var listItemIndex = qIndex
+                    if (isAtEnd) {
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
+                            if (value == null) {
+                                addToCache(qIndex - 1) {
+                                    // ignore any sub values since list was deleted
+                                }
+                                addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
+                            }
+                        }
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
+                        @Suppress("UNCHECKED_CAST")
+                        val reference = definition.getRef(parentReference) as ListReference<Any, IsPropertyContext>
 
-                    val listIndex = initUInt(reader = { qualifier[listItemIndex++] })
+                        // Read set contents. Always a simple value for set since it is in qualifier
+                        val valueDefinition = ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+                        var listItemIndex = qIndex
 
-                    @Suppress("UNCHECKED_CAST")
-                    readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
-                        if (value == null) {
-                            addChangeToOutput(version, ChangeType.DELETE, listDefinition.getItemRef(listIndex, reference))
-                        } else {
-                            addChangeToOutput(version, CHANGE, listDefinition.getItemRef(listIndex, reference) with value)
+                        val listIndex = initUInt(reader = { qualifier[listItemIndex++] })
+
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+                            if (value == null) {
+                                addChangeToOutput(version, ChangeType.DELETE, listDefinition.getItemRef(listIndex, reference))
+                            } else {
+                                addChangeToOutput(version, CHANGE, listDefinition.getItemRef(listIndex, reference) with value)
+                            }
                         }
                     }
                 }
-                SET -> if (isAtEnd) {
-                    // Used for the set size. Is Ignored for changes
-                } else {
-                    val definition = this.properties[index]!!
-                    @Suppress("UNCHECKED_CAST")
-                    val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
-                    @Suppress("UNCHECKED_CAST")
-                    val reference = definition.getRef(parentReference) as SetReference<Any, IsPropertyContext>
+                SET ->{
+                    val definition = this.properties[index]
+                        ?: throw Exception("No definition for $index in $this at $index")
 
-                    // Read set contents. Always a simple value for set since it is in qualifier
-                    val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                    var setItemIndex = qIndex
+                    if (isAtEnd) {
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
+                            if (value == null) {
+                                addToCache(qIndex - 1) {
+                                    // ignore any sub values since set was deleted
+                                }
+                                addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
+                            }
+                        }
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
+                        @Suppress("UNCHECKED_CAST")
+                        val reference = definition.getRef(parentReference) as SetReference<Any, IsPropertyContext>
 
-                    val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
+                        // Read set contents. Always a simple value for set since it is in qualifier
+                        val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
+                        var setItemIndex = qIndex
 
-                    @Suppress("UNCHECKED_CAST")
-                    readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
-                        if (value == null) {
-                            addChangeToOutput(version, ChangeType.DELETE, setDefinition.getItemRef(key, reference))
-                        } else {
-                            addChangeToOutput(version, SET_ADD, setDefinition.getItemRef(key, reference))
+                        val key = valueDefinition.readStorageBytes(qualifier.size - qIndex) { qualifier[setItemIndex++] }
+
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
+                            if (value == null) {
+                                addChangeToOutput(version, ChangeType.DELETE, setDefinition.getItemRef(key, reference))
+                            } else {
+                                addChangeToOutput(version, SET_ADD, setDefinition.getItemRef(key, reference))
+                            }
                         }
                     }
                 }
@@ -324,7 +354,15 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val reference = definition.getRef(parentReference) as MapReference<Any, Any, IsPropertyContext>
 
                     if (isAtEnd) {
-                        // Used for the map size. Is Ignored for changes
+                        @Suppress("UNCHECKED_CAST")
+                        readValueFromStorage(MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
+                            if (value == null) {
+                                addToCache(qIndex - 1) {
+                                    // ignore any sub values since map was deleted
+                                }
+                                addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
+                            }
+                        }
                     } else {
                         // Read set contents. Always a simple value for set since it is in qualifier
                         val keyDefinition = ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)

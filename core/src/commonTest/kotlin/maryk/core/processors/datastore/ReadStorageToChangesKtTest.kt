@@ -34,7 +34,9 @@ val valuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
     "5403009fe9" to (1234uL to null),
     "540300ae46" to (1234uL to "twelve"),
     "540300ac46" to (1234uL to null),
+    "66" to (1233uL to Unit),
     "6609" to (1234uL to "test"),
+    "6616" to (1234uL to Unit),
     "661609" to (1234uL to "another test"),
     "7a" to (1234uL to 3),
     "7a00000000" to (1233uL to "v1"),
@@ -115,6 +117,56 @@ class ReadStorageToChangesKtTest {
                     Delete(
                         TestMarykModel { set refAt Date(1989, 5, 15) },
                         TestMarykModel { set refAt Date(1989, 5, 16) }
+                    )
+                )
+            )
+        )
+    }
+
+    @Test
+    fun convertStorageToValuesWithNullMapListSetValues() {
+        val unsetValuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
+            "4b" to (1235uL to null), // set
+            "4b80004577" to (1233uL to Date(2018, 9, 9)),
+            "54" to (1234uL to null), // map
+            "5403008fe9" to (1233uL to "ten"),
+            "66" to (1234uL to null), // embeddedValues
+            "6609" to (1234uL to "test"),
+            "7a" to (1234uL to null), // listOfString
+            "7a00000000" to (1233uL to "v1")
+        )
+
+        var qualifierIndex = -1
+        val values = TestMarykModel.readStorageToChanges(
+            getQualifier = {
+                unsetValuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
+                    initByteArrayByHex(it.first)
+                }
+            },
+            select = null,
+            processValue = { _, _ , changer ->
+                unsetValuesAsStorablesWithVersion[qualifierIndex].second.apply {
+                    changer(first, second)
+                }
+            }
+        )
+
+        values shouldBe listOf(
+            VersionedChanges(
+                1234uL,
+                listOf(
+                    Delete(
+                        TestMarykModel.ref { map },
+                        TestMarykModel.ref { embeddedValues },
+                        TestMarykModel.ref { listOfString }
+                    )
+                )
+            ),
+            VersionedChanges(
+                1235uL,
+                listOf(
+                    Delete(
+                        TestMarykModel.ref { set }
                     )
                 )
             )

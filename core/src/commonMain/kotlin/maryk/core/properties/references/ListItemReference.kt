@@ -24,7 +24,7 @@ import maryk.core.query.pairs.ReferenceValuePair
 /** Reference to a List Item on [parentReference] with [T] by [index] */
 class ListItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     val index: UInt,
-    listDefinition: IsListDefinition<T, CX>,
+    val listDefinition: IsListDefinition<T, CX>,
     parentReference: ListReference<T, CX>?
 ) : HasEmbeddedPropertyReference<T>, CanHaveComplexChildReference<T, IsValueDefinition<T, CX>, ListReference<T, CX>, List<T>>(
     listDefinition.valueDefinition, parentReference

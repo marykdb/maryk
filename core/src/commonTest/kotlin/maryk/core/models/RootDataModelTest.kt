@@ -317,6 +317,7 @@ internal class RootDataModelTest {
         			"indexed": false,
         			"required": false,
         			"final": false,
+        			"minSize": 1,
         			"maxSize": 6,
         			"valueDefinition": ["String", {
         				"indexed": false,
@@ -526,6 +527,7 @@ internal class RootDataModelTest {
           indexed: false
           required: false
           final: false
+          minSize: 1
           maxSize: 6
           valueDefinition: !String
             indexed: false

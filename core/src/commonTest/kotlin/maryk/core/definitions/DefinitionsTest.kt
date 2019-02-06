@@ -252,6 +252,7 @@ class DefinitionsTest {
             indexed: false
             required: false
             final: false
+            minSize: 1
             maxSize: 6
             valueDefinition: !String
               indexed: false

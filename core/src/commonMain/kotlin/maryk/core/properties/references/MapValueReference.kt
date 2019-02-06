@@ -19,7 +19,7 @@ import maryk.core.query.pairs.ReferenceValuePair
 /** Reference to map value [V] below [key] of [K] contained in map referred by [parentReference] */
 class MapValueReference<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
     val key: K,
-    private val mapDefinition: IsMapDefinition<K, V, CX>,
+    val mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: MapReference<K, V, CX>?
 ) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, MapReference<K, V, CX>, Map<K, V>>(
     mapDefinition.valueDefinition, parentReference

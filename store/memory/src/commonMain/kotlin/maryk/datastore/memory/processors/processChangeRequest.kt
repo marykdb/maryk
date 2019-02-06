@@ -14,6 +14,7 @@ import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.enum.AnyIndexedEnum
@@ -26,9 +27,12 @@ import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapReference
+import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.PropertyReference
+import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -287,12 +291,50 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                         }
 
                                         if (previousValue == null) {
+                                            // Check if parent exists before trying to change
+                                            if (reference is PropertyReference<*, *, *, *> && reference !is ListItemReference<*, *>) {
+                                                getValue<Any>(newValueList, reference.parentReference!!.toStorageByteArray())
+                                                    ?: throw Exception("Property '${reference.completeName}' can only be changed if parent exists. Set the parent property to set this value.")
+                                            }
+
+                                            // Extra validations based on reference type
                                             when (reference) {
                                                 is ListItemReference<*, *> -> throw Exception("ListItem can only be changed if it exists. To add a new one use ListChange.")
-                                                is PropertyReference<*, *, *, *> -> {
-                                                    getValue<Any>(newValueList, reference.parentReference!!.toStorageByteArray())
-                                                        ?: throw Exception("Property '${reference.completeName}' can only be changed if parent exists. Set the parent property to set this value.")
+                                                is MapValueReference<*, *, *> -> {
+                                                    try {
+                                                        @Suppress("UNCHECKED_CAST")
+                                                        val mapDefinition =
+                                                            reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
+                                                        @Suppress("UNCHECKED_CAST")
+                                                        mapDefinition.keyDefinition.validateWithRef(reference.key, reference.key) {
+                                                            mapDefinition.getKeyRef(reference.key, reference.parentReference as MapReference<Any, Any, IsPropertyContext>)
+                                                        }
+                                                    } catch (e: ValidationException) { addValidationFail(e) }
+
+                                                    createCountUpdater(
+                                                        newValueList,
+                                                        reference.parentReference as IsPropertyReference<out Map<*, *>, IsPropertyDefinition<out Map<*, *>>, out Any>,
+                                                        version,
+                                                        1,
+                                                        keepAllVersions
+                                                    ) {
+                                                        @Suppress("UNCHECKED_CAST")
+                                                        (reference as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
+                                                    }
                                                 }
+                                                is SetItemReference<*, *> -> {
+                                                    createCountUpdater(
+                                                        newValueList,
+                                                        reference.parentReference as IsPropertyReference<out Set<Any>, IsPropertyDefinition<out Set<Any>>, out Any>,
+                                                        version,
+                                                        1,
+                                                        keepAllVersions
+                                                    ) {
+                                                        @Suppress("UNCHECKED_CAST")
+                                                        (reference as SetItemReference<Any, IsPropertyContext>).setDefinition.validateSize(it) { reference.parentReference }
+                                                    }
+                                                }
+                                                is MapKeyReference<*, *, *> -> throw Exception("Not allowed to delete Map key, delete value instead")
                                             }
                                         }
 
@@ -322,6 +364,47 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                         newValue = null,
                                         refGetter = { ref }
                                     )
+
+                                    // Extra validations based on reference type
+                                    when (ref) {
+                                        is MapValueReference<*, *, *> -> {
+                                            createCountUpdater(
+                                                newValueList,
+                                                ref.parentReference as IsPropertyReference<out Map<*, *>, IsPropertyDefinition<out Map<*, *>>, out Any>,
+                                                version,
+                                                -1,
+                                                keepAllVersions
+                                            ) {
+                                                @Suppress("UNCHECKED_CAST")
+                                                (ref as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { ref as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
+                                            }
+                                        }
+                                        is SetItemReference<*, *> -> {
+                                            createCountUpdater(
+                                                newValueList,
+                                                ref.parentReference as IsPropertyReference<out Set<Any>, IsPropertyDefinition<out Set<Any>>, out Any>,
+                                                version,
+                                                -1,
+                                                keepAllVersions
+                                            ) {
+                                                @Suppress("UNCHECKED_CAST")
+                                                (ref as SetItemReference<Any, IsPropertyContext>).setDefinition.validateSize(it) { ref as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
+                                            }
+                                        }
+                                        is ListItemReference<*, *> -> {
+                                            createCountUpdater(
+                                                newValueList,
+                                                ref.parentReference as IsPropertyReference<out List<Any>, IsPropertyDefinition<out List<Any>>, out Any>,
+                                                version,
+                                                -1,
+                                                keepAllVersions
+                                            ) {
+                                                @Suppress("UNCHECKED_CAST")
+                                                (ref as ListItemReference<Any, IsPropertyContext>).listDefinition.validateSize(it) { ref as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
+                                            }
+                                        }
+                                        is MapKeyReference<*, *, *> -> throw Exception("Not allowed to delete Map key, delete value instead")
+                                    }
                                 } catch (e: ValidationException) {
                                     addValidationFail(e)
                                 }

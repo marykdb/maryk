@@ -3,6 +3,7 @@ package maryk.datastore.memory
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.exceptions.InvalidValueException
+import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.types.Date
@@ -10,7 +11,6 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.ListChange
-import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
@@ -38,7 +38,7 @@ class InMemoryDataStoreChangeValidationTest {
                 TestMarykModel.add(
                     TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true, listOfString = listOf("a", "b", "c"), map = mapOf(Time(2, 3, 5) to "test"), set = setOf(Date(2018, 3, 4))),
                     TestMarykModel("haha2", 3, 8u, 1.244, DateTime(2018, 1, 2), false, listOfString = listOf("c", "d", "e"), map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"), set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))),
-                    TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, reference = TestMarykModel.key("AAACKwEBAQAC"))
+                    TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, listOfString = listOf("c"), reference = TestMarykModel.key("AAACKwEBAQAC"))
                 )
             )
 
@@ -255,15 +255,11 @@ class InMemoryDataStoreChangeValidationTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
-                    MapChange(
-                        TestMarykModel.ref { map }.change(
-                            valuesToAdd = mapOf(
-                                Time(1, 2, 3) to "test1",
-                                Time(2, 3, 4) to "test2",
-                                Time(3, 4, 5) to "test3",
-                                Time(4, 5, 6) to "test4"
-                            )
-                        )
+                    Change(
+                        TestMarykModel{ map.refAt(Time(1, 2, 3)) } with "test1",
+                        TestMarykModel{ map.refAt(Time(2, 3, 4)) } with "test2",
+                        TestMarykModel{ map.refAt(Time(3, 4, 5)) } with "test3",
+                        TestMarykModel{ map.refAt(Time(4, 5, 6)) } with "test4"
                     )
                 )
             )
@@ -296,13 +292,9 @@ class InMemoryDataStoreChangeValidationTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
-                    MapChange(
-                        TestMarykModel.ref { map }.change(
-                            valuesToAdd = mapOf(
-                                Time(23, 52, 53) to "test1",
-                                Time(1, 52, 53) to "verylongwrongsize"
-                            )
-                        )
+                    Change(
+                        TestMarykModel{ map.refAt(Time(23, 52, 53)) } with "test1",
+                        TestMarykModel{ map.refAt(Time(1, 52, 53)) } with "verylongwrongsize"
                     )
                 )
             )
@@ -331,5 +323,29 @@ class InMemoryDataStoreChangeValidationTest {
             Time(12, 33, 45) to "another",
             Time(13, 44, 55) to "another2"
         )
+    }
+
+    @Test
+    fun executeChangeListSizeValidationExceptionRequest() = runSuspendingTest {
+        val changeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[2].change(
+                    Delete(
+                        TestMarykModel{ listOfString.refAt(0u) }
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.size shouldBe 1
+        changeResponse.statuses[0].let { status ->
+            val validationFail = shouldBeOfType<ValidationFail<*>>(status)
+            validationFail.exceptions.apply {
+                size shouldBe 1
+                shouldBeOfType<NotEnoughItemsException>(first()).apply {
+                    size shouldBe 0u
+                }
+            }
+        }
     }
 }

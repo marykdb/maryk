@@ -8,7 +8,6 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.ListChange
-import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
@@ -366,14 +365,12 @@ class InMemoryDataStoreChangeTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
-                    MapChange(
-                        TestMarykModel.ref { map }.change(
-                            keysToDelete = setOf(Time(12, 33, 45)),
-                            valuesToAdd = mapOf(
-                                Time(1, 2, 3) to "test1",
-                                Time(2, 3, 4) to "test2"
-                            )
-                        )
+                    Change(
+                        TestMarykModel{ map.refAt(Time(1, 2, 3)) } with "test1",
+                        TestMarykModel{ map.refAt(Time(2, 3, 4)) } with "test2"
+                    ),
+                    Delete(
+                        TestMarykModel{ map.refAt(Time(12, 33, 45)) }
                     )
                 )
             )

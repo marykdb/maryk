@@ -165,6 +165,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
             index = 15, name = "listOfString",
             definition = ListDefinition(
                 required = false,
+                minSize = 1u,
                 maxSize = 6u,
                 valueDefinition = StringDefinition(
                     maxSize = 10u

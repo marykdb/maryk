@@ -99,7 +99,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
     }
 
     /** Validates size of map and throws exception if it fails*/
-    fun validateSize(
+    override fun validateSize(
         mapSize: UInt,
         refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
     ) {

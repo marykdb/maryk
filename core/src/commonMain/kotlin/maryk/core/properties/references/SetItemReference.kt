@@ -19,7 +19,7 @@ import maryk.core.protobuf.WriteCacheWriter
  */
 class SetItemReference<T: Any, CX: IsPropertyContext> internal constructor(
     val value: T,
-    private val setDefinition: IsSetDefinition<T, CX>,
+    val setDefinition: IsSetDefinition<T, CX>,
     parentReference: SetReference<T, CX>?
 ) : CanHaveSimpleChildReference<T, IsPropertyDefinition<T>, SetReference<T, CX>, Set<T>>(
     setDefinition.valueDefinition, parentReference

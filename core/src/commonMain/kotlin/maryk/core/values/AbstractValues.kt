@@ -20,7 +20,7 @@ typealias AnyAbstractValues = AbstractValues<Any, IsDataModel<AbstractPropertyDe
 /**
  * Contains a [values] with all values related to a DataObject of [dataModel]
  */
-abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>>: Iterable<ValueItem> {
+abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDefinitions<DO>>: IsValues<P> {
     abstract val dataModel: DM
     internal abstract val values: IsValueItems
     abstract val context: RequestContext?

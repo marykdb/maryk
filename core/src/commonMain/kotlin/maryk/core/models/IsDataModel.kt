@@ -4,7 +4,7 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.values.AbstractValues
+import maryk.core.values.IsValues
 
 /** A DataModel which holds properties and can be validated */
 interface IsDataModel<P: IsPropertyDefinitions> {
@@ -31,5 +31,5 @@ interface IsDataModel<P: IsPropertyDefinitions> {
         parent: IsPropertyReference<out Any, IsPropertyDefinition<*>, *>? = null,
         propertyDefinitionGetter: P.()-> W
     ) =
-        propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W, AbstractValues<*, *, *>>
+        propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W, IsValues<P>>
 }

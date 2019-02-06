@@ -10,7 +10,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.values.AbstractValues
+import maryk.core.values.IsValues
 import maryk.core.values.Values
 
 /**
@@ -50,7 +50,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
     /** Get a top level reference on a model with [propertyDefinitionGetter] */
     infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
         propertyDefinitionGetter: P.()-> W
-    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, AbstractValues<*, *, *>> =
+    ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, IsValues<P>> =
         { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */

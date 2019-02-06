@@ -15,7 +15,7 @@ import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-val valuesAsStorablesWithVersion = arrayOf<Pair<String, Pair<ULong, Any?>>>(
+val valuesAsStorablesWithVersion = arrayOf(
     "09" to (1234uL to "hello world"),
     "11" to (1234uL to 5),
     "19" to (1235uL to 3u),
@@ -132,6 +132,9 @@ class ReadStorageToChangesKtTest {
             "5403008fe9" to (1233uL to "ten"),
             "66" to (1234uL to null), // embeddedValues
             "6609" to (1234uL to "test"),
+            "69" to (1234uL to null),
+            "691d" to (1234uL to Unit),
+            "691d09" to (1234uL to "m3"),
             "7a" to (1234uL to null), // listOfString
             "7a00000000" to (1233uL to "v1")
         )
@@ -158,6 +161,7 @@ class ReadStorageToChangesKtTest {
                     Delete(
                         TestMarykModel.ref { map },
                         TestMarykModel.ref { embeddedValues },
+                        TestMarykModel.ref { multi },
                         TestMarykModel.ref { listOfString }
                     )
                 )

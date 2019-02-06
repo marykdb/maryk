@@ -206,6 +206,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             val ref =
                                 definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
+                                // ignore any sub values since value was deleted
+                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } else {
                                 if (value !is TypedValue<*, *> || value.value != Unit) {
@@ -255,9 +257,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             val ref =
                                 definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
-                                addToCache(qIndex - 1) {
-                                    // ignore any sub values since embed was deleted
-                                }
+                                // ignore any sub values since embed was deleted
+                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } // Else this value just exists
                         }
@@ -282,9 +283,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                addToCache(qIndex - 1) {
-                                    // ignore any sub values since list was deleted
-                                }
+                                // ignore any sub values since list was deleted
+                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
                             }
                         }
@@ -318,9 +318,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                addToCache(qIndex - 1) {
-                                    // ignore any sub values since set was deleted
-                                }
+                                // ignore any sub values since set was deleted
+                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
                             }
                         }
@@ -357,9 +356,8 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                addToCache(qIndex - 1) {
-                                    // ignore any sub values since map was deleted
-                                }
+                                // ignore any sub values since map was deleted
+                                addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
                             }
                         }

@@ -7,7 +7,6 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.ValuesWithMetaData
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
-import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
 
@@ -67,7 +66,3 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         lastVersion = maxVersion
     )
 }
-
-/** Check if [node] is deleted */
-private fun isDeletedNode(node: DataRecordNode) =
-    node is DeletedValue<*> || (node is DataRecordHistoricValues<*> && node.history.last() is DeletedValue<*>)

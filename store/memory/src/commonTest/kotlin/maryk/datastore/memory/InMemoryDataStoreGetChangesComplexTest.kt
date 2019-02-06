@@ -9,6 +9,7 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.with
+import maryk.core.query.pairs.withType
 import maryk.core.query.requests.add
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
@@ -76,7 +77,11 @@ class InMemoryDataStoreGetChangesComplexTest {
 
         getResponse.changes[0].changes shouldBe listOf(
             VersionedChanges(version = lowestVersion, changes = listOf(
-                MultiTypeChange(ComplexModel.ref { multi } with V3),
+                MultiTypeChange(
+                    ComplexModel.ref { multi } withType V3,
+                    ComplexModel { mapIntMulti.refAt(1u) } withType V3,
+                    ComplexModel { mapIntMulti.refAt(3u) } withType V3
+                ),
                 Change(
                     ComplexModel { multi.refWithType(V3, Properties) { value } } with "u3",
                     ComplexModel { multi.withType(V3, Properties) { model ref { value } } } with "ue3",

@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
-import maryk.core.query.pairs.with
+import maryk.core.query.pairs.withType
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
@@ -15,7 +15,7 @@ class MultiTypeChangeTest {
     val ref = TestMarykModel.ref { multi }
 
     private val multiTypeChange = MultiTypeChange(
-        TestMarykModel.ref { multi } with V3
+        TestMarykModel.ref { multi } withType V3
     )
 
     private val context = RequestContext(

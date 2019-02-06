@@ -113,12 +113,14 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
                         val value = readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
-                        if (value == null) {
-                            // Ensure that next potential embedded values are not read because is deleted
-                            addToCache(offset) {
-                                // Ignore reading and return
-                            }
-                        } else valueAdder(value)
+                        when (value) {
+                            null -> // Ensure that next potential embedded values are not read because is deleted
+                                addToCache(offset) {
+                                    // Ignore reading and return
+                                }
+                            is TypedValue<*, *> -> readTypedValue(qualifier, qIndex, readValueFromStorage, definition as IsMultiTypeDefinition<*, *>, select, addToCache, valueAdder)
+                            else -> valueAdder(value)
+                        }
                     } else {
                         readComplexValueFromStorage(
                             definition,
@@ -396,16 +398,29 @@ private fun readTypedValue(
     valueDefinition: IsMultiTypeDefinition<*, *>,
     select: IsPropRefGraph<*>?,
     addToCache: CacheProcessor,
-    addValueToOutput: AddValue
+    addValueToOutput: AddValue,
+    typeToCheck: IndexedEnum<*>? = null
 ) {
     var qIndex1 = offset
     if (qualifier.size <= qIndex1) {
         @Suppress("UNCHECKED_CAST")
         readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>)?.let {
+            // Pass type to check
+            addToCache(qIndex1 - 1) { q ->
+                readTypedValue(q, qIndex1, readValueFromStorage, valueDefinition, select, addToCache, addValueToOutput, (it as TypedValue<*, *>).type)
+            }
+
             addValueToOutput(it)
         }
     } else {
         initUIntByVarWithExtraInfo({ qualifier[qIndex1++] }) { typeIndex, _ ->
+            typeToCheck?.let {
+                // Skip values if type does not check out
+                if (typeToCheck.index != typeIndex) {
+                    return@initUIntByVarWithExtraInfo
+                }
+            }
+
             valueDefinition.readComplexTypedValue(
                 typeIndex,
                 qualifier,

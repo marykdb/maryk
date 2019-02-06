@@ -1,11 +1,13 @@
 package maryk.core.processors.datastore
 
+import maryk.core.properties.types.TypedValue
 import maryk.core.values.EmptyValueItems
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.time.Date
 import maryk.lib.time.Time
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.Option.V1
 import maryk.test.models.TestMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -78,7 +80,8 @@ class ReadStorageToValuesKtTest {
 
     @Test
     fun convertStorageToValuesWithNullMapListSetValues() {
-        val valuesUnset = arrayOf<Pair<String, Any?>>(
+        // This is incorrect data but still the processor should skip the complex values
+        val valuesUnset = arrayOf(
             "4b" to null, // set
             "4b80001104" to Date(1981, 12, 5),
             "54" to null, // map
@@ -102,6 +105,33 @@ class ReadStorageToValuesKtTest {
 
         values shouldBe TestMarykModel.values {
             EmptyValueItems
+        }
+    }
+
+    @Test
+    fun convertStorageToValuesWithWrongMultis() {
+        // This is incorrect data but still the processor should skip the complex type ids
+        val valuesUnset = arrayOf(
+            "69" to TypedValue(V1, "test"),
+            "691d" to Unit,
+            "691d09" to "m3"
+        )
+
+        var qualifierIndex = -1
+        val values = TestMarykModel.convertStorageToValues(
+            getQualifier = {
+                valuesUnset.getOrNull(++qualifierIndex)?.let {
+                    initByteArrayByHex(it.first)
+                }
+            },
+            select = null,
+            processValue = { _, _ -> valuesUnset[qualifierIndex].second }
+        )
+
+        values shouldBe TestMarykModel.values {
+            mapNonNulls(
+                multi with TypedValue(V1, "test")
+            )
         }
     }
 }

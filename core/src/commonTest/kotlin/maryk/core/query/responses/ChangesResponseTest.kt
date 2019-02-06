@@ -17,6 +17,7 @@ import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
+import maryk.core.query.pairs.withType
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
@@ -41,7 +42,7 @@ class ChangesResponseTest {
                             ListChange(TestMarykModel.ref { list }.change()),
                             SetChange(TestMarykModel.ref { set }.change()),
                             MapChange(TestMarykModel.ref { map }.change()),
-                            MultiTypeChange(TestMarykModel.ref { multi } with V3)
+                            MultiTypeChange(TestMarykModel.ref { multi } withType V3)
                         )
                     ),
                     VersionedChanges(

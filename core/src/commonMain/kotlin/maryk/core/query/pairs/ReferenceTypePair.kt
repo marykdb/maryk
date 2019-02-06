@@ -3,9 +3,9 @@ package maryk.core.query.pairs
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
 import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualIndexedEnumDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.IsPropertyReference
@@ -17,7 +17,7 @@ import maryk.core.values.ObjectValues
 
 /** Defines a pair of a [reference] and [type] of type [E] */
 data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
-    override val reference: MultiTypePropertyReference<E, *, MultiTypeDefinitionWrapper<E, *, *, *>, *>,
+    override val reference: IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, Any>,
     val type: E
 ) : DefinedByReference<TypedValue<E, Any>> {
 
@@ -52,5 +52,6 @@ data class ReferenceTypePair<E: IndexedEnum<E>> internal constructor(
 }
 
 /** Convenience infix method to create Reference [type] pairs */
-infix fun <E: IndexedEnum<E>> IsPropertyReference<TypedValue<E, *>, MultiTypeDefinitionWrapper<E, *, *, *>, *>.with(type: E) =
-    ReferenceTypePair(this as MultiTypePropertyReference<E, *, MultiTypeDefinitionWrapper<E, *, *, *>, *>, type)
+@Suppress("UNCHECKED_CAST")
+infix fun <E: IndexedEnum<E>> IsPropertyReference<TypedValue<E, *>, IsPropertyDefinition<TypedValue<E, *>>, *>.withType(type: E) =
+    ReferenceTypePair(this as IsPropertyReference<TypedValue<E, Any>, IsPropertyDefinition<TypedValue<E, Any>>, Any>, type)

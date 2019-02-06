@@ -30,7 +30,6 @@ import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.AnyIndexedEnum
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.graph.IsPropRefGraph
@@ -42,7 +41,6 @@ import maryk.core.properties.references.CompleteReferenceType.MAP_KEY
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
-import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.ReferenceType
 import maryk.core.properties.references.ReferenceType.EMBED
 import maryk.core.properties.references.ReferenceType.LIST
@@ -210,7 +208,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 addToCache(qIndex - 1) {}
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } else {
-                                if (value !is TypedValue<*, *> || value.value != Unit) {
+                                if (value !is TypedValue<*, *>) {
                                     addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
                                 } else { // Is a TypedValue with Unit as value
                                     @Suppress("UNCHECKED_CAST")
@@ -378,9 +376,20 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 if (value == null) {
                                     addChangeToOutput(version, ChangeType.DELETE, valueReference)
                                 } else {
-                                    if (value !is TypedValue<*, *> || value.value != Unit) {
+                                    if (value !is TypedValue<*, *>) {
                                         addChangeToOutput(version, CHANGE, valueReference with value)
-                                    } // Else ignore since the Type is contained in sub values
+                                    } else {
+                                        readTypedValue(
+                                            valueReference,
+                                            qualifier,
+                                            qIndex,
+                                            readValueFromStorage,
+                                            valueDefinition as IsMultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>,
+                                            select,
+                                            addToCache,
+                                            addChangeToOutput
+                                        )
+                                    }
                                 }
                             }
                         } else {
@@ -483,7 +492,7 @@ private fun readTypedValue(
                         addChangeToOutput(
                             version, TYPE,
                             ReferenceTypePair(
-                                reference as MultiTypePropertyReference<AnyIndexedEnum, *, MultiTypeDefinitionWrapper<AnyIndexedEnum, *, *, *>, *>,
+                                reference as IsPropertyReference<TypedValue<AnyIndexedEnum, Any>, IsPropertyDefinition<TypedValue<AnyIndexedEnum, Any>>, Any>,
                                 value.type as AnyIndexedEnum
                             )
                         )

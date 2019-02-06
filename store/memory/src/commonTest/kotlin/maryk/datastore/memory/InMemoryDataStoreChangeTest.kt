@@ -127,18 +127,18 @@ class InMemoryDataStoreChangeTest {
             shouldBeRecent(success.version, 1000uL)
         }
 
-        val getResponse = dataStore.execute(
+        @Suppress("UNUSED_VARIABLE") val getResponse = dataStore.execute(
             TestMarykModel.get(keys[1])
         )
 
         getResponse.values.size shouldBe 1
         getResponse.values.first().let {
             it.values { string } shouldBe "haha3"
-            it.values { listOfString }!![0] shouldBe "z"
-            it.values { map }!![Time(12, 33, 45)] shouldBe "changed"
-            it.values { list }!! shouldBe newIntList
-            it.values { set }!! shouldBe newDateSet
-            it.values { embeddedValues }!! shouldBe newValues
+            it.values { listOfString }?.get(0) shouldBe "z"
+            it.values { map }?.get(Time(12, 33, 45)) shouldBe "changed"
+            it.values { list } shouldBe newIntList
+            it.values { set } shouldBe newDateSet
+            it.values { embeddedValues } shouldBe newValues
         }
     }
 

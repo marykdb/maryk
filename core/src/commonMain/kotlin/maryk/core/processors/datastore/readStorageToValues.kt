@@ -112,7 +112,13 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
-                        readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)?.let(valueAdder)
+                        val value = readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
+                        if (value == null) {
+                            // Ensure that next potential embedded values are not read because is deleted
+                            addToCache(offset) {
+                                // Ignore reading and return
+                            }
+                        } else valueAdder(value)
                     } else {
                         readComplexValueFromStorage(
                             definition,
@@ -283,8 +289,16 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         // Begin to read map value
                         if (qualifier.size <= qIndex) {
                             @Suppress("UNCHECKED_CAST")
-                            readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, mapDefinition.valueDefinition)?.let {
-                                mapItemAdder(it)
+                            val value = readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, mapDefinition.valueDefinition)
+
+                            when {
+                                value == null ->
+                                    // Ensure that next map values are not read because they are deleted
+                                    addToCache(qIndex - 1) {
+                                        // Ignore reading and return
+                                    }
+                                value != Unit -> mapItemAdder(value)
+                                else -> null
                             }
                         } else {
                             when (val valueDefinition = mapDefinition.valueDefinition) {
@@ -416,6 +430,7 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     addValueToOutput: AddValue
 ) {
     val definition = this.definition(index)
+        ?: throw Exception("No definition for $index in $this")
     @Suppress("UNCHECKED_CAST")
     val type: IndexedEnum<IndexedEnum<*>> =
         this.type(index) as IndexedEnum<IndexedEnum<*>>? ?: throw Exception("Unknown type $index for $this")
@@ -423,7 +438,14 @@ private fun IsMultiTypeDefinition<*, *>.readComplexTypedValue(
     val addMultiTypeToOutput: AddValue = { addValueToOutput(TypedValue(type, it)) }
 
     if (qualifier.size <= qIndex) {
-        // skip for indicator items
+        @Suppress("UNCHECKED_CAST")
+        val value = readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition as IsPropertyDefinition<Any>)
+
+        if (value == null) {
+            // Ensure that next values are not read because Values is deleted
+            addToCache(qIndex - 1) {}
+        }
+        // Dont process further
         return
     }
 

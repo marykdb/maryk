@@ -23,30 +23,19 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
     var maxVersion = record.firstVersion
 
     val values = this.convertStorageToValues(
-        getQualifier = {
-            valueIndex++
-
-            // skip deleted values
-            while (valueIndex < record.values.size  && isDeletedNode(record.values[valueIndex])) {
-                valueIndex++
-            }
-
-            if (valueIndex < record.values.size) {
-                record.values[valueIndex].reference
-            } else null
-        },
+        getQualifier = { record.values.getOrNull(++valueIndex)?.reference },
         select = select,
         processValue = { _, _ ->
             val node = record.values[valueIndex]
             when (node) {
                 is DataRecordValue<*> -> {
-                    // Only add if  below expected version
+                    // Only add if below expected version
                     if (toVersion == null || node.version < toVersion) {
                         if (node.version > maxVersion) {
                             maxVersion = node.version
                         }
                         node.value
-                    } else null
+                    } else null // Signal that at this moment the value does not exist
                 }
                 is DataRecordHistoricValues<*> -> {
                     when (val latest = node.history.findLast { toVersion == null || it.version < toVersion }) {
@@ -57,11 +46,11 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
                             }
                             latest.value
                         }
-                        is DeletedValue<*> -> {} // skip deleted
+                        is DeletedValue<*> -> null
                         else -> throw Exception("Unknown value type")
                     }
                 }
-                is DeletedValue<*> -> {} // Skip deleted
+                is DeletedValue<*> -> null
             }
         }
     )

@@ -75,6 +75,7 @@ val valuesAsStorablesWithNulls = arrayOf<Pair<String, Any?>>(
     "54" to 1,
     "5403009ff9" to null,
     "540300ae46" to "twelve",
+    "66" to Unit,
     "6609" to "test",
     "661609" to null,
     "7a" to 1,

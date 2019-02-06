@@ -1,5 +1,6 @@
 package maryk.core.processors.datastore
 
+import maryk.core.values.EmptyValueItems
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.time.Date
 import maryk.lib.time.Time
@@ -72,6 +73,35 @@ class ReadStorageToValuesKtTest {
                 listOfString with listOf("v1"),
                 setOfString with setOf("def")
             )
+        }
+    }
+
+    @Test
+    fun convertStorageToValuesWithNullMapListSetValues() {
+        val valuesUnset = arrayOf<Pair<String, Any?>>(
+            "4b" to null, // set
+            "4b80001104" to Date(1981, 12, 5),
+            "54" to null, // map
+            "540300ae46" to "twelve",
+            "66" to null, // embeddedValues
+            "6609" to "test",
+            "7a" to null, // listOfString
+            "7a00000000" to "v1"
+        )
+
+        var qualifierIndex = -1
+        val values = TestMarykModel.convertStorageToValues(
+            getQualifier = {
+                valuesUnset.getOrNull(++qualifierIndex)?.let {
+                    initByteArrayByHex(it.first)
+                }
+            },
+            select = null,
+            processValue = { _, _ -> valuesUnset[qualifierIndex].second }
+        )
+
+        values shouldBe TestMarykModel.values {
+            EmptyValueItems
         }
     }
 }

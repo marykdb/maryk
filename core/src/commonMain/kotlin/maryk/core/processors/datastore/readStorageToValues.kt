@@ -8,6 +8,7 @@ import maryk.core.models.IsDataModel
 import maryk.core.models.IsDataModelWithValues
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.models.values
+import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
 import maryk.core.processors.datastore.StorageTypeEnum.SetSize
@@ -143,7 +144,16 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             addValueToOutput,
                             index
                         )
-                    } else null // ignore containing value
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        val embedValue = readValueFromStorage(Embed as StorageTypeEnum<IsPropertyDefinition<Any>>, definition)
+                        if (embedValue == null) {
+                            // Ensure that next embedded values are not read
+                            addToCache(offset) {
+                                // Ignore reading and return
+                            }
+                        } else null // unknown value so ignore
+                    }
                 }
                 LIST -> {
                     val definition = this.properties[index]
@@ -165,7 +175,12 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             }
 
                             addValueToOutput(index, list)
-                        } else null
+                        } else {
+                            // Ensure that next list values are not read
+                            addToCache(offset) {
+                                // Ignore reading and return
+                            }
+                        }
                     } else {
                         val itemIndex = initUInt(reader = {
                             qualifier[qIndex++]
@@ -202,7 +217,12 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             }
 
                             addValueToOutput(index, set)
-                        } else null
+                        } else {
+                            // Ensure that next set values are not read
+                            addToCache(offset) {
+                                // Ignore reading and return
+                            }
+                        }
                     } else {
                         // Read set contents. Always a simple value for set since it is in qualifier
                         val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
@@ -240,7 +260,12 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             }
 
                             addValueToOutput(index, map)
-                        } else null
+                        } else {
+                            // Ensure that next map values are not read
+                            addToCache(offset) {
+                                // Ignore reading and return
+                            }
+                        }
                     } else {
                         @Suppress("UNCHECKED_CAST")
                         val mapDefinition = definition.definition as? IsMapDefinition<Any, Any, *> ?: throw Exception("Definition ${definition.definition} should be a MapDefinition")

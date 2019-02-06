@@ -40,7 +40,6 @@ import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ListChange
-import maryk.core.query.changes.MapChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
@@ -322,19 +321,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                                         (reference as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
                                                     }
                                                 }
-                                                is SetItemReference<*, *> -> {
-                                                    createCountUpdater(
-                                                        newValueList,
-                                                        reference.parentReference as IsPropertyReference<out Set<Any>, IsPropertyDefinition<out Set<Any>>, out Any>,
-                                                        version,
-                                                        1,
-                                                        keepAllVersions
-                                                    ) {
-                                                        @Suppress("UNCHECKED_CAST")
-                                                        (reference as SetItemReference<Any, IsPropertyContext>).setDefinition.validateSize(it) { reference.parentReference }
-                                                    }
-                                                }
-                                                is MapKeyReference<*, *, *> -> throw Exception("Not allowed to delete Map key, delete value instead")
+                                                is SetItemReference<*, *> -> throw Exception("Not allowed to add with a Set Item reference, use SetChange instead")
+                                                is MapKeyReference<*, *, *> -> throw Exception("Not allowed to add with a Map key, use Map value instead")
                                             }
                                         }
 
@@ -416,11 +404,6 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             val originalList = getList(newValueList, listChange.reference)
                             val list = originalList?.toMutableList() ?: mutableListOf()
                             val originalCount = list.size
-                            listChange.deleteAtIndex?.let {
-                                for (deleteIndex in it) {
-                                    list.removeAt(deleteIndex.toInt())
-                                }
-                            }
                             listChange.deleteValues?.let {
                                 for (deleteValue in it) {
                                     list.remove(deleteValue)
@@ -483,16 +466,6 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     }
                                 }
                             }
-                            setChange.deleteValues?.let {
-                                for (value in it) {
-                                    val setItemRef = setDefinition.getItemRef(value, setReference)
-                                    deleteByReference(newValueList, setItemRef, version, keepAllVersions) { _, prevValue ->
-                                        prevValue?.let {
-                                            countChange-- // only count down if value existed
-                                        }
-                                    }.also(setChanged)
-                                }
-                            }
 
                             createCountUpdater(
                                 newValueList,
@@ -502,67 +475,6 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                 keepAllVersions
                             ) {
                                 setDefinition.validateSize(it) { setReference }
-                            }
-                        }
-                    }
-                    is MapChange -> {
-                        for (mapChange in change.mapValueChanges) {
-                            @Suppress("UNCHECKED_CAST")
-                            val mapReference = mapChange.reference as MapReference<Any, Any, IsPropertyContext>
-                            val mapDefinition = mapReference.propertyDefinition.definition
-                            var countChange = 0
-                            // First keys to delete since they don't change indices because of tombstones
-                            mapChange.keysToDelete?.let {
-                                for (key in it) {
-                                    val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                    deleteByReference(newValueList, mapValueRef, version, keepAllVersions) { _, prevValue ->
-                                        prevValue?.let {
-                                            countChange-- // only count down if value existed
-                                        }
-                                    }.also(setChanged)
-                                }
-                            }
-                            mapChange.valuesToSet?.let {
-                                createValidationUmbrellaException({ mapReference }) { addException ->
-                                    for ((key, value) in it) {
-                                        val mapValueRef = mapDefinition.getValueRef(key, mapReference)
-                                        try {
-                                            mapDefinition.keyDefinition.validateWithRef(
-                                                null,
-                                                key
-                                            ) { mapDefinition.getKeyRef(key, mapReference) }
-                                        } catch (e: ValidationException) {
-                                            addException(e)
-                                        }
-                                        try {
-                                            mapDefinition.valueDefinition.validateWithRef(
-                                                null,
-                                                value
-                                            ) { mapValueRef }
-                                        } catch (e: ValidationException) {
-                                            addException(e)
-                                        }
-
-                                        setValue(
-                                            newValueList,
-                                            mapValueRef,
-                                            value,
-                                            version
-                                        ) { _, prevValue ->
-                                            prevValue ?: countChange++ // Only count up when value did not exist
-                                        }.also(setChanged)
-                                    }
-                                }
-                            }
-
-                            createCountUpdater(
-                                newValueList,
-                                mapChange.reference,
-                                version,
-                                countChange,
-                                keepAllVersions
-                            ) {
-                                mapDefinition.validateSize(it) { mapReference }
                             }
                         }
                     }

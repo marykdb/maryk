@@ -29,7 +29,6 @@ class DataObjectChangeTest {
             )
         ),
         SetChange(TestMarykModel.ref { set }.change()),
-        MapChange(TestMarykModel.ref { map }.change()),
         lastVersion = 12345uL
     )
 
@@ -67,8 +66,6 @@ class DataObjectChangeTest {
             addValuesToEnd: [1, 2, 3]
         - !SetChange
           set:
-        - !MapChange
-          map:
         lastVersion: 12345
 
         """.trimIndent()

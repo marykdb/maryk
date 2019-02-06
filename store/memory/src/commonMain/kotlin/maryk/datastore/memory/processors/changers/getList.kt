@@ -25,14 +25,16 @@ internal fun <T: Any> getList(
 
     val list = ArrayList<T>(count)
     while (valueIndex < values.size) {
-        val node = getValueAtIndex<T>(values, valueIndex) ?: continue
+        val node = getValueAtIndex<T>(values, valueIndex)
 
-        // Break if reference does not match list start
-        if (!node.reference.matchStart(referenceToCompareTo)) {
-            break
+        if(node != null) {
+            // Break if reference does not match list start
+            if (!node.reference.matchStart(referenceToCompareTo)) {
+                break
+            }
+
+            list.add(node.value)
         }
-
-        list.add(node.value)
         valueIndex++
     }
     return list

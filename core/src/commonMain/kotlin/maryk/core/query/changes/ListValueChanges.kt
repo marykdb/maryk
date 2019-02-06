@@ -9,7 +9,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.NumberDefinition
-import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListReference
@@ -20,12 +19,11 @@ import maryk.core.values.ObjectValues
 
 /**
  * Changes for a list property containing values of type [T]
- * Options are to [deleteAtIndex], [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
+ * Options are to [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
  * This is also the order of operation so mind changed indices while changing
  */
 data class ListValueChanges<T: Any> internal constructor(
     override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>,
-    val deleteAtIndex: Set<UInt>? = null,
     val deleteValues: List<T>? = null,
     val addValuesAtIndex: Map<UInt, T>? = null,
     val addValuesToEnd: List<T>? = null
@@ -43,11 +41,6 @@ data class ListValueChanges<T: Any> internal constructor(
         ), ListValueChanges<*>::addValuesAtIndex)
 
         val deleteValues = add(4, "deleteValues", valueListDefinition, ListValueChanges<*>::deleteValues)
-
-        val deleteAtIndex = add(5, "deleteAtIndex", SetDefinition(
-            required = false,
-            valueDefinition = NumberDefinition(type = UInt32)
-        ), ListValueChanges<*>::deleteAtIndex)
     }
 
     companion object: QueryDataModel<ListValueChanges<*>, Properties>(
@@ -58,8 +51,7 @@ data class ListValueChanges<T: Any> internal constructor(
             reference = values(1),
             addValuesToEnd = values(2),
             addValuesAtIndex = values(3),
-            deleteValues = values(4),
-            deleteAtIndex = values(5)
+            deleteValues = values(4)
         )
     }
 }
@@ -79,11 +71,10 @@ private val valueListDefinition = ListDefinition(
 
 /**
  * Convenience infix method to define an array value change
- * Options are to [deleteAtIndex], [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
+ * Options are to [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
  * This is also the order of operation so mind changed indices while changing
  */
 fun <T: Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>, *>.change(
-    deleteAtIndex: Set<UInt>? = null,
     deleteValues: List<T>? = null,
     addValuesAtIndex: Map<UInt, T>? = null,
     addValuesToEnd: List<T>? = null
@@ -92,6 +83,5 @@ fun <T: Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, 
         reference = this,
         addValuesToEnd = addValuesToEnd,
         addValuesAtIndex = addValuesAtIndex,
-        deleteValues = deleteValues,
-        deleteAtIndex = deleteAtIndex
+        deleteValues = deleteValues
     )

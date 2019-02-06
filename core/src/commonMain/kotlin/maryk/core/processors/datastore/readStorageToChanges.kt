@@ -127,8 +127,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
                 } ?: setValueChanges.add(
                     SetValueChanges(
                         ref.parentReference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *>,
-                        addValues = mutableSetOf(ref.value),
-                        deleteValues = null
+                        addValues = mutableSetOf(ref.value)
                     )
                 )
             }

@@ -303,9 +303,11 @@ class InMemoryDataStoreChangeTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
+                    Delete(
+                        TestMarykModel{ listOfString.refAt(1u) }
+                    ),
                     ListChange(
                         TestMarykModel.ref { listOfString }.change(
-                            deleteAtIndex = setOf(1u),
                             deleteValues = listOf("c"),
                             addValuesAtIndex = mapOf(
                                 0u to "zero"
@@ -336,9 +338,11 @@ class InMemoryDataStoreChangeTest {
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
+                    Delete(
+                        TestMarykModel { set.refAt(Date(2018, 11, 25)) }
+                    ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
-                            deleteValues = setOf(Date(2018, 11, 25)),
                             addValues = setOf(Date(2018, 11, 26))
                         )
                     )

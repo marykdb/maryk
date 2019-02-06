@@ -26,8 +26,7 @@ class DataObjectVersionedChangeTest {
                 listOf(
                     ObjectSoftDeleteChange(true),
                     ListChange(TestMarykModel.ref { list }.change()),
-                    SetChange(TestMarykModel.ref { set }.change()),
-                    MapChange(TestMarykModel.ref { map }.change())
+                    SetChange(TestMarykModel.ref { set }.change())
                 )
             ),
             VersionedChanges(
@@ -72,8 +71,6 @@ class DataObjectVersionedChangeTest {
             list:
           - !SetChange
             set:
-          - !MapChange
-            map:
         - version: 319674127
           changes:
           - !Change

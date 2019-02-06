@@ -14,7 +14,6 @@ class ListChangeTest {
         TestMarykModel.ref { listOfString }.change(
             addValuesAtIndex = mapOf(2u to "a", 3u to "abc"),
             addValuesToEnd = listOf("four", "five"),
-            deleteAtIndex = setOf(0u, 1u),
             deleteValues = listOf("three")
         )
     )
@@ -45,7 +44,6 @@ class ListChangeTest {
             2: a
             3: abc
           deleteValues: [three]
-          deleteAtIndex: [0, 1]
 
         """.trimIndent()
     }

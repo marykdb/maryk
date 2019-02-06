@@ -16,8 +16,7 @@ class SetChangeTest {
             addValues = setOf(
                 Date(2014, 4, 14),
                 Date(2013, 3, 13)
-            ),
-            deleteValues = setOf(Date(2018, 7, 17))
+            )
         )
     )
 
@@ -43,7 +42,6 @@ class SetChangeTest {
         checkYamlConversion(this.setPropertyChange, SetChange, { this.context }) shouldBe """
         set:
           addValues: [2014-04-14, 2013-03-13]
-          deleteValues: [2018-07-17]
 
         """.trimIndent()
     }

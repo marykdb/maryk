@@ -14,6 +14,5 @@ internal val mapOfChangeDefinitions = mapOf(
     ChangeType.ObjectDelete to EmbeddedObjectDefinition(dataModel = { ObjectSoftDeleteChange } ),
     ChangeType.ListChange to EmbeddedObjectDefinition(dataModel = { ListChange } ),
     ChangeType.SetChange to EmbeddedObjectDefinition(dataModel = { SetChange } ),
-    ChangeType.MapChange to EmbeddedObjectDefinition(dataModel = { MapChange } ),
     ChangeType.TypeChange to EmbeddedObjectDefinition(dataModel = { MultiTypeChange } )
 )

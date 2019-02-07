@@ -16,7 +16,6 @@ Boolean true or false.
 
 ## Other options
 - `default` - the default value to be used if value was not set.
-- `indexed` - default false
 
 ## Examples
 
@@ -31,7 +30,6 @@ Boolean true or false.
 **Example of a Kotlin Boolean property definition**
 ```kotlin
 val def = BooleanDefinition(
-    indexed = true,
     required = true,
     final = false,
     default = true

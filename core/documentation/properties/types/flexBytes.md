@@ -21,7 +21,6 @@ Defines a property of a flexible bytes length.
 
 ## Other options
 - `default` - the default value to be used if value was not set.
-- `indexed` - default false
 
 ## Examples
 

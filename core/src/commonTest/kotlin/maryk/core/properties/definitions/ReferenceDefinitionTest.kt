@@ -25,7 +25,6 @@ internal class ReferenceDefinitionTest {
         dataModel = { TestMarykModel }
     )
     val defMaxDefined = ReferenceDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -91,7 +90,6 @@ internal class ReferenceDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
         checkYamlConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() }) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

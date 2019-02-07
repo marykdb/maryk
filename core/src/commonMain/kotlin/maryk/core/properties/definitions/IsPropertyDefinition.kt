@@ -11,7 +11,6 @@ import maryk.core.properties.references.IsPropertyReference
  * Interface to define this is a property definition containing [T]
  */
 interface IsPropertyDefinition<T: Any> {
-    val indexed: Boolean
     val required: Boolean
     val final: Boolean
 
@@ -32,16 +31,12 @@ interface IsPropertyDefinition<T: Any> {
     fun getEmbeddedByIndex(index: Int): IsPropertyDefinitionWrapper<*, *, *, *>?
 
     companion object {
-        internal fun <DO:Any> addIndexed(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(1, "indexed", BooleanDefinition(default = false), getter)
-        }
-
         internal fun <DO:Any> addRequired(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(2, "required", BooleanDefinition(default = true), getter)
+            definitions.add(1, "required", BooleanDefinition(default = true), getter)
         }
 
         internal fun <DO:Any> addFinal(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> Boolean) {
-            definitions.add(3, "final", BooleanDefinition(default = false), getter)
+            definitions.add(2, "final", BooleanDefinition(default = false), getter)
         }
     }
 }

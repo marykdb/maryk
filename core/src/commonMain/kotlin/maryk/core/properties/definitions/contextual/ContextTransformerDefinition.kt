@@ -16,7 +16,6 @@ data class ContextTransformerDefinition<T: Any, in CX: IsPropertyContext, CXI: I
     private val contextTransformer: (CX?) -> CXI?
 ) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
     override val wireType = definition.wireType
-    override val indexed = definition.indexed
     override val required = definition.required
     override val final = definition.final
 

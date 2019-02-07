@@ -19,7 +19,6 @@ import maryk.lib.time.Time
 
 /** Definition for Date properties */
 data class DateDefinition(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -65,26 +64,24 @@ data class DateDefinition(
     object Model : SimpleObjectDataModel<DateDefinition, ObjectPropertyDefinitions<DateDefinition>>(
         properties = object : ObjectPropertyDefinitions<DateDefinition>() {
             init {
-                IsPropertyDefinition.addIndexed(this, DateDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, DateDefinition::required)
                 IsPropertyDefinition.addFinal(this, DateDefinition::final)
                 IsComparableDefinition.addUnique(this, DateDefinition::unique)
-                add(5, "minValue", DateDefinition(), DateDefinition::minValue)
-                add(6, "maxValue", DateDefinition(), DateDefinition::maxValue)
-                add(7, "default", DateDefinition(), DateDefinition::default)
-                IsMomentDefinition.addFillWithNow(8, this, DateDefinition::fillWithNow)
+                add(4, "minValue", DateDefinition(), DateDefinition::minValue)
+                add(5, "maxValue", DateDefinition(), DateDefinition::maxValue)
+                add(6, "default", DateDefinition(), DateDefinition::default)
+                IsMomentDefinition.addFillWithNow(7, this, DateDefinition::fillWithNow)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<DateDefinition>) = DateDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            unique = values(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7),
-            fillWithNow = values(8)
+            required = values(1),
+            final = values(2),
+            unique = values(3),
+            minValue = values(4),
+            maxValue = values(5),
+            default = values(6),
+            fillWithNow = values(7)
         )
     }
 }

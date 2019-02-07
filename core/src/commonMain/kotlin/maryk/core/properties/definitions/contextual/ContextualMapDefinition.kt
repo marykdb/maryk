@@ -14,7 +14,6 @@ class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
     private val contextualResolver: (context: CX?) -> IsByteTransportableMap<K, V, CX>,
     override val required: Boolean = true
 ) : IsByteTransportableMap<K, V, CX>, IsSerializableFlexBytesEncodable<Map<K, V>, CX> {
-    override val indexed = false
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null

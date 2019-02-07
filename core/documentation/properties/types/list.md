@@ -20,7 +20,6 @@ Property definitions need to be required and values can thus not be null.
 
 ## Other options
 - `default` - the default value to be used if value was not set.
-- `indexed` - default false
 - `valueDefinition` - definition of values contained
 
 ## Examples
@@ -29,7 +28,6 @@ Property definitions need to be required and values can thus not be null.
 ```yaml
 !List
   valueDefinition: !String
-  indexed: false
   required: false
   final: true
   minSize: 1

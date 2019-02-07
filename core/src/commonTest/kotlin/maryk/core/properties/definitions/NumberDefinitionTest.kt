@@ -22,7 +22,6 @@ internal class NumberDefinitionTest {
 
     private val defMaxDefined = NumberDefinition(
         type = SInt32,
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -147,7 +146,6 @@ internal class NumberDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, NumberDefinition.Model)
         checkYamlConversion(this.defMaxDefined, NumberDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

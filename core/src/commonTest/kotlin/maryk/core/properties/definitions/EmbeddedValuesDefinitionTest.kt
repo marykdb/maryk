@@ -45,7 +45,6 @@ internal class EmbeddedValuesDefinitionTest {
         dataModel = { MarykModel }
     )
     private val defMaxDefined = EmbeddedValuesDefinition(
-        indexed = true,
         required = false,
         final = true,
         dataModel = { MarykModel },
@@ -124,7 +123,6 @@ internal class EmbeddedValuesDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, EmbeddedValuesDefinition.Model, { DefinitionsContext() })
         checkYamlConversion(this.defMaxDefined, EmbeddedValuesDefinition.Model, { DefinitionsContext() }) shouldBe """
-        indexed: true
         required: false
         final: true
         dataModel: MarykModel

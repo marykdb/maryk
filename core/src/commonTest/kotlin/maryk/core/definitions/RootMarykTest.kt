@@ -57,7 +57,6 @@ class RootMarykTest {
             - !UUID
             ? 1: value
             : !String
-              indexed: false
               required: true
               final: false
               unique: false

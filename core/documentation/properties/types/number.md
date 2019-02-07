@@ -51,7 +51,6 @@ unsigned integers are available.
 
 ## Other options
 - `default` - the default value to be used if value was not set.
-- `indexed` - default false
 - `type` - [type of number](#types). 
 
 ## Examples

@@ -59,7 +59,6 @@ internal data class PropertyDefinitionsCollectionDefinition(
         IsPropertyContext
     >
 >, IsPropertyDefinitionsCollectionDefinition<PropertyDefinitions> {
-    override val indexed = false
     override val required = true
     override val final = true
     override val minSize: UInt? = null

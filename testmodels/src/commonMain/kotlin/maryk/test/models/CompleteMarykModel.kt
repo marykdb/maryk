@@ -61,7 +61,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val string = add(
             index = 1, name = "string",
             definition = StringDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -76,7 +75,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val number = add(
             index = 2, name = "number",
             definition = NumberDefinition(
-                indexed = true,
                 final = true,
                 unique = true,
                 type = UInt32,
@@ -89,7 +87,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val boolean = add(
             index = 3, name = "boolean",
             definition = BooleanDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 default = true
@@ -98,7 +95,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val enum = add(
             index = 4, name = "enum",
             definition = EnumDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -111,7 +107,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val date = add(
             index = 5, name = "date",
             definition = DateDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -124,7 +119,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val dateTime = add(
             index = 6, name = "dateTime",
             definition = DateTimeDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -138,7 +132,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val time = add(
             index = 7, name = "time",
             definition = TimeDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -152,7 +145,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val fixedBytes = add(
             index = 8, name = "fixedBytes",
             definition = FixedBytesDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -166,7 +158,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val flexBytes = add(
             index = 9, name = "flexBytes",
             definition = FlexBytesDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -180,7 +171,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val reference = add(
             index = 10, name = "reference",
             definition = ReferenceDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 unique = true,
@@ -193,7 +183,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val subModel = add(
             index = 11, name = "subModel",
             definition = EmbeddedValuesDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 dataModel = { SimpleMarykModel },
@@ -205,7 +194,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val valueModel = add(
             index = 12, name = "valueModel",
             definition = ValueModelDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 dataModel = ValueMarykObject,
@@ -226,7 +214,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val list = add(
             index = 13, name = "list",
             definition = ListDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 minSize = 1u,
@@ -240,7 +227,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val set = add(
             index = 14, name = "set",
             definition = SetDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 minSize = 1u,
@@ -254,7 +240,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val map = add(
             index = 15, name = "map",
             definition = MapDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 minSize = 1u,
@@ -269,7 +254,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val multi = add(
             index = 16, name = "multi",
             definition = MultiTypeDefinition<MarykEnum, IsPropertyContext>(
-                indexed = true,
                 required = false,
                 final = true,
                 typeEnum = MarykEnum,
@@ -317,7 +301,6 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         val mapWithEnum = add(
             index = 21, name = "mapWithEnum",
             definition = MapDefinition(
-                indexed = true,
                 required = false,
                 final = true,
                 minSize = 1u,

@@ -179,13 +179,13 @@ class SequenceItemsReaderTest {
     fun readMapInsideSequence() {
         createYamlReader("""
          - Number
-         - indexed: false
+         - unique: false
            required: false
         """.trimIndent()).apply {
             assertStartArray()
             assertValue("Number")
             assertStartObject()
-            assertFieldName("indexed")
+            assertFieldName("unique")
             assertValue(false, ValueType.Bool)
             assertFieldName("required")
             assertValue(false, ValueType.Bool)

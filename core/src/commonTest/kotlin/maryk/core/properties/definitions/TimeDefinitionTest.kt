@@ -32,7 +32,6 @@ internal class TimeDefinitionTest {
     )
 
     private val defMaxDefined = TimeDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -136,7 +135,6 @@ internal class TimeDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, TimeDefinition.Model)
         checkYamlConversion(this.defMaxDefined, TimeDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

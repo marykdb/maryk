@@ -113,7 +113,6 @@ private data class MultiTypeDescriptor(
 private data class MultiTypeDescriptorListDefinition(
     override val valueDefinition: IsValueDefinition<MultiTypeDescriptor, IsPropertyContext>
 ) : IsCollectionDefinition<MultiTypeDescriptor, List<MultiTypeDescriptor>, IsPropertyContext, IsValueDefinition<MultiTypeDescriptor, IsPropertyContext>> {
-    override val indexed: Boolean = false
     override val required: Boolean = true
     override val final: Boolean = false
     override val minSize: UInt? = null

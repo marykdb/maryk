@@ -11,7 +11,6 @@ import maryk.core.values.SimpleObjectValues
 
 /** Definition for a bytes array with fixed length */
 data class FlexBytesDefinition(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -60,28 +59,26 @@ data class FlexBytesDefinition(
     object Model : SimpleObjectDataModel<FlexBytesDefinition, ObjectPropertyDefinitions<FlexBytesDefinition>>(
         properties = object : ObjectPropertyDefinitions<FlexBytesDefinition>() {
             init {
-                IsPropertyDefinition.addIndexed(this, FlexBytesDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, FlexBytesDefinition::required)
                 IsPropertyDefinition.addFinal(this, FlexBytesDefinition::final)
                 IsComparableDefinition.addUnique(this, FlexBytesDefinition::unique)
-                add(5, "minValue", FlexBytesDefinition(), FlexBytesDefinition::minValue)
-                add(6, "maxValue", FlexBytesDefinition(), FlexBytesDefinition::maxValue)
-                add(7, "default", FlexBytesDefinition(), FlexBytesDefinition::default)
-                HasSizeDefinition.addMinSize(8, this, FlexBytesDefinition::minSize)
-                HasSizeDefinition.addMaxSize(9, this, FlexBytesDefinition::maxSize)
+                add(4, "minValue", FlexBytesDefinition(), FlexBytesDefinition::minValue)
+                add(5, "maxValue", FlexBytesDefinition(), FlexBytesDefinition::maxValue)
+                add(6, "default", FlexBytesDefinition(), FlexBytesDefinition::default)
+                HasSizeDefinition.addMinSize(7, this, FlexBytesDefinition::minSize)
+                HasSizeDefinition.addMaxSize(8, this, FlexBytesDefinition::maxSize)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<FlexBytesDefinition>) = FlexBytesDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            unique = values(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7),
-            minSize = values(8),
-            maxSize = values(9)
+            required = values(1),
+            final = values(2),
+            unique = values(3),
+            minValue = values(4),
+            maxValue = values(5),
+            default = values(6),
+            minSize = values(7),
+            maxSize = values(8)
         )
     }
 }

@@ -24,7 +24,6 @@ internal class FlexBytesDefinitionTest {
     )
 
     val defMaxDefined = FlexBytesDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -102,7 +101,6 @@ internal class FlexBytesDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, FlexBytesDefinition.Model)
         checkYamlConversion(this.defMaxDefined, FlexBytesDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

@@ -4,13 +4,13 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.ObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.ObjectValues
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
@@ -44,7 +44,6 @@ internal class EmbeddedObjectDefinitionTest {
         dataModel = { MarykObject }
     )
     private val defMaxDefined = EmbeddedObjectDefinition(
-        indexed = true,
         required = false,
         final = true,
         dataModel = { MarykObject },
@@ -123,7 +122,6 @@ internal class EmbeddedObjectDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
         checkYamlConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() }) shouldBe """
-        indexed: true
         required: false
         final: true
         dataModel: MarykObject

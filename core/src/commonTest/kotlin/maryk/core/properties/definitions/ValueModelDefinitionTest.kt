@@ -20,7 +20,6 @@ internal class ValueModelDefinitionTest {
         dataModel = TestValueObject
     )
     private val defMaxDefined = ValueModelDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -119,7 +118,6 @@ internal class ValueModelDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ValueModelDefinition.Model, { DefinitionsContext() })
         checkYamlConversion(this.defMaxDefined, ValueModelDefinition.Model, { DefinitionsContext() }) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

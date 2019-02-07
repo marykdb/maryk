@@ -17,7 +17,6 @@ import maryk.json.JsonWriter
 internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
 ): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
-    override val indexed = false
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED

@@ -14,7 +14,6 @@ import maryk.lib.bytes.writeUTF8Bytes
 
 /** Definition for String properties */
 data class StringDefinition(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -80,30 +79,28 @@ data class StringDefinition(
     object Model : SimpleObjectDataModel<StringDefinition, ObjectPropertyDefinitions<StringDefinition>>(
         properties = object : ObjectPropertyDefinitions<StringDefinition>() {
             init {
-                IsPropertyDefinition.addIndexed(this, StringDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, StringDefinition::required)
                 IsPropertyDefinition.addFinal(this, StringDefinition::final)
                 IsComparableDefinition.addUnique(this, StringDefinition::unique)
-                add(5, "minValue", StringDefinition(), StringDefinition::minValue)
-                add(6, "maxValue", StringDefinition(), StringDefinition::maxValue)
-                add(7, "default", StringDefinition(), StringDefinition::default)
-                HasSizeDefinition.addMinSize(8, this, StringDefinition::minSize)
-                HasSizeDefinition.addMaxSize(9, this, StringDefinition::maxSize)
-                add(10, "regEx", StringDefinition(), StringDefinition::regEx)
+                add(4, "minValue", StringDefinition(), StringDefinition::minValue)
+                add(5, "maxValue", StringDefinition(), StringDefinition::maxValue)
+                add(6, "default", StringDefinition(), StringDefinition::default)
+                HasSizeDefinition.addMinSize(7, this, StringDefinition::minSize)
+                HasSizeDefinition.addMaxSize(8, this, StringDefinition::maxSize)
+                add(9, "regEx", StringDefinition(), StringDefinition::regEx)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<StringDefinition>) = StringDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            unique = values(4),
-            minValue = values(5),
-            maxValue = values(6),
-            default = values(7),
-            minSize = values(8),
-            maxSize = values(9),
-            regEx = values(10)
+            required = values(1),
+            final = values(2),
+            unique = values(3),
+            minValue = values(4),
+            maxValue = values(5),
+            default = values(6),
+            minSize = values(7),
+            maxSize = values(8),
+            regEx = values(9)
         )
     }
 }

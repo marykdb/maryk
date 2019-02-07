@@ -3,16 +3,15 @@ package maryk.core.properties.definitions
 import maryk.core.extensions.bytes.initBoolean
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.SimpleObjectDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WireType
+import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Boolean properties */
 data class BooleanDefinition(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val default: Boolean? = null
@@ -49,18 +48,16 @@ data class BooleanDefinition(
     object Model : SimpleObjectDataModel<BooleanDefinition, ObjectPropertyDefinitions<BooleanDefinition>>(
         properties = object : ObjectPropertyDefinitions<BooleanDefinition>() {
             init {
-                IsPropertyDefinition.addIndexed(this, BooleanDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, BooleanDefinition::required)
                 IsPropertyDefinition.addFinal(this, BooleanDefinition::final)
-                add(4, "default", BooleanDefinition(), BooleanDefinition::default)
+                add(3, "default", BooleanDefinition(), BooleanDefinition::default)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<BooleanDefinition>) = BooleanDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            default = values(4)
+            required = values(1),
+            final = values(2),
+            default = values(3)
         )
     }
 }

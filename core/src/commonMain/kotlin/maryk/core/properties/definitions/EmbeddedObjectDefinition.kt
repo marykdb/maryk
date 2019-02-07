@@ -27,7 +27,6 @@ import maryk.lib.safeLazy
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
 class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out DM : AbstractObjectDataModel<DO, P, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
@@ -117,7 +116,6 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         if (this === other) return true
         if (other !is EmbeddedObjectDefinition<*, *, *, *, *>) return false
 
-        if (indexed != other.indexed) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (internalDataModel.value != other.internalDataModel.value) return false
@@ -126,8 +124,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
     }
 
     override fun hashCode(): Int {
-        var result = indexed.hashCode()
-        result = 31 * result + required.hashCode()
+        var result = required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + internalDataModel.value.hashCode()
         return result
@@ -137,10 +134,9 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, EmbeddedObjectDefinition<*, *, *, *, *>::indexed)
                 IsPropertyDefinition.addRequired(this, EmbeddedObjectDefinition<*, *, *, *, *>::required)
                 IsPropertyDefinition.addFinal(this, EmbeddedObjectDefinition<*, *, *, *, *>::final)
-                add(4, "dataModel",
+                add(3, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextualResolver = { context: ModelContext?, name ->
                             context?.definitionsContext?.let{
@@ -171,7 +167,7 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
                     }
                 )
 
-                add(5, "default",
+                add(4, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -184,11 +180,10 @@ class EmbeddedObjectDefinition<DO : Any, P: ObjectPropertyDefinitions<DO>, out D
         }
     ) {
         override fun invoke(values: ObjectValues<EmbeddedObjectDefinition<*, *, *, *, *>, ObjectPropertyDefinitions<EmbeddedObjectDefinition<*, *, *, *, *>>>) = EmbeddedObjectDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(4),
-            default = values(5)
+            required = values(1),
+            final = values(2),
+            dataModel = values<Unit.() -> ObjectDataModel<Any, ObjectPropertyDefinitions<Any>>>(3),
+            default = values(4)
         )
     }
 }

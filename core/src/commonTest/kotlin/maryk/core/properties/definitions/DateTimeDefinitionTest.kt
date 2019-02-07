@@ -29,7 +29,6 @@ internal class DateTimeDefinitionTest {
     )
 
     private val defMaxDefined = DateTimeDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -133,7 +132,6 @@ internal class DateTimeDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, DateTimeDefinition.Model)
         checkYamlConversion(this.defMaxDefined, DateTimeDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

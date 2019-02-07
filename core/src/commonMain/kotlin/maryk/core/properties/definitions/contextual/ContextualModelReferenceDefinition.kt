@@ -32,7 +32,6 @@ data class ContextualModelReferenceDefinition<DM: IsNamedDataModel<*>, in CX: Is
     val contextualResolver: (context: CXI?, name: String) -> Unit.() -> DM,
     val contextTransformer: (CX?) -> CXI?
 ): IsValueDefinition<IsDataModelReference<DM>, CX>, IsSerializableFlexBytesEncodable<IsDataModelReference<DM>, CX> {
-    override val indexed = false
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED

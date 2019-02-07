@@ -15,7 +15,6 @@ import kotlin.test.Test
 internal class BooleanDefinitionTest {
     val def = BooleanDefinition()
     val defMaxDefined = BooleanDefinition(
-        indexed = true,
         required = false,
         final = true,
         default = true
@@ -87,7 +86,6 @@ internal class BooleanDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, BooleanDefinition.Model)
         checkYamlConversion(this.defMaxDefined, BooleanDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         default: true

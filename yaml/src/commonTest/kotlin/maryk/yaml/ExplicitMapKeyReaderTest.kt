@@ -331,7 +331,7 @@ class ExplicitMapKeyReaderTest {
         |properties:
         | ? 0: string
         | : !Foo
-        |   indexed: false
+        |   required: false
         |   regEx: ha.*
         | ? 1: model
         | : !Bar
@@ -347,7 +347,7 @@ class ExplicitMapKeyReaderTest {
             assertEndObject()
             assertEndComplexFieldName()
             assertStartObject(TestType.Foo)
-            assertFieldName("indexed")
+            assertFieldName("required")
             assertValue(false, ValueType.Bool)
             assertFieldName("regEx")
             assertValue("ha.*")

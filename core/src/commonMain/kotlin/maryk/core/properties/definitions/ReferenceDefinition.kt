@@ -20,7 +20,6 @@ import maryk.lib.safeLazy
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DM: IsRootDataModel<*>>(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -67,7 +66,6 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
         if (this === other) return true
         if (other !is ReferenceDefinition<*>) return false
 
-        if (indexed != other.indexed) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (unique != other.unique) return false
@@ -80,8 +78,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
     }
 
     override fun hashCode(): Int {
-        var result = indexed.hashCode()
-        result = 31 * result + required.hashCode()
+        var result = required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + unique.hashCode()
         result = 31 * result + (minValue?.hashCode() ?: 0)
@@ -94,14 +91,13 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
     object Model : DefinitionDataModel<ReferenceDefinition<*>>(
         properties = object : ObjectPropertyDefinitions<ReferenceDefinition<*>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, ReferenceDefinition<*>::indexed)
                 IsPropertyDefinition.addRequired(this, ReferenceDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, ReferenceDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, ReferenceDefinition<*>::unique)
-                add(5, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
-                add(6, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
-                add(7, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
-                add(8, "dataModel",
+                add(4, "minValue", FlexBytesDefinition(), ReferenceDefinition<*>::minValue)
+                add(5, "maxValue", FlexBytesDefinition(), ReferenceDefinition<*>::maxValue)
+                add(6, "default", FlexBytesDefinition(), ReferenceDefinition<*>::default)
+                add(7, "dataModel",
                     definition = ContextualModelReferenceDefinition(
                         contextualResolver = { context: ContainsDefinitionsContext?, name ->
                             context?.let {
@@ -132,14 +128,13 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ReferenceDefinition<*>>) = ReferenceDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            unique = values(4),
-            minValue = values<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            maxValue = values<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            default = values<Bytes?>(7)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
-            dataModel = values(8)
+            required = values(1),
+            final = values(2),
+            unique = values(3),
+            minValue = values<Bytes?>(4)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            maxValue = values<Bytes?>(5)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            default = values<Bytes?>(6)?.let { Key<IsTypedRootDataModel<IsRootDataModel<IsPropertyDefinitions>, IsPropertyDefinitions>>(it.bytes) },
+            dataModel = values(7)
         )
     }
 }

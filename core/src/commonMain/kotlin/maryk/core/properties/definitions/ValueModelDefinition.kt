@@ -7,7 +7,6 @@ import maryk.core.models.AbstractObjectDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.models.ValueDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedObjectDefinition
@@ -19,6 +18,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WireType
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 
@@ -27,7 +27,6 @@ private typealias GenericValueModelDefinition = ValueModelDefinition<*, *, *>
 
 /** Definition for value model properties containing dataObjects of [DO] defined by [dataModel] of [DM] */
 data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>, P: ObjectPropertyDefinitions<DO>>(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -89,12 +88,11 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<ValueModelDefinition<*, *, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, ValueModelDefinition<*, *, *>::indexed)
                 IsPropertyDefinition.addRequired(this, ValueModelDefinition<*, *, *>::required)
                 IsPropertyDefinition.addFinal(this, ValueModelDefinition<*, *, *>::final)
                 IsComparableDefinition.addUnique(this, ValueModelDefinition<*, *, *>::unique)
 
-                add(5, "dataModel",
+                add(4, "dataModel",
                     ContextualModelReferenceDefinition<ValueDataModel<*, *>, ModelContext>(
                         contextualResolver = { context, name ->
                             context?.definitionsContext?.let {
@@ -126,7 +124,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     }
                 )
 
-                add(6, "minValue",
+                add(5, "minValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -136,7 +134,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     ValueModelDefinition<*, *, *>::minValue
                 )
 
-                add(7, "maxValue",
+                add(6, "maxValue",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -146,7 +144,7 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
                     ValueModelDefinition<*, *, *>::maxValue
                 )
 
-                add(8, "default",
+                add(7, "default",
                     ContextualEmbeddedObjectDefinition(
                         contextualResolver = { context: ModelContext? ->
                             @Suppress("UNCHECKED_CAST")
@@ -160,14 +158,13 @@ data class ValueModelDefinition<DO: ValueDataObject, DM : ValueDataModel<DO, P>,
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(values: SimpleObjectValues<ValueModelDefinition<*, *, *>>) = ValueModelDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            unique = values(4),
-            dataModel = values<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(5),
-            minValue = values(6),
-            maxValue = values(7),
-            default = values(8)
+            required = values(1),
+            final = values(2),
+            unique = values(3),
+            dataModel = values<ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>>(4),
+            minValue = values(5),
+            maxValue = values(6),
+            default = values(7)
         ) as GenericValueModelDefinition
     }
 }

@@ -34,7 +34,6 @@ internal class ListDefinitionTest {
     )
 
     private val defMaxDefined = ListDefinition(
-        indexed = true,
         final = true,
         required = false,
         minSize = 2u,
@@ -224,13 +223,11 @@ internal class ListDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, ListDefinition.Model)
         checkYamlConversion(this.defMaxDefined, ListDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         minSize: 2
         maxSize: 4
         valueDefinition: !String
-          indexed: false
           required: true
           final: false
           unique: false

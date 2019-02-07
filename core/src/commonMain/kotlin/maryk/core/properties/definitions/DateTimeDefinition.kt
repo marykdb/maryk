@@ -5,7 +5,6 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLongByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
@@ -17,12 +16,12 @@ import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.values.SimpleObjectValues
 
 /**
  * Definition for DateTime properties
  */
 data class DateTimeDefinition(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -73,17 +72,16 @@ data class DateTimeDefinition(
         contextTransformer = { DateTimeDefinitionContext() },
         properties = object : ObjectPropertyDefinitions<DateTimeDefinition>() {
             init {
-                IsPropertyDefinition.addIndexed(this, DateTimeDefinition::indexed)
                 IsPropertyDefinition.addRequired(this, DateTimeDefinition::required)
                 IsPropertyDefinition.addFinal(this, DateTimeDefinition::final)
                 IsComparableDefinition.addUnique(this, DateTimeDefinition::unique)
-                IsTimeDefinition.addPrecision(5, this,
+                IsTimeDefinition.addPrecision(4, this,
                     DateTimeDefinition::precision,
                     capturer = { context: TimePrecisionContext, timePrecision ->
                         context.precision = timePrecision
                     }
                 )
-                add(6, "minValue",
+                add(5, "minValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: DateTimeDefinitionContext? ->
                             context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -91,7 +89,7 @@ data class DateTimeDefinition(
                     ),
                     DateTimeDefinition::minValue
                 )
-                add(7, "maxValue",
+                add(6, "maxValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: DateTimeDefinitionContext? ->
                             context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -99,7 +97,7 @@ data class DateTimeDefinition(
                     ),
                     DateTimeDefinition::maxValue
                 )
-                add(8, "default",
+                add(7, "default",
                     ContextualValueDefinition(
                         contextualResolver = { context: DateTimeDefinitionContext? ->
                             context?.dateTimeDefinition ?: throw ContextNotFoundException()
@@ -107,20 +105,19 @@ data class DateTimeDefinition(
                     ),
                     DateTimeDefinition::default
                 )
-                IsMomentDefinition.addFillWithNow(9, this, DateTimeDefinition::fillWithNow)
+                IsMomentDefinition.addFillWithNow(8, this, DateTimeDefinition::fillWithNow)
             }
         }
     ) {
         override fun invoke(values: SimpleObjectValues<DateTimeDefinition>) = DateTimeDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            unique = values(4),
-            precision = values(5),
-            minValue = values(6),
-            maxValue = values(7),
-            default = values(8),
-            fillWithNow = values(9)
+            required = values(1),
+            final = values(2),
+            unique = values(3),
+            precision = values(4),
+            minValue = values(5),
+            maxValue = values(6),
+            default = values(7),
+            fillWithNow = values(8)
         )
     }
 }

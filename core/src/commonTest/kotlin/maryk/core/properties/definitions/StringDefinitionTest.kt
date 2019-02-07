@@ -35,7 +35,6 @@ internal class StringDefinitionTest {
         maxSize = 6u
     )
     private val defMaxDefined = StringDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -135,7 +134,6 @@ internal class StringDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, StringDefinition.Model)
         checkYamlConversion(this.defMaxDefined, StringDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

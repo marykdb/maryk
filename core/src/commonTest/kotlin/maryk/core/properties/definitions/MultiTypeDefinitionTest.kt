@@ -38,7 +38,6 @@ internal class MultiTypeDefinitionTest {
     )
 
     val defMaxDefined = MultiTypeDefinition<Option, IsPropertyContext>(
-        indexed = true,
         final = true,
         required = false,
         typeEnum = Option,
@@ -115,7 +114,6 @@ internal class MultiTypeDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, MultiTypeDefinition.Model)
         checkYamlConversion(this.defMaxDefined, MultiTypeDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         typeEnum: Option
@@ -123,14 +121,12 @@ internal class MultiTypeDefinitionTest {
         definitionMap:
           ? 1: V1
           : !String
-            indexed: false
             required: true
             final: false
             unique: false
             regEx: '#.*'
           ? 2: V2
           : !Number
-            indexed: false
             required: true
             final: false
             unique: false

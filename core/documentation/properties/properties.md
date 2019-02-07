@@ -72,10 +72,3 @@ for unique external IDs and email addresses.
 * Minimum size - Property cannot be smaller than this size
 * Maximum size - Property cannot be larger than this size
 * Regular Expression - For string properties the content has to be a match
-
-## Indexed
-
-Most properties contain a property to set it on indexed. If this value is set 
-to true it will be indexed in the persistent storage. Be careful adding indices
-since this can slow down writing data. Also consider a good key design so less
-indices are needed.

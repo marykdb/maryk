@@ -31,7 +31,6 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for Map property */
 data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constructor(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val minSize: UInt? = null,
@@ -54,7 +53,6 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
     }
 
     constructor(
-        indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
         minSize: UInt? = null,
@@ -62,7 +60,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         keyDefinition: IsSimpleValueDefinition<K, CX>,
         valueDefinition: IsUsableInMapValue<V, CX>,
         default: Map<K, V>? = null
-    ) : this(indexed, required, final, minSize, maxSize, keyDefinition, valueDefinition as IsSubDefinition<V, CX>, default)
+    ) : this(required, final, minSize, maxSize, keyDefinition, valueDefinition as IsSubDefinition<V, CX>, default)
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null
 
@@ -197,13 +195,12 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         contextTransformer = { KeyValueDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<MapDefinition<*, *, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, MapDefinition<*, *, *>::indexed)
                 IsPropertyDefinition.addRequired(this, MapDefinition<*, *, *>::required)
                 IsPropertyDefinition.addFinal(this, MapDefinition<*, *, *>::final)
-                HasSizeDefinition.addMinSize(4, this, MapDefinition<*, *, *>::minSize)
-                HasSizeDefinition.addMaxSize(5, this, MapDefinition<*, *, *>::maxSize)
+                HasSizeDefinition.addMinSize(3, this, MapDefinition<*, *, *>::minSize)
+                HasSizeDefinition.addMaxSize(4, this, MapDefinition<*, *, *>::maxSize)
 
-                add(6, "keyDefinition",
+                add(5, "keyDefinition",
                     ContextTransformerDefinition(
                         contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
@@ -226,7 +223,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
                     }
                 )
 
-                add(7, "valueDefinition",
+                add(6, "valueDefinition",
                     ContextTransformerDefinition(
                         contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
@@ -250,7 +247,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
                 )
 
                 @Suppress("UNCHECKED_CAST")
-                add(8, "default",
+                add(7, "default",
                     ContextualMapDefinition(
                         contextualResolver = { context: KeyValueDefinitionContext? ->
                             context?.let {
@@ -265,14 +262,13 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
         }
     ) {
         override fun invoke(values: SimpleObjectValues<MapDefinition<*, *, *>>) = MapDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            minSize = values(4),
-            maxSize = values(5),
-            keyDefinition = values<IsSimpleValueDefinition<*, *>>(6),
-            valueDefinition = values<IsValueDefinition<*, *>>(7),
-            default = values(8)
+            required = values(1),
+            final = values(2),
+            minSize = values(3),
+            maxSize = values(4),
+            keyDefinition = values<IsSimpleValueDefinition<*, *>>(5),
+            valueDefinition = values<IsValueDefinition<*, *>>(6),
+            default = values(7)
         )
     }
 }

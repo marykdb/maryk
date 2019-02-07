@@ -59,7 +59,6 @@ internal class ValueDataModelTest {
         name: TestValueObject
         ? 1: int
         : !Number
-          indexed: false
           required: true
           final: false
           unique: false
@@ -68,7 +67,6 @@ internal class ValueDataModelTest {
           random: false
         ? 2: dateTime
         : !DateTime
-          indexed: false
           required: true
           final: false
           unique: false
@@ -76,7 +74,6 @@ internal class ValueDataModelTest {
           fillWithNow: false
         ? 3: bool
         : !Boolean
-          indexed: false
           required: true
           final: false
 

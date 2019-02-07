@@ -16,7 +16,6 @@ import maryk.core.values.SimpleObjectValues
 
 /** Definition for List property */
 data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val minSize: UInt? = null,
@@ -31,14 +30,13 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     }
 
     constructor(
-        indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
         minSize: UInt? = null,
         maxSize: UInt? = null,
         valueDefinition: IsUsableInCollection<T, CX>,
         default: List<T>? = null
-    ): this(indexed, required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
+    ): this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
     override fun newMutableCollection(context: CX?) = mutableListOf<T>()
 
@@ -61,12 +59,11 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         contextTransformer = { ListDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<ListDefinition<*, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, ListDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, ListDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, ListDefinition<*, *>::final)
-                HasSizeDefinition.addMinSize(4, this, ListDefinition<*, *>::minSize)
-                HasSizeDefinition.addMaxSize(5, this, ListDefinition<*, *>::maxSize)
-                add(6, "valueDefinition",
+                HasSizeDefinition.addMinSize(3, this, ListDefinition<*, *>::minSize)
+                HasSizeDefinition.addMaxSize(4, this, ListDefinition<*, *>::maxSize)
+                add(5, "valueDefinition",
                     ContextTransformerDefinition(
                         contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
@@ -91,7 +88,7 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(7, "default", ContextualCollectionDefinition(
+                add(6, "default", ContextualCollectionDefinition(
                     required = false,
                     contextualResolver = { context: ListDefinitionContext? ->
                         context?.listDefinition?.let {
@@ -103,13 +100,12 @@ data class ListDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<ListDefinition<*, *>>) = ListDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            minSize = values(4),
-            maxSize = values(5),
-            valueDefinition = values<IsValueDefinition<*, *>>(6),
-            default = values(7)
+            required = values(1),
+            final = values(2),
+            minSize = values(3),
+            maxSize = values(4),
+            valueDefinition = values<IsValueDefinition<*, *>>(5),
+            default = values(6)
         )
     }
 }

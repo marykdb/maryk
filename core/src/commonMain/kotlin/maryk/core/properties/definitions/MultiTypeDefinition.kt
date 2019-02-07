@@ -46,7 +46,6 @@ import maryk.yaml.YamlWriter
  * Receives context of [CX]
  */
 data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> internal constructor(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     val typeEnum: IndexedEnumDefinition<E>,
@@ -69,14 +68,13 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     }
 
     constructor(
-        indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
         typeEnum: IndexedEnumDefinition<E>,
         typeIsFinal: Boolean = true,
         definitionMap: Map<E, IsUsableInMultiType<out Any, CX>>,
         default: TypedValue<E, *>? = null
-    ) : this(indexed, required, final, typeEnum, typeIsFinal, definitionMap as Map<E, IsSubDefinition<out Any, CX>>, default)
+    ) : this(required, final, typeEnum, typeIsFinal, definitionMap as Map<E, IsSubDefinition<out Any, CX>>, default)
 
     override fun definition(index: UInt) = definitionMapByIndex[index]
     override fun type(index: UInt) = typeByIndex[index]
@@ -252,7 +250,6 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         if (this === other) return true
         if (other !is MultiTypeDefinition<*, *>) return false
 
-        if (indexed != other.indexed) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (typeIsFinal != other.typeIsFinal) return false
@@ -271,8 +268,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     }
 
     override fun hashCode(): Int {
-        var result = indexed.hashCode()
-        result = 31 * result + required.hashCode()
+        var result = required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + definitionMap.hashCode()
         result = 31 * result + typeIsFinal.hashCode()
@@ -319,11 +315,10 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         contextTransformer = { MultiTypeDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<MultiTypeDefinition<*, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, MultiTypeDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, MultiTypeDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, MultiTypeDefinition<*, *>::final)
 
-                add(4, "typeEnum",
+                add(3, "typeEnum",
                     StringDefinition(),
                     getter = MultiTypeDefinition<*, *>::typeEnum,
                     capturer = { context: MultiTypeDefinitionContext, value ->
@@ -335,12 +330,12 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
                     fromSerializable = { null }
                 )
 
-                add(5, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
+                add(4, "typeIsFinal", BooleanDefinition(default = true), MultiTypeDefinition<*, *>::typeIsFinal)
 
-                this.addDescriptorPropertyWrapperWrapper(6, "definitionMap")
+                this.addDescriptorPropertyWrapperWrapper(5, "definitionMap")
 
                 @Suppress("UNCHECKED_CAST")
-                add(7, "default",
+                add(6, "default",
                     ContextualValueDefinition(
                         required = false,
                         contextTransformer = { context: MultiTypeDefinitionContext? ->
@@ -357,23 +352,22 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     ) {
         override fun invoke(values: SimpleObjectValues<MultiTypeDefinition<*, *>>): MultiTypeDefinition<IndexedEnum<Any>, ContainsDefinitionsContext> {
             val definitionMap = convertMultiTypeDescriptors(
-                values(6)
+                values(5)
             )
 
             val typeOptions = definitionMap.keys.toTypedArray()
 
             val typeEnum = IndexedEnumDefinition(
-                values(4)
+                values(3)
             ) { typeOptions }
 
             return MultiTypeDefinition(
-                indexed = values(1),
-                required = values(2),
-                final = values(3),
+                required = values(1),
+                final = values(2),
                 typeEnum = typeEnum,
-                typeIsFinal = values(5),
+                typeIsFinal = values(4),
                 definitionMap = definitionMap,
-                default = values(7)
+                default = values(6)
             )
         }
     }

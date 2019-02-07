@@ -16,7 +16,6 @@ data class ContextInjectCollectionOnWriteDefinition<T: Any, C: Collection<T>, in
     val definition: IsCollectionDefinition<T, C, CX, IsValueDefinition<T, CX>>,
     private val valueInjector: (CX?) -> C
 ) : IsByteTransportableCollection<T, C, CX> by definition, IsSerializableFlexBytesEncodable<C, CX> {
-    override val indexed = definition.indexed
     override val required = definition.required
     override val final = definition.final
 

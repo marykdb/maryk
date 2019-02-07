@@ -32,7 +32,6 @@ internal class SetDefinitionTest {
     )
 
     private val defMaxDefined = SetDefinition(
-        indexed = true,
         final = true,
         required = false,
         minSize = 2u,
@@ -142,13 +141,11 @@ internal class SetDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, SetDefinition.Model)
         checkYamlConversion(this.defMaxDefined, SetDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         minSize: 2
         maxSize: 4
         valueDefinition: !String
-          indexed: false
           required: true
           final: false
           unique: false

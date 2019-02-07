@@ -105,7 +105,6 @@ internal class RootDataModelTest {
         		"index": 1,
         		"name": "string",
         		"definition": ["String", {
-        			"indexed": false,
         			"required": true,
         			"final": false,
         			"unique": false,
@@ -116,7 +115,6 @@ internal class RootDataModelTest {
         		"index": 2,
         		"name": "int",
         		"definition": ["Number", {
-        			"indexed": false,
         			"required": true,
         			"final": false,
         			"unique": false,
@@ -128,7 +126,6 @@ internal class RootDataModelTest {
         		"index": 3,
         		"name": "uint",
         		"definition": ["Number", {
-        			"indexed": false,
         			"required": true,
         			"final": true,
         			"unique": false,
@@ -139,7 +136,6 @@ internal class RootDataModelTest {
         		"index": 4,
         		"name": "double",
         		"definition": ["Number", {
-        			"indexed": false,
         			"required": true,
         			"final": false,
         			"unique": false,
@@ -150,7 +146,6 @@ internal class RootDataModelTest {
         		"index": 5,
         		"name": "dateTime",
         		"definition": ["DateTime", {
-        			"indexed": false,
         			"required": true,
         			"final": false,
         			"unique": false,
@@ -161,7 +156,6 @@ internal class RootDataModelTest {
         		"index": 6,
         		"name": "bool",
         		"definition": ["Boolean", {
-        			"indexed": false,
         			"required": true,
         			"final": true
         		}]
@@ -169,7 +163,6 @@ internal class RootDataModelTest {
         		"index": 7,
         		"name": "enum",
         		"definition": ["Enum", {
-        			"indexed": false,
         			"required": true,
         			"final": true,
         			"unique": false,
@@ -187,11 +180,9 @@ internal class RootDataModelTest {
         		"index": 8,
         		"name": "list",
         		"definition": ["List", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"valueDefinition": ["Number", {
-        				"indexed": false,
         				"required": true,
         				"final": false,
         				"unique": false,
@@ -203,12 +194,10 @@ internal class RootDataModelTest {
         		"index": 9,
         		"name": "set",
         		"definition": ["Set", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"maxSize": 5,
         			"valueDefinition": ["Date", {
-        				"indexed": false,
         				"required": true,
         				"final": false,
         				"unique": false,
@@ -220,12 +209,10 @@ internal class RootDataModelTest {
         		"index": 10,
         		"name": "map",
         		"definition": ["Map", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"maxSize": 5,
         			"keyDefinition": ["Time", {
-        				"indexed": false,
         				"required": true,
         				"final": false,
         				"unique": false,
@@ -234,7 +221,6 @@ internal class RootDataModelTest {
         				"fillWithNow": false
         			}],
         			"valueDefinition": ["String", {
-        				"indexed": false,
         				"required": true,
         				"final": false,
         				"unique": false,
@@ -245,7 +231,6 @@ internal class RootDataModelTest {
         		"index": 11,
         		"name": "valueObject",
         		"definition": ["Value", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"unique": false,
@@ -255,7 +240,6 @@ internal class RootDataModelTest {
         		"index": 12,
         		"name": "embeddedValues",
         		"definition": ["Embed", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"dataModel": "EmbeddedMarykModel"
@@ -264,7 +248,6 @@ internal class RootDataModelTest {
         		"index": 13,
         		"name": "multi",
         		"definition": ["MultiType", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"typeEnum": "Option",
@@ -273,7 +256,6 @@ internal class RootDataModelTest {
         				"index": 1,
         				"name": "V1",
         				"definition": ["String", {
-        					"indexed": false,
         					"required": true,
         					"final": false,
         					"unique": false
@@ -282,7 +264,6 @@ internal class RootDataModelTest {
         				"index": 2,
         				"name": "V2",
         				"definition": ["Number", {
-        					"indexed": false,
         					"required": true,
         					"final": false,
         					"unique": false,
@@ -293,7 +274,6 @@ internal class RootDataModelTest {
         				"index": 3,
         				"name": "V3",
         				"definition": ["Embed", {
-        					"indexed": false,
         					"required": true,
         					"final": false,
         					"dataModel": "EmbeddedMarykModel"
@@ -304,7 +284,6 @@ internal class RootDataModelTest {
         		"index": 14,
         		"name": "reference",
         		"definition": ["Reference", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"unique": false,
@@ -314,13 +293,11 @@ internal class RootDataModelTest {
         		"index": 15,
         		"name": "listOfString",
         		"definition": ["List", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"minSize": 1,
         			"maxSize": 6,
         			"valueDefinition": ["String", {
-        				"indexed": false,
         				"required": true,
         				"final": false,
         				"unique": false,
@@ -331,7 +308,6 @@ internal class RootDataModelTest {
         		"index": 16,
         		"name": "selfReference",
         		"definition": ["Reference", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"unique": false,
@@ -341,12 +317,10 @@ internal class RootDataModelTest {
         		"index": 17,
         		"name": "setOfString",
         		"definition": ["Set", {
-        			"indexed": false,
         			"required": false,
         			"final": false,
         			"maxSize": 6,
         			"valueDefinition": ["String", {
-        				"indexed": false,
         				"required": true,
         				"final": false,
         				"unique": false,
@@ -372,7 +346,6 @@ internal class RootDataModelTest {
         - !Ref enum
         ? 1: string
         : !String
-          indexed: false
           required: true
           final: false
           unique: false
@@ -380,7 +353,6 @@ internal class RootDataModelTest {
           regEx: ha.*
         ? 2: int
         : !Number
-          indexed: false
           required: true
           final: false
           unique: false
@@ -389,7 +361,6 @@ internal class RootDataModelTest {
           random: false
         ? 3: uint
         : !Number
-          indexed: false
           required: true
           final: true
           unique: false
@@ -397,7 +368,6 @@ internal class RootDataModelTest {
           random: false
         ? 4: double
         : !Number
-          indexed: false
           required: true
           final: false
           unique: false
@@ -405,7 +375,6 @@ internal class RootDataModelTest {
           random: false
         ? 5: dateTime
         : !DateTime
-          indexed: false
           required: true
           final: false
           unique: false
@@ -413,12 +382,10 @@ internal class RootDataModelTest {
           fillWithNow: false
         ? 6: bool
         : !Boolean
-          indexed: false
           required: true
           final: true
         ? 7: enum
         : !Enum
-          indexed: false
           required: true
           final: true
           unique: false
@@ -431,11 +398,9 @@ internal class RootDataModelTest {
           default: V1
         ? 8: list
         : !List
-          indexed: false
           required: false
           final: false
           valueDefinition: !Number
-            indexed: false
             required: true
             final: false
             unique: false
@@ -443,12 +408,10 @@ internal class RootDataModelTest {
             random: false
         ? 9: set
         : !Set
-          indexed: false
           required: false
           final: false
           maxSize: 5
           valueDefinition: !Date
-            indexed: false
             required: true
             final: false
             unique: false
@@ -456,12 +419,10 @@ internal class RootDataModelTest {
             fillWithNow: false
         ? 10: map
         : !Map
-          indexed: false
           required: false
           final: false
           maxSize: 5
           keyDefinition: !Time
-            indexed: false
             required: true
             final: false
             unique: false
@@ -469,27 +430,23 @@ internal class RootDataModelTest {
             maxValue: '23:00'
             fillWithNow: false
           valueDefinition: !String
-            indexed: false
             required: true
             final: false
             unique: false
             maxSize: 10
         ? 11: valueObject
         : !Value
-          indexed: false
           required: false
           final: false
           unique: false
           dataModel: TestValueObject
         ? 12: embeddedValues
         : !Embed
-          indexed: false
           required: false
           final: false
           dataModel: EmbeddedMarykModel
         ? 13: multi
         : !MultiType
-          indexed: false
           required: false
           final: false
           typeEnum: Option
@@ -497,13 +454,11 @@ internal class RootDataModelTest {
           definitionMap:
             ? 1: V1
             : !String
-              indexed: false
               required: true
               final: false
               unique: false
             ? 2: V2
             : !Number
-              indexed: false
               required: true
               final: false
               unique: false
@@ -511,45 +466,38 @@ internal class RootDataModelTest {
               random: false
             ? 3: V3
             : !Embed
-              indexed: false
               required: true
               final: false
               dataModel: EmbeddedMarykModel
         ? 14: reference
         : !Reference
-          indexed: false
           required: false
           final: false
           unique: false
           dataModel: TestMarykModel
         ? 15: listOfString
         : !List
-          indexed: false
           required: false
           final: false
           minSize: 1
           maxSize: 6
           valueDefinition: !String
-            indexed: false
             required: true
             final: false
             unique: false
             maxSize: 10
         ? 16: selfReference
         : !Reference
-          indexed: false
           required: false
           final: false
           unique: false
           dataModel: TestMarykModel
         ? 17: setOfString
         : !Set
-          indexed: false
           required: false
           final: false
           maxSize: 6
           valueDefinition: !String
-            indexed: false
             required: true
             final: false
             unique: false

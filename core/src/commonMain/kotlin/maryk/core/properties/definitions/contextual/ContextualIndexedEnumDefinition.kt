@@ -29,7 +29,6 @@ data class ContextualIndexedEnumDefinition<CX: IsPropertyContext, CXI: IsPropert
 ): IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
     override val wireType = VAR_INT
 
-    override val indexed = false
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null

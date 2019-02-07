@@ -22,7 +22,6 @@ internal class FixedBytesDefinitionTest {
     )
 
     val defMaxDefined = FixedBytesDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -90,7 +89,6 @@ internal class FixedBytesDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, FixedBytesDefinition.Model)
         checkYamlConversion(this.defMaxDefined, FixedBytesDefinition.Model) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

@@ -2,7 +2,6 @@ package maryk.core.properties.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
-import maryk.core.values.SimpleObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualNumberDefinition
@@ -13,12 +12,12 @@ import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.WriteCacheReader
+import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeWriter
 import maryk.lib.exceptions.ParseException
 
 /** Definition for Number properties */
 data class NumberDefinition<T: Comparable<T>>(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val unique: Boolean = false,
@@ -74,12 +73,11 @@ data class NumberDefinition<T: Comparable<T>>(
         contextTransformer = { NumericContext() },
         properties = object : ObjectPropertyDefinitions<NumberDefinition<*>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, NumberDefinition<*>::indexed)
                 IsPropertyDefinition.addRequired(this, NumberDefinition<*>::required)
                 IsPropertyDefinition.addFinal(this, NumberDefinition<*>::final)
                 IsComparableDefinition.addUnique(this, NumberDefinition<*>::unique)
                 @Suppress("UNCHECKED_CAST")
-                add(5, "type",
+                add(4, "type",
                     definition = EnumDefinition(enum = NumberType),
                     getter = NumberDefinition<*>::type as (NumberDefinition<*>) -> NumberDescriptor<Comparable<Any>>?,
                     capturer = { context: NumericContext, value: NumberType ->
@@ -95,7 +93,7 @@ data class NumberDefinition<T: Comparable<T>>(
                         value?.type
                     }
                 )
-                add(6, "minValue",
+                add(5, "minValue",
                     ContextualNumberDefinition<NumericContext>(required = false) {
                         it?.numberType ?: throw ContextNotFoundException()
                     },
@@ -104,7 +102,7 @@ data class NumberDefinition<T: Comparable<T>>(
                         it.minValue as Comparable<Any>?
                     }
                 )
-                add(7, "maxValue",
+                add(6, "maxValue",
                     ContextualNumberDefinition<NumericContext>(required = false) {
                         it?.numberType ?: throw ContextNotFoundException()
                     },
@@ -113,7 +111,7 @@ data class NumberDefinition<T: Comparable<T>>(
                         it.maxValue as Comparable<Any>?
                     }
                 )
-                add(8, "default",
+                add(7, "default",
                     ContextualNumberDefinition<NumericContext>(required = false) {
                         it?.numberType ?: throw ContextNotFoundException()
                     },
@@ -122,21 +120,20 @@ data class NumberDefinition<T: Comparable<T>>(
                         it.default as Comparable<Any>?
                     }
                 )
-                IsNumericDefinition.addRandom(9,this, NumberDefinition<*>::random)
+                IsNumericDefinition.addRandom(8,this, NumberDefinition<*>::random)
             }
         }
     ) {
         @Suppress("UNCHECKED_CAST")
         override fun invoke(values: SimpleObjectValues<NumberDefinition<*>>) = NumberDefinition<Comparable<Any>>(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            unique = values(4),
-            type = values(5),
-            minValue = values(6),
-            maxValue = values(7),
-            default = values(8),
-            random = values(9)
+            required = values(1),
+            final = values(2),
+            unique = values(3),
+            type = values(4),
+            minValue = values(5),
+            maxValue = values(6),
+            default = values(7),
+            random = values(8)
         )
     }
 }

@@ -18,7 +18,6 @@ data class ContextualPropertyReferenceDefinition<in CX: IsPropertyContext> inter
     override val required: Boolean = true,
     val contextualResolver: (context: CX?) -> IsPropertyDefinitions
 ): IsValueDefinition<AnyPropertyReference, CX>, IsSerializableFlexBytesEncodable<AnyPropertyReference, CX> {
-    override val indexed = false
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 

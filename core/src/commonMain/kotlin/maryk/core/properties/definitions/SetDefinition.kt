@@ -16,7 +16,6 @@ import maryk.core.values.SimpleObjectValues
 
 /** Definition for Set property */
 data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     override val minSize: UInt? = null,
@@ -31,14 +30,13 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
     }
 
     constructor(
-        indexed: Boolean = false,
         required: Boolean = true,
         final: Boolean = false,
         minSize: UInt? = null,
         maxSize: UInt? = null,
         valueDefinition: IsUsableInCollection<T, CX>,
         default: Set<T>? = null
-    ): this(indexed, required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
+    ): this(required, final, minSize, maxSize, valueDefinition as IsValueDefinition<T, CX>, default)
 
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
 
@@ -67,12 +65,11 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         contextTransformer = { SetDefinitionContext(it) },
         properties = object : ObjectPropertyDefinitions<SetDefinition<*, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, SetDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, SetDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, SetDefinition<*, *>::final)
-                HasSizeDefinition.addMinSize(4, this, SetDefinition<*, *>::minSize)
-                HasSizeDefinition.addMaxSize(5, this, SetDefinition<*, *>::maxSize)
-                add(6, "valueDefinition",
+                HasSizeDefinition.addMinSize(3, this, SetDefinition<*, *>::minSize)
+                HasSizeDefinition.addMaxSize(4, this, SetDefinition<*, *>::maxSize)
+                add(5, "valueDefinition",
                     ContextTransformerDefinition(
                         contextTransformer = { it?.definitionsContext },
                         definition = MultiTypeDefinition(
@@ -95,7 +92,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
                     }
                 )
                 @Suppress("UNCHECKED_CAST")
-                add(7, "default", ContextualCollectionDefinition(
+                add(6, "default", ContextualCollectionDefinition(
                     required = false,
                     contextualResolver = { context: SetDefinitionContext? ->
                         context?.setDefinition?.let {
@@ -107,13 +104,12 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         }
     ) {
         override fun invoke(values: SimpleObjectValues<SetDefinition<*, *>>) = SetDefinition(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            minSize = values(4),
-            maxSize = values(5),
-            valueDefinition = values<IsValueDefinition<*, *>>(6),
-            default = values(7)
+            required = values(1),
+            final = values(2),
+            minSize = values(3),
+            maxSize = values(4),
+            valueDefinition = values<IsValueDefinition<*, *>>(5),
+            default = values(6)
         )
     }
 }

@@ -28,7 +28,6 @@ internal class EnumDefinitionTest {
     )
 
     val defMaxDefined = EnumDefinition(
-        indexed = true,
         required = false,
         final = true,
         unique = true,
@@ -111,7 +110,6 @@ internal class EnumDefinitionTest {
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, EnumDefinition.Model, null, ::compare)
         checkYamlConversion(this.defMaxDefined, EnumDefinition.Model, null, ::compare) shouldBe """
-        indexed: true
         required: false
         final: true
         unique: true

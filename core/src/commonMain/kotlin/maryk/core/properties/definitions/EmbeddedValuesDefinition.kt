@@ -30,7 +30,6 @@ import maryk.lib.safeLazy
 
 /** Definition for embedded object properties [P] to [dataModel] of type [DM] */
 class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions>(
-    override val indexed: Boolean = false,
     override val required: Boolean = true,
     override val final: Boolean = false,
     dataModel: Unit.() -> DM,
@@ -112,7 +111,6 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         if (this === other) return true
         if (other !is EmbeddedValuesDefinition<*, *>) return false
 
-        if (indexed != other.indexed) return false
         if (required != other.required) return false
         if (final != other.final) return false
         if (internalDataModel.value != other.internalDataModel.value) return false
@@ -121,8 +119,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
     }
 
     override fun hashCode(): Int {
-        var result = indexed.hashCode()
-        result = 31 * result + required.hashCode()
+        var result = required.hashCode()
         result = 31 * result + final.hashCode()
         result = 31 * result + internalDataModel.value.hashCode()
         return result
@@ -132,10 +129,9 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         contextTransformer = { ModelContext(it) },
         properties = object : ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>() {
             init {
-                IsPropertyDefinition.addIndexed(this, EmbeddedValuesDefinition<*, *>::indexed)
                 IsPropertyDefinition.addRequired(this, EmbeddedValuesDefinition<*, *>::required)
                 IsPropertyDefinition.addFinal(this, EmbeddedValuesDefinition<*, *>::final)
-                add(4, "dataModel",
+                add(3, "dataModel",
                     ContextualModelReferenceDefinition(
                         contextTransformer = {context: ModelContext? ->
                             context?.definitionsContext
@@ -169,7 +165,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
                 )
 
                 @Suppress("UNCHECKED_CAST")
-                add(5, "default",
+                add(4, "default",
                     ContextualEmbeddedValuesDefinition(
                         contextualResolver = { context: ModelContext? ->
                             context?.model?.invoke(Unit) as? AbstractValuesDataModel<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, ModelContext>? ?: throw ContextNotFoundException()
@@ -181,11 +177,10 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel<P>, P: PropertyDefinitions
         }
     ) {
         override fun invoke(values: ObjectValues<EmbeddedValuesDefinition<*, *>, ObjectPropertyDefinitions<EmbeddedValuesDefinition<*, *>>>) = EmbeddedValuesDefinition<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            indexed = values(1),
-            required = values(2),
-            final = values(3),
-            dataModel = values(4),
-            default = values(5)
+            required = values(1),
+            final = values(2),
+            dataModel = values(3),
+            default = values(4)
         )
     }
 }

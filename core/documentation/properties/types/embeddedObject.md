@@ -19,7 +19,6 @@ A property which contains another DataModel as embedded object. See
 
 ## Other options
 - `default` - the default value to be used if value was not set.
-- `indexed` - default false
 - `dataModel` - Refers to DataModel to be embedded
 
 ## Examples

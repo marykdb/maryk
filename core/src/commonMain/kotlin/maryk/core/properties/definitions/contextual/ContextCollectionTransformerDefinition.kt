@@ -15,7 +15,6 @@ internal data class ContextCollectionTransformerDefinition<T: Any, C: Collection
     val definition: IsByteTransportableCollection<T, C, CXI>,
     private val contextTransformer: (CX?) -> CXI?
 ) : IsByteTransportableCollection<T, C, CX> {
-    override val indexed = definition.indexed
     override val required = definition.required
     override val final = definition.final
 

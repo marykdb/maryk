@@ -1,6 +1,6 @@
 package maryk.datastore.memory
 
-import maryk.core.properties.definitions.wrapper.atWithType
+import maryk.core.properties.definitions.wrapper.atKeyAndType
 import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.core.properties.types.Key
@@ -182,7 +182,7 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.change(
                 keys[4].change(
                     Delete(
-                        ComplexModel { mapIntMulti.atWithType(1u, V3, EmbeddedMarykModel.Properties) { model ref { model } } },
+                        ComplexModel { mapIntMulti.atKeyAndType(1u, V3, EmbeddedMarykModel.Properties) { model ref { model } } },
                         ComplexModel { mapIntMulti.refAtKeyAndType(3u, V3, EmbeddedMarykModel.Properties) { model } }
                     )
                 )
@@ -214,7 +214,7 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.change(
                 keys[5].change(
                     Change(
-                        ComplexModel { mapIntMulti.atWithType(1u, V3, Properties) { model { model ref { value } } } } with "changed",
+                        ComplexModel { mapIntMulti.atKeyAndType(1u, V3, Properties) { model { model ref { value } } } } with "changed",
                         ComplexModel { mapIntObject.refAtKey(1u) { value } } with "mapIntObjectChanged",
                         ComplexModel { multi.withType(V3, Properties) { model ref { value } } } with "multi sub changed"
                     )

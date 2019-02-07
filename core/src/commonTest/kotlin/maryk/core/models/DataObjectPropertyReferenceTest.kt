@@ -1,7 +1,7 @@
 package maryk.core.models
 
 import maryk.core.properties.definitions.wrapper.at
-import maryk.core.properties.definitions.wrapper.atWithType
+import maryk.core.properties.definitions.wrapper.atKeyAndType
 import maryk.core.properties.definitions.wrapper.refAtKey
 import maryk.core.properties.definitions.wrapper.refAtKeyAndType
 import maryk.lib.extensions.toHex
@@ -41,7 +41,7 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.completeName shouldBe "mapIntObject.@2.model.value"
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.completeName shouldBe "mapIntMulti.@2.*V3.value"
-        ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.completeName shouldBe "mapIntMulti.@2.*V3.model.value"
+        ComplexModel { mapIntMulti.atKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.completeName shouldBe "mapIntMulti.@2.*V3.model.value"
 
         ComplexModel { multi.refWithType(V3, Properties) { value } }.completeName shouldBe "multi.*V3.value"
         ComplexModel { multi.withType(V3, Properties) { model ref { value } } }.completeName shouldBe "multi.*V3.model.value"
@@ -71,7 +71,7 @@ internal class DataObjectPropertyReferenceTest {
         ComplexModel { mapIntObject.at(2u) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "1c04000000021609"
 
         ComplexModel { mapIntMulti.refAtKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { value } }.toStorageByteArray().toHex() shouldBe "2404000000021d09"
-        ComplexModel { mapIntMulti.atWithType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
+        ComplexModel { mapIntMulti.atKeyAndType(2u, V3, EmbeddedMarykModel.Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "2404000000021d1609"
 
         ComplexModel { multi.refWithType(V3, Properties) { value } }.toStorageByteArray().toHex() shouldBe "091d09"
         ComplexModel { multi.withType(V3, Properties) { model ref { value } } }.toStorageByteArray().toHex() shouldBe "091d1609"

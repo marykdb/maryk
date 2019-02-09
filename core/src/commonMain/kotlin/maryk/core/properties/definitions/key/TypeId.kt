@@ -31,8 +31,6 @@ data class TypeId<E: IndexedEnum<E>>(
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
 
-    constructor(multiTypeDefinition: MultiTypeDefinitionWrapper<E, TypedValue<E, *>, IsPropertyContext, *>) : this(reference = multiTypeDefinition.getRef())
-
     override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO): UInt {
         @Suppress("UNCHECKED_CAST")
         val multiType = dataModel.properties.getPropertyGetter(

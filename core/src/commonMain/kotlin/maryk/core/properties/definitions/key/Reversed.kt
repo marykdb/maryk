@@ -30,9 +30,6 @@ data class Reversed<T: Any>(
     override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) =
         this.reference.propertyDefinition.getValue(dataModel, values)
 
-    /** Convenience constructor to pass [definition] */
-    constructor(definition: FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>) : this(definition.getRef())
-
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
         this.reference.propertyDefinition.writeStorageBytes(value) {
             writer(MAX_BYTE xor it)

@@ -18,8 +18,8 @@ internal class ReversedTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         keyDefinitions = arrayOf(
-            Reversed(Properties.boolean),
-            Reversed(Properties.dateTime)
+            Reversed(Properties.boolean.getRef()),
+            Reversed(Properties.dateTime.getRef())
         ),
         properties = Properties
     ) {

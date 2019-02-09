@@ -23,7 +23,7 @@ internal class TypeIdTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         keyDefinitions = arrayOf(
-            TypeId(MarykModel.Properties.multi)
+            TypeId(MarykModel.Properties.multi.getRef())
         ),
         properties = Properties
     ) {

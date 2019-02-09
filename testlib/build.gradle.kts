@@ -33,7 +33,7 @@ kotlin {
             dependencies {
                 api(kotlin("stdlib-jdk8"))
                 api(kotlin("test"))
-                api(kotlin("test-junit"))
+                api(kotlin("test-junit5"))
                 implementation(kotlin("reflect"))
 
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")

@@ -1,12 +1,12 @@
 package maryk.core.query.filters
 
 import maryk.core.models.QueryDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
@@ -21,7 +21,7 @@ data class Not(
     override val filterType = FilterType.Not
 
     object Properties : ObjectPropertyDefinitions<Not>() {
-        val filters = Properties.add(1, "filters",
+        val filters = add(1, "filters",
             ListDefinition(
                 valueDefinition = MultiTypeDefinition(
                     typeEnum = FilterType,

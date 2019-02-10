@@ -29,7 +29,7 @@ internal class TypeIdTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val multi = MarykModel.Properties.add(
+            val multi = add(
                 1,
                 "multi",
                 MultiTypeDefinition(

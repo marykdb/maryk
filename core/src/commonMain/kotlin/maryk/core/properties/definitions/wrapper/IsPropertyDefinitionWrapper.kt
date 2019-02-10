@@ -89,7 +89,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
     }
 
     /** Get a reference to this definition inside [parentRef] */
-    fun getRef(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, *, *>
+    fun ref(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, *, *>
 
     /**
      * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates
@@ -97,7 +97,7 @@ interface IsPropertyDefinitionWrapper<T: Any, TO: Any, in CX:IsPropertyContext, 
      * @throws ValidationException when encountering invalid new value
      */
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> AnyPropertyReference? = { null }) {
-        this.validateWithRef(previousValue, newValue) { this.getRef(parentRefFactory()) }
+        this.validateWithRef(previousValue, newValue) { this.ref(parentRefFactory()) }
     }
 
     /** Calculates the needed byte size to transport [value] within optional [context] and caches it with [cacher] */

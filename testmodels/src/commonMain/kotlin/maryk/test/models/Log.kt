@@ -25,8 +25,8 @@ enum class Severity(
 object Log: RootDataModel<Log, Log.Properties>(
     name = "Log",
     keyDefinitions = arrayOf(
-        Reversed(timestamp.getRef()),
-        severity.getRef()
+        Reversed(timestamp.ref()),
+        severity.ref()
     ),
     properties = Log.Properties
 ) {

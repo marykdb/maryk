@@ -31,5 +31,5 @@ interface IsDataModel<P: IsPropertyDefinitions> {
         parent: IsPropertyReference<out Any, IsPropertyDefinition<*>, *>? = null,
         propertyDefinitionGetter: P.()-> W
     ) =
-        propertyDefinitionGetter(this.properties).getRef(parent) as IsPropertyReference<T, W, IsValues<P>>
+        propertyDefinitionGetter(this.properties).ref(parent) as IsPropertyReference<T, W, IsValues<P>>
 }

@@ -219,7 +219,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
         // Except if it is the InjectWithReference object in which it is encoded
         if (value is Inject<*, *> && this !is InjectWithReference.Companion) {
             if (context is RequestContext) {
-                context.collectInjectLevel(this) { definition.getRef(it) }
+                context.collectInjectLevel(this) { definition.ref(it) }
                 context.collectInject(value)
             }
 
@@ -231,7 +231,7 @@ abstract class AbstractDataModel<DO: Any, P: AbstractPropertyDefinitions<DO>, V:
                     || definition is IsMapDefinition<*, *, *>)
         ) {
             // Collect inject level if value can contain sub values
-            context.collectInjectLevel(this) { definition.getRef(it) }
+            context.collectInjectLevel(this) { definition.ref(it) }
         }
 
         definition.capture(context, value)

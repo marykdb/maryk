@@ -192,7 +192,7 @@ private data class MultiTypeDescriptorPropertyDefinitionWrapper internal constru
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) =
         ValuePropertyReference(this, parentRef)
 }
 

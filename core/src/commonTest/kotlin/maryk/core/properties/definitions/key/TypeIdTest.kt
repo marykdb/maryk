@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.key.TypeIdTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
@@ -23,7 +24,7 @@ internal class TypeIdTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         keyDefinitions = arrayOf(
-            TypeId(MarykModel.Properties.multi.getRef())
+            TypeId(multi.ref())
         ),
         properties = Properties
     ) {
@@ -45,7 +46,7 @@ internal class TypeIdTest {
         operator fun invoke(
             multi: TypedValue<Option, *>
         ) = this.values {
-            ReversedTest.MarykModel.Properties.mapNonNulls(
+            mapNonNulls(
                 this.multi with multi
             )
         }
@@ -64,7 +65,7 @@ internal class TypeIdTest {
 
         (keyDef is TypeId<*>) shouldBe true
         val specificDef = keyDef as TypeId<*>
-        specificDef.reference shouldBe MarykModel.Properties.multi.getRef()
+        specificDef.reference shouldBe multi.ref()
 
         specificDef.getValue(MarykModel, obj) shouldBe 2u
 
@@ -81,7 +82,7 @@ internal class TypeIdTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            value = TypeId(MarykModel.Properties.multi.getRef()),
+            value = TypeId(multi.ref()),
             dataModel = TypeId.Model,
             context = { context }
         )
@@ -90,7 +91,7 @@ internal class TypeIdTest {
     @Test
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
-            value = TypeId(MarykModel.Properties.multi.getRef()),
+            value = TypeId(multi.ref()),
             dataModel = TypeId.Model,
             context = { context }
         )
@@ -99,7 +100,7 @@ internal class TypeIdTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(
-            value = TypeId(MarykModel.Properties.multi.getRef()),
+            value = TypeId(multi.ref()),
             dataModel = TypeId.Model,
             context = { context }
         )

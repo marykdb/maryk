@@ -78,7 +78,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
                     try {
                         this.keyDefinition.validateWithRef(null, key) {
                             @Suppress("UNCHECKED_CAST")
-                            this.getKeyRef(key, refGetter() as MapReference<K, V, CX>?)
+                            this.keyRef(key, refGetter() as MapReference<K, V, CX>?)
                         }
                     } catch (e: ValidationException) {
                         addException(e)
@@ -86,7 +86,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
                     try {
                         this.valueDefinition.validateWithRef(null, value) {
                             @Suppress("UNCHECKED_CAST")
-                            this.getValueRef(key, refGetter() as MapReference<K, V, CX>?)
+                            this.valueRef(key, refGetter() as MapReference<K, V, CX>?)
                         }
                     } catch (e: ValidationException) {
                         addException(e)

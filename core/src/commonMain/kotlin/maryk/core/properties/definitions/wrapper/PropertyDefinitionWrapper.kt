@@ -27,6 +27,6 @@ data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: I
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) =
         ValuePropertyReference(this, parentRef)
 }

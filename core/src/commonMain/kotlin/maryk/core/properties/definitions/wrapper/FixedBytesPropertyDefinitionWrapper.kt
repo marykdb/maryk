@@ -30,6 +30,6 @@ data class FixedBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyCon
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) =
         ValueWithFixedBytesPropertyReference(this, parentRef)
 }

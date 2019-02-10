@@ -28,7 +28,6 @@ import maryk.core.yaml.MarykYamlReaders
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
-import maryk.test.models.EmbeddedMarykObject
 import maryk.test.models.Option
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
@@ -56,9 +55,7 @@ internal class RootDataModelTest {
         )
     }
 
-    private val subModelRef = EmbeddedMarykObject.Properties.value.getRef(
-        TestMarykModel.Properties.embeddedValues.getRef()
-    )
+    private val subModelRef = TestMarykModel { embeddedValues.ref { value } }
     private val mapRef = TestMarykModel.ref { map }
     private val mapKeyRef = TestMarykModel { map refToKey Time(12, 33, 44) }
 

@@ -98,7 +98,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         if (newValue != null) {
             if (this.typeIsFinal && previousValue != null) {
                 if (newValue.type != previousValue.type) {
-                    throw AlreadySetException(this.getTypeRef(newValue.type, refGetter() as CanHaveComplexChildReference<*, *, *, *>?))
+                    throw AlreadySetException(this.typeRef(newValue.type, refGetter() as CanHaveComplexChildReference<*, *, *, *>?))
                 }
             }
 
@@ -222,7 +222,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
 
         if (context is RequestContext) {
             context.collectInjectLevel(this) {
-                this.getTypeRef(value.type, it as CanHaveComplexChildReference<*, *, *, *>)
+                this.typeRef(value.type, it as CanHaveComplexChildReference<*, *, *, *>)
             }
         }
 
@@ -284,7 +284,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
         if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
         val typeIndex = initUIntByVar(reader)
         val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
-        return getTypeRef(type, parentReference)
+        return typeRef(type, parentReference)
     }
 
     override fun resolveReferenceFromStorage(
@@ -296,7 +296,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
             index
         }
         val type = this.typeByIndex[typeIndex] ?: throw UnexpectedValueException("Type $typeIndex is not known")
-        return getTypeRef(type, parentReference)
+        return typeRef(type, parentReference)
     }
 
     /** Resolve a reference from [name] found on a [parentReference] */
@@ -306,7 +306,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
     ) = when(name[0]) {
         '*' ->  {
             val type = this.typeByName[name.substring(1)] ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
-            getTypeRef(type, parentReference)
+            typeRef(type, parentReference)
         }
         else -> throw ParseException("Unknown Type type $name[0]")
     }

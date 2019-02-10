@@ -35,12 +35,12 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) =
         MultiTypePropertyReference(this, parentRef)
 
     /** For quick notation to get a [type] reference */
     infix fun ofType(type: E): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> TypeReference<E, CX> {
-        return { this.getTypeRef(type, this.getRef(it)) }
+        return { this.typeRef(type, this.ref(it)) }
     }
 
     /** Specific extension to support fetching deeper references with [type] */
@@ -51,7 +51,7 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
         propertyDefinitionGetter: P.()-> W
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
         {
-            val typeRef = this.getTypeRef(type, this.getRef(it))
+            val typeRef = this.typeRef(type, this.ref(it))
             (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(typeRef, propertyDefinitionGetter)
         }
 
@@ -64,7 +64,7 @@ data class MultiTypeDefinitionWrapper<E: IndexedEnum<E>, TO: Any, CX: IsProperty
             (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
         {
-            val typeRef = this.getTypeRef(type, this.getRef(it))
+            val typeRef = this.typeRef(type, this.ref(it))
             (this.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(typeRef, referenceGetter)
         }
 }

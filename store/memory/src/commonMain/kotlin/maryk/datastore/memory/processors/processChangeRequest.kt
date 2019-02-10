@@ -306,7 +306,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                                             reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
                                                         @Suppress("UNCHECKED_CAST")
                                                         mapDefinition.keyDefinition.validateWithRef(reference.key, reference.key) {
-                                                            mapDefinition.getKeyRef(reference.key, reference.parentReference as MapReference<Any, Any, IsPropertyContext>)
+                                                            mapDefinition.keyRef(reference.key, reference.parentReference as MapReference<Any, Any, IsPropertyContext>)
                                                         }
                                                     } catch (e: ValidationException) { addValidationFail(e) }
 
@@ -449,7 +449,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                             setChange.addValues?.let {
                                 createValidationUmbrellaException({ setReference }) { addException ->
                                     for (value in it) {
-                                        val setItemRef = setDefinition.getItemRef(value, setReference)
+                                        val setItemRef = setDefinition.itemRef(value, setReference)
                                         try {
                                             setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
                                             setValue(

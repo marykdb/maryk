@@ -142,7 +142,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
         var propertyReference: AnyPropertyReference? = null
         for (name in names) {
             propertyReference = when (propertyReference) {
-                null -> this[name]?.getRef(propertyReference)
+                null -> this[name]?.ref(propertyReference)
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name, context)
                 else -> throw DefNotFoundException("Illegal $referenceName, ${propertyReference.completeName} does not contain embedded property definitions for $name")
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
@@ -165,7 +165,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
             propertyReference = when (propertyReference) {
                 null -> {
                     val index = initIntByVar(lengthReader)
-                    this[index]?.getRef()
+                    this[index]?.ref()
                 }
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedRef(lengthReader, context)
                 else -> throw DefNotFoundException("More property references found on property that cannot have any ")
@@ -184,7 +184,7 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
         }
 
         return decodeStorageIndex(lengthReader) { index, referenceType ->
-            val propertyReference = this[index]?.getRef()
+            val propertyReference = this[index]?.ref()
             when {
                 propertyReference == null -> throw DefNotFoundException("Property reference does not exist")
                 readLength >= length -> propertyReference

@@ -8,6 +8,6 @@ import maryk.core.properties.references.ListReference
 interface IsListDefinition<T: Any, CX: IsPropertyContext>: IsCollectionDefinition<T, List<T>, CX, IsValueDefinition<T, CX>>,
     HasDefaultValueDefinition<List<T>> {
     /** Get a reference to a specific list item on [parentList] by [index]. */
-    fun getItemRef(index: UInt, parentList: ListReference<T, CX>?) =
+    fun itemRef(index: UInt, parentList: ListReference<T, CX>?) =
         ListItemReference(index, this, parentList)
 }

@@ -23,7 +23,7 @@ interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P: AbstractPropertyDefin
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
     ): IsPropertyReference<Any, *, *> {
         val index = initIntByVar(reader)
-        return this.dataModel.properties[index]?.getRef(parentReference)
+        return this.dataModel.properties[index]?.ref(parentReference)
             ?: throw DefNotFoundException("Embedded Definition with $index not found")
     }
 
@@ -35,7 +35,7 @@ interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P: AbstractPropertyDefin
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
         return decodeStorageIndex(reader) { index, type ->
-            val propertyReference = this.dataModel.properties[index]?.getRef(parentReference)
+            val propertyReference = this.dataModel.properties[index]?.ref(parentReference)
                 ?: throw DefNotFoundException("Embedded Definition with $index not found")
 
             if (isDoneReading()) {
@@ -54,7 +54,7 @@ interface IsEmbeddedDefinition<out DM : IsDataModel<P>, P: AbstractPropertyDefin
         name: String,
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
     ): IsPropertyReference<Any, *, *> {
-        return this.dataModel.properties[name]?.getRef(parentReference)
+        return this.dataModel.properties[name]?.ref(parentReference)
             ?: throw DefNotFoundException("Embedded Definition with $name not found")
     }
 }

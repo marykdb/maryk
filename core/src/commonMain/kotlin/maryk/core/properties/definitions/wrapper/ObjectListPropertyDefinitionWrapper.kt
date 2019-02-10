@@ -47,7 +47,7 @@ data class ObjectListPropertyDefinitionWrapper<
         return { referenceGetter ->
             { parentRef ->
                 objectValuesDefinition.dataModel(
-                    this.getItemRef(index, this.getRef(parentRef)),
+                    this.itemRef(index, this.ref(parentRef)),
                     referenceGetter as ObjectPropertyDefinitions<*>.() -> (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<Any, IsPropertyDefinitionWrapper<Any, *, *, *>, *>
                 )
             }

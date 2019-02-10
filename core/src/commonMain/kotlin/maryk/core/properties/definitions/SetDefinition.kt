@@ -45,7 +45,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         item: T
     ) = { parentRef: AnyPropertyReference? ->
         @Suppress("UNCHECKED_CAST")
-        this.getItemRef(item, parentRef as SetReference<T, CX>?) as IsPropertyReference<Any, *, *>
+        this.itemRef(item, parentRef as SetReference<T, CX>?) as IsPropertyReference<Any, *, *>
     }
 
     override fun validateCollectionForExceptions(
@@ -56,7 +56,7 @@ data class SetDefinition<T: Any, CX: IsPropertyContext> internal constructor(
         for (it in newValue) {
             validator(it) {
                 @Suppress("UNCHECKED_CAST")
-                this.getItemRef(it, refGetter() as SetReference<T, CX>?)
+                this.itemRef(it, refGetter() as SetReference<T, CX>?)
             }
         }
     }

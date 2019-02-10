@@ -8,6 +8,8 @@ import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.key.ReversedTest.MarykModel.Properties.boolean
+import maryk.core.properties.definitions.key.ReversedTest.MarykModel.Properties.dateTime
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.time.DateTime
 import maryk.test.ByteCollector
@@ -18,8 +20,8 @@ internal class ReversedTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         keyDefinitions = arrayOf(
-            Reversed(Properties.boolean.getRef()),
-            Reversed(Properties.dateTime.getRef())
+            Reversed(boolean.ref()),
+            Reversed(dateTime.ref())
         ),
         properties = Properties
     ) {
@@ -72,7 +74,7 @@ internal class ReversedTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(
-            value = Reversed(MarykModel.Properties.boolean.getRef()),
+            value = Reversed(boolean.ref()),
             dataModel = Reversed.Model,
             context = { context }
         )
@@ -81,7 +83,7 @@ internal class ReversedTest {
     @Test
     fun convertDefinitionToJSONAndBack() {
         checkJsonConversion(
-            value = Reversed(MarykModel.Properties.boolean.getRef()),
+            value = Reversed(boolean.ref()),
             dataModel = Reversed.Model,
             context = { context }
         )
@@ -90,7 +92,7 @@ internal class ReversedTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(
-            value = Reversed(MarykModel.Properties.boolean.getRef()),
+            value = Reversed(boolean.ref()),
             dataModel = Reversed.Model,
             context = { context }
         )

@@ -31,28 +31,28 @@ class EmbeddedValuesPropertyRef<
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
-            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(name)?.getRef(this)
+            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(name)?.ref(this)
                     ?: throw DefNotFoundException("Embedded Definition with $name not found")
         } else {
-            this.propertyDefinition.definition.dataModel.properties[name]?.getRef(this)
+            this.propertyDefinition.definition.dataModel.properties[name]?.ref(this)
                     ?: throw DefNotFoundException("Embedded Definition with $name not found")
         }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
         val index = initIntByVar(reader)
         return if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
-            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.getRef(this)
+            (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
         } else {
-            this.propertyDefinition.definition.dataModel.properties[index]?.getRef(this)
+            this.propertyDefinition.definition.dataModel.properties[index]?.ref(this)
         } ?: throw DefNotFoundException("Embedded Definition with $index not found")
     }
 
     override fun getEmbeddedStorageRef(reader: () -> Byte, context: IsPropertyContext?, referenceType: CompleteReferenceType, isDoneReading: () -> Boolean): AnyPropertyReference {
         return decodeStorageIndex(reader) { index, type ->
             val propertyReference = if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {
-                (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.getRef(this)
+                (context.dataModel as? IsValuesDataModel<*>)?.properties?.get(index)?.ref(this)
             } else {
-                this.propertyDefinition.definition.dataModel.properties[index]?.getRef(this)
+                this.propertyDefinition.definition.dataModel.properties[index]?.ref(this)
             } ?: throw DefNotFoundException("Embedded Definition with $name not found")
 
             if (isDoneReading()) {

@@ -347,5 +347,5 @@ internal data class ObjectPropertyDefinitionsCollectionDefinitionWrapper<in DO: 
     override val shouldSerialize: ((Any) -> Boolean)? = null
     override val capturer: ((DefinitionsConversionContext, ObjectPropertyDefinitions<Any>) -> Unit)? = null
 
-    override fun getRef(parentRef: AnyPropertyReference?) = throw Throwable("Not implemented")
+    override fun ref(parentRef: AnyPropertyReference?) = throw Throwable("Not implemented")
 }

@@ -24,12 +24,12 @@ interface IsListPropertyDefinitionWrapper<T: Any, TO: Any, LD: ListDefinition<T,
     override val definition: LD
 
     @Suppress("UNCHECKED_CAST")
-    override fun getRef(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) =
         ListReference(this as IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
     fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) =
-        this.definition.getItemRef(index, this.getRef(parentRef))
+        this.definition.itemRef(index, this.ref(parentRef))
 
     /** For quick notation to get a list item reference by [index] */
     infix fun refAt(index: UInt): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> ListItemReference<T, CX> {

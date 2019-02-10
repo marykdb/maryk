@@ -39,7 +39,7 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) =
         EmbeddedValuesPropertyRef(
             this,
             parentRef?.let {
@@ -51,12 +51,12 @@ data class EmbeddedValuesPropertyDefinitionWrapper<
     infix fun <T: Any, W: IsPropertyDefinitionWrapper<T, *, *, *>> ref(
         propertyDefinitionGetter: P.()-> W
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, IsValues<P>> =
-        { this.definition.dataModel.ref(this.getRef(it), propertyDefinitionGetter) }
+        { this.definition.dataModel.ref(this.ref(it), propertyDefinitionGetter) }
 
     /** For quick notation to fetch property references with [referenceGetter] within embedded object */
     operator fun <T: Any, W: IsPropertyDefinition<T>, R: IsPropertyReference<T, W, *>> invoke(
         referenceGetter: P.() ->
             (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
     ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
-        { this.definition.dataModel(this.getRef(it), referenceGetter) }
+        { this.definition.dataModel(this.ref(it), referenceGetter) }
 }

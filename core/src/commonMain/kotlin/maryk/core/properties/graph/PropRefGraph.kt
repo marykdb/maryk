@@ -67,7 +67,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
                 context.subDataModel = (value.propertyDefinition as EmbeddedValuesPropertyDefinitionWrapper<*, *, *>).dataModel
             },
             toSerializable = { value: IsPropertyDefinitionWrapper<*, *, *, *>?, _ ->
-                value?.getRef()
+                value?.ref()
             },
             fromSerializable = { value ->
                 value?.propertyDefinition as IsPropertyDefinitionWrapper<*, *, *, *>?
@@ -96,7 +96,7 @@ data class PropRefGraph<P: PropertyDefinitions, DM: IsValuesDataModel<PS>, PS: P
         )
 
         override fun writeJson(obj: PropRefGraph<*, *, *>, writer: IsJsonLikeWriter, context: GraphContext?) {
-            writeJsonValues(obj.parent.getRef(), obj.properties, writer, context)
+            writeJsonValues(obj.parent.ref(), obj.properties, writer, context)
         }
 
         @Suppress("UNUSED_PARAMETER")
@@ -211,7 +211,7 @@ internal fun <DO: Any> ObjectPropertyDefinitions<DO>.addProperties(
         toSerializable = { value: IsPropRefGraphNode<*> ->
             value.let {
                 when (it) {
-                    is IsPropertyDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.getRef())
+                    is IsPropertyDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref())
                     is PropRefGraph<*, *, *> -> TypedValue(it.graphType, it)
                     else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
                 }

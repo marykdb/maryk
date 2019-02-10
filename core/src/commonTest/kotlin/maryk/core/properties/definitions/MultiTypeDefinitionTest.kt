@@ -14,7 +14,7 @@ import maryk.test.ByteCollector
 import maryk.test.models.Option
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V3
-import maryk.test.models.TestMarykModel
+import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.shouldBe
 import maryk.test.shouldThrow
 import kotlin.test.Test
@@ -75,14 +75,14 @@ internal class MultiTypeDefinitionTest {
             def.validateWithRef(
                 previousValue = TypedValue(Option.V1, "WRONG"),
                 newValue = TypedValue(Option.V2, 400),
-                refGetter = { TestMarykModel.properties.multi.getRef()  }
+                refGetter = { multi.ref() }
             )
         }.reference.toString() shouldBe "multi.*V2"
     }
 
     @Test
     fun resolveReferenceByName() {
-        def.resolveReferenceByName("*V1") shouldBe def.getTypeRef(V1, null)
+        def.resolveReferenceByName("*V1") shouldBe def.typeRef(V1, null)
     }
 
     @Test

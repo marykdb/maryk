@@ -20,10 +20,10 @@ interface IsMapDefinition<K: Any, V: Any, CX: IsPropertyContext>
     )
 
     /** Get a reference to a specific map [key] on [parentMap] */
-    fun getKeyRef(key: K, parentMap: MapReference<K, V, CX>?) =
+    fun keyRef(key: K, parentMap: MapReference<K, V, CX>?) =
             MapKeyReference(key, this, parentMap)
 
     /** Get a reference to a specific map value on [parentMap] by [key] */
-    fun getValueRef(key: K, parentMap: MapReference<K, V, CX>?) =
+    fun valueRef(key: K, parentMap: MapReference<K, V, CX>?) =
         MapValueReference(key, this, parentMap)
 }

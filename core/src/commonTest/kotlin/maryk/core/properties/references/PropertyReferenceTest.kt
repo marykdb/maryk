@@ -5,6 +5,8 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.references.Properties.definition
+import maryk.core.properties.references.Properties.modelDefinition
 import maryk.core.protobuf.WriteCache
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -24,8 +26,8 @@ private object Model : RootDataModel<Model, Properties>(
     "name", properties = Properties
 )
 
-private val ref = Properties.definition.getRef()
-private val subRef = Properties.definition.getRef(Properties.modelDefinition.getRef())
+private val ref = definition.ref()
+private val subRef = definition.ref(modelDefinition.ref())
 
 internal class PropertyReferenceTest {
     @Test
@@ -64,8 +66,8 @@ internal class PropertyReferenceTest {
 
     @Test
     fun testCompareTo() {
-        ref shouldBe Properties.definition.getRef()
-        ref shouldNotBe Properties.modelDefinition.getRef()
+        ref shouldBe definition.ref()
+        ref shouldNotBe modelDefinition.ref()
     }
 
     @Test

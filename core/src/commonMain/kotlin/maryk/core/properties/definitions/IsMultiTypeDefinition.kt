@@ -31,7 +31,7 @@ interface IsMultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> :
      * Creates a reference referring to [type] of multi type below [parentReference]
      * so reference can be strongly typed
      */
-    fun getTypeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
+    fun typeRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
         TypeReference(type, this, parentReference)
 
     /** Resolve a reference from [reader] found on a [parentReference] */

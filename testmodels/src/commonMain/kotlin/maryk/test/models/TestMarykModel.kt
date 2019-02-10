@@ -33,9 +33,9 @@ import maryk.test.models.TestMarykModel.Properties.uint
 object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     name = "TestMarykModel",
     keyDefinitions = arrayOf(
-        uint.getRef(),
-        bool.getRef(),
-        enum.getRef()
+        uint.ref(),
+        bool.ref(),
+        enum.ref()
     ),
     properties = Properties
 ) {

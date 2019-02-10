@@ -32,15 +32,15 @@ data class SetPropertyDefinitionWrapper<T: Any, CX: IsPropertyContext, in DO: An
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override fun getRef(parentRef: AnyPropertyReference?) =
+    override fun ref(parentRef: AnyPropertyReference?) =
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
 
     /** Get a reference to a specific set item by [value] with optional [parentRef] */
-    private fun getItemRef(value: T, parentRef: AnyPropertyReference? = null) =
-        this.definition.getItemRef(value, this.getRef(parentRef))
+    private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) =
+        this.definition.itemRef(value, this.ref(parentRef))
 
     /** For quick notation to get a set [item] reference */
     infix fun refAt(item: T): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> SetItemReference<T, *> {
-        return { this.getItemRef(item, it) }
+        return { this.itemRef(item, it) }
     }
 }

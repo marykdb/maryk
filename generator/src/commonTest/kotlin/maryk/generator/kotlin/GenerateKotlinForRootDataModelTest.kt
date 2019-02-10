@@ -92,9 +92,9 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
     name = "CompleteMarykModel",
     keyDefinitions = arrayOf(
         UUIDKey,
-        TypeId(Properties.multiForKey.getRef()),
+        TypeId(Properties.multiForKey.ref()),
         Properties.booleanForKey,
-        Reversed(Properties.dateForKey.getRef())
+        Reversed(Properties.dateForKey.ref())
     ),
     properties = Properties
 ) {

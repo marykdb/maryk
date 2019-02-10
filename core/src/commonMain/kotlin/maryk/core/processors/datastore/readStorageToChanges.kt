@@ -217,7 +217,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             definition
                         ) { version, value ->
                             val ref =
-                                definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                                definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } else {
@@ -239,7 +239,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             }
                         }
                     } else { // Is Complex value
-                        val reference = definition.getRef(parentReference)
+                        val reference = definition.ref(parentReference)
                         readComplexChanges(
                             qualifier,
                             qIndex,
@@ -256,7 +256,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     val definition = this.properties[index]
                         ?: throw Exception("No definition for $index in $this at $index")
 
-                    val reference = definition.getRef(parentReference)
+                    val reference = definition.ref(parentReference)
 
                     if (isAtEnd) {
                         // Handle embed deletes
@@ -266,7 +266,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                             definition
                         ) { version, value ->
                             val ref =
-                                definition.getRef(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                                definition.ref(parentReference) as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                             if (value == null) {
                                 addChangeToOutput(version, ChangeType.DELETE, ref)
                             } // Else this value just exists
@@ -292,14 +292,14 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(ListSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
+                                addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
                         }
                     } else {
                         @Suppress("UNCHECKED_CAST")
                         val listDefinition = definition as IsListDefinition<Any, IsPropertyContext>
                         @Suppress("UNCHECKED_CAST")
-                        val reference = definition.getRef(parentReference) as ListReference<Any, IsPropertyContext>
+                        val reference = definition.ref(parentReference) as ListReference<Any, IsPropertyContext>
 
                         // Read set contents. Always a simple value for set since it is in qualifier
                         val valueDefinition = ((definition as IsListDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
@@ -310,9 +310,9 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
                             if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, listDefinition.getItemRef(listIndex, reference))
+                                addChangeToOutput(version, ChangeType.DELETE, listDefinition.itemRef(listIndex, reference))
                             } else {
-                                addChangeToOutput(version, CHANGE, listDefinition.getItemRef(listIndex, reference) with value)
+                                addChangeToOutput(version, CHANGE, listDefinition.itemRef(listIndex, reference) with value)
                             }
                         }
                     }
@@ -325,14 +325,14 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(SetSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
+                                addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
                         }
                     } else {
                         @Suppress("UNCHECKED_CAST")
                         val setDefinition = definition as IsSetDefinition<Any, IsPropertyContext>
                         @Suppress("UNCHECKED_CAST")
-                        val reference = definition.getRef(parentReference) as SetReference<Any, IsPropertyContext>
+                        val reference = definition.ref(parentReference) as SetReference<Any, IsPropertyContext>
 
                         // Read set contents. Always a simple value for set since it is in qualifier
                         val valueDefinition = ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
@@ -343,9 +343,9 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(Value as StorageTypeEnum<IsPropertyDefinition<Any>>, valueDefinition as IsPropertyDefinition<Any>) { version, value ->
                             if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, setDefinition.getItemRef(key, reference))
+                                addChangeToOutput(version, ChangeType.DELETE, setDefinition.itemRef(key, reference))
                             } else {
-                                addChangeToOutput(version, SET_ADD, setDefinition.getItemRef(key, reference))
+                                addChangeToOutput(version, SET_ADD, setDefinition.itemRef(key, reference))
                             }
                         }
                     }
@@ -355,13 +355,13 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                     @Suppress("UNCHECKED_CAST")
                     val mapDefinition = definition as IsMapDefinition<Any, Any, IsPropertyContext>
                     @Suppress("UNCHECKED_CAST")
-                    val reference = definition.getRef(parentReference) as MapReference<Any, Any, IsPropertyContext>
+                    val reference = definition.ref(parentReference) as MapReference<Any, Any, IsPropertyContext>
 
                     if (isAtEnd) {
                         @Suppress("UNCHECKED_CAST")
                         readValueFromStorage(MapSize as StorageTypeEnum<IsPropertyDefinition<Any>>, definition) { version, value ->
                             if (value == null) {
-                                addChangeToOutput(version, ChangeType.DELETE, definition.getRef(parentReference))
+                                addChangeToOutput(version, ChangeType.DELETE, definition.ref(parentReference))
                             }
                         }
                     } else {
@@ -377,7 +377,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 Value as StorageTypeEnum<IsPropertyDefinition<Any>>,
                                 valueDefinition as IsPropertyDefinition<Any>
                             ) { version, value ->
-                                val valueReference = mapDefinition.getValueRef(key, reference)
+                                val valueReference = mapDefinition.valueRef(key, reference)
                                 if (value == null) {
                                     addChangeToOutput(version, ChangeType.DELETE, valueReference)
                                 } else {
@@ -402,7 +402,7 @@ private fun <P: PropertyDefinitions> IsDataModel<P>.readQualifier(
                                 qualifier,
                                 qIndex,
                                 valueDefinition,
-                                mapDefinition.getValueRef(key, reference),
+                                mapDefinition.valueRef(key, reference),
                                 select,
                                 addToCache,
                                 addChangeToOutput,

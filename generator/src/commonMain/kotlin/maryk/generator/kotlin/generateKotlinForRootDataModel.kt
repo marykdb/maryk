@@ -73,13 +73,13 @@ private fun Array<out IsFixedBytesPropertyReference<out Any>>.generateKotlin(add
                 addImport("maryk.core.properties.definitions.key.TypeId")
                 @Suppress("UNCHECKED_CAST")
                 val typeId= keyPart as TypeId<IndexedEnum<Any>>
-                output += "TypeId(Properties.${typeId.reference.name}.getRef())"
+                output += "TypeId(Properties.${typeId.reference.name}.ref())"
             }
             is Reversed<*> -> {
                 addImport("maryk.core.properties.definitions.key.Reversed")
                 @Suppress("UNCHECKED_CAST")
                 val reversed: Reversed<Any> = keyPart as Reversed<Any>
-                output += "Reversed(Properties.${reversed.reference.name}.getRef())"
+                output += "Reversed(Properties.${reversed.reference.name}.ref())"
             }
             is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
                 output += "Properties.${keyPart.name}"

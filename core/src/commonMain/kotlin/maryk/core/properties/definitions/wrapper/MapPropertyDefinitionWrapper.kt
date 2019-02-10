@@ -41,25 +41,25 @@ data class MapPropertyDefinitionWrapper<K: Any, V: Any, TO: Any, CX: IsPropertyC
     override val graphType = PropRefGraphType.PropRef
 
     @Suppress("UNCHECKED_CAST")
-    override fun getRef(parentRef: AnyPropertyReference?): MapReference<K, V, CX> =
+    override fun ref(parentRef: AnyPropertyReference?): MapReference<K, V, CX> =
         MapReference(this as MapPropertyDefinitionWrapper<K, V, Any, CX, *>, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
 
     /** Get a reference to a specific map [key] with optional [parentRef] */
-    private fun getKeyRef(key: K, parentRef: AnyPropertyReference? = null) =
-        this.definition.getKeyRef(key, this.getRef(parentRef))
+    private fun keyRef(key: K, parentRef: AnyPropertyReference? = null) =
+        this.definition.keyRef(key, this.ref(parentRef))
 
     /** Get a reference to a specific map value by [key] with optional [parentRef] */
-    internal fun getValueRef(key: K, parentRef: AnyPropertyReference? = null) =
-        this.definition.getValueRef(key, this.getRef(parentRef))
+    internal fun valueRef(key: K, parentRef: AnyPropertyReference? = null) =
+        this.definition.valueRef(key, this.ref(parentRef))
 
     /** For quick notation to get a map [key] reference */
     infix fun refToKey(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapKeyReference<K, V, *> {
-        return { this.getKeyRef(key, it) }
+        return { this.keyRef(key, it) }
     }
 
     /** For quick notation to get a map value reference at given [key] */
     infix fun refAt(key: K): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> MapValueReference<K, V, *> {
-        return { this.getValueRef(key, it) }
+        return { this.valueRef(key, it) }
     }
 }
 
@@ -69,7 +69,7 @@ fun <K: Any, V: Values<*, P>, DM: IsValuesDataModel<P>, P: PropertyDefinitions, 
     key: K,
     propertyDefinitionGetter: P.()-> W
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
-    { (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.ref(this.getValueRef(key, it), propertyDefinitionGetter) }
+    { (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel.ref(this.valueRef(key, it), propertyDefinitionGetter) }
 
 /** Specific extension to support fetching sub refs on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
@@ -81,7 +81,7 @@ fun <K: Any, E: IndexedEnum<E>, P: PropertyDefinitions, T: Any, W: IsPropertyDef
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> IsPropertyReference<T, W, *> =
     {
         val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
-        val typeRef = multiTypeDef.getTypeRef(type, this.getValueRef(key, it))
+        val typeRef = multiTypeDef.typeRef(type, this.valueRef(key, it))
         (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel.ref(typeRef, propertyDefinitionGetter)
     }
 
@@ -92,7 +92,7 @@ fun <K: Any, V: Values<*, P>, DM: IsValuesDataModel<P>, P: PropertyDefinitions, 
     referenceGetter: P.() ->
         (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
-    { (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(this.getValueRef(key, it), referenceGetter) }
+    { (this.definition.valueDefinition as EmbeddedValuesDefinition<DM, P>).dataModel(this.valueRef(key, it), referenceGetter) }
 
 /** Specific extension to support fetching deeper references on Map values by [key] and [type] */
 @Suppress("UNCHECKED_CAST")
@@ -105,6 +105,6 @@ fun <K: Any, E: IndexedEnum<E>, P: PropertyDefinitions, T: Any, R: IsPropertyRef
 ): (IsPropertyReference<out Any, IsPropertyDefinition<*>, *>?) -> R =
     {
         val multiTypeDef = (this.definition.valueDefinition as IsMultiTypeDefinition<E, IsPropertyContext>)
-        val typeRef = multiTypeDef.getTypeRef(type, this.getValueRef(key, it))
+        val typeRef = multiTypeDef.typeRef(type, this.valueRef(key, it))
         (multiTypeDef.definitionMap[type] as EmbeddedValuesDefinition<IsValuesDataModel<P>, P>).dataModel(typeRef, referenceGetter)
     }

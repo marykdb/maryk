@@ -4,7 +4,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.key.Reversed
@@ -12,13 +11,14 @@ import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 
 interface IsRootValuesDataModel<P: PropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
 
 interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
-    val keyDefinitions: Array<FixedBytesProperty<out Any>>
+    val keyDefinitions: Array<IsFixedBytesPropertyReference<out Any>>
     val keySize: Int
     val keyIndices: IntArray
 
@@ -61,7 +61,7 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
     }
 
     companion object {
-        fun calculateKeySize(keyDefinitions: Array<FixedBytesProperty<out Any>>): Int {
+        fun calculateKeySize(keyDefinitions: Array<IsFixedBytesPropertyReference<out Any>>): Int {
             var totalBytes = keyDefinitions.size - 1 // Start with adding size of separators
 
             for (it in keyDefinitions) {
@@ -79,7 +79,7 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
                         checkKeyDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
                     }
                 }
-                totalBytes += it.byteSize
+                totalBytes += it.propertyDefinition.byteSize
             }
             return totalBytes
         }

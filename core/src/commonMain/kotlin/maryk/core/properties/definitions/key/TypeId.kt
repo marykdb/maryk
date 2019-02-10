@@ -4,17 +4,17 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionWithContextDataModel
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.FixedBytesProperty
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
@@ -27,17 +27,10 @@ import maryk.core.values.Values
  */
 data class TypeId<E: IndexedEnum<E>>(
     val reference: MultiTypePropertyReference<E, TypedValue<E, *>, MultiTypeDefinitionWrapper<E, TypedValue<E, *>, IsPropertyContext, *>, *>
-) : FixedBytesProperty<UInt> {
+) : IsFixedBytesEncodable<UInt>, IsFixedBytesPropertyReference<UInt> {
+    override val propertyDefinition = this
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
-
-    override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO): UInt {
-        @Suppress("UNCHECKED_CAST")
-        val multiType = dataModel.properties.getPropertyGetter(
-            reference.propertyDefinition.index
-        )?.invoke(dataObject) as TypedValue<*, *>
-        return multiType.type.index
-    }
 
     override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>): UInt {
         val typedValue = values<TypedValue<*, *>?>(reference.propertyDefinition.index)

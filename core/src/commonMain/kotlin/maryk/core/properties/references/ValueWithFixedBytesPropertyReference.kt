@@ -1,7 +1,11 @@
 package maryk.core.properties.references
 
-import maryk.core.values.AbstractValues
+import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.definitions.key.KeyPartType
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
+import maryk.core.properties.exceptions.RequiredException
+import maryk.core.values.AbstractValues
+import maryk.core.values.Values
 
 /**
  * Reference to a value property containing values of type [T] which are of fixed byte length. This can be used inside
@@ -16,6 +20,16 @@ open class ValueWithFixedBytesPropertyReference<
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-): PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference), IsValuePropertyReference<T, TO, D, P> {
+):
+    PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference),
+    IsValuePropertyReference<T, TO, D, P>,
+    IsFixedBytesPropertyReference<T>
+{
+    override val keyPartType = KeyPartType.Reference
     override val name = this.propertyDefinition.name
+
+    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) =
+        values[this] ?: throw RequiredException(this)
+
+    override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) = propertyReference == this
 }

@@ -52,7 +52,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
     keyDefinitions = arrayOf(
         UUIDKey,
         TypeId(Properties.multiForKey.getRef()),
-        Properties.booleanForKey,
+        Properties.booleanForKey.getRef(),
         Reversed(Properties.dateForKey.getRef())
     ),
     properties = Properties

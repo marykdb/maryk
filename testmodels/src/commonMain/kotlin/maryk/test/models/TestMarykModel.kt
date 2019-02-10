@@ -26,13 +26,16 @@ import maryk.core.values.Values
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.models.TestMarykModel.Properties.bool
+import maryk.test.models.TestMarykModel.Properties.enum
+import maryk.test.models.TestMarykModel.Properties.uint
 
 object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     name = "TestMarykModel",
     keyDefinitions = arrayOf(
-        Properties.uint,
-        Properties.bool,
-        Properties.enum
+        uint.getRef(),
+        bool.getRef(),
+        enum.getRef()
     ),
     properties = Properties
 ) {

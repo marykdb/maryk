@@ -26,7 +26,7 @@ object Log: RootDataModel<Log, Log.Properties>(
     name = "Log",
     keyDefinitions = arrayOf(
         Reversed(timestamp.getRef()),
-        severity
+        severity.getRef()
     ),
     properties = Log.Properties
 ) {

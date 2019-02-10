@@ -7,10 +7,11 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.FixedBytesProperty
+import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.query.DefinitionsConversionContext
@@ -21,14 +22,12 @@ import kotlin.experimental.xor
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
     val reference: ValueWithFixedBytesPropertyReference<T, *, FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>, *>
-) : FixedBytesProperty<T> {
+) : IsFixedBytesEncodable<T>, IsFixedBytesPropertyReference<T> {
+    override val propertyDefinition = this
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
-    override fun <DO : Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO) =
-        this.reference.propertyDefinition.getValue(dataModel, dataObject)
-
     override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) =
-        this.reference.propertyDefinition.getValue(dataModel, values)
+        this.reference.getValue(dataModel, values)
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
         this.reference.propertyDefinition.writeStorageBytes(value) {

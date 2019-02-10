@@ -2,12 +2,12 @@ package maryk.generator.kotlin
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.FixedBytesProperty
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.key.UUIDKey
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
+import maryk.core.properties.references.IsFixedBytesPropertyReference
+import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 
 fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     packageName: String,
@@ -60,7 +60,7 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
 /**
  * Generate the kotlin for key definitions and adds imports with [addImport]
  */
-private fun Array<out FixedBytesProperty<out Any>>.generateKotlin(addImport: (String) -> Unit): String {
+private fun Array<out IsFixedBytesPropertyReference<out Any>>.generateKotlin(addImport: (String) -> Unit): String {
     val output = mutableListOf<String>()
 
     for (keyPart in this) {
@@ -81,7 +81,7 @@ private fun Array<out FixedBytesProperty<out Any>>.generateKotlin(addImport: (St
                 val reversed: Reversed<Any> = keyPart as Reversed<Any>
                 output += "Reversed(Properties.${reversed.reference.name}.getRef())"
             }
-            is IsPropertyDefinitionWrapper<*, *, *, *> -> {
+            is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
                 output += "Properties.${keyPart.name}"
             }
             else -> throw Exception("Unknown key part type $keyPart")

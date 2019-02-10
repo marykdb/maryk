@@ -3,10 +3,10 @@ package maryk.core.properties.definitions.key
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.FixedBytesProperty
+import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.EmptyValueItems
@@ -17,11 +17,10 @@ import maryk.lib.uuid.generateUUID
 import maryk.yaml.IsYamlReader
 
 /** A key with a Universally Unique ID */
-object UUIDKey: FixedBytesProperty<Pair<Long, Long>> {
+object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>>, IsFixedBytesPropertyReference<Pair<Long, Long>> {
+    override val propertyDefinition = this
     override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
-
-    override fun <DO: Any, P: ObjectPropertyDefinitions<DO>> getValue(dataModel: IsObjectDataModel<DO, P>, dataObject: DO) = generateUUID()
 
     override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) = generateUUID()
 

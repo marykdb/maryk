@@ -41,12 +41,11 @@ object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>>, IsFixedBytesPropertyRef
     ) {
         override fun invoke(values: SimpleObjectValues<UUIDKey>) = UUIDKey
 
-        override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?): SimpleObjectValues<UUIDKey> {
-            return if (reader is IsYamlReader) {
+        override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?) =
+            if (reader is IsYamlReader) {
                 this.values { EmptyValueItems }
             } else {
                 super.readJson(reader, context)
             }
-        }
     }
 }

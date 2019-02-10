@@ -51,7 +51,7 @@ data class TypeId<E: IndexedEnum<E>>(
     internal object Model : DefinitionWithContextDataModel<TypeId<*>, DefinitionsConversionContext>(
         properties = object : ObjectPropertyDefinitions<TypeId<*>>() {
             init {
-                add(1, "multiTypeDefinition",
+                add(1, "reference",
                     ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
                         contextualResolver = {
                             it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()

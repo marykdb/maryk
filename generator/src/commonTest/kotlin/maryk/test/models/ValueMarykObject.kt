@@ -1,12 +1,12 @@
-package maryk
+package maryk.test.models
 
 import maryk.core.models.ValueDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
+import maryk.core.values.ObjectValues
 import maryk.lib.time.Date
 
 data class ValueMarykObject(

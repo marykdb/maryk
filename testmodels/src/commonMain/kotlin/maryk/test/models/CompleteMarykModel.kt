@@ -1,7 +1,6 @@
 package maryk.test.models
 
 import maryk.core.models.RootDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -179,7 +178,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 unique = true,
                 minValue = Key("AA"),
                 maxValue = Key("f39/f39/fw"),
-                default = Key("AAECAw"),
+                default = Key("AAECAQAAECAQAAECAQAAEA"),
                 dataModel = { SimpleMarykModel }
             )
         )
@@ -256,11 +255,11 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         )
         val multi = add(
             index = 16, name = "multi",
-            definition = MultiTypeDefinition<MarykEnum, IsPropertyContext>(
+            definition = MultiTypeDefinition(
                 required = false,
                 final = true,
                 typeEnum = MarykEnum,
-                definitionMap = mapOf(
+                definitionMap = definitionMap(
                     MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
@@ -283,10 +282,10 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         )
         val multiForKey = add(
             index = 19, name = "multiForKey",
-            definition = MultiTypeDefinition<MarykEnum, IsPropertyContext>(
+            definition = MultiTypeDefinition(
                 final = true,
                 typeEnum = MarykEnum,
-                definitionMap = mapOf(
+                definitionMap = definitionMap(
                     MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
@@ -327,7 +326,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         time: Time = Time(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),
-        reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEC"),
+        reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEA"),
         subModel: Values<SimpleMarykModel, SimpleMarykModel.Properties> = SimpleMarykModel(
             value = "a default"
         ),
@@ -343,7 +342,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         dateForKey: Date,
         multiForKey: TypedValue<MarykEnum, *>,
         enumEmbedded: MarykEnumEmbedded,
-        mapWithEnum: Map<MarykEnumEmbedded, String>
+        mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value")
     ) = values {
         mapNonNulls(
             this.string with string,

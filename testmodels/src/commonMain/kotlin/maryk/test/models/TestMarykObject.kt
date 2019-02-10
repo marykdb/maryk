@@ -1,6 +1,5 @@
 package maryk.test.models
 import maryk.core.models.ObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -151,10 +150,10 @@ data class TestMarykObject(
 
         val multi = add(
             index = 13, name = "multi",
-            definition = MultiTypeDefinition<Option, IsPropertyContext>(
+            definition = MultiTypeDefinition(
                 required = false,
                 typeEnum = Option,
-                definitionMap = mapOf(
+                definitionMap = definitionMap(
                     Option.V1 to StringDefinition(),
                     Option.V2 to NumberDefinition(type = SInt32),
                     Option.V3 to EmbeddedObjectDefinition(

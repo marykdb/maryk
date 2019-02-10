@@ -7,7 +7,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 val generatedKotlinForSimpleDataModel = """
-package maryk
+package maryk.test.models
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -38,11 +38,9 @@ object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Proper
 """.trimIndent()
 
 val generatedKotlinForCompleteDataModel = """
-package maryk
+package maryk.test.models
 
 import maryk.core.models.RootDataModel
-import maryk.core.objects.Values
-import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -51,7 +49,6 @@ import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
-import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
@@ -72,19 +69,23 @@ import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.values.Values
 import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
+import maryk.test.models.CompleteMarykModel.Properties.booleanForKey
+import maryk.test.models.CompleteMarykModel.Properties.dateForKey
+import maryk.test.models.CompleteMarykModel.Properties.multiForKey
 
 enum class MarykEnumEmbedded(
-    override val index: Int
+    override val index: UInt
 ): IndexedEnum<MarykEnumEmbedded> {
-    E1(1),
-    E2(2),
-    E3(3);
+    E1(1u),
+    E2(2u),
+    E3(3u);
 
     companion object: IndexedEnumDefinition<MarykEnumEmbedded>(
-        "MarykEnumEmbedded", MarykEnumEmbedded::cases
+        "MarykEnumEmbedded", MarykEnumEmbedded::values
     )
 }
 
@@ -92,9 +93,9 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
     name = "CompleteMarykModel",
     keyDefinitions = arrayOf(
         UUIDKey,
-        TypeId(Properties.multiForKey.ref()),
-        Properties.booleanForKey,
-        Reversed(Properties.dateForKey.ref())
+        TypeId(multiForKey.ref()),
+        booleanForKey.ref(),
+        Reversed(dateForKey.ref())
     ),
     properties = Properties
 ) {
@@ -217,7 +218,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 unique = true,
                 minValue = Key("AA"),
                 maxValue = Key("f39/f39/fw"),
-                default = Key("AAECAw"),
+                default = Key("AAECAQAAECAQAAECAQAAEA"),
                 dataModel = { SimpleMarykModel }
             )
         )
@@ -298,7 +299,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
                 required = false,
                 final = true,
                 typeEnum = MarykEnum,
-                definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(
+                definitionMap = definitionMap(
                     MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
@@ -324,7 +325,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
             definition = MultiTypeDefinition(
                 final = true,
                 typeEnum = MarykEnum,
-                definitionMap = mapOf<MarykEnum, IsSubDefinition<*, IsPropertyContext>>(
+                definitionMap = definitionMap(
                     MarykEnum.O1 to StringDefinition(
                         regEx = "hi.*"
                     ),
@@ -357,7 +358,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
 
     operator fun invoke(
         string: String = "string",
-        number: UInt32 = 42u,
+        number: UInt = 42u,
         boolean: Boolean = true,
         enum: MarykEnum = MarykEnum.O1,
         date: Date = Date(2018, 5, 2),
@@ -365,7 +366,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         time: Time = Time(10, 11, 12),
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),
-        reference: Key<SimpleMarykModel> = Key("AAECAw"),
+        reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEA"),
         subModel: Values<SimpleMarykModel, SimpleMarykModel.Properties> = SimpleMarykModel(
             value = "a default"
         ),
@@ -415,7 +416,7 @@ class GenerateKotlinForRootDataModelTest {
     fun generateKotlinForSimpleModel(){
         var output = ""
 
-        SimpleMarykModel.generateKotlin("maryk") {
+        SimpleMarykModel.generateKotlin("maryk.test.models") {
             output += it
         }
 
@@ -430,7 +431,7 @@ class GenerateKotlinForRootDataModelTest {
             enums = mutableListOf(MarykEnum)
         )
 
-        CompleteMarykModel.generateKotlin("maryk", generationContext) {
+        CompleteMarykModel.generateKotlin("maryk.test.models", generationContext) {
             output += it
         }
 

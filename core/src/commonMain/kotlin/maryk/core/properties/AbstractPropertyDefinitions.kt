@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFixedBytesEncodable
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MapDefinition
 import maryk.core.properties.definitions.SetDefinition
@@ -60,6 +61,10 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
                 if(it != null) items += it
             }
         }
+
+    /** Helper for definition maps for multi types. Add enum/usableInMultiType [pair] to map */
+    fun <E: IndexedEnum<E>> definitionMap(vararg pair: Pair<E, IsUsableInMultiType<*, IsPropertyContext>>) =
+        mapOf(*pair)
 
     /** Add flex bytes encodable property [definition] with [name] and [index] */
     fun <T: Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>> add(

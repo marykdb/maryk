@@ -1,9 +1,9 @@
 package maryk.generator.proto3
 
+import maryk.core.definitions.Definitions
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnum
-import maryk.ValueMarykObject
-import maryk.core.definitions.Definitions
+import maryk.test.models.ValueMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.fail

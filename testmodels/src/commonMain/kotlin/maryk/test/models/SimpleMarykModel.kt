@@ -8,7 +8,7 @@ object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Proper
     name = "SimpleMarykModel",
     properties = Properties
 ) {
-    object Properties : PropertyDefinitions() {
+    object Properties: PropertyDefinitions() {
         val value = add(
             index = 1, name = "value",
             definition = StringDefinition(
@@ -20,7 +20,7 @@ object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Proper
 
     operator fun invoke(
         value: String = "haha"
-    ) = this.values {
+    ) = values {
         mapNonNulls(
             this.value with value
         )

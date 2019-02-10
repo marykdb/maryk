@@ -1,11 +1,11 @@
 package maryk.generator.kotlin
 
-import maryk.EmbeddedModel
-import maryk.ValueMarykObject
 import maryk.core.definitions.Definitions
 import maryk.test.models.CompleteMarykModel
+import maryk.test.models.EmbeddedModel
 import maryk.test.models.MarykEnum
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.ValueMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.fail
@@ -29,7 +29,7 @@ class GenerateKotlinForDefinitionsTest {
             EmbeddedModel,
             CompleteMarykModel,
             SimpleMarykModel
-        ).generateKotlin("maryk") { name ->
+        ).generateKotlin("maryk.test.models") { name ->
             setOfNames.add(name)
             val writer = mapOfWriters[name]
                     ?: fail("Called for not known writer $name")

@@ -1,11 +1,11 @@
 package maryk.generator.kotlin
 
-import maryk.EmbeddedModel
+import maryk.test.models.EmbeddedModel
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 val generatedKotlinForEmbeddedDataModel = """
-package maryk
+package maryk.test.models
 
 import maryk.core.models.DataModel
 import maryk.core.properties.PropertyDefinitions
@@ -40,7 +40,7 @@ class GenerateKotlinForEmbeddedDataModelTest {
     fun generateKotlinForSimpleModel(){
         var output = ""
 
-        EmbeddedModel.generateKotlin("maryk") {
+        EmbeddedModel.generateKotlin("maryk.test.models") {
             output += it
         }
 

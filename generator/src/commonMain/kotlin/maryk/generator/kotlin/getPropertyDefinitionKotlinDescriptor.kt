@@ -54,7 +54,7 @@ private val sInt32Imports = arrayOf("maryk.core.properties.types.numeric.SInt32"
 private val sInt64Imports = arrayOf("maryk.core.properties.types.numeric.SInt64")
 private val float32Imports = arrayOf("maryk.core.properties.types.numeric.Float32")
 private val float64Imports = arrayOf("maryk.core.properties.types.numeric.Float64")
-private val valuesImports = arrayOf("maryk.core.objects.Values")
+private val valuesImports = arrayOf("maryk.core.values.Values")
 
 private val generateKotlinValueWithDefinition: (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String = { definition, value, addImport ->
     generateKotlinValue(definition, value, addImport)
@@ -144,7 +144,7 @@ private val definitionNamesMap = mapOf(
         kotlinTypeName = { "TypedValue<${it.typeEnum.name}, *>" },
         definitionModel = MultiTypeDefinition.Model as IsSimpleObjectDataModel<MultiTypeDefinition<IndexedEnum<Any>, *>>,
         propertyValueOverride = mapOf(
-            "definitionMap" to { definition, _, addImport ->
+            "definitionMap" to { definition, _, _ ->
                 val multiTypeDefinition = definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
 
                 val typeName = multiTypeDefinition.typeEnum.name
@@ -161,10 +161,7 @@ private val definitionNamesMap = mapOf(
 
                 val types = typeValues.joinToString(",\n").prependIndent()
 
-                addImport("maryk.core.properties.IsPropertyContext")
-                addImport("maryk.core.properties.definitions.IsSubDefinition")
-
-                "mapOf<$typeName, IsSubDefinition<*, IsPropertyContext>>(\n$types\n)"
+                "definitionMap(\n$types\n)"
             },
             "default" to generateKotlinValueWithDefinition
         )
@@ -177,12 +174,12 @@ private val definitionNamesMap = mapOf(
                 NumberType.SInt16 -> "Short"
                 NumberType.SInt32 -> "Int"
                 NumberType.SInt64 -> "Long"
-                NumberType.UInt8 -> "UInt8"
-                NumberType.UInt16 -> "UInt16"
-                NumberType.UInt32 -> "UInt32"
-                NumberType.UInt64 -> "UInt64"
+                NumberType.UInt8 -> "UByte"
+                NumberType.UInt16 -> "UShort"
+                NumberType.UInt32 -> "UInt"
+                NumberType.UInt64 -> "ULong"
                 NumberType.Float32 -> "Float"
-                NumberType.Float64 -> "Float64"
+                NumberType.Float64 -> "Double"
             }
         },
         imports = {

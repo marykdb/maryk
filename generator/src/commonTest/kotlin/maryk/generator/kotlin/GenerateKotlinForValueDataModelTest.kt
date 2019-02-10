@@ -1,19 +1,19 @@
 package maryk.generator.kotlin
 
-import maryk.ValueMarykObject
+import maryk.test.models.ValueMarykObject
 import maryk.test.shouldBe
 import kotlin.test.Test
 
 val generatedKotlinForValueDataModel = """
-package maryk
+package maryk.test.models
 
 import maryk.core.models.ValueDataModel
-import maryk.core.objects.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.SInt32
+import maryk.core.values.ObjectValues
 import maryk.lib.time.Date
 
 data class ValueMarykObject(
@@ -55,7 +55,7 @@ class GenerateKotlinForValueDataModelTest {
     fun generateKotlinForSimpleModel(){
         var output = ""
 
-        ValueMarykObject.generateKotlin("maryk") {
+        ValueMarykObject.generateKotlin("maryk.test.models") {
             output += it
         }
 

@@ -76,9 +76,9 @@ object ComplexModel: RootDataModel<ComplexModel, Properties>(
                 keyDefinition = NumberDefinition(
                     type = UInt32
                 ),
-                valueDefinition = MultiTypeDefinition<Option, IsPropertyContext>(
+                valueDefinition = MultiTypeDefinition(
                     typeEnum = Option,
-                    definitionMap = mapOf(
+                    definitionMap = definitionMap(
                         V1 to StringDefinition(),
                         V2 to NumberDefinition(type = SInt32),
                         V3 to EmbeddedValuesDefinition(

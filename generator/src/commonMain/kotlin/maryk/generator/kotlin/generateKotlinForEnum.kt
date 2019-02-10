@@ -23,17 +23,17 @@ fun <E: IndexedEnum<E>> IndexedEnumDefinition<E>.generateKotlinClass(addImport: 
 
     val values = mutableListOf<String>()
     for (value in this.cases()) {
-        values.add("${value.name}(${value.index})")
+        values.add("${value.name}(${value.index}u)")
     }
 
     return """
     enum class ${this.name}(
-        override val index: Int
+        override val index: UInt
     ): IndexedEnum<${this.name}> {
         ${values.joinToString(",\n").prependIndent().prependIndent().trimStart()};
 
         companion object: IndexedEnumDefinition<${this.name}>(
-            "${this.name}", ${this.name}::cases
+            "${this.name}", ${this.name}::values
         )
     }
     """.trimIndent()

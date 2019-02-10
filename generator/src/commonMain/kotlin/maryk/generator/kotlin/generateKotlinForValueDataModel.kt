@@ -11,7 +11,7 @@ fun <DO: ValueDataObject, P: ObjectPropertyDefinitions<DO>> ValueDataModel<DO, P
 ) {
     val importsToAdd = mutableSetOf(
         "maryk.core.models.ValueDataModel",
-        "maryk.core.objects.ObjectValues",
+        "maryk.core.values.ObjectValues",
         "maryk.core.properties.ObjectPropertyDefinitions",
         "maryk.core.properties.types.ValueDataObject"
     )

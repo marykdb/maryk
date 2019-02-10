@@ -22,7 +22,7 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
 
     // Add key definitions if they are not the default UUID key
     val keyDefAsKotlin = if (this.keyDefinitions.size != 1 || this.keyDefinitions[0] != UUIDKey) {
-        val keyDefs = this.keyDefinitions.generateKotlin(addImport)
+        val keyDefs = this.keyDefinitions.generateKotlin(packageName, name, addImport)
 
         """keyDefinitions = arrayOf(
             ${keyDefs.prependIndent().prependIndent().trimStart()}
@@ -60,7 +60,11 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
 /**
  * Generate the kotlin for key definitions and adds imports with [addImport]
  */
-private fun Array<out IsFixedBytesPropertyReference<out Any>>.generateKotlin(addImport: (String) -> Unit): String {
+private fun Array<out IsFixedBytesPropertyReference<out Any>>.generateKotlin(
+    packageName: String,
+    name: String,
+    addImport: (String) -> Unit
+): String {
     val output = mutableListOf<String>()
 
     for (keyPart in this) {
@@ -73,16 +77,19 @@ private fun Array<out IsFixedBytesPropertyReference<out Any>>.generateKotlin(add
                 addImport("maryk.core.properties.definitions.key.TypeId")
                 @Suppress("UNCHECKED_CAST")
                 val typeId= keyPart as TypeId<IndexedEnum<Any>>
-                output += "TypeId(Properties.${typeId.reference.name}.ref())"
+                addImport("$packageName.$name.Properties.${typeId.reference.name}")
+                output += "TypeId(${typeId.reference.name}.ref())"
             }
             is Reversed<*> -> {
                 addImport("maryk.core.properties.definitions.key.Reversed")
                 @Suppress("UNCHECKED_CAST")
                 val reversed: Reversed<Any> = keyPart as Reversed<Any>
-                output += "Reversed(Properties.${reversed.reference.name}.ref())"
+                addImport("$packageName.$name.Properties.${reversed.reference.name}")
+                output += "Reversed(${reversed.reference.name}.ref())"
             }
             is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
-                output += "Properties.${keyPart.name}"
+                addImport("$packageName.$name.Properties.${keyPart.name}")
+                output += "${keyPart.name}.ref()"
             }
             else -> throw Exception("Unknown key part type $keyPart")
         }

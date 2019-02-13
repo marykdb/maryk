@@ -8,7 +8,6 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.key.IndexKeyPartType
 import maryk.core.properties.definitions.key.IsIndexable
 import maryk.core.properties.definitions.key.Multiple
@@ -46,7 +45,6 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
     init { checkKeyDefinition(keyDefinition) }
 
-    @Suppress("UNCHECKED_CAST")
     private object RootModelProperties:
         ObjectPropertyDefinitions<RootDataModel<*, *>>(),
         IsDataModelPropertyDefinitions<RootDataModel<*, *>, PropertyDefinitionsCollectionDefinitionWrapper<RootDataModel<*, *>>>
@@ -58,24 +56,21 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                 typeEnum = IndexKeyPartType,
                 definitionMap = mapOfIndexKeyPartDefinitions
             ),
-            getter = { rootDataModel ->
-                rootDataModel.keyDefinition.let { keyDef ->
-                    TypedValue(keyDef.indexKeyPartType, keyDef)
-                }
-            }
+            toSerializable = { value: IsIndexable?, _: ContainsDefinitionsContext? ->
+                value?.let{ TypedValue(value.indexKeyPartType, value) }
+            },
+            fromSerializable = { value: TypedValue<IndexKeyPartType, Any>? -> value?.value as IsIndexable },
+            getter = RootDataModel<*, *>::keyDefinition
         )
     }
 
-    @Suppress("UNCHECKED_CAST")
     object Model : AbstractObjectDataModel<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>, ContainsDefinitionsContext, ContainsDefinitionsContext>(
         properties = RootModelProperties
     ) {
         override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
             name = values(1),
             properties = values(2),
-            keyDefinition = (values<TypedValue<PropertyDefinitionType, *>?>(3))?.let {
-                it.value as IsIndexable
-            } ?: UUIDKey
+            keyDefinition = values(3) ?: UUIDKey
         ){}
 
         override fun writeJson(
@@ -146,7 +141,6 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 }
 
 /** Get Key based on [values] */
-@Suppress("UNCHECKED_CAST")
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
     val bytes = ByteArray(this.keyDefinition.byteSize)
     var index = 0
@@ -159,6 +153,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.key(values: Values
         is IsFixedBytesPropertyReference<*> -> {
             val value = keyDef.getValue(values)
 
+            @Suppress("UNCHECKED_CAST")
             (keyDef as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
                 bytes[index++] = it
             }

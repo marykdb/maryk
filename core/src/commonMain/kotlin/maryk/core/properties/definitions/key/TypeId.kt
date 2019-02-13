@@ -3,8 +3,8 @@ package maryk.core.properties.definitions.key
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
-import maryk.core.models.DefinitionWithContextDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -18,7 +18,7 @@ import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 
 /**
@@ -32,7 +32,7 @@ data class TypeId<E: IndexedEnum<E>>(
     override val keyPartType = KeyPartType.TypeId
     override val byteSize = 2
 
-    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>): UInt {
+    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>): UInt {
         val typedValue = values<TypedValue<*, *>?>(reference.propertyDefinition.index)
                 ?: throw RequiredException(reference)
         return typedValue.type.index
@@ -48,21 +48,22 @@ data class TypeId<E: IndexedEnum<E>>(
     override fun isForPropertyReference(propertyReference: AnyPropertyReference) =
         this.reference == propertyReference
 
-    internal object Model : DefinitionWithContextDataModel<TypeId<*>, DefinitionsConversionContext>(
-        properties = object : ObjectPropertyDefinitions<TypeId<*>>() {
-            init {
-                add(1, "reference",
-                    ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
-                        contextualResolver = {
-                            it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
-                        }
-                    ),
-                    getter = TypeId<*>::reference
-                )
-            }
-        }
+    object Properties : ObjectPropertyDefinitions<TypeId<*>>() {
+        val reference = add(1, "reference",
+            ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
+                contextualResolver = {
+                    it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                }
+            ),
+            getter = TypeId<*>::reference
+        )
+    }
+
+    internal object Model : SingleTypedValueDataModel<AnyPropertyReference, TypeId<*>, Properties, DefinitionsConversionContext>(
+        properties = Properties,
+        singlePropertyDefinition = Properties.reference
     ) {
-        override fun invoke(values: SimpleObjectValues<TypeId<*>>) = TypeId<IndexedEnum<Any>>(
+        override fun invoke(values: ObjectValues<TypeId<*>, Properties>) = TypeId<IndexedEnum<Any>>(
             reference = values(1)
         )
     }

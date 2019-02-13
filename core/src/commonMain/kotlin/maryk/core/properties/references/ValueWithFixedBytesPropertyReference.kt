@@ -28,7 +28,7 @@ open class ValueWithFixedBytesPropertyReference<
     override val keyPartType = KeyPartType.Reference
     override val name = this.propertyDefinition.name
 
-    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) =
+    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) =
         values[this] ?: throw RequiredException(this)
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) = propertyReference == this

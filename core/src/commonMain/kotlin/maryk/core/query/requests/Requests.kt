@@ -1,7 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.inject.InjectWithReference
-import maryk.core.models.QuerySingleTypedValueDataModel
+import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -59,7 +59,7 @@ data class Requests internal constructor(
      * This is however not true for Protobuf. There this object contains a list of injectables.
      */
     @Suppress("UNCHECKED_CAST")
-    companion object: QuerySingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
+    companion object: SingleTypedValueDataModel<TypedValue<RequestType, Any>, Requests, Properties, RequestContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.requests as IsPropertyDefinitionWrapper<TypedValue<RequestType, Any>, TypedValue<RequestType, Any>, RequestContext, Requests>
     ) {

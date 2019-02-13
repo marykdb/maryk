@@ -1,6 +1,6 @@
 package maryk.core.definitions
 
-import maryk.core.models.QuerySingleTypedValueDataModel
+import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
@@ -52,7 +52,7 @@ data class RootMaryk(
     }
 
     @Suppress("UNCHECKED_CAST")
-    companion object: QuerySingleTypedValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DefinitionsContext>(
+    companion object: SingleTypedValueDataModel<List<TypedValue<Operation, *>>, RootMaryk, Properties, DefinitionsContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.operations as IsPropertyDefinitionWrapper<List<TypedValue<Operation, *>>, List<TypedValue<Operation, *>>, DefinitionsContext, RootMaryk>
     ) {

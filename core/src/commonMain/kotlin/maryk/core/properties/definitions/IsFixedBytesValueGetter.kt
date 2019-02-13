@@ -7,10 +7,10 @@ import maryk.core.values.Values
 /** Interface to get value of fixed bytes encodables */
 interface IsFixedBytesValueGetter<out T: Any> {
     /**
-     * Get the value from [values] with [dataModel] of type [DM]
+     * Get the value from [values] from dataModel of type [DM]
      * to be used in a fixed bytes encodable
      */
-    fun <DM: IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>): T
+    fun <DM: IsValuesDataModel<*>> getValue(values: Values<DM, *>): T
 
     /**
      * Check if value getter is defined for property referred by [propertyReference]

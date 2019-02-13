@@ -22,7 +22,7 @@ object UUIDKey: IsFixedBytesEncodable<Pair<Long, Long>>, IsFixedBytesPropertyRef
     override val keyPartType = KeyPartType.UUID
     override val byteSize = 16
 
-    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) = generateUUID()
+    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) = generateUUID()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Pair(
         initLong(reader),

@@ -67,7 +67,7 @@ internal class TypeIdTest {
         val specificDef = keyDef as TypeId<*>
         specificDef.reference shouldBe multi.ref()
 
-        specificDef.getValue(MarykModel, obj) shouldBe 2u
+        specificDef.getValue(obj) shouldBe 2u
 
         val bc = ByteCollector()
         bc.reserve(2)
@@ -103,6 +103,6 @@ internal class TypeIdTest {
             value = TypeId(multi.ref()),
             dataModel = TypeId.Model,
             context = { context }
-        )
+        ) shouldBe "multi"
     }
 }

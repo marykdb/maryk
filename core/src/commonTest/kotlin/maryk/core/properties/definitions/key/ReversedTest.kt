@@ -95,6 +95,6 @@ internal class ReversedTest {
             value = Reversed(boolean.ref()),
             dataModel = Reversed.Model,
             context = { context }
-        )
+        ) shouldBe "bool"
     }
 }

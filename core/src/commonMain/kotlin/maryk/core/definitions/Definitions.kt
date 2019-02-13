@@ -2,8 +2,8 @@ package maryk.core.definitions
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.DataModel
-import maryk.core.models.QuerySingleValueDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.SingleValueDataModel
 import maryk.core.models.ValueDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -103,7 +103,7 @@ data class Definitions(
     }
 
     @Suppress("UNCHECKED_CAST")
-    internal companion object: QuerySingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
+    internal companion object: SingleValueDataModel<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, Definitions, Properties, ContainsDefinitionsContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.definitions as IsPropertyDefinitionWrapper<List<TypedValue<PrimitiveType, MarykPrimitive>>, List<MarykPrimitive>, ContainsDefinitionsContext, Definitions>
     ) {

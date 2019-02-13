@@ -159,7 +159,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.key(values: Values
     val bytes = ByteArray(this.keySize)
     var index = 0
     for (it in this.keyDefinitions) {
-        val value = it.getValue(this, values)
+        val value = it.getValue(values)
 
         (it.propertyDefinition as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
             bytes[index++] = it

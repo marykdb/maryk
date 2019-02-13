@@ -10,7 +10,7 @@ import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
 import maryk.lib.exceptions.ParseException
 
-typealias QuerySingleTypedValueDataModel<T, DO, P, CX> = QuerySingleValueDataModel<T, T, DO, P, CX>
+typealias SingleTypedValueDataModel<T, DO, P, CX> = SingleValueDataModel<T, T, DO, P, CX>
 
 /**
  * ObjectDataModel of type [DO] with [properties] definitions with a single property to contain
@@ -18,7 +18,7 @@ typealias QuerySingleTypedValueDataModel<T, DO, P, CX> = QuerySingleValueDataMod
  *
  * In JSON/YAML this model is represented as just that property.
  */
-abstract class QuerySingleValueDataModel<T: Any, TO: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
+abstract class SingleValueDataModel<T: Any, TO: Any, DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext>(
     properties: P,
     private val singlePropertyDefinition: IsPropertyDefinitionWrapper<T, TO, CX, DO>
 ) : AbstractObjectDataModel<DO, P, CX, CX>(properties) {

@@ -2,8 +2,8 @@ package maryk.core.properties.definitions.key
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
-import maryk.core.models.DefinitionWithContextDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.IsFixedBytesEncodable
@@ -14,7 +14,7 @@ import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.query.DefinitionsConversionContext
-import maryk.core.values.SimpleObjectValues
+import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import kotlin.experimental.xor
 
@@ -25,8 +25,8 @@ data class Reversed<T: Any>(
     override val propertyDefinition = this
     override val keyPartType = KeyPartType.Reversed
     override val byteSize = this.reference.propertyDefinition.byteSize
-    override fun <DM : IsValuesDataModel<*>> getValue(dataModel: DM, values: Values<DM, *>) =
-        this.reference.getValue(dataModel, values)
+    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) =
+        this.reference.getValue(values)
 
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
         this.reference.propertyDefinition.writeStorageBytes(value) {
@@ -43,22 +43,23 @@ data class Reversed<T: Any>(
     override fun isForPropertyReference(propertyReference: AnyPropertyReference) =
         this.reference == propertyReference
 
-    internal object Model : DefinitionWithContextDataModel<Reversed<out Any>, DefinitionsConversionContext>(
-        properties = object : ObjectPropertyDefinitions<Reversed<out Any>>() {
-            init {
-                add(1, "reference",
-                    ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
-                        contextualResolver = { it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException() }
-                    ),
-                    getter = {
-                        @Suppress("UNCHECKED_CAST")
-                        it.reference as IsPropertyReference<Any, *, *>
-                    }
-                )
+    object Properties : ObjectPropertyDefinitions<Reversed<out Any>>() {
+        val reference = add(1, "reference",
+            ContextualPropertyReferenceDefinition<DefinitionsConversionContext>(
+                contextualResolver = { it?.propertyDefinitions as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException() }
+            ),
+            getter = {
+                @Suppress("UNCHECKED_CAST")
+                it.reference as IsPropertyReference<Any, *, *>
             }
-        }
+        )
+    }
+
+    internal object Model : SingleTypedValueDataModel<AnyPropertyReference, Reversed<out Any>, Properties, DefinitionsConversionContext>(
+        properties = Properties,
+        singlePropertyDefinition = Properties.reference
     ) {
-        override fun invoke(values: SimpleObjectValues<Reversed<out Any>>) = Reversed<Any>(
+        override fun invoke(values: ObjectValues<Reversed<out Any>, Properties>) = Reversed<Any>(
             reference = values(1)
         )
     }

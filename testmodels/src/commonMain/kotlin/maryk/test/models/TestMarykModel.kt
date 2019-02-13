@@ -17,6 +17,8 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
 import maryk.core.properties.definitions.key.Multiple
+import maryk.core.properties.definitions.key.Reversed
+import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
@@ -27,7 +29,11 @@ import maryk.lib.time.Date
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.TestMarykModel.Properties.bool
+import maryk.test.models.TestMarykModel.Properties.dateTime
+import maryk.test.models.TestMarykModel.Properties.double
 import maryk.test.models.TestMarykModel.Properties.enum
+import maryk.test.models.TestMarykModel.Properties.int
+import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestMarykModel.Properties.uint
 
 object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
@@ -36,6 +42,15 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         uint.ref(),
         bool.ref(),
         enum.ref()
+    ),
+    indices = listOf(
+        int.ref(),
+        Reversed(double.ref()),
+        TypeId(multi.ref()),
+        Multiple(
+            Reversed(dateTime.ref()),
+            enum.ref()
+        )
     ),
     properties = Properties
 ) {

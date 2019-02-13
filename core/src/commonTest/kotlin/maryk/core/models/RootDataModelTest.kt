@@ -98,6 +98,7 @@ internal class RootDataModelTest {
         {
         	"name": "TestMarykModel",
         	"key": ["Multiple", [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]]],
+        	"indices": [["Ref", "int"], ["Reversed", "double"], ["TypeId", "multi"], ["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"]]]],
         	"properties": [{
         		"index": 1,
         		"name": "string",
@@ -341,6 +342,13 @@ internal class RootDataModelTest {
         - !Ref uint
         - !Ref bool
         - !Ref enum
+        indices:
+        - !Ref int
+        - !Reversed double
+        - !TypeId multi
+        - !Multiple
+          - !Reversed dateTime
+          - !Ref enum
         ? 1: string
         : !String
           required: true

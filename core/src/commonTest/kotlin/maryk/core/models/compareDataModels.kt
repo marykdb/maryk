@@ -26,5 +26,8 @@ internal fun <DM: AbstractDataModel<*, *, *, *, *>> compareDataModels(converted:
         }
 
         converted.keyDefinition shouldBe original.keyDefinition
+
+        converted.indices?.size shouldBe original.indices?.size
+        converted.indices shouldBe original.indices
     }
 }

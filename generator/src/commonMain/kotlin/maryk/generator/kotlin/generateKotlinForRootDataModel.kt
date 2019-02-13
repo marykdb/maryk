@@ -25,9 +25,18 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     val keyDefAsKotlin = if (this.keyDefinition != UUIDKey) {
         val keyDefs = this.keyDefinition.generateKotlin(packageName, name, addImport)
 
-        """keyDefinitions = ${keyDefs.prependIndent().prependIndent().trimStart()}
+        """keyDefinitions = ${keyDefs.prependIndent().prependIndent().trimStart()},
         """.trimStart()
     } else ""
+
+    // Add indices if they are not null
+    val indicesAsKotlin = this.indices?.let { indexables ->
+        val output = mutableListOf<String>()
+        for (it in indexables) {
+            output += it.generateKotlin(packageName, name, addImport)
+        }
+        "indices = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),\n        "
+    } ?: ""
 
     val enumKotlinDefinitions = mutableListOf<String>()
     val propertiesKotlin = this.properties.generateKotlin(addImport, generationContext) {
@@ -37,7 +46,7 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     val code = """
     object $name: RootDataModel<$name, $name.Properties>(
         name = "$name",
-        ${keyDefAsKotlin}properties = Properties
+        ${keyDefAsKotlin}${indicesAsKotlin}properties = Properties
     ) {
         object Properties: PropertyDefinitions() {
             ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}
@@ -94,7 +103,7 @@ private fun IsIndexable.generateKotlin(
             output += it.generateKotlin(packageName, name, addImport)
         }
 
-        "Multiple(\n${output.joinToString(",\n").prependIndent()}\n),"
+        "Multiple(\n${output.joinToString(",\n").prependIndent()}\n)"
     }
     else -> throw Exception("Unknown key part type $this")
 }

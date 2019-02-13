@@ -36,7 +36,9 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.models.CompleteMarykModel.Properties.booleanForKey
 import maryk.test.models.CompleteMarykModel.Properties.dateForKey
+import maryk.test.models.CompleteMarykModel.Properties.dateTime
 import maryk.test.models.CompleteMarykModel.Properties.multiForKey
+import maryk.test.models.CompleteMarykModel.Properties.number
 
 enum class MarykEnumEmbedded(
     override val index: UInt
@@ -57,6 +59,14 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
         TypeId(multiForKey.ref()),
         booleanForKey.ref(),
         Reversed(dateForKey.ref())
+    ),
+    indices = listOf(
+        number.ref(),
+        Reversed(dateTime.ref()),
+        Multiple(
+            booleanForKey.ref(),
+            TypeId(multiForKey.ref())
+        )
     ),
     properties = Properties
 ) {

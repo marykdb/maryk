@@ -20,6 +20,7 @@ interface IsRootValuesDataModel<P: PropertyDefinitions> : IsRootDataModel<P>, Is
 
 interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
     val keyDefinition: IsIndexable
+    val indices: List<IsIndexable>?
 
     /** Get Key by [base64] bytes as string representation */
     fun key(base64: String): Key<*>

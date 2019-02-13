@@ -7,12 +7,14 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.key.IndexKeyPartType
 import maryk.core.properties.definitions.key.IsIndexable
 import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.key.mapOfIndexKeyPartDefinitions
+import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -39,6 +41,7 @@ typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefini
 abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     name: String,
     final override val keyDefinition: IsIndexable = UUIDKey,
+    final override val indices: List<IsIndexable>? = null,
     properties: P
 ) : DataModel<DM, P>(name, properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
@@ -57,10 +60,25 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                 definitionMap = mapOfIndexKeyPartDefinitions
             ),
             toSerializable = { value: IsIndexable?, _: ContainsDefinitionsContext? ->
-                value?.let{ TypedValue(value.indexKeyPartType, value) }
+                value?.let { TypedValue(value.indexKeyPartType, value) }
             },
             fromSerializable = { value: TypedValue<IndexKeyPartType, Any>? -> value?.value as IsIndexable },
             getter = RootDataModel<*, *>::keyDefinition
+        )
+        val indices = add(4, "indices",
+            ListDefinition(
+                valueDefinition =  MultiTypeDefinition(
+                    typeEnum = IndexKeyPartType,
+                    definitionMap = mapOfIndexKeyPartDefinitions
+                )
+            ),
+            toSerializable = { value: IsIndexable ->
+                value.let { TypedValue(it.indexKeyPartType, it) }
+            },
+            fromSerializable = { value: TypedValue<IndexKeyPartType, Any> ->
+                value.let { it.value as IsIndexable }
+            },
+            getter = RootDataModel<*, *>::indices
         )
     }
 
@@ -70,7 +88,8 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
             name = values(1),
             properties = values(2),
-            keyDefinition = values(3) ?: UUIDKey
+            keyDefinition = values(3) ?: UUIDKey,
+            indices = values(4)
         ){}
 
         override fun writeJson(
@@ -96,7 +115,8 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
             values: MutableValueItems,
             context: ContainsDefinitionsContext?
         ) {
-            var keyDefinitionsToProcessLater: List<JsonToken>? = null
+            var keyDefinitionToReadLater: List<JsonToken>? = null
+            var indicesToReadLater: List<JsonToken>? = null
 
             readDataModelJson(
                 context,
@@ -107,20 +127,33 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
             ) { definition ->
                 when (definition) {
                     RootModelProperties.key -> {
-                        val collectedTokens = mutableListOf<JsonToken>()
-
-                        reader.skipUntilNextField {
-                            collectedTokens.add(it)
+                        keyDefinitionToReadLater = mutableListOf<JsonToken>().apply {
+                            reader.skipUntilNextField { add(it) }
                         }
-
-                        keyDefinitionsToProcessLater = collectedTokens
+                        true
+                    }
+                    RootModelProperties.indices -> {
+                        indicesToReadLater = mutableListOf<JsonToken>().apply {
+                            reader.skipUntilNextField { add(it) }
+                        }
                         true
                     }
                     else -> false
                 }
             }
 
-            keyDefinitionsToProcessLater?.let { jsonTokens ->
+            readDelayed(keyDefinitionToReadLater, RootModelProperties.key, reader, values, context)
+            readDelayed(indicesToReadLater, RootModelProperties.indices, reader, values, context)
+        }
+
+        private fun readDelayed(
+            tokensToReadLater: List<JsonToken>?,
+            propertyDefinitionWrapper: IsPropertyDefinitionWrapper<*, *, DefinitionsConversionContext, *>,
+            reader: IsJsonLikeReader,
+            values: MutableValueItems,
+            context: ContainsDefinitionsContext?
+        ) {
+            tokensToReadLater?.let { jsonTokens ->
                 val lateReader = if (reader is IsYamlReader) {
                     jsonTokens.map { reader.pushToken(it) }
                     reader.pushToken(reader.currentToken)
@@ -130,7 +163,8 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
                     PresetJsonTokenReader(jsonTokens)
                 }
 
-                values[RootModelProperties.key.index] = RootModelProperties.key.readJson(lateReader, context as DefinitionsConversionContext?)
+                values[propertyDefinitionWrapper.index] =
+                    propertyDefinitionWrapper.readJson(lateReader, context as DefinitionsConversionContext?)
 
                 if (reader is IsYamlReader) {
                     reader.nextToken()

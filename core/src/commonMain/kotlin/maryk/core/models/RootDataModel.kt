@@ -7,12 +7,13 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.PropertyDefinitionsCollectionDefinitionWrapper
 import maryk.core.properties.definitions.IsFixedBytesEncodable
-import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.key.KeyPartType
+import maryk.core.properties.definitions.key.IndexKeyPartType
+import maryk.core.properties.definitions.key.IsIndexable
+import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.definitions.key.UUIDKey
-import maryk.core.properties.definitions.key.mapOfKeyPartDefinitions
+import maryk.core.properties.definitions.key.mapOfIndexKeyPartDefinitions
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -38,19 +39,12 @@ typealias RootDataModelImpl = RootDataModel<IsRootValuesDataModel<PropertyDefini
  */
 abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     name: String,
-    final override val keyDefinitions: Array<IsFixedBytesPropertyReference<out Any>> = arrayOf(UUIDKey),
+    final override val keyDefinition: IsIndexable = UUIDKey,
     properties: P
 ) : DataModel<DM, P>(name, properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
 
-    final override val keySize = IsRootDataModel.calculateKeySize(keyDefinitions)
-    final override val keyIndices: IntArray
-
-    init {
-        var index = 0
-        // Add indices to array. Also account for the 1 sized separator
-        keyIndices = keyDefinitions.map { def -> index.also { index += def.propertyDefinition.byteSize + 1 } }.toIntArray()
-    }
+    init { checkKeyDefinition(keyDefinition) }
 
     @Suppress("UNCHECKED_CAST")
     private object RootModelProperties:
@@ -60,15 +54,13 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         override val name = IsNamedDataModel.addName(this as ObjectPropertyDefinitions<RootDataModel<*, *>>, RootDataModel<*, *>::name)
         override val properties = DataModel.addProperties(this as ObjectPropertyDefinitions<RootDataModel<*, *>>)
         val key = add(3, "key",
-            ListDefinition(
-                valueDefinition = MultiTypeDefinition(
-                    typeEnum = KeyPartType,
-                    definitionMap = mapOfKeyPartDefinitions
-                )
+            MultiTypeDefinition(
+                typeEnum = IndexKeyPartType,
+                definitionMap = mapOfIndexKeyPartDefinitions
             ),
             getter = { rootDataModel ->
-                rootDataModel.keyDefinitions.map { keyDef ->
-                    TypedValue(keyDef.keyPartType, keyDef)
+                rootDataModel.keyDefinition.let { keyDef ->
+                    TypedValue(keyDef.indexKeyPartType, keyDef)
                 }
             }
         )
@@ -81,9 +73,9 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         override fun invoke(values: ObjectValues<RootDataModel<*, *>, ObjectPropertyDefinitions<RootDataModel<*, *>>>) = object : RootDataModelImpl(
             name = values(1),
             properties = values(2),
-            keyDefinitions = (values<List<TypedValue<PropertyDefinitionType, *>>?>(3))?.map {
-                it.value as IsFixedBytesPropertyReference<*>
-            }?.toTypedArray() ?: arrayOf(UUIDKey) as Array<IsFixedBytesPropertyReference<out Any>>
+            keyDefinition = (values<TypedValue<PropertyDefinitionType, *>?>(3))?.let {
+                it.value as IsIndexable
+            } ?: UUIDKey
         ){}
 
         override fun writeJson(
@@ -156,19 +148,22 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 /** Get Key based on [values] */
 @Suppress("UNCHECKED_CAST")
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
-    val bytes = ByteArray(this.keySize)
+    val bytes = ByteArray(this.keyDefinition.byteSize)
     var index = 0
-    for (it in this.keyDefinitions) {
-        val value = it.getValue(values)
-
-        (it.propertyDefinition as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
-            bytes[index++] = it
+    when (val keyDef = this.keyDefinition) {
+        is Multiple -> {
+            keyDef.writeStorageBytes(values) {
+                bytes[index++] = it
+            }
         }
+        is IsFixedBytesPropertyReference<*> -> {
+            val value = keyDef.getValue(values)
 
-        // Add separator
-        if (index < this.keySize) {
-            bytes[index++] = 1
+            (keyDef as IsFixedBytesEncodable<Any>).writeStorageBytes(value) {
+                bytes[index++] = it
+            }
         }
     }
+
     return Key(bytes)
 }

@@ -1,6 +1,7 @@
 package maryk.core.processors.datastore
 
 import maryk.core.models.IsRootValuesDataModel
+import maryk.core.properties.definitions.key.Multiple
 import maryk.core.query.filters.IsFilter
 import maryk.lib.extensions.compare.compareTo
 
@@ -21,8 +22,9 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     listOfParts: MutableList<IsKeyPartialToMatch>,
     listOfUniqueFilters: MutableList<UniqueToMatch>
 ): ScanRange {
-    val start = ByteArray(this.keySize)
-    val end = ByteArray(this.keySize) { -1 }
+    val keySize = this.keyDefinition.byteSize
+    val start = ByteArray(keySize)
+    val end = ByteArray(keySize) { -1 }
     var startInclusive = true
     var endInclusive = true
 
@@ -33,7 +35,9 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     for (keyPart in listOfParts) {
         // If current key part bytes offset is lower than current key part and that part was already written (partCounter for keyIndex was there)
         if (currentOffset < keyPart.fromIndex && partCounter == keyIndex + 1) {
-            currentOffset = if (this.keyIndices.size > 1) this.keyIndices[++keyIndex] else this.keySize
+            currentOffset = (this.keyDefinition as? Multiple)?.let {
+                if(it.indices.size > 1) it.indices[++keyIndex] else keySize
+            } ?: keySize
         }
         // Break off if current offset is not expected for key part.
         if (currentOffset != keyPart.fromIndex) {
@@ -50,7 +54,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
                 val nextIndex = currentOffset + keyPart.toMatch.size
                 // Separator to 1 so match is exact
-                if (nextIndex < this.keySize) {
+                if (nextIndex < keySize) {
                     start[nextIndex] = 1
                     end[nextIndex] = 1
                 }
@@ -62,7 +66,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
                 val nextIndex = currentOffset + keyPart.toBeSmaller.size
                 // Separator to 1 so match is exact
-                if (nextIndex < this.keySize) {
+                if (nextIndex < keySize) {
                     start[nextIndex] = if (keyPart.inclusive) 1 else 2
                 } else {
                     startInclusive = keyPart.inclusive
@@ -75,7 +79,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
                 val nextIndex = currentOffset + keyPart.toBeBigger.size
                 // Separator to 1 so match is exact
-                if (nextIndex < this.keySize) {
+                if (nextIndex < keySize) {
                     end[nextIndex] = if (keyPart.inclusive) 1 else 0
                 } else {
                     endInclusive = keyPart.inclusive
@@ -92,7 +96,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
                 }
                 val nextIndex = currentOffset + first.size
                 // Separator to 1 so match is exact
-                if (nextIndex < this.keySize) {
+                if (nextIndex < keySize) {
                     start[nextIndex] = 1
                     end[nextIndex] = 1
                 }

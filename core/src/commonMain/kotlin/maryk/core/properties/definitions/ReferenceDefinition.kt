@@ -35,7 +35,7 @@ class ReferenceDefinition<DM: IsRootDataModel<*>>(
 {
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = WireType.LENGTH_DELIMITED
-    override val byteSize get() = dataModel.keySize
+    override val byteSize get() = dataModel.keyDefinition.byteSize
 
     private val internalDataModel = safeLazy(dataModel)
     val dataModel: DM get() = internalDataModel.value

@@ -15,9 +15,7 @@ import kotlin.test.Test
 internal class UUIDKeyTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
-        keyDefinitions = arrayOf(
-            UUIDKey
-        ),
+        keyDefinition = UUIDKey,
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
@@ -40,7 +38,7 @@ internal class UUIDKeyTest {
 
         val b = initByteArrayByHex("8e6d5dc885e4b7d5f4fb932d5a0d0378")
 
-        val keyDef = MarykModel.keyDefinitions[0] as UUIDKey
+        val keyDef = MarykModel.keyDefinition as UUIDKey
 
         var i = 0
         val uuid = keyDef.readStorageBytes(16) {
@@ -58,7 +56,7 @@ internal class UUIDKeyTest {
         val key = MarykModel.key(obj)
         key.bytes.size shouldBe 16
 
-        val keyDef = MarykModel.keyDefinitions[0]
+        val keyDef = MarykModel.keyDefinition
 
         (keyDef === UUIDKey) shouldBe true
         val specificDef = keyDef as UUIDKey

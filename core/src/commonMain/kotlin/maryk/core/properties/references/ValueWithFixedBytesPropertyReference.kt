@@ -1,7 +1,8 @@
 package maryk.core.properties.references
 
 import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.definitions.key.KeyPartType
+import maryk.core.properties.definitions.IsFixedBytesEncodable
+import maryk.core.properties.definitions.key.IndexKeyPartType
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.values.AbstractValues
@@ -23,9 +24,11 @@ open class ValueWithFixedBytesPropertyReference<
 ):
     PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference),
     IsValuePropertyReference<T, TO, D, P>,
-    IsFixedBytesPropertyReference<T>
+    IsFixedBytesPropertyReference<T>,
+    IsFixedBytesEncodable<T> by propertyDefinition
 {
-    override val keyPartType = KeyPartType.Reference
+    override val byteSize = propertyDefinition.byteSize
+    override val indexKeyPartType = IndexKeyPartType.Reference
     override val name = this.propertyDefinition.name
 
     override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) =

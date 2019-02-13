@@ -23,9 +23,7 @@ import kotlin.test.Test
 internal class TypeIdTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
-        keyDefinitions = arrayOf(
-            TypeId(multi.ref())
-        ),
+        keyDefinition = TypeId(multi.ref()),
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
@@ -61,7 +59,7 @@ internal class TypeIdTest {
         val key = MarykModel.key(obj)
         key.bytes.toHex() shouldBe "0002"
 
-        val keyDef = MarykModel.keyDefinitions[0]
+        val keyDef = MarykModel.keyDefinition
 
         (keyDef is TypeId<*>) shouldBe true
         val specificDef = keyDef as TypeId<*>

@@ -97,7 +97,7 @@ internal class RootDataModelTest {
         ) shouldBe """
         {
         	"name": "TestMarykModel",
-        	"key": [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]],
+        	"key": ["Multiple", [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]]],
         	"properties": [{
         		"index": 1,
         		"name": "string",
@@ -337,7 +337,7 @@ internal class RootDataModelTest {
             ::compareDataModels
         ) shouldBe """
         name: TestMarykModel
-        key:
+        key: !Multiple
         - !Ref uint
         - !Ref bool
         - !Ref enum

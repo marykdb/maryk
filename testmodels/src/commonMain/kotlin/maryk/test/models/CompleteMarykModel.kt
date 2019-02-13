@@ -18,6 +18,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.TypeId
 import maryk.core.properties.definitions.key.UUIDKey
@@ -51,7 +52,7 @@ enum class MarykEnumEmbedded(
 
 object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
     name = "CompleteMarykModel",
-    keyDefinitions = arrayOf(
+    keyDefinition = Multiple(
         UUIDKey,
         TypeId(multiForKey.ref()),
         booleanForKey.ref(),

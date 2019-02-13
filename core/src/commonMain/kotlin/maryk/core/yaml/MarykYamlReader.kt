@@ -1,7 +1,7 @@
 package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.key.KeyPartType
+import maryk.core.properties.definitions.key.IndexKeyPartType
 import maryk.json.IsJsonLikeReader
 import maryk.json.TokenType
 import maryk.yaml.YamlReader
@@ -39,5 +39,5 @@ val marykTypeMap: Map<String, TokenType> = arrayOf<Pair<String, TokenType>>()
         PropertyDefinitionType.values().map { it.name to it }
     )
     .plus(
-        KeyPartType.cases().map { it.name to it }
+        IndexKeyPartType.cases().map { it.name to it }
     ).toMap()

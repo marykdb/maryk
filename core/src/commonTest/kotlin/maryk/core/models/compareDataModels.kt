@@ -1,6 +1,5 @@
 package maryk.core.models
 
-import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.comparePropertyDefinitionWrapper
 import maryk.test.shouldBe
 
@@ -26,13 +25,6 @@ internal fun <DM: AbstractDataModel<*, *, *, *, *>> compareDataModels(converted:
             throw AssertionError("Converted model should be a RootObjectDataModel")
         }
 
-        converted.keyDefinitions.zip(original.keyDefinitions).forEach { (converted, original) ->
-            when(converted) {
-                is IsPropertyDefinitionWrapper<*, *, *, *> -> {
-                    comparePropertyDefinitionWrapper(converted, original as IsPropertyDefinitionWrapper<*, *, *, *>)
-                }
-                else -> converted shouldBe original
-            }
-        }
+        converted.keyDefinition shouldBe original.keyDefinition
     }
 }

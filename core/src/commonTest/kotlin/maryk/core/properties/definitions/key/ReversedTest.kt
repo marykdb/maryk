@@ -19,7 +19,7 @@ import kotlin.test.Test
 internal class ReversedTest {
     object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
-        keyDefinitions = arrayOf(
+        keyDefinition = Multiple(
             Reversed(boolean.ref()),
             Reversed(dateTime.ref())
         ),
@@ -57,7 +57,7 @@ internal class ReversedTest {
         val key = MarykModel.key(obj)
 
         @Suppress("UNCHECKED_CAST")
-        with(MarykModel.keyDefinitions[1] as Reversed<DateTime>) {
+        with((MarykModel.keyDefinition as Multiple).references[1] as Reversed<DateTime>) {
             val bc = ByteCollector()
             bc.reserve(8)
             this.writeStorageBytes(dt, bc::write)

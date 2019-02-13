@@ -5,6 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
@@ -58,7 +59,7 @@ fun convertFilterToKeyPartsToMatch(
             )
         }
         is Range -> for ((reference, value) in filter.referenceRangePairs) {
-            getKeyDefinitionOrNull(dataModel, reference) { index, keyDefinition ->
+            getKeyDefinitionOrNull(dataModel, reference) { index, _, keyDefinition ->
                 val fromBytes = convertValueToKeyBytes(keyDefinition, value.from)
                 val toBytes = convertValueToKeyBytes(keyDefinition, value.to)
                 listOfKeyParts.add(
@@ -70,7 +71,7 @@ fun convertFilterToKeyPartsToMatch(
             }
         }
         is ValueIn -> for ((reference, value) in filter.referenceValuePairs) {
-            getKeyDefinitionOrNull(dataModel, reference) { index, keyDefinition ->
+            getKeyDefinitionOrNull(dataModel, reference) { index, _, keyDefinition ->
                 val list = ArrayList<ByteArray>(value.size)
                 for (setValue in value) {
                     list.add(
@@ -126,9 +127,10 @@ private fun <T: Any> walkFilterReferencesAndValues(
     handleKeyBytes: (Int, ByteArray) -> Unit
 ) {
     for ((reference, value) in referenceValuePairs.referenceValuePairs) {
-        getKeyDefinitionOrNull(dataModel, reference) { index, keyDefinition ->
+        getKeyDefinitionOrNull(dataModel, reference) { _, byteIndex, keyDefinition ->
             val byteArray = convertValueToKeyBytes(keyDefinition, value)
-            handleKeyBytes(dataModel.keyIndices[index], byteArray)
+
+            handleKeyBytes(byteIndex, byteArray)
         }
 
         // Add unique to match if
@@ -157,13 +159,25 @@ private fun <T : Any> createUniqueToMatch(
 private fun <T: Any> getKeyDefinitionOrNull(
     dataModel: IsRootValuesDataModel<*>,
     reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
-    processKeyDefinitionIfFound: (Int, IsFixedBytesPropertyReference<Any>) -> Unit
+    processKeyDefinitionIfFound: (Int, Int, IsFixedBytesPropertyReference<Any>) -> Unit
 ){
-    for ((index, keyDef) in dataModel.keyDefinitions.withIndex()) {
-        if (keyDef.isForPropertyReference(reference)) {
-            @Suppress("UNCHECKED_CAST")
-            processKeyDefinitionIfFound(index, keyDef as IsFixedBytesPropertyReference<Any>)
-            break
+    when(val keyDefinition = dataModel.keyDefinition) {
+        is Multiple -> {
+            for ((index, keyDef) in keyDefinition.references.withIndex()) {
+                if (keyDef.isForPropertyReference(reference)) {
+                    @Suppress("UNCHECKED_CAST")
+                    processKeyDefinitionIfFound(index, keyDefinition.indices[index], keyDef as IsFixedBytesPropertyReference<Any>)
+                    break
+                }
+            }
         }
+        is IsFixedBytesPropertyReference<*> -> {
+            if (keyDefinition.isForPropertyReference(reference)) {
+                @Suppress("UNCHECKED_CAST")
+                processKeyDefinitionIfFound(0, 0, keyDefinition as IsFixedBytesPropertyReference<Any>)
+            }
+        }
+        else -> throw Exception("Impossible option $keyDefinition for keyDefinition")
     }
+
 }

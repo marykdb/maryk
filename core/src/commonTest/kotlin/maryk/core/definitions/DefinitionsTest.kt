@@ -63,8 +63,7 @@ class DefinitionsTest {
             required: true
             final: false
         SimpleMarykModel: !RootModel
-          key:
-          - !UUID
+          key: !UUID
           ? 1: value
           : !String
             required: true
@@ -89,7 +88,7 @@ class DefinitionsTest {
             final: false
             dataModel: TestMarykModel
         TestMarykModel: !RootModel
-          key:
+          key: !Multiple
           - !Ref uint
           - !Ref bool
           - !Ref enum

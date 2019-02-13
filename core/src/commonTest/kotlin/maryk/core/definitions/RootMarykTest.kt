@@ -53,8 +53,7 @@ class RootMarykTest {
             2: V2
             3: V3
           SimpleMarykModel: !RootModel
-            key:
-            - !UUID
+            key: !UUID
             ? 1: value
             : !String
               required: true

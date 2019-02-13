@@ -8,7 +8,6 @@ import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
@@ -27,9 +26,9 @@ import maryk.core.values.Values
  */
 data class TypeId<E: IndexedEnum<E>>(
     val reference: MultiTypePropertyReference<E, TypedValue<E, *>, MultiTypeDefinitionWrapper<E, TypedValue<E, *>, IsPropertyContext, *>, *>
-) : IsFixedBytesEncodable<UInt>, IsFixedBytesPropertyReference<UInt> {
+) : IsFixedBytesPropertyReference<UInt> {
     override val propertyDefinition = this
-    override val keyPartType = KeyPartType.TypeId
+    override val indexKeyPartType = IndexKeyPartType.TypeId
     override val byteSize = 2
 
     override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>): UInt {

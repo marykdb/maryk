@@ -44,7 +44,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
 
                 if (index < 0) {
                     val recordValues = ArrayList<DataRecordNode>()
-                    var uniquesToProcess: MutableList<DataRecordValue<Comparable<Any>>>? = null
+                    var uniquesToIndex: MutableList<DataRecordValue<Comparable<Any>>>? = null
                     val dataRecord = DataRecord(
                         key = key,
                         values = recordValues,
@@ -58,16 +58,16 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                             @Suppress("UNCHECKED_CAST")
                             val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
                             dataStore.validateUniqueNotExists(comparableValue, dataRecord)
-                            when (uniquesToProcess) {
-                                null -> uniquesToProcess = mutableListOf(comparableValue)
-                                else -> uniquesToProcess!!.add(comparableValue)
+                            when (uniquesToIndex) {
+                                null -> uniquesToIndex = mutableListOf(comparableValue)
+                                else -> uniquesToIndex!!.add(comparableValue)
                             }
                         }
                         recordValues += dataRecordValue
                     }
 
-                    if (!uniquesToProcess.isNullOrEmpty()) {
-                        uniquesToProcess?.forEach { dataRecordValue ->
+                    if (!uniquesToIndex.isNullOrEmpty()) {
+                        uniquesToIndex?.forEach { dataRecordValue ->
                             @Suppress("UNCHECKED_CAST")
                             dataStore.addToUniqueIndex(dataRecord, dataRecordValue)
                         }

@@ -8,6 +8,7 @@ import maryk.core.models.key
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 import maryk.lib.extensions.initByteArrayByHex
+import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -32,7 +33,7 @@ internal class UUIDKeyTest {
     }
 
     @Test
-    fun testConv() {
+    fun testConversion() {
         val msb = 1039590204813653973
         val lsb = 8429492950547628920
 
@@ -86,5 +87,10 @@ internal class UUIDKeyTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(UUIDKey, UUIDKey.Model)
+    }
+
+    @Test
+    fun toReferenceStorageBytes() {
+        UUIDKey.toReferenceStorageByteArray().toHex() shouldBe "01"
     }
 }

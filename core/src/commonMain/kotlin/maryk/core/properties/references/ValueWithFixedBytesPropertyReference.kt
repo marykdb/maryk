@@ -1,5 +1,7 @@
 package maryk.core.properties.references
 
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.key.IndexKeyPartType
@@ -35,4 +37,18 @@ open class ValueWithFixedBytesPropertyReference<
         values[this] ?: throw RequiredException(this)
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) = propertyReference == this
+
+    override fun calculateReferenceStorageByteLength(): Int {
+        val refLength = this.calculateStorageByteLength()
+        return refLength.calculateVarIntWithExtraInfoByteSize() + refLength
+    }
+
+    override fun writeReferenceStorageBytes(writer: (Byte) -> Unit) {
+        val refLength = this.calculateStorageByteLength()
+        refLength.writeVarIntWithExtraInfo(
+            this.indexKeyPartType.index.toByte(),
+            writer
+        )
+        this.writeStorageBytes(writer)
+    }
 }

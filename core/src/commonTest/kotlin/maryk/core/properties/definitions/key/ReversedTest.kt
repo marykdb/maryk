@@ -11,6 +11,7 @@ import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.key.ReversedTest.MarykModel.Properties.boolean
 import maryk.core.properties.definitions.key.ReversedTest.MarykModel.Properties.dateTime
 import maryk.core.query.DefinitionsConversionContext
+import maryk.lib.extensions.toHex
 import maryk.lib.time.DateTime
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
@@ -96,5 +97,10 @@ internal class ReversedTest {
             dataModel = Reversed.Model,
             context = { context }
         ) shouldBe "bool"
+    }
+
+    @Test
+    fun toReferenceStorageBytes() {
+        Reversed(boolean.ref()).toReferenceStorageByteArray().toHex() shouldBe "0c09"
     }
 }

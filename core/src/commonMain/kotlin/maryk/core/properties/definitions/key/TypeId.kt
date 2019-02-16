@@ -1,8 +1,10 @@
 package maryk.core.properties.definitions.key
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
@@ -46,6 +48,19 @@ data class TypeId<E: IndexedEnum<E>>(
 
     override fun isForPropertyReference(propertyReference: AnyPropertyReference) =
         this.reference == propertyReference
+
+    override fun calculateReferenceStorageByteLength(): Int {
+        val refLength = this.reference.calculateStorageByteLength()
+        return refLength.calculateVarIntWithExtraInfoByteSize() + refLength
+    }
+
+    override fun writeReferenceStorageBytes(writer: (Byte) -> Unit) {
+        this.reference.calculateStorageByteLength().writeVarIntWithExtraInfo(
+            this.indexKeyPartType.index.toByte(),
+            writer
+        )
+        this.reference.writeStorageBytes(writer)
+    }
 
     object Properties : ObjectPropertyDefinitions<TypeId<*>>() {
         val reference = add(1, "reference",

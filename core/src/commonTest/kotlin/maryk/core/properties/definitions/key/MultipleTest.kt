@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.query.DefinitionsConversionContext
+import maryk.lib.extensions.toHex
 import maryk.test.models.TestMarykModel.Properties
 import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.int
@@ -54,5 +55,10 @@ class MultipleTest {
         - !Ref int
 
         """.trimIndent()
+    }
+
+    @Test
+    fun toReferenceStorageBytes() {
+        multiple.toReferenceStorageByteArray().toHex() shouldBe "050101020c31020b69020a11"
     }
 }

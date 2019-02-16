@@ -103,4 +103,9 @@ internal class TypeIdTest {
             context = { context }
         ) shouldBe "multi"
     }
+
+    @Test
+    fun toReferenceStorageBytes() {
+        TypeId(multi.ref()).toReferenceStorageByteArray().toHex() shouldBe "0b09"
+    }
 }

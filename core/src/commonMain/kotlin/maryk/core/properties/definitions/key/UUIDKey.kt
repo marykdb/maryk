@@ -1,7 +1,9 @@
 package maryk.core.properties.definitions.key
 
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.DefinitionDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -33,6 +35,13 @@ object UUIDKey: IsFixedBytesPropertyReference<Pair<Long, Long>> {
     override fun writeStorageBytes(value: Pair<Long, Long>, writer: (byte: Byte) -> Unit) {
         value.first.writeBytes(writer)
         value.second.writeBytes(writer)
+    }
+
+    override fun calculateReferenceStorageByteLength() =
+        this.indexKeyPartType.index.calculateVarByteLength()
+
+    override fun writeReferenceStorageBytes(writer: (Byte) -> Unit) {
+        this.indexKeyPartType.index.writeVarBytes(writer)
     }
 
     internal object Model : DefinitionDataModel<UUIDKey>(

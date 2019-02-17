@@ -3,6 +3,9 @@ package maryk.datastore.memory.records
 import maryk.core.models.IsRootValuesDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.processors.changers.getValue
+import maryk.datastore.memory.records.index.IndexValues
+import maryk.datastore.memory.records.index.UniqueException
+import maryk.datastore.memory.records.index.UniqueIndexValues
 import maryk.lib.extensions.compare.compareTo
 
 internal typealias AnyDataStore = DataStore<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
@@ -14,21 +17,31 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     val keepAllVersions: Boolean
 ) {
     val records: MutableList<DataRecord<DM, P>> = mutableListOf()
+    private val indices: MutableList<IndexValues<DM, P>> = mutableListOf()
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, P, Comparable<Any>>> = mutableListOf()
 
-    /** Add [record] to unique index for [value] and pass [previousValue] so that index reference can be deleted */
-    fun addToUniqueIndex(record: DataRecord<DM, P>, value: DataRecordValue<Comparable<Any>>, previousValue: DataRecordValue<Comparable<Any>>? = null) {
-        val index = getOrCreateUniqueIndex(value.reference)
+    /** Add [record] to index for [value] and pass [previousValue] so that index reference can be deleted */
+    fun addToIndex(record: DataRecord<DM, P>, indexName: ByteArray, value: ByteArray, version: ULong, previousValue: ByteArray? = null) {
+        val index = getOrCreateIndex(indexName)
         previousValue?.let {
-            index.removeFromIndex(record, previousValue.value, value.version, keepAllVersions)
+            index.removeFromIndex(record, previousValue, version, keepAllVersions)
         }
-        index.addToIndex(record, value.value, value.version)
+        index.addToIndex(record, value, version)
+    }
+
+    /** Add [record] to unique index for [value] and pass [previousValue] so that index reference can be deleted */
+    fun addToUniqueIndex(record: DataRecord<DM, P>, indexName: ByteArray, value: Comparable<Any>, version: ULong, previousValue: Comparable<Any>? = null) {
+        val index = getOrCreateUniqueIndex(indexName)
+        previousValue?.let {
+            index.removeFromIndex(record, previousValue, version, keepAllVersions)
+        }
+        index.addToIndex(record, value, version)
     }
 
     /** Remove [dataRecord] from all unique indices and register removal below [version] */
     fun removeFromUniqueIndices(dataRecord: DataRecord<DM, P>, version: ULong) {
         for (indexValues in uniqueIndices) {
-            getValue<Comparable<Any>>(dataRecord.values, indexValues.reference)?.let {
+            getValue<Comparable<Any>>(dataRecord.values, indexValues.indexReference)?.let {
                 indexValues.removeFromIndex(dataRecord, it.value, version, keepAllVersions)
             }
         }
@@ -47,14 +60,29 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         }
     }
 
-    /** Get unique index for [reference] or create it if it does not exist. */
-    private fun getOrCreateUniqueIndex(reference: ByteArray): UniqueIndexValues<DM, P, Comparable<Any>> {
-        val i = uniqueIndices.binarySearch { it.reference.compareTo(reference) }
+    /** Get unique index for [indexReference] or create it if it does not exist. */
+    private fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM, P> {
+        val i = indices.binarySearch { it.indexReference.compareTo(indexReference) }
         return if (i < 0) {
-            UniqueIndexValues<DM, P, Comparable<Any>>(reference).also {
+            IndexValues<DM, P>(indexReference).also {
+                indices.add(
+                    i * -1 - 1,
+                    it
+                )
+            }
+        } else {
+            indices[i]
+        }
+    }
+
+    /** Get unique index for [indexReference] or create it if it does not exist. */
+    private fun getOrCreateUniqueIndex(indexReference: ByteArray): UniqueIndexValues<DM, P, Comparable<Any>> {
+        val i = uniqueIndices.binarySearch { it.indexReference.compareTo(indexReference) }
+        return if (i < 0) {
+            UniqueIndexValues<DM, P, Comparable<Any>>(indexReference).also {
                 uniqueIndices.add(
                     i * -1 - 1,
-                    UniqueIndexValues(reference)
+                    it
                 )
             }
         } else {

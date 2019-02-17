@@ -62,7 +62,7 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.memory.records.UniqueException
+import maryk.datastore.memory.records.index.UniqueException
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.time.Instant
 

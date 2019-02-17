@@ -1,6 +1,7 @@
-package maryk.datastore.memory.records
+package maryk.datastore.memory.records.index
 
 import maryk.core.models.key
+import maryk.datastore.memory.records.DataRecord
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykModel.Properties
 import maryk.test.models.SimpleMarykModel.Properties.value
@@ -10,9 +11,10 @@ import kotlin.test.Test
 class UniqueIndexValuesTest {
     private val valueReference = value.ref().toStorageByteArray()
 
-    private val uniqueIndex = UniqueIndexValues<SimpleMarykModel, Properties, String>(
-        valueReference
-    )
+    private val uniqueIndex =
+        UniqueIndexValues<SimpleMarykModel, Properties, String>(
+            valueReference
+        )
 
     private val simpleValues = SimpleMarykModel("test")
 

@@ -5,9 +5,12 @@ import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.exceptions.AlreadySetException
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
@@ -20,7 +23,7 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.memory.records.UniqueException
+import maryk.datastore.memory.records.index.UniqueException
 import maryk.lib.time.Instant
 
 internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>
@@ -45,6 +48,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                 if (index < 0) {
                     val recordValues = ArrayList<DataRecordNode>()
                     var uniquesToIndex: MutableList<DataRecordValue<Comparable<Any>>>? = null
+                    var toIndex: MutableMap<ByteArray, ByteArray>? = null
                     val dataRecord = DataRecord(
                         key = key,
                         values = recordValues,
@@ -52,8 +56,38 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                         lastVersion = version
                     )
 
+                    // Find new index values to write
+                    addRequest.dataModel.indices?.forEach { indexDefinition ->
+                        val valueBytes = ByteArray(indexDefinition.byteSize)
+                        var writeIndex = 0
+                        val writer = { byte: Byte -> valueBytes[writeIndex++] = byte }
+
+                        try {
+                            when (indexDefinition) {
+                                is Multiple -> {
+                                    indexDefinition.writeStorageBytes(objectToAdd, writer)
+                                }
+                                is IsFixedBytesPropertyReference<*> -> {
+                                    @Suppress("UNCHECKED_CAST")
+                                    val reference = indexDefinition as IsFixedBytesPropertyReference<Any>
+                                    reference.getValue(objectToAdd).let {
+                                        indexDefinition.writeStorageBytes(it, writer)
+                                    }
+                                }
+                                else -> throw Exception("Unknown IsIndexable $indexDefinition")
+                            }
+                        } catch (e: RequiredException) {
+                            return@forEach // skip if no complete values to index found
+                        }
+
+                        if (toIndex == null) toIndex = mutableMapOf()
+                        toIndex?.let {
+                            it[indexDefinition.toReferenceStorageByteArray()] = valueBytes
+                        }
+                    }
+
                     objectToAdd.writeToStorage { _, reference, definition, value ->
-                        val dataRecordValue  = DataRecordValue(reference, value, version)
+                        val dataRecordValue = DataRecordValue(reference, value, version)
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                             @Suppress("UNCHECKED_CAST")
                             val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
@@ -66,11 +100,12 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                         recordValues += dataRecordValue
                     }
 
-                    if (!uniquesToIndex.isNullOrEmpty()) {
-                        uniquesToIndex?.forEach { dataRecordValue ->
-                            @Suppress("UNCHECKED_CAST")
-                            dataStore.addToUniqueIndex(dataRecord, dataRecordValue)
-                        }
+                    uniquesToIndex?.forEach { value ->
+                        dataStore.addToUniqueIndex(dataRecord, value.reference, value.value, version)
+                    }
+
+                    toIndex?.forEach { (indexName, value) ->
+                        dataStore.addToIndex(dataRecord, indexName, value, version)
                     }
 
                     dataStore.records.add((index * -1) - 1, dataRecord)

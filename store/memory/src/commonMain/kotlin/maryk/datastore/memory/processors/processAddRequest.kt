@@ -5,12 +5,10 @@ import maryk.core.models.key
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsComparableDefinition
-import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
@@ -58,27 +56,17 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
 
                     // Find new index values to write
                     addRequest.dataModel.indices?.forEach { indexDefinition ->
-                        val valueBytes = ByteArray(indexDefinition.byteSize)
+                        val valueBytes = ByteArray(indexDefinition.byteSize + addRequest.dataModel.keyDefinition.byteSize)
                         var writeIndex = 0
                         val writer = { byte: Byte -> valueBytes[writeIndex++] = byte }
 
                         try {
-                            when (indexDefinition) {
-                                is Multiple -> {
-                                    indexDefinition.writeStorageBytes(objectToAdd, writer)
-                                }
-                                is IsFixedBytesPropertyReference<*> -> {
-                                    @Suppress("UNCHECKED_CAST")
-                                    val reference = indexDefinition as IsFixedBytesPropertyReference<Any>
-                                    reference.getValue(objectToAdd).let {
-                                        indexDefinition.writeStorageBytes(it, writer)
-                                    }
-                                }
-                                else -> throw Exception("Unknown IsIndexable $indexDefinition")
-                            }
+                            indexDefinition.writeStorageBytes(objectToAdd, writer)
                         } catch (e: RequiredException) {
                             return@forEach // skip if no complete values to index found
                         }
+                        // add key to end to make it unique for any DataRecord
+                        key.bytes.forEach(writer)
 
                         if (toIndex == null) toIndex = mutableMapOf()
                         toIndex?.let {

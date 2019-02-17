@@ -1,5 +1,7 @@
 package maryk.core.properties.definitions.key
 
+import maryk.core.values.Values
+
 /**
  * Defines this item is usable to describe an Index Key
  */
@@ -22,4 +24,10 @@ interface IsIndexable {
 
     /** Write storage bytes for reference to this indexable with [writer] */
     fun writeReferenceStorageBytes(writer: (Byte) -> Unit)
+
+    /**
+     * Write bytes for storage of indexable for [values] to [writer]
+     * Throws RequiredException if values are missing
+     */
+    fun writeStorageBytes(values: Values<*, *>, writer: (byte: Byte) -> Unit)
 }

@@ -30,11 +30,7 @@ data class Multiple(
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsFixedBytesPropertyReference<*>): this(listOf(*reference))
 
-    /**
-     * Write bytes for storage of multi indexable for [values] to [writer]
-     * Returns true if it is a complete indexable. False if not and should not be written.
-     */
-    fun writeStorageBytes(values: Values<*, *>, writer: (byte: Byte) -> Unit): Boolean {
+    override fun writeStorageBytes(values: Values<*, *>, writer: (byte: Byte) -> Unit) {
         for ((keyIndex, reference) in this.references.withIndex()) {
             @Suppress("UNCHECKED_CAST")
             val value = (reference as IsFixedBytesPropertyReference<Any>).getValue(values)
@@ -46,8 +42,6 @@ data class Multiple(
                 writer(1)
             }
         }
-
-        return true
     }
 
     private fun calculateSize(keyDefinitions: List<IsFixedBytesPropertyReference<*>>): Int {

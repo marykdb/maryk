@@ -138,7 +138,7 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
             validationExceptions!!.add(ve)
         }
 
-        var uniquesToProcess: MutableList<DataRecordValue<Comparable<Any>>>? = null
+        var uniquesToIndex: MutableMap<DataRecordValue<Comparable<Any>>, Any?>? = null
 
         val newValueList = objectToChange.values.toMutableList()
 
@@ -283,9 +283,9 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                             @Suppress("UNCHECKED_CAST")
                                             val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
                                             dataStore.validateUniqueNotExists(comparableValue, objectToChange)
-                                            when (uniquesToProcess) {
-                                                null -> uniquesToProcess = mutableListOf(comparableValue)
-                                                else -> uniquesToProcess!!.add(comparableValue)
+                                            when (uniquesToIndex) {
+                                                null -> uniquesToIndex = mutableMapOf(comparableValue to previousValue)
+                                                else -> uniquesToIndex!![comparableValue] = previousValue
                                             }
                                         }
 
@@ -511,6 +511,11 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
             if (version > objectToChange.lastVersion) {
                 objectToChange.lastVersion = version
             }
+        }
+
+        uniquesToIndex?.forEach { (value, previousValue) ->
+            @Suppress("UNCHECKED_CAST")
+            dataStore.addToUniqueIndex(objectToChange, value.reference, value.value, version, previousValue as Comparable<Any>)
         }
 
         // Apply the new values now all validations have been accepted

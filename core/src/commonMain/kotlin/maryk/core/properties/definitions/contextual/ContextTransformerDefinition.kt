@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -14,7 +14,7 @@ import maryk.json.IsJsonLikeWriter
 data class ContextTransformerDefinition<T: Any, in CX: IsPropertyContext, CXI: IsPropertyContext>(
     val definition: IsValueDefinition<T, CXI>,
     private val contextTransformer: (CX?) -> CXI?
-) : IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
+) : IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
     override val wireType = definition.wireType
     override val required = definition.required
     override val final = definition.final

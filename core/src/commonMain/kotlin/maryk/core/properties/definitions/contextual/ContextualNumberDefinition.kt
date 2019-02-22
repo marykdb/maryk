@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.fromNativeType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -25,7 +25,7 @@ import maryk.lib.exceptions.ParseException
 internal class ContextualNumberDefinition<in CX: IsPropertyContext>(
     override val required: Boolean = true,
     val contextualResolver: (context: CX?) -> NumberDescriptor<Comparable<Any>>
-): IsSubDefinition<Comparable<Any>, CX>, IsSerializableFlexBytesEncodable<Comparable<Any>, CX> {
+): IsSubDefinition<Comparable<Any>, CX>, IsContextualEncodable<Comparable<Any>, CX> {
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null

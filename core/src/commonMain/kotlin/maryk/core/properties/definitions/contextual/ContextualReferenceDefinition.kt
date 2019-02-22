@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType
@@ -17,7 +17,7 @@ import maryk.lib.exceptions.ParseException
 class ContextualReferenceDefinition<in CX: IsPropertyContext>(
     override val required: Boolean = true,
     val contextualResolver: (context: CX?) -> IsRootDataModel<*>
-): IsValueDefinition<Key<*>, CX>, IsSerializableFlexBytesEncodable<Key<*>, CX> {
+): IsValueDefinition<Key<*>, CX>, IsContextualEncodable<Key<*>, CX> {
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 

@@ -56,21 +56,22 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
 
                     // Find new index values to write
                     addRequest.dataModel.indices?.forEach { indexDefinition ->
-                        val valueBytes = ByteArray(indexDefinition.byteSize + addRequest.dataModel.keyDefinition.byteSize)
-                        var writeIndex = 0
-                        val writer = { byte: Byte -> valueBytes[writeIndex++] = byte }
-
                         try {
+                            val indexValueSize = indexDefinition.calculateStorageByteLength(objectToAdd)
+                            val valueBytes = ByteArray(indexValueSize + addRequest.dataModel.keyByteSize)
+                            var writeIndex = 0
+                            val writer = { byte: Byte -> valueBytes[writeIndex++] = byte }
                             indexDefinition.writeStorageBytes(objectToAdd, writer)
+
+                            // add key to end to make it unique for any DataRecord
+                            key.bytes.forEach(writer)
+
+                            if (toIndex == null) toIndex = mutableMapOf()
+                            toIndex?.let {
+                                it[indexDefinition.toReferenceStorageByteArray()] = valueBytes
+                            }
                         } catch (e: RequiredException) {
                             return@forEach // skip if no complete values to index found
-                        }
-                        // add key to end to make it unique for any DataRecord
-                        key.bytes.forEach(writer)
-
-                        if (toIndex == null) toIndex = mutableMapOf()
-                        toIndex?.let {
-                            it[indexDefinition.toReferenceStorageByteArray()] = valueBytes
                         }
                     }
 

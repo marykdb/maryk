@@ -25,7 +25,7 @@ class EmbeddedObjectPropertyRef<
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
 ): CanHaveComplexChildReference<DO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
-), HasEmbeddedPropertyReference<DO>, IsValuePropertyReference<DO, TO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
+), HasEmbeddedPropertyReference<DO>, IsPropertyReferenceForValues<DO, TO, EmbeddedObjectPropertyDefinitionWrapper<DO, TO, P, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =

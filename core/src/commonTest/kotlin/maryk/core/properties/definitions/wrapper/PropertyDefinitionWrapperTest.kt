@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
 import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -17,7 +18,7 @@ fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *
 }
 
 class PropertyDefinitionWrapperTest {
-    private val def = PropertyDefinitionWrapper(
+    private val def = FlexBytesPropertyDefinitionWrapper(
         index = 1,
         name = "wrapper",
         definition = StringDefinition(),

@@ -7,7 +7,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
-import maryk.core.properties.references.IsFixedBytesPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.ObjectValues
@@ -15,41 +15,33 @@ import maryk.core.values.Values
 
 /** Class to encode multiple [references] for key or other indexable usages */
 data class Multiple(
-    val references: List<IsFixedBytesPropertyReference<*>>
+    val references: List<IsIndexablePropertyReference<*>>
 ): IsIndexable {
     override val indexKeyPartType = IndexKeyPartType.Multiple
-    override val byteSize = this.calculateSize(references)
-    val indices: IntArray
-
-    init {
-        var index = 0
-        // Add indices to array. Also account for the 1 sized separator
-        indices = references.map { def -> index.also { index += def.byteSize + 1 } }.toIntArray()
-    }
 
     /** Convenience method to set with each [reference] as separate argument */
-    constructor(vararg reference: IsFixedBytesPropertyReference<*>): this(listOf(*reference))
+    constructor(vararg reference: IsIndexablePropertyReference<*>): this(listOf(*reference))
+
+    override fun calculateStorageByteLength(values: Values<*, *>): Int {
+        var totalBytes = references.size - 1 // Start with adding size of separators
+        for (it in references) {
+            totalBytes += it.calculateStorageByteLength(values)
+        }
+        return totalBytes
+    }
 
     override fun writeStorageBytes(values: Values<*, *>, writer: (byte: Byte) -> Unit) {
         for ((keyIndex, reference) in this.references.withIndex()) {
             @Suppress("UNCHECKED_CAST")
-            val value = (reference as IsFixedBytesPropertyReference<Any>).getValue(values)
+            val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)
 
-            reference.propertyDefinition.writeStorageBytes(value, writer)
+            reference.writeStorageBytes(value, writer)
 
             // Add separator
             if (keyIndex < this.references.lastIndex) {
                 writer(1)
             }
         }
-    }
-
-    private fun calculateSize(keyDefinitions: List<IsFixedBytesPropertyReference<*>>): Int {
-        var totalBytes = keyDefinitions.size - 1 // Start with adding size of separators
-        for (it in keyDefinitions) {
-            totalBytes += it.propertyDefinition.byteSize
-        }
-        return totalBytes
     }
 
     /**
@@ -81,7 +73,7 @@ data class Multiple(
                     typeEnum = IndexKeyPartType,
                     definitionMap = mapOfSimpleIndexKeyPartDefinitions
                 )
-            ) as ListDefinition<TypedValue<IndexKeyPartType, IsFixedBytesPropertyReference<*>>, IsPropertyContext>,
+            ) as ListDefinition<TypedValue<IndexKeyPartType, IsIndexablePropertyReference<*>>, IsPropertyContext>,
             toSerializable = { value ->
                 TypedValue(value.indexKeyPartType, value)
             },
@@ -92,7 +84,7 @@ data class Multiple(
         )
     }
 
-    internal object Model : SingleValueDataModel<List<TypedValue<IndexKeyPartType, IsFixedBytesPropertyReference<*>>>, List<IsFixedBytesPropertyReference<*>>, Multiple, Properties, DefinitionsConversionContext>(
+    internal object Model : SingleValueDataModel<List<TypedValue<IndexKeyPartType, IsIndexablePropertyReference<*>>>, List<IsIndexablePropertyReference<*>>, Multiple, Properties, DefinitionsConversionContext>(
         properties = Properties,
         singlePropertyDefinition = Properties.references
     ) {

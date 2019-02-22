@@ -26,7 +26,7 @@ class EmbeddedValuesPropertyRef<
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
 ): CanHaveComplexChildReference<Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>, AbstractValues<*, *, *>>(
     propertyDefinition, parentReference
-), HasEmbeddedPropertyReference<Values<DM, P>>, IsValuePropertyReference<Values<DM, P>, Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>> {
+), HasEmbeddedPropertyReference<Values<DM, P>>, IsPropertyReferenceForValues<Values<DM, P>, Values<DM, P>, EmbeddedValuesPropertyDefinitionWrapper<DM, P, CX>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =

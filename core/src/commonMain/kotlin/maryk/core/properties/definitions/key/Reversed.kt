@@ -9,11 +9,10 @@ import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
-import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IsFixedBytesPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.properties.references.IsValuePropertyReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
@@ -21,22 +20,24 @@ import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
 data class Reversed<T: Any>(
-    val reference: ValueWithFixedBytesPropertyReference<T, *, FixedBytesPropertyDefinitionWrapper<T, *, *, *, *>, *>
-) : IsFixedBytesPropertyReference<T> {
-    override val propertyDefinition = this
+    val reference: IsValuePropertyReference<T, *, *, *>
+) : IsIndexablePropertyReference<T> {
     override val indexKeyPartType = IndexKeyPartType.Reversed
-    override val byteSize = this.reference.propertyDefinition.byteSize
+
     override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) =
         this.reference.getValue(values)
 
+    override fun calculateStorageByteLength(value: T) =
+        this.reference.calculateStorageByteLength(value)
+
     override fun writeStorageBytes(value: T, writer: (byte: Byte) -> Unit) {
-        this.reference.propertyDefinition.writeStorageBytes(value) {
+        this.reference.writeStorageBytes(value) {
             writer(MAX_BYTE xor it)
         }
     }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): T {
-        return this.reference.propertyDefinition.readStorageBytes(byteSize) {
+        return this.reference.readStorageBytes(length) {
             MAX_BYTE xor reader()
         }
     }

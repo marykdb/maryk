@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -14,7 +14,7 @@ import maryk.json.IsJsonLikeWriter
 internal class ContextualCollectionDefinition<in CX: IsPropertyContext>(
     private val contextualResolver: (context: CX?) -> IsByteTransportableCollection<Any, Collection<Any>, CX>,
     override val required: Boolean = true
-): IsByteTransportableCollection<Any, Collection<Any>, CX>, IsSerializableFlexBytesEncodable<Collection<Any>, CX> {
+): IsByteTransportableCollection<Any, Collection<Any>, CX>, IsContextualEncodable<Collection<Any>, CX> {
     override val final = true
 
     override fun isPacked(context: CX?, encodedWireType: WireType) =

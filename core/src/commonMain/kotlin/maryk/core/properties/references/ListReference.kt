@@ -15,7 +15,7 @@ import maryk.lib.exceptions.ParseException
 open class ListReference<T: Any, CX: IsPropertyContext> internal constructor(
     propertyDefinition: IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : ValuePropertyReference<List<T>, List<Any>, IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
+) : PropertyReferenceForValues<List<T>, List<Any>, IsListPropertyDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, CanHaveComplexChildReference<*, *, *, *>>(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T> {

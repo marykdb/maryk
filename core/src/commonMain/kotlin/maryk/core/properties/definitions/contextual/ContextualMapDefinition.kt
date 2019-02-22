@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableMap
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -13,7 +13,7 @@ import maryk.json.IsJsonLikeWriter
 class ContextualMapDefinition<K: Any, V: Any, in CX: IsPropertyContext>(
     private val contextualResolver: (context: CX?) -> IsByteTransportableMap<K, V, CX>,
     override val required: Boolean = true
-) : IsByteTransportableMap<K, V, CX>, IsSerializableFlexBytesEncodable<Map<K, V>, CX> {
+) : IsByteTransportableMap<K, V, CX>, IsContextualEncodable<Map<K, V>, CX> {
     override val final = true
 
     override fun getEmbeddedByName(name: String): IsPropertyDefinitionWrapper<*, *, *, *>? = null

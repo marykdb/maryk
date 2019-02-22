@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.key.IndexKeyPartType
 import maryk.core.properties.definitions.key.IsIndexable
 import maryk.core.properties.definitions.key.Multiple
+import maryk.core.properties.definitions.key.Reversed
 import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.definitions.key.mapOfIndexKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
@@ -46,7 +47,28 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 ) : DataModel<DM, P>(name, properties), IsTypedRootDataModel<DM, P>, IsRootValuesDataModel<P> {
     override val primitiveType = PrimitiveType.RootModel
 
-    init { checkKeyDefinition(keyDefinition) }
+    override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
+    override val keyIndices = calculateKeyIndices()
+
+    // Add indices to array. Also account for the 1 sized separator
+    private fun calculateKeyIndices(): IntArray {
+        var index = 0
+        return when (keyDefinition) {
+            is Multiple -> keyDefinition.references.map { def ->
+                index.also {
+                    val propDef: IsFixedBytesEncodable<*> = when (def) {
+                        is IsFixedBytesEncodable<*> -> def
+                        is Reversed<*> -> if (def.reference is IsFixedBytesEncodable<*>){
+                            def.reference
+                        } else throw Exception("Key cannot contain flex bytes encodables")
+                        else -> throw Exception("Unknown key encodable")
+                    }
+                    index += propDef.byteSize + 1
+                }
+            }.toIntArray()
+            else -> intArrayOf(0)
+        }
+    }
 
     private object RootModelProperties:
         ObjectPropertyDefinitions<RootDataModel<*, *>>(),
@@ -176,7 +198,7 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
 /** Get Key based on [values] */
 fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.key(values: Values<DM, P>): Key<DM> {
-    val bytes = ByteArray(this.keyDefinition.byteSize)
+    val bytes = ByteArray(this.keyByteSize)
     var index = 0
     when (val keyDef = this.keyDefinition) {
         is Multiple -> {

@@ -255,7 +255,7 @@ data class MapDefinition<K: Any, V: Any, CX: IsPropertyContext> internal constru
                             } ?: throw ContextNotFoundException()
                         },
                         required = false
-                    ) as IsSerializableFlexBytesEncodable<Map<out Any, Any>, KeyValueDefinitionContext>,
+                    ) as IsContextualEncodable<Map<out Any, Any>, KeyValueDefinitionContext>,
                     MapDefinition<*, *, *>::default
                 )
             }

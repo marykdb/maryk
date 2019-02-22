@@ -344,7 +344,7 @@ data class MultiTypeDefinition<E: IndexedEnum<E>, in CX: IsPropertyContext> inte
                         contextualResolver = { context: MultiTypeDefinitionContext? ->
                             context?.multiTypeDefinition ?: throw ContextNotFoundException()
                         }
-                    ) as IsSerializableFlexBytesEncodable<TypedValue<out IndexedEnum<*>, Any>, MultiTypeDefinitionContext>,
+                    ) as IsContextualEncodable<TypedValue<out IndexedEnum<*>, Any>, MultiTypeDefinitionContext>,
                     MultiTypeDefinition<*, *>::default
                 )
             }

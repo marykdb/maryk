@@ -4,8 +4,8 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.enum.AnyIndexedEnum
@@ -26,7 +26,7 @@ data class ContextualIndexedEnumDefinition<CX: IsPropertyContext, CXI: IsPropert
         it as CXI?
     },
     override val required: Boolean = true
-): IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
+): IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
     override val wireType = VAR_INT
 
     override val final = true

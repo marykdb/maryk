@@ -1,13 +1,13 @@
 package maryk.core.properties.references
 
-import maryk.core.values.AbstractValues
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
+import maryk.core.values.AbstractValues
 
 /**
- * Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper
+ * Reference to a property containing values of type [T] inside Values. The property is defined by Property Definition Wrapper
  * [D] and referred by PropertyReference of type [P].
  */
-open class ValuePropertyReference<
+open class PropertyReferenceForValues<
     T: Any,
     TO: Any,
     out D : IsPropertyDefinitionWrapper<T, TO, *, *>,
@@ -15,6 +15,6 @@ open class ValuePropertyReference<
 > internal constructor(
     propertyDefinition: D,
     parentReference: P?
-): PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference), IsValuePropertyReference<T, TO, D, P> {
+): PropertyReference<T, D, P, AbstractValues<*, *, *>>(propertyDefinition, parentReference), IsPropertyReferenceForValues<T, TO, D, P> {
     override val name = this.propertyDefinition.name
 }

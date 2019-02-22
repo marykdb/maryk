@@ -22,7 +22,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
     listOfParts: MutableList<IsKeyPartialToMatch>,
     listOfUniqueFilters: MutableList<UniqueToMatch>
 ): ScanRange {
-    val keySize = this.keyDefinition.byteSize
+    val keySize = this.keyByteSize
     val start = ByteArray(keySize)
     val end = ByteArray(keySize) { -1 }
     var startInclusive = true
@@ -36,7 +36,7 @@ private fun <DM: IsRootValuesDataModel<*>> DM.createScanRangeFromParts(
         // If current key part bytes offset is lower than current key part and that part was already written (partCounter for keyIndex was there)
         if (currentOffset < keyPart.fromIndex && partCounter == keyIndex + 1) {
             currentOffset = (this.keyDefinition as? Multiple)?.let {
-                if(it.indices.size > 1) it.indices[++keyIndex] else keySize
+                if(keyIndices.size > 1) keyIndices[++keyIndex] else keySize
             } ?: keySize
         }
         // Break off if current offset is not expected for key part.

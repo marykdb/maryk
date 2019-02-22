@@ -144,14 +144,13 @@ class EnumDefinition<E : IndexedEnum<E>>(
                         context.enumDefinition = EnumDefinition(enum = value)
                     }
                 )
-                @Suppress("UNCHECKED_CAST")
                 add(5, "minValue",
                     ContextualValueDefinition(
                         contextualResolver = { context: EnumDefinitionContext? ->
                             @Suppress("UNCHECKED_CAST")
                             context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
                         }
-                    ) as IsSerializableFlexBytesEncodable<IndexedEnum<*>, IsPropertyContext>,
+                    ),
                     getter = EnumDefinition<*>::minValue
                 )
                 @Suppress("UNCHECKED_CAST")
@@ -161,7 +160,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                             @Suppress("UNCHECKED_CAST")
                             context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
                         }
-                    ) as IsSerializableFlexBytesEncodable<IndexedEnum<*>, IsPropertyContext>,
+                    ) as IsContextualEncodable<IndexedEnum<*>, IsPropertyContext>,
                     getter = EnumDefinition<*>::maxValue
                 )
                 @Suppress("UNCHECKED_CAST")
@@ -171,7 +170,7 @@ class EnumDefinition<E : IndexedEnum<E>>(
                             @Suppress("UNCHECKED_CAST")
                             context?.enumDefinition as IsValueDefinition<Any, IsPropertyContext>
                         }
-                    ) as IsSerializableFlexBytesEncodable<IndexedEnum<*>, IsPropertyContext>,
+                    ) as IsContextualEncodable<IndexedEnum<*>, IsPropertyContext>,
                     getter = EnumDefinition<*>::default
                 )
             }

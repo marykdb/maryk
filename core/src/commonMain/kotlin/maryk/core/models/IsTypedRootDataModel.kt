@@ -10,11 +10,11 @@ interface IsTypedRootDataModel<DM: IsRootDataModel<P>, P: IsPropertyDefinitions>
     override fun key(base64: String): Key<DM> = this.key(Base64.decode(base64))
 
     override fun key(reader: () -> Byte) = Key<DM>(
-        initByteArray(keyDefinition.byteSize, reader)
+        initByteArray(this.keyByteSize, reader)
     )
 
     override fun key(bytes: ByteArray): Key<DM> {
-        if (bytes.size != this.keyDefinition.byteSize) {
+        if (bytes.size != this.keyByteSize) {
             throw ParseException("Invalid byte length for key")
         }
         return Key(bytes)

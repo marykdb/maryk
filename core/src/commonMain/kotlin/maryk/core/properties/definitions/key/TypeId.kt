@@ -29,7 +29,6 @@ import maryk.core.values.Values
 data class TypeId<E: IndexedEnum<E>>(
     val reference: MultiTypePropertyReference<E, TypedValue<E, *>, MultiTypeDefinitionWrapper<E, TypedValue<E, *>, IsPropertyContext, *>, *>
 ) : IsFixedBytesPropertyReference<UInt> {
-    override val propertyDefinition = this
     override val indexKeyPartType = IndexKeyPartType.TypeId
     override val byteSize = 2
 

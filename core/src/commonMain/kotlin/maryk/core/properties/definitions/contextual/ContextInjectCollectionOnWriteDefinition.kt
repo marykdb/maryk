@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsByteTransportableCollection
 import maryk.core.properties.definitions.IsCollectionDefinition
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -15,7 +15,7 @@ import maryk.json.IsJsonLikeWriter
 data class ContextInjectCollectionOnWriteDefinition<T: Any, C: Collection<T>, in CX: IsPropertyContext>(
     val definition: IsCollectionDefinition<T, C, CX, IsValueDefinition<T, CX>>,
     private val valueInjector: (CX?) -> C
-) : IsByteTransportableCollection<T, C, CX> by definition, IsSerializableFlexBytesEncodable<C, CX> {
+) : IsByteTransportableCollection<T, C, CX> by definition, IsContextualEncodable<C, CX> {
     override val required = definition.required
     override val final = definition.final
 

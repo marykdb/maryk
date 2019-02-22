@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -17,7 +17,7 @@ data class ContextualValueDefinition<CX: IsPropertyContext, CXI: IsPropertyConte
         it as CXI?
     },
     override val required: Boolean = true
-): IsValueDefinition<T, CX>, IsSerializableFlexBytesEncodable<T, CX> {
+): IsValueDefinition<T, CX>, IsContextualEncodable<T, CX> {
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED
 

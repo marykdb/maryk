@@ -9,6 +9,7 @@ import maryk.test.models.TestMarykModel.Properties
 import maryk.test.models.TestMarykModel.Properties.bool
 import maryk.test.models.TestMarykModel.Properties.int
 import maryk.test.models.TestMarykModel.Properties.multi
+import maryk.test.models.TestMarykModel.Properties.string
 import maryk.test.shouldBe
 import kotlin.test.Test
 
@@ -17,6 +18,8 @@ class MultipleTest {
         UUIDKey,
         Reversed(bool.ref()),
         TypeId(multi.ref()),
+        string.ref(),
+        Reversed(string.ref()),
         int.ref()
     )
 
@@ -52,6 +55,8 @@ class MultipleTest {
         - !UUID
         - !Reversed bool
         - !TypeId multi
+        - !Ref string
+        - !Reversed string
         - !Ref int
 
         """.trimIndent()
@@ -59,6 +64,6 @@ class MultipleTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        multiple.toReferenceStorageByteArray().toHex() shouldBe "050101020c31020b69020a11"
+        multiple.toReferenceStorageByteArray().toHex() shouldBe "050101020c31020b69020a09020c09020a11"
     }
 }

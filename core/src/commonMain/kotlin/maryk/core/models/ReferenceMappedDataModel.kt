@@ -4,7 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
@@ -21,7 +21,7 @@ import maryk.lib.exceptions.ParseException
 abstract class ReferenceMappedDataModel<DO: Any, CDO: DefinedByReference<*>, P: ObjectPropertyDefinitions<DO>, CP: ObjectPropertyDefinitions<CDO>>(
     properties: P,
     private val containedDataModel: QueryDataModel<CDO, CP>,
-    private val referenceProperty: PropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
+    private val referenceProperty: ContextualPropertyDefinitionWrapper<AnyPropertyReference, AnyPropertyReference, RequestContext, ContextualPropertyReferenceDefinition<RequestContext>, CDO>
 ) : QueryDataModel<DO, P>(properties) {
 
     /** Write a values to [writer] with references mapped to the internal model for [items] within [context] */

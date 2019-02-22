@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.key.Multiple
 import maryk.core.properties.references.IsFixedBytesPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -108,12 +109,14 @@ fun convertFilterToKeyPartsToMatch(
 
 /** Convert [value] with [keyDefinition] into a key ByteArray */
 private fun convertValueToKeyBytes(
-    keyDefinition: IsFixedBytesPropertyReference<Any>,
+    keyDefinition: IsIndexablePropertyReference<Any>,
     value: Any
 ): ByteArray {
     var byteReadIndex = 0
-    val byteArray = ByteArray(keyDefinition.propertyDefinition.byteSize)
-    keyDefinition.propertyDefinition.writeStorageBytes(value) {
+    val byteArray = ByteArray(
+        keyDefinition.calculateStorageByteLength(value)
+    )
+    keyDefinition.writeStorageBytes(value) {
         byteArray[byteReadIndex++] = it
     }
     return byteArray
@@ -159,14 +162,14 @@ private fun <T : Any> createUniqueToMatch(
 private fun <T: Any> getKeyDefinitionOrNull(
     dataModel: IsRootValuesDataModel<*>,
     reference: IsPropertyReference<out T, IsChangeableValueDefinition<out T, IsPropertyContext>, *>,
-    processKeyDefinitionIfFound: (Int, Int, IsFixedBytesPropertyReference<Any>) -> Unit
+    processKeyDefinitionIfFound: (Int, Int, IsIndexablePropertyReference<Any>) -> Unit
 ){
     when(val keyDefinition = dataModel.keyDefinition) {
         is Multiple -> {
             for ((index, keyDef) in keyDefinition.references.withIndex()) {
                 if (keyDef.isForPropertyReference(reference)) {
                     @Suppress("UNCHECKED_CAST")
-                    processKeyDefinitionIfFound(index, keyDefinition.indices[index], keyDef as IsFixedBytesPropertyReference<Any>)
+                    processKeyDefinitionIfFound(index, dataModel.keyIndices[index], keyDef as IsIndexablePropertyReference<Any>)
                     break
                 }
             }

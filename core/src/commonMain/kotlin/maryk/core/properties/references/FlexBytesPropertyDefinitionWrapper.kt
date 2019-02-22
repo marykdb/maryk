@@ -1,17 +1,17 @@
-package maryk.core.properties.definitions.wrapper
+package maryk.core.properties.references
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.wrapper.AbstractPropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.IsValuePropertyDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType
-import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.ValuePropertyReference
 
 /**
  * Contains a Flex bytes property [definition] of type [T] which cannot be used in keys or ValueObjects
  * It contains an [index] and [name] to which it is referred inside DataModel and a [getter]
  * function to retrieve value on dataObject of [DO] in context [CX]
  */
-data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DO: Any> internal constructor(
+data class FlexBytesPropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: IsSerializableFlexBytesEncodable<T, CX>, DO: Any> internal constructor(
     override val index: Int,
     override val name: String,
     override val definition: D,
@@ -28,5 +28,5 @@ data class PropertyDefinitionWrapper<T: Any, TO:Any, CX: IsPropertyContext, D: I
     override val graphType = PropRefGraphType.PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) =
-        ValuePropertyReference(this, parentRef)
+        ValueWithFlexBytesPropertyReference(this, parentRef)
 }

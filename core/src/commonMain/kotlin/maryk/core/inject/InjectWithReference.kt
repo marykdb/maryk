@@ -5,7 +5,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.ValuePropertyReference
+import maryk.core.properties.references.PropertyReferenceForValues
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.Requests
 import maryk.core.values.AbstractValues
@@ -31,7 +31,7 @@ internal class InjectWithReference(
         }
 
         if (
-            this.reference !is ValuePropertyReference<*, *, *, *>
+            this.reference !is PropertyReferenceForValues<*, *, *, *>
             || toAddTo !is AbstractValues<*, *, *>
         ) {
             throw Exception("Inject can only be contained in Values")

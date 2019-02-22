@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.key.UUIDKey
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 import maryk.core.properties.types.Key
 
 interface IsRootValuesDataModel<P: PropertyDefinitions> : IsRootDataModel<P>, IsValuesDataModel<P>
@@ -21,6 +22,9 @@ interface IsRootValuesDataModel<P: PropertyDefinitions> : IsRootDataModel<P>, Is
 interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
     val keyDefinition: IsIndexable
     val indices: List<IsIndexable>?
+
+    val keyByteSize: Int
+    val keyIndices: IntArray
 
     /** Get Key by [base64] bytes as string representation */
     fun key(base64: String): Key<*>
@@ -61,24 +65,33 @@ interface IsRootDataModel<P: IsPropertyDefinitions> : IsNamedDataModel<P> {
     }
 }
 
-internal fun checkKeyDefinition(keyDefinition: IsIndexable) {
-    when(keyDefinition) {
-        is Multiple ->
-            keyDefinition.references.forEach { checkKeyDefinition(it) }
-        is ValueWithFixedBytesPropertyReference<*, *, *, *> ->
-            checkKeyDefinition(keyDefinition.propertyDefinition.name, keyDefinition.propertyDefinition.definition as IsValueDefinition<*, *>)
-        is TypeId<*> ->
-            checkKeyDefinition(keyDefinition.reference.propertyDefinition.name, keyDefinition.reference.propertyDefinition.definition)
-        is Reversed<*> -> {
-            val reference = keyDefinition.reference as ValueWithFixedBytesPropertyReference<*, *, *, *>
-            checkKeyDefinition(reference.propertyDefinition.name, reference.propertyDefinition.definition)
+internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
+    return when(keyDefinition) {
+        is Multiple -> {
+            var keyCount = keyDefinition.references.size - 1 // Start with adding size of separators
+            keyDefinition.references.forEach {
+                keyCount += checkKeyDefinitionAndCountBytes(it)
+            }
+            keyCount
         }
-        is UUIDKey -> {} // Ignore
+        is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
+            checkKeyDefinition(keyDefinition.name, keyDefinition.propertyDefinition.definition as IsValueDefinition<*, *>)
+            keyDefinition.byteSize
+        }
+        is ValueWithFlexBytesPropertyReference<*, *, *, *> -> throw Exception("Definition should have a fixed amount of bytes for a key")
+        is TypeId<*> -> {
+            checkKeyDefinition(keyDefinition.reference.name, keyDefinition.reference.propertyDefinition.definition)
+            keyDefinition.byteSize
+        }
+        is Reversed<*> -> {
+            return checkKeyDefinitionAndCountBytes(keyDefinition.reference)
+        }
+        is UUIDKey -> UUIDKey.byteSize
         else -> throw Exception("Unknown key definition type: $keyDefinition")
     }
 }
 
 private fun checkKeyDefinition(name: String, it: IsPropertyDefinition<*>) {
-    require(it.required) { "Definition of $name should be required" }
-    require(it.final) { "Definition of $name should be final" }
+    require(it.required) { "Definition of $name should be required for a key" }
+    require(it.final) { "Definition of $name should be final for a key" }
 }

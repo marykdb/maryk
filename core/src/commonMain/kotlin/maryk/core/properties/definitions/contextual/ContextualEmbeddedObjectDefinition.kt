@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.models.SimpleObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -16,7 +16,7 @@ import maryk.json.JsonWriter
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedObjectDefinition<CX: IsPropertyContext>(
     val contextualResolver: (context: CX?) -> SimpleObjectDataModel<Any, ObjectPropertyDefinitions<Any>>
-): IsValueDefinition<Any, CX>, IsSerializableFlexBytesEncodable<Any, CX> {
+): IsValueDefinition<Any, CX>, IsContextualEncodable<Any, CX> {
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED

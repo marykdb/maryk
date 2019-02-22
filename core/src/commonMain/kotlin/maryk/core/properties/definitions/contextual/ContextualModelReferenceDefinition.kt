@@ -3,7 +3,7 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsNamedDataModel
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WriteCacheReader
@@ -31,7 +31,7 @@ fun <DM: IsNamedDataModel<*>, CX: IsPropertyContext> ContextualModelReferenceDef
 data class ContextualModelReferenceDefinition<DM: IsNamedDataModel<*>, in CX: IsPropertyContext, CXI: IsPropertyContext>(
     val contextualResolver: (context: CXI?, name: String) -> Unit.() -> DM,
     val contextTransformer: (CX?) -> CXI?
-): IsValueDefinition<IsDataModelReference<DM>, CX>, IsSerializableFlexBytesEncodable<IsDataModelReference<DM>, CX> {
+): IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {
     override val required = true
     override val final = true
     override val wireType = WireType.LENGTH_DELIMITED

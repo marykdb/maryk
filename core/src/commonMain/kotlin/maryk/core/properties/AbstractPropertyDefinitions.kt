@@ -3,6 +3,7 @@ package maryk.core.properties
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -18,10 +19,11 @@ import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MapPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
-import maryk.core.properties.definitions.wrapper.PropertyDefinitionWrapper
+import maryk.core.properties.definitions.wrapper.ContextualPropertyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.SetPropertyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.FlexBytesPropertyDefinitionWrapper
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.decodeStorageIndex
@@ -71,7 +73,16 @@ abstract class AbstractPropertyDefinitions<DO: Any>:
         index: Int,
         name: String,
         definition: D
-    ) = PropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+    ) = FlexBytesPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
+        addSingle(this)
+    }
+
+    /** Add flex bytes encodable property [definition] with [name] and [index] */
+    fun <T: Any, CX: IsPropertyContext, D: IsContextualEncodable<T, CX>> add(
+        index: Int,
+        name: String,
+        definition: D
+    ) = ContextualPropertyDefinitionWrapper<T, T, CX, D, Any>(index, name, definition).apply {
         addSingle(this)
     }
 

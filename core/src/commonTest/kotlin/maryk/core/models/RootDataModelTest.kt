@@ -20,11 +20,15 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueModelDefinition
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.TypeId
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlReaders
+import maryk.lib.extensions.toHex
 import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 import maryk.test.ByteCollector
@@ -33,8 +37,14 @@ import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
+import maryk.test.models.TestMarykModel.Properties.dateTime
+import maryk.test.models.TestMarykModel.Properties.double
+import maryk.test.models.TestMarykModel.Properties.enum
+import maryk.test.models.TestMarykModel.Properties.int
+import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestValueObject
 import maryk.test.shouldBe
+import maryk.test.shouldNotBe
 import kotlin.test.Test
 
 internal class RootDataModelTest {
@@ -83,6 +93,56 @@ internal class RootDataModelTest {
     }
 
     @Test
+    fun referencesUsedInIndices() {
+        val multiple = Multiple(
+            Reversed(dateTime.ref()),
+            enum.ref(),
+            int.ref()
+        )
+
+        TestMarykModel.referencesUsedInIndices?.apply {
+            size shouldBe 5
+
+            get(0).apply {
+                reference.toHex() shouldBe "11"
+                indexables.apply {
+                    size shouldBe 2
+                    get(0) shouldBe int.ref()
+                    get(1) shouldBe multiple
+                }
+            }
+            get(1).apply {
+                reference.toHex() shouldBe "21"
+                indexables.apply {
+                    size shouldBe 1
+                    get(0) shouldBe Reversed(double.ref())
+                }
+            }
+            get(2).apply {
+                reference.toHex() shouldBe "29"
+                indexables.apply {
+                    size shouldBe 1
+                    get(0) shouldBe multiple
+                }
+            }
+            get(3).apply {
+                reference.toHex() shouldBe "39"
+                indexables.apply {
+                    size shouldBe 1
+                    get(0) shouldBe multiple
+                }
+            }
+            get(4).apply {
+                reference.toHex() shouldBe "69"
+                indexables.apply {
+                    size shouldBe 1
+                    get(0) shouldBe TypeId(multi.ref())
+                }
+            }
+        } shouldNotBe null
+    }
+
+    @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(TestMarykModel, RootDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels)
     }
@@ -98,7 +158,7 @@ internal class RootDataModelTest {
         {
         	"name": "TestMarykModel",
         	"key": ["Multiple", [["Ref", "uint"], ["Ref", "bool"], ["Ref", "enum"]]],
-        	"indices": [["Ref", "int"], ["Reversed", "double"], ["TypeId", "multi"], ["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"]]]],
+        	"indices": [["Ref", "int"], ["Reversed", "double"], ["TypeId", "multi"], ["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"], ["Ref", "int"]]]],
         	"properties": [{
         		"index": 1,
         		"name": "string",
@@ -349,6 +409,7 @@ internal class RootDataModelTest {
         - !Multiple
           - !Reversed dateTime
           - !Ref enum
+          - !Ref int
         ? 1: string
         : !String
           required: true

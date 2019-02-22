@@ -99,6 +99,7 @@ class DefinitionsTest {
           - !Multiple
             - !Reversed dateTime
             - !Ref enum
+            - !Ref int
           ? 1: string
           : !String
             required: true

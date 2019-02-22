@@ -49,7 +49,8 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
         TypeId(multi.ref()),
         Multiple(
             Reversed(dateTime.ref()),
-            enum.ref()
+            enum.ref(),
+            int.ref()
         )
     ),
     properties = Properties

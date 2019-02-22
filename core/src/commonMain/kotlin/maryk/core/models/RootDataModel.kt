@@ -12,8 +12,10 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
-import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.calculateKeyIndices
+import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
+import maryk.core.properties.definitions.index.collectReferencesUsedInIndices
 import maryk.core.properties.definitions.index.mapOfIndexKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
@@ -48,27 +50,9 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
     override val primitiveType = PrimitiveType.RootModel
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
-    override val keyIndices = calculateKeyIndices()
+    override val keyIndices = calculateKeyIndices(keyDefinition)
 
-    // Add indices to array. Also account for the 1 sized separator
-    private fun calculateKeyIndices(): IntArray {
-        var index = 0
-        return when (keyDefinition) {
-            is Multiple -> keyDefinition.references.map { def ->
-                index.also {
-                    val propDef: IsFixedBytesEncodable<*> = when (def) {
-                        is IsFixedBytesEncodable<*> -> def
-                        is Reversed<*> -> if (def.reference is IsFixedBytesEncodable<*>){
-                            def.reference
-                        } else throw Exception("Key cannot contain flex bytes encodables")
-                        else -> throw Exception("Unknown key encodable")
-                    }
-                    index += propDef.byteSize + 1
-                }
-            }.toIntArray()
-            else -> intArrayOf(0)
-        }
-    }
+    override val referencesUsedInIndices = collectReferencesUsedInIndices(indices)
 
     private object RootModelProperties:
         ObjectPropertyDefinitions<RootDataModel<*, *>>(),

@@ -2,7 +2,7 @@ package maryk.core.properties.references
 
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsBytesEncodable
-import maryk.core.properties.definitions.key.IsIndexable
+import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.values.Values
 
 interface IsIndexablePropertyReference<T: Any>: IsIndexable, IsBytesEncodable<T> {

@@ -1,7 +1,7 @@
 package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType
-import maryk.core.properties.definitions.key.IndexKeyPartType
+import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.json.IsJsonLikeReader
 import maryk.json.TokenType
 import maryk.yaml.YamlReader

@@ -5,8 +5,8 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.key.Multiple
-import maryk.core.properties.definitions.key.Reversed
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.types.TimePrecision.MILLIS

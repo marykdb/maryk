@@ -5,7 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
-import maryk.core.properties.definitions.key.Multiple
+import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference

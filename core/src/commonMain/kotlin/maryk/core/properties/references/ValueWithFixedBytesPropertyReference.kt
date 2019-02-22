@@ -4,7 +4,7 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsFixedBytesEncodable
-import maryk.core.properties.definitions.key.IndexKeyPartType
+import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.values.Values

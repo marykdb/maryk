@@ -1,7 +1,7 @@
 package maryk.core.processors.datastore
 
 import maryk.core.models.IsRootValuesDataModel
-import maryk.core.properties.definitions.key.Multiple
+import maryk.core.properties.definitions.index.Multiple
 import maryk.core.query.filters.IsFilter
 import maryk.lib.extensions.compare.compareTo
 

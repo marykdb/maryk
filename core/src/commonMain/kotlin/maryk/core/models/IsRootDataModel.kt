@@ -6,11 +6,11 @@ import maryk.core.properties.IsPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.key.IsIndexable
-import maryk.core.properties.definitions.key.Multiple
-import maryk.core.properties.definitions.key.Reversed
-import maryk.core.properties.definitions.key.TypeId
-import maryk.core.properties.definitions.key.UUIDKey
+import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.TypeId
+import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference

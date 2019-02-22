@@ -1,4 +1,4 @@
-package maryk.core.properties.definitions.key
+package maryk.core.properties.definitions.index
 
 import maryk.core.values.Values
 

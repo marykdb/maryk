@@ -1,4 +1,4 @@
-package maryk.core.properties.definitions.key
+package maryk.core.properties.definitions.index
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -11,7 +11,7 @@ import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.key.TypeIdTest.MarykModel.Properties.multi
+import maryk.core.properties.definitions.index.TypeIdTest.MarykModel.Properties.multi
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex

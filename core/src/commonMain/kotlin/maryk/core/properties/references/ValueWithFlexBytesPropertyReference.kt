@@ -1,7 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.properties.definitions.IsBytesEncodable
-import maryk.core.properties.definitions.key.IndexKeyPartType
+import maryk.core.properties.definitions.index.IndexKeyPartType
 
 /**
  * Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper

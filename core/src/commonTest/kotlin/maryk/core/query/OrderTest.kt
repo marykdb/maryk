@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.query.Direction.DESC
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -13,6 +14,9 @@ class OrderTest {
         SimpleMarykModel.ref { value },
         Direction.DESC
     )
+
+    private val orderDefault = Order()
+    private val orderDesc = Order(direction = DESC)
 
     private val context = RequestContext(
         mapOf(
@@ -41,6 +45,38 @@ class OrderTest {
     fun convertToYAMLAndBack() {
         checkYamlConversion(this.order, Order, { this.context }, ::compareRequest) shouldBe """
         !Desc value
+        """.trimIndent()
+    }
+
+    @Test
+    fun convertDefaultToProtoBufAndBack() {
+        checkProtoBufConversion(this.orderDefault, Order, { this.context }, ::compareRequest)
+    }
+
+    @Test
+    fun convertDefaultToJSONAndBack() {
+        checkJsonConversion(this.orderDefault, Order, { this.context }, ::compareRequest)
+    }
+
+    @Test
+    fun convertDefaultToYAMLAndBack() {
+        checkYamlConversion(this.orderDefault, Order, { this.context }, ::compareRequest) shouldBe ""
+    }
+
+    @Test
+    fun convertDescToProtoBufAndBack() {
+        checkProtoBufConversion(this.orderDesc, Order, { this.context }, ::compareRequest)
+    }
+
+    @Test
+    fun convertDescToJSONAndBack() {
+        checkJsonConversion(this.orderDesc, Order, { this.context }, ::compareRequest)
+    }
+
+    @Test
+    fun convertDescToYAMLAndBack() {
+        checkYamlConversion(this.orderDesc, Order, { this.context }, ::compareRequest) shouldBe """
+        !Desc
         """.trimIndent()
     }
 

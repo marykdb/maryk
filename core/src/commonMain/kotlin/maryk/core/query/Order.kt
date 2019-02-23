@@ -9,11 +9,13 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.values.EmptyValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken
+import maryk.json.JsonToken.EndDocument
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.UnknownYamlTag
@@ -36,20 +38,28 @@ fun AnyPropertyReference.ascending() = Order(this, Direction.ASC)
  * To define the order of results of property referred to [propertyReference] into [direction]
  */
 data class Order internal constructor(
-    val propertyReference: AnyPropertyReference,
+    val propertyReference: AnyPropertyReference? = null,
     val direction: Direction = Direction.ASC
 ) {
     object Properties : ObjectPropertyDefinitions<Order>() {
-        val propertyReference = add(1, "propertyReference", ContextualPropertyReferenceDefinition<RequestContext>(
-            contextualResolver = {
-                it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
-            }
-        ), Order::propertyReference)
+        val propertyReference = add(
+            1, "propertyReference",
+            ContextualPropertyReferenceDefinition<RequestContext>(
+                contextualResolver = {
+                    it?.dataModel?.properties as? AbstractPropertyDefinitions<*>? ?: throw ContextNotFoundException()
+                }
+            ),
+            Order::propertyReference
+        )
 
-        val direction = add(2, "direction", EnumDefinition(
-            enum = Direction,
-            default = Direction.ASC
-        ), Order::direction)
+        val direction = add(
+            2, "direction",
+            EnumDefinition(
+                enum = Direction,
+                default = Direction.ASC
+            ),
+            Order::direction
+        )
     }
 
     companion object: QueryDataModel<Order, Properties>(
@@ -69,7 +79,7 @@ data class Order internal constructor(
         }
 
         private fun writeJsonOrderValue(
-            reference: AnyPropertyReference,
+            reference: AnyPropertyReference?,
             direction: Direction,
             writer: YamlWriter,
             context: RequestContext?
@@ -77,7 +87,9 @@ data class Order internal constructor(
             if (direction == Direction.DESC) {
                 writer.writeTag("!Desc")
             }
-            Properties.propertyReference.writeJsonValue(reference, writer, context)
+            if (reference != null) {
+                Properties.propertyReference.writeJsonValue(reference, writer, context)
+            }
         }
 
         override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Order, Properties> {
@@ -87,30 +99,47 @@ data class Order internal constructor(
                 if (currentToken == JsonToken.StartDocument) {
                     currentToken = reader.nextToken()
 
-                    if (currentToken is JsonToken.Suspended) {
-                        currentToken = currentToken.lastToken
+                    when (currentToken) {
+                        is JsonToken.Suspended -> currentToken = currentToken.lastToken
+                        is EndDocument -> return this.values(context) { EmptyValueItems }
                     }
                 }
 
-                @Suppress("UNCHECKED_CAST")
-                (currentToken as? JsonToken.Value<String>)?.let {
-                    return this.values(context) {
-                        val valueMap = MutableValueItems()
+                val valueMap = MutableValueItems()
 
-                        it.type.let { valueType ->
+                return when (currentToken) {
+                    is JsonToken.StartObject -> { // when has no values
+                        currentToken.type.let { valueType ->
                             if (valueType is UnknownYamlTag && valueType.name == "Desc") {
-                                valueMap += direction withNotNull Direction.DESC
+                                valueMap += Properties.direction withNotNull Direction.DESC
                             }
                         }
 
-                        valueMap += propertyReference withNotNull propertyReference.definition.fromString(
-                            it.value,
-                            context
-                        )
-
-                        valueMap
+                        reader.nextToken() // Read until EndObject
+                        this.values(context) { valueMap }
                     }
-                } ?: throw ParseException("Expected only a property reference in Order")
+                    is JsonToken.Value<*> -> {
+                        this.values(context) {
+                            currentToken.type.let { valueType ->
+                                if (valueType is UnknownYamlTag && valueType.name == "Desc") {
+                                    valueMap += direction withNotNull Direction.DESC
+                                }
+                            }
+
+                            currentToken.value.let { value ->
+                                if (value is String) {
+                                    valueMap += propertyReference withNotNull propertyReference.definition.fromString(
+                                        value,
+                                        context
+                                    )
+                                }
+                            }
+
+                            valueMap
+                        }
+                    }
+                    else -> throw ParseException("Expected an order definition, not $currentToken")
+                }
             } else {
                 return super.readJson(reader, context)
             }

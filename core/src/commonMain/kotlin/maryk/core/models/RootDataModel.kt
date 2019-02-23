@@ -15,7 +15,6 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.definitions.index.calculateKeyIndices
 import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
-import maryk.core.properties.definitions.index.collectReferencesUsedInIndices
 import maryk.core.properties.definitions.index.mapOfIndexKeyPartDefinitions
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsFixedBytesPropertyReference
@@ -51,8 +50,6 @@ abstract class RootDataModel<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)
-
-    override val referencesUsedInIndices = collectReferencesUsedInIndices(indices)
 
     private object RootModelProperties:
         ObjectPropertyDefinitions<RootDataModel<*, *>>(),

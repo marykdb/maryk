@@ -1,5 +1,7 @@
 package maryk.json
 
+import maryk.json.JsonType.TAG
+
 /** Describes JSON elements that can be written */
 enum class JsonType {
     START,
@@ -79,7 +81,7 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         typeStack.removeAt(typeStack.lastIndex)
         checkTypeIsAllowed(
             JsonType.END_ARRAY,
-            arrayOf(JsonType.START_ARRAY, JsonType.ARRAY_VALUE, JsonType.END_ARRAY, JsonType.END_OBJ)
+            arrayOf(JsonType.START_ARRAY, JsonType.ARRAY_VALUE, JsonType.END_ARRAY, JsonType.END_OBJ, TAG)
         )
     }
 

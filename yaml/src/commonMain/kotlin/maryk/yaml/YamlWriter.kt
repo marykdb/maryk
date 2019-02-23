@@ -4,6 +4,7 @@ import maryk.json.AbstractJsonLikeWriter
 import maryk.json.IllegalJsonOperation
 import maryk.json.JsonEmbedType
 import maryk.json.JsonType
+import maryk.json.JsonType.TAG
 
 /** A Yaml writer which writes to [writer] */
 class YamlWriter(
@@ -233,6 +234,11 @@ class YamlWriter(
         }
 
         val lastTypeBeforeCheck = this.lastType
+
+        // If last type is TAG then write it away with an empty value for it
+        if (lastType == TAG) {
+            writeValue("")
+        }
 
         checkTypeIsAllowed(
             JsonType.TAG,

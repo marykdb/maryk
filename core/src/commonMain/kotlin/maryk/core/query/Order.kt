@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.query.Direction.DESC
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -65,6 +66,9 @@ data class Order internal constructor(
     companion object: QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
+        val ascending = Order()
+        val descending = Order(direction = DESC)
+
         override fun invoke(values: ObjectValues<Order, Properties>) = Order(
             propertyReference = values(1),
             direction = values(2)
@@ -86,6 +90,8 @@ data class Order internal constructor(
         ) {
             if (direction == Direction.DESC) {
                 writer.writeTag("!Desc")
+            } else if (reference == null) {
+                writer.writeTag("!Asc")
             }
             if (reference != null) {
                 Properties.propertyReference.writeJsonValue(reference, writer, context)

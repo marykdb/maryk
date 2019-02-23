@@ -29,6 +29,14 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
         index.addToIndex(record, value, version)
     }
 
+    /** Remove [record] for [previousValue] from index */
+    fun removeFromIndex(record: DataRecord<DM, P>, indexName: ByteArray, version: ULong, previousValue: ByteArray? = null) {
+        val index = getOrCreateIndex(indexName)
+        previousValue?.let {
+            index.removeFromIndex(record, previousValue, version, keepAllVersions)
+        }
+    }
+
     /** Add [record] to unique index for [value] and pass [previousValue] so that index reference can be deleted */
     fun addToUniqueIndex(record: DataRecord<DM, P>, indexName: ByteArray, value: Comparable<Any>, version: ULong, previousValue: Comparable<Any>? = null) {
         val index = getOrCreateUniqueIndex(indexName)

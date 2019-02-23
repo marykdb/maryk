@@ -64,6 +64,7 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.index.UniqueException
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matches
 import maryk.lib.time.Instant
 
 internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<DM>, ChangeResponse<DM>>
@@ -516,6 +517,25 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
         uniquesToIndex?.forEach { (value, previousValue) ->
             @Suppress("UNCHECKED_CAST")
             dataStore.addToUniqueIndex(objectToChange, value.reference, value.value, version, previousValue as Comparable<Any>)
+        }
+
+        val oldValueList = objectToChange.values
+
+        // Process indices
+        dataModel.indices?.forEach {
+            val oldValue = it.toStorageByteArray(objectToChange)
+            // Use switch trick to use less object creation and still be able to get values
+            objectToChange.values = newValueList
+            val newValue = it.toStorageByteArray(objectToChange)
+            objectToChange.values = oldValueList
+
+            if (newValue == null) {
+                if (oldValue != null) {
+                    dataStore.removeFromIndex(objectToChange, it.toReferenceStorageByteArray(), version, oldValue)
+                } // else ignore since did not exist
+            } else if (oldValue == null || !newValue.matches(oldValue)) {
+                dataStore.addToIndex(objectToChange, it.toReferenceStorageByteArray(), newValue, version, oldValue)
+            }
         }
 
         // Apply the new values now all validations have been accepted

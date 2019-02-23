@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.ObjectPropertyDefinitions
@@ -14,8 +13,8 @@ import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsValuePropertyReference
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.IsValuesGetter
 import maryk.core.values.ObjectValues
-import maryk.core.values.Values
 import kotlin.experimental.xor
 
 /** Class to reverse key parts of type [T] by [reference] in key. */
@@ -24,7 +23,7 @@ data class Reversed<T: Any>(
 ) : IsIndexablePropertyReference<T> {
     override val indexKeyPartType = IndexKeyPartType.Reversed
 
-    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) =
+    override fun getValue(values: IsValuesGetter) =
         this.reference.getValue(values)
 
     override fun calculateStorageByteLength(value: T) =

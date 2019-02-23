@@ -11,7 +11,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.lib.exceptions.ParseException
 
@@ -97,18 +96,12 @@ abstract class AbstractValues<DO: Any, DM: IsDataModel<P>, P: AbstractPropertyDe
     }
 
     @Suppress("UNCHECKED_CAST")
-    operator fun <T: Any, D: IsPropertyDefinition<T>, C: Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
+    override operator fun <T: Any, D: IsPropertyDefinition<T>, C: Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
         val refList = propertyReference.unwrap()
         var value: Any = this
 
         for (toResolve in refList) {
             value = toResolve.resolve(value) ?: return null
-
-            // In resolving the typed value is directly unwrapped to its value
-            // because the typed value itself is not important in references
-            if (value is TypedValue<*, *>) {
-                value = value.value
-            }
         }
 
         return value as T?

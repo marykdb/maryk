@@ -2,11 +2,10 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
-import maryk.core.values.Values
+import maryk.core.values.IsValuesGetter
 
 /**
  * Reference to a value property containing values of type [T]. The property is defined by Property Definition Wrapper
@@ -37,7 +36,7 @@ interface IsValuePropertyReference<
         this.writeStorageBytes(writer)
     }
 
-    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) =
+    override fun getValue(values: IsValuesGetter) =
         values[this] ?: throw RequiredException(this)
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) =

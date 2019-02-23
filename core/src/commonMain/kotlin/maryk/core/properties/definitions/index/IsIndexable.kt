@@ -1,6 +1,6 @@
 package maryk.core.properties.definitions.index
 
-import maryk.core.values.Values
+import maryk.core.values.IsValuesGetter
 
 /**
  * Defines this item is usable to describe an Index Key
@@ -23,11 +23,11 @@ interface IsIndexable {
     fun writeReferenceStorageBytes(writer: (Byte) -> Unit)
 
     /** Calculates the byte size of the storage bytes for [values] */
-    fun calculateStorageByteLength(values: Values<*, *>): Int
+    fun calculateStorageByteLength(values: IsValuesGetter): Int
 
     /**
      * Write bytes for storage of indexable for [values] to [writer]
      * Throws RequiredException if values are missing
      */
-    fun writeStorageBytes(values: Values<*, *>, writer: (byte: Byte) -> Unit)
+    fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit)
 }

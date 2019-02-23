@@ -2,12 +2,11 @@ package maryk.core.properties.references
 
 import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsFixedBytesEncodable
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.wrapper.FixedBytesPropertyDefinitionWrapper
 import maryk.core.properties.exceptions.RequiredException
-import maryk.core.values.Values
+import maryk.core.values.IsValuesGetter
 
 /**
  * Reference to a value property containing values of type [T] which are of fixed byte length. This can be used inside
@@ -48,7 +47,7 @@ open class ValueWithFixedBytesPropertyReference<
         this.writeStorageBytes(writer)
     }
 
-    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) =
+    override fun getValue(values: IsValuesGetter) =
         values[this] ?: throw RequiredException(this)
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) =

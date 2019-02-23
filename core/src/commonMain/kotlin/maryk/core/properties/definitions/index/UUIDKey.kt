@@ -5,14 +5,13 @@ import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.DefinitionDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.EmptyValueItems
+import maryk.core.values.IsValuesGetter
 import maryk.core.values.SimpleObjectValues
-import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.lib.uuid.generateUUID
 import maryk.yaml.IsYamlReader
@@ -22,7 +21,7 @@ object UUIDKey: IsFixedBytesPropertyReference<Pair<Long, Long>> {
     override val indexKeyPartType = IndexKeyPartType.UUID
     override val byteSize = 16
 
-    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>) = generateUUID()
+    override fun getValue(values: IsValuesGetter) = generateUUID()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Pair(
         initLong(reader),

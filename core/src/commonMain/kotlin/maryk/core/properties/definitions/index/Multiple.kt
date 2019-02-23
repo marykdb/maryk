@@ -10,8 +10,8 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.IsValuesGetter
 import maryk.core.values.ObjectValues
-import maryk.core.values.Values
 
 /** Class to encode multiple [references] for key or other indexable usages */
 data class Multiple(
@@ -22,7 +22,7 @@ data class Multiple(
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsIndexablePropertyReference<*>): this(listOf(*reference))
 
-    override fun calculateStorageByteLength(values: Values<*, *>): Int {
+    override fun calculateStorageByteLength(values: IsValuesGetter): Int {
         var totalBytes = references.size - 1 // Start with adding size of separators
         for (it in references) {
             totalBytes += it.calculateStorageByteLength(values)
@@ -30,7 +30,7 @@ data class Multiple(
         return totalBytes
     }
 
-    override fun writeStorageBytes(values: Values<*, *>, writer: (byte: Byte) -> Unit) {
+    override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
         for ((keyIndex, reference) in this.references.withIndex()) {
             @Suppress("UNCHECKED_CAST")
             val value = (reference as IsIndexablePropertyReference<Any>).getValue(values)

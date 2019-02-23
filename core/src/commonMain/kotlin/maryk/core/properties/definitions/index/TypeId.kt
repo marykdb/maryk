@@ -5,7 +5,6 @@ import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.AbstractPropertyDefinitions
 import maryk.core.properties.IsPropertyContext
@@ -19,8 +18,8 @@ import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.IsValuesGetter
 import maryk.core.values.ObjectValues
-import maryk.core.values.Values
 
 /**
  * Defines a key part which refers to a multi type definition with [reference].
@@ -32,8 +31,8 @@ data class TypeId<E: IndexedEnum<E>>(
     override val indexKeyPartType = IndexKeyPartType.TypeId
     override val byteSize = 2
 
-    override fun <DM : IsValuesDataModel<*>> getValue(values: Values<DM, *>): UInt {
-        val typedValue = values<TypedValue<*, *>?>(reference.propertyDefinition.index)
+    override fun  getValue(values: IsValuesGetter): UInt {
+        val typedValue = values[reference]
                 ?: throw RequiredException(reference)
         return typedValue.type.index
     }

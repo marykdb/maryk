@@ -1,5 +1,15 @@
 package maryk.json
 
+import maryk.json.JsonType.ARRAY_VALUE
+import maryk.json.JsonType.COMPLEX_FIELD_NAME_END
+import maryk.json.JsonType.COMPLEX_FIELD_NAME_START
+import maryk.json.JsonType.END_ARRAY
+import maryk.json.JsonType.END_OBJ
+import maryk.json.JsonType.FIELD_NAME
+import maryk.json.JsonType.OBJ_VALUE
+import maryk.json.JsonType.START
+import maryk.json.JsonType.START_ARRAY
+import maryk.json.JsonType.START_OBJ
 import maryk.json.JsonType.TAG
 
 /** Describes JSON elements that can be written */
@@ -26,22 +36,22 @@ sealed class JsonEmbedType(val isSimple: Boolean) {
 
 /** Class to implement code which is generic among JSON like writers */
 abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
-    protected var lastType: JsonType = JsonType.START
+    protected var lastType: JsonType = START
     protected var typeStack: MutableList<JsonEmbedType> = mutableListOf()
 
     override fun writeStartObject(isCompact: Boolean) {
         typeStack.add(JsonEmbedType.Object(isCompact))
         checkTypeIsAllowed(
-            JsonType.START_OBJ,
+            START_OBJ,
             arrayOf(
-                JsonType.START,
-                JsonType.FIELD_NAME,
-                JsonType.ARRAY_VALUE,
-                JsonType.START_ARRAY,
-                JsonType.END_OBJ,
-                JsonType.TAG,
-                JsonType.COMPLEX_FIELD_NAME_START,
-                JsonType.COMPLEX_FIELD_NAME_END
+                START,
+                FIELD_NAME,
+                ARRAY_VALUE,
+                START_ARRAY,
+                END_OBJ,
+                TAG,
+                COMPLEX_FIELD_NAME_START,
+                COMPLEX_FIELD_NAME_END
             )
         )
     }
@@ -52,24 +62,24 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         }
         typeStack.removeAt(typeStack.lastIndex)
         checkTypeIsAllowed(
-            JsonType.END_OBJ,
-            arrayOf(JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_OBJ, JsonType.END_ARRAY)
+            END_OBJ,
+            arrayOf(START_OBJ, OBJ_VALUE, END_OBJ, END_ARRAY)
         )
     }
 
     override fun writeStartArray(isCompact: Boolean) {
         typeStack.add(JsonEmbedType.Array(isCompact))
         checkTypeIsAllowed(
-            JsonType.START_ARRAY,
+            START_ARRAY,
             arrayOf(
-                JsonType.START,
-                JsonType.FIELD_NAME,
-                JsonType.START_ARRAY,
-                JsonType.ARRAY_VALUE,
-                JsonType.END_ARRAY,
-                JsonType.TAG,
-                JsonType.COMPLEX_FIELD_NAME_START,
-                JsonType.COMPLEX_FIELD_NAME_END
+                START,
+                FIELD_NAME,
+                START_ARRAY,
+                ARRAY_VALUE,
+                END_ARRAY,
+                TAG,
+                COMPLEX_FIELD_NAME_START,
+                COMPLEX_FIELD_NAME_END
             )
         )
     }
@@ -80,15 +90,15 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
         }
         typeStack.removeAt(typeStack.lastIndex)
         checkTypeIsAllowed(
-            JsonType.END_ARRAY,
-            arrayOf(JsonType.START_ARRAY, JsonType.ARRAY_VALUE, JsonType.END_ARRAY, JsonType.END_OBJ, TAG)
+            END_ARRAY,
+            arrayOf(START_ARRAY, ARRAY_VALUE, END_ARRAY, END_OBJ, TAG)
         )
     }
 
     override fun writeFieldName(name: String) {
         checkTypeIsAllowed(
-            JsonType.FIELD_NAME,
-            arrayOf(JsonType.START_OBJ, JsonType.OBJ_VALUE, JsonType.END_ARRAY, JsonType.END_OBJ)
+            FIELD_NAME,
+            arrayOf(START_OBJ, OBJ_VALUE, END_ARRAY, END_OBJ)
         )
     }
 
@@ -102,16 +112,16 @@ abstract class AbstractJsonLikeWriter: IsJsonLikeWriter {
     /** For writing values in Objects */
     protected fun checkObjectValueAllowed() {
         checkTypeIsAllowed(
-            JsonType.OBJ_VALUE,
-            arrayOf(JsonType.FIELD_NAME, JsonType.TAG, JsonType.COMPLEX_FIELD_NAME_END)
+            OBJ_VALUE,
+            arrayOf(FIELD_NAME, TAG, COMPLEX_FIELD_NAME_END)
         )
     }
 
     /** For writing values in Arrays */
     protected fun checkArrayValueAllowed() {
         checkTypeIsAllowed(
-            JsonType.ARRAY_VALUE,
-            arrayOf(JsonType.START_ARRAY, JsonType.ARRAY_VALUE, JsonType.TAG)
+            ARRAY_VALUE,
+            arrayOf(START_ARRAY, ARRAY_VALUE, TAG)
         )
     }
 }

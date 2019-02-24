@@ -1,12 +1,15 @@
 package maryk.json
 
+import maryk.json.JsonType.START_ARRAY
+import maryk.json.JsonType.START_OBJ
+
 /** A JSON writer which writes to [writer] */
 class JsonWriter(
     private val pretty: Boolean = false,
     private val writer: (String) -> Unit
 ) : AbstractJsonLikeWriter() {
     override fun writeStartObject(isCompact: Boolean) {
-        if(lastType != JsonType.START_ARRAY
+        if(lastType != START_ARRAY
             && !typeStack.isEmpty()
             && typeStack.last() is JsonEmbedType.Array
         ) {
@@ -25,7 +28,7 @@ class JsonWriter(
     }
 
     override fun writeStartArray(isCompact: Boolean) {
-        if(lastType != JsonType.START_ARRAY
+        if(lastType != START_ARRAY
             && !typeStack.isEmpty()
             && typeStack.last() is JsonEmbedType.Array
         ) {
@@ -43,7 +46,7 @@ class JsonWriter(
 
     /** Writes the field name for an object */
     override fun writeFieldName(name: String) {
-        if(lastType != JsonType.START_OBJ) {
+        if(lastType != START_OBJ) {
             writer(",")
             makePretty()
         }
@@ -63,7 +66,7 @@ class JsonWriter(
                 writer(value)
             }
             is JsonEmbedType.Array -> {
-                if(lastType != JsonType.START_ARRAY) {
+                if(lastType != START_ARRAY) {
                     writer(",")
                     if (pretty) { writer(" ") }
                 }

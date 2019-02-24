@@ -191,7 +191,7 @@ class YamlWriter(
         val valueToWrite = this.sanitizeValue(value)
         val lastTypeBeforeOperation = this.lastType
 
-        if (lastTypeBeforeOperation == TAG || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
+        if ((lastTypeBeforeOperation == TAG && value != "") || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
             writer(" ")
         }
 

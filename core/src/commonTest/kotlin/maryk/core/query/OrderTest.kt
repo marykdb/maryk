@@ -60,7 +60,7 @@ class OrderTest {
 
     @Test
     fun convertDefaultToYAMLAndBack() {
-        checkYamlConversion(this.orderDefault, Order, { this.context }, ::compareRequest) shouldBe ""
+        checkYamlConversion(this.orderDefault, Order, { this.context }, ::compareRequest) shouldBe "!Asc"
     }
 
     @Test

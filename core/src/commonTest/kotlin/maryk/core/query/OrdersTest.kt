@@ -38,13 +38,12 @@ class OrdersTest {
         checkYamlConversion(this.orders, Orders, { this.context }, ::compareRequest) shouldBe """
         - !Desc value
         - value
-        - !Asc 
+        - !Asc
         - !Desc
         """.trimIndent()
     }
 
     private fun compareRequest(converted: Orders, original: Orders) {
-        println("${converted.orders} ${original.orders}")
         for ((first, second) in converted.orders.zip(original.orders)) {
             first.propertyReference shouldBe second.propertyReference
             first.direction shouldBe second.direction

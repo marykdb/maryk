@@ -9,8 +9,8 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.orders.Order
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.values.ObjectValues
 
@@ -20,7 +20,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.getChanges(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.getChanges(
     vararg keys: Key<DM>,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -30,7 +30,17 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.getChanges(
     select: RootPropRefGraph<P>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    GetChangesRequest(this, keys.toList(), filter, order, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
+    GetChangesRequest(
+        this,
+        keys.toList(),
+        filter,
+        order,
+        fromVersion,
+        toVersion,
+        maxVersions,
+        select,
+        filterSoftDeleted
+    )
 
 /**
  * A Request to get DataObject its versioned changes by value [keys] for specific [dataModel] of type [DM]
@@ -39,7 +49,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.getChanges(
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 @Suppress("EXPERIMENTAL_OVERRIDE")
-data class GetChangesRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
+data class GetChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val filter: IsFilter? = null,
@@ -59,7 +69,7 @@ data class GetChangesRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         val dataModel = IsObjectRequest.addDataModel("from", this, GetChangesRequest<*, *>::dataModel)
         val keys = IsGetRequest.addKeys(this, GetChangesRequest<*, *>::keys)
         val select = IsFetchRequest.addSelect(this, GetChangesRequest<*, *>::select)
-        val filter = IsFetchRequest.addFilter(this,  GetChangesRequest<*, *>::filter)
+        val filter = IsFetchRequest.addFilter(this, GetChangesRequest<*, *>::filter)
         val order = IsFetchRequest.addOrder(this, GetChangesRequest<*, *>::order)
         val toVersion = IsFetchRequest.addToVersion(this, GetChangesRequest<*, *>::toVersion)
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetChangesRequest<*, *>::filterSoftDeleted)
@@ -67,19 +77,20 @@ data class GetChangesRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinition
         val maxVersions = IsChangesRequest.addMaxVersions(9, this, GetChangesRequest<*, *>::maxVersions)
     }
 
-    companion object: QueryDataModel<GetChangesRequest<*, *>, Properties>(
+    companion object : QueryDataModel<GetChangesRequest<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<GetChangesRequest<*, *>, Properties>) = GetChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            dataModel = values(1),
-            keys = values(2),
-            select = values(3),
-            filter = values(4),
-            order = values(5),
-            toVersion = values(6),
-            filterSoftDeleted = values(7),
-            fromVersion = values(8),
-            maxVersions = values(9)
-        )
+        override fun invoke(values: ObjectValues<GetChangesRequest<*, *>, Properties>) =
+            GetChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+                dataModel = values(1),
+                keys = values(2),
+                select = values(3),
+                filter = values(4),
+                order = values(5),
+                toVersion = values(6),
+                filterSoftDeleted = values(7),
+                fromVersion = values(8),
+                maxVersions = values(9)
+            )
     }
 }

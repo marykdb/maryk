@@ -5,8 +5,8 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
-import maryk.core.query.descending
 import maryk.core.query.filters.Exists
+import maryk.core.query.orders.descending
 import maryk.core.yaml.MarykYamlReaders
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getMaxRequest
@@ -20,7 +20,7 @@ class GetRequestTest {
     ))
 
     @Test
-    fun createAsMap(){
+    fun createAsMap() {
         GetRequest.values(context) {
             mapNonNulls(
                 dataModel with SimpleMarykModel,
@@ -30,7 +30,7 @@ class GetRequestTest {
     }
 
     @Test
-    fun createAsMaxMap(){
+    fun createAsMaxMap() {
         GetRequest.values(context) {
             mapNonNulls(
                 dataModel with SimpleMarykModel,

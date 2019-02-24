@@ -1,4 +1,4 @@
-package maryk.core.query
+package maryk.core.query.orders
 
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryDataModel
@@ -9,7 +9,9 @@ import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceD
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.query.Direction.DESC
+import maryk.core.query.RequestContext
+import maryk.core.query.orders.Direction.ASC
+import maryk.core.query.orders.Direction.DESC
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -26,22 +28,22 @@ import maryk.yaml.YamlWriter
 enum class Direction(override val index: UInt) : IndexedEnum<Direction> {
     ASC(1u), DESC(2u);
 
-    companion object: IndexedEnumDefinition<Direction>("Direction", Direction::values)
+    companion object : IndexedEnumDefinition<Direction>("Direction", Direction::values)
 }
 
 /** Descending ordering of property */
-fun AnyPropertyReference.descending() = Order(this, Direction.DESC)
+fun AnyPropertyReference.descending() = Order(this, DESC)
 
 /** Ascending ordering of property */
-fun AnyPropertyReference.ascending() = Order(this, Direction.ASC)
+fun AnyPropertyReference.ascending() = Order(this, ASC)
 
 /**
  * To define the order of results of property referred to [propertyReference] into [direction]
  */
 data class Order internal constructor(
     val propertyReference: AnyPropertyReference? = null,
-    val direction: Direction = Direction.ASC
-) {
+    val direction: Direction = ASC
+) : IsOrder {
     object Properties : ObjectPropertyDefinitions<Order>() {
         val propertyReference = add(
             1, "propertyReference",
@@ -57,26 +59,32 @@ data class Order internal constructor(
             2, "direction",
             EnumDefinition(
                 enum = Direction,
-                default = Direction.ASC
+                default = ASC
             ),
             Order::direction
         )
     }
 
-    companion object: QueryDataModel<Order, Properties>(
+    companion object : QueryDataModel<Order, Properties>(
         properties = Properties
     ) {
         val ascending = Order()
         val descending = Order(direction = DESC)
 
-        override fun invoke(values: ObjectValues<Order, Properties>) = Order(
-            propertyReference = values(1),
-            direction = values(2)
-        )
+        override fun invoke(values: ObjectValues<Order, Properties>) =
+            Order(
+                propertyReference = values(1),
+                direction = values(2)
+            )
 
         override fun writeJson(obj: Order, writer: IsJsonLikeWriter, context: RequestContext?) {
             if (writer is YamlWriter) {
-                writeJsonOrderValue(obj.propertyReference, obj.direction, writer, context)
+                writeJsonOrderValue(
+                    obj.propertyReference,
+                    obj.direction,
+                    writer,
+                    context
+                )
             } else {
                 super.writeJson(obj, writer, context)
             }

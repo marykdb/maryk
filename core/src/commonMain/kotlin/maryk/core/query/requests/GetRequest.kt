@@ -7,8 +7,8 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.orders.Order
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.values.ObjectValues
 
@@ -17,7 +17,7 @@ import maryk.core.values.ObjectValues
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.get(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.get(
     vararg keys: Key<DM>,
     select: RootPropRefGraph<P>? = null,
     filter: IsFilter? = null,
@@ -32,7 +32,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.get(
  * Optional: [order] can be applied to the results and the data can be shown as it was at [toVersion]
  * If [filterSoftDeleted] (default true) is set to false it will not filter away all soft deleted results.
  */
-data class GetRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
+data class GetRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val keys: List<Key<DM>>,
     override val select: RootPropRefGraph<P>? = null,
@@ -55,7 +55,7 @@ data class GetRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> inte
         val filterSoftDeleted = IsFetchRequest.addFilterSoftDeleted(this, GetRequest<*, *>::filterSoftDeleted)
     }
 
-    companion object: QueryDataModel<GetRequest<*, *>, Properties>(
+    companion object : QueryDataModel<GetRequest<*, *>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<GetRequest<*, *>, Properties>) = GetRequest(

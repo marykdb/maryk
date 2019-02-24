@@ -4,7 +4,9 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
-import maryk.core.query.Direction.DESC
+import maryk.core.query.orders.Direction
+import maryk.core.query.orders.Direction.DESC
+import maryk.core.query.orders.Order
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -12,7 +14,7 @@ import kotlin.test.Test
 class OrderTest {
     private val order = Order(
         SimpleMarykModel.ref { value },
-        Direction.DESC
+        DESC
     )
 
     private val orderDefault = Order()

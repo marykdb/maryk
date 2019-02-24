@@ -1,7 +1,7 @@
 package maryk.test.requests
 
-import maryk.core.query.descending
 import maryk.core.query.filters.Exists
+import maryk.core.query.orders.descending
 import maryk.core.query.requests.scanChanges
 import maryk.test.models.SimpleMarykModel
 

@@ -5,8 +5,8 @@ import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
-import maryk.core.query.descending
 import maryk.core.query.filters.Exists
+import maryk.core.query.orders.descending
 import maryk.core.query.requests.GetRequest
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe

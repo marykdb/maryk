@@ -6,8 +6,8 @@ import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.query.RequestContext
-import maryk.core.query.descending
 import maryk.core.query.filters.Exists
+import maryk.core.query.orders.descending
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
@@ -43,7 +43,10 @@ class InjectInRequestTest {
         )
     }
 
-    private fun checker(converted: ObjectValues<GetRequest<*, *>, GetRequest.Properties>, original: ObjectValues<GetRequest<*, *>, GetRequest.Properties>) {
+    private fun checker(
+        converted: ObjectValues<GetRequest<*, *>, GetRequest.Properties>,
+        original: ObjectValues<GetRequest<*, *>, GetRequest.Properties>
+    ) {
         val originalKeys = converted.original { keys } as Any?
 
         when (originalKeys) {

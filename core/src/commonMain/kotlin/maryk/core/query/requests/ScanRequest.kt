@@ -7,8 +7,8 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.orders.Order
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.values.ObjectValues
 
@@ -18,7 +18,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scan(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scan(
     startKey: Key<DM>? = null,
     select: RootPropRefGraph<P>? = null,
     filter: IsFilter? = null,
@@ -36,7 +36,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scan(
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-data class ScanRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
+data class ScanRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val select: RootPropRefGraph<P>? = null,
@@ -51,7 +51,7 @@ data class ScanRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> int
     override val responseModel = ValuesResponse as IsObjectDataModel<ValuesResponse<DM, P>, *>
 
     @Suppress("unused")
-    object Properties: ObjectPropertyDefinitions<ScanRequest<*, *>>() {
+    object Properties : ObjectPropertyDefinitions<ScanRequest<*, *>>() {
         val dataModel = IsObjectRequest.addDataModel("from", this, ScanRequest<*, *>::dataModel)
         val startKey = IsScanRequest.addStartKey(this, ScanRequest<*, *>::startKey)
         val select = IsFetchRequest.addSelect(this, ScanRequest<*, *>::select)
@@ -62,7 +62,7 @@ data class ScanRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> int
         val limit = IsScanRequest.addLimit(this, ScanRequest<*, *>::limit)
     }
 
-    companion object: QueryDataModel<ScanRequest<*, *>, Properties>(
+    companion object : QueryDataModel<ScanRequest<*, *>, Properties>(
         properties = Properties
     ) {
         override fun invoke(values: ObjectValues<ScanRequest<*, *>, Properties>) = ScanRequest(

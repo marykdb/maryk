@@ -4,6 +4,10 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.toUnitLambda
+import maryk.core.query.orders.Order
+import maryk.core.query.orders.Orders
+import maryk.core.query.orders.ascending
+import maryk.core.query.orders.descending
 import maryk.test.models.SimpleMarykModel
 import maryk.test.shouldBe
 import kotlin.test.Test

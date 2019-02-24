@@ -10,14 +10,14 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.query.Order
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.mapOfFilterDefinitions
+import maryk.core.query.orders.Order
 import maryk.core.query.responses.IsResponse
 
 /** Defines a fetch. */
-interface IsFetchRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsResponse> : IsStoreRequest<DM, RP> {
+interface IsFetchRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : IsResponse> : IsStoreRequest<DM, RP> {
     val select: RootPropRefGraph<P>?
     val filter: IsFilter?
     val order: Order?
@@ -25,7 +25,10 @@ interface IsFetchRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsR
     val filterSoftDeleted: Boolean
 
     companion object {
-        internal fun <DM: Any> addSelect(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> RootPropRefGraph<*>?) =
+        internal fun <DM : Any> addSelect(
+            definitions: ObjectPropertyDefinitions<DM>,
+            getter: (DM) -> RootPropRefGraph<*>?
+        ) =
             definitions.add(3, "select",
                 EmbeddedObjectDefinition(
                     dataModel = { RootPropRefGraph }
@@ -34,8 +37,9 @@ interface IsFetchRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsR
             )
 
         @Suppress("UNCHECKED_CAST")
-        internal fun <DM: Any> addFilter(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsFilter?) =
-            definitions.add(4, "filter",
+        internal fun <DM : Any> addFilter(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsFilter?) =
+            definitions.add(
+                4, "filter",
                 MultiTypeDefinition(
                     required = false,
                     typeEnum = FilterType,
@@ -52,7 +56,7 @@ interface IsFetchRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsR
                 getter = getter
             )
 
-        internal fun <DM: Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> Order?) =
+        internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> Order?) =
             definitions.add(5, "order",
                 EmbeddedObjectDefinition(
                     required = false,
@@ -61,15 +65,22 @@ interface IsFetchRequest<DM: IsRootDataModel<P>, P: PropertyDefinitions, RP: IsR
                 getter
             )
 
-        internal fun <DM: Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> ULong?) =
-            definitions.add(6, "toVersion",
+        internal fun <DM : Any> addToVersion(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> ULong?) =
+            definitions.add(
+                6, "toVersion",
                 NumberDefinition(
                     required = false,
                     type = UInt64
-                ), getter)
+                ),
+                getter
+            )
 
-        internal fun <DM: Any> addFilterSoftDeleted(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> Boolean?) =
-            definitions.add(7, "filterSoftDeleted",
+        internal fun <DM : Any> addFilterSoftDeleted(
+            definitions: ObjectPropertyDefinitions<DM>,
+            getter: (DM) -> Boolean?
+        ) =
+            definitions.add(
+                7, "filterSoftDeleted",
                 BooleanDefinition(
                     default = true
                 ),

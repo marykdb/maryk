@@ -7,8 +7,8 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
-import maryk.core.query.Order
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.orders.Order
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.values.ObjectValues
 
@@ -18,7 +18,7 @@ import maryk.core.values.ObjectValues
  * Can also contain a [filter], [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
  */
-fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scanChanges(
+fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.scanChanges(
     startKey: Key<DM>? = null,
     filter: IsFilter? = null,
     order: Order? = null,
@@ -29,7 +29,18 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scanChanges(
     select: RootPropRefGraph<P>? = null,
     filterSoftDeleted: Boolean = true
 ) =
-    ScanChangesRequest(this, startKey, filter, order, limit, fromVersion, toVersion, maxVersions, select, filterSoftDeleted)
+    ScanChangesRequest(
+        this,
+        startKey,
+        filter,
+        order,
+        limit,
+        fromVersion,
+        toVersion,
+        maxVersions,
+        select,
+        filterSoftDeleted
+    )
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit] for specific [dataModel]
@@ -38,7 +49,7 @@ fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.scanChanges(
  * Results can be ordered with an [order] and only selected properties can be returned with a [select] graph
  */
 @Suppress("EXPERIMENTAL_OVERRIDE")
-data class ScanChangesRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> internal constructor(
+data class ScanChangesRequest<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> internal constructor(
     override val dataModel: DM,
     override val startKey: Key<DM>? = null,
     override val filter: IsFilter? = null,
@@ -68,20 +79,21 @@ data class ScanChangesRequest<DM: IsRootValuesDataModel<P>, P: PropertyDefinitio
         val maxVersions = IsChangesRequest.addMaxVersions(10, this, ScanChangesRequest<*, *>::maxVersions)
     }
 
-    companion object: QueryDataModel<ScanChangesRequest<*, *>, Properties>(
+    companion object : QueryDataModel<ScanChangesRequest<*, *>, Properties>(
         properties = Properties
     ) {
-        override fun invoke(values: ObjectValues<ScanChangesRequest<*, *>, Properties>) = ScanChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
-            dataModel = values(1),
-            startKey = values(2),
-            select = values(3),
-            filter = values(4),
-            order = values(5),
-            toVersion = values(6),
-            filterSoftDeleted = values(7),
-            limit = values(8),
-            fromVersion = values(9),
-            maxVersions = values(10)
-        )
+        override fun invoke(values: ObjectValues<ScanChangesRequest<*, *>, Properties>) =
+            ScanChangesRequest<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>(
+                dataModel = values(1),
+                startKey = values(2),
+                select = values(3),
+                filter = values(4),
+                order = values(5),
+                toVersion = values(6),
+                filterSoftDeleted = values(7),
+                limit = values(8),
+                fromVersion = values(9),
+                maxVersions = values(10)
+            )
     }
 }

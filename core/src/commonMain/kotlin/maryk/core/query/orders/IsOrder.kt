@@ -1,4 +1,6 @@
 package maryk.core.query.orders
 
 /** Defines an order definition */
-interface IsOrder
+interface IsOrder {
+    val orderType: OrderType
+}

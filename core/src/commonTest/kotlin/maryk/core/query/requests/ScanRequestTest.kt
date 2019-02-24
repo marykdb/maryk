@@ -7,6 +7,7 @@ import maryk.core.extensions.toUnitLambda
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.scanMaxRequest
+import maryk.test.requests.scanOrdersRequest
 import maryk.test.requests.scanRequest
 import maryk.test.shouldBe
 import kotlin.test.Test
@@ -26,6 +27,7 @@ class ScanSelectRequestTest {
     fun convertToJSONAndBack() {
         checkJsonConversion(scanRequest, ScanRequest, { this.context })
         checkJsonConversion(scanMaxRequest, ScanRequest, { this.context })
+        checkJsonConversion(scanOrdersRequest, ScanRequest, { this.context })
     }
 
     @Test
@@ -47,6 +49,19 @@ class ScanSelectRequestTest {
         filterSoftDeleted: true
         order: value
         limit: 200
+
+        """.trimIndent()
+
+        checkYamlConversion(scanOrdersRequest, ScanRequest, { this.context }) shouldBe """
+        from: SimpleMarykModel
+        startKey: Zk6m4QpZQegUg5s13JVYlQ
+        select:
+        - value
+        filterSoftDeleted: true
+        order:
+        - value
+        - !Desc value
+        limit: 100
 
         """.trimIndent()
     }

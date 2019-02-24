@@ -12,6 +12,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
+import maryk.core.query.orders.OrderType.ORDER
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
@@ -44,6 +45,9 @@ data class Order internal constructor(
     val propertyReference: AnyPropertyReference? = null,
     val direction: Direction = ASC
 ) : IsOrder {
+
+    override val orderType = ORDER
+
     object Properties : ObjectPropertyDefinitions<Order>() {
         val propertyReference = add(
             1, "propertyReference",

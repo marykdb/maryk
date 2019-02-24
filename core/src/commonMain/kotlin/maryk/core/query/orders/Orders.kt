@@ -5,6 +5,7 @@ import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.query.RequestContext
+import maryk.core.query.orders.OrderType.ORDERS
 import maryk.core.query.orders.Orders.Properties.orders
 import maryk.core.values.ObjectValues
 
@@ -13,6 +14,8 @@ data class Orders(
     val orders: List<Order>
 ) : IsOrder {
     constructor(vararg order: Order) : this(order.toList())
+
+    override val orderType = ORDERS
 
     object Properties : ObjectPropertyDefinitions<Orders>() {
         val orders = add(

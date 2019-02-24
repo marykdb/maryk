@@ -1,22 +1,37 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.PropertyDefinitions
-import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.RequestContext
-import maryk.core.query.orders.Order
+import maryk.core.query.orders.IsOrder
+import maryk.core.query.orders.OrderType
+import maryk.core.query.orders.OrderType.ORDER
+import maryk.core.query.orders.OrderType.ORDERS
+import maryk.core.query.orders.mapOfOrderTypeToEmbeddedObject
 import maryk.core.query.responses.IsResponse
+import maryk.json.IsJsonLikeReader
+import maryk.json.IsJsonLikeWriter
+import maryk.json.JsonToken.StartArray
+import maryk.json.JsonToken.StartObject
+import maryk.json.JsonToken.Value
+import maryk.lib.exceptions.ParseException
+import maryk.yaml.IsYamlReader
 
 /** Defines a Scan from key request. */
 interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : IsResponse> : IsFetchRequest<DM, P, RP> {
     val startKey: Key<DM>?
-    val order: Order?
+    val order: IsOrder?
     val limit: UInt
 
     companion object {
@@ -35,13 +50,18 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
                 getter
             )
 
-        internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> Order?) =
+        internal fun <DM : Any> addOrder(definitions: ObjectPropertyDefinitions<DM>, getter: (DM) -> IsOrder?) =
             definitions.add(7, "order",
-                EmbeddedObjectDefinition(
-                    required = false,
-                    dataModel = { Order }
-                ),
-                getter
+                OrderTypesDefinition,
+                toSerializable = { value, _ ->
+                    value?.let {
+                        TypedValue(value.orderType, value)
+                    }
+                },
+                fromSerializable = { value ->
+                    value?.value as IsOrder
+                },
+                getter = getter
             )
 
         internal fun <DO : Any> addLimit(definitions: ObjectPropertyDefinitions<DO>, getter: (DO) -> UInt?) =
@@ -53,5 +73,35 @@ interface IsScanRequest<DM : IsRootDataModel<P>, P : PropertyDefinitions, RP : I
                 ),
                 getter
             )
+    }
+}
+
+private val multiTypeDefinition = MultiTypeDefinition(
+    typeEnum = OrderType,
+    definitionMap = mapOfOrderTypeToEmbeddedObject
+)
+
+private object OrderTypesDefinition : IsMultiTypeDefinition<OrderType, RequestContext> by multiTypeDefinition {
+    override fun writeJsonValue(value: TypedValue<OrderType, Any>, writer: IsJsonLikeWriter, context: RequestContext?) {
+        @Suppress("UNCHECKED_CAST")
+        val definition = mapOfOrderTypeToEmbeddedObject[value.type] as IsEmbeddedObjectDefinition<IsOrder, *, *, RequestContext, RequestContext>?
+            ?: throw DefNotFoundException("No def found for index ${value.type.name}")
+
+        definition.writeJsonValue(value.value as IsOrder, writer, context)
+    }
+
+    override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): TypedValue<OrderType, Any> {
+        val value: IsOrder = when {
+            reader.currentToken is StartArray -> {
+                mapOfOrderTypeToEmbeddedObject.getValue(ORDERS).readJson(reader, context)
+            }
+            (reader.currentToken is Value<*> && reader is IsYamlReader) ||
+                    (reader.currentToken is StartObject && reader !is IsYamlReader) -> {
+                mapOfOrderTypeToEmbeddedObject.getValue(ORDER).readJson(reader, context)
+            }
+            else -> throw ParseException("Expected an array with orders or an order")
+        }
+
+        return TypedValue(value.orderType, value)
     }
 }

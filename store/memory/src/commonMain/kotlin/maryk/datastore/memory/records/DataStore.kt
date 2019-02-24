@@ -13,7 +13,7 @@ internal typealias AnyDataStore = DataStore<IsRootValuesDataModel<PropertyDefini
 /**
  * An in memory data store containing records and indices
  */
-internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+internal class DataStore<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     val keepAllVersions: Boolean
 ) {
     val records: MutableList<DataRecord<DM, P>> = mutableListOf()
@@ -21,7 +21,13 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, P, Comparable<Any>>> = mutableListOf()
 
     /** Add [record] to index for [value] and pass [previousValue] so that index reference can be deleted */
-    fun addToIndex(record: DataRecord<DM, P>, indexName: ByteArray, value: ByteArray, version: ULong, previousValue: ByteArray? = null) {
+    fun addToIndex(
+        record: DataRecord<DM, P>,
+        indexName: ByteArray,
+        value: ByteArray,
+        version: ULong,
+        previousValue: ByteArray? = null
+    ) {
         val index = getOrCreateIndex(indexName)
         previousValue?.let {
             index.removeFromIndex(record, previousValue, version, keepAllVersions)
@@ -30,7 +36,12 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     }
 
     /** Remove [record] for [previousValue] from index */
-    fun removeFromIndex(record: DataRecord<DM, P>, indexName: ByteArray, version: ULong, previousValue: ByteArray? = null) {
+    fun removeFromIndex(
+        record: DataRecord<DM, P>,
+        indexName: ByteArray,
+        version: ULong,
+        previousValue: ByteArray? = null
+    ) {
         val index = getOrCreateIndex(indexName)
         previousValue?.let {
             index.removeFromIndex(record, previousValue, version, keepAllVersions)
@@ -38,7 +49,13 @@ internal class DataStore<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
     }
 
     /** Add [record] to unique index for [value] and pass [previousValue] so that index reference can be deleted */
-    fun addToUniqueIndex(record: DataRecord<DM, P>, indexName: ByteArray, value: Comparable<Any>, version: ULong, previousValue: Comparable<Any>? = null) {
+    fun addToUniqueIndex(
+        record: DataRecord<DM, P>,
+        indexName: ByteArray,
+        value: Comparable<Any>,
+        version: ULong,
+        previousValue: Comparable<Any>? = null
+    ) {
         val index = getOrCreateUniqueIndex(indexName)
         previousValue?.let {
             index.removeFromIndex(record, previousValue, version, keepAllVersions)

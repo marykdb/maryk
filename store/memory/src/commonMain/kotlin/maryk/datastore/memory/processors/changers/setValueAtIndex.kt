@@ -10,7 +10,7 @@ import maryk.datastore.memory.records.DeletedValue
  * Use [keepAllVersions] on true to keep all versions
  * Returns the new DataRecordValue or null if not changed
  */
-internal fun <T: Any> setValueAtIndex(
+internal fun <T : Any> setValueAtIndex(
     values: List<DataRecordNode>,
     valueIndex: Int,
     reference: ByteArray,
@@ -34,13 +34,13 @@ internal fun <T: Any> setValueAtIndex(
                 if (matchedValue.value != value) {
                     DataRecordValue(reference, value, version).also {
                         (values as MutableList<DataRecordNode>)[valueIndex] =
-                                DataRecordHistoricValues(
-                                    reference,
-                                    listOf(
-                                        matchedValue as DataRecordValue<T>,
-                                        it
-                                    )
+                            DataRecordHistoricValues(
+                                reference,
+                                listOf(
+                                    matchedValue as DataRecordValue<T>,
+                                    it
                                 )
+                            )
                     }
                 } else null
             } else {

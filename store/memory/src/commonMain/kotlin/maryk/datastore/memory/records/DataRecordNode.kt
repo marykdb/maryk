@@ -13,20 +13,20 @@ interface IsDataRecordValue<T> {
 }
 
 /** Defines a [value] at [version] for [reference] */
-class DataRecordValue<T: Any>(
+class DataRecordValue<T : Any>(
     override val reference: ByteArray,
     val value: T,
     override val version: ULong
-): DataRecordNode(), IsDataRecordValue<T>
+) : DataRecordNode(), IsDataRecordValue<T>
 
 /** Defines a deletion at [version] for [reference] */
-class DeletedValue<T: Any>(
+class DeletedValue<T : Any>(
     override val reference: ByteArray,
     override val version: ULong
-): DataRecordNode(), IsDataRecordValue<T>
+) : DataRecordNode(), IsDataRecordValue<T>
 
 /** Defines a [history] for [reference] */
-class DataRecordHistoricValues<T: Any>(
+class DataRecordHistoricValues<T : Any>(
     override val reference: ByteArray,
     val history: List<IsDataRecordValue<T>>
-): DataRecordNode()
+) : DataRecordNode()

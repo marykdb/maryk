@@ -11,7 +11,7 @@ import maryk.lib.extensions.compare.compareTo
  * Add [validate] handler to pass previous value for validation
  * Return true if changed
  */
-internal fun <T: Any> setValue(
+internal fun <T : Any> setValue(
     values: MutableList<DataRecordNode>,
     reference: IsPropertyReference<T, *, *>,
     value: T,

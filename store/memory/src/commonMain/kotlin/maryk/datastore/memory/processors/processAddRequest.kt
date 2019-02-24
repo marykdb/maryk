@@ -28,7 +28,10 @@ internal typealias AddStoreAction<DM, P> = StoreAction<DM, P, AddRequest<DM, P>,
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes an AddRequest in a [storeAction] into a [dataStore] */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRequest(storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>, dataStore: DataStore<DM, P>) {
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processAddRequest(
+    storeAction: StoreAction<DM, P, AddRequest<DM, P>, AddResponse<DM>>,
+    dataStore: DataStore<DM, P>
+) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
 
@@ -122,9 +125,11 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processAddRe
                 )
 
                 statuses.add(
-                    ValidationFail(listOf(
-                        AlreadySetException(ref)
-                    ))
+                    ValidationFail(
+                        listOf(
+                            AlreadySetException(ref)
+                        )
+                    )
                 )
             } catch (e: Throwable) {
                 statuses.add(

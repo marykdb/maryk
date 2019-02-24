@@ -12,12 +12,15 @@ internal typealias GetChangesStoreAction<DM, P> = StoreAction<DM, P, GetChangesR
 internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a GetRequest in a [storeAction] into a [dataStore] */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processGetChangesRequest(storeAction: GetChangesStoreAction<DM, P>, dataStore: DataStore<DM, P>) {
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetChangesRequest(
+    storeAction: GetChangesStoreAction<DM, P>,
+    dataStore: DataStore<DM, P>
+) {
     val getRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
 
     for (key in getRequest.keys) {
-        val index  = dataStore.records.binarySearch { it.key.compareTo(key) }
+        val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 
         // Only return if found
         if (index > -1) {

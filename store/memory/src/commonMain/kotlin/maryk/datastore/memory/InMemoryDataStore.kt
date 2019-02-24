@@ -16,7 +16,10 @@ import kotlin.coroutines.CoroutineContext
 internal typealias StoreExecutor<DM, P> = Unit.(StoreAction<DM, P, *, *>, dataStore: DataStore<DM, P>) -> Unit
 internal typealias StoreActor<DM, P> = SendChannel<StoreAction<DM, P, *, *>>
 
-internal expect fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> CoroutineScope.storeActor(store: InMemoryDataStore, executor: StoreExecutor<DM, P>): StoreActor<DM, P>
+internal expect fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> CoroutineScope.storeActor(
+    store: InMemoryDataStore,
+    executor: StoreExecutor<DM, P>
+): StoreActor<DM, P>
 
 /**
  * DataProcessor that stores all data changes in local memory.
@@ -30,7 +33,10 @@ class InMemoryDataStore(
 
     private val dataActors: MutableMap<String, StoreActor<*, *>> = mutableMapOf()
 
-    private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> getStoreActor(scope: CoroutineScope, dataModel: DM) =
+    private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> getStoreActor(
+        scope: CoroutineScope,
+        dataModel: DM
+    ) =
         dataActors.getOrPut(dataModel.name) {
             @Suppress("UNCHECKED_CAST")
             scope.storeActor(this, storeExecutor as StoreExecutor<DM, P>) as StoreActor<*, *>

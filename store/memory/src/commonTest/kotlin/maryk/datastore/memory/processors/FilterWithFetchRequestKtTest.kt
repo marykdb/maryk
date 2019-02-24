@@ -31,7 +31,7 @@ class FilterWithFetchRequestKtTest {
         TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true)
     )
 
-    private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> DM.createDataRecord(values: Values<DM, P>): DataRecord<DM, P> {
+    private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.createDataRecord(values: Values<DM, P>): DataRecord<DM, P> {
         val recordValues = mutableListOf<DataRecordValue<*>>()
 
         values.writeToStorage { _, reference, _, value ->

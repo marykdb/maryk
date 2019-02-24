@@ -6,7 +6,7 @@ import maryk.datastore.memory.records.DataRecordValue
 
 /** Get a value from [values] at [valueIndex] */
 @Suppress("UNCHECKED_CAST")
-internal fun <T: Any> getValueAtIndex(
+internal fun <T : Any> getValueAtIndex(
     values: List<DataRecordNode>,
     valueIndex: Int,
     toVersion: ULong? = null

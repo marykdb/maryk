@@ -26,7 +26,7 @@ import maryk.datastore.memory.records.DataRecord
  * Filters on soft deleted state and given filters.
  * Return true if [dataRecord] should be filtered away.
  */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsFetchRequest<DM, P, *>.filterData(
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> IsFetchRequest<DM, P, *>.filterData(
     dataRecord: DataRecord<DM, P>,
     toVersion: ULong?
 ) = when {
@@ -36,23 +36,23 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> IsFetchReque
 }
 
 /** Test if [dataRecord] is passing given [filter]. True if filter matches */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> doFilter(
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> doFilter(
     filter: IsFilter,
     dataRecord: DataRecord<DM, P>,
     toVersion: ULong?
 ): Boolean {
-    when(filter.filterType) {
+    when (filter.filterType) {
         FilterType.And -> {
             val and = filter as And
             for (f in and.filters) {
-                if(!doFilter(f, dataRecord, toVersion)) return false
+                if (!doFilter(f, dataRecord, toVersion)) return false
             }
             return true
         }
         FilterType.Or -> {
             val or = filter as Or
             for (f in or.filters) {
-                if(doFilter(f, dataRecord, toVersion)) return true
+                if (doFilter(f, dataRecord, toVersion)) return true
             }
             return false
         }
@@ -122,7 +122,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> doFilter(
             val prefixFilter = filter as Prefix
             for ((propRef, prefix) in prefixFilter.referenceValuePairs) {
                 dataRecord[propRef, toVersion]?.let {
-                    if(!(it).startsWith(prefix)) return false
+                    if (!(it).startsWith(prefix)) return false
                 }
             }
             return true
@@ -141,7 +141,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> doFilter(
             val regExFilter = filter as RegEx
             for ((propRef, regEx) in regExFilter.referenceValuePairs) {
                 dataRecord[propRef, toVersion]?.let {
-                    if(!regEx.matches(it)) return false
+                    if (!regEx.matches(it)) return false
                 }
             }
             return true
@@ -150,7 +150,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> doFilter(
             val valueInFilter = filter as ValueIn
             for ((propRef, values) in valueInFilter.referenceValuePairs) {
                 dataRecord[propRef, toVersion]?.let {
-                    if(!values.contains(it)) return false
+                    if (!values.contains(it)) return false
                 }
             }
             return true

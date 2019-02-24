@@ -25,7 +25,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
             valueIndex++
 
             // skip deleted values
-            while (valueIndex < record.values.size  && isDeletedNode(record.values[valueIndex])) {
+            while (valueIndex < record.values.size && isDeletedNode(record.values[valueIndex])) {
                 valueIndex++
             }
 
@@ -68,7 +68,7 @@ internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> DM.recordT
         }
     )
 
-    if(changes.isEmpty()){
+    if (changes.isEmpty()) {
         // Return null if no ValueItems were found
         return null
     }

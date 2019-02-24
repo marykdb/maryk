@@ -48,17 +48,40 @@ class InMemoryDataStoreChangeComplexTest {
                     ),
                     ComplexModel(
                         mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntObject = mapOf(1u to EmbeddedMarykModel("v1", EmbeddedMarykModel("sub")), 2u to EmbeddedMarykModel("v2"))
+                        mapIntObject = mapOf(
+                            1u to EmbeddedMarykModel("v1", EmbeddedMarykModel("sub")),
+                            2u to EmbeddedMarykModel("v2")
+                        )
                     ),
                     ComplexModel(
                         mapStringString = mapOf("a" to "b", "c" to "d"),
-                        mapIntMulti = mapOf(1u to TypedValue(V3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))), 2u to TypedValue(V1, "string"), 3u to TypedValue(V3, EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))))
+                        mapIntMulti = mapOf(
+                            1u to TypedValue(
+                                V3,
+                                EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))
+                            ),
+                            2u to TypedValue(V1, "string"),
+                            3u to TypedValue(
+                                V3,
+                                EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))
+                            )
+                        )
                     ),
                     ComplexModel(
                         multi = TypedValue(V3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
                         mapStringString = mapOf("a" to "b", "c" to "d"),
                         mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
-                        mapIntMulti = mapOf(1u to TypedValue(V3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))), 2u to TypedValue(V1, "string"), 3u to TypedValue(V3, EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))))
+                        mapIntMulti = mapOf(
+                            1u to TypedValue(
+                                V3,
+                                EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("sub2")))
+                            ),
+                            2u to TypedValue(V1, "string"),
+                            3u to TypedValue(
+                                V3,
+                                EmbeddedMarykModel("v2", EmbeddedMarykModel("2sub1", EmbeddedMarykModel("2sub2")))
+                            )
+                        )
                     )
                 )
             )
@@ -182,7 +205,13 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.change(
                 keys[4].change(
                     Delete(
-                        ComplexModel { mapIntMulti.atKeyAndType(1u, V3, EmbeddedMarykModel.Properties) { model ref { model } } },
+                        ComplexModel {
+                            mapIntMulti.atKeyAndType(
+                                1u,
+                                V3,
+                                EmbeddedMarykModel.Properties
+                            ) { model ref { model } }
+                        },
                         ComplexModel { mapIntMulti.refAtKeyAndType(3u, V3, EmbeddedMarykModel.Properties) { model } }
                     )
                 )
@@ -214,7 +243,13 @@ class InMemoryDataStoreChangeComplexTest {
             ComplexModel.change(
                 keys[5].change(
                     Change(
-                        ComplexModel { mapIntMulti.atKeyAndType(1u, V3, Properties) { model { model ref { value } } } } with "changed",
+                        ComplexModel {
+                            mapIntMulti.atKeyAndType(
+                                1u,
+                                V3,
+                                Properties
+                            ) { model { model ref { value } } }
+                        } with "changed",
                         ComplexModel { mapIntObject.refAtKey(1u) { value } } with "mapIntObjectChanged",
                         ComplexModel { multi.withType(V3, Properties) { model ref { value } } } with "multi sub changed"
                     )
@@ -237,7 +272,10 @@ class InMemoryDataStoreChangeComplexTest {
             valuesWithMetaData.values { mapIntMulti }.let {
                 it shouldNotBe null
                 it?.size shouldBe 3
-                it?.get(1u) shouldBe TypedValue(V3, EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("changed"))))
+                it?.get(1u) shouldBe TypedValue(
+                    V3,
+                    EmbeddedMarykModel("v1", EmbeddedMarykModel("sub1", EmbeddedMarykModel("changed")))
+                )
             }
 
             valuesWithMetaData.values { mapIntObject }.let {
@@ -257,7 +295,14 @@ class InMemoryDataStoreChangeComplexTest {
         val newMultiValue = TypedValue(V3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
         val newMapStringString = mapOf("e" to "f", "g" to "h")
         val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
-        val newMapIntMulti = mapOf(5u to TypedValue(V3, EmbeddedMarykModel("v101", EmbeddedMarykModel("suba1", EmbeddedMarykModel("suba2")))), 10u to TypedValue(V1, "new"), 3u to TypedValue(V3, EmbeddedMarykModel("v222", EmbeddedMarykModel("2asub1", EmbeddedMarykModel("2asub2")))))
+        val newMapIntMulti = mapOf(
+            5u to TypedValue(
+                V3,
+                EmbeddedMarykModel("v101", EmbeddedMarykModel("suba1", EmbeddedMarykModel("suba2")))
+            ),
+            10u to TypedValue(V1, "new"),
+            3u to TypedValue(V3, EmbeddedMarykModel("v222", EmbeddedMarykModel("2asub1", EmbeddedMarykModel("2asub2"))))
+        )
 
         val changeResponse = dataStore.execute(
             ComplexModel.change(

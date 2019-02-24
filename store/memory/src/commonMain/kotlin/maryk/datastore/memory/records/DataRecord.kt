@@ -14,12 +14,12 @@ import maryk.datastore.memory.processors.objectSoftDeleteQualifier
  * [firstVersion] and [lastVersion] signify the versions of first and last change
  * [isDeleted] is a state switch to signify record was deleted
  */
-internal data class DataRecord<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+internal data class DataRecord<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     val key: Key<DM>,
     var values: List<DataRecordNode>,
     val firstVersion: ULong,
     var lastVersion: ULong
-): IsValuesGetter {
+) : IsValuesGetter {
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>) =
         getValue<T>(this.values, propertyReference.toStorageByteArray())?.value
 

@@ -23,7 +23,7 @@ import maryk.lib.extensions.compare.matchPart
  * Add [handlePreviousValue] handler to pass previous value for extra operations
  * Return true if value was deleted. False if there was nothing to delete
  */
-internal fun <T: Any> deleteByReference(
+internal fun <T : Any> deleteByReference(
     values: MutableList<DataRecordNode>,
     reference: IsPropertyReference<T, IsPropertyDefinition<T>, *>,
     version: ULong,
@@ -46,7 +46,7 @@ internal fun <T: Any> deleteByReference(
     // Get previous value and convert if of complex type
     @Suppress("UNCHECKED_CAST")
     val prevValue: T = getValueAtIndex<T>(values, valueIndex)?.value.let {
-        if(it == null){
+        if (it == null) {
             // does not exist so nothing to delete
             return false
         } else {
@@ -59,7 +59,13 @@ internal fun <T: Any> deleteByReference(
                 is EmbeddedValuesPropertyRef<*, *, *> -> (reference.propertyDefinition.definition.dataModel as IsDataModelWithValues<*, *, *>).values { EmptyValueItems } as T
                 is MapValueReference<*, *, *> -> {
                     val mapReference = reference.parentReference as MapReference<Any, Any, IsPropertyContext>
-                    createCountUpdater(values, mapReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, out Any>, version, -1, keepAllVersions) { newCount ->
+                    createCountUpdater(
+                        values,
+                        mapReference as IsPropertyReference<Map<*, *>, IsPropertyDefinition<Map<*, *>>, out Any>,
+                        version,
+                        -1,
+                        keepAllVersions
+                    ) { newCount ->
                         mapReference.propertyDefinition.definition.validateSize(newCount) { mapReference }
                     }
                     // Map values can be set to null to be deleted.
@@ -69,7 +75,13 @@ internal fun <T: Any> deleteByReference(
                 is ListItemReference<*, *> -> {
                     val listReference = reference.parentReference as ListReference<Any, IsPropertyContext>
                     val listDefinition = listReference.propertyDefinition.definition
-                    createCountUpdater(values, listReference as IsPropertyReference<List<*>, IsPropertyDefinition<List<*>>, out Any>, version, -1, keepAllVersions) { newCount ->
+                    createCountUpdater(
+                        values,
+                        listReference as IsPropertyReference<List<*>, IsPropertyDefinition<List<*>>, out Any>,
+                        version,
+                        -1,
+                        keepAllVersions
+                    ) { newCount ->
                         toShiftListCount = newCount - reference.index.toUInt()
                         listDefinition.validateSize(newCount.toUInt()) { listReference }
                     }
@@ -80,7 +92,13 @@ internal fun <T: Any> deleteByReference(
                 }
                 is SetItemReference<*, *> -> {
                     val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
-                    createCountUpdater(values, setReference as IsPropertyReference<Set<*>, IsPropertyDefinition<Set<*>>, out Any>, version, -1, keepAllVersions) { newCount ->
+                    createCountUpdater(
+                        values,
+                        setReference as IsPropertyReference<Set<*>, IsPropertyDefinition<Set<*>>, out Any>,
+                        version,
+                        -1,
+                        keepAllVersions
+                    ) { newCount ->
                         setReference.propertyDefinition.definition.validateSize(newCount) { setReference }
                     }
                     // Map values can be set to null to be deleted.
@@ -104,7 +122,7 @@ internal fun <T: Any> deleteByReference(
         val value = values[index]
         val refOfParent = referenceOfParent
 
-        if(value.reference.matchPart(0, referenceToCompareTo)) {
+        if (value.reference.matchPart(0, referenceToCompareTo)) {
             if (toShiftListCount <= 0u) {
                 // Delete if not a list or no further list items
                 isDeleted = deleteByIndex<T>(values, index, value.reference, version) != null
@@ -113,7 +131,14 @@ internal fun <T: Any> deleteByReference(
             // To handle list shifting
             if (toShiftListCount > 0u) {
                 @Suppress("UNCHECKED_CAST")
-                setValueAtIndex(values, index - 1, values[index - 1].reference, (value as DataRecordValue<Any>).value, version, keepAllVersions)
+                setValueAtIndex(
+                    values,
+                    index - 1,
+                    values[index - 1].reference,
+                    (value as DataRecordValue<Any>).value,
+                    version,
+                    keepAllVersions
+                )
                 toShiftListCount--
             }
 

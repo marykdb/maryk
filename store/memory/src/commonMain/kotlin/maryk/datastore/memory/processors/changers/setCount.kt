@@ -9,7 +9,7 @@ import maryk.lib.extensions.compare.compareTo
  * Set count in [values] for [reference] at [version] by applying [countChange] to current count
  * Use [keepAllVersions] on true to keep all versions
  */
-internal fun <T: Any> createCountUpdater(
+internal fun <T : Any> createCountUpdater(
     values: MutableList<DataRecordNode>,
     reference: IsPropertyReference<out T, IsPropertyDefinition<out T>, out Any>,
     version: ULong,

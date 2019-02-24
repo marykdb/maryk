@@ -7,7 +7,7 @@ import maryk.datastore.memory.records.DataRecord
 /**
  * Contains all index values and has methods to add, get or remove unique value references
  */
-internal abstract class AbstractIndexValues<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions, T: Any>(
+internal abstract class AbstractIndexValues<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions, T : Any>(
     val indexReference: ByteArray
 ) {
     abstract val compareTo: T.(T) -> Int

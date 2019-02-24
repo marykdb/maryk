@@ -20,7 +20,7 @@ internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootValuesDataMode
 internal val objectSoftDeleteQualifier = byteArrayOf(0)
 
 /** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDeleteRequest(
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processDeleteRequest(
     storeAction: DeleteStoreAction<DM, P>,
     dataStore: DataStore<DM, P>
 ) {
@@ -43,7 +43,12 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDelet
                         deleteRequest.dataModel.indices?.forEach {
                             val oldValue = it.toStorageByteArray(objectToDelete)
                             if (oldValue != null) {
-                                dataStore.removeFromIndex(objectToDelete, it.toReferenceStorageByteArray(), version, oldValue)
+                                dataStore.removeFromIndex(
+                                    objectToDelete,
+                                    it.toReferenceStorageByteArray(),
+                                    version,
+                                    oldValue
+                                )
                             } // else ignore since did not exist
                         }
 
@@ -57,7 +62,12 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processDelet
                                 it.reference.compareTo(objectSoftDeleteQualifier)
                             }
                             setValueAtIndex(
-                                newValues, valueIndex, objectSoftDeleteQualifier, true, version, dataStore.keepAllVersions
+                                newValues,
+                                valueIndex,
+                                objectSoftDeleteQualifier,
+                                true,
+                                version,
+                                dataStore.keepAllVersions
                             )
 
                             val newRecord = oldRecord.copy(

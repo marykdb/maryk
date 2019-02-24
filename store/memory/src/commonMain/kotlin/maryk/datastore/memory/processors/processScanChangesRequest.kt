@@ -14,7 +14,7 @@ internal typealias ScanChangesStoreAction<DM, P> = StoreAction<DM, P, ScanChange
 internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a ScanRequest in a [storeAction] into a [dataStore] */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanChangesRequest(
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM, P>,
     dataStore: DataStore<DM, P>
 ) {
@@ -29,7 +29,9 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processScanC
             it * -1 + 1
         } else if (!scanRange.startInclusive) {
             it + 1 // Skip the match if not inclusive
-        } else  { it }
+        } else {
+            it
+        }
     }
 
     for (index in startIndex until dataStore.records.size) {

@@ -12,12 +12,15 @@ internal typealias GetStoreAction<DM, P> = StoreAction<DM, P, GetRequest<DM, P>,
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a GetRequest in a [storeAction] into a [dataStore] */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processGetRequest(storeAction: GetStoreAction<DM, P>, dataStore: DataStore<DM, P>) {
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processGetRequest(
+    storeAction: GetStoreAction<DM, P>,
+    dataStore: DataStore<DM, P>
+) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM, P>>()
 
     for (key in getRequest.keys) {
-        val index  = dataStore.records.binarySearch { it.key.compareTo(key) }
+        val index = dataStore.records.binarySearch { it.key.compareTo(key) }
 
         // Only return if found
         if (index > -1) {

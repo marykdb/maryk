@@ -8,7 +8,7 @@ import maryk.lib.extensions.compare.compareTo
 /**
  * Get list from [values] at [reference] by reading and collecting all values from DataRecord
  */
-internal fun <T: Any> getList(
+internal fun <T : Any> getList(
     values: List<DataRecordNode>,
     reference: IsPropertyReference<out List<T>, IsPropertyDefinition<out List<T>>, out Any>
 ): MutableList<T>? {
@@ -27,7 +27,7 @@ internal fun <T: Any> getList(
     while (valueIndex < values.size) {
         val node = getValueAtIndex<T>(values, valueIndex)
 
-        if(node != null) {
+        if (node != null) {
             // Break if reference does not match list start
             if (!node.reference.matchStart(referenceToCompareTo)) {
                 break

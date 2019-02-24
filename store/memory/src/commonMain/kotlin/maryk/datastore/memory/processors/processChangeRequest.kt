@@ -71,7 +71,7 @@ internal typealias ChangeStoreAction<DM, P> = StoreAction<DM, P, ChangeRequest<D
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootValuesDataModel<PropertyDefinitions>, PropertyDefinitions>
 
 /** Processes a ChangeRequest in a [storeAction] into a [dataStore] */
-internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChangeRequest(
+internal fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> processChangeRequest(
     storeAction: ChangeStoreAction<DM, P>,
     dataStore: DataStore<DM, P>
 ) {
@@ -81,17 +81,20 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 
     if (changeRequest.objects.isNotEmpty()) {
-        objectChanges@for (objectChange in changeRequest.objects) {
+        objectChanges@ for (objectChange in changeRequest.objects) {
             val index = dataStore.records.binarySearch { it.key.compareTo(objectChange.key) }
             val objectToChange = dataStore.records[index]
 
             val lastVersion = objectChange.lastVersion
             // Check if version is within range
-            if(lastVersion != null && objectToChange.lastVersion.compareTo(lastVersion) != 0) {
+            if (lastVersion != null && objectToChange.lastVersion.compareTo(lastVersion) != 0) {
                 statuses.add(
                     ValidationFail(
                         listOf(
-                            InvalidValueException(null, "Version of object was different than given: ${objectChange.lastVersion} < ${objectToChange.lastVersion}")
+                            InvalidValueException(
+                                null,
+                                "Version of object was different than given: ${objectChange.lastVersion} < ${objectToChange.lastVersion}"
+                            )
                         )
                     )
                 )
@@ -100,7 +103,14 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
 
             val status: IsChangeResponseStatus<DM> = when {
                 index > -1 -> {
-                    applyChanges(changeRequest.dataModel, dataStore, objectToChange, objectChange.changes, version, dataStore.keepAllVersions)
+                    applyChanges(
+                        changeRequest.dataModel,
+                        dataStore,
+                        objectToChange,
+                        objectChange.changes,
+                        version,
+                        dataStore.keepAllVersions
+                    )
                 }
                 else -> DoesNotExist(objectChange.key)
             }
@@ -121,7 +131,7 @@ internal fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> processChang
  * Apply [changes] to a specific [objectToChange] and record them as [version]
  * [keepAllVersions] determines if history is kept
  */
-private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
+private fun <DM : IsRootValuesDataModel<P>, P : PropertyDefinitions> applyChanges(
     dataModel: DM,
     dataStore: DataStore<DM, P>,
     objectToChange: DataRecord<DM, P>,
@@ -169,7 +179,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     val mapReference = reference as MapReference<Any, Any, IsPropertyContext>
 
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(newValueList, mapReference, version, keepAllVersions)
+                                    val hadPrevValue =
+                                        deleteByReference(newValueList, mapReference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
                                     reference.propertyDefinition.definition.validateWithRef(
@@ -179,7 +190,13 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeMapToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
+                                    writeMapToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
                                 }
                                 is List<*> -> {
                                     if (reference !is ListReference<*, *>) {
@@ -189,7 +206,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     val listReference = reference as ListReference<Any, IsPropertyContext>
 
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(newValueList, listReference, version, keepAllVersions)
+                                    val hadPrevValue =
+                                        deleteByReference(newValueList, listReference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
                                     reference.propertyDefinition.definition.validateWithRef(
@@ -199,7 +217,13 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeListToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
+                                    writeListToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
                                 }
                                 is Set<*> -> {
                                     if (reference !is SetReference<*, *>) {
@@ -209,7 +233,8 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     val setReference = reference as SetReference<Any, IsPropertyContext>
 
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(newValueList, setReference, version, keepAllVersions)
+                                    val hadPrevValue =
+                                        deleteByReference(newValueList, setReference, version, keepAllVersions)
 
                                     @Suppress("UNCHECKED_CAST")
                                     reference.propertyDefinition.definition.validateWithRef(
@@ -219,21 +244,34 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeSetToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
+                                    writeSetToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference !is MultiTypePropertyReference<*, *, *, *>) {
                                         throw Exception("Expected a MultiTypePropertyReference for a typedValue")
                                     }
                                     @Suppress("UNCHECKED_CAST")
-                                    val multiTypeReference = reference as MultiTypePropertyReference<AnyIndexedEnum, Any, *, *>
+                                    val multiTypeReference =
+                                        reference as MultiTypePropertyReference<AnyIndexedEnum, Any, *, *>
                                     @Suppress("UNCHECKED_CAST")
-                                    val multiTypeDefinition = multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
+                                    val multiTypeDefinition =
+                                        multiTypeReference.propertyDefinition.definition as MultiTypeDefinition<AnyIndexedEnum, IsPropertyContext>
 
                                     // Previous value to find
                                     var prevValue: TypedValue<*, *>? = null
                                     // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference<TypedValue<AnyIndexedEnum, Any>>(newValueList, multiTypeReference, version, keepAllVersions) { _, prevTypedValue ->
+                                    val hadPrevValue = deleteByReference<TypedValue<AnyIndexedEnum, Any>>(
+                                        newValueList,
+                                        multiTypeReference,
+                                        version,
+                                        keepAllVersions
+                                    ) { _, prevTypedValue ->
                                         prevValue = prevTypedValue
                                     }
 
@@ -245,7 +283,13 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
                                     val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
-                                    writeTypedValueToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter, reference.propertyDefinition, value)
+                                    writeTypedValueToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
                                 }
                                 is Values<*, *> -> {
                                     if (reference !is EmbeddedValuesPropertyRef<*, *, *>) {
@@ -253,12 +297,18 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     }
 
                                     @Suppress("UNCHECKED_CAST")
-                                    val valuesReference = reference as EmbeddedValuesPropertyRef<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, IsPropertyContext>
+                                    val valuesReference =
+                                        reference as EmbeddedValuesPropertyRef<IsValuesDataModel<PropertyDefinitions>, PropertyDefinitions, IsPropertyContext>
                                     val valuesDefinition = valuesReference.propertyDefinition.definition
 
                                     // Delete all existing values in placeholder
                                     @Suppress("UNCHECKED_CAST")
-                                    val hadPrevValue = deleteByReference(newValueList, valuesReference as IsPropertyReference<Values<*, *>, IsPropertyDefinition<Values<*, *>>, *>, version, keepAllVersions)
+                                    val hadPrevValue = deleteByReference(
+                                        newValueList,
+                                        valuesReference as IsPropertyReference<Values<*, *>, IsPropertyDefinition<Values<*, *>>, *>,
+                                        version,
+                                        keepAllVersions
+                                    )
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
@@ -271,9 +321,18 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                     // Write complex values existence indicator
                                     // Write parent value with Unit so it knows this one is not deleted. So possible lingering old types are not read.
                                     @Suppress("UNCHECKED_CAST")
-                                    valueWriter(Embed as StorageTypeEnum<IsPropertyDefinition<*>>, reference.toStorageByteArray(), valuesDefinition, Unit)
+                                    valueWriter(
+                                        Embed as StorageTypeEnum<IsPropertyDefinition<*>>,
+                                        reference.toStorageByteArray(),
+                                        valuesDefinition,
+                                        Unit
+                                    )
 
-                                    value.writeToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, valueWriter)
+                                    value.writeToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        valueWriter
+                                    )
                                 }
                                 else -> {
                                     setValue(
@@ -293,7 +352,10 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                         if (previousValue == null) {
                                             // Check if parent exists before trying to change
                                             if (reference is PropertyReference<*, *, *, *> && reference !is ListItemReference<*, *>) {
-                                                getValue<Any>(newValueList, reference.parentReference!!.toStorageByteArray())
+                                                getValue<Any>(
+                                                    newValueList,
+                                                    reference.parentReference!!.toStorageByteArray()
+                                                )
                                                     ?: throw Exception("Property '${reference.completeName}' can only be changed if parent exists. Set the parent property to set this value.")
                                             }
 
@@ -306,10 +368,18 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
                                                         val mapDefinition =
                                                             reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
                                                         @Suppress("UNCHECKED_CAST")
-                                                        mapDefinition.keyDefinition.validateWithRef(reference.key, reference.key) {
-                                                            mapDefinition.keyRef(reference.key, reference.parentReference as MapReference<Any, Any, IsPropertyContext>)
+                                                        mapDefinition.keyDefinition.validateWithRef(
+                                                            reference.key,
+                                                            reference.key
+                                                        ) {
+                                                            mapDefinition.keyRef(
+                                                                reference.key,
+                                                                reference.parentReference as MapReference<Any, Any, IsPropertyContext>
+                                                            )
                                                         }
-                                                    } catch (e: ValidationException) { addValidationFail(e) }
+                                                    } catch (e: ValidationException) {
+                                                        addValidationFail(e)
+                                                    }
 
                                                     createCountUpdater(
                                                         newValueList,
@@ -516,7 +586,13 @@ private fun <DM: IsRootValuesDataModel<P>, P: PropertyDefinitions> applyChanges(
 
         uniquesToIndex?.forEach { (value, previousValue) ->
             @Suppress("UNCHECKED_CAST")
-            dataStore.addToUniqueIndex(objectToChange, value.reference, value.value, version, previousValue as Comparable<Any>)
+            dataStore.addToUniqueIndex(
+                objectToChange,
+                value.reference,
+                value.value,
+                version,
+                previousValue as Comparable<Any>
+            )
         }
 
         val oldValueList = objectToChange.values

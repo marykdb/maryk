@@ -5,7 +5,7 @@ import maryk.core.properties.PropertyDefinitions
 import maryk.datastore.memory.records.DataRecord
 
 /**  [record] at [version]. Primarily for in indexes */
-internal class RecordAtVersion<DM: IsRootValuesDataModel<P>, P: PropertyDefinitions>(
+internal class RecordAtVersion<DM : IsRootValuesDataModel<P>, P : PropertyDefinitions>(
     override val record: DataRecord<DM, P>?,
     override val version: ULong
-): IsRecordAtVersion<DM, P>
+) : IsRecordAtVersion<DM, P>

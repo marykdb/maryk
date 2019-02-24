@@ -38,11 +38,63 @@ class InMemoryDataStoreChangeTest {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 TestMarykModel.add(
-                    TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true, listOfString = listOf("a", "b", "c"), map = mapOf(Time(2, 3, 5) to "test"), set = setOf(Date(2018, 3, 4))),
-                    TestMarykModel("haha2", 3, 8u, 1.244, DateTime(2018, 1, 2), false, embeddedValues = EmbeddedMarykModel("value"),list = listOf(1, 4, 6), listOfString = listOf("c", "d", "e"), map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"), set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))),
-                    TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, reference = TestMarykModel.key("AAACKwEBAQAC")),
-                    TestMarykModel("haha4", 4, 14u, 1.644, DateTime(2019, 1, 2), false, multi = TypedValue(V1, "string"), listOfString = listOf("f", "g", "h"), map = mapOf(Time(1, 33, 45) to "an other", Time(13, 44, 55) to "an other2"), set = setOf(Date(2015, 11, 25), Date(2001, 12, 5))),
-                    TestMarykModel("haha5", 5, 13u, 3.44, DateTime(1, 1, 2), true, multi = TypedValue(V1, "v1"), listOfString = listOf("f", "g", "h"), map = mapOf(Time(3, 3, 3) to "three", Time(4, 4, 4) to "4"), set = setOf(Date(2001, 1, 1), Date(2002, 2, 2))),
+                    TestMarykModel(
+                        "haha1",
+                        5,
+                        6u,
+                        0.43,
+                        DateTime(2018, 3, 2),
+                        true,
+                        listOfString = listOf("a", "b", "c"),
+                        map = mapOf(Time(2, 3, 5) to "test"),
+                        set = setOf(Date(2018, 3, 4))
+                    ),
+                    TestMarykModel(
+                        "haha2",
+                        3,
+                        8u,
+                        1.244,
+                        DateTime(2018, 1, 2),
+                        false,
+                        embeddedValues = EmbeddedMarykModel("value"),
+                        list = listOf(1, 4, 6),
+                        listOfString = listOf("c", "d", "e"),
+                        map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
+                        set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))
+                    ),
+                    TestMarykModel(
+                        "haha3",
+                        6,
+                        12u,
+                        1333.3,
+                        DateTime(2018, 12, 9),
+                        false,
+                        reference = TestMarykModel.key("AAACKwEBAQAC")
+                    ),
+                    TestMarykModel(
+                        "haha4",
+                        4,
+                        14u,
+                        1.644,
+                        DateTime(2019, 1, 2),
+                        false,
+                        multi = TypedValue(V1, "string"),
+                        listOfString = listOf("f", "g", "h"),
+                        map = mapOf(Time(1, 33, 45) to "an other", Time(13, 44, 55) to "an other2"),
+                        set = setOf(Date(2015, 11, 25), Date(2001, 12, 5))
+                    ),
+                    TestMarykModel(
+                        "haha5",
+                        5,
+                        13u,
+                        3.44,
+                        DateTime(1, 1, 2),
+                        true,
+                        multi = TypedValue(V1, "v1"),
+                        listOfString = listOf("f", "g", "h"),
+                        map = mapOf(Time(3, 3, 3) to "three", Time(4, 4, 4) to "4"),
+                        set = setOf(Date(2001, 1, 1), Date(2002, 2, 2))
+                    ),
                     TestMarykModel("haha6", 1, 13u, 3.44, DateTime(1, 1, 2), false)
                 )
             )
@@ -304,7 +356,7 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[0].change(
                     Delete(
-                        TestMarykModel{ listOfString.refAt(1u) }
+                        TestMarykModel { listOfString.refAt(1u) }
                     ),
                     ListChange(
                         TestMarykModel.ref { listOfString }.change(
@@ -370,11 +422,11 @@ class InMemoryDataStoreChangeTest {
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel{ map.refAt(Time(1, 2, 3)) } with "test1",
-                        TestMarykModel{ map.refAt(Time(2, 3, 4)) } with "test2"
+                        TestMarykModel { map.refAt(Time(1, 2, 3)) } with "test1",
+                        TestMarykModel { map.refAt(Time(2, 3, 4)) } with "test2"
                     ),
                     Delete(
-                        TestMarykModel{ map.refAt(Time(12, 33, 45)) }
+                        TestMarykModel { map.refAt(Time(12, 33, 45)) }
                     )
                 )
             )

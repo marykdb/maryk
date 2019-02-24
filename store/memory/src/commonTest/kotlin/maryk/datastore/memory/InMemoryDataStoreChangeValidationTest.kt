@@ -36,9 +36,38 @@ class InMemoryDataStoreChangeValidationTest {
         runSuspendingTest {
             val addResponse = dataStore.execute(
                 TestMarykModel.add(
-                    TestMarykModel("haha1", 5, 6u, 0.43, DateTime(2018, 3, 2), true, listOfString = listOf("a", "b", "c"), map = mapOf(Time(2, 3, 5) to "test"), set = setOf(Date(2018, 3, 4))),
-                    TestMarykModel("haha2", 3, 8u, 1.244, DateTime(2018, 1, 2), false, listOfString = listOf("c", "d", "e"), map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"), set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))),
-                    TestMarykModel("haha3", 6, 12u, 1333.3, DateTime(2018, 12, 9), false, listOfString = listOf("c"), reference = TestMarykModel.key("AAACKwEBAQAC"))
+                    TestMarykModel(
+                        "haha1",
+                        5,
+                        6u,
+                        0.43,
+                        DateTime(2018, 3, 2),
+                        true,
+                        listOfString = listOf("a", "b", "c"),
+                        map = mapOf(Time(2, 3, 5) to "test"),
+                        set = setOf(Date(2018, 3, 4))
+                    ),
+                    TestMarykModel(
+                        "haha2",
+                        3,
+                        8u,
+                        1.244,
+                        DateTime(2018, 1, 2),
+                        false,
+                        listOfString = listOf("c", "d", "e"),
+                        map = mapOf(Time(12, 33, 45) to "another", Time(13, 44, 55) to "another2"),
+                        set = setOf(Date(2018, 11, 25), Date(1981, 12, 5))
+                    ),
+                    TestMarykModel(
+                        "haha3",
+                        6,
+                        12u,
+                        1333.3,
+                        DateTime(2018, 12, 9),
+                        false,
+                        listOfString = listOf("c"),
+                        reference = TestMarykModel.key("AAACKwEBAQAC")
+                    )
                 )
             )
 
@@ -163,7 +192,7 @@ class InMemoryDataStoreChangeValidationTest {
             validationFail.exceptions.apply {
                 size shouldBe 1
                 shouldBeOfType<InvalidSizeException>(first()).apply {
-                    reference shouldBe TestMarykModel{ listOfString refAt 0u }
+                    reference shouldBe TestMarykModel { listOfString refAt 0u }
                     value shouldBe "verylongwrongvalue"
                 }
             }
@@ -256,10 +285,10 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel{ map.refAt(Time(1, 2, 3)) } with "test1",
-                        TestMarykModel{ map.refAt(Time(2, 3, 4)) } with "test2",
-                        TestMarykModel{ map.refAt(Time(3, 4, 5)) } with "test3",
-                        TestMarykModel{ map.refAt(Time(4, 5, 6)) } with "test4"
+                        TestMarykModel { map.refAt(Time(1, 2, 3)) } with "test1",
+                        TestMarykModel { map.refAt(Time(2, 3, 4)) } with "test2",
+                        TestMarykModel { map.refAt(Time(3, 4, 5)) } with "test3",
+                        TestMarykModel { map.refAt(Time(4, 5, 6)) } with "test4"
                     )
                 )
             )
@@ -293,8 +322,8 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[1].change(
                     Change(
-                        TestMarykModel{ map.refAt(Time(23, 52, 53)) } with "test1",
-                        TestMarykModel{ map.refAt(Time(1, 52, 53)) } with "verylongwrongsize"
+                        TestMarykModel { map.refAt(Time(23, 52, 53)) } with "test1",
+                        TestMarykModel { map.refAt(Time(1, 52, 53)) } with "verylongwrongsize"
                     )
                 )
             )
@@ -331,7 +360,7 @@ class InMemoryDataStoreChangeValidationTest {
             TestMarykModel.change(
                 keys[2].change(
                     Delete(
-                        TestMarykModel{ listOfString.refAt(0u) }
+                        TestMarykModel { listOfString.refAt(0u) }
                     )
                 )
             )

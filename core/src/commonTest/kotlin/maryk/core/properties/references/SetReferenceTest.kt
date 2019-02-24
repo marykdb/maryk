@@ -13,7 +13,7 @@ import kotlin.test.Test
 class SetReferenceTest {
     private val setReference = TestMarykModel { embeddedValues { marykModel ref { set } } }
     private val reference = TestMarykModel { set refAt Date(2001, 4, 2) }
-    private val subReference = TestMarykModel { embeddedValues { marykModel { set refAt Date(2001, 4, 2) } }}
+    private val subReference = TestMarykModel { embeddedValues { marykModel { set refAt Date(2001, 4, 2) } } }
 
     @Test
     fun getValueFromSet() {

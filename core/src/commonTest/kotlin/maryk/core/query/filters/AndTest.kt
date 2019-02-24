@@ -12,9 +12,9 @@ import kotlin.test.Test
 
 class AndTest {
     private val and = And(
-        Exists(SimpleMarykModel.ref{ value }),
+        Exists(SimpleMarykModel.ref { value }),
         Equals(
-            SimpleMarykModel.ref{ value } with "hoi"
+            SimpleMarykModel.ref { value } with "hoi"
         )
     )
 

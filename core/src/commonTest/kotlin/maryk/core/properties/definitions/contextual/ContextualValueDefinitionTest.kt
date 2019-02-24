@@ -8,7 +8,7 @@ import maryk.test.ByteCollector
 import maryk.test.shouldBe
 import kotlin.test.Test
 
-private class ValueContext: IsPropertyContext {
+private class ValueContext : IsPropertyContext {
     val valueDefinition = StringDefinition()
 }
 

@@ -11,20 +11,22 @@ import kotlin.test.Test
 class ValidationExceptionTest {
     private val ref = SimpleMarykModel.ref { value }
 
-    private val validationUmbrellaException = ValidationUmbrellaException(null, listOf(
-        AlreadySetException(ref),
-        InvalidSizeException(ref, "wrong", 1u, 3u),
-        InvalidValueException(ref, "wrong"),
-        OutOfRangeException(ref, "wrong", "a", "g"),
-        RequiredException(ref),
-        ValidationUmbrellaException(
-            ref,
-            listOf(
-                NotEnoughItemsException(ref, 2u, 3u),
-                TooManyItemsException(ref, 10u, 3u)
+    private val validationUmbrellaException = ValidationUmbrellaException(
+        null, listOf(
+            AlreadySetException(ref),
+            InvalidSizeException(ref, "wrong", 1u, 3u),
+            InvalidValueException(ref, "wrong"),
+            OutOfRangeException(ref, "wrong", "a", "g"),
+            RequiredException(ref),
+            ValidationUmbrellaException(
+                ref,
+                listOf(
+                    NotEnoughItemsException(ref, 2u, 3u),
+                    TooManyItemsException(ref, 10u, 3u)
+                )
             )
         )
-    ))
+    )
 
     private val context = RequestContext(
         mapOf(

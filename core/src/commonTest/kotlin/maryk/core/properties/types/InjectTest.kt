@@ -84,7 +84,7 @@ class InjectTest {
     }
 
     private val valuesToCollect = EmbeddedMarykModel(
-        value ="a test value",
+        value = "a test value",
         model = EmbeddedMarykModel(
             "embedded value"
         )

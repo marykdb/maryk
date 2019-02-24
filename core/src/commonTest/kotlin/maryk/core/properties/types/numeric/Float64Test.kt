@@ -24,7 +24,7 @@ internal class Float64Test {
     @Test
     fun testStringConversion() {
         for (it in float64values) {
-            Float64.ofString(it.toString()) shouldBe  it
+            Float64.ofString(it.toString()) shouldBe it
         }
     }
 

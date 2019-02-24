@@ -16,7 +16,7 @@ class ChangeRequestTest {
     ))
 
     @Test
-    fun testChangeRequest(){
+    fun testChangeRequest() {
         changeRequest.objects.size shouldBe 2
         changeRequest.dataModel shouldBe SimpleMarykModel
     }

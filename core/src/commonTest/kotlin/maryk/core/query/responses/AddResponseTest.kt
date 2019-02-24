@@ -26,13 +26,17 @@ class AddResponseTest {
         listOf(
             AddSuccess(
                 key, 32352uL, listOf(
-                    Change(SimpleMarykModel.ref{ value } with "new")
+                    Change(SimpleMarykModel.ref { value } with "new")
                 )
             ),
             AlreadyExists(key),
-            ValidationFail(ValidationUmbrellaException(null, listOf(
-                InvalidValueException(SimpleMarykModel.ref{ value }, "wrong")
-            ))),
+            ValidationFail(
+                ValidationUmbrellaException(
+                    null, listOf(
+                        InvalidValueException(SimpleMarykModel.ref { value }, "wrong")
+                    )
+                )
+            ),
             AuthFail(),
             ServerFail("Something went wrong")
         )

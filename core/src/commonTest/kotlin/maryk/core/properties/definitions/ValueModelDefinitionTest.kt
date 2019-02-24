@@ -25,18 +25,18 @@ internal class ValueModelDefinitionTest {
         unique = true,
         minValue = TestValueObject(
             int = 0,
-            dateTime = DateTime(2007,12,5),
+            dateTime = DateTime(2007, 12, 5),
             bool = false
         ),
         maxValue = TestValueObject(
             int = 999,
-            dateTime = DateTime(2017,12,5),
+            dateTime = DateTime(2017, 12, 5),
             bool = true
         ),
         dataModel = TestValueObject,
         default = TestValueObject(
             int = 10,
-            dateTime = DateTime(2010,10,10),
+            dateTime = DateTime(2010, 10, 10),
             bool = true
         )
     )
@@ -80,11 +80,13 @@ internal class ValueModelDefinitionTest {
 
     @Test
     fun validate() {
-        def.validateWithRef(newValue = TestValueObject(
-            int = 4,
-            dateTime = DateTime.nowUTC(),
-            bool = true
-        ))
+        def.validateWithRef(
+            newValue = TestValueObject(
+                int = 4,
+                dateTime = DateTime.nowUTC(),
+                bool = true
+            )
+        )
         val e = shouldThrow<ValidationUmbrellaException> {
             def.validateWithRef(
                 newValue = TestValueObject(
@@ -97,7 +99,7 @@ internal class ValueModelDefinitionTest {
 
         e.exceptions.size shouldBe 1
 
-        with (e.exceptions[0] as OutOfRangeException) {
+        with(e.exceptions[0] as OutOfRangeException) {
             this.reference!!.completeName shouldBe "int"
         }
     }

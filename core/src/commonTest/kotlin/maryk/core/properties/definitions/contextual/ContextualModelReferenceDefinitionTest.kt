@@ -39,7 +39,12 @@ class ContextualModelReferenceDefinitionTest {
     fun testTransportConversion() {
         val bc = ByteCollector()
         for (value in modelsToTest) {
-            checkProtoBufConversion(bc, DataModelReference(value.name) { value }, this.def, this.context) { converted, original ->
+            checkProtoBufConversion(
+                bc,
+                DataModelReference(value.name) { value },
+                this.def,
+                this.context
+            ) { converted, original ->
                 converted.get(Unit) shouldBe original.get(Unit)
             }
         }

@@ -21,7 +21,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class TypeIdTest {
-    object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
+    object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         keyDefinition = TypeId(multi.ref()),
         properties = Properties
@@ -51,7 +51,7 @@ internal class TypeIdTest {
     }
 
     @Test
-    fun testKey(){
+    fun testKey() {
         val obj = MarykModel(
             multi = TypedValue(Option.V2, true)
         )

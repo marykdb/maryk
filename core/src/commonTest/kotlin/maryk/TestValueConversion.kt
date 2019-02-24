@@ -7,7 +7,7 @@ import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 
-fun <T: Any, CX: IsPropertyContext> checkProtoBufConversion(
+fun <T : Any, CX : IsPropertyContext> checkProtoBufConversion(
     bc: ByteCollector = ByteCollector(),
     value: T,
     def: IsValueDefinition<T, CX>,

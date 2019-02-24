@@ -59,16 +59,20 @@ internal class MapDefinitionTest {
 
     @Test
     fun validateMapSize() {
-        def.validateWithRef(newValue = mapOf(
-            12 to "#twelve",
-            30 to "#thirty"
-        ))
-        def.validateWithRef(newValue = mapOf(
-            12 to "#twelve",
-            30 to "#thirty",
-            100 to "#hundred",
-            1000 to "#thousand"
-        ))
+        def.validateWithRef(
+            newValue = mapOf(
+                12 to "#twelve",
+                30 to "#thirty"
+            )
+        )
+        def.validateWithRef(
+            newValue = mapOf(
+                12 to "#twelve",
+                30 to "#thirty",
+                100 to "#hundred",
+                1000 to "#thousand"
+            )
+        )
 
         shouldThrow<NotEnoughItemsException> {
             def.validateWithRef(

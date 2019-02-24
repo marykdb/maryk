@@ -44,7 +44,7 @@ internal class TimeDefinitionTest {
 
     @Test
     fun createNowTime() {
-        val expected = Instant.getCurrentEpochTimeInMillis()% (24 * 60 * 60 * 1000) / 1000
+        val expected = Instant.getCurrentEpochTimeInMillis() % (24 * 60 * 60 * 1000) / 1000
         val now = def.createNow().toSecondsOfDay()
 
         assertTrue("$now is diverging too much from $expected time") {

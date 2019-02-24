@@ -18,44 +18,60 @@ import kotlin.test.Test
 internal class ValueDataModelTest {
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, { converted: ValueDataModel<*, *>, original: ValueDataModel<*, *> ->
-            compareDataModels(converted, original)
+        checkProtoBufConversion(
+            TestValueObject,
+            ValueDataModel.Model,
+            { DefinitionsConversionContext() },
+            { converted: ValueDataModel<*, *>, original: ValueDataModel<*, *> ->
+                compareDataModels(converted, original)
 
-            // Also test conversion with the generated ValueObject
+                // Also test conversion with the generated ValueObject
 
-            @Suppress("UNCHECKED_CAST")
-            val convertedValueModel = converted as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
+                @Suppress("UNCHECKED_CAST")
+                val convertedValueModel =
+                    converted as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>
 
-            val value = converted.values {
-                ValueItems(
-                   convertedValueModel.properties[1]!! withNotNull 5,
-                   convertedValueModel.properties[2]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),
-                   convertedValueModel.properties[3]!! withNotNull true
-                )
-            }.toDataObject()
+                val value = converted.values {
+                    ValueItems(
+                        convertedValueModel.properties[1]!! withNotNull 5,
+                        convertedValueModel.properties[2]!! withNotNull DateTime(2018, 7, 18, 12, 0, 0),
+                        convertedValueModel.properties[3]!! withNotNull true
+                    )
+                }.toDataObject()
 
-            val context = DefinitionsContext()
+                val context = DefinitionsContext()
 
-            val bc = ByteCollector()
-            val cache = WriteCache()
+                val bc = ByteCollector()
+                val cache = WriteCache()
 
-            val byteLength = convertedValueModel.calculateProtoBufLength(value, cache, context)
-            bc.reserve(byteLength)
-            convertedValueModel.writeProtoBuf(value, cache, bc::write, context)
-            val convertedValue = convertedValueModel.readProtoBuf(byteLength, bc::read, context).toDataObject()
+                val byteLength = convertedValueModel.calculateProtoBufLength(value, cache, context)
+                bc.reserve(byteLength)
+                convertedValueModel.writeProtoBuf(value, cache, bc::write, context)
+                val convertedValue = convertedValueModel.readProtoBuf(byteLength, bc::read, context).toDataObject()
 
-            convertedValue shouldBe value
-        })
+                convertedValue shouldBe value
+            }
+        )
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels)
+        checkJsonConversion(
+            TestValueObject,
+            ValueDataModel.Model,
+            { DefinitionsConversionContext() },
+            ::compareDataModels
+        )
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(TestValueObject, ValueDataModel.Model, { DefinitionsConversionContext() }, ::compareDataModels) shouldBe  """
+        checkYamlConversion(
+            TestValueObject,
+            ValueDataModel.Model,
+            { DefinitionsConversionContext() },
+            ::compareDataModels
+        ) shouldBe """
         name: TestValueObject
         ? 1: int
         : !Number

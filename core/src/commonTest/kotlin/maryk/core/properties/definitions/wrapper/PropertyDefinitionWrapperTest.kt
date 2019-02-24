@@ -8,7 +8,10 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-fun comparePropertyDefinitionWrapper(converted: IsPropertyDefinitionWrapper<*, *, *, *>, original: IsPropertyDefinitionWrapper<*, *, *, *>) {
+fun comparePropertyDefinitionWrapper(
+    converted: IsPropertyDefinitionWrapper<*, *, *, *>,
+    original: IsPropertyDefinitionWrapper<*, *, *, *>
+) {
     converted.index shouldBe original.index
     converted.name shouldBe original.name
     // Make sure JS tests correct

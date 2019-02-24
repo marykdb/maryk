@@ -52,7 +52,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithMillisecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for(it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
+        for (it in arrayOf(DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(
                 defMilli.calculateStorageByteLength(it)
             )
@@ -65,7 +65,7 @@ internal class DateTimeDefinitionTest {
     @Test
     fun convertValuesWithSecondsPrecisionToStorageBytesAndBack() {
         val bc = ByteCollector()
-        for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
+        for (it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(
                 def.calculateStorageByteLength(it)
             )
@@ -80,7 +80,7 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for(it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
+        for (it in arrayOf(DateTime.MIN, DateTime.nowUTC(), DateTime.MAX_IN_MILLIS)) {
             bc.reserve(defMilli.calculateTransportByteLength(it, cacheFailer))
             defMilli.writeTransportBytes(it, cacheFailer, bc::write)
             defMilli.readTransportBytes(bc.size, bc::read) shouldBe it
@@ -93,7 +93,7 @@ internal class DateTimeDefinitionTest {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()
 
-        for(it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
+        for (it in arrayOf(DateTime.MAX_IN_SECONDS, DateTime.MIN)) {
             bc.reserve(def.calculateTransportByteLength(it, cacheFailer))
             def.writeTransportBytes(it, cacheFailer, bc::write)
             def.readTransportBytes(bc.size, bc::read) shouldBe it

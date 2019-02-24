@@ -27,17 +27,35 @@ class DefinitionsTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true)
+        checkProtoBufConversion(
+            this.definitions,
+            Definitions,
+            { DefinitionsConversionContext() },
+            ::compareDefinitions,
+            true
+        )
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true)
+        checkJsonConversion(
+            this.definitions,
+            Definitions,
+            { DefinitionsConversionContext() },
+            ::compareDefinitions,
+            true
+        )
     }
 
     @Test
     fun convertToYAMLAndBack() {
-        checkYamlConversion(this.definitions, Definitions, { DefinitionsConversionContext() }, ::compareDefinitions, true) shouldBe """
+        checkYamlConversion(
+            this.definitions,
+            Definitions,
+            { DefinitionsConversionContext() },
+            ::compareDefinitions,
+            true
+        ) shouldBe """
         Option: !EnumDefinition
           1: V1
           2: V2

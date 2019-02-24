@@ -46,6 +46,7 @@ internal class ReferenceDefinitionTest {
             def.fromString(b) shouldBe it
         }
     }
+
     @Test
     fun invalidStringValueShouldThrowException() {
         shouldThrow<ParseException> {
@@ -76,7 +77,7 @@ internal class ReferenceDefinitionTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(this.def, ReferenceDefinition.Model,{ DefinitionsContext() })
+        checkProtoBufConversion(this.def, ReferenceDefinition.Model, { DefinitionsContext() })
         checkProtoBufConversion(this.defMaxDefined, ReferenceDefinition.Model, { DefinitionsContext() })
     }
 

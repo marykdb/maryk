@@ -14,7 +14,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class UUIDKeyTest {
-    object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
+    object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         keyDefinition = UUIDKey,
         properties = Properties
@@ -51,7 +51,7 @@ internal class UUIDKeyTest {
     }
 
     @Test
-    fun testKey(){
+    fun testKey() {
         val obj = MarykModel("test")
 
         val key = MarykModel.key(obj)

@@ -8,9 +8,9 @@ import kotlin.test.Test
 
 internal class DateTest {
     private val datesToTest = arrayOf(
-            Date.nowUTC(),
-            Date.MAX,
-            Date.MIN
+        Date.nowUTC(),
+        Date.MAX,
+        Date.MIN
     )
 
     @Test

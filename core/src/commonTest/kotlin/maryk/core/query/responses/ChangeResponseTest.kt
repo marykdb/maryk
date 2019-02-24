@@ -25,9 +25,13 @@ class ChangeResponseTest {
         listOf(
             Success(32352uL),
             DoesNotExist(key),
-            ValidationFail(ValidationUmbrellaException(null, listOf(
-                InvalidValueException(SimpleMarykModel.ref{ value }, "wrong")
-            ))),
+            ValidationFail(
+                ValidationUmbrellaException(
+                    null, listOf(
+                        InvalidValueException(SimpleMarykModel.ref { value }, "wrong")
+                    )
+                )
+            ),
             RequestFail("Request was wrong"),
             AuthFail(),
             ServerFail("Something went wrong")

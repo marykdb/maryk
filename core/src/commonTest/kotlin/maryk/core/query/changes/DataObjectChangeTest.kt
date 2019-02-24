@@ -19,13 +19,13 @@ class DataObjectChangeTest {
     private val subModel = TestMarykModel.ref { embeddedValues }
 
     private val dataObjectChange = key1.change(
-        Change(EmbeddedMarykModel.ref(subModel) { value } with  "new"),
+        Change(EmbeddedMarykModel.ref(subModel) { value } with "new"),
         Delete(EmbeddedMarykModel.ref(subModel) { value }),
         Check(EmbeddedMarykModel.ref(subModel) { value } with "current"),
         ObjectSoftDeleteChange(true),
         ListChange(
             TestMarykModel.ref { list }.change(
-                addValuesToEnd = listOf(1,2,3)
+                addValuesToEnd = listOf(1, 2, 3)
             )
         ),
         SetChange(TestMarykModel.ref { set }.change()),

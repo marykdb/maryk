@@ -17,7 +17,7 @@ class ListReferenceTest {
 
     @Test
     fun getValueFromList() {
-        val list = listOf('a','b','c','d','e','f', 'g')
+        val list = listOf('a', 'b', 'c', 'd', 'e', 'f', 'g')
 
         this.reference.resolveFromAny(list) shouldBe 'f'
 

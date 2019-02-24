@@ -166,7 +166,12 @@ internal class ListDefinitionTest {
         this.testPackedTransportConversion(def64Int, value, asHex, 3)
     }
 
-    private fun <T: Any> testPackedTransportConversion(def: ListDefinition<T, *>, list: List<T>, hex: String, index: Int) {
+    private fun <T : Any> testPackedTransportConversion(
+        def: ListDefinition<T, *>,
+        list: List<T>,
+        hex: String,
+        index: Int
+    ) {
         val bc = ByteCollector()
         val cache = WriteCache()
 

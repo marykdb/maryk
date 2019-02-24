@@ -10,7 +10,7 @@ import maryk.json.JsonWriter
 import maryk.test.shouldBe
 import maryk.yaml.YamlWriter
 
-fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
+fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: T,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
@@ -40,7 +40,7 @@ fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsProp
     return output
 }
 
-fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
+fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
     value: T,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
@@ -76,7 +76,7 @@ fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsProp
     return output
 }
 
-fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkYamlConversion(
+fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkYamlConversion(
     value: ObjectValues<T, P>,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,
@@ -113,7 +113,7 @@ fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsProp
 }
 
 
-fun <T: Any, P: ObjectPropertyDefinitions<T>, CXI: IsPropertyContext, CX: IsPropertyContext> checkJsonConversion(
+fun <T : Any, P : ObjectPropertyDefinitions<T>, CXI : IsPropertyContext, CX : IsPropertyContext> checkJsonConversion(
     value: ObjectValues<T, P>,
     dataModel: AbstractObjectDataModel<T, P, CXI, CX>,
     context: (() -> CXI)? = null,

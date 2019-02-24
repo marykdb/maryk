@@ -15,8 +15,8 @@ class MapReferenceTest {
     private val keyReference = TestMarykModel { map refToKey Time(12, 0, 1) }
     private val valReference = TestMarykModel { map refAt Time(15, 22, 55) }
 
-    private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55)} }}
-    private val subKeyReference = TestMarykModel { embeddedValues { marykModel { map refToKey Time(15, 22, 55)} }}
+    private val subReference = TestMarykModel { embeddedValues { marykModel { map refAt Time(15, 22, 55) } } }
+    private val subKeyReference = TestMarykModel { embeddedValues { marykModel { map refToKey Time(15, 22, 55) } } }
 
     @Test
     fun getValueFromMap() {

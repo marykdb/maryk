@@ -26,15 +26,17 @@ fun createMarykYamlModelReader(yaml: String): IsJsonLikeReader {
     }
 }
 
-class MarykYamlTest{
+class MarykYamlTest {
     @Test
     fun readMarykTags() {
-        createMarykYamlModelReader("""
+        createMarykYamlModelReader(
+            """
         |    - !Boolean { k1: v1 }
         |    - !String { k2: v2 }
         |    - !UUID
         |    - !Ref test
-        """.trimMargin()).apply {
+        """.trimMargin()
+        ).apply {
             shouldBeOfType<JsonToken.StartArray>(nextToken())
 
             shouldBeOfType<JsonToken.StartObject>(

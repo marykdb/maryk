@@ -18,7 +18,7 @@ import maryk.test.shouldBe
 import kotlin.test.Test
 
 internal class ReversedTest {
-    object MarykModel: RootDataModel<MarykModel, MarykModel.Properties>(
+    object MarykModel : RootDataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         keyDefinition = Multiple(
             Reversed(boolean.ref()),
@@ -27,12 +27,16 @@ internal class ReversedTest {
         properties = Properties
     ) {
         object Properties : PropertyDefinitions() {
-            val boolean = add(1, "bool", BooleanDefinition(
-                final = true
-            ))
-            val dateTime = add(2, "dateTime", DateTimeDefinition(
-                final = true
-            ))
+            val boolean = add(
+                1, "bool", BooleanDefinition(
+                    final = true
+                )
+            )
+            val dateTime = add(
+                2, "dateTime", DateTimeDefinition(
+                    final = true
+                )
+            )
         }
 
         operator fun invoke(
@@ -47,7 +51,7 @@ internal class ReversedTest {
     }
 
     @Test
-    fun testKey(){
+    fun testKey() {
         val dt = DateTime(year = 2017, month = 9, day = 3, hour = 12, minute = 43, second = 40)
 
         val obj = MarykModel(

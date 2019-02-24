@@ -58,7 +58,7 @@ class ReadStorageToChangesKtTest {
                 }
             },
             select = null,
-            processValue = { _, _ , changer ->
+            processValue = { _, _, changer ->
                 valuesAsStorablesWithVersion[qualifierIndex].second.forEach {
                     changer(it.first, it.second)
                 }
@@ -77,7 +77,7 @@ class ReadStorageToChangesKtTest {
                     ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
-                            addValues = setOf(Date(2018,9, 9))
+                            addValues = setOf(Date(2018, 9, 9))
                         )
                     )
                 )
@@ -123,7 +123,7 @@ class ReadStorageToChangesKtTest {
                     ),
                     SetChange(
                         TestMarykModel.ref { set }.change(
-                            addValues = setOf(Date(1981,12, 5), Date(1981,12, 6))
+                            addValues = setOf(Date(1981, 12, 5), Date(1981, 12, 6))
                         )
                     )
                 )

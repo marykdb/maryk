@@ -22,15 +22,18 @@ import kotlin.test.Test
 internal class EmbeddedObjectDefinitionTest {
     private data class MarykObject(
         val string: String = "jur"
-    ){
+    ) {
         object Properties : ObjectPropertyDefinitions<MarykObject>() {
             init {
-                add(1, "string", StringDefinition(
-                    regEx = "jur"
-                ), MarykObject::string)
+                add(
+                    1, "string", StringDefinition(
+                        regEx = "jur"
+                    ), MarykObject::string
+                )
             }
         }
-        companion object: ObjectDataModel<MarykObject, Properties>(
+
+        companion object : ObjectDataModel<MarykObject, Properties>(
             name = "MarykObject",
             properties = Properties
         ) {
@@ -67,7 +70,7 @@ internal class EmbeddedObjectDefinitionTest {
     fun convertObjectToJSONAndBack() {
         var output = ""
         val writer = JsonWriter(true) {
-           output += it
+            output += it
         }
         val value = MarykObject()
 
@@ -121,7 +124,10 @@ internal class EmbeddedObjectDefinitionTest {
     @Test
     fun convertDefinitionToYAMLAndBack() {
         checkYamlConversion(this.def, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() })
-        checkYamlConversion(this.defMaxDefined, EmbeddedObjectDefinition.Model, { DefinitionsConversionContext() }) shouldBe """
+        checkYamlConversion(
+            this.defMaxDefined,
+            EmbeddedObjectDefinition.Model,
+            { DefinitionsConversionContext() }) shouldBe """
         required: false
         final: true
         dataModel: MarykObject

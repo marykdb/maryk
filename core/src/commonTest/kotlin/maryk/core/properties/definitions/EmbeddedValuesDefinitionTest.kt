@@ -19,7 +19,7 @@ import maryk.test.shouldThrow
 import kotlin.test.Test
 
 internal class EmbeddedValuesDefinitionTest {
-    object MarykModel: DataModel<MarykModel, MarykModel.Properties>(
+    object MarykModel : DataModel<MarykModel, MarykModel.Properties>(
         name = "MarykModel",
         properties = Properties
     ) {
@@ -68,7 +68,7 @@ internal class EmbeddedValuesDefinitionTest {
     fun convertObjectToJSONAndBack() {
         var output = ""
         val writer = JsonWriter(true) {
-           output += it
+            output += it
         }
         val value = MarykModel()
 

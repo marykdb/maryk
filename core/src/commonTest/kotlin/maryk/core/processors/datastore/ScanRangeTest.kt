@@ -173,7 +173,7 @@ class ScanRangeTest {
     @Test
     fun convertRangeFilterToScanRange() {
         val filter = Range(
-            Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 1, 1) .. DateTime(2018, 12, 8, 12, 33, 55,2)
+            Log.ref { timestamp } with DateTime(2018, 12, 8, 12, 33, 1, 1)..DateTime(2018, 12, 8, 12, 33, 55, 2)
         )
 
         val scanRange = Log.createScanRange(filter, null)

@@ -33,7 +33,7 @@ internal class PropertyReferenceTest {
     @Test
     fun getValueFromList() {
         val values = Model.values {
-            mapNonNulls (
+            mapNonNulls(
                 definition with "±testValue"
             )
         }

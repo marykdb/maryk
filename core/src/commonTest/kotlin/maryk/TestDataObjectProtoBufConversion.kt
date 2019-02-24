@@ -1,15 +1,15 @@
 package maryk
 
 import maryk.core.models.AbstractObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.protobuf.WriteCache
+import maryk.core.values.ObjectValues
 import maryk.test.ByteCollector
 import maryk.test.shouldBe
 
 /** Convert dataObject with a object DataModel */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>, CXI: IsPropertyContext, CX: IsPropertyContext> checkProtoBufConversion(
+fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CXI : IsPropertyContext, CX : IsPropertyContext> checkProtoBufConversion(
     value: DO,
     dataModel: AbstractObjectDataModel<DO, P, CXI, CX>,
     context: (() -> CXI)? = null,
@@ -35,7 +35,7 @@ fun <DO: Any, P: ObjectPropertyDefinitions<DO>, CXI: IsPropertyContext, CX: IsPr
 }
 
 /** Convert values with a values DataModel */
-fun <DO: Any, P: ObjectPropertyDefinitions<DO>, CX: IsPropertyContext> checkProtoBufObjectValuesConversion(
+fun <DO : Any, P : ObjectPropertyDefinitions<DO>, CX : IsPropertyContext> checkProtoBufObjectValuesConversion(
     values: ObjectValues<DO, P>,
     dataModel: AbstractObjectDataModel<DO, P, CX, CX>,
     context: (() -> CX)? = null,

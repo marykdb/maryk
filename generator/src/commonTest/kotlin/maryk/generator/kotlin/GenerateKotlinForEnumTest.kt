@@ -12,12 +12,12 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class MarykEnum(
     override val index: UInt
-): IndexedEnum<MarykEnum> {
+) : IndexedEnum<MarykEnum> {
     O1(1u),
     O2(2u),
     O3(3u);
 
-    companion object: IndexedEnumDefinition<MarykEnum>(
+    companion object : IndexedEnumDefinition<MarykEnum>(
         "MarykEnum", MarykEnum::values
     )
 }
@@ -25,7 +25,7 @@ enum class MarykEnum(
 
 class GenerateKotlinForEnumTest {
     @Test
-    fun generateKotlinForSimpleModel(){
+    fun generateKotlinForSimpleModel() {
         var output = ""
 
         MarykEnum.generateKotlin("maryk.test.models") {

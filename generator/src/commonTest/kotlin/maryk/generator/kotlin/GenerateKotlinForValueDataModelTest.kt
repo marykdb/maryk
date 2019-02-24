@@ -19,8 +19,8 @@ import maryk.lib.time.Date
 data class ValueMarykObject(
     val int: Int = 5,
     val date: Date = Date(2000, 5, 12)
-): ValueDataObject(toBytes(int, date)) {
-    object Properties: ObjectPropertyDefinitions<ValueMarykObject>() {
+) : ValueDataObject(toBytes(int, date)) {
+    object Properties : ObjectPropertyDefinitions<ValueMarykObject>() {
         val int = add(
             index = 1, name = "int",
             definition = NumberDefinition(
@@ -38,7 +38,7 @@ data class ValueMarykObject(
         )
     }
 
-    companion object: ValueDataModel<ValueMarykObject, Properties>(
+    companion object : ValueDataModel<ValueMarykObject, Properties>(
         name = "ValueMarykObject",
         properties = Properties
     ) {
@@ -52,7 +52,7 @@ data class ValueMarykObject(
 
 class GenerateKotlinForValueDataModelTest {
     @Test
-    fun generateKotlinForSimpleModel(){
+    fun generateKotlinForSimpleModel() {
         var output = ""
 
         ValueMarykObject.generateKotlin("maryk.test.models") {

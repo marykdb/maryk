@@ -3,7 +3,7 @@ package maryk.generator.kotlin
 import maryk.core.models.DataModel
 import maryk.core.properties.PropertyDefinitions
 
-fun <P: PropertyDefinitions> DataModel<*, P>.generateKotlin(
+fun <P : PropertyDefinitions> DataModel<*, P>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -24,7 +24,7 @@ fun <P: PropertyDefinitions> DataModel<*, P>.generateKotlin(
         name = "$name",
         properties = Properties
     ) {
-        object Properties: PropertyDefinitions() {
+        object Properties : PropertyDefinitions() {
             ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}
         }
 

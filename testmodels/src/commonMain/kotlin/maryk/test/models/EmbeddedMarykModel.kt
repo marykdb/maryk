@@ -1,12 +1,12 @@
 package maryk.test.models
 
 import maryk.core.models.DataModel
-import maryk.core.values.Values
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.values.Values
 
-object EmbeddedMarykModel: DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Properties>(
+object EmbeddedMarykModel : DataModel<EmbeddedMarykModel, EmbeddedMarykModel.Properties>(
     name = "EmbeddedMarykModel",
     properties = EmbeddedMarykModel.Properties
 ) {

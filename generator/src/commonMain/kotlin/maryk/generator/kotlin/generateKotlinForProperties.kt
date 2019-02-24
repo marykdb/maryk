@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.enum.IndexedEnum
 
 @Suppress("UNCHECKED_CAST")
-internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlin(
+internal fun <DO : Any> AbstractPropertyDefinitions<DO>.generateKotlin(
     addImport: (String) -> Unit,
     generationContext: GenerationContext? = null,
     addEnumDefinition: ((String) -> Unit)? = null
@@ -16,7 +16,7 @@ internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlin(
     val propertiesKotlin = mutableListOf<KotlinForProperty>()
     for (propertyDefinitionWrapper in this) {
         val definition = propertyDefinitionWrapper.definition as? IsTransportablePropertyDefinitionType<Any>
-                ?: throw Exception("Property definition is not supported: ${propertyDefinitionWrapper.definition}")
+            ?: throw Exception("Property definition is not supported: ${propertyDefinitionWrapper.definition}")
 
         val kotlinDescriptor =
             definition.getKotlinDescriptor()
@@ -34,7 +34,7 @@ internal fun <DO: Any> AbstractPropertyDefinitions<DO>.generateKotlin(
             }
         }
 
-        val default = if(definition is HasDefaultValueDefinition<*> && definition.default != null) {
+        val default = if (definition is HasDefaultValueDefinition<*> && definition.default != null) {
             " = ${generateKotlinValue(definition, definition.default as Any, addImport)}"
         } else {
             ""

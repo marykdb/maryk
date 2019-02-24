@@ -26,7 +26,11 @@ import maryk.lib.time.DateTime
 import maryk.lib.time.Time
 
 @Suppress("UNCHECKED_CAST")
-internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: Any, addImport: (String) -> Unit): String = when(value) {
+internal fun generateKotlinValue(
+    definition: IsPropertyDefinition<Any>,
+    value: Any,
+    addImport: (String) -> Unit
+): String = when (value) {
     is String -> """"$value""""
     is TimePrecision -> {
         addImport("maryk.core.properties.types.TimePrecision")
@@ -67,7 +71,7 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
             else -> "DateTime(${value.year}, ${value.month}, ${value.day})"
         }
     }
-    is Date ->  "Date(${value.year}, ${value.month}, ${value.day})"
+    is Date -> "Date(${value.year}, ${value.month}, ${value.day})"
     is IndexedEnumDefinition<*> -> value.name
     is ValueDataModel<*, *> -> {
         value.name
@@ -125,7 +129,11 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
         for (v in mapValues) {
             @Suppress("UNCHECKED_CAST")
             kotlinStringValues.add(
-                "${generateKotlinValue(mapDefinition.keyDefinition, v.key, addImport)} to ${generateKotlinValue(mapDefinition.valueDefinition, v.value, addImport)}"
+                "${generateKotlinValue(mapDefinition.keyDefinition, v.key, addImport)} to ${generateKotlinValue(
+                    mapDefinition.valueDefinition,
+                    v.value,
+                    addImport
+                )}"
             )
         }
 
@@ -167,7 +175,7 @@ internal fun generateKotlinValue(definition: IsPropertyDefinition<Any>, value: A
 private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
-    for(property in this.properties) {
+    for (property in this.properties) {
         @Suppress("UNCHECKED_CAST")
         val wrapper = property as AnyPropertyDefinitionWrapper
         property.getter(value)?.let {
@@ -186,7 +194,7 @@ private fun ObjectDataModel<*, *>.generateKotlinValue(value: Any, addImport: (St
 private fun DataModel<*, *>.generateKotlinValue(value: ValuesImpl, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
-    for(property in this.properties) {
+    for (property in this.properties) {
         value.original(property.index)?.let {
             values.add("${property.name} = ${generateKotlinValue(property.definition, it, addImport)}")
         }

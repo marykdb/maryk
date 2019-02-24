@@ -15,7 +15,7 @@ enum MarykEnum {
 
 class GenerateProto3ForEnumTest {
     @Test
-    fun generateProto3SchemaForEnum(){
+    fun generateProto3SchemaForEnum() {
         var output = ""
 
         MarykEnum.generateProto3Schema {

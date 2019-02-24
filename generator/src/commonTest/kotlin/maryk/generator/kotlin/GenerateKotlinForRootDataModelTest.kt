@@ -13,11 +13,11 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
 
-object SimpleMarykModel: RootDataModel<SimpleMarykModel, SimpleMarykModel.Properties>(
+object SimpleMarykModel : RootDataModel<SimpleMarykModel, SimpleMarykModel.Properties>(
     name = "SimpleMarykModel",
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
+    object Properties : PropertyDefinitions() {
         val value = add(
             index = 1, name = "value",
             definition = StringDefinition(
@@ -82,17 +82,17 @@ import maryk.test.models.CompleteMarykModel.Properties.number
 
 enum class MarykEnumEmbedded(
     override val index: UInt
-): IndexedEnum<MarykEnumEmbedded> {
+) : IndexedEnum<MarykEnumEmbedded> {
     E1(1u),
     E2(2u),
     E3(3u);
 
-    companion object: IndexedEnumDefinition<MarykEnumEmbedded>(
+    companion object : IndexedEnumDefinition<MarykEnumEmbedded>(
         "MarykEnumEmbedded", MarykEnumEmbedded::values
     )
 }
 
-object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
+object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
     name = "CompleteMarykModel",
     keyDefinitions = Multiple(
         UUIDKey,
@@ -110,7 +110,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
     ),
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
+    object Properties : PropertyDefinitions() {
         val string = add(
             index = 1, name = "string",
             definition = StringDefinition(
@@ -424,7 +424,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
 
 class GenerateKotlinForRootDataModelTest {
     @Test
-    fun generateKotlinForSimpleModel(){
+    fun generateKotlinForSimpleModel() {
         var output = ""
 
         SimpleMarykModel.generateKotlin("maryk.test.models") {
@@ -435,7 +435,7 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
-    fun generateKotlinForCompleteModel(){
+    fun generateKotlinForCompleteModel() {
         var output = ""
 
         val generationContext = GenerationContext(

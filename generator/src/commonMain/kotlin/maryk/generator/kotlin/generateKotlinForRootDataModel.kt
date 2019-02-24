@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 
-fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
+fun <P : PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     packageName: String,
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
@@ -44,11 +44,11 @@ fun <P: PropertyDefinitions> RootDataModel<*, P>.generateKotlin(
     }
 
     val code = """
-    object $name: RootDataModel<$name, $name.Properties>(
+    object $name : RootDataModel<$name, $name.Properties>(
         name = "$name",
         ${keyDefAsKotlin}${indicesAsKotlin}properties = Properties
     ) {
-        object Properties: PropertyDefinitions() {
+        object Properties : PropertyDefinitions() {
             ${propertiesKotlin.generateDefinitionsForProperties().prependIndent().trimStart()}
         }
 
@@ -80,7 +80,7 @@ private fun IsIndexable.generateKotlin(
     is TypeId<*> -> {
         addImport("maryk.core.properties.definitions.key.TypeId")
         @Suppress("UNCHECKED_CAST")
-        val typeId= this as TypeId<IndexedEnum<Any>>
+        val typeId = this as TypeId<IndexedEnum<Any>>
         addImport("$packageName.$name.Properties.${typeId.reference.name}")
         "TypeId(${typeId.reference.name}.ref())"
     }

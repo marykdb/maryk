@@ -1,13 +1,14 @@
 package maryk.test.models
+
 import maryk.core.models.ObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.values.ObjectValues
 
 data class SimpleMarykObject(
     val value: String = "haha"
 ) {
-    object Properties: ObjectPropertyDefinitions<SimpleMarykObject>() {
+    object Properties : ObjectPropertyDefinitions<SimpleMarykObject>() {
         val value = add(
             index = 1, name = "value",
             definition = StringDefinition(
@@ -18,7 +19,7 @@ data class SimpleMarykObject(
         )
     }
 
-    companion object: ObjectDataModel<SimpleMarykObject, Properties>(
+    companion object : ObjectDataModel<SimpleMarykObject, Properties>(
         name = "SimpleMarykObject",
         properties = Properties
     ) {

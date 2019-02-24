@@ -27,7 +27,7 @@ import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberType
 import maryk.generator.kotlin.GenerationContext
 
-fun <P: AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
+fun <P : AbstractPropertyDefinitions<*>> IsNamedDataModel<P>.generateProto3Schema(
     generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {
@@ -73,7 +73,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
     generationContext: GenerationContext,
     messageAdder: (String) -> Unit
 ): String {
-    return when(this) {
+    return when (this) {
         is StringDefinition -> "string"
         is BooleanDefinition -> "bool"
         is FixedBytesDefinition,
@@ -83,7 +83,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is TimeDefinition -> "uint32"
         is DateDefinition -> "sint32"
         is DateTimeDefinition -> "int64"
-        is NumberDefinition<*> -> when(this.type.type) {
+        is NumberDefinition<*> -> when (this.type.type) {
             NumberType.SInt8,
             NumberType.SInt16,
             NumberType.SInt32 -> "sint32"
@@ -106,18 +106,38 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             }
             this.enum.name
         }
-        is SetDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}"
-        is ListDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}"
+        is SetDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(
+            name,
+            generationContext,
+            messageAdder
+        )}"
+        is ListDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(
+            name,
+            generationContext,
+            messageAdder
+        )}"
         is MapDefinition<*, *, *> -> {
             val keyDefinition = this.keyDefinition
-            when(keyDefinition) {
+            when (keyDefinition) {
                 is EnumDefinition<*>,
                 is FlexBytesDefinition,
                 is FixedBytesDefinition,
-                is ReferenceDefinition<*> -> return createEmbeddedMapModel(name, keyDefinition, valueDefinition, generationContext, messageAdder)
+                is ReferenceDefinition<*> -> return createEmbeddedMapModel(
+                    name,
+                    keyDefinition,
+                    valueDefinition,
+                    generationContext,
+                    messageAdder
+                )
                 is NumberDefinition<*> -> when (keyDefinition.type) {
                     is Float32,
-                    is Float64 -> return createEmbeddedMapModel(name, keyDefinition, valueDefinition, generationContext, messageAdder)
+                    is Float64 -> return createEmbeddedMapModel(
+                        name,
+                        keyDefinition,
+                        valueDefinition,
+                        generationContext,
+                        messageAdder
+                    )
                 }
                 else -> {
                     //continue

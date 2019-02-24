@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 
 /** Describes the property definitions for translation to kotlin */
-internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportablePropertyDefinitionType<T>, P: ObjectPropertyDefinitions<D>>(
+internal open class PropertyDefinitionKotlinDescriptor<T : Any, D : IsTransportablePropertyDefinitionType<T>, P : ObjectPropertyDefinitions<D>>(
     val className: String,
     val kotlinTypeName: (D) -> String,
     val definitionModel: IsObjectDataModel<D, P>,
@@ -33,7 +33,7 @@ internal open class PropertyDefinitionKotlinDescriptor<T: Any, D: IsTransportabl
     fun definitionToKotlin(definition: D, addImport: (String) -> Unit): String {
         val output = mutableListOf<String>()
 
-        properties@for (property in definitionModel.properties) {
+        properties@ for (property in definitionModel.properties) {
             val value = property.getter(definition)
 
             val def = property.definition

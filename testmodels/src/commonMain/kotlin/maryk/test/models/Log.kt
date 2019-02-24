@@ -17,13 +17,13 @@ import maryk.test.models.Severity.INFO
 
 enum class Severity(
     override val index: UInt
-): IndexedEnum<Severity> {
+) : IndexedEnum<Severity> {
     INFO(1u), DEBUG(2u), ERROR(3u);
 
-    companion object: IndexedEnumDefinition<Severity>("Severity", Severity::values)
+    companion object : IndexedEnumDefinition<Severity>("Severity", Severity::values)
 }
 
-object Log: RootDataModel<Log, Log.Properties>(
+object Log : RootDataModel<Log, Log.Properties>(
     name = "Log",
     keyDefinition = Multiple(
         Reversed(timestamp.ref()),

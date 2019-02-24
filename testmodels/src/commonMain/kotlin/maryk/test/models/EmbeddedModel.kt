@@ -8,7 +8,7 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
     name = "EmbeddedModel",
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
+    object Properties : PropertyDefinitions() {
         val value = add(
             index = 1, name = "value",
             definition = StringDefinition(

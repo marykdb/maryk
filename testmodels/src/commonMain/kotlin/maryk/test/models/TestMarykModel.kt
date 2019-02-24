@@ -1,4 +1,5 @@
 package maryk.test.models
+
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.PropertyDefinitions
@@ -36,7 +37,7 @@ import maryk.test.models.TestMarykModel.Properties.int
 import maryk.test.models.TestMarykModel.Properties.multi
 import maryk.test.models.TestMarykModel.Properties.uint
 
-object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
+object TestMarykModel : RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     name = "TestMarykModel",
     keyDefinition = Multiple(
         uint.ref(),
@@ -55,7 +56,7 @@ object TestMarykModel: RootDataModel<TestMarykModel, TestMarykModel.Properties>(
     ),
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
+    object Properties : PropertyDefinitions() {
         val string = add(
             index = 1, name = "string",
             definition = StringDefinition(

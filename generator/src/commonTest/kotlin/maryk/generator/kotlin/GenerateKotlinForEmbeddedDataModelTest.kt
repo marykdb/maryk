@@ -15,7 +15,7 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
     name = "EmbeddedModel",
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
+    object Properties : PropertyDefinitions() {
         val value = add(
             index = 1, name = "value",
             definition = StringDefinition(
@@ -37,7 +37,7 @@ object EmbeddedModel : DataModel<EmbeddedModel, EmbeddedModel.Properties>(
 
 class GenerateKotlinForEmbeddedDataModelTest {
     @Test
-    fun generateKotlinForSimpleModel(){
+    fun generateKotlinForSimpleModel() {
         var output = ""
 
         EmbeddedModel.generateKotlin("maryk.test.models") {

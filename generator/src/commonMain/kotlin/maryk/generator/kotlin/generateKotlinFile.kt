@@ -14,7 +14,7 @@ internal fun writeKotlinFile(
     writer: (String) -> Unit
 ) {
     val enumDefinitionKotlin = if (enumKotlinDefinitions != null && !enumKotlinDefinitions.isEmpty()) {
-        "\n"+ enumKotlinDefinitions.joinToString("\n\n") + '\n'
+        "\n" + enumKotlinDefinitions.joinToString("\n\n") + '\n'
     } else ""
 
     val imports = """

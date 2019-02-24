@@ -16,17 +16,19 @@ data class TestValueObject(
     val bool: Boolean
 ) : ValueDataObject(toBytes(int, dateTime, bool)) {
     object Properties : ObjectPropertyDefinitions<TestValueObject>() {
-        val int = add(1, "int", NumberDefinition(
-            type = SInt32,
-            maxValue = 6
-        ), TestValueObject::int)
+        val int = add(
+            1, "int", NumberDefinition(
+                type = SInt32,
+                maxValue = 6
+            ), TestValueObject::int
+        )
 
         val dateTime = add(2, "dateTime", DateTimeDefinition(), TestValueObject::dateTime)
 
         val bool = add(3, "bool", BooleanDefinition(), TestValueObject::bool)
     }
 
-    companion object: ValueDataModel<TestValueObject, Properties>(
+    companion object : ValueDataModel<TestValueObject, Properties>(
         name = "TestValueObject",
         properties = Properties
     ) {

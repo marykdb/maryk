@@ -14,11 +14,11 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.numeric.UInt8
 
-object NumericMarykModel: RootDataModel<NumericMarykModel, NumericMarykModel.Properties>(
+object NumericMarykModel : RootDataModel<NumericMarykModel, NumericMarykModel.Properties>(
     name = "NumericMarykModel",
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
+    object Properties : PropertyDefinitions() {
         val sInt8 = add(
             index = 1, name = "sInt8",
             definition = NumberDefinition(

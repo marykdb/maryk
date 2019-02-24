@@ -26,11 +26,19 @@ fun Definitions.generateKotlin(
             }
             is ValueDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>).generateKotlin(packageName, kotlinGenerationContext, writer)
+                (obj as ValueDataModel<ValueDataObject, ObjectPropertyDefinitions<ValueDataObject>>).generateKotlin(
+                    packageName,
+                    kotlinGenerationContext,
+                    writer
+                )
             }
             is RootDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as RootDataModel<*, PropertyDefinitions>).generateKotlin(packageName, kotlinGenerationContext, writer)
+                (obj as RootDataModel<*, PropertyDefinitions>).generateKotlin(
+                    packageName,
+                    kotlinGenerationContext,
+                    writer
+                )
             }
             is DataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)

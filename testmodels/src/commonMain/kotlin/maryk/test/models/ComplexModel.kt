@@ -17,7 +17,7 @@ import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 
-object ComplexModel: RootDataModel<ComplexModel, Properties>(
+object ComplexModel : RootDataModel<ComplexModel, Properties>(
     name = "ComplexModel",
     properties = Properties
 ) {
@@ -92,7 +92,7 @@ object ComplexModel: RootDataModel<ComplexModel, Properties>(
 
     operator fun invoke(
         multi: TypedValue<Option, Any>? = null,
-        mapStringString: Map<String,String>? = null,
+        mapStringString: Map<String, String>? = null,
         mapIntObject: Map<UInt, Values<EmbeddedMarykModel, EmbeddedMarykModel.Properties>>? = null,
         mapIntMulti: Map<UInt, TypedValue<Option, *>>? = null
     ) = this.values {

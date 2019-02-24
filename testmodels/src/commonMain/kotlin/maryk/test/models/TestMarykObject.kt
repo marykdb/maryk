@@ -1,4 +1,5 @@
 package maryk.test.models
+
 import maryk.core.models.ObjectDataModel
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.BooleanDefinition
@@ -42,7 +43,7 @@ data class TestMarykObject(
     val reference: Key<TestMarykModel>? = null,
     val listOfString: List<String>? = null
 ) {
-    object Properties: ObjectPropertyDefinitions<TestMarykObject>() {
+    object Properties : ObjectPropertyDefinitions<TestMarykObject>() {
         val string = add(
             index = 1, name = "string",
             definition = StringDefinition(
@@ -183,7 +184,7 @@ data class TestMarykObject(
         )
     }
 
-    companion object: ObjectDataModel<TestMarykObject, Properties>(
+    companion object : ObjectDataModel<TestMarykObject, Properties>(
         name = "TestMarykObject",
         properties = Properties
     ) {

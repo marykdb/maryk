@@ -42,17 +42,17 @@ import maryk.test.models.CompleteMarykModel.Properties.number
 
 enum class MarykEnumEmbedded(
     override val index: UInt
-): IndexedEnum<MarykEnumEmbedded> {
+) : IndexedEnum<MarykEnumEmbedded> {
     E1(1u),
     E2(2u),
     E3(3u);
 
-    companion object: IndexedEnumDefinition<MarykEnumEmbedded>(
+    companion object : IndexedEnumDefinition<MarykEnumEmbedded>(
         "MarykEnumEmbedded", MarykEnumEmbedded::values
     )
 }
 
-object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
+object CompleteMarykModel : RootDataModel<CompleteMarykModel, CompleteMarykModel.Properties>(
     name = "CompleteMarykModel",
     keyDefinition = Multiple(
         UUIDKey,
@@ -70,7 +70,7 @@ object CompleteMarykModel: RootDataModel<CompleteMarykModel, CompleteMarykModel.
     ),
     properties = Properties
 ) {
-    object Properties: PropertyDefinitions() {
+    object Properties : PropertyDefinitions() {
         val string = add(
             index = 1, name = "string",
             definition = StringDefinition(

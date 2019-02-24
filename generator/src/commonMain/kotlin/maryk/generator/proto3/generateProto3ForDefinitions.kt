@@ -25,7 +25,10 @@ fun Definitions.generateProto3(
             }
             is ValueDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)
-                (obj as ValueDataModel<*, ObjectPropertyDefinitions<*>>).generateProto3Schema(kotlinGenerationContext, writer)
+                (obj as ValueDataModel<*, ObjectPropertyDefinitions<*>>).generateProto3Schema(
+                    kotlinGenerationContext,
+                    writer
+                )
             }
             is RootDataModel<*, *> -> {
                 val writer = writerConstructor(obj.name)

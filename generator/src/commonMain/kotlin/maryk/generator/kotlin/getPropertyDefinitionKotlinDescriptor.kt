@@ -33,7 +33,7 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.numeric.NumberType
 
 /** Get the PropertyDefinitionKotlinDescriptor of the given property */
-internal fun <T: Any, D: IsTransportablePropertyDefinitionType<T>, P: ObjectPropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
+internal fun <T : Any, D : IsTransportablePropertyDefinitionType<T>, P : ObjectPropertyDefinitions<D>> D.getKotlinDescriptor(): PropertyDefinitionKotlinDescriptor<T, D, P> {
     @Suppress("UNCHECKED_CAST")
     return definitionNamesMap[this.propertyDefinitionType] as PropertyDefinitionKotlinDescriptor<T, D, P>?
         ?: throw Exception("Unknown propertyDefinitionType ${this.propertyDefinitionType}")
@@ -56,9 +56,10 @@ private val float32Imports = arrayOf("maryk.core.properties.types.numeric.Float3
 private val float64Imports = arrayOf("maryk.core.properties.types.numeric.Float64")
 private val valuesImports = arrayOf("maryk.core.values.Values")
 
-private val generateKotlinValueWithDefinition: (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String = { definition, value, addImport ->
-    generateKotlinValue(definition, value, addImport)
-}
+private val generateKotlinValueWithDefinition: (IsTransportablePropertyDefinitionType<Any>, Any, (String) -> Unit) -> String =
+    { definition, value, addImport ->
+        generateKotlinValue(definition, value, addImport)
+    }
 
 @Suppress("UNCHECKED_CAST")
 private val definitionNamesMap = mapOf(
@@ -123,7 +124,8 @@ private val definitionNamesMap = mapOf(
         className = "ListDefinition",
         kotlinTypeName = {
             val transportableValueDefinition = it.valueDefinition as IsTransportablePropertyDefinitionType<Any>
-            val kotlinDescriptorForValueDefinition = transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
+            val kotlinDescriptorForValueDefinition =
+                transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
             "List<$kotlinDescriptorForValueDefinition>"
         },
         definitionModel = ListDefinition.Model as IsSimpleObjectDataModel<ListDefinition<Any, *>>
@@ -132,9 +134,11 @@ private val definitionNamesMap = mapOf(
         className = "MapDefinition",
         kotlinTypeName = {
             val transportableKeyDefinition = it.keyDefinition as IsTransportablePropertyDefinitionType<Any>
-            val kotlinDescriptorForKeyDefinition = transportableKeyDefinition.getKotlinDescriptor().kotlinTypeName(transportableKeyDefinition)
+            val kotlinDescriptorForKeyDefinition =
+                transportableKeyDefinition.getKotlinDescriptor().kotlinTypeName(transportableKeyDefinition)
             val transportableValueDefinition = it.valueDefinition as IsTransportablePropertyDefinitionType<Any>
-            val kotlinDescriptorForValueDefinition = transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
+            val kotlinDescriptorForValueDefinition =
+                transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
             "Map<$kotlinDescriptorForKeyDefinition, $kotlinDescriptorForValueDefinition>"
         },
         definitionModel = MapDefinition.Model as IsSimpleObjectDataModel<MapDefinition<Any, Any, *>>
@@ -145,7 +149,8 @@ private val definitionNamesMap = mapOf(
         definitionModel = MultiTypeDefinition.Model as IsSimpleObjectDataModel<MultiTypeDefinition<IndexedEnum<Any>, *>>,
         propertyValueOverride = mapOf(
             "definitionMap" to { definition, _, _ ->
-                val multiTypeDefinition = definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
+                val multiTypeDefinition =
+                    definition as MultiTypeDefinition<IndexedEnum<IndexedEnum<*>>, IsPropertyContext>
 
                 val typeName = multiTypeDefinition.typeEnum.name
 
@@ -208,7 +213,8 @@ private val definitionNamesMap = mapOf(
         className = "SetDefinition",
         kotlinTypeName = {
             val transportableValueDefinition = it.valueDefinition as IsTransportablePropertyDefinitionType<Any>
-            val kotlinDescriptorForValueDefinition = transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
+            val kotlinDescriptorForValueDefinition =
+                transportableValueDefinition.getKotlinDescriptor().kotlinTypeName(transportableValueDefinition)
             "Set<$kotlinDescriptorForValueDefinition>"
         },
         definitionModel = SetDefinition.Model as IsSimpleObjectDataModel<SetDefinition<Any, *>>

@@ -5,8 +5,8 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 
 enum class Option(
     override val index: UInt
-): IndexedEnum<Option> {
+) : IndexedEnum<Option> {
     V1(1u), V2(2u), V3(3u);
 
-    companion object: IndexedEnumDefinition<Option>("Option", Option::values)
+    companion object : IndexedEnumDefinition<Option>("Option", Option::values)
 }

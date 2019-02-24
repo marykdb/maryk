@@ -1,17 +1,17 @@
 package maryk.test.models
 
 import maryk.core.models.ObjectDataModel
-import maryk.core.values.ObjectValues
 import maryk.core.properties.ObjectPropertyDefinitions
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.values.ObjectValues
 
 @Suppress("unused")
 data class EmbeddedMarykObject(
     val value: String,
     val model: EmbeddedMarykObject? = null,
     val marykModel: TestMarykObject? = null
-){
+) {
     object Properties : ObjectPropertyDefinitions<EmbeddedMarykObject>() {
         val value = add(
             index = 1, name = "value",
@@ -35,7 +35,8 @@ data class EmbeddedMarykObject(
             getter = EmbeddedMarykObject::marykModel
         )
     }
-    companion object: ObjectDataModel<EmbeddedMarykObject, Properties>(
+
+    companion object : ObjectDataModel<EmbeddedMarykObject, Properties>(
         name = "EmbeddedMarykObject",
         properties = Properties
     ) {
